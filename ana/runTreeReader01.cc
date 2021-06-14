@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   string treeName("frames");
 
   string readerName("treeReader01");
-  TString histfile("");
+  string histfile("");
 
   // -- command line arguments
   for (int i = 0; i < argc; i++){
@@ -81,8 +81,9 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-D"))  {dirName    = string(argv[++i]);  dirspec = 1; } // where to put the output
     if (!strcmp(argv[i],"-f"))  {fileName   = string(argv[++i]); file = 1; }     // single file instead of chain
     if (!strcmp(argv[i],"-n"))  {nevents    = atoi(argv[++i]); }                 // number of events to run
-    if (!strcmp(argv[i],"-o"))  {histfile   = TString(argv[++i]); }              // set output file
+    if (!strcmp(argv[i],"-o"))  {histfile   = string(argv[++i]); }               // set output file
     if (!strcmp(argv[i],"-S"))  {start = atoi(argv[++i]); }                      // set start event number
+    if (!strcmp(argv[i],"-t"))  {treeName   = string(argv[++i]); }               // set tree name
     if (!strcmp(argv[i],"-v"))  {verbose    = atoi(argv[++i]); }                 // set verbosity level
   }
 
@@ -94,9 +95,9 @@ int main(int argc, char *argv[]) {
   fn.ReplaceAll("tree", "");
 
   // -- Determine filename for output histograms and 'final' small/reduced tree
-  TString meta = fileName;
+  TString meta = fileName.c_str();
   if(histfile == "") {
-    TString  barefile(fileName), chainFile, meta;
+    TString  barefile(fileName.c_str()), chainFile, meta;
     if (file == 0) {
       // -- input from chain
       if (barefile.Contains("chains/")) {
@@ -134,7 +135,7 @@ int main(int argc, char *argv[]) {
       TString bla(barefile);
       bla.Replace(0, fl+1, ' '); bla.Strip(TString::kLeading, ' ');  bla.Remove(0,1);
       histfile =  bla;
-      histfile.ReplaceAll(".root", "");
+      replaceAll(histfile, ".root", "");
       histfile +=  "." + fn + ".root";
       if (dirspec) {
 	if (dirName[0] == '/') {
@@ -145,16 +146,16 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  string shistfile = histfile.Data();
+  string shistfile = histfile;
   replaceAll(shistfile, "..", ".");
   histfile = shistfile.c_str();
-  cout << "Opening " << histfile.Data() << " for output histograms" << endl;
+  cout << "Opening " << histfile << " for output histograms" << endl;
   cout << "Opening " << fileName.c_str() << " for input" << endl;
 
 
   // -- Set up chain
   TChain *chain = new TChain(TString(treeName));
-  cout << "Chaining ... " << treeName << endl;
+  cout << "Chaining ->" << treeName << "<-" << endl;
   char pName[2000];
   int nentries;
   if (file == 0) {
@@ -183,7 +184,7 @@ int main(int argc, char *argv[]) {
   treeReader01 *a = NULL;
   if ("treeReader01" == readerName) {
     cout << "instantiating treeReader01" << endl;
-    a = new treeReader01(chain, "nada");
+    a = new treeReader01(chain, treeName);
   }
 
   if (a) {
