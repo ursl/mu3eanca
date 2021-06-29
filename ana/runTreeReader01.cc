@@ -51,8 +51,8 @@ int main(int argc, char *argv[]) {
   TTree::SetMaxTreeSize(100000000000ll); // 100 GB
 
   // -- Some defaults
-  string dirBase("./");               // this could point to "/home/ursl/data/root/."
-  string dirName("."); dirspec = 0;   // and this to, e.g. "bmm", "bee", "bem", ...
+  string dirBase(".");               // this could point to "/home/ursl/data/root/."
+  string dirName("results"); dirspec = 1;   // and this to, e.g. "bmm", "bee", "bem", ...
   string cutFile("tree.default.cuts");
 
   string treeName("frames");
