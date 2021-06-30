@@ -63,11 +63,11 @@ void treeReader01::endAnalysis() {
 void treeReader01::eventProcessing() {
   initVariables();
 
-  printBranches();
+  //  printBranches();
+  fillHist();
 
   // -- generic rudimentary analysis
   if (DBX) {
-    cout << "----------------------------------------------------------------------" << endl;
   }
 
 }
@@ -76,13 +76,20 @@ void treeReader01::eventProcessing() {
 
 // ----------------------------------------------------------------------
 void treeReader01::fillHist() {
+  TH1D *h1 = (TH1D*)fpHistFile->Get("hp");
+
+  for (unsigned int i = 0; i < fp->size(); ++i) {
+    h1->Fill(fp->at(i));
+  }
+
+
 }
 
 // ----------------------------------------------------------------------
 void treeReader01::bookHist() {
   cout << "==> treeReader01: bookHist> " << endl;
 
-  new TH1D("evts", "events", 40, 0., 40.);
+  new TH1D("hp", "hp", 100, -100., 100.);
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
@@ -263,11 +270,10 @@ void treeReader01::printBranches() {
   }
   cout << endl;
 
-  cout << ": fmc_pt->size() = " << fmc_pt->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_pt->size(); ++i) {
-    cout << fmc_pt->at(i) << "/"
-	 << fmc_p->at(i)*TMath::Sin(fmc_theta->at(i));
-    if (i < fmc_pt->size() - 1) cout << ", ";
+  cout << ": fmc_p->size() = " << fmc_p->size() << ":  ";
+  for (unsigned int i = 0; i < fmc_p->size(); ++i) {
+    cout << fmc_p->at(i) ;
+    if (i < fmc_p->size() - 1) cout << ", ";
   }
   cout << endl;
 
@@ -403,7 +409,7 @@ int treeReader01::loop(int nevents, int start) {
   Long64_t nentries = fpChain->GetEntriesFast();
 
   Long64_t nbytes = 0, nb = 0;
-  for (Long64_t jentry = 0; jentry < nentries; ++jentry) {
+  for (Long64_t jentry = 0; jentry < maxEvents; ++jentry) {
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
     nb = fpChain->GetEntry(jentry);   nbytes += nb;
@@ -453,6 +459,7 @@ int treeReader01::loop(int nevents, int start) {
 
 }
 
+// ----------------------------------------------------------------------
 Long64_t treeReader01::LoadTree(Long64_t entry) {
   // Set the environment to read one entry
   if (!fpChain) return -5;
