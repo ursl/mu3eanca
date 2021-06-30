@@ -2,6 +2,7 @@
 #define TREEREADER01_H
 
 #include <iostream>
+#include <vector>
 
 #include <TROOT.h>
 #include <TVector3.h>
@@ -19,7 +20,8 @@
 class treeReader01 {
 public:
   treeReader01(TChain *tree, std::string para);
-  virtual      ~treeReader01();
+  virtual            ~treeReader01();
+  Long64_t           LoadTree(Long64_t entry);
   virtual void       init(std::string treeName);
   virtual void       initFrames();
   virtual void       initBranch(std::string name, int* var);
@@ -48,7 +50,7 @@ public:
   int fVerbose;
 
 protected:
-
+  int         fCurrent;        // current tree number in chain
   TChain      *fpChain;        // pointer to the analyzed TTree or TChain
   TFile       *fpHistFile;     // for output histograms and reduced trees
   std::string fChainFileName; // the name of the chain file
@@ -74,7 +76,7 @@ protected:
   std::vector<int>     *fnhit, *fhid0, *fsid0;
   std::vector<double>  *fx0, *fy0, *fz0, *ft0, *ft0_err;
   std::vector<double>  *fdt, *fdt_si, *ft0_tl, *ft0_fb, *ft0_si;
-  std::vector<double>  *fp, *fperr2, *fchi2, *ftan01, *flam01, *fn_shared_hits, *fn_shared_segs;
+  std::vector<double>  *fr, *frerr2, *fp, *fperr2, *fchi2, *ftan01, *flam01, *fn_shared_hits, *fn_shared_segs;
   // TBranch              *fbmc, *fbmc_prime, *fbmc_type;
   // TBranch	       *fbmc_pid, *fbmc_tid, *fbmc_mid;
   // TBranch	       *fbmc_p, *fbmc_pt, *fbmc_phi, *fbmc_lam, *fbmc_theta;
