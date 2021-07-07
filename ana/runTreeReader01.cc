@@ -16,7 +16,7 @@
 #include "TKey.h"
 
 #include "util/util.hh"
-#include "treeReader01.hh"
+#include "trBase.hh"
 
 using namespace std;
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   string treeName("frames");
   string tree2Name("nada");
 
-  string readerName("treeReader01");
+  string readerName("trBase");
   string histfile("");
 
   // -- command line arguments
@@ -185,10 +185,10 @@ int main(int argc, char *argv[]) {
   }
 
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
-  treeReader01 *a = NULL;
-  if ("treeReader01" == readerName) {
-    cout << "instantiating treeReader01" << endl;
-    a = new treeReader01(chain, treeName);
+  trBase *a = NULL;
+  if ("trBase" == readerName) {
+    cout << "instantiating trBase" << endl;
+    a = new trBase(chain, treeName);
   }
 
   if (a) {

@@ -41,7 +41,7 @@ EXTHEADERS    = -I..
 
 # -- Files
 #CSTUFF =
-READER = treeReader01.o plotResults.o # plotClass.o
+READER = trBase.o plotResults.o # plotClass.o
 
 DICT = ${READER:.o=Dict.o}
 DICTHEADERS = ${READER:.o=Dict.h}
