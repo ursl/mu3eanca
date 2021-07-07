@@ -24,6 +24,12 @@ treeReader01::treeReader01(TChain *chain, string treeName) {
   }
   fpChain = chain;
   fChainName = treeName;
+
+  if (string::npos != fChainName.find("frames")) {
+    fMode = FRAMES;
+  } else if (string::npos != fChainName.find("mu3e")) {
+    fMode = MU3E;
+  }
   fNentries = fpChain->GetEntries();
   cout << "==> treeReader01: constructor fpChain: " << fpChain << "/" << fpChain->GetName() << " entries = " <<   fNentries << endl;
 
@@ -510,14 +516,8 @@ int treeReader01::loop(int nevents, int start) {
 
   Long64_t nentries = fpChain->GetEntriesFast();
 
-  int mode(0);
-  if (string::npos != fChainName.find("frames")) {
-    mode = 1;
-  } else if (string::npos != fChainName.find("mu3e")) {
-    mode = 2;
-  }
 
-  cout << "mode = " << mode << endl;
+  cout << "mode = " << fMode << endl;
 
   Long64_t nbytes = 0, nb = 0;
   for (Long64_t jentry = 0; jentry < maxEvents; ++jentry) {
@@ -527,10 +527,10 @@ int treeReader01::loop(int nevents, int start) {
     // if (Cut(ientry) < 0) continue;
 
 
-    if (1 == mode) {
+    if (FRAMES == fMode) {
       fRun = frunId;
       fEvt = feventId;
-    } else if (2 == mode) {
+    } else if (MU3E == fMode) {
       fRun = fHeader.run;
       fEvt = fHeader.event;
     }

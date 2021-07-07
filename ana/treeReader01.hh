@@ -29,6 +29,9 @@ class treeReader01 {
 public:
   treeReader01(TChain *tree, std::string para);
   virtual            ~treeReader01();
+
+  enum MODE {UNSET, FRAMES, MU3E};
+
   Long64_t           LoadTree(Long64_t entry);
   virtual void       init(std::string treeName);
   virtual void       initFrames();
@@ -63,6 +66,7 @@ public:
   int fVerbose;
 
 protected:
+  enum MODE   fMode;           // what type of tree?
   int         fCurrent;        // current tree number in chain
   TChain      *fpChain;        // pointer to the analyzed TTree or TChain
   TFile       *fpHistFile;     // for output histograms and reduced trees
