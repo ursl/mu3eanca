@@ -17,6 +17,14 @@
 
 #define DR      57.29577951
 
+struct header {
+  int event;
+  int run;
+  int type;
+  int setup;
+  double weight;
+};
+
 class treeReader01 {
 public:
   treeReader01(TChain *tree, std::string para);
@@ -24,9 +32,14 @@ public:
   Long64_t           LoadTree(Long64_t entry);
   virtual void       init(std::string treeName);
   virtual void       initFrames();
+  virtual void       initMu3e();
+  virtual void       initMu3e_mchits();
   virtual void       initBranch(std::string name, int* var);
   virtual void       initBranch(std::string name, float* var);
+  virtual void       initBranch(std::string name, double* var);
+  virtual void       initBranch(std::string name, std::string** var);
   virtual void       initBranch(std::string name, std::vector<int>** vect);
+  virtual void       initBranch(std::string name, std::vector<unsigned int>** vect);
   virtual void       initBranch(std::string name, std::vector<double>** vect);
 
   virtual void       openHistFile(std::string filename);
@@ -53,8 +66,8 @@ protected:
   int         fCurrent;        // current tree number in chain
   TChain      *fpChain;        // pointer to the analyzed TTree or TChain
   TFile       *fpHistFile;     // for output histograms and reduced trees
-  std::string fChainFileName; // the name of the chain file
-  std::string fCutFile;       // contains file with the cut definitions
+  std::string fChainName;      // the name of the chain file
+  std::string fCutFile;        // contains file with the cut definitions
 
   // -- Pre-filled variables
   int          fNentries;      // number of events in chain; filled in treeReader01::treeReader01()
@@ -77,20 +90,32 @@ protected:
   std::vector<double>  *fx0, *fy0, *fz0, *ft0, *ft0_err;
   std::vector<double>  *fdt, *fdt_si, *ft0_tl, *ft0_fb, *ft0_si;
   std::vector<double>  *fr, *frerr2, *fp, *fperr2, *fchi2, *ftan01, *flam01, *fn_shared_hits, *fn_shared_segs;
-  // TBranch              *fbmc, *fbmc_prime, *fbmc_type;
-  // TBranch	       *fbmc_pid, *fbmc_tid, *fbmc_mid;
-  // TBranch	       *fbmc_p, *fbmc_pt, *fbmc_phi, *fbmc_lam, *fbmc_theta;
-  // TBranch	       *fbmc_vx, *fbmc_vy, *fbmc_vz, *fbmc_vr, *fbmc_vt, *fbmc_t0;
-  // TBranch	       *fbnhit, *fbhid0, *fbsid0;
-  // TBranch	       *fbx0, *fby0, *fbz0, *fbt0, *fbt0_err;
-  // TBranch	       *fbdt, *fbdt_si, *fbt0_tl, *fbt0_fb, *fbt0_si;
-  // TBranch	       *fbp, *fbperr2, *fbchi2, *fbtan01, *fblam01, *fbn_shared_hits, *fbn_shared_segs;
+
+  // -- tree variables: mu3e
+  struct header              fHeader;
+  double                     fWeight;
+  std::string                *fRandomState;
+  int                        fNhit;
+  std::vector<unsigned int>  *fhit_pixelid, *fhit_timestamp;
+  std::vector<int>           *fhit_mc_i, *fhit_mc_n;
+
+  int                        fNtrajectories;
+  std::vector<unsigned int>  *ftraj_ID, *ftraj_mother, *ftraj_fbhid, *ftraj_tlhid;
+  std::vector<int>           *ftraj_PID, *ftraj_type;
+  std::vector<double>        *ftraj_time, *ftraj_vx, *ftraj_vy, *ftraj_vz;
+  std::vector<double>        *ftraj_px, *ftraj_py, *ftraj_pz;
+
+  // -- mu3e_mchits
+  int                        fdet, ftid, fpdg, fhid, fhid_g;
+  double                     fedep, ftime;
 
   int                   fNBranches;
   std::vector<TBranch*> fBranches;
 
+  std::string fTree2Name;
+  TTree       *fTree2;
 
-  // -- Histogram pointers
+  // -- Output histogram/tree pointers
   TTree       *fTree;
 
   bool DBX;
