@@ -48,6 +48,7 @@ void treeReader01::init(string treeName) {
   cout << "==> treeReader01: init..." << endl;
 
   if (string::npos != treeName.find("frames")) initFrames();
+  if (string::npos != treeName.find("mu3e")) initMu3e();
 
   initVariables();
 }
@@ -82,12 +83,21 @@ void treeReader01::eventProcessing() {
 
 // ----------------------------------------------------------------------
 void treeReader01::fillHist() {
-  TH1D *h1 = (TH1D*)fpHistFile->Get("hp");
+  if (FRAMES == fMode) {
+    TH1D *h1 = (TH1D*)fpHistFile->Get("hp");
 
-  for (unsigned int i = 0; i < fp->size(); ++i) {
-    h1->Fill(fp->at(i));
+    for (unsigned int i = 0; i < fp->size(); ++i) {
+      h1->Fill(fp->at(i));
+    }
   }
 
+  if (MU3E == fMode) {
+    TH1D *hpx = (TH1D*)fpHistFile->Get("hpx");
+
+    for (unsigned int i = 0; i < ftraj_px->size(); ++i) {
+      hpx->Fill(ftraj_px->at(i));
+    }
+  }
 
 }
 
@@ -95,7 +105,13 @@ void treeReader01::fillHist() {
 void treeReader01::bookHist() {
   cout << "==> treeReader01: bookHist> " << endl;
 
-  new TH1D("hp", "hp", 100, -100., 100.);
+  if (FRAMES == fMode) {
+    new TH1D("hp", "hp", 100, -100., 100.);
+  }
+
+  if (MU3E == fMode) {
+    new TH1D("hpx", "hpx", 100, -100., 100.);
+  }
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
