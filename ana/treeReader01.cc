@@ -17,15 +17,15 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-treeReader01::treeReader01(TChain *chain, string para) {
+treeReader01::treeReader01(TChain *chain, string treeName) {
   cout << "==> treeReader01: constructor..." << endl;
   if (chain == 0) {
     cout << "You need to pass a chain!" << endl;
   }
   fpChain = chain;
-  cout << "==> treeReader01: constructor fpChain: " << fpChain << "/" << endl;
-  fpChain->ls();
-  fNentries = chain->GetEntries();
+  fChainName = treeName;
+  fNentries = fpChain->GetEntries();
+  cout << "==> treeReader01: constructor fpChain: " << fpChain << "/" << fpChain->GetName() << " entries = " <<   fNentries << endl;
 
   fNBranches = 0;
   fBranches.resize(1000);
@@ -34,14 +34,14 @@ treeReader01::treeReader01(TChain *chain, string para) {
   }
   cout << " &feventId = " << &feventId << " initialized with fBranches.size() = " << fBranches.size() << endl;
 
-  init(para);
+  init(treeName);
 }
 
 // ----------------------------------------------------------------------
 void treeReader01::init(string treeName) {
   cout << "==> treeReader01: init..." << endl;
 
-  if ("frames" == treeName) initFrames();
+  if (string::npos != treeName.find("frames")) initFrames();
 
   initVariables();
 }
@@ -113,11 +113,9 @@ void treeReader01::initVariables() {
 // -- Below is the icc material
 // ======================================================================
 
-
 // ----------------------------------------------------------------------
 void treeReader01::initFrames() {
   cout << "==> treeReader01::initFrames() ... " << endl;
-
   // -- NB: The following lines are essential. Else there will be a crash when compiler does not do default zeroing!
   fmc = fmc_prime = fmc_type = 0;
   fmc_pid = fmc_tid = fmc_mid = 0;
@@ -187,15 +185,51 @@ void treeReader01::initFrames() {
   initBranch("lam01", &flam01);
   initBranch("n_shared_hits", &fn_shared_hits);
   initBranch("n_shared_segs", &fn_shared_segs);
-
-
-  if (0) {
-    cout << "fNBranches = " << fNBranches << endl;
-    for (unsigned int it = 0; it < fNBranches; ++it) {
-      cout << Form("%3d ", it) << fBranches[it]->GetName() << " at " << fBranches[it] << endl;
-    }
-  }
 }
+
+
+// ----------------------------------------------------------------------
+void treeReader01::initMu3e() {
+  cout << "==> treeReader01::initMu3e() ... " << endl;
+
+  fpChain->SetBranchAddress("Header", &fHeader);
+  initBranch("Weight", &fWeight);
+  initBranch("RandomState", &fRandomState);
+  initBranch("Nhit", &fNhit);
+
+  initBranch("hit_pixelid", &fhit_pixelid);
+  initBranch("hit_timestamp", &fhit_timestamp);
+  initBranch("hit_mc_i", &fhit_mc_i);
+  initBranch("hit_mc_n", &fhit_mc_n);
+
+  initBranch("Ntrajectories", &fNtrajectories);
+  initBranch("traj_ID", &ftraj_ID);
+  initBranch("traj_mother", &ftraj_mother);
+  initBranch("traj_fbhid", &ftraj_fbhid);
+  initBranch("traj_tlhid", &ftraj_tlhid);
+  initBranch("traj_PID", &ftraj_PID);
+  initBranch("traj_type", &ftraj_type);
+  initBranch("traj_time", &ftraj_time);
+  initBranch("traj_vx", &ftraj_vx);
+  initBranch("traj_vy", &ftraj_vy);
+  initBranch("traj_vz", &ftraj_vz);
+  initBranch("traj_px", &ftraj_px);
+  initBranch("traj_py", &ftraj_py);
+  initBranch("traj_pz", &ftraj_pz);
+}
+
+
+// ----------------------------------------------------------------------
+void treeReader01::initMu3e_mchits() {
+  fTree2->SetBranchAddress("det", &fdet);
+  fTree2->SetBranchAddress("tid", &ftid);
+  fTree2->SetBranchAddress("pdg", &fpdg);
+  fTree2->SetBranchAddress("hid", &fhid);
+  fTree2->SetBranchAddress("hid_g", &fhid_g);
+  fTree2->SetBranchAddress("edep", &fedep);
+  fTree2->SetBranchAddress("time", &ftime);
+}
+
 
 // ----------------------------------------------------------------------
 void treeReader01::initBranch(string name, int* pvar) {
@@ -208,6 +242,7 @@ void treeReader01::initBranch(string name, int* pvar) {
        << endl;
   ++fNBranches;
 }
+
 
 // ----------------------------------------------------------------------
 void treeReader01::initBranch(string name, float* pvar) {
@@ -222,6 +257,24 @@ void treeReader01::initBranch(string name, float* pvar) {
 }
 
 // ----------------------------------------------------------------------
+void treeReader01::initBranch(string name, double* pvar) {
+  int i = fNBranches;
+  fpChain->SetBranchAddress(name.c_str(), pvar, &(fBranches[i]));
+  cout << "initBranch(" << name << ", double*), fNBranches = "
+       << i
+       << " &(fBranches[" << i << "]) = " << &(fBranches[i])
+       << ", fBranches[" << i << "] = " << (fBranches[i])
+       << endl;
+  ++fNBranches;
+}
+
+// ----------------------------------------------------------------------
+void treeReader01::initBranch(string name, string** pvar) {
+  cout << "initBranch(" << name << "),  pvar = " << pvar << endl;
+  fpChain->SetBranchAddress(name.c_str(), pvar);
+}
+
+// ----------------------------------------------------------------------
 void treeReader01::initBranch(string name, vector<int>** pvect) {
   int i = fNBranches;
   fpChain->SetBranchAddress(name.c_str(), pvect, &(fBranches[i]));
@@ -229,6 +282,18 @@ void treeReader01::initBranch(string name, vector<int>** pvect) {
        << i
        << " &(fBranches[" << i << "]) = " << &(fBranches[i])
        << ", fBranches[" << i << "] = " << (fBranches[i])
+       << endl;
+  ++fNBranches;
+}
+
+// ----------------------------------------------------------------------
+void treeReader01::initBranch(string name, vector<unsigned int>** pvect) {
+  int i = fNBranches;
+  fpChain->SetBranchAddress(name.c_str(), pvect, &(fBranches[i]));
+  cout << "initBranch(" << name << ", vector<unsigned int>), fNBranches = "
+       << i
+       << " &(fBranches[i]) = " << &(fBranches[i])
+       << ", fBranches[i] = " << (fBranches[i])
        << endl;
   ++fNBranches;
 }
@@ -248,44 +313,82 @@ void treeReader01::initBranch(string name, vector<double>** pvect) {
 
 // ----------------------------------------------------------------------
 void treeReader01::printBranches() {
-  cout << "evt: " << fChainEvent
-       << " eventId: " << feventId
-       << " run: "  << frunId
-       << " w8: " << frunId
-       << " geom_vertex_found: " << fgeom_vertex_found
-       << " true_vertex_found: " << ftrue_vertex_found
-       << " w8: " << frunId
-       << endl;
-  cout << ": fmc_tid->size() = " << fmc_tid->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_tid->size(); ++i) {
-    cout << fmc_tid->at(i);
-    if (i < fmc_tid->size() - 1) cout << ", ";
-  }
-  cout << endl;
 
-  cout << ": fmc_type->size() = " << fmc_type->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_type->size(); ++i) {
-    cout << fmc_type->at(i);
-    if (i < fmc_type->size() - 1) cout << ", ";
-  }
-  cout << endl;
+  if (string::npos != fChainName.find("mu3e")) {
+    cout << "mu3e evt: " << fChainEvent
+	 << " event: " << fHeader.event
+	 << " run: "  << fHeader.run
+	 << " type: " << fHeader.type
+	 << " RandomState: " << fRandomState->c_str()
+	 << endl;
+    cout << ": ftraj_ID->size() = " << ftraj_ID->size() << ":  ";
+    for (unsigned int i = 0; i < ftraj_ID->size(); ++i) {
+      cout << ftraj_ID->at(i)
+	<< "(" << ftraj_PID->at(i)
+	   << "/" << ftraj_type->at(i)
+	   << "/" << ftraj_mother->at(i)
+	   << ")";
+      if (i < ftraj_ID->size() - 1) cout << ", ";
+    }
+    cout << endl;
 
-  cout << ": fmc_p->size() = " << fmc_p->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_p->size(); ++i) {
-    cout << fmc_p->at(i) ;
-    if (i < fmc_p->size() - 1) cout << ", ";
-  }
-  cout << endl;
+    cout << ": fmc_p->size() = " << fmc_p->size() << ":  ";
+    for (unsigned int i = 0; i < fmc_p->size(); ++i) {
+      cout << fmc_p->at(i) ;
+      if (i < fmc_p->size() - 1) cout << ", ";
+    }
+    cout << endl;
 
-  cout << ": fmc_v->size() = " << fmc_vx->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_vx->size(); ++i) {
-    cout << fmc_vx->at(i) << "/"
-	 << fmc_vy->at(i) << "/"
-	 << fmc_vz->at(i);
-    if (i < fmc_vx->size() - 1) cout << ", ";
+    cout << ": fmc_v->size() = " << fmc_vx->size() << ":  ";
+    for (unsigned int i = 0; i < fmc_vx->size(); ++i) {
+      cout << fmc_vx->at(i) << "/"
+	   << fmc_vy->at(i) << "/"
+	   << fmc_vz->at(i);
+      if (i < fmc_vx->size() - 1) cout << ", ";
+    }
+    cout << endl;
   }
-  cout << endl;
 
+  if (string::npos != fChainName.find("frames")) {
+    cout << "frames evt: " << fChainEvent
+	 << " eventId: " << feventId
+	 << " run: "  << frunId
+	 << " w8: " << frunId
+	 << " geom_vertex_found: " << fgeom_vertex_found
+	 << " true_vertex_found: " << ftrue_vertex_found
+	 << " w8: " << frunId
+	 << endl;
+    cout << ": fmc_tid->size() = " << fmc_tid->size() << ":  ";
+    for (unsigned int i = 0; i < fmc_tid->size(); ++i) {
+      cout << fmc_tid->at(i);
+      if (i < fmc_tid->size() - 1) cout << ", ";
+    }
+    cout << endl;
+
+    cout << ": fmc_type->size() = " << fmc_type->size() << ":  ";
+    for (unsigned int i = 0; i < fmc_type->size(); ++i) {
+      cout << fmc_type->at(i);
+      if (i < fmc_type->size() - 1) cout << ", ";
+    }
+    cout << endl;
+
+    cout << ": fmc_pt->size() = " << fmc_pt->size() << ":  ";
+    for (unsigned int i = 0; i < fmc_pt->size(); ++i) {
+      cout << fmc_pt->at(i) << "/"
+	   << fmc_p->at(i)*TMath::Sin(fmc_theta->at(i));
+      if (i < fmc_pt->size() - 1) cout << ", ";
+    }
+    cout << endl;
+
+    cout << ": fmc_v->size() = " << fmc_vx->size() << ":  ";
+    for (unsigned int i = 0; i < fmc_vx->size(); ++i) {
+      cout << fmc_vx->at(i) << "/"
+	   << fmc_vy->at(i) << "/"
+	   << fmc_vz->at(i);
+      if (i < fmc_vx->size() - 1) cout << ", ";
+    }
+    cout << endl;
+  }
 }
 
 
@@ -405,8 +508,16 @@ int treeReader01::loop(int nevents, int start) {
   if (maxEvents < 10000)   step = 500;
   if (maxEvents < 1000)    step = 100;
 
-
   Long64_t nentries = fpChain->GetEntriesFast();
+
+  int mode(0);
+  if (string::npos != fChainName.find("frames")) {
+    mode = 1;
+  } else if (string::npos != fChainName.find("mu3e")) {
+    mode = 2;
+  }
+
+  cout << "mode = " << mode << endl;
 
   Long64_t nbytes = 0, nb = 0;
   for (Long64_t jentry = 0; jentry < maxEvents; ++jentry) {
@@ -414,47 +525,68 @@ int treeReader01::loop(int nevents, int start) {
     if (ientry < 0) break;
     nb = fpChain->GetEntry(jentry);   nbytes += nb;
     // if (Cut(ientry) < 0) continue;
+
+
+    if (1 == mode) {
+      fRun = frunId;
+      fEvt = feventId;
+    } else if (2 == mode) {
+      fRun = fHeader.run;
+      fEvt = fHeader.event;
+    }
+
     if (jentry%step == 0) {
       TTimeStamp ts;
       cout  << " (run: " << Form("%8d", fRun)
-	    << ", event: " << Form("%10d", fEvt)
-	    << ", time now: " << ts.AsString("lc")
-	    << ")" << endl;
+            << ", event: " << Form("%10d", fEvt)
+            << ", time now: " << ts.AsString("lc")
+            << ")" << endl;
     }
+
 
     eventProcessing();
   }
 
-  // // OLD OLD
-  // int treeNumber(0), oldTreeNumber(-1);
+
+  // Long64_t nb(0);
+  // int treeNumber(-1), oldTreeNumber(-1);
   // fpChain->GetFile(); // without this, treeNumber initially will be -1.
-  // for (Long64_t jEvent = start; jEvent < maxEvents; ++jEvent) {
-  //   Long64_t ientry = LoadTree(jEvent);
-  //   if (ientry < 0) break;
+  // int mode(-1);
+
+
+  // for (int jEvent = start; jEvent < maxEvents; ++jEvent) {
   //   treeNumber = fpChain->GetTreeNumber();
   //   if (treeNumber != oldTreeNumber) {
-  //     cout << "    " << Form("      %8d", jEvent) << " " << fpChain->GetFile()->GetName() << endl;
+  //     cout << "    " << Form("      %8d", jEvent)
+  // 	   << " with tree ->" << fChainName
+  // 	   << "<- from "  << fpChain->GetFile()->GetName();
+  //     if ("mu3e_mchits" == fTree2Name) {
+  // 	fTree2 = (TTree*)fpChain->GetFile()->Get(fTree2Name.c_str());
+  // 	initMu3e_mchits();
+  // 	cout << " and tree2 ->" << fTree2Name << "<-";
+  //     }
+  //     cout << endl;
   //     oldTreeNumber = treeNumber;
   //   }
 
-  //   //    if (jEvent%step == 0) cout << Form(" .. Event %8d", jEvent);
+  //   if (jEvent%step == 0) cout << Form(" .. chain event %8d", jEvent);
 
   //   fChainEvent = jEvent;
 
   //   // -- complete tree reading:
-  //   //    nb += fpChain->GetEvent(jEvent);
-  //   nb += fpChain->GetEntry(jEvent);
+  //   nb += fpChain->GetEvent(jEvent);
 
-  //   if (jEvent%step == 0) {
-  //     TTimeStamp ts;
-  //     cout  << " (run: " << Form("%8d", fRun)
-  // 	    << ", event: " << Form("%10d", fEvt)
-  // 	    << ", time now: " << ts.AsString("lc")
-  // 	    << ")" << endl;
+  //   if (1 == mode) {
+  //     fRun = frunId;
+  //     fEvt = feventId;
+  //   } else if (2 == mode) {
+  //     fRun = fHeader.run;
+  //     fEvt = fHeader.event;
   //   }
 
   //   eventProcessing();
   // }
+
   return 0;
 
 }

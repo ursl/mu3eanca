@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
   string cutFile("tree.default.cuts");
 
   string treeName("frames");
+  string tree2Name("nada");
 
   string readerName("treeReader01");
   string histfile("");
@@ -154,6 +155,9 @@ int main(int argc, char *argv[]) {
 
 
   // -- Set up chain
+  if ("mu3e" == treeName) {
+    tree2Name = "mu3e_mchits";
+  }
   TChain *chain = new TChain(TString(treeName));
   cout << "Chaining ->" << treeName << "<-" << endl;
   char pName[2000];
