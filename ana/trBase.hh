@@ -1,5 +1,5 @@
-#ifndef TREEREADER01_H
-#define TREEREADER01_H
+#ifndef TRBASE_H
+#define TRBASE_H
 
 #include <iostream>
 #include <vector>
@@ -25,10 +25,10 @@ struct header {
   double weight;
 };
 
-class treeReader01 {
+class trBase {
 public:
-  treeReader01(TChain *tree, std::string para);
-  virtual            ~treeReader01();
+  trBase(TChain *tree, std::string para);
+  virtual            ~trBase();
 
   enum MODE {UNSET, FRAMES, MU3E};
 
@@ -74,10 +74,10 @@ protected:
   std::string fCutFile;        // contains file with the cut definitions
 
   // -- Pre-filled variables
-  int          fNentries;      // number of events in chain; filled in treeReader01::treeReader01()
-  int          fChainEvent;    // current sequential event number in chain; filled in treeReader01::loop()
-  int          fEvt;           // current event number; filled in treeReader01::loop()
-  int          fRun;           // current run number; filled in treeReader01::loop()
+  int          fNentries;      // number of events in chain; filled in trBase::trBase()
+  int          fChainEvent;    // current sequential event number in chain; filled in trBase::loop()
+  int          fEvt;           // current event number; filled in trBase::loop()
+  int          fRun;           // current run number; filled in trBase::loop()
 
 
 

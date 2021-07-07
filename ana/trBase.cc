@@ -1,4 +1,4 @@
-#include "treeReader01.hh"
+#include "trBase.hh"
 
 #include <fstream>
 #include <string>
@@ -17,8 +17,8 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-treeReader01::treeReader01(TChain *chain, string treeName) {
-  cout << "==> treeReader01: constructor..." << endl;
+trBase::trBase(TChain *chain, string treeName) {
+  cout << "==> trBase: constructor..." << endl;
   if (chain == 0) {
     cout << "You need to pass a chain!" << endl;
   }
@@ -31,7 +31,7 @@ treeReader01::treeReader01(TChain *chain, string treeName) {
     fMode = MU3E;
   }
   fNentries = fpChain->GetEntries();
-  cout << "==> treeReader01: constructor fpChain: " << fpChain << "/" << fpChain->GetName() << " entries = " <<   fNentries << endl;
+  cout << "==> trBase: constructor fpChain: " << fpChain << "/" << fpChain->GetName() << " entries = " <<   fNentries << endl;
 
   fNBranches = 0;
   fBranches.resize(1000);
@@ -44,8 +44,8 @@ treeReader01::treeReader01(TChain *chain, string treeName) {
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::init(string treeName) {
-  cout << "==> treeReader01: init..." << endl;
+void trBase::init(string treeName) {
+  cout << "==> trBase: init..." << endl;
 
   if (string::npos != treeName.find("frames")) initFrames();
   if (string::npos != treeName.find("mu3e")) initMu3e();
@@ -55,19 +55,19 @@ void treeReader01::init(string treeName) {
 
 
 // ----------------------------------------------------------------------
-void treeReader01::startAnalysis() {
-  cout << "treeReader01: startAnalysis: ..." << endl;
+void trBase::startAnalysis() {
+  cout << "trBase: startAnalysis: ..." << endl;
   DBX = true;
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::endAnalysis() {
-  cout << "treeReader01: endAnalysis: ..." << endl;
+void trBase::endAnalysis() {
+  cout << "trBase: endAnalysis: ..." << endl;
 }
 
 
 // ----------------------------------------------------------------------
-void treeReader01::eventProcessing() {
+void trBase::eventProcessing() {
   initVariables();
 
   //  printBranches();
@@ -82,7 +82,7 @@ void treeReader01::eventProcessing() {
 
 
 // ----------------------------------------------------------------------
-void treeReader01::fillHist() {
+void trBase::fillHist() {
   if (FRAMES == fMode) {
     TH1D *h1 = (TH1D*)fpHistFile->Get("hp");
 
@@ -102,8 +102,8 @@ void treeReader01::fillHist() {
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::bookHist() {
-  cout << "==> treeReader01: bookHist> " << endl;
+void trBase::bookHist() {
+  cout << "==> trBase: bookHist> " << endl;
 
   if (FRAMES == fMode) {
     new TH1D("hp", "hp", 100, -100., 100.);
@@ -123,8 +123,8 @@ void treeReader01::bookHist() {
 
 
 // ----------------------------------------------------------------------
-void treeReader01::initVariables() {
-  //  cout << "treeReader01: initVariables: for run = " << fRun << "/evt = " << fEvt << endl;
+void trBase::initVariables() {
+  //  cout << "trBase: initVariables: for run = " << fRun << "/evt = " << fEvt << endl;
 
 }
 
@@ -136,8 +136,8 @@ void treeReader01::initVariables() {
 // ======================================================================
 
 // ----------------------------------------------------------------------
-void treeReader01::initFrames() {
-  cout << "==> treeReader01::initFrames() ... " << endl;
+void trBase::initFrames() {
+  cout << "==> trBase::initFrames() ... " << endl;
   // -- NB: The following lines are essential. Else there will be a crash when compiler does not do default zeroing!
   fmc = fmc_prime = fmc_type = 0;
   fmc_pid = fmc_tid = fmc_mid = 0;
@@ -211,8 +211,8 @@ void treeReader01::initFrames() {
 
 
 // ----------------------------------------------------------------------
-void treeReader01::initMu3e() {
-  cout << "==> treeReader01::initMu3e() ... " << endl;
+void trBase::initMu3e() {
+  cout << "==> trBase::initMu3e() ... " << endl;
 
   fpChain->SetBranchAddress("Header", &fHeader);
   initBranch("Weight", &fWeight);
@@ -242,7 +242,7 @@ void treeReader01::initMu3e() {
 
 
 // ----------------------------------------------------------------------
-void treeReader01::initMu3e_mchits() {
+void trBase::initMu3e_mchits() {
   fTree2->SetBranchAddress("det", &fdet);
   fTree2->SetBranchAddress("tid", &ftid);
   fTree2->SetBranchAddress("pdg", &fpdg);
@@ -254,7 +254,7 @@ void treeReader01::initMu3e_mchits() {
 
 
 // ----------------------------------------------------------------------
-void treeReader01::initBranch(string name, int* pvar) {
+void trBase::initBranch(string name, int* pvar) {
   int i = fNBranches;
   fpChain->SetBranchAddress(name.c_str(), pvar, &(fBranches[i]));
   cout << "initBranch(" << name << ", int*), fNBranches = "
@@ -267,7 +267,7 @@ void treeReader01::initBranch(string name, int* pvar) {
 
 
 // ----------------------------------------------------------------------
-void treeReader01::initBranch(string name, float* pvar) {
+void trBase::initBranch(string name, float* pvar) {
   int i = fNBranches;
   fpChain->SetBranchAddress(name.c_str(), pvar, &(fBranches[i]));
   cout << "initBranch(" << name << ", float*), fNBranches = "
@@ -279,7 +279,7 @@ void treeReader01::initBranch(string name, float* pvar) {
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::initBranch(string name, double* pvar) {
+void trBase::initBranch(string name, double* pvar) {
   int i = fNBranches;
   fpChain->SetBranchAddress(name.c_str(), pvar, &(fBranches[i]));
   cout << "initBranch(" << name << ", double*), fNBranches = "
@@ -291,13 +291,13 @@ void treeReader01::initBranch(string name, double* pvar) {
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::initBranch(string name, string** pvar) {
+void trBase::initBranch(string name, string** pvar) {
   cout << "initBranch(" << name << "),  pvar = " << pvar << endl;
   fpChain->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::initBranch(string name, vector<int>** pvect) {
+void trBase::initBranch(string name, vector<int>** pvect) {
   int i = fNBranches;
   fpChain->SetBranchAddress(name.c_str(), pvect, &(fBranches[i]));
   cout << "initBranch(" << name << ", vector<int>), fNBranches = "
@@ -309,7 +309,7 @@ void treeReader01::initBranch(string name, vector<int>** pvect) {
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::initBranch(string name, vector<unsigned int>** pvect) {
+void trBase::initBranch(string name, vector<unsigned int>** pvect) {
   int i = fNBranches;
   fpChain->SetBranchAddress(name.c_str(), pvect, &(fBranches[i]));
   cout << "initBranch(" << name << ", vector<unsigned int>), fNBranches = "
@@ -321,7 +321,7 @@ void treeReader01::initBranch(string name, vector<unsigned int>** pvect) {
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::initBranch(string name, vector<double>** pvect) {
+void trBase::initBranch(string name, vector<double>** pvect) {
   int i = fNBranches;
   fpChain->SetBranchAddress(name.c_str(), pvect, &(fBranches[i]));
   cout << "initBranch(" << name << ", vector<double>), fNBranches = "
@@ -334,7 +334,7 @@ void treeReader01::initBranch(string name, vector<double>** pvect) {
 
 
 // ----------------------------------------------------------------------
-void treeReader01::printBranches() {
+void trBase::printBranches() {
 
   if (string::npos != fChainName.find("mu3e")) {
     cout << "mu3e evt: " << fChainEvent
@@ -416,22 +416,22 @@ void treeReader01::printBranches() {
 
 
 // ----------------------------------------------------------------------
-treeReader01::~treeReader01() {
-  cout << "==> treeReader01: destructor ..." << endl;
+trBase::~trBase() {
+  cout << "==> trBase: destructor ..." << endl;
   if (!fpChain) return;
   delete fpChain->GetCurrentFile();
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::openHistFile(string filename) {
+void trBase::openHistFile(string filename) {
   fpHistFile = new TFile(filename.c_str(), "RECREATE");
   fpHistFile->cd();
-  cout << "==> treeReader01: Opened " << fpHistFile->GetName() << endl;
+  cout << "==> trBase: Opened " << fpHistFile->GetName() << endl;
 }
 
 // ----------------------------------------------------------------------
-void treeReader01::closeHistFile() {
-  cout << "==> treeReader01: Writing " << fpHistFile->GetName() << endl;
+void trBase::closeHistFile() {
+  cout << "==> trBase: Writing " << fpHistFile->GetName() << endl;
   fpHistFile->cd();
   fpHistFile->Write();
   fpHistFile->Close();
@@ -440,10 +440,10 @@ void treeReader01::closeHistFile() {
 }
 
 // --------------------------------------------------------------------------------------------------
-void treeReader01::readCuts(string filename, int dump) {
+void trBase::readCuts(string filename, int dump) {
   char  buffer[200];
   fCutFile = filename;
-  if (dump) cout << "==> treeReader01: Reading " << fCutFile << " for cut settings" << endl;
+  if (dump) cout << "==> trBase: Reading " << fCutFile << " for cut settings" << endl;
   sprintf(buffer, "%s", fCutFile.c_str());
   ifstream is(buffer);
   char CutName[100];
@@ -454,7 +454,7 @@ void treeReader01::readCuts(string filename, int dump) {
 
   if (dump) {
     cout << "====================================" << endl;
-    cout << "==> treeReader01: Cut file  " << fCutFile << endl;
+    cout << "==> trBase: Cut file  " << fCutFile << endl;
     cout << "------------------------------------" << endl;
   }
 
@@ -490,7 +490,7 @@ void treeReader01::readCuts(string filename, int dump) {
     }
 
 
-    if (!ok) cout << "==> treeReader01: ERROR: Don't know about variable " << CutName << endl;
+    if (!ok) cout << "==> trBase: ERROR: Don't know about variable " << CutName << endl;
   }
 
   if (dump)  cout << "------------------------------------" << endl;
@@ -498,28 +498,28 @@ void treeReader01::readCuts(string filename, int dump) {
 
 
 // ----------------------------------------------------------------------
-int treeReader01::loop(int nevents, int start) {
+int trBase::loop(int nevents, int start) {
   int maxEvents(0);
 
-  cout << "==> treeReader01: Chain has a total of " << fNentries << " events" << endl;
+  cout << "==> trBase: Chain has a total of " << fNentries << " events" << endl;
 
   // -- Setup for restricted running (not yet foolproof, i.e. bugfree)
   if (nevents < 0) {
     maxEvents = fNentries;
   } else {
-    cout << "==> treeReader01: Running over " << nevents << " events" << endl;
+    cout << "==> trBase: Running over " << nevents << " events" << endl;
     maxEvents = nevents;
   }
   if (start < 0) {
     start = 0;
   } else {
-    cout << "==> treeReader01: Starting at event " << start << endl;
+    cout << "==> trBase: Starting at event " << start << endl;
     if (maxEvents >  fNentries) {
-      cout << "==> treeReader01: Requested to run until event " << maxEvents << ", but will run only to end of chain at ";
+      cout << "==> trBase: Requested to run until event " << maxEvents << ", but will run only to end of chain at ";
       maxEvents = fNentries;
       cout << maxEvents << endl;
     } else {
-      cout << "==> treeReader01: Requested to run until event " << maxEvents << endl;
+      cout << "==> trBase: Requested to run until event " << maxEvents << endl;
     }
   }
 
@@ -608,7 +608,7 @@ int treeReader01::loop(int nevents, int start) {
 }
 
 // ----------------------------------------------------------------------
-Long64_t treeReader01::LoadTree(Long64_t entry) {
+Long64_t trBase::LoadTree(Long64_t entry) {
   // Set the environment to read one entry
   if (!fpChain) return -5;
   Long64_t centry = fpChain->LoadTree(entry);
