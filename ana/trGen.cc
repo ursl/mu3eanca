@@ -12,8 +12,7 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-// Run with: ./runTreeReader01 -c chains/bg-test -D root
-//           ./runTreeReader01 -f test.root
+// Run with: bin/runTreeReader01 -t mu3e -f data/mu3e_run_000779.root -D results/
 // ----------------------------------------------------------------------
 
 

@@ -59,8 +59,8 @@ protected:
   // -- Pre-filled variables
   int          fNentries;      // number of events in chain; filled in trBase::trBase()
   int          fChainEvent;    // current sequential event number in chain; filled in trBase::loop()
-  int          fEvt;           // current event number; filled in trBase::loop()
-  int          fRun;           // current run number; filled in trBase::loop()
+  int          fEvt;           // current event number; filled in derived classes in commonVar()
+  int          fRun;           // current run number; filled in derived classes in commonVar()
 
 
   int                   fNBranches;
