@@ -11,8 +11,8 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-// Run with: ./runTreeReader01 -c chains/bg-test -D root
-//           ./runTreeReader01 -f test.root
+// Run with: see derived classes!
+//
 // ----------------------------------------------------------------------
 
 
