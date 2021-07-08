@@ -6,14 +6,35 @@
 #include <TRandom.h>
 #include "trGen.hh"
 
-#define MMUON 105.658305
+#include "util/massesMeV.hh"
 
 using namespace std;
-
 
 // ----------------------------------------------------------------------
 // Run with: bin/runTreeReader01 -t mu3e -f data/mu3e_run_000779.root -D results/
 // ----------------------------------------------------------------------
+
+
+// Mu3eEvent.cc:
+// if(ptype >= 0 && dtype >= 0) trajType = 10 * dtype + ptype;
+
+// Mu3eTrajectory.h::Mu3eTrackInfo
+// * 0     - gamma (photon)
+// * 1,2   - e^+,-
+// * 3,4   - mu^+,-
+// * 5,6   - pi^+,-
+// * 7     - nu_e/nu_mu/nu_tau
+
+// * Decay (origin) type:
+// * 1     - michel
+// * 2     - radiative
+// * 3     - internal conversion
+// * 4-8   - qed (ioni, phot, compt, conv)
+// * 9     - signal
+// * 10    - familon signal
+// * 11-13 - decay with dark photon
+
+
 
 
 // ----------------------------------------------------------------------
@@ -22,6 +43,8 @@ trGen::trGen(TChain *chain, string treeName) : trBase(chain, treeName) {
 
   initMu3e();
   initVariables();
+
+  DBX = false;
 
 }
 
@@ -36,7 +59,6 @@ void trGen::commonVar() {
 // ----------------------------------------------------------------------
 void trGen::startAnalysis() {
   cout << "trGen: startAnalysis: ..." << endl;
-  DBX = true;
 }
 
 // ----------------------------------------------------------------------
@@ -58,16 +80,30 @@ void trGen::closeHistFile() {
 void trGen::eventProcessing() {
   initVariables();
 
-  //  printBranches();
-  fillHist();
-
-  // -- generic rudimentary analysis
+  // -- generic debug output
   if (DBX) {
+    printBranches();
   }
+
+  fillHist();
+  michelSpectrum();
+
 
 }
 
 
+// ----------------------------------------------------------------------
+void trGen::michelSpectrum() {
+
+  TH1D *h1 = (TH1D*)fpHistFile->Get("hmichel");
+  TLorentzVector p4;
+  for (unsigned int i = 0; i < fNtrajectories; ++i) {
+    if ((-11 == ftraj_PID->at(i)) && (11 == ftraj_type->at(i))) {
+      p4.SetXYZM(ftraj_px->at(i), ftraj_py->at(i), ftraj_pz->at(i), MMUON);
+      h1->Fill(p4.Rho());
+    }
+  }
+}
 
 // ----------------------------------------------------------------------
 void trGen::fillHist() {
@@ -86,6 +122,8 @@ void trGen::bookHist() {
   cout << "==> trGen: bookHist> " << endl;
 
   new TH1D("hpx", "hpx", 100, -100., 100.);
+  new TH1D("hmichel", "hmichel", 60, 0., 60.);
+  new TH2D("vmichel", "vmichel (r vs. z)", 100, -200., 200., 100, -200., 200.);
 
 }
 
@@ -146,23 +184,34 @@ void trGen::initMu3e_mchits() {
 // ----------------------------------------------------------------------
 void trGen::printBranches() {
 
+  cout << "----------------------------------------------------------------------" << endl;
   cout << "mu3e evt: " << fChainEvent
        << " event: " << fHeader.event
        << " run: "  << fHeader.run
        << " type: " << fHeader.type
-       << " RandomState: " << fRandomState->c_str()
+       << ": fNtrajectories = " << fNtrajectories << ":  "
+       << ": fNhit = " << fNhit << ":  "
        << endl;
-  cout << ": ftraj_ID->size() = " << ftraj_ID->size() << ":  ";
   for (unsigned int i = 0; i < ftraj_ID->size(); ++i) {
-    cout << ftraj_ID->at(i)
-	 << "(" << ftraj_PID->at(i)
-	 << "/" << ftraj_type->at(i)
-	 << "/" << ftraj_mother->at(i)
-	 << ")";
-    if (i < ftraj_ID->size() - 1) cout << ", ";
+    cout << Form("trj %2d", i)
+	 << Form(" ID = %7d", ftraj_ID->at(i))
+	 << Form(" PID = %+4d", ftraj_PID->at(i))
+	 << Form(" type = %3d", ftraj_type->at(i))
+	 << Form(" mother ID = %7d", ftraj_mother->at(i))
+	 << Form(" vz = %+9.3f", ftraj_vz->at(i))
+	 << Form(" vr = %+8.3f", TMath::Sqrt(ftraj_vx->at(i)*ftraj_vx->at(i) + ftraj_vy->at(i)*ftraj_vy->at(i)))
+	 << " time = " << ftraj_time->at(i)
+	 << endl;
   }
-  cout << endl;
-
+  for (unsigned int i = 0; i < fNhit; ++i) {
+    cout << Form("hit %3d", i)
+	 << Form(" pxhitid = %4d", fhit_pixelid->at(i))
+	 << Form(" timestamp = %4d", fhit_timestamp->at(i))
+	 << Form(" hit_mc_i = %4d", fhit_mc_i->at(i))
+	 << Form(" hit_mc_n = %4d", fhit_mc_n->at(i))
+	 << endl;
+  }
+  cout << "----------------------------------------------------------------------" << endl;
 }
 
 
