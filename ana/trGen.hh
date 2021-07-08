@@ -45,6 +45,7 @@ public:
   void       closeHistFile();
 
   // -- study
+  void       michelSpectrum();
 
 
 protected:

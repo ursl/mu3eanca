@@ -6,7 +6,7 @@
 #include <TRandom.h>
 #include "trRec.hh"
 
-#define MMUON 105.658305
+#include "util/massesMeV.hh"
 
 using namespace std;
 
