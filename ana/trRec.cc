@@ -12,7 +12,7 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-// Run with: bin/runTreeReader01 -t frames -f data/mu3e_trirec_000779.root -D results/
+// Run with: bin/runTreeReader -t frames -f data/mu3e_trirec_000779.root -D results/
 // ----------------------------------------------------------------------
 
 
@@ -23,7 +23,6 @@ trRec::trRec(TChain *chain, string treeName) : trBase(chain, treeName) {
   initFrames();
   initVariables();
 
-  DBX = false;
 }
 
 // ----------------------------------------------------------------------
@@ -56,12 +55,10 @@ void trRec::closeHistFile() {
 void trRec::eventProcessing() {
   initVariables();
 
-  //  printBranches();
-  fillHist();
-
-  // -- generic rudimentary analysis
-  if (DBX) {
+  if (fVerbose > 9) {
+    printBranches();
   }
+  fillHist();
 
 }
 

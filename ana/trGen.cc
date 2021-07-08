@@ -11,7 +11,7 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-// Run with: bin/runTreeReader01 -t mu3e -f data/mu3e_run_000779.root -D results/
+// Run with: bin/runTreeReader -t mu3e -f data/mu3e_run_000779.root -D results/
 // ----------------------------------------------------------------------
 
 
@@ -43,8 +43,6 @@ trGen::trGen(TChain *chain, string treeName) : trBase(chain, treeName) {
 
   initMu3e();
   initVariables();
-
-  DBX = false;
 
 }
 
@@ -81,7 +79,7 @@ void trGen::eventProcessing() {
   initVariables();
 
   // -- generic debug output
-  if (DBX) {
+  if (fVerbose > 9) {
     printBranches();
   }
 
