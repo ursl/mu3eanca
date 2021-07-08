@@ -25,7 +25,6 @@ trBase::trBase(TChain *chain, string treeName) {
   fpChain = chain;
   fChainName = treeName;
 
-  fMode = FRAMES;
   fNentries = fpChain->GetEntries();
   cout << "==> trBase: constructor fpChain: " << fpChain << "/" << fpChain->GetName() << " entries = " <<   fNentries << endl;
 
@@ -34,67 +33,41 @@ trBase::trBase(TChain *chain, string treeName) {
   for (unsigned int it = 0; it < fBranches.size(); ++it) {
     fBranches[it] = 0;
   }
-  cout << " &feventId = " << &feventId << " initialized with fBranches.size() = " << fBranches.size() << endl;
 
 }
 
 // ----------------------------------------------------------------------
-void trBase::init(string treeName) {
-  cout << "==> trBase: init..." << endl;
-
-  if (string::npos != treeName.find("frames")) initFrames();
-
-  initVariables();
+void trBase::commonVar() {
+  cout << "trBase::commonVar() wrong class " << endl;
 }
-
 
 // ----------------------------------------------------------------------
 void trBase::startAnalysis() {
-  cout << "trBase: startAnalysis: ..." << endl;
-  DBX = true;
+  cout << "trBase::startAnalysis() wrong class " << endl;
 }
 
 // ----------------------------------------------------------------------
 void trBase::endAnalysis() {
-  cout << "trBase: endAnalysis: ..." << endl;
+  cout << "trBase::endAnalysis() wrong class " << endl;
 }
 
 
 // ----------------------------------------------------------------------
 void trBase::eventProcessing() {
-  initVariables();
-
-  //  printBranches();
-  fillHist();
-
-  // -- generic rudimentary analysis
-  if (DBX) {
-  }
-
+  cout << "trBase::eventProcessing() wrong class " << endl;
 }
 
 
 
 // ----------------------------------------------------------------------
 void trBase::fillHist() {
-  if (FRAMES == fMode) {
-    TH1D *h1 = (TH1D*)fpHistFile->Get("hp");
-
-    for (unsigned int i = 0; i < fp->size(); ++i) {
-      h1->Fill(fp->at(i));
-    }
-  }
-
+  cout << "trBase::fillHist() wrong class " << endl;
 
 }
 
 // ----------------------------------------------------------------------
 void trBase::bookHist() {
   cout << "==> trBase: bookHist> " << endl;
-
-  if (FRAMES == fMode) {
-    new TH1D("hp", "hp", 100, -100., 100.);
-  }
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
@@ -107,8 +80,7 @@ void trBase::bookHist() {
 
 // ----------------------------------------------------------------------
 void trBase::initVariables() {
-  //  cout << "trBase: initVariables: for run = " << fRun << "/evt = " << fEvt << endl;
-
+  cout << "trBase::initVariables() wrong class " << endl;
 }
 
 
@@ -117,82 +89,6 @@ void trBase::initVariables() {
 // ======================================================================
 // -- Below is the icc material
 // ======================================================================
-
-// ----------------------------------------------------------------------
-void trBase::initFrames() {
-  cout << "==> trBase::initFrames() ... " << endl;
-  // -- NB: The following lines are essential. Else there will be a crash when compiler does not do default zeroing!
-  fmc = fmc_prime = fmc_type = 0;
-  fmc_pid = fmc_tid = fmc_mid = 0;
-  fmc_p = fmc_pt = fmc_phi = fmc_lam = fmc_theta = 0;
-  fmc_vx = fmc_vy = fmc_vz = fmc_vr = fmc_vt = fmc_t0 = 0;
-  fnhit = fhid0 = fsid0 = 0;
-  fx0 = fy0 = fz0 = ft0 = ft0_err = 0;
-  fdt = fdt_si = ft0_tl = ft0_fb = ft0_si = 0;
-  fr = frerr2 = fp = fperr2 = fchi2 = ftan01 = flam01 = fn_shared_hits = fn_shared_segs = 0;
-
-  initBranch("n", &fn);
-  initBranch("n3", &fn3);
-  initBranch("n4", &fn4);
-  initBranch("n6", &fn6);
-  initBranch("n8", &fn8);
-
-  initBranch("geom_vertex_found", &fgeom_vertex_found);
-  initBranch("true_vertex_found", &ftrue_vertex_found);
-
-  initBranch("eventId", &feventId);
-  initBranch("runId", &frunId);
-  initBranch("weight", &fweight);
-
-  initBranch("mc", &fmc);
-  initBranch("mc_prime", &fmc_prime);
-  initBranch("mc_type", &fmc_type);
-
-  initBranch("mc_pid", &fmc_pid);
-  initBranch("mc_tid", &fmc_tid);
-  initBranch("mc_mid", &fmc_mid);
-
-  initBranch("mc_p", &fmc_p);
-  initBranch("mc_pt", &fmc_pt);
-  initBranch("mc_phi", &fmc_phi);
-  initBranch("mc_lam", &fmc_lam);
-  initBranch("mc_theta", &fmc_theta);
-
-  initBranch("mc_vx", &fmc_vx);
-  initBranch("mc_vy", &fmc_vy);
-  initBranch("mc_vz", &fmc_vz);
-  initBranch("mc_vr", &fmc_vr);
-  initBranch("mc_vt", &fmc_vt);
-  initBranch("mc_t0", &fmc_t0);
-
-  initBranch("nhit", &fnhit);
-  initBranch("hid0", &fhid0);
-  initBranch("sid0", &fsid0);
-
-  initBranch("x0", &fx0);
-  initBranch("y0", &fy0);
-  initBranch("z0", &fz0);
-  initBranch("t0", &ft0);
-  initBranch("t0_err", &ft0_err);
-
-  initBranch("dt", &fdt);
-  initBranch("dt_si", &fdt_si);
-  initBranch("t0_tl", &ft0_tl);
-  initBranch("t0_fb", &ft0_fb);
-  initBranch("t0_si", &ft0_si);
-
-  initBranch("r", &fr);
-  initBranch("rerr2", &frerr2);
-  initBranch("p", &fp);
-  initBranch("perr2", &fperr2);
-  initBranch("chi2", &fchi2);
-  initBranch("tan01", &ftan01);
-  initBranch("lam01", &flam01);
-  initBranch("n_shared_hits", &fn_shared_hits);
-  initBranch("n_shared_segs", &fn_shared_segs);
-}
-
-
 
 // ----------------------------------------------------------------------
 void trBase::initBranch(string name, int* pvar) {
@@ -272,53 +168,6 @@ void trBase::initBranch(string name, vector<double>** pvect) {
        << endl;
   ++fNBranches;
 }
-
-
-// ----------------------------------------------------------------------
-void trBase::printBranches() {
-
-  if (string::npos != fChainName.find("frames")) {
-    cout << "frames evt: " << fChainEvent
-	 << " eventId: " << feventId
-	 << " run: "  << frunId
-	 << " w8: " << frunId
-	 << " geom_vertex_found: " << fgeom_vertex_found
-	 << " true_vertex_found: " << ftrue_vertex_found
-	 << " w8: " << frunId
-	 << endl;
-    cout << ": fmc_tid->size() = " << fmc_tid->size() << ":  ";
-    for (unsigned int i = 0; i < fmc_tid->size(); ++i) {
-      cout << fmc_tid->at(i);
-      if (i < fmc_tid->size() - 1) cout << ", ";
-    }
-    cout << endl;
-
-    cout << ": fmc_type->size() = " << fmc_type->size() << ":  ";
-    for (unsigned int i = 0; i < fmc_type->size(); ++i) {
-      cout << fmc_type->at(i);
-      if (i < fmc_type->size() - 1) cout << ", ";
-    }
-    cout << endl;
-
-    cout << ": fmc_pt->size() = " << fmc_pt->size() << ":  ";
-    for (unsigned int i = 0; i < fmc_pt->size(); ++i) {
-      cout << fmc_pt->at(i) << "/"
-	   << fmc_p->at(i)*TMath::Sin(fmc_theta->at(i));
-      if (i < fmc_pt->size() - 1) cout << ", ";
-    }
-    cout << endl;
-
-    cout << ": fmc_v->size() = " << fmc_vx->size() << ":  ";
-    for (unsigned int i = 0; i < fmc_vx->size(); ++i) {
-      cout << fmc_vx->at(i) << "/"
-	   << fmc_vy->at(i) << "/"
-	   << fmc_vz->at(i);
-      if (i < fmc_vx->size() - 1) cout << ", ";
-    }
-    cout << endl;
-  }
-}
-
 
 
 // ----------------------------------------------------------------------
@@ -407,7 +256,7 @@ void trBase::readCuts(string filename, int dump) {
 int trBase::loop(int nevents, int start) {
   int maxEvents(0);
 
-  cout << "==> trBase: Chain has a total of " << fNentries << " events" << endl;
+  cout << "==> trBase: Chain " << fChainName << " has a total of " << fNentries << " events" << endl;
 
   // -- Setup for restricted running (not yet foolproof, i.e. bugfree)
   if (nevents < 0) {
@@ -436,26 +285,21 @@ int trBase::loop(int nevents, int start) {
   if (maxEvents < 10000)   step = 500;
   if (maxEvents < 1000)    step = 100;
 
-  Long64_t nentries = fpChain->GetEntriesFast();
-
-
-  cout << "mode = " << fMode << endl;
-
   Long64_t nbytes = 0, nb = 0;
   for (Long64_t jentry = 0; jentry < maxEvents; ++jentry) {
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
     nb = fpChain->GetEntry(jentry);   nbytes += nb;
-    // if (Cut(ientry) < 0) continue;
 
-
-      fRun = frunId;
-      fEvt = feventId;
+    // -- fill common variables (fEvt, fRun, etc)
+    fChainEvent = jentry;
+    this->commonVar();
 
     if (jentry%step == 0) {
       TTimeStamp ts;
-      cout  << " (run: " << Form("%8d", fRun)
-            << ", event: " << Form("%10d", fEvt)
+      cout  << " (runId: " << Form("%8d", fRun)
+            << ", eventId: " << Form("%8d", fEvt)
+            << ", chainEvt: " << Form("%10d", fChainEvent)
             << ", time now: " << ts.AsString("lc")
             << ")" << endl;
     }

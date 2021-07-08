@@ -19,6 +19,7 @@
 
 #include "trBase.hh"
 #include "trGen.hh"
+#include "trRec.hh"
 
 using namespace std;
 
@@ -184,8 +185,8 @@ int main(int argc, char *argv[]) {
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   trBase *a = NULL;
   if (string::npos != treeName.find("frames")) {
-    cout << "instantiating trBase" << endl;
-    a = new trBase(chain, treeName);
+    cout << "instantiating trRec" << endl;
+    a = new trRec(chain, treeName);
   }
   else if (string::npos != treeName.find("mu3e")) {
     cout << "instantiating trGen" << endl;

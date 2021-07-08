@@ -27,22 +27,22 @@ struct header {
 class trGen: public trBase {
 public:
   trGen(TChain *tree, std::string para);
-  virtual            ~trGen();
+  ~trGen();
 
-  virtual void       init(std::string treeName);
-  virtual void       initMu3e();
-  virtual void       initMu3e_mchits();
-  virtual void       printBranches();
+  void       commonVar();
+  void       initMu3e();
+  void       initMu3e_mchits();
+  void       printBranches();
 
-  virtual void       bookHist();
-  virtual void       readCuts(std::string filename, int dump = 1);
+  void       bookHist();
+  void       readCuts(std::string filename, int dump = 1);
 
-  virtual void       startAnalysis();
-  virtual void       endAnalysis();
-  virtual void       eventProcessing();
-  virtual void       initVariables();
-  virtual void       fillHist();
-  virtual void       closeHistFile();
+  void       startAnalysis();
+  void       endAnalysis();
+  void       eventProcessing();
+  void       initVariables();
+  void       fillHist();
+  void       closeHistFile();
 
   // -- study
 
@@ -63,6 +63,7 @@ protected:
   std::vector<double>        *ftraj_px, *ftraj_py, *ftraj_pz;
 
   // -- mu3e_mchits
+  TTree                      *fTree2;
   int                        fdet, ftid, fpdg, fhid, fhid_g;
   double                     fedep, ftime;
 
