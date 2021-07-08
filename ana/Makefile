@@ -5,7 +5,8 @@
 # ======================================================================
 .PHONY: prep clean vars
 
-# -- create a link to an external dependency, cf https://github.com/ursl/util
+# -- create a link to an external dependency (https://github.com/ursl/util)
+#    no submodule because of constant changes in util
 UTIL = ../util
 
 ROOTCINT      = $(ROOTSYS)/bin/rootcint
@@ -41,7 +42,7 @@ EXTHEADERS    = -I..
 
 # -- Files
 #CSTUFF =
-READER = trBase.o plotResults.o # plotClass.o
+READER = trBase.o trGen.o plotResults.o # plotClass.o
 
 DICT = ${READER:.o=Dict.o}
 DICTHEADERS = ${READER:.o=Dict.h}

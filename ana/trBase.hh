@@ -17,14 +17,6 @@
 
 #define DR      57.29577951
 
-struct header {
-  int event;
-  int run;
-  int type;
-  int setup;
-  double weight;
-};
-
 class trBase {
 public:
   trBase(TChain *tree, std::string para);
@@ -35,8 +27,6 @@ public:
   Long64_t           LoadTree(Long64_t entry);
   virtual void       init(std::string treeName);
   virtual void       initFrames();
-  virtual void       initMu3e();
-  virtual void       initMu3e_mchits();
   virtual void       initBranch(std::string name, int* var);
   virtual void       initBranch(std::string name, float* var);
   virtual void       initBranch(std::string name, double* var);
@@ -94,24 +84,6 @@ protected:
   std::vector<double>  *fx0, *fy0, *fz0, *ft0, *ft0_err;
   std::vector<double>  *fdt, *fdt_si, *ft0_tl, *ft0_fb, *ft0_si;
   std::vector<double>  *fr, *frerr2, *fp, *fperr2, *fchi2, *ftan01, *flam01, *fn_shared_hits, *fn_shared_segs;
-
-  // -- tree variables: mu3e
-  struct header              fHeader;
-  double                     fWeight;
-  std::string                *fRandomState;
-  int                        fNhit;
-  std::vector<unsigned int>  *fhit_pixelid, *fhit_timestamp;
-  std::vector<int>           *fhit_mc_i, *fhit_mc_n;
-
-  int                        fNtrajectories;
-  std::vector<unsigned int>  *ftraj_ID, *ftraj_mother, *ftraj_fbhid, *ftraj_tlhid;
-  std::vector<int>           *ftraj_PID, *ftraj_type;
-  std::vector<double>        *ftraj_time, *ftraj_vx, *ftraj_vy, *ftraj_vz;
-  std::vector<double>        *ftraj_px, *ftraj_py, *ftraj_pz;
-
-  // -- mu3e_mchits
-  int                        fdet, ftid, fpdg, fhid, fhid_g;
-  double                     fedep, ftime;
 
   int                   fNBranches;
   std::vector<TBranch*> fBranches;
