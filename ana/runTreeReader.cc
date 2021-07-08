@@ -36,7 +36,9 @@ using namespace std;
 
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-// %% Usage: bin/runTreeReader01 -f test.root
+// %% Usage examples:
+// %% bin/runTreeReader -t frames -f data/mu3e_trirec_000779.root -D results/
+// %% bin/runTreeReader -t mu3e -f data/mu3e_run_000779.root -D results/
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 int main(int argc, char *argv[]) {
@@ -194,6 +196,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (a) {
+    a->setVerbosity(verbose);
     a->openHistFile(histfile);
     a->readCuts(cutFile.c_str(), 1);
     a->bookHist();

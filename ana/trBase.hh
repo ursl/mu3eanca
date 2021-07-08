@@ -47,7 +47,7 @@ public:
   virtual void       setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
 
 
-  int fVerbose;
+  int  fVerbose;
 
 protected:
   int         fCurrent;        // current tree number in chain
@@ -68,8 +68,6 @@ protected:
 
   // -- Output histogram/tree pointers
   TTree       *fTree;
-
-  bool DBX;
 
   // -- Cut values
   double PTLO, PTHI;
