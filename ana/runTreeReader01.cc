@@ -16,7 +16,9 @@
 #include "TKey.h"
 
 #include "util/util.hh"
+
 #include "trBase.hh"
+#include "trGen.hh"
 
 using namespace std;
 
@@ -56,9 +58,7 @@ int main(int argc, char *argv[]) {
   string cutFile("tree.default.cuts");
 
   string treeName("frames");
-  string tree2Name("nada");
 
-  string readerName("trBase");
   string histfile("");
 
   // -- command line arguments
@@ -155,9 +155,6 @@ int main(int argc, char *argv[]) {
 
 
   // -- Set up chain
-  if ("mu3e" == treeName) {
-    tree2Name = "mu3e_mchits";
-  }
   TChain *chain = new TChain(TString(treeName));
   cout << "Chaining ->" << treeName << "<-" << endl;
   char pName[2000];
@@ -186,9 +183,13 @@ int main(int argc, char *argv[]) {
 
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   trBase *a = NULL;
-  if ("trBase" == readerName) {
+  if (string::npos != treeName.find("frames")) {
     cout << "instantiating trBase" << endl;
     a = new trBase(chain, treeName);
+  }
+  else if (string::npos != treeName.find("mu3e")) {
+    cout << "instantiating trGen" << endl;
+    a = new trGen(chain, treeName);
   }
 
   if (a) {

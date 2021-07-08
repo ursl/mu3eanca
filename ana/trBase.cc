@@ -25,11 +25,7 @@ trBase::trBase(TChain *chain, string treeName) {
   fpChain = chain;
   fChainName = treeName;
 
-  if (string::npos != fChainName.find("frames")) {
-    fMode = FRAMES;
-  } else if (string::npos != fChainName.find("mu3e")) {
-    fMode = MU3E;
-  }
+  fMode = FRAMES;
   fNentries = fpChain->GetEntries();
   cout << "==> trBase: constructor fpChain: " << fpChain << "/" << fpChain->GetName() << " entries = " <<   fNentries << endl;
 
@@ -40,7 +36,6 @@ trBase::trBase(TChain *chain, string treeName) {
   }
   cout << " &feventId = " << &feventId << " initialized with fBranches.size() = " << fBranches.size() << endl;
 
-  init(treeName);
 }
 
 // ----------------------------------------------------------------------
@@ -48,7 +43,6 @@ void trBase::init(string treeName) {
   cout << "==> trBase: init..." << endl;
 
   if (string::npos != treeName.find("frames")) initFrames();
-  if (string::npos != treeName.find("mu3e")) initMu3e();
 
   initVariables();
 }
@@ -91,13 +85,6 @@ void trBase::fillHist() {
     }
   }
 
-  if (MU3E == fMode) {
-    TH1D *hpx = (TH1D*)fpHistFile->Get("hpx");
-
-    for (unsigned int i = 0; i < ftraj_px->size(); ++i) {
-      hpx->Fill(ftraj_px->at(i));
-    }
-  }
 
 }
 
@@ -107,10 +94,6 @@ void trBase::bookHist() {
 
   if (FRAMES == fMode) {
     new TH1D("hp", "hp", 100, -100., 100.);
-  }
-
-  if (MU3E == fMode) {
-    new TH1D("hpx", "hpx", 100, -100., 100.);
   }
 
   // -- Reduced Tree
@@ -210,48 +193,6 @@ void trBase::initFrames() {
 }
 
 
-// ----------------------------------------------------------------------
-void trBase::initMu3e() {
-  cout << "==> trBase::initMu3e() ... " << endl;
-
-  fpChain->SetBranchAddress("Header", &fHeader);
-  initBranch("Weight", &fWeight);
-  initBranch("RandomState", &fRandomState);
-  initBranch("Nhit", &fNhit);
-
-  initBranch("hit_pixelid", &fhit_pixelid);
-  initBranch("hit_timestamp", &fhit_timestamp);
-  initBranch("hit_mc_i", &fhit_mc_i);
-  initBranch("hit_mc_n", &fhit_mc_n);
-
-  initBranch("Ntrajectories", &fNtrajectories);
-  initBranch("traj_ID", &ftraj_ID);
-  initBranch("traj_mother", &ftraj_mother);
-  initBranch("traj_fbhid", &ftraj_fbhid);
-  initBranch("traj_tlhid", &ftraj_tlhid);
-  initBranch("traj_PID", &ftraj_PID);
-  initBranch("traj_type", &ftraj_type);
-  initBranch("traj_time", &ftraj_time);
-  initBranch("traj_vx", &ftraj_vx);
-  initBranch("traj_vy", &ftraj_vy);
-  initBranch("traj_vz", &ftraj_vz);
-  initBranch("traj_px", &ftraj_px);
-  initBranch("traj_py", &ftraj_py);
-  initBranch("traj_pz", &ftraj_pz);
-}
-
-
-// ----------------------------------------------------------------------
-void trBase::initMu3e_mchits() {
-  fTree2->SetBranchAddress("det", &fdet);
-  fTree2->SetBranchAddress("tid", &ftid);
-  fTree2->SetBranchAddress("pdg", &fpdg);
-  fTree2->SetBranchAddress("hid", &fhid);
-  fTree2->SetBranchAddress("hid_g", &fhid_g);
-  fTree2->SetBranchAddress("edep", &fedep);
-  fTree2->SetBranchAddress("time", &ftime);
-}
-
 
 // ----------------------------------------------------------------------
 void trBase::initBranch(string name, int* pvar) {
@@ -336,41 +277,6 @@ void trBase::initBranch(string name, vector<double>** pvect) {
 // ----------------------------------------------------------------------
 void trBase::printBranches() {
 
-  if (string::npos != fChainName.find("mu3e")) {
-    cout << "mu3e evt: " << fChainEvent
-	 << " event: " << fHeader.event
-	 << " run: "  << fHeader.run
-	 << " type: " << fHeader.type
-	 << " RandomState: " << fRandomState->c_str()
-	 << endl;
-    cout << ": ftraj_ID->size() = " << ftraj_ID->size() << ":  ";
-    for (unsigned int i = 0; i < ftraj_ID->size(); ++i) {
-      cout << ftraj_ID->at(i)
-	<< "(" << ftraj_PID->at(i)
-	   << "/" << ftraj_type->at(i)
-	   << "/" << ftraj_mother->at(i)
-	   << ")";
-      if (i < ftraj_ID->size() - 1) cout << ", ";
-    }
-    cout << endl;
-
-    cout << ": fmc_p->size() = " << fmc_p->size() << ":  ";
-    for (unsigned int i = 0; i < fmc_p->size(); ++i) {
-      cout << fmc_p->at(i) ;
-      if (i < fmc_p->size() - 1) cout << ", ";
-    }
-    cout << endl;
-
-    cout << ": fmc_v->size() = " << fmc_vx->size() << ":  ";
-    for (unsigned int i = 0; i < fmc_vx->size(); ++i) {
-      cout << fmc_vx->at(i) << "/"
-	   << fmc_vy->at(i) << "/"
-	   << fmc_vz->at(i);
-      if (i < fmc_vx->size() - 1) cout << ", ";
-    }
-    cout << endl;
-  }
-
   if (string::npos != fChainName.find("frames")) {
     cout << "frames evt: " << fChainEvent
 	 << " eventId: " << feventId
@@ -433,7 +339,7 @@ void trBase::openHistFile(string filename) {
 void trBase::closeHistFile() {
   cout << "==> trBase: Writing " << fpHistFile->GetName() << endl;
   fpHistFile->cd();
-  fpHistFile->Write();
+  //  fpHistFile->Write();
   fpHistFile->Close();
   delete fpHistFile;
 
@@ -543,13 +449,8 @@ int trBase::loop(int nevents, int start) {
     // if (Cut(ientry) < 0) continue;
 
 
-    if (FRAMES == fMode) {
       fRun = frunId;
       fEvt = feventId;
-    } else if (MU3E == fMode) {
-      fRun = fHeader.run;
-      fEvt = fHeader.event;
-    }
 
     if (jentry%step == 0) {
       TTimeStamp ts;
