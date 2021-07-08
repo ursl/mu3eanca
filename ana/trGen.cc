@@ -26,10 +26,11 @@ trGen::trGen(TChain *chain, string treeName) : trBase(chain, treeName) {
 
 }
 
-// ----------------------------------------------------------------------
-void trGen::init(string treeName) {
-  cout << "==> trGen: init..." << endl;
 
+// ----------------------------------------------------------------------
+void trGen::commonVar() {
+  fRun = fHeader.run;
+  fEvt = fHeader.event;
 }
 
 
@@ -80,15 +81,10 @@ void trGen::fillHist() {
 
 // ----------------------------------------------------------------------
 void trGen::bookHist() {
+  trBase::bookHist();
   cout << "==> trGen: bookHist> " << endl;
 
   new TH1D("hpx", "hpx", 100, -100., 100.);
-
-  // -- Reduced Tree
-  fTree = new TTree("events", "events");
-  fTree->Branch("run",      &fRun,       "run/I");
-  fTree->Branch("evt",      &fEvt,       "evt/I");
-
 
 }
 
@@ -166,21 +162,6 @@ void trGen::printBranches() {
   }
   cout << endl;
 
-  cout << ": fmc_p->size() = " << fmc_p->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_p->size(); ++i) {
-    cout << fmc_p->at(i) ;
-    if (i < fmc_p->size() - 1) cout << ", ";
-  }
-  cout << endl;
-
-  cout << ": fmc_v->size() = " << fmc_vx->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_vx->size(); ++i) {
-    cout << fmc_vx->at(i) << "/"
-	 << fmc_vy->at(i) << "/"
-	 << fmc_vz->at(i);
-    if (i < fmc_vx->size() - 1) cout << ", ";
-  }
-    cout << endl;
 }
 
 
