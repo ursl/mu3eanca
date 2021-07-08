@@ -23,6 +23,7 @@ trRec::trRec(TChain *chain, string treeName) : trBase(chain, treeName) {
   initFrames();
   initVariables();
 
+  DBX = false;
 }
 
 // ----------------------------------------------------------------------
@@ -34,7 +35,6 @@ void trRec::commonVar() {
 // ----------------------------------------------------------------------
 void trRec::startAnalysis() {
   cout << "trRec: startAnalysis: ..." << endl;
-  DBX = true;
 }
 
 // ----------------------------------------------------------------------
