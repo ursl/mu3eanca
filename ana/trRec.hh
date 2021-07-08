@@ -58,6 +58,11 @@ protected:
   double PTLO, PTHI;
   int TYPE;
 
+
+  struct redTreeData {
+    double p;
+  } fRTD;
+
 };
 
 

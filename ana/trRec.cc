@@ -73,6 +73,7 @@ void trRec::fillHist() {
   for (unsigned int i = 0; i < fp->size(); ++i) {
     h1->Fill(fp->at(i));
   }
+  fTree->Fill();
 }
 
 // ----------------------------------------------------------------------
@@ -83,6 +84,7 @@ void trRec::bookHist() {
   new TH1D("hp", "hp", 100, -100., 100.);
 
 
+  //  fTree->Branch("p",  &fRTD.p,  "p/D");
 
 }
 

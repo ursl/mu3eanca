@@ -76,6 +76,8 @@ void trGen::fillHist() {
   for (unsigned int i = 0; i < ftraj_px->size(); ++i) {
     hpx->Fill(ftraj_px->at(i));
   }
+
+  fTree->Fill();
 }
 
 // ----------------------------------------------------------------------
