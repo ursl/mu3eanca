@@ -127,6 +127,7 @@ void trGen::genStudy() {
 
   TLorentzVector p4;
   for (unsigned int i = 0; i < fNtrajectories; ++i) {
+    ((TH1D*)fpHistFile->Get("hproc"))->Fill(ftraj_type->at(i));
     // -- Michel decay electrons
     if ((-11 == ftraj_PID->at(i)) && (11 == ftraj_type->at(i))) {
       p4.SetXYZM(ftraj_px->at(i), ftraj_py->at(i), ftraj_pz->at(i), MMUON);
@@ -168,6 +169,30 @@ void trGen::bookHist() {
   new TH2D("vrzconv", "vconv (r vs. z)", 200, -1500., 500., 120, 0., 60.);
   new TH2D("vxyconv", "vconv (x vs. y)", 100, -100., 100., 100, -100., 100.);
 
+  TH1D *hproc = new TH1D("hproc", "Processes and particles", 100, 0., 100.);
+  hproc->GetXaxis()->SetLabelSize(0.016);
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(3.), "Beam #mu^{+}");
+
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(11.), "Michel e^{+}");
+  //  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(12.), "Michel e^{-}");
+
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(20.), "Radiative #gamma");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(21.), "Radiative e^{+}");
+  //  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(22.), "Radiative e^{-}");
+
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(41.), "Conv. e^{+}");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(42.), "Conv. e^{-}");
+
+  //  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(51.), "Some e^{+}");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(52.), "Some e^{-}");
+
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(60.), "Some #gamma");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(70.), "Some #gamma");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(82.), "Some e^{-}");
+
+  for (int i = 1; i < 100; ++i) {
+    hproc->GetXaxis()->ChangeLabel(i, 60.);
+  }
 }
 
 
