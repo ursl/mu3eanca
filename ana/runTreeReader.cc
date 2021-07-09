@@ -187,10 +187,12 @@ int main(int argc, char *argv[]) {
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   trBase *a = NULL;
   if (string::npos != treeName.find("frames")) {
-    cout << "instantiating trRec" << endl;
+    cout << "instantiating trRec with tree " << treeName << endl;
     a = new trRec(chain, treeName);
-  }
-  else if (string::npos != treeName.find("mu3e")) {
+  } else if (string::npos != treeName.find("segs")) {
+    cout << "instantiating trRec with tree " << treeName << endl;
+    a = new trRec(chain, treeName);
+  } else if (string::npos != treeName.find("mu3e")) {
     cout << "instantiating trGen" << endl;
     a = new trGen(chain, treeName);
   }
