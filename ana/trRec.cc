@@ -96,42 +96,27 @@ void trRec::initVariables() {
 // ----------------------------------------------------------------------
 void trRec::printBranches() {
 
+  cout << "----------------------------------------------------------------------" << endl;
   cout << "frames evt: " << fChainEvent
        << " eventId: " << fEvt
        << " run: "  << fRun
        << " geom_vertex_found: " << fgeom_vertex_found
        << " true_vertex_found: " << ftrue_vertex_found
        << endl;
-  cout << ": fmc_tid->size() = " << fmc_tid->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_tid->size(); ++i) {
-    cout << fmc_tid->at(i);
-    if (i < fmc_tid->size() - 1) cout << ", ";
-  }
-  cout << endl;
 
-  cout << ": fmc_type->size() = " << fmc_type->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_type->size(); ++i) {
-    cout << fmc_type->at(i);
-    if (i < fmc_type->size() - 1) cout << ", ";
+  for (unsigned int i = 0; i < fmc_p->size(); ++i) {
+    cout << Form("mctrk %2d", i)
+	 << Form(" pid = %4d", fmc_pid->at(i))
+	 << Form(" tid = %+7d", fmc_tid->at(i))
+	 << Form(" type = %3d", fmc_type->at(i))
+	 << Form(" mid = %7d", fmc_mid->at(i))
+	 << Form(" vz = %+9.3f", fmc_vz->at(i))
+	 << Form(" vr = %+8.3f", TMath::Sqrt(fmc_vx->at(i)*fmc_vx->at(i) + fmc_vy->at(i)*fmc_vy->at(i)))
+	 << " t0 = " << fmc_t0->at(i)
+	 << endl;
   }
-  cout << endl;
+  cout << "----------------------------------------------------------------------" << endl;
 
-  cout << ": fmc_pt->size() = " << fmc_pt->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_pt->size(); ++i) {
-    cout << fmc_pt->at(i) << "/"
-	 << fmc_p->at(i)*TMath::Sin(fmc_theta->at(i));
-    if (i < fmc_pt->size() - 1) cout << ", ";
-  }
-  cout << endl;
-
-  cout << ": fmc_v->size() = " << fmc_vx->size() << ":  ";
-  for (unsigned int i = 0; i < fmc_vx->size(); ++i) {
-    cout << fmc_vx->at(i) << "/"
-	 << fmc_vy->at(i) << "/"
-	 << fmc_vz->at(i);
-    if (i < fmc_vx->size() - 1) cout << ", ";
-  }
-  cout << endl;
 
 }
 
