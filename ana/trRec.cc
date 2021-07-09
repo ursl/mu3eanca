@@ -20,15 +20,20 @@ using namespace std;
 trRec::trRec(TChain *chain, string treeName) : trBase(chain, treeName) {
   cout << "==> trRec: constructor..." << endl;
 
-  initFrames();
+  //  initFrames();
+  initSegs();
   initVariables();
 
 }
 
 // ----------------------------------------------------------------------
 void trRec::commonVar() {
+  // -- frames:
   fRun = frunId;
   fEvt = feventId;
+  // -- segs:
+  fRun = fSegsInt["runId"];
+  fEvt = fSegsInt["eventId"];
 }
 
 // ----------------------------------------------------------------------
@@ -56,9 +61,10 @@ void trRec::eventProcessing() {
   initVariables();
 
   if (fVerbose > 9) {
-    printBranches();
+    //    printFramesBranches();
+    printSegsBranches();
   }
-  fillHist();
+  //  fillHist();
 
 }
 
@@ -94,7 +100,7 @@ void trRec::initVariables() {
 
 
 // ----------------------------------------------------------------------
-void trRec::printBranches() {
+void trRec::printFramesBranches() {
 
   cout << "----------------------------------------------------------------------" << endl;
   cout << "frames evt: " << fChainEvent
@@ -118,6 +124,23 @@ void trRec::printBranches() {
   cout << "----------------------------------------------------------------------" << endl;
 
 
+}
+
+// ----------------------------------------------------------------------
+void trRec::printSegsBranches() {
+
+  cout << "----------------------------------------------------------------------" << endl;
+  cout << "frames evt: " << fChainEvent
+       << " eventId: " << fEvt
+       << " run: "  << fRun
+       << endl;
+
+  cout << "eventId: " << fSegsInt["eventId"]
+       << " runId: " << fSegsInt["runId"]
+       << " p: " <<  fSegsFloat["p"]
+       << " chi2:" << fSegsFloat["chi2"]
+       << " n:" << fSegsInt["n"]
+       << endl;
 }
 
 
@@ -203,6 +226,22 @@ void trRec::initFrames() {
   initBranch("lam01", &flam01);
   initBranch("n_shared_hits", &fn_shared_hits);
   initBranch("n_shared_segs", &fn_shared_segs);
+}
+
+
+
+// ----------------------------------------------------------------------
+void trRec::initSegs() {
+  cout << "==> trRec::initSegs() ... " << endl;
+
+  fSegsInt.insert(make_pair("eventId", 0)); initBranch("eventId", &(fSegsInt["eventId"]));
+  fSegsInt.insert(make_pair("runId", 0)); initBranch("runId", &(fSegsInt["runId"]));
+  fSegsInt.insert(make_pair("n", 0)); initBranch("n", &(fSegsInt["n"]));
+
+  fSegsFloat.insert(make_pair("p", 0)); initBranch("p", &(fSegsFloat["p"]));
+  fSegsFloat.insert(make_pair("mc_p", 0)); initBranch("mc_p", &(fSegsFloat["mc_p"]));
+  fSegsFloat.insert(make_pair("chi2", 0)); initBranch("chi2", &(fSegsFloat["chi2"]));
+
 }
 
 

@@ -23,7 +23,9 @@ public:
 
   void       commonVar();
   void       initFrames();
-  void       printBranches();
+  void       initSegs();
+  void       printFramesBranches();
+  void       printSegsBranches();
 
   void       bookHist();
   void       readCuts(std::string filename, int dump = 1);
@@ -53,6 +55,11 @@ protected:
   std::vector<double>  *fx0, *fy0, *fz0, *ft0, *ft0_err;
   std::vector<double>  *fdt, *fdt_si, *ft0_tl, *ft0_fb, *ft0_si;
   std::vector<double>  *fr, *frerr2, *fp, *fperr2, *fchi2, *ftan01, *flam01, *fn_shared_hits, *fn_shared_segs;
+
+  // -- tree variables: segs
+  std::map<std::string, int> fSegsInt;
+  std::map<std::string, float> fSegsFloat;
+  std::map<std::string, float[]> fSegsFloatV;
 
   // -- Cut values
   double PTLO, PTHI;
