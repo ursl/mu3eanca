@@ -307,46 +307,6 @@ int trBase::loop(int nevents, int start) {
     eventProcessing();
   }
 
-
-  // Long64_t nb(0);
-  // int treeNumber(-1), oldTreeNumber(-1);
-  // fpChain->GetFile(); // without this, treeNumber initially will be -1.
-  // int mode(-1);
-
-
-  // for (int jEvent = start; jEvent < maxEvents; ++jEvent) {
-  //   treeNumber = fpChain->GetTreeNumber();
-  //   if (treeNumber != oldTreeNumber) {
-  //     cout << "    " << Form("      %8d", jEvent)
-  // 	   << " with tree ->" << fChainName
-  // 	   << "<- from "  << fpChain->GetFile()->GetName();
-  //     if ("mu3e_mchits" == fTree2Name) {
-  // 	fTree2 = (TTree*)fpChain->GetFile()->Get(fTree2Name.c_str());
-  // 	initMu3e_mchits();
-  // 	cout << " and tree2 ->" << fTree2Name << "<-";
-  //     }
-  //     cout << endl;
-  //     oldTreeNumber = treeNumber;
-  //   }
-
-  //   if (jEvent%step == 0) cout << Form(" .. chain event %8d", jEvent);
-
-  //   fChainEvent = jEvent;
-
-  //   // -- complete tree reading:
-  //   nb += fpChain->GetEvent(jEvent);
-
-  //   if (1 == mode) {
-  //     fRun = frunId;
-  //     fEvt = feventId;
-  //   } else if (2 == mode) {
-  //     fRun = fHeader.run;
-  //     fEvt = fHeader.event;
-  //   }
-
-  //   eventProcessing();
-  // }
-
   return 0;
 
 }
