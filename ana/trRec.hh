@@ -57,9 +57,10 @@ protected:
   std::vector<double>  *fr, *frerr2, *fp, *fperr2, *fchi2, *ftan01, *flam01, *fn_shared_hits, *fn_shared_segs;
 
   // -- tree variables: segs
+  static constexpr int SEGSN = 10;
   std::map<std::string, int> fSegsInt;
   std::map<std::string, float> fSegsFloat;
-  std::map<std::string, float[]> fSegsFloatV;
+  std::map<std::string, float*> fSegsFloatV;
 
   // -- Cut values
   double PTLO, PTHI;
