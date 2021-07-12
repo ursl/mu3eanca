@@ -1,10 +1,13 @@
 #include "trBase.hh"
+#include "trRec.hh"
 
 #include <fstream>
 #include <string>
 
+
+
 #include <TRandom.h>
-#include "trRec.hh"
+#include <TLorentzVector.h>
 
 #include "util/massesMeV.hh"
 
@@ -20,20 +23,28 @@ using namespace std;
 trRec::trRec(TChain *chain, string treeName) : trBase(chain, treeName) {
   cout << "==> trRec: constructor..." << endl;
 
-  //  initFrames();
-  initSegs();
-  initVariables();
+  if (string::npos != fChainName.find("segs")) {
+    fMode = SEGS;
+  } else if (string::npos != fChainName.find("frames")) {
+    fMode = FRAMES;
+  }
+  if (FRAMES == fMode) {
+    initFrames();
+  } else if (SEGS == fMode) {
+    initSegs();
+  }
 
 }
 
 // ----------------------------------------------------------------------
 void trRec::commonVar() {
-  // -- frames:
-  fRun = frunId;
-  fEvt = feventId;
-  // -- segs:
-  fRun = fSegsInt["runId"];
-  fEvt = fSegsInt["eventId"];
+  if (FRAMES == fMode) {
+    fRun = frunId;
+    fEvt = feventId;
+  } else if (SEGS == fMode) {
+    fRun = fSegsInt["runId"];
+    fEvt = fSegsInt["eventId"];
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -61,21 +72,77 @@ void trRec::eventProcessing() {
   initVariables();
 
   if (fVerbose > 9) {
-    //    printFramesBranches();
-    printSegsBranches();
+    if (FRAMES == fMode) {
+      printFramesBranches();
+    } else if (SEGS == fMode) {
+      printSegsBranches();
+    }
   }
-  //  fillHist();
 
+  recStudy();
+
+}
+
+
+// ----------------------------------------------------------------------
+void trRec::recStudy() {
+  // -- translation of trGen study. tree variables are not filled, though!
+  if (SEGS == fMode) {
+    TLorentzVector p4;
+    ((TH1D*)fpHistFile->Get("hproc"))->Fill(fSegsInt["mc_type"]);
+    // -- Michel decay electrons
+    if ((-11 == fSegsInt["mc_pid"]) && (11 == fSegsInt["mc_type"])) {
+      //	p4.SetXYZM(ftraj_px->at(i), ftraj_py->at(i), ftraj_pz->at(i), MMUON);
+
+      double px = fSegsFloat["mc_pt"] * TMath::Cos(fSegsFloat["mc_phi"]);
+      double py = fSegsFloat["mc_pt"] * TMath::Sin(fSegsFloat["mc_phi"]);
+      double pz = fSegsFloat["mc_pt"] * TMath::Sin(fSegsFloat["mc_theta"]);
+      p4.SetXYZM(px, py, pz, MMUON);
+
+      double r = fSegsFloat["mc_pt"];
+      ((TH1D*)fpHistFile->Get("hmichel"))->Fill(p4.Rho());
+      ((TH2D*)fpHistFile->Get("vrzmichel"))->Fill(fSegsFloat["mc_vz"], r);
+      ((TH2D*)fpHistFile->Get("vxymichel"))->Fill(fSegsFloat["mc_vx"], fSegsFloat["mc_vy"]);
+    }
+    // -- converted photons
+    if ((-11 == fSegsInt["mc_pid"]) && (41 == fSegsInt["mc_type"])) {
+      double r = fSegsFloat["mc_pt"];
+      ((TH1D*)fpHistFile->Get("vrzconv"))->Fill(fSegsFloat["mc_vx"], r);
+      ((TH1D*)fpHistFile->Get("vxyconv"))->Fill(fSegsFloat["mc_vx"], fSegsFloat["mc_vy"]);
+    }
+  }
+
+  // -- Gavin's plots
+  if (SEGS == fMode) {
+    static int first(1);
+    if (1 == first) {
+      first = 0;
+      new TH1D("hsegAll", "all tracks", 120, -60., 60.);
+      new TH1D("hsegFirst", "tracks of first curler turn ", 120, -60., 60.);
+      new TH1D("hsegMC", "tracks with matching MC hits", 120, -60., 60.);
+      new TH1D("hsegMCprime", "tracks with matching MC hits of first turn", 120, -60., 60.);
+    }
+    if (4 == fSegsInt["nhit"]) {
+      ((TH1D*)fpHistFile->Get("hsegAll"))->Fill(fSegsFloat["p"]);
+      if (0 == fSegsInt["seq"]) {
+	((TH1D*)fpHistFile->Get("hsegFirst"))->Fill(fSegsFloat["p"]);
+      }
+      if (1 == fSegsInt["mc"]) {
+	((TH1D*)fpHistFile->Get("hsegMC"))->Fill(fSegsFloat["p"]);
+      }
+      if (1 == fSegsInt["mc_prime"]) {
+	((TH1D*)fpHistFile->Get("hsegMCprime"))->Fill(fSegsFloat["p"]);
+      }
+    }
+
+  }
 }
 
 
 
 // ----------------------------------------------------------------------
 void trRec::fillHist() {
-  TH1D *h1 = (TH1D*)fpHistFile->Get("hp");
-  for (unsigned int i = 0; i < fp->size(); ++i) {
-    h1->Fill(fp->at(i));
-  }
+
   fTree->Fill();
 }
 
@@ -84,7 +151,38 @@ void trRec::bookHist() {
   trBase::bookHist();
   cout << "==> trRec: bookHist> " << endl;
 
-  new TH1D("hp", "hp", 100, -100., 100.);
+  new TH1D("hpx", "hpx", 100, -100., 100.);
+  new TH1D("hmichel", "hmichel", 60, 0., 60.);
+  new TH2D("vrzmichel", "vmichel (r vs. z)", 200, -1500., 500., 120, 0., 60.);
+  new TH2D("vxymichel", "vmichel (x vs. y)", 100, -100., 100., 100, -100., 100.);
+
+  new TH2D("vrzconv", "vconv (r vs. z)", 200, -1500., 500., 120, 0., 60.);
+  new TH2D("vxyconv", "vconv (x vs. y)", 100, -100., 100., 100, -100., 100.);
+
+  TH1D *hproc = new TH1D("hproc", "Processes and particles", 100, 0., 100.);
+  hproc->GetXaxis()->SetLabelSize(0.016);
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(3.), "Beam #mu^{+}");
+
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(11.), "Michel e^{+}");
+  //  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(12.), "Michel e^{-}");
+
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(20.), "Radiative #gamma");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(21.), "Radiative e^{+}");
+  //  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(22.), "Radiative e^{-}");
+
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(41.), "Conv. e^{+}");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(42.), "Conv. e^{-}");
+
+  //  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(51.), "Some e^{+}");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(52.), "Some e^{-}");
+
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(60.), "Some #gamma");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(70.), "Some #gamma");
+  hproc->GetXaxis()->SetBinLabel(hproc->FindBin(82.), "Some e^{-}");
+
+  for (int i = 1; i < 100; ++i) {
+    hproc->GetXaxis()->ChangeLabel(i, 60.);
+  }
 
 
   //  fTree->Branch("p",  &fRTD.p,  "p/D");
@@ -328,7 +426,6 @@ void trRec::initSegs() {
   pats.push_back("21");
 
   for (unsigned int i = 0; i < pats.size(); ++i) {
-    cout << "initializing pattern ->" << pats[i] << "<-" << endl;
     fSegsFloatV.insert(make_pair("x" + pats[i], new float[SEGSN]));    initBranch("x" + pats[i], fSegsFloatV["x" + pats[i]]);
     fSegsFloatV.insert(make_pair("y" + pats[i], new float[SEGSN]));    initBranch("y" + pats[i], fSegsFloatV["y" + pats[i]]);
     fSegsFloatV.insert(make_pair("z" + pats[i], new float[SEGSN]));    initBranch("z" + pats[i], fSegsFloatV["z" + pats[i]]);

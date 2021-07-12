@@ -38,7 +38,7 @@ public:
   void       closeHistFile();
 
   // -- study
-
+  void       recStudy();
 
 protected:
 
