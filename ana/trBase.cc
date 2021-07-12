@@ -17,7 +17,7 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-trBase::trBase(TChain *chain, string treeName) {
+trBase::trBase(TChain *chain, string treeName): fVerbose(0), fMode(0) {
   cout << "==> trBase: constructor..." << endl;
   if (chain == 0) {
     cout << "You need to pass a chain!" << endl;
