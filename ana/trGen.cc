@@ -1,16 +1,6 @@
 #include "trBase.hh"
 #include "trGen.hh"
-
-#include <fstream>
-#include <string>
-
-#include <TLorentzVector.h>
-#include <TH1.h>
-#include <TH2.h>
-
-#include "util/massesMeV.hh"
-
-using namespace std;
+#include "trIncludes.hh"
 
 // ----------------------------------------------------------------------
 // Run with: bin/runTreeReader -t mu3e -f data/mu3e_run_000779.root -D results/
@@ -127,12 +117,15 @@ void trGen::eventProcessing() {
 // ----------------------------------------------------------------------
 void trGen::genStudy() {
 
-  TLorentzVector p4;
+  LorentzVector<PxPyPzMVector> p4;
   for (unsigned int i = 0; i < fNtrajectories; ++i) {
     ((TH1D*)fpHistFile->Get("hproc"))->Fill(ftraj_type->at(i));
     // -- Michel decay electrons
     if ((-11 == ftraj_PID->at(i)) && (11 == ftraj_type->at(i))) {
-      p4.SetXYZM(ftraj_px->at(i), ftraj_py->at(i), ftraj_pz->at(i), MMUON);
+      double px = ftraj_px->at(i);
+      double py = ftraj_py->at(i);
+      double pz = ftraj_pz->at(i);
+      p4  = LorentzVector<PxPyPzMVector>(px, py, pz, MMUON);
       double r = TMath::Sqrt(ftraj_vx->at(i)*ftraj_vx->at(i) + ftraj_vy->at(i)*ftraj_vy->at(i));
       ((TH1D*)fpHistFile->Get("hmichel"))->Fill(p4.Rho());
       ((TH2D*)fpHistFile->Get("vrzmichel"))->Fill(ftraj_vz->at(i), r);

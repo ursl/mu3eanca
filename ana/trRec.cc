@@ -1,16 +1,6 @@
 #include "trBase.hh"
 #include "trRec.hh"
-
-#include <fstream>
-#include <string>
-
-#include <TLorentzVector.h>
-#include <TH1.h>
-#include <TH2.h>
-
-#include "util/massesMeV.hh"
-
-using namespace std;
+#include "trIncludes.hh"
 
 // ----------------------------------------------------------------------
 // Run with: bin/runTreeReader -t segs -f data/mu3e_trirec_000779.root -D results/
@@ -85,8 +75,8 @@ void trRec::eventProcessing() {
 // ----------------------------------------------------------------------
 void trRec::recStudy() {
   // -- translation of trGen study. tree variables are not filled, though!
-  if (SEGS == fMode) {
-    TLorentzVector p4;
+  if (SEGS == fMode) { //ROOT::Math::PxPyPzMVector
+    LorentzVector<PxPyPzMVector> p4;
     ((TH1D*)fpHistFile->Get("hproc"))->Fill(fSegsInt["mc_type"]);
     // -- Michel decay electrons
     if ((-11 == fSegsInt["mc_pid"]) && (11 == fSegsInt["mc_type"])) {
@@ -95,7 +85,7 @@ void trRec::recStudy() {
       double px = fSegsFloat["mc_pt"] * TMath::Cos(fSegsFloat["mc_phi"]);
       double py = fSegsFloat["mc_pt"] * TMath::Sin(fSegsFloat["mc_phi"]);
       double pz = fSegsFloat["mc_pt"] * TMath::Sin(fSegsFloat["mc_theta"]);
-      p4.SetXYZM(px, py, pz, MMUON);
+      p4  = LorentzVector<PxPyPzMVector>(px, py, pz, MMUON);
 
       double r = fSegsFloat["mc_pt"];
       ((TH1D*)fpHistFile->Get("hmichel"))->Fill(p4.Rho());

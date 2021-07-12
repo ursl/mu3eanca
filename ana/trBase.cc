@@ -1,16 +1,5 @@
 #include "trBase.hh"
-
-#include <fstream>
-#include <string>
-
-#include <TH1.h>
-#include <TH2.h>
-#include "TRandom.h"
-
-#define MMUON 105.658305
-
-using namespace std;
-
+#include "trIncludes.hh"
 
 // ----------------------------------------------------------------------
 // Run with: see derived classes!
