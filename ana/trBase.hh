@@ -22,6 +22,8 @@ public:
   trBase(TChain *tree, std::string para);
   virtual            ~trBase();
 
+  enum MODE {UNSET, SEGS, FRAMES};
+
   Long64_t           LoadTree(Long64_t entry);
   virtual void       commonVar();
   virtual void       initBranch(std::string name, int* var);
@@ -47,7 +49,8 @@ public:
   virtual void       setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
 
 
-  int  fVerbose, fMode;
+  int  fVerbose;
+  MODE fMode;
 
 protected:
   int         fCurrent;        // current tree number in chain
