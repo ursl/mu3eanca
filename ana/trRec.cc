@@ -4,18 +4,16 @@
 #include <fstream>
 #include <string>
 
-
-
-#include <TRandom.h>
 #include <TLorentzVector.h>
+#include <TH1.h>
+#include <TH2.h>
 
 #include "util/massesMeV.hh"
 
 using namespace std;
 
-
 // ----------------------------------------------------------------------
-// Run with: bin/runTreeReader -t frames -f data/mu3e_trirec_000779.root -D results/
+// Run with: bin/runTreeReader -t segs -f data/mu3e_trirec_000779.root -D results/
 // ----------------------------------------------------------------------
 
 

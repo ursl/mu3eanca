@@ -1,10 +1,12 @@
 #include "trBase.hh"
+#include "trGen.hh"
 
 #include <fstream>
 #include <string>
 
-#include <TRandom.h>
-#include "trGen.hh"
+#include <TLorentzVector.h>
+#include <TH1.h>
+#include <TH2.h>
 
 #include "util/massesMeV.hh"
 

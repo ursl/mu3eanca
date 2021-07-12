@@ -4,16 +4,6 @@
 #include <iostream>
 #include <vector>
 
-#include <TROOT.h>
-#include <TVector3.h>
-#include <TLorentzVector.h>
-#include <TChain.h>
-#include <TFile.h>
-#include <TH1.h>
-#include <TH2.h>
-#include <TTree.h>
-#include <TTimeStamp.h>
-
 #include "trBase.hh"
 
 struct header {
