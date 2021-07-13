@@ -84,7 +84,7 @@ void trRec::recStudy() {
 
       double px = fSegsFloat["mc_pt"] * TMath::Cos(fSegsFloat["mc_phi"]);
       double py = fSegsFloat["mc_pt"] * TMath::Sin(fSegsFloat["mc_phi"]);
-      double pz = fSegsFloat["mc_pt"] * TMath::Sin(fSegsFloat["mc_theta"]);
+      double pz = fSegsFloat["mc_pt"] * TMath::Tan(fSegsFloat["mc_lam"]);
       p4  = LorentzVector<PxPyPzMVector>(px, py, pz, MMUON);
 
       double r = fSegsFloat["mc_pt"];
