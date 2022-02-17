@@ -1,34 +1,14 @@
-/* Copyright 2008, 2010, Oracle and/or its affiliates. All rights reserved.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; version 2 of the License.
-
-There are special exceptions to the terms and conditions of the GPL
-as it is applied to this software. View the full text of the
-exception in file EXCEPTIONS-CONNECTOR-C++ in the directory of this
-software distribution.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+/* 
+//////////////////////////////////////////////////////////////////////
+merlin-l-001>c++ -fPIC -I/psi/home/langenegger/data/mysql-connector-cpp -I/usr/include/mysql -c test0.cc
+merlin-l-001>c++ -shared /usr/lib64/mysql/libmysqlclient_r.so test0.o -o test0
+merlin-l-001>./test0 
+Segmentation fault
+////////////////////////////////////////////////////////////////////// 
 */
 
-/* Standard C++ includes */
-#include <stdlib.h>
-#include <iostream>
 
-/*
-  Include directly the different
-  headers from cppconn/ and mysql_driver.h + mysql_util.h
-  (and mysql_connection.h). This will reduce your build time!
-*/
-#include "mysql_connection.h"
+#include "mysql.h"
 
 #include <cppconn/driver.h>
 #include <cppconn/resultset.h>
