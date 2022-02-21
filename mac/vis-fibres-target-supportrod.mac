@@ -34,8 +34,8 @@
 /vis/drawVolume FibreTracker
 /vis/viewer/refresh
 #/vis/scene/add/volume FibreTracker
-/vis/scene/add/volume Target
-/vis/scene/add/volume TargetSupportRod
+#/vis/scene/add/volume Target
+#/vis/scene/add/volume TargetSupportRod
 #/vis/scene/add/volume FibreTracker
 
 # Draw coordinate axes:
