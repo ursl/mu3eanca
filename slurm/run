@@ -1,0 +1,529 @@
+#!/usr/bin/env perl
+
+# Usage:        run [-C] [-D dest] [-p short | standard | long] -c grid.csh -t tarfile -m {debug|local|grid|batch} [-b] -r {pattern1%pattern2}
+# ------            [-x 'bin/runTreeReaders -r bmmReader -C cuts/bla.cuts'] *
+#
+#               submit to grid all jobs specified in the command line
+#
+# OLD Examples: cd Bs2MuMu/test/Winter01/production/Bs2MuMu
+# ------------- run -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m grid \
+#               -r 'STORAGE1 srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/BdToKPi' \
+#               BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10014.py
+#
+#               cd Bs2MuMu/macros/chains
+#               run -c ../tree.csh  -t ~/grid/Winter07/grid-1.tar.gz -m batch \
+#               -x 'bin/runTreeReaders -n 900 -r muCharmReader -C cuts/muCharm.default.cuts' \
+#               -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/trees' \
+#               100414.v05.data
+#
+#
+#                cd /t3home/ursl/recoil/mcprod/CMSSW_9_3_1/jobs/recoil37-40
+#                $BASE/perl/run -w 100 -S -t /t3home/ursl/recoil/mcprod/CMSSW_9_3_1/gendigireco-191023.tar.gz \
+#                -m batch -P short -c $BASE/CmsswAnalysis/test/v01/prodGenDigiRecoSlurm_2017.csh \
+#                -r 'PFNS srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat% .... ' \
+#                recoil37_gensim-* > & run.log &
+#
+#
+# Destination examples: any  cscs.ch  rl.ac.uk  ic.ac.uk  in2p3.fr  oeaw.ac.at  ciemat.es unl.edu pi.infn.it
+#
+#
+#
+# Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
+# ------------ is run in directory where the py files reside! ??? IS THIS TRUE ???
+#
+# 2021/08/19   change -q to imply qsub. 'partition' (queue) is specified with -P. slurm is the default and -S is gone.
+# 2020/01/15   change cn-test to t3
+# 2019/10/24   add -w 200 to move runCont functionality into run
+# 2019/10/23   wanted to change -l to produce a list of run commands (but failed to get the apostrophes)
+# 2019/10/02   add '-S' to submit with slurm (-s is taken by runAll)
+# 2018/01/15   re-introduced debug (= local but does not do any cleanup at the end of the run)
+# 2016/10/12   add GlueCEPolicyMaxWallClockTime
+# 2016/10/11   add GlueCEStateEstimatedResponseTime
+# 2016/07/19   modify jdl creation and grid job submission
+# 2016/07/18   -C now also submits new jobs (e.g. if new py files for a dataset have appeared)
+# 2016/04/15   added -l old or -l new to run on old or new nodes
+# 2016/04/05   added -b to run local jobs in the background
+# 2013/01/21   changed default transfer method from srmcp to lcg-cp also for grid jobs
+# 2010/12/10   bug fix: remove $https from jobs.list only for grid jobs
+# 2010/06/18   added new option to control the CMSSW version
+# 2010/06/15   added 'rm -rf $JOB' to start of batch job (in case the previously running job had been killed)
+# 2010/05/10   added debug option to resubmission
+# 2010/04/30   add V0-cms-$CMSSW to requirements and allow non-destination specific submission
+# 2010/04/28   adapted to runTreeReaders usage, fixed wrong remove instructions
+# 2010/04/27   changed '-d destination' to '-D destination'
+# 2010/03/29   change default arguments for t3 batch srmcp
+# 2010/03/18   change name, remove all traces of ursl, add batch job name to jobs.list
+# 2010/03/09   translate XXXX in replacements into the correct number
+# 2010/03/08   Add -C to submit only those which crashed in a previous attempt. Add also batch jobs to jobs.list.
+# 2010/03/06   Changed separation character for -r list to %, added default settings to always be written into csh!
+# 2010/03/05   STORAGE1 and input file location now provided as command line argument
+# 2010/03/03   Added grid URL duplication into local and common jobs.list files
+# 2010/03/02   First version that runs locally, in batch, on the grid.
+#
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('bCc:dD:l:L:m:p:qr:R:t:v:w:x:');
+
+# -- User setup
+my $siesta = 120;
+my $user  = $ENV{'USER'};
+my $home  = $ENV{'HOME'};
+(my $uhome = $home) =~ s|[^/]+$||;
+$uhome .= "ursl";
+my $glite = "$home/grid/glite.conf";
+my $qsub = "/gridware/sge/bin/lx24-amd64/qsub  ";
+if (!$opt_p) {
+    $opt_p = "short";
+}
+my $sbatch = "/usr/bin/sbatch --mem=3000 --account=t3 ";
+# -- if you want to exclude some nodes:
+if (1) {
+#    $qsub = "/gridware/sge/bin/lx24-amd64/qsub -l h='!t3wn42&!t3wn24' ";
+    $qsub = "/gridware/sge/bin/lx24-amd64/qsub -l h='!t3wn15' ";
+}
+
+# -- if continuous submission, provide information how to suspend/stop
+if ($opt_w) {
+    print "run($$):     $ARGV[0] .. $ARGV[$#ARGV]\n";
+    print "to stop:     touch STOP.$$\n";
+    print "to suspend:  touch WAIT.$$\n";
+}
+
+# -- define mode if not provided
+if (!$opt_m) {
+    $opt_m = "batch";
+}
+
+# -- Default settings
+my $CMSSW = $ENV{'CMSSW_VERSION'};
+if ($opt_v) {
+    $CMSSW = $opt_v;
+}
+my $SCRAM = $ENV{'SCRAM_ARCH'};
+
+#my $SRMCP = "\"srmcp -2\"";
+my $SRMCP = "\"lcg-cp -b -D srmv2\"";
+if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
+if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 --streams_num=1\"";}
+if ($opt_m eq "batch") {$SRMCP = "\"lcg-cp -b -D srmv2\"";}
+if ($opt_m eq "local" || $opt_m eq "debug") {$SRMCP = "\"lcg-cp -b -D srmv2\"";}
+
+my $jobsList = "jobs.list";
+if ($opt_L) {
+    $jobsList = $opt_L;
+}
+
+if (!-e "$glite") {
+    print "$glite does not exist, using $uhome/grid/glite.conf\n";
+    $glite = "$uhome/grid/glite.conf";
+}
+
+# -- replacements
+if ($opt_r) {$replace = $opt_r; }
+@replaces = split(/%/, $replace);
+if ($opt_x) {
+    push(@replaces, "EXECUTABLE \"$opt_x\"");
+}
+print "Replacement list: \n";
+foreach $repl (@replaces) {
+    print "$repl\n"
+}
+
+# -- destination
+if ($opt_m eq "grid" && !$opt_D) {
+    $opt_D = "ce01.lcg.cscs.ch";
+    print " no destination provided, sending to CSCS: $opt_D\n";
+}
+
+# -- resource broker
+my $rb = " ";
+if ($opt_R) {
+    $rb = "-r $opt_R";
+}
+
+my $host = `hostname`;
+chop($host);
+
+# -- split arguments into directory- and file-names
+my $tarFile, $tarDirectory;
+($tarDirectory, $tarFile) = fileAndDirectory($opt_t);
+my $cshFile, $cshDirectory;
+($cshDirectory, $cshFile) = fileAndDirectory($opt_c);
+
+#print "***===> Name of csh file $cshDirectory $cshFile \n";
+
+my $pwd = `pwd`;
+chop($pwd);
+
+# -- Make sure that the combined jobs.list exist
+if (!(-e "../$jobsList")) {
+    open(TMP, ">../$jobsList");
+    print TMP "###Submitted Job Ids###\n";
+    close(TMP);
+}
+
+
+# -- submit all job files
+my $jobDirectory, $jobFile;
+my $njobs = &countPending;
+foreach $jobfile (@ARGV) {
+
+    # -- runCont functionality!
+    $datum = `date`;
+    chop($datum);
+    &checkUser($datum);
+    if ($opt_w && ($njobs > $opt_w)) {
+	$njobs = &countPending;
+	$datum = `date`;
+	chop($datum);
+	print "run($$): $njobs jobs waiting at $datum\n";
+	while ($njobs > $opt_w) {
+	    sleep($siesta);
+	    $datum = `date`;
+	    chop($datum);
+	    &checkUser($datum);
+	    $njobs = &countPending;
+	    $datum = `date`;
+	    chop($datum);
+	    print "run($$): $njobs jobs waiting at $datum\n";
+	}
+    }
+    $njobs++;
+
+    ($jobDirectory, $jobFile) = fileAndDirectory($jobfile);
+    if ($jobDirectory =~ /^\//) {
+    } elsif ($jobDirectory eq "") {
+ 	$jobDirectory = "..";
+    } else {
+	$jobDirectory = "../".$jobDirectory;
+    }
+
+    # -- Cut off trailing py extension
+    #    $rest = substr($jobFile, 0, rindex($jobFile, '/')+1);
+    #    $jobFile =~ s/$rest//;
+    ($job = $jobFile) =~ s/\.py//g;
+
+    # -- Cut off everything except the number
+    $number    = $job;
+    $number = substr($job, rindex($job, '-')+1, length($job));
+
+    $ENV{'JOB'}    = $job;
+
+    $tdir = "tmp-$job";
+    # -- Check whether the previous submission was successful
+    if ($opt_C) {
+	if (-d "$tdir") {
+	    if (-e "$tdir/NOK") {
+		print "resubmitting $job\n";
+		# -- remove old entry in $jobsList
+		$https = `/bin/grep https $tdir/$jobsList`; chop($https);
+		if ($opt_d) {
+		    if ($opt_m eq "grid") {print "would remove from $jobsList: $https \n";}
+		    print "would remove from $jobsList: $tdir \n";
+		    next;
+		} else {
+		    if ($opt_m eq "grid") {&remove("$jobsList", $https); }
+		    &remove("$jobsList", $tdir); # this will also remove the sge lines which contain $tdir
+		}
+	    } else {
+		next;
+	    }
+	} else {
+	    print "submitting new job $job\n";
+	}
+    }
+
+     # -- create tmp directory for running/submission
+    system("/bin/rm -rf $tdir");
+    mkdir($tdir);
+    chdir($tdir);
+
+    # -- create necessary scripts
+    &makeCshFile($job, $jobFile);
+    if ($opt_m eq "grid") {
+	&makeJdlFile($job);
+    }
+
+    #print " --> /bin/cp $jobDirectory/$jobFile .\n";
+    if (-e "$jobDirectory/$jobFile") {
+	system("/bin/cp $jobDirectory/$jobFile .");
+    } else {
+	system("touch $jobFile");
+    }
+    &makeTarLink($job);
+    system("/bin/chmod 755 $job.csh");
+
+    # -- get a timestamp
+    ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+    $year += 1900;
+    $mon += 1;
+    $timeStamp = sprintf("%s, %4i/%02i/%02i %02i:%02i:%02i", $host, $year, $mon, $mday, $hour, $min, $sec);
+
+    if ($opt_m eq "local" || $opt_m eq "debug") {
+	print "local running: $job.csh\n";
+	if ($opt_d) {
+	    print("./$job.csh >& local.log\n");
+	} else {
+	    if ($opt_b) {
+		system("./$job.csh >& local.log &");
+	    } else {
+		system("./$job.csh >& local.log");
+	    }
+	    open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
+	    print IN "###Submitted Job Ids###\n";
+	    print IN "local $tdir \n";
+	    print IN "\# $timeStamp $pwd/$tdir $host $host\n";
+	    close(IN);
+	    system("/usr/bin/tail -2 $jobsList >> ../$jobsList");
+	}
+    } elsif ($opt_m eq "batch") {
+	print "batch submission: $job\n";
+	$jobName = "$job.csh";
+	if ($user eq "ursl") { $jobName = `$home/perl/rline`; chop($jobName); }
+	if ($opt_d) {
+	    if ($opt_q) {
+		print "$qsub -q $opt_q $nodelist -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
+	    } else {
+		print "$sbatch -p $opt_p -J $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
+	    }
+	} else {
+	    if ($opt_q) {
+		print "$qsub -q $opt_q $nodelist -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
+		$result = `$qsub -q $opt_q $nodelist -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh`;
+		chop($result);
+		$result =~ s/Your job //g;
+		$result =~ s/ has been submitted//g;
+		($sgeNumber, $sgeName) = split(/\(/, $result, 2);
+		$sgeName =~ s/\)//g;
+		$sgeName =~ s/\"//g;
+		$sgeNumber =~ s/\ //g;
+		$sgeName =~ s/\ //g;
+		print "Submitted ->$sgeNumber<- with name ->$sgeName<-\n";
+		open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
+		print IN "###Submitted Job Ids###\n";
+		print IN "sge $tdir \n";
+		print IN "\# $timeStamp $pwd/$tdir $sgeName $sgeNumber\n";
+		close(IN);
+		system("/usr/bin/tail -2 $jobsList >> ../$jobsList");
+	    } else {
+		print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
+		$result = `$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh`;
+		chop($result);
+		$result =~ s/Submitted batch job //g;
+		print "Submitted ->$result<- with name ->$jobName<-\n";
+		open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
+		print IN "###Submitted Job Ids###\n";
+		print IN "slurm $timeStamp $pwd/$tdir $jobName $result\n";
+		close(IN);
+		system("/usr/bin/tail -1 $jobsList >> ../$jobsList");
+	    }
+
+	}
+    } elsif ($opt_m eq "grid") {
+	if ($opt_d) {
+	    print "grid running: $job.jdl\n";
+	    print("glite-wms-job-submit -o $jobsList $rb -a --config $glite $job.jdl\n");
+	} else {
+	     print("glite-wms-job-submit -o $jobsList -a $job.jdl\n");
+#	    system("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl");
+	    system("glite-wms-job-submit -o $jobsList -a --config $glite $job.jdl");
+
+	    open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
+	    print IN "\# $timeStamp $pwd/$tdir $job.jdl\n";
+	    close(IN);
+	    system("/usr/bin/tail -2 $jobsList >> ../$jobsList");
+	}
+    }
+
+    chdir("..");
+}
+
+
+# ----------------------------------------------------------------------
+sub makeTarLink {
+    ($ljob) = @_;
+    if ($opt_t =~ /^\//) {
+	if ($opt_m eq "grid") {
+	    system("/bin/cp $opt_t $ljob.tar.gz");
+	} else {
+	    system("/bin/ln -s $opt_t $ljob.tar.gz");
+	}
+    } else {
+	if ($opt_m eq "grid") {
+	    system("/bin/cp ../$tarDirectory/$tarFile $ljob.tar.gz");
+	} else {
+	    system("/bin/ln -s ../$tarDirectory/$tarFile $ljob.tar.gz");
+	}
+    }
+    if ($opt_m eq "grid") {
+	system("/bin/cp `which data_replica.py` data_replica.py");
+    }
+}
+
+# ----------------------------------------------------------------------
+sub makeJdlFile {
+    ($ljob) = @_;
+    $lpyfile = $ljob.".py";
+    open(OUT, ">$ljob.jdl")  || die "Cannot open $ljob.jdl\n";
+    my $datum = `/bin/date`; chop $datum;
+    print OUT "# created by ursl's run at $datum\n";
+    print OUT "Executable    = \"$ljob.csh\";\n";
+    print OUT "StdOutput     = \"$ljob.log\";\n";
+    print OUT "StdError      = \"$ljob.err\";\n";
+    print OUT "InputSandbox  ={\"$ljob.csh\", \"$ljob.jdl\", \"$lpyfile\", \"$ljob.tar.gz\", \"data_replica.py\"};\n";
+    print OUT "OutputSandbox ={\"$ljob.csh\", \"$ljob.jdl\", \"$lpyfile\", \"$ljob.log\", \"$ljob.err\"};\n";
+    print OUT "VirtualOrganisation = \"cms\";\n";
+#    print OUT "PerusalFileEnable = true;\n";
+#    print OUT "PerusalTimeInterval = 30;\n";
+#    print OUT "Rank          = other.GlueCEStateFreeCPUs;\n";
+    print OUT "Rank          =-other.GlueCEStateEstimatedResponseTime;\n";
+    my $REQ = "(other.GlueCEPolicyMaxWallClockTime > 300)";
+
+    if ($opt_D) {
+	if ($opt_D eq "any") {
+	    #	    print OUT "Requirements  = ((Member(\"VO-cms-$CMSSW\", other.GlueHostApplicationSoftwareRunTimeEnvironment)));\n";
+	} else {
+	    print OUT "Requirements  = ((RegExp(\"$opt_D\", other.GlueCEUniqueId)));\n";
+            #       print OUT "                );\n";
+	    #	    print OUT "                 && (Member(\"VO-cms-$CMSSW\", other.GlueHostApplicationSoftwareRunTimeEnvironment)));\n";
+	}
+    }
+
+#    print OUT "Requirements  = ((RegExp(\"ce01.lcg.cscs.ch\", other.GlueCEUniqueId))
+#                  && (Member(\"VO-cms-CMSSW_3_5_0\", other.GlueHostApplicationSoftwareRunTimeEnvironment))
+#                 );\n";
+
+    close OUT;
+}
+
+
+# ----------------------------------------------------------------------
+sub makeCshFile {
+    ($ljob, $ljobfile) = @_;
+    if ($cshDirectory =~ /^\//) {
+	open(IN, "$cshDirectory/$cshFile") || die "Cannot open $cshDirectory/$cshFile\n";
+    } else {
+	open(IN, "../$cshDirectory/$cshFile") || die "Cannot open ../$cshDirectory/$cshFile\n";
+    }
+    open(OUT, ">$ljob.csh")  || die "Cannot open $ljob.csh\n";
+    my $datum = `/bin/date`; chop $datum;
+    while (<IN>) {
+	if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug") && /\# BATCH START/) {
+	    print OUT "# BATCH START\n";
+	    print OUT "mkdir -p /scratch/$user\n";
+	    print OUT "cd /scratch/$user\n";
+	    print OUT "/bin/rm -rf \$JOB\n";
+	    print OUT "mkdir \$JOB\n";
+	    print OUT "cd \$JOB\n";
+	    print OUT "/bin/cp $pwd/$tdir/$ljob.tar.gz .\n";
+	    print OUT "/bin/cp $pwd/$tdir/$ljobfile .\n";
+	}
+
+	if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug") && /\# BATCH END/) {
+	    if ($opt_m eq "debug") {
+		# do nothing!
+	    } else {
+		print OUT "# BATCH END\n";
+		print OUT "echo \"coming to an end\" \n";
+		print OUT "pwd \n";
+		print OUT "ls -l \n";
+		print OUT "cd /scratch/$user\n";
+		print OUT "/bin/rm -rf \$JOB\n";
+		print OUT "pwd \n";
+		print OUT "ls -l \n";
+		print OUT "echo \"cleanup data_replica.py logfiles in /tmp\" \n";
+		print OUT "/bin/rm -f /tmp/data_replica-admin-* \n";
+		print OUT "echo \"check it\" \n";
+		print OUT "/bin/ls /tmp | /bin/grep -i $user \n"
+	    }
+	}
+
+	foreach $repl (@replaces) {
+	    ($patt, $value) = split(/ /, $repl, 2);
+	    # FIXME: HERE ADD PARSING/REPLACING OF XXXX with $number!!!
+	    $value =~ s/XXXX/$number/g;
+            if (/setenv $patt/) {
+                s/$patt/$patt $value/g;
+                last;
+            }
+	}
+
+	if (/XXXX/) {
+	    s/XXXX/$number/g;
+	} elsif (/setenv CMSSW/) {
+	    s/setenv CMSSW/setenv CMSSW       $CMSSW/g;
+	} elsif (/setenv SRMCP/) {
+	    s/setenv SRMCP/setenv SRMCP       $SRMCP/g;
+	} elsif (/setenv SCRAM_ARCH/) {
+	    s/setenv SCRAM_ARCH/setenv SCRAM_ARCH  $SCRAM/g;
+	} elsif (/setenv JOB/) {
+	    s/setenv JOB/setenv JOB      $ljob/g;
+	} elsif (/#SBATCH -o/) {
+	    s/#SBATCH -o/#SBATCH -o $pwd\/$tdir\/$ljob.log/g;
+	} elsif (/#SBATCH -e/) {
+	    s/#SBATCH -e/#SBATCH -e $pwd\/$tdir\/$ljob.err/g;
+	}
+
+	print OUT;
+    }
+    close OUT;
+
+}
+
+
+# ----------------------------------------------------------------------
+sub fileAndDirectory {
+    ($in) = @_;
+
+    $dir = substr($in, 0, rindex($in, '/'));
+    if (rindex($in, '/') < 0) { $dir = ""; }
+    $file = substr($in, rindex($in, '/')+1, length($in));
+    @result = ($dir, $file);
+    return @result;
+}
+
+
+# ----------------------------------------------------------------------
+sub remove {
+    ($lfile, $lpat) = @_;
+    rename("$lfile", "$lfile.old");
+    open(IN, "$lfile.old");
+    open(OUT, ">$lfile");
+    while(<IN>) {
+	unless (/$lpat/) { print OUT; }
+    }
+    close(IN);
+    close(OUT);
+}
+
+# ----------------------------------------------------------------------
+sub countPending() {
+    $n = `squeue -u ursl -t PENDING -h | wc -l `;
+    chop($n);
+    # print "n = ->$n<- \n";
+    return $n;
+}
+
+# ----------------------------------------------------------------------
+sub checkUser() {
+    ($ldatum) = @_;
+    # -- bail out in case of STOP file
+    if (-e "STOP.$$") {
+	unlink("STOP.$$");
+	print "runCont($$): saw STOP.$$ at $ldatum, exit\n";
+	exit(0);
+    }
+    # -- wait 1h in case of WAIT file
+    while (-e "WAIT.$$") {
+	$datum = `date`;
+	chop($datum);
+	print "runCont($$): watching WAIT.$$ at $ldatum\n";
+	sleep(3600);
+    }
+
+}
