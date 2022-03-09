@@ -1,0 +1,28 @@
+#! /usr/bin/perl
+
+# 2018/06/06 fix dependency on (removed) /shome and add fallback in case no .jobnames file is present
+# 2019/10/24 remove possible whitespaces (when a comment sign appears in the line)
+
+my $home  = $ENV{'HOME'};
+my $user  = $ENV{'USER'};
+
+if (@ARGV) {
+   $jobnames = shift;
+}
+else {
+    $jobnames = "$home/.jobnames";
+    if (!(-e $jobnames)) {
+	($uhome = $home) =~ s/$user/ursl/;
+	$jobnames = "$uhome/.jobnames";
+    }
+}
+
+open(NAME,"$jobnames");
+while (<NAME>) {
+    rand($.) < 1 && ($jobname = $_);
+}
+chop $jobname;
+close NAME;
+($job, $rest) = split(/\#/, $jobname, 2);
+$job =~ s/\s//g;
+print "$job\n";
