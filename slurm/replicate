@@ -1,0 +1,104 @@
+#!/usr/bin/env perl
+
+#
+# replicate -t file.template [-o] -f 01000 -l 02000 [-s 1 || -p 'run set',reportFile,histFileName]
+#
+# -o will put the output files into the same place as the template. Default is to dump into pwd.
+#
+# This is useful for the generation of many files, which are built
+# according to the following scheme:
+#
+#    bla-1000.py    py file containing the runnumber 1000 in the name
+#
+# Inside the py file, there are names that contain the runnumber and need to be changed:
+#
+#    rootFileName  = cms.untracked.string("pixelTree-01000.root"),
+#
+# The given usage example is taylored to these cases and will replace the runnumber
+# of the template file with the new runnumber for all lines containing a word of the
+# 'pattern' argument.
+#
+#  2021/08/20  if output is dumped into pwd, the template is also duplicated in pwd
+#  2021/08/19  output is dumped into pwd
+#  2017/09/01  Add -z to suppress leading zeros
+#  2009/10/27  Modified documentation for CMS
+#
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use File::Basename;
+
+use Getopt::Std;
+getopts('f:l:op:s:t:z');
+
+
+if ($opt_t) {
+    $template = $opt_t;
+} else {
+    die "need a template!\n";
+}
+
+if ($opt_f) {
+    $firstNum = $opt_f;
+    if ($opt_o) {
+	$firstNum = $firstNum + 1;
+    }
+} else {
+#    $firstNum = 0;
+    die "need starting number\n";
+}
+
+if ($opt_l) {
+    $lastNum = $opt_l;
+} else {
+    die "need ending number\n";
+}
+
+if (1 == $opt_s) {
+    $opt_p = "setRunNumber"
+}
+
+if ($opt_p) {$replace = $opt_p; }
+
+@replaces = split(/,/, $replace);
+
+open(IN, "$template") || die "cannot open $template\n";
+@in = <IN>;
+close IN;
+
+grep(s/\n//, @in);
+
+foreach $patt (@replaces) {
+    print "Replacing in lines with $patt\n";
+}
+
+for ($i =  $firstNum; $i <= $lastNum; $i++) {
+    $augm = $i;
+    if (!$opt_z) {
+	while (length(opt_f) > length($augm)+1) {$augm = '0'.$augm;}
+    }
+    ($filename = $template) =~ s/$firstNum/$augm/;
+    # -- strip  path from filename (if any)
+    my $path = dirname($filename);
+    my $file = basename($filename);
+    if ($opt_o) {
+	$file = $filename;
+    }
+
+    open(OUT, ">$file") || die "cannot open $file\n";
+    print "$file\n";
+    foreach $bla (@in) {
+	$line = $bla;
+	foreach $patt (@replaces) {
+	    if ($line =~ /$patt/) {
+		$line =~ s/$firstNum/$augm/g;
+		last;
+	    }
+	}
+	print OUT "$line\n";
+    }
+    close OUT;
+}
