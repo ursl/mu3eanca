@@ -69,9 +69,13 @@ echo "../_build/mu3eSim/mu3eSim --script $JOB.mac --output ./$JOB.root"
 ../_build/mu3eSim/mu3eSim --script $JOB.mac --output ./$JOB.root
 date
 ls -rtl
+echo "slurm check size of rootfile produced"
+ls -l ./$JOB.root
 
 cp ./$JOB.root $STORAGE1
-
+$BLA = `ls -l $STORAGE1/$JOB.root`
+echo "slurm check that rootfile was copied $BLA"
+ls -l $STORAGE1/$JOB.root
 
 date
 
