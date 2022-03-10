@@ -9,7 +9,7 @@
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.mac, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside! ??? IS THIS TRUE ???
 #
-# 2022/03/09   migrated to merlin
+# 2022/03/09   migrated to merlin, removed grid stuff
 # 2021/08/19   change -q to imply qsub. 'partition' (queue) is specified with -P. slurm is the default and -S is gone.
 # 2020/01/15   change cn-test to t3
 # 2019/10/24   add -w 200 to move runCont functionality into run
@@ -234,7 +234,7 @@ foreach $jobfile (@ARGV) {
     } elsif ($opt_m eq "batch") {
 	print "batch submission: $job\n";
 	$jobName = "$job.csh";
-	if ($user eq "langenegger") { $jobName = `$home/perl/rline`; chop($jobName); }
+	if ($user eq "langenegger") { $jobName = `rline`; chop($jobName); }
 	if ($opt_d) {
 	    print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
 	} else {
