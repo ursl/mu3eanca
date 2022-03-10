@@ -73,7 +73,7 @@ echo "slurm check size of rootfile produced"
 ls -l ./$JOB.root
 
 cp ./$JOB.root $STORAGE1
-$BLA = `ls -l $STORAGE1/$JOB.root`
+setenv BLA  `ls -l $STORAGE1/$JOB.root`
 echo "slurm check that rootfile was copied $BLA"
 ls -l $STORAGE1/$JOB.root
 
