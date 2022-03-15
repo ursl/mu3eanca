@@ -257,36 +257,35 @@ sub rootFileSize {
     my $gotRoot = 0;
     my $gotLog = 0;
     my $locationrootfile = "";
+    my $rpath = "";
     while(<LIN>) {
-	if (($gotRoot == 0) && (/xrdcp -f/)) {
+	if (($gotRoot == 0) && (/slurm check that rootfile was copied/)) {
 	    chop;
-	    ($cmd, $option, $fname, $location) = split(/ /);
-	    ($prefix, $path)  = split(/trivcat\//, $location);
-	    $locationrootfile = $path . "/" . $fname;
-	    @xrdls = `xrdfs t3se01.psi.ch:1094 ls $path`;
-	    $gotRoot = grep(/$fname/, @xrdls);
-	    #print "gotRoot> $gotRoot\n";
+	    ($bla, $rest) = split(/ $user /);
+	    ($group, $rsize, $rest1) = split(/ /, $rest, 3);
+	    ($month, $day, $time, $rpath) = split(/ /, $rest1);
+	    #print "gotRoot> bla   =  ->$bla<-\n";
+	    #print "gotRoot> rest  =  ->$rest<-\n";
+	    #print "gotRoot> rest1 =  ->$rest1<-\n";
+	    #print "gotRoot> rsize =  ->$rsize<-\n";
+	    #print "gotRoot> path  =  ->$rpath<-\n";
+	    if ($rsize > 0) {
+		$gotRoot = 1;
+	    } 
 	}
     }
     close(LIN);
 
     # -- check that the rootfile really exists on the SE
     if ($gotRoot) {
-	@results = `xrdfs t3se01.psi.ch:1094 stat $locationrootfile`;
-	$result = $results[2];
-	chop($result);
-	$result =~ s/Size:\s*//g;
-	# -- try again if this did not work (e.g. because of [auth failed])
-	if ($result == 0) {
-	    @results = `xrdfs t3dcachedb03.psi.ch stat $lfn`;
-	    $result = $results[2];
-	    $result =~ s/Size:\s*//g;
+	if (-e $rpath) {
+	    $result = $rsize;
 	}
     } else {
 	$result = -1;
     }
 
-    return ($result, "$STORAGE1$lfn");
+    return ($result, "$rpath");
 }
 
 
