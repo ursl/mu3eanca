@@ -4,7 +4,6 @@ int NFILE(21);
 
 // ----------------------------------------------------------------------
 void plotFeeAsicID() { 
-  gFile = TFile::Open("/psi/home/langenegger/data/slurm/data/run-220314.root");
   gFile ->cd("stat");
   
   TH1F* PlanePosZ = (TH1F*)gDirectory->Get("PlanePosZ");
@@ -36,7 +35,6 @@ void plotFeeAsicID() {
 
 // ----------------------------------------------------------------------
 void plotFeeDose() { 
-  gFile = TFile::Open("/psi/home/langenegger/data/slurm/data/run-220314.root");
   gFile ->cd("stat");
   
   TH1F* h1 = (TH1F*)gDirectory->Get("hFibreFEEDose");
@@ -53,7 +51,6 @@ void plotFeeDose() {
 
 // ----------------------------------------------------------------------
 void plotFeeImpact() { 
-  gFile = TFile::Open("/psi/home/langenegger/data/slurm/data/run-220314.root");
   gFile ->cd("stat");
   
   TH2F* h2 = (TH2F*)gDirectory->Get("RadialOutElmz2");
