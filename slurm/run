@@ -3,7 +3,8 @@
 # Usage:        run [-C] [-D dest] [-p short | standard | long] -c run.csh -t tarfile -m {debug|local|batch} [-b] -r {pattern1%pattern2}
 # ------            [-x 'bin/runTreeReaders -r bmmReader -C cuts/bla.cuts'] *
 #
-#
+# Examples:    run -t ../220318.tar.gz -c ~/mu3e/mu3eanca/slurm/slurm-mu3eSim.csh -r 'STORAGE1 /psi/home/langenegger/data/slurm/root%SITE T3_CH_PSI' run-test.mac
+# ---------
 #
 #
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.mac, the numbering is at the end, separated with -
