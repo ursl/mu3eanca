@@ -1,0 +1,44 @@
+#!/usr/bin/env perl
+
+# ----------------------------------------------------------------------
+#
+# Usage: cd jobs/..; mkTarFile 150701.tar.gz
+# -----  
+#
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('x:');
+
+if ($ARGV[0]) {
+    $name = $ARGV[0];
+} else {
+    die "need a name for the tarfile\n";
+}
+
+$include  = "_build run ";
+
+$exclude .= " --exclude .git";
+$exclude .= " --exclude CMakeFiles";
+$exclude .= " --exclude \\*.root";
+$exclude .= " --exclude \\*.root.\\*";
+$exclude .= " --exclude \\*.pdf";
+$exclude .= " --exclude \\*.ps";
+$exclude .= " --exclude \\*.eps";
+$exclude .= " --exclude \\*.png";
+$exclude .= " --exclude \\*.log";
+$exclude .= " --exclude \\*.tex";
+$exclude .= " --exclude \\*.old";
+$exclude .= " --exclude .nfs\\*";
+$exclude .= " --exclude \\*~";
+if ($opt_x) {
+    $exclude .= " $opt_x";
+}
+
+
+system("tar zcvf $name $include $exclude");
+print("tar zcvf $name $include $exclude\n");
