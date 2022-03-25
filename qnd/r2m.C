@@ -11,31 +11,6 @@
 
 using json = nlohmann::json;
 
-// namespace ns {
-//   struct sensorInfo {
-//     int id;
-//     int intRunChip, simChip;
-//     vector<double> v, drow, dcol;
-//     int nrow, ncol;
-//     double width, length, thickness, pixelSize;
-//   };
-
-//   void to_json(json &j, const sensorInfo &p) {
-//     j = json{{"id", p.id},
-// 	     {"intRunChip", p.intRunChip},
-// 	     {"simChip", p.simChip}
-//     }
-//   }
-
-//   void from_json(const json &j, sensorInfo &p) {
-//     j.at("id").get_to(p.id);
-//     j.at("intRunChip").get_to(p.intRunChip);
-//     j.at("simChip").get_to(p.simChip);
-//   }
-
-// }
-
-
 // ----------------------------------------------------------------------
 vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned int> *vTimeStamp) {
   vector<unsigned int> payload;
@@ -99,10 +74,10 @@ vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned
     // -- hit
     word  = 0;
     word  = (ts03_00 << 28);
-    word |= (isen << 22);
-    word |= (irow << 14);
-    word |= (icol << 6);
-    word |= (itot << 1);
+    word |= (isen << 21);
+    word |= (irow << 13);
+    word |= (icol << 5);
+    word |= (itot << 0);
     payload.push_back(word);
     
   }
