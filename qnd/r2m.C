@@ -18,6 +18,25 @@ vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned
   unsigned int preamble(0xE80000BC), trailer(0xFC00009C);
   assert(vPixelID->size() == vTimeStamp->size());
 
+  // -- sort the two vectors such that timestamp is strictly increasing
+  vector<unsigned int> vid, vts;
+  vid.push_back(vPixelID->at(0)); 
+  vts.push_back(vTimeStamp->at(0)); 
+  for (unsigned int ihit = 1; ihit < vTimeStamp->size(); ++ihit) {
+    for (unsigned int i = 0; i < vts.size(); ++i) {
+      if ((vTimeStamp->at(ihit) < vts[i]) && (i < vts.size())) {
+	auto it = vts.insert(vts.begin()+i, vTimeStamp->at(ihit));
+	auto iu = vid.insert(vid.begin()+i, vPixelID->at(ihit));
+	break;	
+      }
+      if (i+1 == vts.size()) {
+	vts.push_back(vTimeStamp->at(ihit));
+	vid.push_back(vPixelID->at(ihit));
+	break;	
+      }
+    }
+  }
+  
   // -- preamble
   payload.push_back(preamble);
   
@@ -38,9 +57,9 @@ vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned
   payload.push_back(ts47_16);
   payload.push_back(ts15_00);
 
-  for (unsigned int ihit = 0; ihit < vPixelID->size(); ++ihit) {
-    timestamp = static_cast<ULong64_t>(vTimeStamp->at(ihit));
-    pixelid   = vPixelID->at(ihit);
+  for (unsigned int ihit = 0; ihit < vid.size(); ++ihit) {
+    timestamp = static_cast<ULong64_t>(vts[ihit]);
+    pixelid   = vid[ihit];
 
     irow = pixelid & 0xff;
     icol = (pixelid >> 8) & 0xff;
@@ -97,11 +116,18 @@ void v0() {
    
   // -- check parsed JSON file
   int intRunChip(-1), simChip(-1);
+  double vx, vy, vz;
   map<int, int> simChip2irChip;
   for (json::iterator it = jMap.begin(); it != jMap.end(); ++it) {
+    // cout << *it << endl;
     it->at("intRunChip").get_to(intRunChip);
     it->at("simChip").get_to(simChip);
-    cout << "intRunChip = " << intRunChip << " simChip = " << simChip << endl;
+    it->at("v").at("x").get_to(vx);
+    it->at("v").at("y").get_to(vy);
+    it->at("v").at("z").get_to(vz);
+    cout << Form("intRunChip = %3d simChip = %3d v=(%+6.3f,%+6.3f,%+6.3f)",
+		 intRunChip, simChip, vx, vy, vz)
+	 << endl;
     simChip2irChip[simChip] = intRunChip;
   }
 
