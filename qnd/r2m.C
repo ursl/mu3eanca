@@ -1,8 +1,9 @@
 // ----------------------------------------------------------------------
 // r2m -- root2Midas
 //
-// Usage: .L r2m 
-// -----
+// Usage: root filename.root
+// -----  .L r2m.C
+//        v0()
 // ----------------------------------------------------------------------
 
 #include <fstream>
@@ -47,6 +48,8 @@ vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned
   unsigned int word(0);
 
   ULong64_t timestamp = static_cast<ULong64_t>(vTimeStamp->at(0));
+  // -- multiply timestamp from simulation by a factor 2
+  timestamp = (timestamp << 1);
   unsigned int pixelid   = vPixelID->at(0);
   ts47_16 = (timestamp >> 16) & 0xffffffff;
   ts15_00 = (timestamp & 0xffff) << 16;
@@ -64,7 +67,7 @@ vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned
     irow = pixelid & 0xff;
     icol = (pixelid >> 8) & 0xff;
     isen = (pixelid >> 16) & 0xffff;
-    
+
     ts47_16 = (timestamp >> 16) & 0xffffffff;
     ts15_00 = (timestamp & 0xffff) << 16;
     ts10_04 = (timestamp >> 4) & 0x7f;
@@ -125,8 +128,12 @@ void v0() {
     it->at("v").at("x").get_to(vx);
     it->at("v").at("y").get_to(vy);
     it->at("v").at("z").get_to(vz);
-    cout << Form("intRunChip = %3d simChip = %3d v=(%+6.3f,%+6.3f,%+6.3f)",
-		 intRunChip, simChip, vx, vy, vz)
+    TVector3 r(vx, vy, vz);
+    // -- Note: MK's JSON file has dimensions of meter, not milimeter!
+    cout << Form("intRunChip = %3d simChip = %3d r = %5.2f phi = %6.1f v=(%+7.3f,%+7.3f,%+7.3f)",
+		 intRunChip, simChip,
+		 1.e3*TMath::Sqrt(vx*vx + vy*vy), r.Phi()*TMath::RadToDeg(),
+		 1.e3*vx, 1.e3*vy, 1.e3*vz)
 	 << endl;
     simChip2irChip[simChip] = intRunChip;
   }
@@ -150,6 +157,7 @@ void v0() {
   int nmax(100);
   //  nmax = tMu3e->GetEntries();
   unsigned int irow(0), icol(0), isen(0);
+  unsigned int chip(0), ladder(0), layer(0), rest(0); 
   unsigned int ts47_16(0), ts15_00(0), ts10_04(0), ts03_00(0); 
   for (int ievt = 0; ievt < nmax; ++ievt) {
     Long64_t tentry = tMu3e->LoadTree(ievt);
@@ -162,9 +170,16 @@ void v0() {
     for (int ihit = 0; ihit < Nhit; ++ihit) {
       unsigned int pixelid   = v_hit_pixelid->at(ihit);
       ULong64_t timestamp = static_cast<ULong64_t>(v_hit_timestamp->at(ihit));
+      // -- multiply timestamp from simulation by a factor 2 (also for printout here)
+      timestamp = (timestamp << 1);
       irow = pixelid & 0xff;
       icol = (pixelid >> 8) & 0xff;
       isen = (pixelid >> 16) & 0xffff;
+
+      chip   = (isen & 0x1f);
+      ladder = (isen >> 5) & 0x1f;
+      layer  = (isen >> 10) & 0x1f;
+      rest   = (isen >> 15);
       
       ts47_16 = (timestamp >> 16) & 0xffffffff;
       ts15_00 = timestamp & 0xffffULL;
@@ -172,14 +187,16 @@ void v0() {
       ts03_00 = timestamp & 0xfULL;
 
       cout << hex << pixelid << " " << dec;
-      //      cout << " (" << isen << " aka " << simChip2irChip[isen] << ": " << icol << "/" << irow << ")";
-      cout << "TS=" << hex << timestamp << dec << "(" << timestamp << ")" << hex 
-	   << " ts47_16=" << ts47_16
-	   << " ts15_00=" << ts15_00
-	   << " ts10_04=" << ts10_04
-	   << " ts03_00=" << ts03_00
-	   << " " 
-	;
+      cout << " (" << isen << " aka " << simChip2irChip[isen] << ": " << icol << "/" << irow << ")";
+      cout << Form(" chip/ladder/layer = %2d/%2d/%2d ", chip, ladder, layer);
+      cout << " rest = " << rest << " "; 
+      if (0) cout << "TS=" << hex << timestamp << dec << "(" << timestamp << ")" << hex 
+		  << " ts47_16=" << ts47_16
+		  << " ts15_00=" << ts15_00
+		  << " ts10_04=" << ts10_04
+		  << " ts03_00=" << ts03_00
+		  << " " 
+	       ;
       // specbook:
       // First the preamble is sent. After this the MuPix Data Header is sent. This contains the 48-bit timestamp.
       // After this the sub-Header is sent, which contains an indicator (111111), the (10:4) bits of the timestamp
@@ -194,6 +211,7 @@ void v0() {
 
     // -- get the payload
     vector<unsigned int>payload = mupixPayload(v_hit_pixelid, v_hit_timestamp);
+    // -- print it
     for (unsigned ip = 0; ip < payload.size(); ++ip) {
       cout << Form("%3d: %08x", ip, payload[ip]) << endl;
     }
