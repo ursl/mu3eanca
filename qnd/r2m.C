@@ -76,7 +76,9 @@ map<std::string, std::vector<unsigned int> > simChipId = {
 
 
 // ----------------------------------------------------------------------
-vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned int> *vTimeStamp) {
+vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID,
+				 vector<unsigned int> *vTimeStamp,
+				 map<int, int> &simChip2irChip) {
   vector<unsigned int> payload;
 
   unsigned int preamble(0xE80000BC), trailer(0xFC00009C);
@@ -103,7 +105,8 @@ vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned
   
   // -- preamble
   payload.push_back(preamble);
-  
+  unsigned int chip(9999), ladder(9999), layer(9999), simChip(9999), irChip(9999); 
+
   unsigned int irow(0), icol(0), isen(0), itot(31);
   unsigned int ts47_16(0), ts15_00(0), ts10_04(0), ts03_00(0); 
   unsigned int oldts47_16(1), oldts15_00(1), oldts10_04(1), oldts03_00(1); 
@@ -130,8 +133,22 @@ vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned
     irow = pixelid & 0xff;
     icol = (pixelid >> 8) & 0xff;
     isen = (pixelid >> 16) & 0xffff;
-    // FIXME HERE! translate isen to irChip!
-    
+
+    // -- now translate the simulation sensorId into simChipId
+    chip   = (isen & 0x1f);
+    ladder = (isen >> 5) & 0x1f;
+    layer  = (isen >> 10) & 0x1f;
+    if (0 == layer) {
+      if (ladder > 4) ladder -= 4; 
+    } else if (1 == layer) {
+      if (ladder > 5) ladder -= 2; 
+    } else {
+      cout << "Error: should not reach this point, skipping hit" << endl;
+      continue;
+    }
+    simChip = simChipId[Form("layer%d:ladder%d", layer, ladder)][chip-1];
+    irChip  = simChip2irChip[simChip];
+   
     ts47_16 = (timestamp >> 16) & 0xffffffff;
     ts15_00 = (timestamp & 0xffff) << 16;
     ts10_04 = (timestamp >> 4) & 0x7f;
@@ -160,7 +177,7 @@ vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID, vector<unsigned
     // -- hit
     word  = 0;
     word  = (ts03_00 << 28);
-    word |= (isen << 21);
+    word |= (irChip << 21);
     word |= (irow << 13);
     word |= (icol << 5);
     word |= (itot << 0);
@@ -251,7 +268,6 @@ void v0() {
 	cout << "Error: should not reach this point, skipping hit" << endl;
 	continue;
       }
-      // cout << "getting " << Form("layer%d:ladder%d", layer, ladder)  << endl;
       simChip = simChipId[Form("layer%d:ladder%d", layer, ladder)][chip-1];
       
       rest   = (isen >> 15);
@@ -288,7 +304,7 @@ void v0() {
     cout << endl;
 
     // -- get the payload
-    vector<unsigned int>payload = mupixPayload(v_hit_pixelid, v_hit_timestamp);
+    vector<unsigned int>payload = mupixPayload(v_hit_pixelid, v_hit_timestamp, simChip2irChip);
     // -- print it
     for (unsigned ip = 0; ip < payload.size(); ++ip) {
       cout << Form("%3d: %08x", ip, payload[ip]) << endl;
