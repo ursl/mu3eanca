@@ -5,7 +5,9 @@
 #SBATCH -o
 
 setenv JOB 
-setenv ROOTFILENAME $JOB:s/\.i/.root/
+setenv STEERFILE    $JOB.i
+setenv ROOTFILENAME $JOB.root
+setenv RANDOMSEED   $JOB:s/PIONEER_SlantedTgtE_prod-//
 setenv STORAGE1
 setenv SITE
 
@@ -58,8 +60,10 @@ echo "ls -l"
 ls -l
 
 # PIONEER_SlantedTgtE_prod-40009.i histoFile=PIONEER_SlantedTgtE_prod-40009.root
-echo "g4bl $JOB histoFile=$JOB.root"
-g4bl $JOB histoFile=$JOB.root
+echo "----------------------------------------------------------------------"
+echo "g4bl $STEERFILE randomseed=$RANDOMSEED histoFile=$ROOTFILENAME"
+echo "----------------------------------------------------------------------"
+g4bl $STEERFILE randomseed=$RANDOMSEED histoFile=$ROOTFILENAME
 date
 ls -rtl
 echo "slurm check size of rootfile produced"
