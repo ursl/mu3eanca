@@ -134,29 +134,29 @@ foreach $jobfile (@ARGV) {
     chop($datum);
     &checkUser($datum);
     if ($opt_w && ($njobs > $opt_w)) {
-	$njobs = &countPending;
-	$datum = `date`;
-	chop($datum);
-	print "run($$): $njobs jobs waiting at $datum\n";
-	while ($njobs > $opt_w) {
-	    sleep($siesta);
-	    $datum = `date`;
-	    chop($datum);
-	    &checkUser($datum);
-	    $njobs = &countPending;
-	    $datum = `date`;
-	    chop($datum);
-	    print "run($$): $njobs jobs waiting at $datum\n";
-	}
+        $njobs = &countPending;
+        $datum = `date`;
+        chop($datum);
+        print "run($$): $njobs jobs waiting at $datum\n";
+        while ($njobs > $opt_w) {
+            sleep($siesta);
+            $datum = `date`;
+            chop($datum);
+            &checkUser($datum);
+            $njobs = &countPending;
+            $datum = `date`;
+            chop($datum);
+            print "run($$): $njobs jobs waiting at $datum\n";
+        }
     }
     $njobs++;
 
     ($jobDirectory, $jobFile) = fileAndDirectory($jobfile);
     if ($jobDirectory =~ /^\//) {
     } elsif ($jobDirectory eq "") {
- 	$jobDirectory = "..";
+        $jobDirectory = "..";
     } else {
-	$jobDirectory = "../".$jobDirectory;
+        $jobDirectory = "../".$jobDirectory;
     }
 
     # -- Cut off trailing py extension
@@ -173,26 +173,26 @@ foreach $jobfile (@ARGV) {
     $tdir = "tmp-$job";
     # -- Check whether the previous submission was successful
     if ($opt_C) {
-	if (-d "$tdir") {
-	    if (-e "$tdir/NOK") {
-		print "resubmitting $job\n";
-		# -- remove old entry in $jobsList
-		$https = `/bin/grep https $tdir/$jobsList`; chop($https);
-		if ($opt_d) {
-		    print "would remove from $jobsList: $tdir \n";
-		    next;
-		} else {
-		    &remove("$jobsList", $tdir); # this will also remove the sge lines which contain $tdir
-		}
-	    } else {
-		next;
-	    }
-	} else {
-	    print "submitting new job $job\n";
-	}
+        if (-d "$tdir") {
+            if (-e "$tdir/NOK") {
+                print "resubmitting $job\n";
+                # -- remove old entry in $jobsList
+                $https = `/bin/grep https $tdir/$jobsList`; chop($https);
+                if ($opt_d) {
+                    print "would remove from $jobsList: $tdir \n";
+                    next;
+                } else {
+                    &remove("$jobsList", $tdir); # this will also remove the sge lines which contain $tdir
+                }
+            } else {
+                next;
+            }
+        } else {
+            print "submitting new job $job\n";
+        }
     }
 
-     # -- create tmp directory for running/submission
+    # -- create tmp directory for running/submission
     system("/bin/rm -rf $tdir");
     mkdir($tdir);
     chdir($tdir);
@@ -202,11 +202,14 @@ foreach $jobfile (@ARGV) {
 
     #print " --> /bin/cp $jobDirectory/$jobFile .\n";
     if (-e "$jobDirectory/$jobFile") {
-	system("/bin/cp $jobDirectory/$jobFile .");
+        system("/bin/cp $jobDirectory/$jobFile .");
     } else {
-	system("touch $jobFile");
+        system("touch $jobFile");
     }
-    &makeTarLink($job);
+    
+    if ($tarFile) {
+        &makeTarLink($job);
+    }
     system("/bin/chmod 755 $job.csh");
 
     # -- get a timestamp
@@ -216,41 +219,41 @@ foreach $jobfile (@ARGV) {
     $timeStamp = sprintf("%s, %4i/%02i/%02i %02i:%02i:%02i", $host, $year, $mon, $mday, $hour, $min, $sec);
 
     if ($opt_m eq "local" || $opt_m eq "debug") {
-	print "local running: $job.csh\n";
-	if ($opt_d) {
-	    print("./$job.csh >& local.log\n");
-	} else {
-	    if ($opt_b) {
-		system("./$job.csh >& local.log &");
-	    } else {
-		system("./$job.csh >& local.log");
-	    }
-	    open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
-	    print IN "###Submitted Job Ids###\n";
-	    print IN "local $tdir \n";
-	    print IN "\# $timeStamp $pwd/$tdir $host $host\n";
-	    close(IN);
-	    system("/usr/bin/tail -2 $jobsList >> ../$jobsList");
-	}
+        print "local running: $job.csh\n";
+        if ($opt_d) {
+            print("./$job.csh >& local.log\n");
+        } else {
+            if ($opt_b) {
+                system("./$job.csh >& local.log &");
+            } else {
+                system("./$job.csh >& local.log");
+            }
+            open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
+            print IN "###Submitted Job Ids###\n";
+            print IN "local $tdir \n";
+            print IN "\# $timeStamp $pwd/$tdir $host $host\n";
+            close(IN);
+            system("/usr/bin/tail -2 $jobsList >> ../$jobsList");
+        }
     } elsif ($opt_m eq "batch") {
-	print "batch submission: $job\n";
-	$jobName = "$job.csh";
-	if ($user eq "langenegger") { $jobName = `rline`; chop($jobName); }
-	if ($opt_d) {
-	    print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
-	} else {
-	    print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
-	    $result = `$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh`;
-	    chop($result);
-	    $result =~ s/Submitted batch job //g;
-	    print "Submitted ->$result<- with name ->$jobName<-\n";
-	    open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
-	    print IN "###Submitted Job Ids###\n";
-	    print IN "slurm $timeStamp $pwd/$tdir $jobName $result\n";
-	    close(IN);
-	    system("/usr/bin/tail -1 $jobsList >> ../$jobsList");
+        print "batch submission: $job\n";
+        $jobName = "$job.csh";
+        if ($user eq "langenegger") { $jobName = `rline`; chop($jobName); }
+        if ($opt_d) {
+            print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
+        } else {
+            print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
+            $result = `$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh`;
+            chop($result);
+            $result =~ s/Submitted batch job //g;
+            print "Submitted ->$result<- with name ->$jobName<-\n";
+            open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
+            print IN "###Submitted Job Ids###\n";
+            print IN "slurm $timeStamp $pwd/$tdir $jobName $result\n";
+            close(IN);
+            system("/usr/bin/tail -1 $jobsList >> ../$jobsList");
 
-	}
+        }
     } 
 
     chdir("..");
@@ -261,9 +264,9 @@ foreach $jobfile (@ARGV) {
 sub makeTarLink {
     ($ljob) = @_;
     if ($opt_t =~ /^\//) {
-	system("/bin/ln -s $opt_t $ljob.tar.gz");
+        system("/bin/ln -s $opt_t $ljob.tar.gz");
     } else {
-	system("/bin/ln -s ../$tarDirectory/$tarFile $ljob.tar.gz");
+        system("/bin/ln -s ../$tarDirectory/$tarFile $ljob.tar.gz");
     }
 }
 
@@ -273,60 +276,62 @@ sub makeTarLink {
 sub makeCshFile {
     ($ljob, $ljobfile) = @_;
     if ($cshDirectory =~ /^\//) {
-	open(IN, "$cshDirectory/$cshFile") || die "Cannot open $cshDirectory/$cshFile\n";
+        open(IN, "$cshDirectory/$cshFile") || die "Cannot open $cshDirectory/$cshFile\n";
     } else {
-	open(IN, "../$cshDirectory/$cshFile") || die "Cannot open ../$cshDirectory/$cshFile\n";
+        open(IN, "../$cshDirectory/$cshFile") || die "Cannot open ../$cshDirectory/$cshFile\n";
     }
     open(OUT, ">$ljob.csh")  || die "Cannot open $ljob.csh\n";
     my $datum = `/bin/date`; chop $datum;
     while (<IN>) {
-	if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug") && /\# BATCH START/) {
-	    print OUT "# BATCH START\n";
-	    print OUT "mkdir -p /scratch/$user\n";
-	    print OUT "cd /scratch/$user\n";
-	    print OUT "/bin/rm -rf \$JOB\n";
-	    print OUT "mkdir \$JOB\n";
-	    print OUT "cd \$JOB\n";
-	    print OUT "/bin/cp $pwd/$tdir/$ljob.tar.gz .\n";
-	    print OUT "/bin/cp $pwd/$tdir/$ljobfile .\n";
-	}
+        if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug") && /\# BATCH START/) {
+            print OUT "# BATCH START\n";
+            print OUT "mkdir -p /scratch/$user\n";
+            print OUT "cd /scratch/$user\n";
+            print OUT "/bin/rm -rf \$JOB\n";
+            print OUT "mkdir \$JOB\n";
+            print OUT "cd \$JOB\n";
+            if ($tarFile) {
+                print OUT "/bin/cp $pwd/$tdir/$ljob.tar.gz .\n";
+            }
+            print OUT "/bin/cp $pwd/$tdir/$ljobfile .\n";
+        }
 
-	if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug") && /\# BATCH END/) {
-	    if ($opt_m eq "debug") {
-		# do nothing!
-	    } else {
-		print OUT "# BATCH END\n";
-		print OUT "echo \"coming to an end\" \n";
-		print OUT "pwd \n";
-		print OUT "ls -l \n";
-		print OUT "cd /scratch/$user\n";
-		print OUT "/bin/rm -rf \$JOB\n";
-		print OUT "pwd \n";
-		print OUT "ls -l \n";
-	    }
-	}
+        if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug") && /\# BATCH END/) {
+            if ($opt_m eq "debug") {
+                # do nothing!
+            } else {
+                print OUT "# BATCH END\n";
+                print OUT "echo \"coming to an end\" \n";
+                print OUT "pwd \n";
+                print OUT "ls -l \n";
+                print OUT "cd /scratch/$user\n";
+                print OUT "/bin/rm -rf \$JOB\n";
+                print OUT "pwd \n";
+                print OUT "ls -l \n";
+            }
+        }
 
-	foreach $repl (@replaces) {
-	    ($patt, $value) = split(/ /, $repl, 2);
-	    # FIXME: HERE ADD PARSING/REPLACING OF XXXX with $number!!!
-	    $value =~ s/XXXX/$number/g;
+        foreach $repl (@replaces) {
+            ($patt, $value) = split(/ /, $repl, 2);
+            # FIXME: HERE ADD PARSING/REPLACING OF XXXX with $number!!!
+            $value =~ s/XXXX/$number/g;
             if (/setenv $patt/) {
                 s/$patt/$patt $value/g;
                 last;
             }
-	}
+        }
 
-	if (/XXXX/) {
-	    s/XXXX/$number/g;
-	} elsif (/setenv JOB/) {
-	    s/setenv JOB/setenv JOB      $ljob/g;
-	} elsif (/#SBATCH -o/) {
-	    s/#SBATCH -o/#SBATCH -o $pwd\/$tdir\/$ljob.log/g;
-	} elsif (/#SBATCH -e/) {
-	    s/#SBATCH -e/#SBATCH -e $pwd\/$tdir\/$ljob.err/g;
-	}
+        if (/XXXX/) {
+            s/XXXX/$number/g;
+        } elsif (/setenv JOB/) {
+            s/setenv JOB/setenv JOB      $ljob/g;
+        } elsif (/#SBATCH -o/) {
+            s/#SBATCH -o/#SBATCH -o $pwd\/$tdir\/$ljob.log/g;
+        } elsif (/#SBATCH -e/) {
+            s/#SBATCH -e/#SBATCH -e $pwd\/$tdir\/$ljob.err/g;
+        }
 
-	print OUT;
+        print OUT;
     }
     close OUT;
 
@@ -352,7 +357,7 @@ sub remove {
     open(IN, "$lfile.old");
     open(OUT, ">$lfile");
     while(<IN>) {
-	unless (/$lpat/) { print OUT; }
+        unless (/$lpat/) { print OUT; }
     }
     close(IN);
     close(OUT);
@@ -371,16 +376,16 @@ sub checkUser() {
     ($ldatum) = @_;
     # -- bail out in case of STOP file
     if (-e "STOP.$$") {
-	unlink("STOP.$$");
-	print "runCont($$): saw STOP.$$ at $ldatum, exit\n";
-	exit(0);
+        unlink("STOP.$$");
+        print "runCont($$): saw STOP.$$ at $ldatum, exit\n";
+        exit(0);
     }
     # -- wait 1h in case of WAIT file
     while (-e "WAIT.$$") {
-	$datum = `date`;
-	chop($datum);
-	print "runCont($$): watching WAIT.$$ at $ldatum\n";
-	sleep(3600);
+        $datum = `date`;
+        chop($datum);
+        print "runCont($$): watching WAIT.$$ at $ldatum\n";
+        sleep(3600);
     }
 
 }
