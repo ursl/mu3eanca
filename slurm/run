@@ -159,10 +159,11 @@ foreach $jobfile (@ARGV) {
         $jobDirectory = "../".$jobDirectory;
     }
 
-    # -- Cut off trailing py extension
+    # -- Cut off trailing mac/i extension
     #    $rest = substr($jobFile, 0, rindex($jobFile, '/')+1);
     #    $jobFile =~ s/$rest//;
     ($job = $jobFile) =~ s/\.mac//g;
+    ($job = $jobFile) =~ s/\.i//g;
 
     # -- Cut off everything except the number
     $number    = $job;
