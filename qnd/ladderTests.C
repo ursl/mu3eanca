@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "TGraphErrors.h"
+
 #include "../../analyzer/analyzer/utility/json.h"
 
 using namespace std;
@@ -63,9 +65,53 @@ vector<pair<double, double> > combine2Lines(string l1, string l2) {
   
 }
 
+// ----------------------------------------------------------------------
+TGraphErrors* makeGraph(vector<pair<double, double> > result, int mcolor, int mstyle, double msize) {
+  int nsize(result.size());
+
+  // -- sort vectors
+  vector<double> x, y;
+  x.push_back(result[0].first);
+  y.push_back(result[0].second); 
+  for (unsigned int i = 1; i < result.size(); ++i) {
+    for (unsigned int ix = 0; ix < x.size(); ++ix) {
+      if ((result[i].first < x[ix]) && (ix < x.size())) {
+        auto it = x.insert(x.begin() + ix, result[i].first);
+        auto iu = y.insert(y.begin() + ix, result[i].second);
+        break;  
+      }
+      if (ix + 1 == x.size()) {
+        x.push_back(result[i].first);
+        y.push_back(result[i].second);
+        break;  
+      }
+    }
+  }
+
+  double vx[result.size()];
+  double vy[result.size()];
+  double vxe[result.size()];
+  double vye[result.size()];
+  for (unsigned int i = 0; i < nsize; ++i) {
+    vx[i] = x[i];
+    vy[i] = y[i];
+
+    vxe[i] = 0.;
+    vye[i] = 0.;
+  }
+  
+  TGraphErrors *gr = new TGraphErrors(nsize, vx, vy, vxe, vye); 
+  gr->SetMarkerStyle(mstyle);
+  gr->SetMarkerSize(msize);
+  gr->SetMarkerColor(mcolor);
+  gr->SetLineColor(mcolor);
+  gr->SetLineWidth(3);
+  return gr; 
+}
+
 
 // ----------------------------------------------------------------------
-TH1D* ivTest(string filename= "qc_ladder_0.json") {
+TGraphErrors* ivTest(string filename= "qc_ladder_0.json", int color = 1) {
   cout << "reading json from file ->" << filename << "<-" << endl;
   vector<string> ivstrings;
   ivstrings.push_back("IV");
@@ -79,26 +125,10 @@ TH1D* ivTest(string filename= "qc_ladder_0.json") {
   string current = readFromJson(filename, ivstrings); 
 
   vector<pair<double, double> > result = combine2Lines(voltage, current); 
-
-  TH1D *h1 = new TH1D("h1", Form("IV curve %s", filename.c_str()), 30, 0., 30.);
-  h1->SetMaximum(0.5);
-  h1->SetMinimum(-12.0);
-  for (unsigned int i = 0; i < h1->GetNbinsX(); ++i) {
-    h1->SetBinContent(i+1, 1.0);
-  }
   
-  h1->SetMarkerStyle(20);
-  h1->SetMarkerSize(0.8);
-  h1->GetXaxis()->SetTitle("Bias voltage [-V]");
-  h1->GetYaxis()->SetTitle("Current [#mu A]");
-  h1->GetYaxis()->SetTitleOffset(1.1);
-  for (unsigned int i = 0; i < result.size(); ++i) {
-    cout << "Filling " << h1->FindBin(result[i].first) << " " <<  result[i].second << endl;
-    h1->SetBinContent(h1->FindBin(result[i].first), result[i].second);
-  }
-
-  h1->Draw("p0");
-  return h1; 
+  TGraphErrors *grG  = makeGraph(result, color, 20, 1.);
+  grG->Draw("l");
+  return grG; 
 }
 
 
@@ -106,27 +136,36 @@ TH1D* ivTest(string filename= "qc_ladder_0.json") {
 void ivTests(int layer = 1) {
   vector<string> files;
   vector<int> cols;
+
+  TH1D *h1 = new TH1D("h1", "h1", 30, 0., 30.);
+  h1->SetMaximum(0.5);
+  h1->SetMinimum(-12.0);
+  h1->GetXaxis()->SetTitle("Bias voltage [-V]");
+  h1->GetYaxis()->SetTitle("Current [#mu A]");
+  h1->GetYaxis()->SetTitleOffset(1.1);
   
-  if (0 == layer) {
-    files.push_back("qc_ladder_0.json"); cols.push_back(kBlack);
-    files.push_back("qc_ladder_1.json"); cols.push_back(kBlue);
-    files.push_back("qc_ladder_2.json"); cols.push_back(kRed); 
-    files.push_back("qc_ladder_3.json"); cols.push_back(kCyan); 
-    files.push_back("qc_ladder_4.json"); cols.push_back(kMagenta); 
-    files.push_back("qc_ladder_6.json"); cols.push_back(kGreen+1); 
-    files.push_back("qc_ladder_7.json"); cols.push_back(kBlue+2);   
-  };
+  h1->Draw();
 
   
+  if (0 == layer) {
+    files.push_back("qc_ladder_0.json"); cols.push_back(kRed+1);      
+    files.push_back("qc_ladder_1.json"); cols.push_back(kRed+2);      
+    files.push_back("qc_ladder_2.json"); cols.push_back(kBlue+1);     
+    files.push_back("qc_ladder_3.json"); cols.push_back(kBlue+3);     
+    files.push_back("qc_ladder_4.json"); cols.push_back(kGreen+1);     
+    files.push_back("qc_ladder_6.json"); cols.push_back(kGreen+3);     
+    files.push_back("qc_ladder_7.json"); cols.push_back(kYellow+1);     
+  };                                     
+  
   if (1 == layer) {
-    files.push_back("qc_ladder_10.json"); cols.push_back(kBlack);    
-    files.push_back("qc_ladder_11.json"); cols.push_back(kBlue);     
-    files.push_back("qc_ladder_12.json"); cols.push_back(kRed);      
-    files.push_back("qc_ladder_13.json"); cols.push_back(kCyan);     
-    files.push_back("qc_ladder_14.json"); cols.push_back(kMagenta);  
-    files.push_back("qc_ladder_15.json"); cols.push_back(kGreen+1);  
-    files.push_back("qc_ladder_16.json"); cols.push_back(kBlue+2);   
-    files.push_back("qc_ladder_17.json"); cols.push_back(kRed+2);   
+    files.push_back("qc_ladder_10.json"); cols.push_back(kRed+1);    
+    files.push_back("qc_ladder_11.json"); cols.push_back(kRed+2);     
+    files.push_back("qc_ladder_12.json"); cols.push_back(kBlue+1);      
+    files.push_back("qc_ladder_13.json"); cols.push_back(kBlue+3);     
+    files.push_back("qc_ladder_14.json"); cols.push_back(kGreen+1);  
+    files.push_back("qc_ladder_15.json"); cols.push_back(kGreen+3);  
+    files.push_back("qc_ladder_16.json"); cols.push_back(kYellow+1);   
+    files.push_back("qc_ladder_17.json"); cols.push_back(kYellow+3);   
   };
   vector<string> opts;
   vector<string> titles;
@@ -139,27 +178,36 @@ void ivTests(int layer = 1) {
     titles.push_back(title);
   }
   
-  vector<TH1*> hists; 
+  vector<TGraphErrors*> hists; 
   for (unsigned int i = 0; i < files.size(); ++i) {
-    hists.push_back(ivTest(files[i]));
-    hists[i]->SetMarkerColor(cols[i]);
+    hists.push_back(ivTest(files[i], cols[i]));
   }
 
   gStyle->SetOptStat(0); 
   gStyle->SetOptTitle(0); 
   
   for (unsigned int i = 0; i < hists.size(); ++i) {
-    if (0 == i) {
-      hists[i]->Draw("p0");
-    } else {
-      hists[i]->Draw("p0same");
-    }
+    hists[i]->Draw("pl");
   }
 
-  TLegend *tll = newLegend("Half ladders", 0.7, 0.2, 0.88, 0.5, hists, titles, opts);
+  TLegend *tll = newLegend(0.7, 0.2, 0.88, 0.5);
   tll->SetTextSize(0.03);
+  if (0 == layer) {
+    tll->SetHeader("Layer 0");
+  } else if (1 == layer) {
+    tll->SetHeader("Layer 1");
+  }    
+  for (unsigned int i = 0; i < files.size(); ++i) {
+    TLegendEntry *tle = tll->AddEntry(hists[i], titles[i].c_str(), "p");
+    tle->SetTextColor(cols[i]);
+  }
+  
   tll->Draw();
 
+  tl->SetTextColor(kGray);
+  tl->SetTextSize(0.001);
+  tl->DrawLatexNDC(0.102, 0.102, "UL");
+  
   if (1 == layer) {
     c0.SaveAs("iv-layer1.pdf");
   }
