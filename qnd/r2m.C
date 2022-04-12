@@ -76,11 +76,11 @@ map<std::string, std::vector<unsigned int> > simChipId = {
 
 
 // ----------------------------------------------------------------------
-vector<unsigned int>mupixPayload(vector<unsigned int> *vPixelID,
-				 vector<unsigned int> *vTimeStamp,
-				 map<int, int> &simChip2irChip) {
+vector<unsigned int> mupixPayload(vector<unsigned int> *vPixelID,
+                                  vector<unsigned int> *vTimeStamp,
+                                  map<int, int> &simChip2irChip) {
   vector<unsigned int> payload;
-
+  
   unsigned int preamble(0xE80000BC), trailer(0xFC00009C);
   assert(vPixelID->size() == vTimeStamp->size());
 
@@ -304,13 +304,24 @@ void v0() {
     cout << endl;
 
     // -- get the payload
-    vector<unsigned int>payload = mupixPayload(v_hit_pixelid, v_hit_timestamp, simChip2irChip);
-    // -- print it
-    for (unsigned ip = 0; ip < payload.size(); ++ip) {
-      cout << Form("%3d: %08x", ip, payload[ip]) << endl;
-    }
-
+    vector<unsigned int> payload = mupixPayload(v_hit_pixelid, v_hit_timestamp, simChip2irChip);
+    // // -- print it
+    // for (unsigned ip = 0; ip < payload.size(); ++ip) {
+    //   cout << Form("%3d: %08x", ip, payload[ip]) << endl;
+    // }
+    
   }
 
   
+}
+
+
+// ----------------------------------------------------------------------
+void decodeMupixPayload(vector<unsigned int>payload) {
+  // -- print it
+  for (unsigned ip = 0; ip < payload.size(); ++ip) {
+    cout << Form("%3d: %08x", ip, payload[ip]) << endl;
+  }
+  
+
 }
