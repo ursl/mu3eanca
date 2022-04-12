@@ -141,7 +141,7 @@ void ivTests(int layer = 1) {
   h1->SetMaximum(0.5);
   h1->SetMinimum(-12.0);
   h1->GetXaxis()->SetTitle("Bias voltage [-V]");
-  h1->GetYaxis()->SetTitle("Current [#mu A]");
+  h1->GetYaxis()->SetTitle("Current [#muA]");
   h1->GetYaxis()->SetTitleOffset(1.1);
   
   h1->Draw();
