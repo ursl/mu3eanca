@@ -7,6 +7,10 @@
 
 using namespace std;
 
+// -- <HLDR, quantity<chip 0, chip 1, chip2> > 
+map<int, vector<double> > gLayout; 
+
+
 // ----------------------------------------------------------------------
 string readFromJson(string filename, vector<string> what) {
   ifstream INS(filename);
@@ -136,7 +140,7 @@ TGraphErrors* ivTest(string filename= "qc_ladder_0.json", int color = 1) {
 void ivTests(int layer = 1) {
   vector<string> files;
   vector<int> cols;
-
+  
   TH1D *h1 = new TH1D("h1", "h1", 30, 0., 30.);
   h1->SetMaximum(0.5);
   h1->SetMinimum(-12.0);
@@ -169,6 +173,7 @@ void ivTests(int layer = 1) {
   };
   vector<string> opts;
   vector<string> titles;
+  vector<int> ladderNumbers;
   for (unsigned int i = 0; i < files.size(); ++i) {
     opts.push_back("p");
     string title = files[i];
@@ -176,11 +181,35 @@ void ivTests(int layer = 1) {
     replaceAll(title, "qc_", "");
     replaceAll(title, "_", " ");
     titles.push_back(title);
+    
+    replaceAll(title, "ladder", "");
+    replaceAll(title, " ", "");
+    ladderNumbers.push_back(atoi(title.c_str()));
+    cout << "ladderNumber " << ladderNumbers[i] << endl;
   }
   
   vector<TGraphErrors*> hists; 
   for (unsigned int i = 0; i < files.size(); ++i) {
-    hists.push_back(ivTest(files[i], cols[i]));
+    TGraphErrors *gr = ivTest(files[i], cols[i]);
+    hists.push_back(gr);
+    // -- determine V at which compliance (<-9.9 uA) is reached
+    bool foundCompliance(false);
+    for (int ix = 0; ix < gr->GetN(); ++ix) {
+      if (gr->GetPointY(ix) < -9.9) {
+        cout << "hldr = " << ladderNumbers[i]
+             << " compliance " << gr->GetPointY(ix) << " at " << gr->GetPointX(ix) << endl;
+        vector<double> vchips = {gr->GetPointX(ix), gr->GetPointX(ix), gr->GetPointX(ix)};
+        gLayout.insert(make_pair(ladderNumbers[i], vchips));
+        foundCompliance = true; 
+        break;
+      }
+    }
+    if (!foundCompliance) {
+      vector<double> vchips = {30., 30., 30.};
+      gLayout.insert(make_pair(ladderNumbers[i], vchips));
+      cout << "hldr = " << ladderNumbers[i]
+           << " no compliance until 25" << endl;
+    }
   }
 
   gStyle->SetOptStat(0); 
@@ -217,8 +246,70 @@ void ivTests(int layer = 1) {
   
 }
 
-// // ----------------------------------------------------------------------
-// int main() {
-//   iv();
-//   return 0;
-// }
+
+
+// ----------------------------------------------------------------------
+void mapIV() {
+  TH2D *hl0 = new TH2D("L0", "L0", 6, 0., 6.,  8, 0., 8.);
+  hl0->SetMaximum(30.);
+  hl0->SetNdivisions(600, "X");
+  hl0->SetNdivisions(800, "Y");
+  hl0->GetZaxis()->SetTitle("V_{B}");
+  for (int i = 0; i < 8; ++i) {
+    hl0->SetBinLabel(i, Form("%d", i));
+  }
+  TH2D *hl1 = new TH2D("L1", "L1", 6, 0., 6., 10, 0., 10.);
+  hl1->SetNdivisions(600, "X");
+  hl1->SetNdivisions(1000, "Y");
+  hl1->SetMaximum(30.);
+
+  // -- fixed coloring
+  Int_t    colors[] = {kRed, kRed-9, kBlue-6, kBlue-4, kGreen+1, kGreen+2};
+  Double_t levels[] = {0.,   5.,     10.,     15.,     20.,      25.,       30.};
+  gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+  
+  hl0->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+  hl1->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+  
+  if (gLayout.size() < 2) {
+    ivTests(0); 
+    ivTests(1); 
+  }
+
+  map<int, vector<double> >::iterator it;
+  for (it = gLayout.begin(); it != gLayout.end(); ++it) {
+    int hldr = it->first; 
+    int cmpl = it->second[0]; 
+    cout << "HLDR " << hldr << " cmpl = " << cmpl << endl;
+    // -- FIXME!!!
+    if (hldr < 8) {
+      hl0->SetBinContent(1, hldr+1, cmpl);
+      hl0->SetBinContent(2, hldr+1, cmpl);
+      hl0->SetBinContent(3, hldr+1, cmpl);
+    } else {
+      int bias(9);
+      hl1->SetBinContent(1, hldr+1-bias, cmpl);
+      hl1->SetBinContent(2, hldr+1-bias, cmpl);
+      hl1->SetBinContent(3, hldr+1-bias, cmpl);
+    }
+  }
+  
+  c0.SetWindowSize(800, 400); 
+  zone(2,1);
+  gPad->SetRightMargin(0.2);
+  gPad->SetGridx(1);
+  gPad->SetGridy(1);
+  hl0->Draw("colz");
+
+  gPad->Update();
+  TPaletteAxis *palette = (TPaletteAxis*)hl0->GetListOfFunctions()->FindObject("palette");
+  palette->SetX1NDC(0.88);
+  palette->SetX2NDC(0.92);
+  gPad->Modified();
+  gPad->Update();
+
+  c0.cd(2);
+  gPad->SetGridx(1);
+  gPad->SetGridy(1);
+  hl1->Draw("colz");
+}
