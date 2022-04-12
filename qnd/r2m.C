@@ -513,10 +513,36 @@ void v0() {
 
 // ----------------------------------------------------------------------
 void decodeMupixPayload(vector<unsigned int>payload) {
-  // -- print it
-  for (unsigned ip = 0; ip < payload.size(); ++ip) {
-    cout << Form("%3d: %08x", ip, payload[ip]) << endl;
-  }
+  int VERBOSE(1);
   
+  // -- print it
+  struct hit {
+    unsigned int ts, chip, row, col, tot;
+  };
+  vector<hit> vhits; 
+  for (unsigned ip = 0; ip < payload.size(); ++ip) {
+    if (VERBOSE > 0) cout << Form("%3d: %08x", ip, payload[ip]) << endl;
+    if (payload[ip] == ('P' << 0 | 'C' << 8 | 'D' << 16 | '0' << 24)) {
+      cout << "the above signals the start of the PCDO bank" << endl;
+      ip += 4; 
+      unsigned int ts0 = payload[ip++];
+      unsigned int ts1 = payload[ip++];
+      vhits.clear();
+      
+      while (payload[ip] != 0xFC00009C) {
+        unsigned int ts2  = payload[ip++];
+        unsigned int word = payload[ip++];
+        struct hit ahit;
+        ahit.tot  = (word & 0x1f);
+        ahit.col  = ((word >> 5) & 0xff);
+        ahit.row  = ((word >> 13) & 0xff);
+        ahit.chip = ((word >> 21) & 0x7f);
+        ahit.ts   = ((word >> 28) & 0xf);
+        cout << "col/row/chip = " << ahit.col << "/" << ahit.row  << "/" << ahit.chip << endl;
+        vhits.push_back(ahit);
+      }
+      continue;
+    }
+  }
 
 }
