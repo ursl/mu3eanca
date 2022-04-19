@@ -3,13 +3,39 @@
 
 #include "TGraphErrors.h"
 
-#include "../../analyzer/analyzer/utility/json.h"
-
 using namespace std;
 
 // -- <HLDR, quantity<chip 0, chip 1, chip2> > 
 map<int, vector<double> > gLayout; 
 
+// ----------------------------------------------------------------------
+// -- return <BIN, US=0|DS=1> pair, given HLDR number
+pair<int, int> hldrBin(int hldr) {
+  // bin numbering starts at 1!
+  if (hldr >= 0 && hldr <= 7) {
+    return make_pair(hldr+1, 0); 
+  } else if (hldr >= 18 && hldr <= 25) {
+    return make_pair(hldr-17, 1);
+  } else if (hldr >= 8 && hldr <= 17) {
+    return make_pair(hldr-7, 0);
+  } else if (hldr >= 26 && hldr <= 35) {
+    return make_pair(hldr-25, 1);
+  }
+  return make_pair(-1, -1);
+}
+
+
+// ----------------------------------------------------------------------
+// -- return layer number based on hldr
+int hldrLayer(int hldr) {
+  if (hldr >= 0 && hldr <= 7) {
+    return 0;
+  } else if (hldr >= 18 && hldr <= 25) {
+    return 0;
+  }
+
+  return 1;
+}
 
 // ----------------------------------------------------------------------
 string readFromJson(string filename, vector<string> what) {
@@ -154,22 +180,44 @@ void ivTests(int layer = 1) {
   if (0 == layer) {
     files.push_back("qc_ladder_0.json"); cols.push_back(kRed+1);      
     files.push_back("qc_ladder_1.json"); cols.push_back(kRed+2);      
-    files.push_back("qc_ladder_2.json"); cols.push_back(kBlue+1);     
-    files.push_back("qc_ladder_3.json"); cols.push_back(kBlue+3);     
-    files.push_back("qc_ladder_4.json"); cols.push_back(kGreen+1);     
-    files.push_back("qc_ladder_6.json"); cols.push_back(kGreen+3);     
-    files.push_back("qc_ladder_7.json"); cols.push_back(kYellow+1);     
+    files.push_back("qc_ladder_2.json"); cols.push_back(kRed-4);     
+    files.push_back("qc_ladder_3.json"); cols.push_back(kMagenta+1);     
+    files.push_back("qc_ladder_4.json"); cols.push_back(kMagenta-6);     
+    files.push_back("qc_ladder_6.json"); cols.push_back(kYellow+4);     
+    files.push_back("qc_ladder_7.json"); cols.push_back(kYellow-2);     
+    
+    files.push_back("qc_ladder_18.json"); cols.push_back(kBlue+1);      
+    files.push_back("qc_ladder_19.json"); cols.push_back(kBlue-7);      
+    files.push_back("qc_ladder_20.json"); cols.push_back(kBlue-10);     
+    files.push_back("qc_ladder_21.json"); cols.push_back(kCyan+3);     
+    files.push_back("qc_ladder_22.json"); cols.push_back(kCyan+1);     
+    files.push_back("qc_ladder_23.json"); cols.push_back(kGreen+1);     
+    files.push_back("qc_ladder_24.json"); cols.push_back(kGreen+3);     
+    files.push_back("qc_ladder_25.json"); cols.push_back(kGreen-6);     
   };                                     
   
   if (1 == layer) {
     files.push_back("qc_ladder_10.json"); cols.push_back(kRed+1);    
     files.push_back("qc_ladder_11.json"); cols.push_back(kRed+2);     
-    files.push_back("qc_ladder_12.json"); cols.push_back(kBlue+1);      
-    files.push_back("qc_ladder_13.json"); cols.push_back(kBlue+3);     
-    files.push_back("qc_ladder_14.json"); cols.push_back(kGreen+1);  
-    files.push_back("qc_ladder_15.json"); cols.push_back(kGreen+3);  
-    files.push_back("qc_ladder_16.json"); cols.push_back(kYellow+1);   
-    files.push_back("qc_ladder_17.json"); cols.push_back(kYellow+3);   
+    files.push_back("qc_ladder_12.json"); cols.push_back(kRed-4);      
+    files.push_back("qc_ladder_13.json"); cols.push_back(kMagenta+1);     
+    files.push_back("qc_ladder_14.json"); cols.push_back(kMagenta-6);  
+    files.push_back("qc_ladder_15.json"); cols.push_back(kYellow+4);  
+    files.push_back("qc_ladder_16.json"); cols.push_back(kYellow-2);   
+    files.push_back("qc_ladder_17.json"); cols.push_back(kYellow-8);   
+
+    files.push_back("qc_ladder_26.json"); cols.push_back(kBlue+1);    
+    files.push_back("qc_ladder_27.json"); cols.push_back(kBlue-7);     
+    files.push_back("qc_ladder_28.json"); cols.push_back(kBlue-10);      
+    files.push_back("qc_ladder_29.json"); cols.push_back(kCyan+3);     
+    files.push_back("qc_ladder_30.json"); cols.push_back(kCyan+1);  
+    files.push_back("qc_ladder_31.json"); cols.push_back(kCyan-8);  
+    files.push_back("qc_ladder_32.json"); cols.push_back(kGreen+1);   
+    files.push_back("qc_ladder_33.json"); cols.push_back(kGreen+3);   
+    files.push_back("qc_ladder_34.json"); cols.push_back(kGreen-6);   
+    files.push_back("qc_ladder_35.json"); cols.push_back(kGreen-8);   
+
+
   };
   vector<string> opts;
   vector<string> titles;
@@ -219,11 +267,12 @@ void ivTests(int layer = 1) {
     hists[i]->Draw("pl");
   }
 
-  TLegend *tll = newLegend(0.7, 0.2, 0.88, 0.5);
-  tll->SetTextSize(0.03);
+  TLegend *tll = newLegend(0.7, 0.45, 0.88, 0.75);
   if (0 == layer) {
+    tll->SetTextSize(0.025);
     tll->SetHeader("Layer 0");
   } else if (1 == layer) {
+    tll->SetTextSize(0.020);
     tll->SetHeader("Layer 1");
   }    
   for (unsigned int i = 0; i < files.size(); ++i) {
@@ -250,19 +299,20 @@ void ivTests(int layer = 1) {
 
 // ----------------------------------------------------------------------
 void mapIV() {
-  TH2D *hl0 = new TH2D("L0", "L0", 6, 0., 6.,  8, 0., 8.);
+  TH2D *hl0 = new TH2D("L0", "Layer 0", 6, 0., 6.,  8, 0., 8.);
   hl0->SetMaximum(30.);
   hl0->SetNdivisions(600, "X");
-  hl0->SetNdivisions(800, "Y");
+  hl0->SetNdivisions(0, "Y");
   hl0->GetZaxis()->SetTitle("V_{B}");
-  for (int i = 0; i < 8; ++i) {
-    hl0->SetBinLabel(i, Form("%d", i));
-  }
-  TH2D *hl1 = new TH2D("L1", "L1", 6, 0., 6., 10, 0., 10.);
-  hl1->SetNdivisions(600, "X");
-  hl1->SetNdivisions(1000, "Y");
-  hl1->SetMaximum(30.);
 
+ 
+  TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
+  hl1->SetNdivisions(600, "X");
+  hl1->SetNdivisions(0, "Y");
+  hl1->SetMaximum(30.);
+  hl1->GetZaxis()->SetTitle("V_{B}");
+
+  
   // -- fixed coloring
   Int_t    colors[] = {kRed, kRed-9, kBlue-6, kBlue-4, kGreen+1, kGreen+2};
   Double_t levels[] = {0.,   5.,     10.,     15.,     20.,      25.,       30.};
@@ -281,35 +331,95 @@ void mapIV() {
     int hldr = it->first; 
     int cmpl = it->second[0]; 
     cout << "HLDR " << hldr << " cmpl = " << cmpl << endl;
-    // -- FIXME!!!
-    if (hldr < 8) {
-      hl0->SetBinContent(1, hldr+1, cmpl);
-      hl0->SetBinContent(2, hldr+1, cmpl);
-      hl0->SetBinContent(3, hldr+1, cmpl);
+    if (0 == hldrLayer(hldr)) {
+      hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, cmpl);
+      hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, cmpl);
+      hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, cmpl);
     } else {
-      int bias(9);
-      hl1->SetBinContent(1, hldr+1-bias, cmpl);
-      hl1->SetBinContent(2, hldr+1-bias, cmpl);
-      hl1->SetBinContent(3, hldr+1-bias, cmpl);
+      hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, cmpl);
+      hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, cmpl);
+      hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, cmpl);
     }
   }
   
   c0.SetWindowSize(800, 400); 
+
+  // -- Layer 0
   zone(2,1);
+  gPad->SetLeftMargin(0.2);
   gPad->SetRightMargin(0.2);
   gPad->SetGridx(1);
   gPad->SetGridy(1);
   hl0->Draw("colz");
 
   gPad->Update();
+
   TPaletteAxis *palette = (TPaletteAxis*)hl0->GetListOfFunctions()->FindObject("palette");
   palette->SetX1NDC(0.88);
   palette->SetX2NDC(0.92);
+
+  // -- draw an axis on the right side
+  TGaxis *aR0 = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(),
+                          gPad->GetUxmax(), gPad->GetUymax(), 18, 26, 8, "+L");
+  aR0->CenterLabels();  aR0->SetTickLength(0.);
+  aR0->Draw();
+
+  // -- draw an axis on the left side
+  TGaxis *aL0 = new TGaxis(gPad->GetUxmin(), gPad->GetUymin(),
+                          gPad->GetUxmin(), gPad->GetUymax(), 0, 8, 8, "-R");
+  aL0->CenterLabels();  aL0->SetTickLength(0.);
+  aL0->Draw();
+
+  tl->SetTextSize(0.08);
+  tl->SetTextColor(kBlack);
+  tl->DrawLatexNDC(0.4, 0.92, "Layer 0");
+  
+  tl->SetTextColor(kGray);
+  tl->SetTextSize(0.002);
+  tl->DrawLatexNDC(0.2, 0.8978, "UL");
+
   gPad->Modified();
   gPad->Update();
 
+  // -- Layer 1
   c0.cd(2);
+  gPad->SetLeftMargin(0.2);
+  gPad->SetRightMargin(0.2);
   gPad->SetGridx(1);
   gPad->SetGridy(1);
   hl1->Draw("colz");
+  gPad->Update();
+
+  palette = (TPaletteAxis*)hl1->GetListOfFunctions()->FindObject("palette");
+  palette->SetX1NDC(0.88);
+  palette->SetX2NDC(0.92);
+
+  // -- draw an axis on the right side
+  TGaxis *aR1 = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(),
+                          gPad->GetUxmax(), gPad->GetUymax(), 26, 36, 10, "+L");
+  aR1->CenterLabels();  aR1->SetTickLength(0.);
+  aR1->Draw();
+
+  // -- draw an axis on the left side
+  TGaxis *aL1 = new TGaxis(gPad->GetUxmin(), gPad->GetUymin(),
+                          gPad->GetUxmin(), gPad->GetUymax(), 8, 18, 10, "-R");
+  aL1->CenterLabels();  aL1->SetTickLength(0.);
+  aL1->Draw();
+
+
+  tl->SetTextSize(0.08);
+  tl->SetTextColor(kBlack);
+  tl->DrawLatexNDC(0.4, 0.92, "Layer 1");
+
+  tl->SetTextColor(kGray);
+  tl->SetTextSize(0.002);
+  tl->DrawLatexNDC(0.2, 0.8978, "UL");
+
+  gPad->Modified();
+  gPad->Update();
+
+
+  c0.SaveAs("map-iv.pdf");
+  
+  
 }
