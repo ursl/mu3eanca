@@ -296,51 +296,9 @@ void ivTests(int layer = 1) {
 }
 
 
-
 // ----------------------------------------------------------------------
-void mapIV() {
-  TH2D *hl0 = new TH2D("L0", "Layer 0", 6, 0., 6.,  8, 0., 8.);
-  hl0->SetMaximum(30.);
-  hl0->SetNdivisions(600, "X");
-  hl0->SetNdivisions(0, "Y");
-  hl0->GetZaxis()->SetTitle("V_{B}");
-
- 
-  TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
-  hl1->SetNdivisions(600, "X");
-  hl1->SetNdivisions(0, "Y");
-  hl1->SetMaximum(30.);
-  hl1->GetZaxis()->SetTitle("V_{B}");
-
+void displayMap(TH2D *hl0, TH2D *hl1) {
   
-  // -- fixed coloring
-  Int_t    colors[] = {kRed, kRed-9, kBlue-6, kBlue-4, kGreen+1, kGreen+2};
-  Double_t levels[] = {0.,   5.,     10.,     15.,     20.,      25.,       30.};
-  gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
-  
-  hl0->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
-  hl1->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
-  
-  if (gLayout.size() < 2) {
-    ivTests(0); 
-    ivTests(1); 
-  }
-
-  map<int, vector<double> >::iterator it;
-  for (it = gLayout.begin(); it != gLayout.end(); ++it) {
-    int hldr = it->first; 
-    int cmpl = it->second[0]; 
-    cout << "HLDR " << hldr << " cmpl = " << cmpl << endl;
-    if (0 == hldrLayer(hldr)) {
-      hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, cmpl);
-      hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, cmpl);
-      hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, cmpl);
-    } else {
-      hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, cmpl);
-      hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, cmpl);
-      hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, cmpl);
-    }
-  }
   
   c0.SetWindowSize(800, 400); 
 
@@ -417,9 +375,54 @@ void mapIV() {
 
   gPad->Modified();
   gPad->Update();
+ 
+}
 
 
+// ----------------------------------------------------------------------
+void mapIV() {
+  if (gLayout.size() < 2) {
+    ivTests(0); 
+    ivTests(1); 
+  }
+
+  TH2D *hl0 = new TH2D("L0", "Layer 0", 6, 0., 6.,  8, 0., 8.);
+  hl0->SetMaximum(30.);
+  hl0->SetNdivisions(600, "X");
+  hl0->SetNdivisions(0, "Y");
+  hl0->GetZaxis()->SetTitle("V_{B}");
+  
+  
+  TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
+  hl1->SetNdivisions(600, "X");
+  hl1->SetNdivisions(0, "Y");
+  hl1->SetMaximum(30.);
+  hl1->GetZaxis()->SetTitle("V_{B}");
+  
+  // -- fixed coloring
+  Int_t    colors[] = {kRed, kRed-9, kBlue-6, kBlue-4, kGreen+1, kGreen+2};
+  Double_t levels[] = {0.,   5.,     10.,     15.,     20.,      25.,       30.};
+  gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+  
+  hl0->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+  hl1->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+
+  map<int, vector<double> >::iterator it;
+  for (it = gLayout.begin(); it != gLayout.end(); ++it) {
+    int hldr = it->first; 
+    int cmpl = it->second[0]; 
+    cout << "HLDR " << hldr << " cmpl = " << cmpl << endl;
+    if (0 == hldrLayer(hldr)) {
+      hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, cmpl);
+      hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, cmpl);
+      hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, cmpl);
+    } else {
+      hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, cmpl);
+      hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, cmpl);
+      hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, cmpl);
+    }
+  }
+  
+  displayMap(hl0, hl1);
   c0.SaveAs("map-iv.pdf");
-  
-  
 }
