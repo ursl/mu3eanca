@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <algorithm>
 
 #include "TGraphErrors.h"
 
@@ -160,7 +161,7 @@ vector<pair<double, double> > combine2Lines(string l1, string l2) {
   cout << "l1 ->" << l1 << "<-" << endl;
   cout << "l2 ->" << l2 << "<-" << endl;
   
-  // -- start reading until
+  // -- start reading until 
   double val1, val2;
   string comma;
   istringstream sl1(l1);
@@ -170,12 +171,17 @@ vector<pair<double, double> > combine2Lines(string l1, string l2) {
   cout << "val1(" << val1 << "), val2(" << val2 << ")" << endl;
   result.push_back(make_pair(val1, val2));
   
+  size_t nComma = std::count(l1.begin(), l1.end(), ',');
+  int iComma(0);
+  
   while (1) {
     sl1 >> val1 >> comma;
     sl2 >> val2 >> comma;
     if (val1 < 1) break;
+    if (iComma > nComma) break;
     result.push_back(make_pair(val1, val2));
     cout << result.size() << ": val1(" << val1 << "), val2(" << val2 << ")" << endl;
+    ++iComma;
   }
     
   return result;
@@ -261,6 +267,111 @@ TGraphErrors* makeGraph(vector<pair<double, double> > result, int mcolor, int ms
 
 
 // ----------------------------------------------------------------------
+vector<TGraphErrors *> linkqualiTest(string filename= "qc_ladder_0.json", int color = 1) {
+  cout << "reading json from file ->" << filename << "<-" << endl;
+  vector<string> vcostrings;
+  
+  vector<vector<pair<double, double> > > allResults;
+  
+  for (int ic = 0; ic < 3; ++ic) {
+    vcostrings.clear();
+    vcostrings.push_back("LINKQUALIcheck");
+    vcostrings.push_back("Output");
+    vcostrings.push_back(Form("%d", ic));
+    vcostrings.push_back("Scan");
+    vcostrings.push_back("VPVCO");
+    string voltage = readFromJson(filename, vcostrings); 
+    vcostrings.clear();
+    vcostrings.push_back("LINKQUALIcheck");
+    vcostrings.push_back("Output");
+    vcostrings.push_back(Form("%d", ic));
+    vcostrings.push_back("Scan");
+    vcostrings.push_back("error_rate");
+    string current = readFromJson(filename, vcostrings); 
+    
+    vector<pair<double, double> > result = combine2Lines(voltage, current); 
+    allResults.push_back(result);
+  }
+       
+  vector<TGraphErrors *> vg; 
+  for (unsigned int i = 0; i < allResults.size(); ++i) {
+    vg.push_back(makeGraph(allResults[i], color, 24+i, 1.));
+  }
+  return vg;
+}
+
+
+// ----------------------------------------------------------------------
+void linkqualiTests(int parno = 0, int layer = 1) {
+  vector<string> files, titles;
+  vector<int> cols, ladderNumbers;
+
+  files.clear();
+  cols.clear();
+  loadFiles(files, cols, titles, ladderNumbers, layer); 
+
+  TCanvas c1;
+  c1.SetLogy(1);
+  TH1D *h1 = new TH1D("h1", "", 10, 0., 100.);
+  h1->SetMaximum(1.e10);
+  h1->SetMinimum(1.e-3);
+  h1->GetXaxis()->SetTitle("VPVCO [DAC]");
+  h1->GetYaxis()->SetTitle("errorrate"); 
+  h1->GetYaxis()->SetTitleOffset(1.1);
+  gStyle->SetOptStat(0);
+  
+  h1->Draw();
+
+  int plotLdr(1);
+  for (unsigned int i = 0; i < files.size(); ++i) {
+    cout << "*** i = " << i << " " << files[i] << endl;
+    vector<TGraphErrors *> gr = linkqualiTest(files[i], kBlue);
+    int hldr = ladderNumbers[i];
+    vector<double>  vchips; 
+    vector<int> colors  = {kBlue-2, kGreen+2, kRed-3};
+    // -- fit pol1 to each of the three graphs
+    if ((0 == parno) && (plotLdr == hldr)) {
+      c1.cd();
+      c1.Clear();
+      h1->Draw();
+    }
+    for (unsigned int ig = 0; ig < gr.size(); ++ig) {
+      gr[ig]->SetLineWidth(1);
+      double minErr(1.e99), minVCO(0.), val(0.);
+      for (int ix = 0; ix < gr[ig]->GetN(); ++ix) {
+        if ((gr[ig]->GetPointY(ix) > 1.e-6) && gr[ig]->GetPointY(ix) < minErr) {
+          minVCO = gr[ig]->GetPointX(ix);
+          minErr = gr[ig]->GetPointY(ix);
+        }
+      }
+      if (0 == parno) {
+        val = minErr;
+      } else if (1 == parno) {
+        val = minVCO;
+      }
+      vchips.push_back(val);
+      cout << "ig = " << ig << " minErr = " << minErr << " minVCO = " << minVCO << " parno = " << parno << endl;
+
+      if ((0 == parno) && (plotLdr == hldr)) {
+        gr[ig]->SetMarkerColor(colors[ig]);
+        gr[ig]->SetLineColor(colors[ig]);
+        gr[ig]->SetLineStyle(kDashed);
+        gr[ig]->Draw("lp");
+      }
+    }
+    
+    if ((0 == parno) && (plotLdr == hldr)) {
+      c1.SaveAs(Form("linkquali-%d.pdf", hldr));
+    }
+    gLayout.insert(make_pair(hldr, vchips));
+      
+  }
+
+  return;
+}
+
+
+// ----------------------------------------------------------------------
 vector<TGraphErrors *> dacscanTest(string dacname = "VPDAC", string filename= "qc_ladder_0.json", int color = 1) {
   cout << "reading json from file ->" << filename << "<-" << endl;
   vector<string> ivstrings;
@@ -293,6 +404,8 @@ vector<TGraphErrors *> dacscanTest(string dacname = "VPDAC", string filename= "q
   }
   return vg;
 }
+
+
 
 
 // ----------------------------------------------------------------------
@@ -367,6 +480,7 @@ void dacscanTests(string dacname = "VPDAC", int parno = 0, int layer = 1) {
 
   return;
 }
+
 
 
 
@@ -504,13 +618,14 @@ void lvTests(int layer = 0) {
 }
 
 // ----------------------------------------------------------------------
-void displayMap(TH2D *hl0, TH2D *hl1) {
+void displayMap(TH2D *hl0, TH2D *hl1, int logz = 0) {
   c0.SetWindowSize(800, 400); 
 
   // -- Layer 0
   zone(2,1);
   gPad->SetLeftMargin(0.2);
   gPad->SetRightMargin(0.2);
+  gPad->SetLogz(logz);
   hl0->Draw("colz");
 
   gPad->Update();
@@ -548,6 +663,7 @@ void displayMap(TH2D *hl0, TH2D *hl1) {
   gPad->SetRightMargin(0.2);
   gPad->SetGridx(1);
   gPad->SetGridy(1);
+  gPad->SetLogz(logz);
   hl1->Draw("colz");
   gPad->Update();
 
@@ -837,6 +953,118 @@ void mapDacscan(string dacname = "VPDAC", int parno = 0) {
   drawChipGrid(10);
   
   c0.SaveAs(Form("map-%s-par%d.pdf", dacname.c_str(), parno));
+
+  gLayout.clear();
+}
+
+
+
+// ----------------------------------------------------------------------
+void mapLinkQuali(int parno = 0) {
+  if (gLayout.size() < 2) {
+    linkqualiTests(parno, 0); 
+    linkqualiTests(parno, 1); 
+  }
+  
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  
+  TH2D *hl0 = new TH2D("L0", "Layer 0", 6, 0., 6.,  8, 0., 8.);
+  hl0->SetNdivisions(600, "X");
+  hl0->SetNdivisions(0, "Y");
+  if (0 == parno) {
+    hl0->GetZaxis()->SetTitle("Error rate");
+  } else {
+    hl0->GetZaxis()->SetTitle("VCO(min. error rate)");
+  }
+  hl0->GetZaxis()->SetTitleOffset(1.1);
+  hl0->GetZaxis()->SetTitleSize(0.06);
+  
+  
+  TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
+  hl1->SetNdivisions(600, "X");
+  hl1->SetNdivisions(0, "Y");
+  if (0 == parno) {
+    hl1->GetZaxis()->SetTitle("Error rate");
+  } else {
+    hl1->GetZaxis()->SetTitle("VCO(min. error rate)");
+  }
+  hl1->GetZaxis()->SetTitleOffset(1.1);
+  hl1->GetZaxis()->SetTitleSize(0.06);
+  
+  // -- fixed coloring
+  double dmin(0.), dmax(1.);
+  Int_t    colors[] = {kGreen+2, kGreen+1, kBlue-4, kBlue-6, kRed, kRed-9};
+  Double_t levels[sizeof(colors)/sizeof(Int_t) + 1];
+  if (0 == parno) {
+    //      dmin = -1.e-4;
+    dmin = 1.e-1;
+    dmax = 1.e10;
+    levels[0] = 1.e-1; levels[1] = 1.e3; levels[2] = 1.e5; levels[3] = 1.e7; levels[4] = 1.e8; levels[5] = 1.e9; levels[6] = 1.e10;
+  } else {
+    dmin = 0.1;
+    //      dmin = -0.1;
+    dmax = 40.1;
+    levels[0] = 0.; levels[1] = 5.; levels[2] = 10.; levels[3] = 20.; levels[4] = 30.; levels[5] = 40.; levels[6] = 41.;
+  }
+  
+  hl0->SetMaximum(dmax);
+  hl0->SetMinimum(dmin);
+  hl1->SetMaximum(dmax);
+  hl1->SetMinimum(dmin);
+
+  gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+  
+  hl0->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+  hl1->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+
+  map<int, vector<double> >::iterator it;
+  for (it = gLayout.begin(); it != gLayout.end(); ++it) {
+    int hldr = it->first; 
+    double chip0 = it->second[0]; 
+    double chip1 = it->second[1]; 
+    double chip2 = it->second[2]; 
+    cout << "HLDR " << hldr
+         << " chip0 = " << chip0
+         << " chip1 = " << chip1
+         << " chip2 = " << chip2
+         << endl;
+    if (0 == hldrLayer(hldr)) {
+      if (0 == hldrBin(hldr).second) {
+        // -- US needs to be swapped because of firmware mismatch
+        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
+      } else {
+        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+      }
+    } else {
+      if (0 == hldrBin(hldr).second) {
+        // -- US needs to be swapped because of firmware mismatch
+        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
+      } else {
+        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+      }
+    }
+  }
+
+  if (0 == parno) {
+    displayMap(hl0, hl1, 1);
+  } else {
+    displayMap(hl0, hl1, 0);
+  }
+  c0.cd(1);
+  drawChipGrid(8);
+  c0.cd(2);
+  drawChipGrid(10);
+  
+  c0.SaveAs(Form("map-linkQuali-par%d.pdf", parno));
 
   gLayout.clear();
 }
