@@ -8,6 +8,32 @@ using namespace std;
 // -- <HLDR, quantity<chip 0, chip 1, chip2> > 
 map<int, vector<double> > gLayout; 
 
+
+// ----------------------------------------------------------------------
+void drawChipGrid(int imax) {
+  for (int i = 0; i <= imax; ++i) {
+    pl->DrawLine(0., i, 6., i);
+  }
+
+  for (int i = 0; i <= 6; ++i) {
+    pl->DrawLine(i, 0., i, imax);
+  }
+
+}
+
+// ----------------------------------------------------------------------
+void drawLadderGrid(int imax) {
+  for (int i = 0; i <= imax; ++i) {
+    pl->DrawLine(0., i, 6., i);
+  }
+
+  pl->DrawLine(0, 0., 0, imax);
+  pl->DrawLine(3, 0., 3, imax);
+  pl->DrawLine(6, 0., 6, imax);
+
+}
+
+
 // ----------------------------------------------------------------------
 // -- return <BIN, US=0|DS=1> pair, given HLDR number
 pair<int, int> hldrBin(int hldr) {
@@ -35,6 +61,68 @@ int hldrLayer(int hldr) {
   }
 
   return 1;
+}
+
+
+// ----------------------------------------------------------------------
+void loadFiles(vector<string> &files, vector<int> &cols,
+               vector<string> &titles, vector<int> &ladderNumbers,
+               int layer) {
+  if (0 == layer) {
+    files.push_back("qc_ladder_0.json"); cols.push_back(kRed+1);      
+    files.push_back("qc_ladder_1.json"); cols.push_back(kRed+2);      
+    files.push_back("qc_ladder_2.json"); cols.push_back(kRed-4);     
+    files.push_back("qc_ladder_3.json"); cols.push_back(kMagenta+1);     
+    files.push_back("qc_ladder_4.json"); cols.push_back(kMagenta-6);     
+    files.push_back("qc_ladder_6.json"); cols.push_back(kYellow+4);     
+    files.push_back("qc_ladder_7.json"); cols.push_back(kYellow-2);     
+    
+    files.push_back("qc_ladder_18.json"); cols.push_back(kBlue+1);      
+    files.push_back("qc_ladder_19.json"); cols.push_back(kBlue-7);      
+    files.push_back("qc_ladder_20.json"); cols.push_back(kBlue-10);     
+    files.push_back("qc_ladder_21.json"); cols.push_back(kCyan+3);     
+    files.push_back("qc_ladder_22.json"); cols.push_back(kCyan+1);     
+    files.push_back("qc_ladder_23.json"); cols.push_back(kGreen+1);     
+    files.push_back("qc_ladder_24.json"); cols.push_back(kGreen+3);     
+    files.push_back("qc_ladder_25.json"); cols.push_back(kGreen-6);     
+  };                                     
+  
+  if (1 == layer) {
+    files.push_back("qc_ladder_10.json"); cols.push_back(kRed+1);    
+    files.push_back("qc_ladder_11.json"); cols.push_back(kRed+2);     
+    files.push_back("qc_ladder_12.json"); cols.push_back(kRed-4);      
+    files.push_back("qc_ladder_13.json"); cols.push_back(kMagenta+1);     
+    files.push_back("qc_ladder_14.json"); cols.push_back(kMagenta-6);  
+    files.push_back("qc_ladder_15.json"); cols.push_back(kYellow+4);  
+    files.push_back("qc_ladder_16.json"); cols.push_back(kYellow-2);   
+    files.push_back("qc_ladder_17.json"); cols.push_back(kYellow-8);   
+
+    files.push_back("qc_ladder_26.json"); cols.push_back(kBlue+1);    
+    files.push_back("qc_ladder_27.json"); cols.push_back(kBlue-7);     
+    files.push_back("qc_ladder_28.json"); cols.push_back(kBlue-10);      
+    files.push_back("qc_ladder_29.json"); cols.push_back(kCyan+3);     
+    files.push_back("qc_ladder_30.json"); cols.push_back(kCyan+1);  
+    files.push_back("qc_ladder_31.json"); cols.push_back(kCyan-8);  
+    files.push_back("qc_ladder_32.json"); cols.push_back(kGreen+1);   
+    files.push_back("qc_ladder_33.json"); cols.push_back(kGreen+3);   
+    files.push_back("qc_ladder_34.json"); cols.push_back(kGreen-6);   
+    files.push_back("qc_ladder_35.json"); cols.push_back(kGreen-8);   
+  };
+
+  for (unsigned int i = 0; i < files.size(); ++i) {
+    string title = files[i];
+    replaceAll(title, ".json", "");
+    replaceAll(title, "qc_", "");
+    replaceAll(title, "_", " ");
+    titles.push_back(title);
+    
+    replaceAll(title, "ladder", "");
+    replaceAll(title, " ", "");
+    ladderNumbers.push_back(atoi(title.c_str()));
+    cout << "ladderNumber " << ladderNumbers[i] << endl;
+  }
+
+  
 }
 
 // ----------------------------------------------------------------------
@@ -89,11 +177,42 @@ vector<pair<double, double> > combine2Lines(string l1, string l2) {
     result.push_back(make_pair(val1, val2));
     cout << result.size() << ": val1(" << val1 << "), val2(" << val2 << ")" << endl;
   }
+    
+  return result;
   
+}
+
+// ----------------------------------------------------------------------
+vector<double> split1Line(string l1) {
+  vector<double> result;
+
+  l1 = l1.substr(l1.find("[") + 2);
+  l1 = l1.substr(0, l1.rfind("]") -1);
+
+  cout << "l1 ->" << l1 << "<-" << endl;
+  
+  // -- start reading until
+  double val1;
+  string comma;
+  istringstream sl1(l1);
+  sl1 >> val1 >> comma;
+  cout << "val1(" << val1 << ")" << endl;
+  result.push_back(val1);
+  
+  for (int i = 1; i < 3; ++i) {
+    sl1 >> val1 >> comma;
+    result.push_back(val1);
+    cout << result.size() << ": val1(" << val1 << ")" << endl;
+  }
+
+  if (result.size() > 3) {
+    result.erase(result.end() - 1);     
+  }
   
   return result;
   
 }
+
 
 // ----------------------------------------------------------------------
 TGraphErrors* makeGraph(vector<pair<double, double> > result, int mcolor, int mstyle, double msize) {
@@ -164,8 +283,12 @@ TGraphErrors* ivTest(string filename= "qc_ladder_0.json", int color = 1) {
 
 // ----------------------------------------------------------------------
 void ivTests(int layer = 1) {
-  vector<string> files;
-  vector<int> cols;
+  vector<string> files, titles;
+  vector<int> cols, ladderNumbers;
+
+  files.clear();
+  cols.clear();
+  loadFiles(files, cols, titles, ladderNumbers, layer); 
   
   TH1D *h1 = new TH1D("h1", "h1", 30, 0., 30.);
   h1->SetMaximum(0.5);
@@ -175,66 +298,6 @@ void ivTests(int layer = 1) {
   h1->GetYaxis()->SetTitleOffset(1.1);
   
   h1->Draw();
-
-  
-  if (0 == layer) {
-    files.push_back("qc_ladder_0.json"); cols.push_back(kRed+1);      
-    files.push_back("qc_ladder_1.json"); cols.push_back(kRed+2);      
-    files.push_back("qc_ladder_2.json"); cols.push_back(kRed-4);     
-    files.push_back("qc_ladder_3.json"); cols.push_back(kMagenta+1);     
-    files.push_back("qc_ladder_4.json"); cols.push_back(kMagenta-6);     
-    files.push_back("qc_ladder_6.json"); cols.push_back(kYellow+4);     
-    files.push_back("qc_ladder_7.json"); cols.push_back(kYellow-2);     
-    
-    files.push_back("qc_ladder_18.json"); cols.push_back(kBlue+1);      
-    files.push_back("qc_ladder_19.json"); cols.push_back(kBlue-7);      
-    files.push_back("qc_ladder_20.json"); cols.push_back(kBlue-10);     
-    files.push_back("qc_ladder_21.json"); cols.push_back(kCyan+3);     
-    files.push_back("qc_ladder_22.json"); cols.push_back(kCyan+1);     
-    files.push_back("qc_ladder_23.json"); cols.push_back(kGreen+1);     
-    files.push_back("qc_ladder_24.json"); cols.push_back(kGreen+3);     
-    files.push_back("qc_ladder_25.json"); cols.push_back(kGreen-6);     
-  };                                     
-  
-  if (1 == layer) {
-    files.push_back("qc_ladder_10.json"); cols.push_back(kRed+1);    
-    files.push_back("qc_ladder_11.json"); cols.push_back(kRed+2);     
-    files.push_back("qc_ladder_12.json"); cols.push_back(kRed-4);      
-    files.push_back("qc_ladder_13.json"); cols.push_back(kMagenta+1);     
-    files.push_back("qc_ladder_14.json"); cols.push_back(kMagenta-6);  
-    files.push_back("qc_ladder_15.json"); cols.push_back(kYellow+4);  
-    files.push_back("qc_ladder_16.json"); cols.push_back(kYellow-2);   
-    files.push_back("qc_ladder_17.json"); cols.push_back(kYellow-8);   
-
-    files.push_back("qc_ladder_26.json"); cols.push_back(kBlue+1);    
-    files.push_back("qc_ladder_27.json"); cols.push_back(kBlue-7);     
-    files.push_back("qc_ladder_28.json"); cols.push_back(kBlue-10);      
-    files.push_back("qc_ladder_29.json"); cols.push_back(kCyan+3);     
-    files.push_back("qc_ladder_30.json"); cols.push_back(kCyan+1);  
-    files.push_back("qc_ladder_31.json"); cols.push_back(kCyan-8);  
-    files.push_back("qc_ladder_32.json"); cols.push_back(kGreen+1);   
-    files.push_back("qc_ladder_33.json"); cols.push_back(kGreen+3);   
-    files.push_back("qc_ladder_34.json"); cols.push_back(kGreen-6);   
-    files.push_back("qc_ladder_35.json"); cols.push_back(kGreen-8);   
-
-
-  };
-  vector<string> opts;
-  vector<string> titles;
-  vector<int> ladderNumbers;
-  for (unsigned int i = 0; i < files.size(); ++i) {
-    opts.push_back("p");
-    string title = files[i];
-    replaceAll(title, ".json", "");
-    replaceAll(title, "qc_", "");
-    replaceAll(title, "_", " ");
-    titles.push_back(title);
-    
-    replaceAll(title, "ladder", "");
-    replaceAll(title, " ", "");
-    ladderNumbers.push_back(atoi(title.c_str()));
-    cout << "ladderNumber " << ladderNumbers[i] << endl;
-  }
   
   vector<TGraphErrors*> hists; 
   for (unsigned int i = 0; i < files.size(); ++i) {
@@ -296,25 +359,54 @@ void ivTests(int layer = 1) {
 }
 
 
+
+// ----------------------------------------------------------------------
+void lvTest(string filename= "qc_ladder_0.json", int hldr = 0) {
+  cout << "reading json from file ->" << filename << "<-" << endl;
+  vector<string> ivstrings;
+  ivstrings.push_back("LVPowerOn");
+  ivstrings.push_back("Output");
+  ivstrings.push_back("current_increase");
+  string currentIncrease = readFromJson(filename, ivstrings); 
+  
+  vector<double> result = split1Line(currentIncrease); 
+  for (unsigned int i = 0; i < result.size(); ++i) {
+    cout << "hldr = " << hldr << " i = " << i << " result = " << result[i] << endl;
+  }
+  gLayout.insert(make_pair(hldr, result));
+}
+
+
+// ----------------------------------------------------------------------
+void lvTests(int layer = 0) {
+  vector<string> files, titles;
+  vector<int> cols, ladderNumbers;
+  
+  files.clear();
+  cols.clear();
+  loadFiles(files, cols, titles, ladderNumbers, layer); 
+ 
+  for (unsigned int i = 0; i < files.size(); ++i) {
+    lvTest(files[i], ladderNumbers[i]);
+    cout << "gLayout.size() = " << gLayout.size() << endl;
+  }
+}
+
 // ----------------------------------------------------------------------
 void displayMap(TH2D *hl0, TH2D *hl1) {
-  
-  
   c0.SetWindowSize(800, 400); 
 
   // -- Layer 0
   zone(2,1);
   gPad->SetLeftMargin(0.2);
   gPad->SetRightMargin(0.2);
-  gPad->SetGridx(1);
-  gPad->SetGridy(1);
   hl0->Draw("colz");
 
   gPad->Update();
 
   TPaletteAxis *palette = (TPaletteAxis*)hl0->GetListOfFunctions()->FindObject("palette");
-  palette->SetX1NDC(0.88);
-  palette->SetX2NDC(0.92);
+  palette->SetX1NDC(0.85);
+  palette->SetX2NDC(0.87);
 
   // -- draw an axis on the right side
   TGaxis *aR0 = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(),
@@ -349,8 +441,8 @@ void displayMap(TH2D *hl0, TH2D *hl1) {
   gPad->Update();
 
   palette = (TPaletteAxis*)hl1->GetListOfFunctions()->FindObject("palette");
-  palette->SetX1NDC(0.88);
-  palette->SetX2NDC(0.92);
+  palette->SetX1NDC(0.85);
+  palette->SetX2NDC(0.87);
 
   // -- draw an axis on the right side
   TGaxis *aR1 = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(),
@@ -391,6 +483,8 @@ void mapIV() {
   hl0->SetNdivisions(600, "X");
   hl0->SetNdivisions(0, "Y");
   hl0->GetZaxis()->SetTitle("V_{B}");
+  hl0->GetZaxis()->SetTitleOffset(0.8);
+  hl0->GetZaxis()->SetTitleSize(0.06);
   
   
   TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
@@ -398,6 +492,8 @@ void mapIV() {
   hl1->SetNdivisions(0, "Y");
   hl1->SetMaximum(30.);
   hl1->GetZaxis()->SetTitle("V_{B}");
+  hl1->GetZaxis()->SetTitleOffset(0.8);
+  hl1->GetZaxis()->SetTitleSize(0.06);
   
   // -- fixed coloring
   Int_t    colors[] = {kRed, kRed-9, kBlue-6, kBlue-4, kGreen+1, kGreen+2};
@@ -424,5 +520,93 @@ void mapIV() {
   }
   
   displayMap(hl0, hl1);
+  c0.cd(1);
+  drawLadderGrid(8);
+  c0.cd(2);
+  drawLadderGrid(10);
+
   c0.SaveAs("map-iv.pdf");
+}
+
+
+// ----------------------------------------------------------------------
+void mapLV() {
+  if (gLayout.size() < 2) {
+    lvTests(0); 
+    lvTests(1); 
+  }
+
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  
+  TH2D *hl0 = new TH2D("L0", "Layer 0", 6, 0., 6.,  8, 0., 8.);
+  hl0->SetMaximum(0.5);
+  hl0->SetMinimum(-0.1);
+  hl0->SetNdivisions(600, "X");
+  hl0->SetNdivisions(0, "Y");
+  hl0->GetZaxis()->SetTitle("#Delta(I) [A]");
+  hl0->GetZaxis()->SetTitleOffset(0.8);
+  hl0->GetZaxis()->SetTitleSize(0.06);
+  
+  
+  TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
+  hl1->SetMaximum(0.5);
+  hl1->SetMinimum(-0.1);
+  hl1->SetNdivisions(600, "X");
+  hl1->SetNdivisions(0, "Y");
+  hl1->GetZaxis()->SetTitle("#Delta(I) [A]");
+  hl1->GetZaxis()->SetTitleOffset(0.8);
+  hl1->GetZaxis()->SetTitleSize(0.06);
+  
+  // -- fixed coloring
+  Int_t    colors[] = {kRed, kRed-9, kBlue-6, kBlue-4, kGreen+1, kGreen+2};
+  Double_t levels[] = {-0.1, 0.0,    0.1,     0.2,     0.3,      0.35,        0.5};
+  gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+  
+  hl0->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+  hl1->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+
+  map<int, vector<double> >::iterator it;
+  for (it = gLayout.begin(); it != gLayout.end(); ++it) {
+    int hldr = it->first; 
+    double chip0 = it->second[0]; 
+    double chip1 = it->second[1]; 
+    double chip2 = it->second[2]; 
+    cout << "HLDR " << hldr
+         << " chip0 = " << chip0
+         << " chip1 = " << chip1
+         << " chip2 = " << chip2
+         << endl;
+    if (0 == hldrLayer(hldr)) {
+      if (0 == hldrBin(hldr).second) {
+        // -- US needs to be swapped because of firmware mismatch
+        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
+      } else {
+        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+      }
+    } else {
+      if (0 == hldrBin(hldr).second) {
+        // -- US needs to be swapped because of firmware mismatch
+        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
+      } else {
+        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+      }
+    }
+  }
+
+  displayMap(hl0, hl1);
+  c0.cd(1);
+  drawChipGrid(8);
+  c0.cd(2);
+  drawChipGrid(10);
+  
+  c0.SaveAs("map-lv.pdf");
 }
