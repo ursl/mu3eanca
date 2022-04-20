@@ -296,7 +296,7 @@ vector<TGraphErrors *> dacscanTest(string dacname = "VPDAC", string filename= "q
 
 
 // ----------------------------------------------------------------------
-void dacscanTests(string dacname = "VPDAC", int layer = 1) {
+void dacscanTests(string dacname = "VPDAC", int parno = 0, int layer = 1) {
   vector<string> files, titles;
   vector<int> cols, ladderNumbers;
 
@@ -320,58 +320,30 @@ void dacscanTests(string dacname = "VPDAC", int layer = 1) {
   
   h1->Draw();
 
-  //  vector<TGraphErrors*> hists; 
   for (unsigned int i = 0; i < files.size(); ++i) {
     cout << "*** i = " << i << " " << files[i] << endl;
     vector<TGraphErrors *> gr = dacscanTest(dacname, files[i], cols[i]);
-    //    hists.push_back(gr);
+    int hldr = ladderNumbers[i];
+    vector<double>  vchips; 
     // -- fit pol1 to each of the three graphs
     for (unsigned int ig = 0; ig < gr.size(); ++ig) {
       gr[ig]->Fit("pol1");
-      double offset(0.), slope(0.);
+      double offset(0.), slope(0.), val(0.);
       TF1 *f = (TF1*)gr[ig]->GetFunction("pol1");
       offset = f->GetParameter(0);
       slope = f->GetParameter(1);
-      cout << "ig = " << ig << " offset = " << offset << " slope = " << slope << endl;
+      if (0 == parno) {
+        val = offset;
+      } else if (1 == parno) {
+        val = slope;
+      }
+      vchips.push_back(val);
+      cout << "ig = " << ig << " offset = " << offset << " slope = " << slope << " parno = " << parno << endl;
     }
-
+    gLayout.insert(make_pair(hldr, vchips));
   }
 
   return;
-  
-  // gStyle->SetOptStat(0); 
-  // gStyle->SetOptTitle(0); 
-  
-  // for (unsigned int i = 0; i < hists.size(); ++i) {
-  //   hists[i]->Draw("pl");
-  // }
-
-  // TLegend *tll = newLegend(0.7, 0.45, 0.88, 0.75);
-  // if (0 == layer) {
-  //   tll->SetTextSize(0.025);
-  //   tll->SetHeader("Layer 0");
-  // } else if (1 == layer) {
-  //   tll->SetTextSize(0.020);
-  //   tll->SetHeader("Layer 1");
-  // }    
-  // for (unsigned int i = 0; i < files.size(); ++i) {
-  //   TLegendEntry *tle = tll->AddEntry(hists[i], titles[i].c_str(), "p");
-  //   tle->SetTextColor(cols[i]);
-  // }
-  
-  // tll->Draw();
-
-  // tl->SetTextColor(kGray);
-  // tl->SetTextSize(0.001);
-  // tl->DrawLatexNDC(0.102, 0.102, "UL");
-  
-  // if (1 == layer) {
-  //   c0.SaveAs("iv-layer1.pdf");
-  // }
-  // if (0 == layer) {
-  //   c0.SaveAs("iv-layer0.pdf");
-  // }
-  
 }
 
 
@@ -727,3 +699,145 @@ void mapLV() {
   
   c0.SaveAs("map-lv.pdf");
 }
+
+
+// ----------------------------------------------------------------------
+void mapDacscan(string dacname = "VPDAC", int parno = 0) {
+  if (gLayout.size() < 2) {
+    dacscanTests(dacname, parno, 0); 
+    dacscanTests(dacname, parno, 1); 
+  }
+  
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  
+  TH2D *hl0 = new TH2D("L0", "Layer 0", 6, 0., 6.,  8, 0., 8.);
+  hl0->SetNdivisions(600, "X");
+  hl0->SetNdivisions(0, "Y");
+  if (0 == parno) {
+    hl0->GetZaxis()->SetTitle(Form("I(%s = 0) [A]", dacname.c_str()));
+  } else {
+    hl0->GetZaxis()->SetTitle(Form("d(I)/d(%s)", dacname.c_str()));
+  }
+  hl0->GetZaxis()->SetTitleOffset(1.1);
+  hl0->GetZaxis()->SetTitleSize(0.06);
+  
+  
+  TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
+  hl1->SetNdivisions(600, "X");
+  hl1->SetNdivisions(0, "Y");
+  if (0 == parno) {
+    hl1->GetZaxis()->SetTitle(Form("I(%s = 0) [A]", dacname.c_str()));
+  } else {
+    hl1->GetZaxis()->SetTitle(Form("d(I)/d(%s)", dacname.c_str()));
+  }
+  hl1->GetZaxis()->SetTitleOffset(1.1);
+  hl1->GetZaxis()->SetTitleSize(0.06);
+  
+  // -- fixed coloring
+  double dmin(0.), dmax(1.);
+  Int_t    colors[] = {kRed, kRed-9, kBlue-6, kBlue-4, kGreen+1, kGreen+2};
+  Double_t levels[sizeof(colors)/sizeof(Int_t) + 1];
+  if (string::npos != dacname.find("VPDAC")) {
+    if (0 == parno) {
+      //      dmin = -1.e-4;
+      dmin = -0.1;
+      dmax = 1.0;
+      levels[0] = -0.1; levels[1] = 0.1; levels[2] = 0.3; levels[3] = 0.5; levels[4] = 0.7; levels[5] = 0.9; levels[6] = 1.0;
+    } else {
+      dmin = -2.e-2;
+      //      dmin = -0.1;
+      dmax = 0.03;
+      levels[0] = 1.5*dmin; levels[1] = 0.0; levels[2] = 0.005; levels[3] = 0.010; levels[4] = 0.015; levels[5] = 0.020; levels[6] = 0.025;
+    }
+  } else if (string::npos != dacname.find("ref_Vss")) {
+    if (0 == parno) {
+      dmin = -0.1;
+      dmax = 1.0;
+      levels[0] = -0.1; levels[1] = 0.1; levels[2] = 0.2; levels[3] = 0.3; levels[4] = 0.4; levels[5] = 0.5; levels[6] = 1.0;
+    } else {
+      dmin = -2.e-4;
+      dmax = 0.0012;
+      levels[0] = 1.5*dmin; levels[1] = 0.0; levels[2] = 0.0002; levels[3] = 0.0004; levels[4] = 0.0006; levels[5] = 0.0008; levels[6] = 0.0010;
+    }
+  }
+
+  hl0->SetMaximum(dmax);
+  hl0->SetMinimum(dmin);
+  hl1->SetMaximum(dmax);
+  hl1->SetMinimum(dmin);
+
+  gStyle->SetPalette((sizeof(colors)/sizeof(Int_t)), colors);
+  
+  hl0->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+  hl1->SetContour((sizeof(levels)/sizeof(Double_t)), levels);
+
+  map<int, vector<double> >::iterator it;
+  for (it = gLayout.begin(); it != gLayout.end(); ++it) {
+    int hldr = it->first; 
+    double chip0 = it->second[0]; 
+    double chip1 = it->second[1]; 
+    double chip2 = it->second[2]; 
+    cout << "HLDR " << hldr
+         << " chip0 = " << chip0
+         << " chip1 = " << chip1
+         << " chip2 = " << chip2
+         << endl;
+    if (0 == hldrLayer(hldr)) {
+      if (0 == hldrBin(hldr).second) {
+        // -- US needs to be swapped because of firmware mismatch
+        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
+      } else {
+        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+      }
+    } else {
+      if (0 == hldrBin(hldr).second) {
+        // -- US needs to be swapped because of firmware mismatch
+        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
+      } else {
+        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+      }
+    }
+  }
+
+  displayMap(hl0, hl1);
+  c0.cd(1);
+  drawChipGrid(8);
+  c0.cd(2);
+  drawChipGrid(10);
+  
+  c0.SaveAs(Form("map-%s-par%d.pdf", dacname.c_str(), parno));
+
+  gLayout.clear();
+}
+
+
+// ----------------------------------------------------------------------
+void ladderTests() {
+  gLayout.clear();
+  mapIV();
+  
+  gLayout.clear();
+  mapLV();
+
+  gLayout.clear();
+  mapDacscan("ref_Vss", 0);
+  gLayout.clear();
+  mapDacscan("ref_Vss", 1);
+
+  gLayout.clear();
+  mapDacscan("VPDAC", 0);
+  gLayout.clear();
+  mapDacscan("VPDAC", 1);
+
+}
+
+
