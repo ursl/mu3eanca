@@ -289,7 +289,7 @@ vector<TGraphErrors *> dacscanTest(string dacname = "VPDAC", string filename= "q
        
   vector<TGraphErrors *> vg; 
   for (unsigned int i = 0; i < allResults.size(); ++i) {
-    vg.push_back(makeGraph(allResults[i], color, 20+i, 1.));
+    vg.push_back(makeGraph(allResults[i], color, 24+i, 1.));
   }
   return vg;
 }
@@ -303,7 +303,8 @@ void dacscanTests(string dacname = "VPDAC", int parno = 0, int layer = 1) {
   files.clear();
   cols.clear();
   loadFiles(files, cols, titles, ladderNumbers, layer); 
-  
+
+  TCanvas c1;
   TH1D *h1(0);
   if (string::npos != dacname.find("VPDAC")) {
     h1 = new TH1D("h1", "h1", 10, 0., 10.);
@@ -320,14 +321,22 @@ void dacscanTests(string dacname = "VPDAC", int parno = 0, int layer = 1) {
   
   h1->Draw();
 
+  int plotLdr(1);
   for (unsigned int i = 0; i < files.size(); ++i) {
     cout << "*** i = " << i << " " << files[i] << endl;
-    vector<TGraphErrors *> gr = dacscanTest(dacname, files[i], cols[i]);
+    vector<TGraphErrors *> gr = dacscanTest(dacname, files[i], kBlue);
     int hldr = ladderNumbers[i];
     vector<double>  vchips; 
+    vector<int> colors  = {kBlue-2, kGreen+2, kRed-3};
     // -- fit pol1 to each of the three graphs
+    if ((0 == parno) && (plotLdr == hldr)) {
+      c1.cd();
+      c1.Clear();
+      h1->Draw();
+    }
     for (unsigned int ig = 0; ig < gr.size(); ++ig) {
-      gr[ig]->Fit("pol1");
+      gr[ig]->SetLineWidth(1);
+      gr[ig]->Fit("pol1", "w");
       double offset(0.), slope(0.), val(0.);
       TF1 *f = (TF1*)gr[ig]->GetFunction("pol1");
       offset = f->GetParameter(0);
@@ -339,8 +348,21 @@ void dacscanTests(string dacname = "VPDAC", int parno = 0, int layer = 1) {
       }
       vchips.push_back(val);
       cout << "ig = " << ig << " offset = " << offset << " slope = " << slope << " parno = " << parno << endl;
+
+      if ((0 == parno) && (plotLdr == hldr)) {
+        gr[ig]->SetMarkerColor(colors[ig]);
+        gr[ig]->SetLineColor(colors[ig]);
+        gr[ig]->SetLineStyle(kDashed);
+        f->SetLineColor(colors[ig]);
+        gr[ig]->Draw("lp");
+      }
+    }
+    
+    if ((0 == parno) && (plotLdr == hldr)) {
+      c1.SaveAs(Form("dacscan-%s-%d.pdf", dacname.c_str(), hldr));
     }
     gLayout.insert(make_pair(hldr, vchips));
+      
   }
 
   return;
@@ -838,6 +860,10 @@ void ladderTests() {
   gLayout.clear();
   mapDacscan("VPDAC", 1);
 
+  // -- FIXME: add
+  // linkquali
+  // 
+  
 }
 
 
