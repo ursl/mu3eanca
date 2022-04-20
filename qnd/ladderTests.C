@@ -135,9 +135,9 @@ string readFromJson(string filename, vector<string> what) {
     found.push_back(false);
   }
   while (getline(INS, sline)) {
-    //    cout << sline << endl;
     string search = string("\"") + what[cnt] + string("\"");
     if (string::npos != sline.find(search)) {
+      // cout << "found ->" << search << "<- in " << sline << endl;
       ++cnt;
     }
     if (cnt == what.size()) {
@@ -247,6 +247,7 @@ TGraphErrors* makeGraph(vector<pair<double, double> > result, int mcolor, int ms
 
     vxe[i] = 0.;
     vye[i] = 0.;
+    cout << "i = " << i << " x = " << vx[i] << " y = " << vy[i] << endl;
   }
   
   TGraphErrors *gr = new TGraphErrors(nsize, vx, vy, vxe, vye); 
@@ -257,6 +258,122 @@ TGraphErrors* makeGraph(vector<pair<double, double> > result, int mcolor, int ms
   gr->SetLineWidth(3);
   return gr; 
 }
+
+
+// ----------------------------------------------------------------------
+vector<TGraphErrors *> dacscanTest(string dacname = "VPDAC", string filename= "qc_ladder_0.json", int color = 1) {
+  cout << "reading json from file ->" << filename << "<-" << endl;
+  vector<string> ivstrings;
+  
+  vector<vector<pair<double, double> > > allResults;
+  
+  for (int ic = 0; ic < 3; ++ic) {
+    ivstrings.clear();
+    ivstrings.push_back("DACScan");
+    ivstrings.push_back("Output");
+    ivstrings.push_back(dacname);
+    ivstrings.push_back(Form("%d", ic));
+    ivstrings.push_back(dacname + "_values");
+    string voltage = readFromJson(filename, ivstrings); 
+    ivstrings.clear();
+    ivstrings.push_back("DACScan");
+    ivstrings.push_back("Output");
+    ivstrings.push_back(dacname);
+    ivstrings.push_back(Form("%d", ic));
+    ivstrings.push_back(dacname + "_current");
+    string current = readFromJson(filename, ivstrings); 
+    
+    vector<pair<double, double> > result = combine2Lines(voltage, current); 
+    allResults.push_back(result);
+  }
+       
+  vector<TGraphErrors *> vg; 
+  for (unsigned int i = 0; i < allResults.size(); ++i) {
+    vg.push_back(makeGraph(allResults[i], color, 20+i, 1.));
+  }
+  return vg;
+}
+
+
+// ----------------------------------------------------------------------
+void dacscanTests(string dacname = "VPDAC", int layer = 1) {
+  vector<string> files, titles;
+  vector<int> cols, ladderNumbers;
+
+  files.clear();
+  cols.clear();
+  loadFiles(files, cols, titles, ladderNumbers, layer); 
+  
+  TH1D *h1(0);
+  if (string::npos != dacname.find("VPDAC")) {
+    h1 = new TH1D("h1", "h1", 10, 0., 10.);
+  } else if (string::npos != dacname.find("ref_Vss")) {
+    h1 = new TH1D("h1", "h1", 10, 0., 300.);
+  } else {
+    h1 = new TH1D("h1", "h1", 10, 0., 100.);
+  }
+  h1->SetMaximum(2.);
+  h1->SetMinimum(0.);
+  h1->GetXaxis()->SetTitle(Form("%s [DAC]", dacname.c_str()));
+  h1->GetYaxis()->SetTitle("Current [A]");
+  h1->GetYaxis()->SetTitleOffset(1.1);
+  
+  h1->Draw();
+
+  //  vector<TGraphErrors*> hists; 
+  for (unsigned int i = 0; i < files.size(); ++i) {
+    cout << "*** i = " << i << " " << files[i] << endl;
+    vector<TGraphErrors *> gr = dacscanTest(dacname, files[i], cols[i]);
+    //    hists.push_back(gr);
+    // -- fit pol1 to each of the three graphs
+    for (unsigned int ig = 0; ig < gr.size(); ++ig) {
+      gr[ig]->Fit("pol1");
+      double offset(0.), slope(0.);
+      TF1 *f = (TF1*)gr[ig]->GetFunction("pol1");
+      offset = f->GetParameter(0);
+      slope = f->GetParameter(1);
+      cout << "ig = " << ig << " offset = " << offset << " slope = " << slope << endl;
+    }
+
+  }
+
+  return;
+  
+  // gStyle->SetOptStat(0); 
+  // gStyle->SetOptTitle(0); 
+  
+  // for (unsigned int i = 0; i < hists.size(); ++i) {
+  //   hists[i]->Draw("pl");
+  // }
+
+  // TLegend *tll = newLegend(0.7, 0.45, 0.88, 0.75);
+  // if (0 == layer) {
+  //   tll->SetTextSize(0.025);
+  //   tll->SetHeader("Layer 0");
+  // } else if (1 == layer) {
+  //   tll->SetTextSize(0.020);
+  //   tll->SetHeader("Layer 1");
+  // }    
+  // for (unsigned int i = 0; i < files.size(); ++i) {
+  //   TLegendEntry *tle = tll->AddEntry(hists[i], titles[i].c_str(), "p");
+  //   tle->SetTextColor(cols[i]);
+  // }
+  
+  // tll->Draw();
+
+  // tl->SetTextColor(kGray);
+  // tl->SetTextSize(0.001);
+  // tl->DrawLatexNDC(0.102, 0.102, "UL");
+  
+  // if (1 == layer) {
+  //   c0.SaveAs("iv-layer1.pdf");
+  // }
+  // if (0 == layer) {
+  //   c0.SaveAs("iv-layer0.pdf");
+  // }
+  
+}
+
 
 
 // ----------------------------------------------------------------------
