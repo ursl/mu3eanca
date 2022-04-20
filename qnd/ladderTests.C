@@ -973,7 +973,7 @@ void mapLinkQuali(int parno = 0) {
   hl0->SetNdivisions(600, "X");
   hl0->SetNdivisions(0, "Y");
   if (0 == parno) {
-    hl0->GetZaxis()->SetTitle("Error rate");
+    hl0->GetZaxis()->SetTitle("Min. error rate");
   } else {
     hl0->GetZaxis()->SetTitle("VCO(min. error rate)");
   }
@@ -985,7 +985,7 @@ void mapLinkQuali(int parno = 0) {
   hl1->SetNdivisions(600, "X");
   hl1->SetNdivisions(0, "Y");
   if (0 == parno) {
-    hl1->GetZaxis()->SetTitle("Error rate");
+    hl1->GetZaxis()->SetTitle("Min. error rate");
   } else {
     hl1->GetZaxis()->SetTitle("VCO(min. error rate)");
   }
@@ -1088,10 +1088,11 @@ void ladderTests() {
   gLayout.clear();
   mapDacscan("VPDAC", 1);
 
-  // -- FIXME: add
-  // linkquali
-  // 
-  
+  gLayout.clear();
+  mapLinkQuali(0);
+  gLayout.clear();
+  mapLinkQuali(1);
+
 }
 
 
