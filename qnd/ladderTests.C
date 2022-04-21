@@ -10,6 +10,48 @@ using namespace std;
 map<int, vector<double> > gLayout; 
 
 
+void drawChipNumbering() {
+
+  TH2D *h1 = new TH2D("h2", "", 6, 0., 6., 1, 0., 1.);
+  h1->SetNdivisions(0, "X");
+  h1->SetNdivisions(0, "Y");
+
+  c0.SetWindowSize(800, 100); 
+
+
+  gStyle->SetOptStat(0);
+
+  
+  h1->Draw("");
+
+
+  pl->SetLineWidth(3);
+  for (int i = 0; i <= 6; ++i) {
+    pl->DrawLine(i, 0., i, 1.);
+  }
+  pl->DrawLine(0., 0., 6., 0.);
+  pl->DrawLine(0., 1., 6., 1.);
+  
+
+  tl->SetTextSize(0.6);
+  tl->SetTextColor(kBlack);
+  tl->SetNDC(kFALSE);
+
+  double ypos(0.3);
+  tl->DrawLatex(0.4, ypos, "2");
+  tl->DrawLatex(1.4, ypos, "1");
+  tl->DrawLatex(2.4, ypos, "0");
+
+  tl->DrawLatex(3.4, ypos, "2");
+  tl->DrawLatex(4.4, ypos, "1");
+  tl->DrawLatex(5.4, ypos, "0");
+
+  tl->SetNDC(kTRUE);
+
+  c0.SaveAs("laddertests-chipnumbering.pdf");
+  
+}
+
 // ----------------------------------------------------------------------
 void drawChipGrid(int imax) {
   for (int i = 0; i <= imax; ++i) {
@@ -852,9 +894,10 @@ void mapLV() {
         hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
         hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       } else {
-        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        // -- apparently DS numbering is 2 1 0 (along increasing z)
+        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
         hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
-        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       }
     } else {
       if (0 == hldrBin(hldr).second) {
@@ -863,9 +906,10 @@ void mapLV() {
         hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
         hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       } else {
-        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        // -- apparently DS numbering is 2 1 0 (along increasing z)
+        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
         hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
-        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       }
     }
   }
@@ -981,9 +1025,10 @@ void mapDacscan(string dacname = "VPDAC", int parno = 0) {
         hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
         hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       } else {
-        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        // -- apparently DS numbering is 2 1 0 (along increasing z)
+        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
         hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
-        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       }
     } else {
       if (0 == hldrBin(hldr).second) {
@@ -992,9 +1037,10 @@ void mapDacscan(string dacname = "VPDAC", int parno = 0) {
         hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
         hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       } else {
-        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        // -- apparently DS numbering is 2 1 0 (along increasing z)
+        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
         hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
-        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       }
     }
   }
@@ -1109,9 +1155,10 @@ void mapLinkQuali(int parno = 0) {
         hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
         hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       } else {
-        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        // -- apparently DS numbering is 2 1 0 (along increasing z)
+        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
         hl0->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
-        hl0->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+        hl0->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       }
     } else {
       if (0 == hldrBin(hldr).second) {
@@ -1120,9 +1167,10 @@ void mapLinkQuali(int parno = 0) {
         hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
         hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       } else {
-        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip0);
+        // -- apparently DS numbering is 2 1 0 (along increasing z)
+        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip0);
         hl1->SetBinContent(3*hldrBin(hldr).second + 2, hldrBin(hldr).first, chip1);
-        hl1->SetBinContent(3*hldrBin(hldr).second + 3, hldrBin(hldr).first, chip2);
+        hl1->SetBinContent(3*hldrBin(hldr).second + 1, hldrBin(hldr).first, chip2);
       }
     }
   }
