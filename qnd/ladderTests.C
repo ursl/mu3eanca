@@ -128,6 +128,7 @@ void loadFiles(vector<string> &files, vector<int> &cols,
 
 // ----------------------------------------------------------------------
 string readFromJson(string filename, vector<string> what) {
+  cout << "***** " << filename << endl;
   ifstream INS(filename);
   string sline;
   vector<bool> found;
@@ -177,8 +178,7 @@ vector<pair<double, double> > combine2Lines(string l1, string l2) {
   while (1) {
     sl1 >> val1 >> comma;
     sl2 >> val2 >> comma;
-    if (val1 < 1) break;
-    if (iComma > nComma) break;
+    if (iComma > nComma+1) break;
     result.push_back(make_pair(val1, val2));
     cout << result.size() << ": val1(" << val1 << "), val2(" << val2 << ")" << endl;
     ++iComma;
@@ -316,13 +316,12 @@ void linkqualiTests(int parno = 0, int layer = 1) {
   h1->SetMaximum(1.e10);
   h1->SetMinimum(1.e-3);
   h1->GetXaxis()->SetTitle("VPVCO [DAC]");
-  h1->GetYaxis()->SetTitle("errorrate"); 
+  h1->GetYaxis()->SetTitle("error rate"); 
   h1->GetYaxis()->SetTitleOffset(1.1);
   gStyle->SetOptStat(0);
   
   h1->Draw();
 
-  int plotLdr(1);
   for (unsigned int i = 0; i < files.size(); ++i) {
     cout << "*** i = " << i << " " << files[i] << endl;
     vector<TGraphErrors *> gr = linkqualiTest(files[i], kBlue);
@@ -330,7 +329,7 @@ void linkqualiTests(int parno = 0, int layer = 1) {
     vector<double>  vchips; 
     vector<int> colors  = {kBlue-2, kGreen+2, kRed-3};
     // -- fit pol1 to each of the three graphs
-    if ((0 == parno) && (plotLdr == hldr)) {
+    if (0 == parno) {
       c1.cd();
       c1.Clear();
       h1->Draw();
@@ -339,20 +338,24 @@ void linkqualiTests(int parno = 0, int layer = 1) {
       gr[ig]->SetLineWidth(1);
       double minErr(1.e99), minVCO(0.), val(0.);
       for (int ix = 0; ix < gr[ig]->GetN(); ++ix) {
-        if ((gr[ig]->GetPointY(ix) > 1.e-6) && gr[ig]->GetPointY(ix) < minErr) {
+        if ((gr[ig]->GetPointY(ix) > 0.) && gr[ig]->GetPointY(ix) < minErr) {
           minVCO = gr[ig]->GetPointX(ix);
           minErr = gr[ig]->GetPointY(ix);
         }
       }
       if (0 == parno) {
-        val = minErr;
+        if (minErr > 1.e98) {
+          val = 1.e-6;
+        } else {
+          val = minErr;
+        }            
       } else if (1 == parno) {
         val = minVCO;
       }
       vchips.push_back(val);
       cout << "ig = " << ig << " minErr = " << minErr << " minVCO = " << minVCO << " parno = " << parno << endl;
 
-      if ((0 == parno) && (plotLdr == hldr)) {
+      if (0 == parno) {
         gr[ig]->SetMarkerColor(colors[ig]);
         gr[ig]->SetLineColor(colors[ig]);
         gr[ig]->SetLineStyle(kDashed);
@@ -360,7 +363,7 @@ void linkqualiTests(int parno = 0, int layer = 1) {
       }
     }
     
-    if ((0 == parno) && (plotLdr == hldr)) {
+    if (0 == parno) {
       c1.SaveAs(Form("linkquali-%d.pdf", hldr));
     }
     gLayout.insert(make_pair(hldr, vchips));
@@ -395,6 +398,14 @@ vector<TGraphErrors *> dacscanTest(string dacname = "VPDAC", string filename= "q
     string current = readFromJson(filename, ivstrings); 
     
     vector<pair<double, double> > result = combine2Lines(voltage, current); 
+
+    // -- remove trailing 0
+    vector<pair<double, double> >::iterator it;
+    for (it = result.begin() + 1; it != result.end(); ++it) {
+      if (0 == it->first) break;
+    }
+    result.erase(it, result.end());
+    
     allResults.push_back(result);
   }
        
@@ -434,7 +445,6 @@ void dacscanTests(string dacname = "VPDAC", int parno = 0, int layer = 1) {
   
   h1->Draw();
 
-  int plotLdr(1);
   for (unsigned int i = 0; i < files.size(); ++i) {
     cout << "*** i = " << i << " " << files[i] << endl;
     vector<TGraphErrors *> gr = dacscanTest(dacname, files[i], kBlue);
@@ -442,36 +452,42 @@ void dacscanTests(string dacname = "VPDAC", int parno = 0, int layer = 1) {
     vector<double>  vchips; 
     vector<int> colors  = {kBlue-2, kGreen+2, kRed-3};
     // -- fit pol1 to each of the three graphs
-    if ((0 == parno) && (plotLdr == hldr)) {
+    if (0 == parno) {
       c1.cd();
       c1.Clear();
       h1->Draw();
     }
     for (unsigned int ig = 0; ig < gr.size(); ++ig) {
       gr[ig]->SetLineWidth(1);
-      gr[ig]->Fit("pol1", "w");
+      int fitstatus = gr[ig]->Fit("pol1", "w");
       double offset(0.), slope(0.), val(0.);
-      TF1 *f = (TF1*)gr[ig]->GetFunction("pol1");
-      offset = f->GetParameter(0);
-      slope = f->GetParameter(1);
-      if (0 == parno) {
-        val = offset;
-      } else if (1 == parno) {
-        val = slope;
+      if (0 == fitstatus) {
+        TF1 *f = (TF1*)gr[ig]->GetFunction("pol1");
+        f->SetLineColor(colors[ig]);
+        offset = f->GetParameter(0);
+        slope = f->GetParameter(1);
+        if (0 == parno) {
+          val = offset;
+        } else if (1 == parno) {
+          val = slope;
+        }
+      } else {
+        val = -99.;
       }
       vchips.push_back(val);
-      cout << "ig = " << ig << " offset = " << offset << " slope = " << slope << " parno = " << parno << endl;
+      cout << "ig = " << ig << " offset = " << offset << " slope = " << slope << " parno = " << parno
+           << " fit status = " << fitstatus
+           << endl;
 
-      if ((0 == parno) && (plotLdr == hldr)) {
+      if (0 == parno) {
         gr[ig]->SetMarkerColor(colors[ig]);
         gr[ig]->SetLineColor(colors[ig]);
         gr[ig]->SetLineStyle(kDashed);
-        f->SetLineColor(colors[ig]);
         gr[ig]->Draw("lp");
       }
     }
     
-    if ((0 == parno) && (plotLdr == hldr)) {
+    if (0 == parno) {
       c1.SaveAs(Form("dacscan-%s-%d.pdf", dacname.c_str(), hldr));
     }
     gLayout.insert(make_pair(hldr, vchips));
@@ -707,20 +723,33 @@ void mapIV() {
 
   TH2D *hl0 = new TH2D("L0", "Layer 0", 6, 0., 6.,  8, 0., 8.);
   hl0->SetMaximum(30.);
+  hl0->SetMinimum(-0.1);
   hl0->SetNdivisions(600, "X");
   hl0->SetNdivisions(0, "Y");
   hl0->GetZaxis()->SetTitle("V_{B}");
   hl0->GetZaxis()->SetTitleOffset(0.8);
   hl0->GetZaxis()->SetTitleSize(0.06);
-  
+  // -- initialize histogram to indicate untested hldr
+  for (int ix = 0; ix < hl0->GetNbinsX(); ++ix) {
+    for (int iy = 0; iy < hl0->GetNbinsY(); ++iy) {
+      hl0->SetBinContent(ix+1, iy+1, -99.);
+    }
+  }
   
   TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
   hl1->SetNdivisions(600, "X");
   hl1->SetNdivisions(0, "Y");
   hl1->SetMaximum(30.);
+  hl1->SetMinimum(-0.1);
   hl1->GetZaxis()->SetTitle("V_{B}");
   hl1->GetZaxis()->SetTitleOffset(0.8);
   hl1->GetZaxis()->SetTitleSize(0.06);
+  // -- initialize histogram to indicate untested hldr
+  for (int ix = 0; ix < hl1->GetNbinsX(); ++ix) {
+    for (int iy = 0; iy < hl1->GetNbinsY(); ++iy) {
+      hl1->SetBinContent(ix+1, iy+1, -99.);
+    }
+  }
   
   // -- fixed coloring
   Int_t    colors[] = {kRed, kRed-9, kBlue-6, kBlue-4, kGreen+1, kGreen+2};
@@ -774,6 +803,12 @@ void mapLV() {
   hl0->GetZaxis()->SetTitle("#Delta(I) [A]");
   hl0->GetZaxis()->SetTitleOffset(0.8);
   hl0->GetZaxis()->SetTitleSize(0.06);
+  // -- initialize histogram to indicate untested hldr
+  for (int ix = 0; ix < hl0->GetNbinsX(); ++ix) {
+    for (int iy = 0; iy < hl0->GetNbinsY(); ++iy) {
+      hl0->SetBinContent(ix+1, iy+1, -99.);
+    }
+  }
   
   
   TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
@@ -784,6 +819,12 @@ void mapLV() {
   hl1->GetZaxis()->SetTitle("#Delta(I) [A]");
   hl1->GetZaxis()->SetTitleOffset(0.8);
   hl1->GetZaxis()->SetTitleSize(0.06);
+  // -- initialize histogram to indicate untested hldr
+  for (int ix = 0; ix < hl1->GetNbinsX(); ++ix) {
+    for (int iy = 0; iy < hl1->GetNbinsY(); ++iy) {
+      hl1->SetBinContent(ix+1, iy+1, -99.);
+    }
+  }
   
   // -- fixed coloring
   Int_t    colors[] = {kRed, kRed-9, kBlue-6, kBlue-4, kGreen+1, kGreen+2};
@@ -852,6 +893,12 @@ void mapDacscan(string dacname = "VPDAC", int parno = 0) {
   TH2D *hl0 = new TH2D("L0", "Layer 0", 6, 0., 6.,  8, 0., 8.);
   hl0->SetNdivisions(600, "X");
   hl0->SetNdivisions(0, "Y");
+  // -- initialize histogram to indicate untested hldr
+  for (int ix = 0; ix < hl0->GetNbinsX(); ++ix) {
+    for (int iy = 0; iy < hl0->GetNbinsY(); ++iy) {
+      hl0->SetBinContent(ix+1, iy+1, -99.);
+    }
+  }
   if (0 == parno) {
     hl0->GetZaxis()->SetTitle(Form("I(%s = 0) [A]", dacname.c_str()));
   } else {
@@ -864,6 +911,12 @@ void mapDacscan(string dacname = "VPDAC", int parno = 0) {
   TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
   hl1->SetNdivisions(600, "X");
   hl1->SetNdivisions(0, "Y");
+  // -- initialize histogram to indicate untested hldr
+  for (int ix = 0; ix < hl1->GetNbinsX(); ++ix) {
+    for (int iy = 0; iy < hl1->GetNbinsY(); ++iy) {
+      hl1->SetBinContent(ix+1, iy+1, -99.);
+    }
+  }
   if (0 == parno) {
     hl1->GetZaxis()->SetTitle(Form("I(%s = 0) [A]", dacname.c_str()));
   } else {
@@ -972,6 +1025,16 @@ void mapLinkQuali(int parno = 0) {
   TH2D *hl0 = new TH2D("L0", "Layer 0", 6, 0., 6.,  8, 0., 8.);
   hl0->SetNdivisions(600, "X");
   hl0->SetNdivisions(0, "Y");
+  // -- initialize histogram to indicate untested hldr
+  for (int ix = 0; ix < hl0->GetNbinsX(); ++ix) {
+    for (int iy = 0; iy < hl0->GetNbinsY(); ++iy) {
+      if (0 == parno) {
+        hl0->SetBinContent(ix+1, iy+1, 1.e-3);
+      } else {
+        hl0->SetBinContent(ix+1, iy+1, -99.);
+      }
+    }
+  }
   if (0 == parno) {
     hl0->GetZaxis()->SetTitle("Min. error rate");
   } else {
@@ -984,6 +1047,16 @@ void mapLinkQuali(int parno = 0) {
   TH2D *hl1 = new TH2D("L1", "Layer 1", 6, 0., 6., 10, 0., 10.);
   hl1->SetNdivisions(600, "X");
   hl1->SetNdivisions(0, "Y");
+  // -- initialize histogram to indicate untested hldr
+  for (int ix = 0; ix < hl1->GetNbinsX(); ++ix) {
+    for (int iy = 0; iy < hl1->GetNbinsY(); ++iy) {
+      if (0 == parno) {
+        hl1->SetBinContent(ix+1, iy+1, 1.e-3);
+      } else {
+        hl1->SetBinContent(ix+1, iy+1, -99.);
+      }        
+    }
+  }
   if (0 == parno) {
     hl1->GetZaxis()->SetTitle("Min. error rate");
   } else {
@@ -994,13 +1067,13 @@ void mapLinkQuali(int parno = 0) {
   
   // -- fixed coloring
   double dmin(0.), dmax(1.);
-  Int_t    colors[] = {kGreen+2, kGreen+1, kBlue-4, kBlue-6, kRed, kRed-9};
+  Int_t    colors[] = {kGreen+2, kGreen+1, kBlue-4, kBlue-6, kRed-9, kRed};
   Double_t levels[sizeof(colors)/sizeof(Int_t) + 1];
   if (0 == parno) {
     //      dmin = -1.e-4;
     dmin = 1.e-1;
     dmax = 1.e10;
-    levels[0] = 1.e-1; levels[1] = 1.e3; levels[2] = 1.e5; levels[3] = 1.e7; levels[4] = 1.e8; levels[5] = 1.e9; levels[6] = 1.e10;
+    levels[0] = 1.e-1; levels[1] = 1.e2; levels[2] = 1.e3; levels[3] = 1.e5; levels[4] = 1.e7; levels[5] = 1.e9; levels[6] = 1.e10;
   } else {
     dmin = 0.1;
     //      dmin = -0.1;
