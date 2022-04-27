@@ -1,0 +1,187 @@
+{
+  "/MIDAS version" : "2.1",
+  "/MIDAS git revision" : "Mon Apr 25 21:04:06 2022 +0200 - midas-2020-08-a-763-gf92f4467-dirty on branch develop",
+  "/filename" : "/home/mu3e/online/online/pixels/qctest/ladder/output/quick_32.json",
+  "/ODB path" : "/Equipment/PixelsCentral/QCTests/Ladder",
+
+  "Eval" : {
+    "Insight" : {
+      "IV_curve" : {
+      },
+      "LV_power_ON" : {
+      },
+      "DAC_scan" : {
+      },
+      "link_quality" : {
+      }
+    },
+    "half_ladder_id" : 0,
+    "grade" : "",
+    "IV_curve" : false,
+    "LV_power_ON" : [ false, false, false ],
+    "DAC_scan_VPDAC" : [ false, false, false ],
+    "DAC_scan_ref_Vss" : [ false, false, false ],
+    "link_quality" : [ false, false, false ]
+  },
+  "current_ladder_id" : 0,
+  "current_hameg_id" : 0,
+  "current_channel" : 0,
+  "IV" : {
+    "Input" : {
+      "hv_current_limit" : 1.0000000000000001e-05,
+      "start_voltage" : 0,
+      "step_voltage" : 5,
+      "fine_step_voltage" : 1,
+      "stop_voltage" : 25
+    },
+    "Output" : {
+      "Voltage" : [ 0, 5, 10, 15, 20, 16, 17, 18, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+      "Current" : [ -8.4548699999999999e-01, -1.0098100000000001e+00, -1.1505799999999999e+00, -1.3162499999999999e+00, -9.9567999999999994e+00, -1.3938400000000000e+00, -1.4499100000000000e+00, -1.6018600000000001e+00, -1.9604299999999999e+00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+      "V" : 25
+    },
+    "half_ladder_id" : 0,
+    "hameg_id" : 0,
+    "channel" : 0
+  },
+  "LVPowerOn" : {
+    "Input" : {
+    },
+    "Output" : {
+      "current_increase" : [ 3.9290000000000003e-01, 3.9019999999999999e-01, 4.1449999999999998e-01, 0 ]
+    },
+    "half_ladder_id" : 0,
+    "hameg_id" : 7,
+    "channel" : 0
+  },
+  "DACScan" : {
+    "Input" : {
+      "HV_voltage" : 5,
+      "HV_curr_limit" : 1.0000000000000001e-05,
+      "VPDAC" : {
+        "start_value" : 0,
+        "step" : 1,
+        "stop_value" : 6
+      },
+      "ref_Vss" : {
+        "start_value" : 50,
+        "step" : 50,
+        "stop_value" : 250
+      }
+    },
+    "Output" : {
+      "VPDAC" : {
+        "0" : {
+          "VPDAC_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "VPDAC_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        "1" : {
+          "VPDAC_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "VPDAC_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        "2" : {
+          "VPDAC_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "VPDAC_current" : [ 0, 0, 0, 0, 0, 0, 1.8940000000000001e-01, 0, 0, 0, 0 ]
+        }
+      },
+      "ref_Vss" : {
+        "0" : {
+          "ref_Vss_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "ref_Vss_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        "1" : {
+          "ref_Vss_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "ref_Vss_current" : [ 0, 0, 0, 0, 6.6869999999999996e-01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        "2" : {
+          "ref_Vss_values" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "ref_Vss_current" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        }
+      }
+    },
+    "half_ladder_id" : 22,
+    "hameg_id" : 7,
+    "channel" : 3
+  },
+  "LINKQUALIcheck" : {
+    "Input" : {
+      "HV_voltage" : 5,
+      "HV_curr_limit" : 1.0000000000000001e-05,
+      "start_magic_value_VPVCO" : 11,
+      "stop_magic_value_VPVCO" : 40,
+      "waiting_time" : 5
+    },
+    "Output" : {
+      "0" : {
+        "Scan" : {
+          "VPVCO" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate_linkA" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate_linkB" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate_linkC" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        "opt_VPVCO" : 0,
+        "opt_VNVCO" : 12,
+        "ErrorRate" : 0
+      },
+      "1" : {
+        "Scan" : {
+          "VPVCO" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate_linkA" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate_linkB" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate_linkC" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        "opt_VPVCO" : 0,
+        "opt_VNVCO" : 12,
+        "ErrorRate" : 0
+      },
+      "2" : {
+        "Scan" : {
+          "VPVCO" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate_linkA" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate_linkB" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          "error_rate_linkC" : [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        },
+        "opt_VPVCO" : 0,
+        "opt_VNVCO" : 1,
+        "ErrorRate" : 1000000
+      }
+    },
+    "half_ladder_id" : 22,
+    "hameg_id" : 7,
+    "channel" : 3
+  },
+  "Default_config" : {
+    "IV" : {
+      "HV_current_limit" : 1.0000000000000001e-05,
+      "start_voltage" : 0,
+      "step_voltage" : 5,
+      "fine_step_voltage" : 1,
+      "stop_voltage" : 30
+    },
+    "LVPowerOn" : {
+    },
+    "DACScan" : {
+      "HV_voltage" : -5,
+      "HV_curr_limit" : 1.0000000000000001e-05,
+      "VPDAC" : {
+        "start_value" : 0,
+        "step" : 1,
+        "stop_value" : 6
+      },
+      "ref_Vss" : {
+        "start_value" : 160,
+        "step" : 2,
+        "stop_value" : 220
+      }
+    },
+    "LINKQUALIcheck" : {
+      "HV_voltage" : -5,
+      "HV_curr_limit" : 1.0000000000000001e-05,
+      "start_magic_value_VPVCO" : 7,
+      "stop_magic_value_VPVCO" : 29,
+      "waiting_time" : 3
+    }
+  }
+}
