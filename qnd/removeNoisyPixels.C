@@ -3,15 +3,37 @@
 
 using namespace::std;
 
-void writeNoiseMaskFile(vector<uint8_t> noise, int chipID);
+void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID);
 
 
 // ----------------------------------------------------------------------
-void remove_noisy_pixels(const std::string& filename) {
-  cout << "start remove_noisy_pixels" << endl;
+void remove_noisy_pixels(int runnumber) {
+  cout << "start remove_noisy_pixels for " << Form("dataTree%05d.root", runnumber) << endl;
+
+  vector<int> skipList = {
+    54, 55, 56, 57, 58, 59,
+    114, 115, 116, 117, 118, 119,
+    // Layer0:
+    62, 68, 10, 11, 15, 20,
+    // Layer1:
+    95, 36, 96, 101,
+    // 3 links not working:
+    // (Mask all runs)
+    // Layer0:
+    71, 70, 69, 12, 13, 14, 16, 17, 81,
+    // Layer1:
+    27, 34, 106, 50, 52,
+    // 3 link errors:
+    // (Mask for runs so far?)
+    // Layer0:
+    5, 78,
+    // Layer1:
+    41
+  };
+
   
   // open file
-  auto * infile = new TFile(filename.c_str(), "OPEN");
+  auto * infile = new TFile(Form("dataTree%05d.root", runnumber), "OPEN");
   std::stringstream ss;
 
   // get tree from file
@@ -29,10 +51,14 @@ void remove_noisy_pixels(const std::string& filename) {
 
   // create hitmap histo
   std::vector<TH2F *> hitmaps;
+  std::vector<TH1F *> noisemaps;
   for (int i=0; i<128; i++) {
     ss.str("");
     ss << "hitmap" << i;
     hitmaps.push_back(new TH2F(ss.str().c_str(), ss.str().c_str(), 256, 0, 256, 250, 0, 250));
+    ss.str("");
+    ss << "noisemap" << i;
+    noisemaps.push_back(new TH1F(ss.str().c_str(), ss.str().c_str(), 2000, 0, 2000));
     cout << "created " << ss.str().c_str() << endl;
   }
 
@@ -66,7 +92,6 @@ void remove_noisy_pixels(const std::string& filename) {
   tree->SetBranchAddress("isInCluster", &v_isInCluster, &b_isInCluster);
 
   uint64_t fnentries = tree->GetEntries();
-  fnentries = 2000; 
   cout << "----------------------------------------------------------------------" << endl;
   int VERBOSE(0);
   for (Long64_t ievt = 0; ievt < fnentries; ++ievt) {
@@ -106,9 +131,15 @@ void remove_noisy_pixels(const std::string& filename) {
   // find noisy pixels per chipID
   std::map<int, std::vector<std::pair<uint8_t, uint8_t>>> noisy_pixels;
   std::uint64_t hits_total = 0;
-  std::uint64_t noise_limit = 0;
+  int noise_limit(0);
+
+  vector<string> vPrint;
   
   for (int chipID : unique_chipIDs) {
+    if (skipList.end() != find(skipList.begin(), skipList.end(), chipID)) {
+      continue;
+    }
+    
     hits_total = 0;
     if (chipID >= 128)
       continue;
@@ -118,22 +149,43 @@ void remove_noisy_pixels(const std::string& filename) {
       }
     }
     hits_total = hits_total * 1.111111; // correct for missing pixels at the chip border
-    noise_limit = 10 * hits_total/64000;
+    noise_limit = 10. * hits_total/64000;
     noisy_pixels[chipID] = std::vector<std::pair<uint8_t, uint8_t> >();
     
-    std::cout << "chipID: "<< chipID ;
+
+    // -- try to find noise level
+    TH2F *h2 = hitmaps.at(chipID);
+    TH1F *h1 = noisemaps.at(chipID);
+    for (int32_t ny = 1; ny <= h2->GetYaxis()->GetNbins(); ny++) {
+      for (int32_t nx = 1; nx <= h2->GetXaxis()->GetNbins(); nx++) {
+        noisemaps.at(chipID)->Fill(h2->GetBinContent(nx, ny));
+      }
+    }
+    // -- noise defined as mean(nhits) + NSIG*sigma
+    int NSIGMA(20);
+    noise_limit = h1->GetMean() + NSIGMA*h1->GetRMS() + 0.5;
+    cout << "chipID " << chipID
+         << " (maximum: " << h2->GetMaximum() << ") mean(nhit) = " << h1->GetMean() << " RMS = " << h1->GetRMS()
+         << " noise level = " << noise_limit
+         << endl;
     
-    float tot_noisy_pixels = 0;
+    
+    int tot_noisy_pixels = 0;
     vector<uint8_t> vNoise; 
+    string spix(Form("(max = %d), pix: ", static_cast<int>(h2->GetMaximum())));
     for (int32_t ny = 1; ny <= hitmaps.at(chipID)->GetYaxis()->GetNbins(); ny++) {
-      cout << "filling row " << ny-1 << endl;
+      // cout << "filling row " << ny-1 << endl;
       for (int32_t nx = 1; nx <= hitmaps.at(chipID)->GetXaxis()->GetNbins(); nx++) {
-        if (hitmaps.at(chipID)->GetBinContent(nx, ny) > noise_limit) {
-          //          std::cout << "Chip ID " << chipID << ", Found noisy pixel at " << nx-1 << ", " << ny-1 << std::endl;
+        int nhit = static_cast<int>(hitmaps.at(chipID)->GetBinContent(nx, ny)); 
+        // -- if the noise limit is 0 then there will be NO noisy pixels
+        if ((noise_limit > 0) && (nhit > noise_limit)) {
+          std::cout << "Chip ID " << chipID << ", Found noisy pixel at " << nx-1 << ", " << ny-1
+                    << " nhits = " << nhit << " noise_limit = " << noise_limit
+                    << std::endl;
           tot_noisy_pixels++;
-          // -1 since bin 1/1 of GetBinContent is pixel 0/0
           noisy_pixels[chipID].push_back(std::pair<uint8_t, uint8_t>(nx-1, ny-1));
           vNoise.push_back(0xff);
+          spix += string(Form("%d/%d(%d) ", nx-1, ny-1, nhit));
         } else {
           vNoise.push_back(0x0);
         }
@@ -141,24 +193,35 @@ void remove_noisy_pixels(const std::string& filename) {
     }
     // -- fill up to 255
     for (int32_t ny = 251; ny <= 256; ny++) {
-      cout << "+filling row " << ny-1 << endl;
+      // cout << "+filling row " << ny-1 << endl;
       for (int32_t nx = 1; nx <= hitmaps.at(chipID)->GetXaxis()->GetNbins(); nx++) {
         vNoise.push_back(0xda);
       }
     }
     std::cout << " with a  total of " << tot_noisy_pixels << " (" << tot_noisy_pixels*100/64000 << "%)\n";
-    writeNoiseMaskFile(vNoise, chipID);
+    writeNoiseMaskFile(vNoise, runnumber, chipID);
+
+    vPrint.push_back(Form("chipID %3d, n. level = %2d, N(n. pixels) = %d %s", chipID, noise_limit, tot_noisy_pixels, spix.c_str()));
     vNoise.clear();
   }
-  
+
+  ofstream o(Form("summaryNoiseMaskFile-run%d.txt", runnumber)); 
+  cout << "Summary of noisy (n.) pixels for run "  << runnumber << endl;
+  o << "Summary of noisy (n.) pixels for run "  << runnumber << endl;
+  for (unsigned int i = 0; i < vPrint.size(); ++i) {
+    cout << vPrint[i] << endl;
+    o << vPrint[i] << endl;
+  }
+  o.close();
+    
   return;
   
 }
 
 
 // ----------------------------------------------------------------------
-void writeNoiseMaskFile(vector<uint8_t> noise, int chipID) {
-  ofstream o(Form("noiseMaskFile-chipID%d", chipID)); 
+void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID) {
+  ofstream o(Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID)); 
   for (unsigned int i = 0; i < noise.size(); ++i) {
     o << noise[i];
   }
