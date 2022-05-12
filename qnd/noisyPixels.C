@@ -3,13 +3,31 @@
 
 using namespace::std;
 
-void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID);
+// -- dump vnoise into noise mask file
+void writeNoiseMaskFile(vector<uint8_t> vnoise, int runnumber, int chipID);
+
+// -- read in noise mask file and merge its contents into vnoise
+void readNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID);
 
 
 // ----------------------------------------------------------------------
-void remove_noisy_pixels(int runnumber) {
+pair<int, int> colrowFromIdx(int idx) {
+  int col = idx/256;
+  int row = idx%256;
+  return make_pair(col, row);
+}
+
+// ----------------------------------------------------------------------
+int idxFromColRow(int col, int row) {
+  int idx = col*256 + row;
+  return idx; 
+}
+
+// ----------------------------------------------------------------------
+void writeNoisyPixelsMaskFiles(int runnumber) {
   cout << "start remove_noisy_pixels for " << Form("dataTree%05d.root", runnumber) << endl;
 
+  // https://mattermost.gitlab.rlp.net/mu3e/pl/qk3t7i7t53gqubqbucjpggzdna
   vector<int> skipList = {
     54, 55, 56, 57, 58, 59,
     114, 115, 116, 117, 118, 119,
@@ -135,10 +153,13 @@ void remove_noisy_pixels(int runnumber) {
 
   vector<string> vPrint;
   
+  bool DBX(false);
   for (int chipID : unique_chipIDs) {
     if (skipList.end() != find(skipList.begin(), skipList.end(), chipID)) {
       continue;
     }
+
+    if (DBX && chipID != 18) continue;
     
     hits_total = 0;
     if (chipID >= 128)
@@ -161,7 +182,7 @@ void remove_noisy_pixels(int runnumber) {
         noisemaps.at(chipID)->Fill(h2->GetBinContent(nx, ny));
       }
     }
-    // -- noise defined as mean(nhits) + NSIG*sigma
+    // -- noise defined as mean(nhits) + NSIGMA*sigma
     int NSIGMA(20);
     noise_limit = h1->GetMean() + NSIGMA*h1->GetRMS() + 0.5;
     cout << "chipID " << chipID
@@ -173,9 +194,9 @@ void remove_noisy_pixels(int runnumber) {
     int tot_noisy_pixels = 0;
     vector<uint8_t> vNoise; 
     string spix(Form("(max = %d), pix: ", static_cast<int>(h2->GetMaximum())));
-    for (int32_t ny = 1; ny <= hitmaps.at(chipID)->GetYaxis()->GetNbins(); ny++) {
-      // cout << "filling row " << ny-1 << endl;
-      for (int32_t nx = 1; nx <= hitmaps.at(chipID)->GetXaxis()->GetNbins(); nx++) {
+    for (int32_t nx = 1; nx <= hitmaps.at(chipID)->GetXaxis()->GetNbins(); nx++) {
+      if (DBX) cout << "filling col " << nx-1 << endl;
+      for (int32_t ny = 1; ny <= hitmaps.at(chipID)->GetYaxis()->GetNbins(); ny++) {
         int nhit = static_cast<int>(hitmaps.at(chipID)->GetBinContent(nx, ny)); 
         // -- if the noise limit is 0 then there will be NO noisy pixels
         if ((noise_limit > 0) && (nhit > noise_limit)) {
@@ -190,11 +211,9 @@ void remove_noisy_pixels(int runnumber) {
           vNoise.push_back(0x0);
         }
       }
-    }
-    // -- fill up to 255
-    for (int32_t ny = 251; ny <= 256; ny++) {
-      // cout << "+filling row " << ny-1 << endl;
-      for (int32_t nx = 1; nx <= hitmaps.at(chipID)->GetXaxis()->GetNbins(); nx++) {
+      // -- fill up to 255
+      for (int32_t ny = 251; ny <= 256; ny++) {
+        if (DBX) cout << "+filling row " << ny-1 << endl;
         vNoise.push_back(0xda);
       }
     }
@@ -226,4 +245,23 @@ void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID) {
     o << noise[i];
   }
   o.close();
+}
+
+// ----------------------------------------------------------------------
+void readNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
+  ifstream is(Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID)); 
+
+  if (is.is_open() ) {
+    char mychar;
+    int i(0); 
+    while (is) {
+      mychar = is.get();
+      if (0 != mychar) {
+        vnoise[i] = mychar;
+      }
+      ++i;
+    }
+  }
+
+  is.close();
 }
