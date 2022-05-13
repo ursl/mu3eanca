@@ -10,6 +10,27 @@ void writeNoiseMaskFile(vector<uint8_t> vnoise, int runnumber, int chipID);
 void readNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID);
 
 
+
+// ----------------------------------------------------------------------
+vector<uint8_t> readFile(string filename) {
+  // -- open the file
+  streampos fileSize;
+  ifstream file(filename.c_str(), std::ios::binary);
+  
+  // -- get its size
+  file.seekg(0, std::ios::end);
+  fileSize = file.tellg();
+  file.seekg(0, std::ios::beg);
+  
+  // -- read the data
+  vector<uint8_t> fileData(fileSize);
+  file.read((char*) &fileData[0], fileSize);
+
+  file.close();
+  
+  return fileData;
+}
+
 // ----------------------------------------------------------------------
 pair<int, int> colrowFromIdx(int idx) {
   int col = idx/256;
@@ -247,21 +268,31 @@ void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID) {
   o.close();
 }
 
-// ----------------------------------------------------------------------
-void readNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
-  ifstream is(Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID)); 
 
-  if (is.is_open() ) {
-    char mychar;
-    int i(0); 
-    while (is) {
-      mychar = is.get();
-      if (0 != mychar) {
-        vnoise[i] = mychar;
-      }
-      ++i;
+// ----------------------------------------------------------------------
+void addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
+  vector<uint8_t> vread = readFile(Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID));
+  
+  for (unsigned int i = 0; i < vread.size(); ++i){
+    pair<int, int> a = colrowFromIdx(i);
+    if ((0 == vnoise[i]) && (0 != vread[i])) {
+      if (0xda != vread[i]) cout << Form("run %d setting col/row = %3d/%3d to %x", runnumber, a.first, a.second, vread[i]) << endl;
+      vnoise[i] = vread[i];
     }
   }
 
-  is.close();
+}
+
+
+// ----------------------------------------------------------------------
+void mergeNoiseFiles(int chipID) {
+  vector<uint8_t> vnoise;
+  for (int i = 0; i < 256*256; ++i) vnoise.push_back(0);
+
+  addNoiseMaskFile(vnoise, 216, chipID);
+  addNoiseMaskFile(vnoise, 215, chipID);
+  addNoiseMaskFile(vnoise, 220, chipID);
+
+
+  
 }
