@@ -7,9 +7,10 @@
 setenv JOB 
 setenv STEERFILE    $JOB.i
 setenv ROOTFILENAME $JOB.root
-setenv RANDOMSEED   $JOB:s/PIONEER_SlantedTgtE_prod-//
 setenv STORAGE1
 setenv SITE
+setenv G4BLOUTPUTDIR
+setenv G4BLTRACKFILE
 
 # -- set up env required for running
 source /psi/home/langenegger/data/g4bl/root-062206/bin/thisroot.csh
@@ -61,18 +62,32 @@ ls -l
 
 # PIONEER_SlantedTgtE_prod-40009.i histoFile=PIONEER_SlantedTgtE_prod-40009.root
 echo "----------------------------------------------------------------------"
-echo "g4bl $STEERFILE randomseed=$RANDOMSEED histoFile=$ROOTFILENAME"
+echo "g4bl $STEERFILE histoFile=$ROOTFILENAME"
 echo "----------------------------------------------------------------------"
-g4bl $STEERFILE randomseed=$RANDOMSEED histoFile=$ROOTFILENAME
+g4bl $STEERFILE histoFile=$ROOTFILENAME  |& tee g4bl.log
 date
 ls -rtl
 echo "slurm check size of rootfile produced"
 ls -l ./$JOB.root
 
-cp ./$JOB.root $STORAGE1
-setenv BLA  `ls -l $STORAGE1/$JOB.root`
-echo "slurm check that rootfile was copied $BLA"
-ls -l $STORAGE1/$JOB.root
+mkdir -p $STORAGE1
+
+if ( -e ./CALOCNTR.txt ) then
+    cp ./$JOB.root $STORAGE1
+    setenv BLA  `ls -l $STORAGE1/$JOB.root`
+    echo "slurm check that rootfile was copied $BLA"
+    ls -l $STORAGE1/$JOB.root
+endif
+
+if ( -e ./CALOCNTR.txt ) then
+    cp ./CALOCNTR.txt $STORAGE1/$JOB-CALOCNTR.txt
+    cp ./CALOENTR.txt $STORAGE1/$JOB-CALOENTR.txt
+    cp ./profile.txt $STORAGE1/$JOB-profile.txt
+    cp ./g4bl.log $STORAGE1/$JOB-g4bl.log
+else
+    echo "no output files to copy"
+endif
+    
 
 date
 
