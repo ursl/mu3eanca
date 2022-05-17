@@ -6,6 +6,17 @@ using namespace::std;
 
 map<int, vector<pair<int, int> > > gChipNoisyPixels; 
 
+
+// ----------------------------------------------------------------------
+bool validNoise(const vector<uint8_t> &v) {
+  for (unsigned int i = 0; i < v.size(); ++i) {
+    if (0 != v[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // ----------------------------------------------------------------------
 vector<uint8_t> readFile(string filename) {
   // -- open the file
@@ -13,8 +24,8 @@ vector<uint8_t> readFile(string filename) {
   ifstream file;
   file.open(filename.c_str(), std::ios::binary);
   if (!file) {
-    // cout << "file ->" << filename << "<- not found, skipping" << endl;
-    vector<uint8_t> fileData;
+    cout << "file ->" << filename << "<- not found, skipping" << endl;
+    vector<uint8_t> fileData = {};
     return fileData;
   }
   
@@ -71,54 +82,6 @@ void summaryMaskFile(string filename) {
 
 
 // ----------------------------------------------------------------------
-// -- adds a run to the vector<uint8_t>
-// ----------------------------------------------------------------------
-int addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
-  vector<uint8_t> vread = readFile(Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID));
-
-  if (0 == vread.size()) {
-    return -1;
-  }
-
-  for (unsigned int i = 0; i < vread.size(); ++i){
-    pair<int, int> a = colrowFromIdx(i);
-    if ((0 == vnoise[i]) && (0 != vread[i])) {
-      if (0xda != vread[i]) cout << Form("run %d setting col/row = %3d/%3d to %x",
-                                         runnumber, a.first, a.second, vread[i])
-                                 << endl;
-      vnoise[i] = vread[i];
-    }
-  }
-  return 0;
-}
-
-
-// ----------------------------------------------------------------------
-// -- combines all runs into one mask file
-// ----------------------------------------------------------------------
-vector<uint8_t> mergeNoiseFiles(int chipID, int& fine) {
-  vector<int> runlist = {215, 216, 220};
-  vector<uint8_t> vnoise;
-  for (int i = 0; i < 256*256; ++i) vnoise.push_back(0);
-
-  for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
-    int ok = addNoiseMaskFile(vnoise, runlist[irun], chipID);
-  }
-
-  // -- check that file(s) read (if at all) had non-zero entries
-  fine = 0; 
-  for (unsigned int i = 0; i < vnoise.size(); ++i){
-    if (0 != vnoise[i]) {
-      fine = 1;
-      break;
-    }
-  }
-  
-  return vnoise; 
-}
-
-
-// ----------------------------------------------------------------------
 // -- fill gChipNoisyPixels for a chipID
 // ----------------------------------------------------------------------
 void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise) {
@@ -134,26 +97,71 @@ void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise) {
 
 
 // ----------------------------------------------------------------------
-void fillAllNoisyPixels() {
+void fillAllNoisyPixels(string dir = ".") {
   int OK(0); 
+  gChipNoisyPixels.clear();
+
   for (int i = 0; i < 128; ++i) {
-    vector<uint8_t> vnoise = mergeNoiseFiles(i, OK);
-    if (1 == OK) {
+    vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dir.c_str(), i));
+    if (validNoise(vnoise)) {
       fillNoisyPixels(i, vnoise);
-    } else {
-      cout << "did not find a masknoisefile for chip " << i << ", not filling noisy pixels" << endl;
     }
   }
 
-  TH1D *h1 = new TH1D("hnoise", "noisy pixels/chips", 100, 0., 100.);
+  TH1D *h1 = new TH1D("hnoise", Form("noisy pixels/chips (%s)", dir.c_str()), 50, 0., 1000.);
   map<int, vector<pair<int, int> > >::iterator it; 
   for (it = gChipNoisyPixels.begin(); it != gChipNoisyPixels.end(); ++it) {
     cout << "chip " << it->first << " it->size() = " << it->second.size() << endl;
     h1->Fill(it->second.size());
   }
-
   h1->Draw();
+  if (dir == ".") {
+    c0.SaveAs("nNoisyPixels.pdf");
+  } else {
+    c0.SaveAs(Form("nNoisyPixels-%s.pdf", dir.c_str()));
+  }
+}
 
-  c0.SaveAs("nNoisyPixels.pdf");
-            
+
+// ----------------------------------------------------------------------
+void compareNsig() {
+  int OK(0); 
+
+  gStyle->SetOptStat(0);
+  
+  vector<string> dirs = {"msig20", "msig10", "msig5"};
+  TH1D *h1 = new TH1D("hnoise", "noisy pixels/chips", 50, 0., 2000.);
+  TH1D *hs = new TH1D("hsummary", "average number of noisy pixels/chips", dirs.size(), 0., dirs.size());
+  cout << "dirs.size() = " << dirs.size() << endl;
+  
+  for (unsigned int idir = 0; idir < dirs.size(); ++idir) {
+    gChipNoisyPixels.clear();
+    h1->Reset();
+    string blabel = dirs[idir];
+    replaceAll(blabel, "msig", "msig=");
+    
+    hs->GetXaxis()->SetBinLabel(idir+1, blabel.c_str());
+    for (int i = 0; i < 128; ++i) {
+      vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dirs[idir].c_str(), i));
+      if (validNoise(vnoise)) {
+        fillNoisyPixels(i, vnoise);
+      }
+    }
+    
+    map<int, vector<pair<int, int> > >::iterator it; 
+    for (it = gChipNoisyPixels.begin(); it != gChipNoisyPixels.end(); ++it) {
+      cout << "chip " << it->first << " it->size() = " << it->second.size() << endl;
+      h1->Fill(it->second.size());
+    }
+    hs->SetBinContent(idir+1, h1->GetMean());
+    cout << "setting hs bin contents " << h1->GetMean() << endl;
+  }
+  hs->SetMinimum(0.);
+  hs->SetMaximum(1.3*hs->GetMaximum());
+  hs->Draw();
+
+  tl->SetTextSize(0.03);
+  tl->DrawLatex(0.16, 0.85, "noise level #equiv mean(nhit) + msig * RMS(nhit) + 0.5");
+  
+  c0.SaveAs("meanNumberNoisyPixels-msig.pdf");
 }
