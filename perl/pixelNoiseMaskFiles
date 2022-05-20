@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 
 
-@tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git status && cd -`;
+@tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git status && cd -'`;
 
 exit(0);
 
