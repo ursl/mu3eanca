@@ -67,12 +67,17 @@ echo "----------------------------------------------------------------------"
 g4bl $STEERFILE histoFile=$ROOTFILENAME  |& tee g4bl.log
 date
 ls -rtl
+
+if ( -e ./CALOCNTR.txt ) then
+    cp ./CALOCNTR.txt ./$JOB.root
+endif
+
 echo "slurm check size of rootfile produced"
 ls -l ./$JOB.root
 
 mkdir -p $STORAGE1
 
-if ( -e ./CALOCNTR.txt ) then
+if ( -e ./$JOB.root ) then
     cp ./$JOB.root $STORAGE1
     setenv BLA  `ls -l $STORAGE1/$JOB.root`
     echo "slurm check that rootfile was copied $BLA"
@@ -80,6 +85,8 @@ if ( -e ./CALOCNTR.txt ) then
 endif
 
 if ( -e ./CALOCNTR.txt ) then
+    # dummy entry for monSlurm
+    cp ./CALOCNTR.txt $STORAGE1/$JOB.root
     cp ./CALOCNTR.txt $STORAGE1/$JOB-CALOCNTR.txt
     cp ./CALOENTR.txt $STORAGE1/$JOB-CALOENTR.txt
     cp ./profile.txt $STORAGE1/$JOB-profile.txt
