@@ -1,6 +1,10 @@
 #! /usr/bin/perl
 
 
+@tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git status && cd -`;
+
+exit(0);
+
 $MAXCHIPS = 2; 
 
 open(OUT, "| odbedit ") || die "Cannot open odbedit\n";
@@ -12,5 +16,6 @@ for ($i = 0; $i < $MAXCHIPS; $i++) {
 }
 
 print OUT " quit \r\n";
+
 
 close OUT;
