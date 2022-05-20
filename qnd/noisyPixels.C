@@ -6,9 +6,32 @@ using namespace::std;
 // -- dump vnoise into noise mask file
 void writeNoiseMaskFile(vector<uint8_t> vnoise, int runnumber, int chipID);
 
-// -- read in noise mask file and merge its contents into vnoise
-void readNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID);
 
+// ----------------------------------------------------------------------
+vector<uint8_t> readFile(string filename) {
+  // -- open the file
+  streampos fileSize;
+  ifstream file;
+  file.open(filename.c_str(), std::ios::binary);
+  if (!file) {
+    cout << "file ->" << filename << "<- not found, skipping" << endl;
+    vector<uint8_t> fileData;
+    return fileData;
+  }
+  
+  // -- get its size
+  file.seekg(0, std::ios::end);
+  fileSize = file.tellg();
+  file.seekg(0, std::ios::beg);
+  
+  // -- read the data
+  vector<uint8_t> fileData(fileSize);
+  file.read((char*) &fileData[0], fileSize);
+
+  file.close();
+  
+  return fileData;
+}
 
 // ----------------------------------------------------------------------
 pair<int, int> colrowFromIdx(int idx) {
@@ -24,8 +47,10 @@ int idxFromColRow(int col, int row) {
 }
 
 // ----------------------------------------------------------------------
+// -- read noise information for all chips from a tree for one run
+// ----------------------------------------------------------------------
 void writeNoisyPixelsMaskFiles(int runnumber) {
-  cout << "start remove_noisy_pixels for " << Form("dataTree%05d.root", runnumber) << endl;
+  cout << "writeNoisyPixelsMaskFiles for " << Form("dataTree%05d.root", runnumber) << endl;
 
   // https://mattermost.gitlab.rlp.net/mu3e/pl/qk3t7i7t53gqubqbucjpggzdna
   vector<int> skipList = {
@@ -57,6 +82,14 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
   // get tree from file
   auto * tree = (TTree *) infile->FindObjectAny("HitData");
 
+  TH1F *hErrors = new TH1F("hErrors", "hErrors", 128, 0., 128.);
+  TH1F *hTotal  = new TH1F("hTotal", "hTotal", 128, 0., 128.);
+  TH1F *hRatio  = new TH1F("hRatio", Form("Error ratio (row > 249) run %d", runnumber), 128, 0., 128.); hRatio->Sumw2(kTRUE);
+
+  hErrors->Reset();
+  hTotal->Reset();
+  hRatio->Reset();
+  
   // get unique chipID
   TH1F * cID = new TH1F("chipID", "chipID", 200, 0, 200);
   tree->Project("chipID", "chipID");
@@ -72,10 +105,10 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
   std::vector<TH1F *> noisemaps;
   for (int i=0; i<128; i++) {
     ss.str("");
-    ss << "hitmap" << i;
+    ss << Form("hitmap_run%d_chipID%d", runnumber, i);
     hitmaps.push_back(new TH2F(ss.str().c_str(), ss.str().c_str(), 256, 0, 256, 250, 0, 250));
     ss.str("");
-    ss << "noisemap" << i;
+    ss << Form("noisemap_run%d_chipID%d", runnumber, i);
     noisemaps.push_back(new TH1F(ss.str().c_str(), ss.str().c_str(), 2000, 0, 2000));
     cout << "created " << ss.str().c_str() << endl;
   }
@@ -83,7 +116,8 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
   vector<unsigned int>  *v_runID(0), *v_MIDASEventID(0), *v_ts2(0), *v_hitTime(0),
     *v_headerTime(0), *v_headerTimeMajor(0), *v_subHeaderTime(0), *v_trigger(0),
     *v_isInCluster(0);
-  vector<unsigned char>  *v_col(0), *v_row(0), *v_chipID(0), *v_fpgaID(0), *v_chipIDRaw(0), *v_tot(0), *v_isMUSR(0), *v_hitType(0), *v_layer(0);
+  vector<unsigned char>  *v_col(0), *v_row(0), *v_chipID(0), *v_fpgaID(0), *v_chipIDRaw(0),
+    *v_tot(0), *v_isMUSR(0), *v_hitType(0), *v_layer(0);
   TBranch *b_runID(0), *b_col(0), *b_row(0), *b_chipID(0), *b_MIDASEventID(0),
     *b_ts2(0), *b_hitTime(0),
     *b_headerTime(0), *b_headerTimeMajor(0), *b_subHeaderTime(0), *b_trigger(0),
@@ -142,9 +176,16 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
     for (int ihit = 0; ihit < v_col->size(); ++ihit) {
       if (VERBOSE) cout << Form("col/row/chip = %d/%d/%d", v_col->at(ihit), v_row->at(ihit), v_chipID->at(ihit)) << endl;
       hitmaps.at(v_chipID->at(ihit))->Fill(v_col->at(ihit), v_row->at(ihit));
+
+      hTotal->Fill(v_chipID->at(ihit));
+      if (v_row->at(ihit) > 249) {
+        hErrors->Fill(v_chipID->at(ihit));
+      }
     }    
   }
 
+  hRatio->Divide(hErrors, hTotal);
+  
 
   // find noisy pixels per chipID
   std::map<int, std::vector<std::pair<uint8_t, uint8_t>>> noisy_pixels;
@@ -155,15 +196,12 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
   
   bool DBX(false);
   for (int chipID : unique_chipIDs) {
+    if (chipID >= 128) continue;
     if (skipList.end() != find(skipList.begin(), skipList.end(), chipID)) {
-      continue;
+      //      continue;
     }
-
-    if (DBX && chipID != 18) continue;
-    
+   
     hits_total = 0;
-    if (chipID >= 128)
-      continue;
     for (int32_t nx = 5; nx <= 245; nx++) {
       for (int32_t ny = 5; ny <= 245; ny++) {
         hits_total = hits_total + hitmaps.at(chipID)->GetBinContent(nx, ny);
@@ -220,7 +258,8 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
     std::cout << " with a  total of " << tot_noisy_pixels << " (" << tot_noisy_pixels*100/64000 << "%)\n";
     writeNoiseMaskFile(vNoise, runnumber, chipID);
 
-    vPrint.push_back(Form("chipID %3d, n. level = %2d, N(n. pixels) = %d %s", chipID, noise_limit, tot_noisy_pixels, spix.c_str()));
+    vPrint.push_back(Form("chipID %3d, n. level = %2d, N(n. pixels) = %d %s",
+                          chipID, noise_limit, tot_noisy_pixels, spix.c_str()));
     vNoise.clear();
   }
 
@@ -239,29 +278,138 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
 
 
 // ----------------------------------------------------------------------
+// -- dump vector<uint8_t> into mask file
+// ----------------------------------------------------------------------
 void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID) {
-  ofstream o(Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID)); 
+  string filename("");
+  if (runnumber > 0) {
+    filename = Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID);
+  } else {
+    filename = Form("noiseMaskFile-chipID%d", chipID);
+  }
+
+  ofstream o(filename); 
   for (unsigned int i = 0; i < noise.size(); ++i) {
     o << noise[i];
   }
   o.close();
 }
 
-// ----------------------------------------------------------------------
-void readNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
-  ifstream is(Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID)); 
 
-  if (is.is_open() ) {
-    char mychar;
-    int i(0); 
-    while (is) {
-      mychar = is.get();
-      if (0 != mychar) {
-        vnoise[i] = mychar;
-      }
-      ++i;
+// ----------------------------------------------------------------------
+// -- produce summary of a mask file
+// ----------------------------------------------------------------------
+void summarize(vector<uint8_t> vnoise) {
+  for (unsigned int i = 0; i < vnoise.size(); ++i){
+    pair<int, int> a = colrowFromIdx(i);
+    if ((0 != vnoise[i]) && (0xda != vnoise[i])) {
+      cout << Form("pix: %d/%d ", a.first, a.second);
+    }
+  }
+  cout  << endl;
+}
+
+// ----------------------------------------------------------------------
+// -- produce summary of a mask file
+// ----------------------------------------------------------------------
+void summaryMaskFile(string filename) {
+  vector<uint8_t> vnoise = readFile(filename);
+  cout << filename << ": ";
+  summarize(vnoise);
+}
+
+
+
+// ----------------------------------------------------------------------
+// -- adds a run to the vector<uint8_t>
+// ----------------------------------------------------------------------
+void addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
+  vector<uint8_t> vread = readFile(Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID));
+
+  if (0 == vread.size()) {
+    return;
+  }
+
+  for (unsigned int i = 0; i < vread.size(); ++i){
+    pair<int, int> a = colrowFromIdx(i);
+    if ((0 == vnoise[i]) && (0 != vread[i])) {
+      if (0xda != vread[i]) cout << Form("run %d setting col/row = %3d/%3d to %x",
+                                         runnumber, a.first, a.second, vread[i])
+                                 << endl;
+      vnoise[i] = vread[i];
     }
   }
 
-  is.close();
+}
+
+
+// ----------------------------------------------------------------------
+// -- combines all runs into one mask file
+// ----------------------------------------------------------------------
+void mergeNoiseFiles(int chipID) {
+  vector<int> runlist = {215, 216, 220};
+  vector<uint8_t> vnoise;
+  for (int i = 0; i < 256*256; ++i) vnoise.push_back(0);
+
+  for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
+    addNoiseMaskFile(vnoise, runlist[irun], chipID);
+  }
+
+  writeNoiseMaskFile(vnoise, -1, chipID);
+}
+
+
+// ----------------------------------------------------------------------
+// -- main function reading all trees (producing per-run files) and
+// -- merging all runs into single mask file
+// ----------------------------------------------------------------------
+void produceAllMergedNoiseFiles() {
+
+  vector<int> runlist = {215, 216, 220};
+  for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
+    writeNoisyPixelsMaskFiles(runlist[irun]);
+  }
+
+  
+  for (int i = 0; i < 128; ++i) {
+    mergeNoiseFiles(i);
+  }
+
+
+  for (int i = 0; i < 128; ++i) {
+    summaryMaskFile(Form("noiseMaskFile-chipID%d", i));
+  }
+
+}
+
+// ----------------------------------------------------------------------
+void plotLVDS(int run) {
+  gStyle->SetOptStat(0);
+  TH1D *hRatio = (TH1D*)gROOT->FindObject("hRatio"); hRatio->SetLineColor(kRed);
+  TH1D *hTotal = (TH1D*)gROOT->FindObject("hTotal");
+  hRatio->Draw("hist");
+  hTotal->Scale(1./hTotal->GetEntries());
+  hTotal->Draw("samehist");
+  tl->SetTextSize(0.04);
+  tl->SetTextColor(kRed);   tl->DrawLatexNDC(0.7, 0.2, "error ratio");
+  tl->SetTextColor(kBlack); tl->DrawLatexNDC(0.7, 0.15, "hits (a.u.)");
+  c0.SaveAs(Form("rowOverflow-%d.pdf", run));
+
+  for (int i = 1; i < hRatio->GetNbinsX(); ++i) {
+    if (hRatio->GetBinContent(i) > 0.) {
+      hRatio->SetBinContent(i, 0.);
+    } else {
+      // -- set to one only for chips that have hits
+      if (hTotal->GetBinContent(i) > 0.) {
+        cout << "Chip w/o row overflows: " << i-1 << endl;
+        hRatio->SetBinContent(i, 1.);
+      }
+    }
+  }
+
+  hRatio->SetTitle("chips without row overflows");
+  hRatio->SetLineColor(kBlack);
+  hRatio->Draw("hist");
+  c0.SaveAs(Form("noRowOverflows-%d.pdf", run));
+  
 }
