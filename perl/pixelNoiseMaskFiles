@@ -1,9 +1,11 @@
 #! /usr/bin/perl
 
 
-@tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git status && cd -'`;
+# @tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git status && cd -'`;
+#$tag[0] = substr $tag[0], 0, -1;
 
-$tag[0] = substr $tag[0], 0, -1;
+@tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git rev-parse HEAD && cd -'`;
+
 print "->$tag[0]<-\n";
 
 exit(0);
