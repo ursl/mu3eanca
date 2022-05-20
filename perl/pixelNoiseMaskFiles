@@ -9,9 +9,7 @@ $githash = substr $tag[0], 0, -1;
 
 print "githash ->$githash<-\n";
 
-exit(0);
-
-$MAXCHIPS = 2; 
+$MAXCHIPS = 3; 
 
 open(OUT, "| odbedit ") || die "Cannot open odbedit\n";
 print OUT " cd /Equipment/PixelsCentral/Settings/TDACS \r\n";
