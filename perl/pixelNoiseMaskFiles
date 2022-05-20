@@ -1,25 +1,65 @@
 #! /usr/bin/perl
 
+# ----------------------------------------------------------------------
+# pixelNoiseMaskFiles
+# ===================
+#
+# Usage: ./pixelNoiseMaskFiles [-n noiseMaskFile-chipID] [-t]
+#
+# Options: -n namestub  change the names of the files
+#          -t           write tag (obtained via ssh into switch0) into ODB key GitHash
+#          -d           debug: do not ssh and do not interact with ODB
+#
+# History 2022/05/20 first shot
+#
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('dn:t');
+
+my $midasdir = "/Equipment/PixelsCentral/Settings/TDACS";
+my $tagName = "GitHash";
+
+
+my $namestub = "/home/mu3e/pixel-maskfiles/noiseMaskFile-chipID";
+if ($opt_n) {
+    $namestub = $opt_n; 
+}
 
 # @tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git status && cd -'`;
 #$tag[0] = substr $tag[0], 0, -1;
 
-@tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git rev-parse HEAD && cd -'`;
-$githash = substr $tag[0], 0, -1;
-
-print "githash ->$githash<-\n";
 
 $MAXCHIPS = 120; 
 
-open(OUT, "| odbedit ") || die "Cannot open odbedit\n";
-print OUT " cd /Equipment/PixelsCentral/Settings/TDACS \r\n";
+if (!$opt_d) {
+    open(OUT, "| odbedit ") || die "Cannot open odbedit\n";
+} else {
+    open(OUT, ""); # FIXME!!!
+    print " would be in ODB \r\n";
+}
+
+print OUT " cd $midasdir \r\n";
 print OUT " ls \r\n";
 
 for ($i = 0; $i < $MAXCHIPS; $i++) {
-    print OUT "set $i/TDACFILE /home/mu3e/pixel-maskfiles/noiseMaskFile-chipID$i \r\n";
+    print OUT "set $i/TDACFILE $namestub$i \r\n";
 }
 
-print OUT "set GitHash $githash \r\n";
+
+if ($opt_t) {
+    if (!$opt_d) {
+        @tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git rev-parse HEAD && cd -'`;
+        $githash = substr $tag[0], 0, -1;
+    }
+    print "githash ->$githash<-\n";
+    print OUT "set GitHash $githash \r\n";
+}
+
 
 
 print OUT " quit \r\n";
