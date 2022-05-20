@@ -5,7 +5,7 @@
 #$tag[0] = substr $tag[0], 0, -1;
 
 @tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git rev-parse HEAD && cd -'`;
-$tag[0] = substr $tag[0], 0, -1;
+$githash = substr $tag[0], 0, -1;
 
 print "->$tag[0]<-\n";
 
@@ -20,6 +20,9 @@ print OUT " ls \r\n";
 for ($i = 0; $i < $MAXCHIPS; $i++) {
     print OUT "set $i/TDACFILE /home/mu3e/pixel-maskfiles/noiseMaskFile-chipID$i \r\n";
 }
+
+print OUT "set GitHash $githash \r\n";
+
 
 print OUT " quit \r\n";
 
