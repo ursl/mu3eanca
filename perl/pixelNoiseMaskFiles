@@ -7,7 +7,7 @@
 @tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git rev-parse HEAD && cd -'`;
 $githash = substr $tag[0], 0, -1;
 
-print "->$tag[0]<-\n";
+print "githash ->$githash<-\n";
 
 exit(0);
 
