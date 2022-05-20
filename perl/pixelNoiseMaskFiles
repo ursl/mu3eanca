@@ -4,10 +4,13 @@
 $MAXCHIPS = 2; 
 
 open(OUT, "|odbedit");
-print OUT "cd /Equipment/PixelsCentral/Settings/TDACS\n";
-print OUT "ls\n";
+print OUT "cd /Equipment/PixelsCentral/Settings/TDACS \n";
+print OUT "ls \n";
 
 for ($i = 0; $i < $MAXCHIPS; $i++) {
 #    print(OUT, "odbedit -c 'set \"/Equipment/PixelsCentral/Settings/TDACS/$i/TDACFILE\" \"/home/mu3e/pixel-maskfiles/noiseMaskFile-chipID$i\"'\n");
 
 }
+
+
+close OUT;
