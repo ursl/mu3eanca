@@ -7,6 +7,7 @@
 setenv JOB 
 setenv STEERFILE    $JOB.i
 setenv ROOTFILENAME $JOB.root
+setenv MOMENTUM     
 setenv STORAGE1
 setenv SITE
 setenv G4BLOUTPUTDIR
@@ -62,21 +63,18 @@ ls -l
 
 # PIONEER_SlantedTgtE_prod-40009.i histoFile=PIONEER_SlantedTgtE_prod-40009.root
 echo "----------------------------------------------------------------------"
-echo "g4bl $STEERFILE histoFile=$ROOTFILENAME"
+echo "g4bl $STEERFILE histoFile=$ROOTFILENAME momentum=$MOMENTUM"
 echo "----------------------------------------------------------------------"
-g4bl $STEERFILE histoFile=$ROOTFILENAME  |& tee g4bl.log
+g4bl $STEERFILE histoFile=$ROOTFILENAME  momentum=$MOMENTUM |& tee g4bl.log
 date
 ls -rtl
-
-if ( -e ./CALOCNTR.txt ) then
-    cp ./CALOCNTR.txt ./$JOB.root
-endif
 
 echo "slurm check size of rootfile produced"
 ls -l ./$JOB.root
 
 mkdir -p $STORAGE1
 
+# -- g4bl production
 if ( -e ./$JOB.root ) then
     cp ./$JOB.root $STORAGE1
     setenv BLA  `ls -l $STORAGE1/$JOB.root`
@@ -84,13 +82,32 @@ if ( -e ./$JOB.root ) then
     ls -l $STORAGE1/$JOB.root
 endif
 
+# -- g4bl transport
 if ( -e ./CALOCNTR.txt ) then
     # dummy entry for monSlurm
-    cp ./CALOCNTR.txt $STORAGE1/$JOB.root
-    cp ./CALOCNTR.txt $STORAGE1/$JOB-CALOCNTR.txt
-    cp ./CALOENTR.txt $STORAGE1/$JOB-CALOENTR.txt
-    cp ./profile.txt $STORAGE1/$JOB-profile.txt
-    cp ./g4bl.log $STORAGE1/$JOB-g4bl.log
+    cp ./CALOCNTR.txt $STORAGE1/p$MOMENTUM-$JOB.root
+    cp ./CALOCNTR.txt $STORAGE1/p$MOMENTUM-$JOB-CALOCNTR.txt
+    cp ./CALOENTR.txt $STORAGE1/p$MOMENTUM-$JOB-CALOENTR.txt
+    cp ./g4bl.log $STORAGE1/p$MOMENTUM-$JOB-g4bl.log
+
+    if ( -e ./profile.txt ) then
+       cp ./profile.txt $STORAGE1/p$MOMENTUM-$JOB-profile.txt
+    endif
+    if ( -e ./profile-13.txt ) then
+       cp ./profile-13.txt $STORAGE1/p$MOMENTUM-$JOB-profile-13.txt
+    endif
+    if ( -e ./profile-211.txt ) then
+       cp ./profile-211.txt $STORAGE1/p$MOMENTUM-$JOB-profile-211.txt
+    endif
+    if ( -e ./profile-11.txt ) then
+       cp ./profile-11.txt $STORAGE1/p$MOMENTUM-$JOB-profile-11.txt
+    endif
+    if ( -e ./profile-2212.txt ) then
+       cp ./profile-2212.txt $STORAGE1/p$MOMENTUM-$JOB-profile-2212.txt
+    endif
+    if ( -e ./profile-0.txt ) then
+       cp ./profile-0.txt $STORAGE1/p$MOMENTUM-$JOB-profile-0.txt
+    endif
 else
     echo "no output files to copy"
 endif
