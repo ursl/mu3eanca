@@ -55,7 +55,7 @@ echo "--> End of env testing"
 # ----------------------------------------------------------------------
 # -- Run g4bl
 # ----------------------------------------------------------------------
-echo "--> Run g4bl"
+echo "--> Run g4bl for job ->$JOB<-"
 echo "pwd"
 pwd
 echo "ls -l"
@@ -85,28 +85,28 @@ endif
 # -- g4bl transport
 if ( -e ./CALOCNTR.txt ) then
     # dummy entry for monSlurm
-    cp ./CALOCNTR.txt $STORAGE1/p$MOMENTUM-$JOB.root
-    cp ./CALOCNTR.txt $STORAGE1/p$MOMENTUM-$JOB-CALOCNTR.txt
-    cp ./CALOENTR.txt $STORAGE1/p$MOMENTUM-$JOB-CALOENTR.txt
-    cp ./g4bl.log $STORAGE1/p$MOMENTUM-$JOB-g4bl.log
+    cp ./CALOCNTR.txt $STORAGE1/$JOB.root
+    cp ./CALOCNTR.txt $STORAGE1/$JOB-CALOCNTR.txt
+    cp ./CALOENTR.txt $STORAGE1/$JOB-CALOENTR.txt
+    cp ./g4bl.log $STORAGE1/$JOB-g4bl.log
 
     if ( -e ./profile.txt ) then
-       cp ./profile.txt $STORAGE1/p$MOMENTUM-$JOB-profile.txt
+       cp ./profile.txt $STORAGE1/$JOB-profile.txt
     endif
     if ( -e ./profile-13.txt ) then
-       cp ./profile-13.txt $STORAGE1/p$MOMENTUM-$JOB-profile-13.txt
+       cp ./profile-13.txt $STORAGE1/$JOB-profile-13.txt
     endif
     if ( -e ./profile-211.txt ) then
-       cp ./profile-211.txt $STORAGE1/p$MOMENTUM-$JOB-profile-211.txt
+       cp ./profile-211.txt $STORAGE1/$JOB-profile-211.txt
     endif
     if ( -e ./profile-11.txt ) then
-       cp ./profile-11.txt $STORAGE1/p$MOMENTUM-$JOB-profile-11.txt
+       cp ./profile-11.txt $STORAGE1/$JOB-profile-11.txt
     endif
     if ( -e ./profile-2212.txt ) then
-       cp ./profile-2212.txt $STORAGE1/p$MOMENTUM-$JOB-profile-2212.txt
+       cp ./profile-2212.txt $STORAGE1/$JOB-profile-2212.txt
     endif
     if ( -e ./profile-0.txt ) then
-       cp ./profile-0.txt $STORAGE1/p$MOMENTUM-$JOB-profile-0.txt
+       cp ./profile-0.txt $STORAGE1/$JOB-profile-0.txt
     endif
 else
     echo "no output files to copy"
