@@ -4,14 +4,15 @@
 # pixelNoiseMaskFiles
 # ===================
 #
-# Usage: ./pixelNoiseMaskFiles [-n noiseMaskFile-chipID] [-t]
+# Usage: ./pixelNoiseMaskFiles [-N -n noiseMaskFile-chipID] [-T]
 #
-# Options: -n namestub  change the names of the files
-#          -t           write tag (obtained via ssh into switch0) into ODB key GitHash
+# Options: -N           change the names of the files
+#          -n namestub  provide name stub
+#          -T           write tag (obtained via ssh into switch0) into ODB key GitHash
 #          -d           debug: do not ssh and do not interact with ODB
 #
 # History 2022/05/20 first shot
-#
+#         2022/05/23 add -N
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -19,7 +20,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('dn:t');
+getopts('dNn:T');
 
 my $midasdir = "/Equipment/PixelsCentral/Settings/TDACS";
 my $tagName = "GitHash";
@@ -35,34 +36,36 @@ if ($opt_n) {
 
 
 $MAXCHIPS = 120; 
+my $OUT;
 
 if (!$opt_d) {
     open(OUT, "| odbedit ") || die "Cannot open odbedit\n";
+    select OUT;
 } else {
-    open(OUT, ""); # FIXME!!!
-    print " would be in ODB \r\n";
+#    open(OUT, ">STDOUT"); # FIXME!!!
+#    print " would be in ODB \r\n";
 }
 
-print OUT " cd $midasdir \r\n";
-print OUT " ls \r\n";
+print " cd $midasdir \r\n";
+print " ls \r\n";
 
-for ($i = 0; $i < $MAXCHIPS; $i++) {
-    print OUT "set $i/TDACFILE $namestub$i \r\n";
+if ($opt_N) {
+    for ($i = 0; $i < $MAXCHIPS; $i++) {
+        print "set $i/TDACFILE $namestub$i \r\n";
+    }
 }
 
-
-if ($opt_t) {
+if ($opt_T) {
     if (!$opt_d) {
         @tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git rev-parse HEAD && cd -'`;
         $githash = substr $tag[0], 0, -1;
     }
-    print "githash ->$githash<-\n";
-    print OUT "set GitHash $githash \r\n";
+    print "set GitHash $githash \r\n";
 }
 
 
 
-print OUT " quit \r\n";
+print " quit \r\n";
 
 
 close OUT;
