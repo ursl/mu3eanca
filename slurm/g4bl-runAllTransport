@@ -22,7 +22,7 @@
 use File::Copy;
 use Getopt::Std;
 
-getopts('c:di:p:s:');
+getopts('c:di:m:p:s:');
 
 my $run = "/psi/home/langenegger/mu3e/mu3eanca/slurm/run";
 
@@ -52,13 +52,17 @@ if (!$opt_p) {
     $opt_p = 28;
 }
 
+if (!$opt_m) {
+    $opt_m = "muprod0003";
+}
+
 my $slurmcsh = "/psi/home/langenegger/mu3e/mu3eanca/slurm/slurm-g4bl-pioneer.csh"; 
 
 my $settings = "STORAGE1 /psi/home/langenegger/data/slurm/pioneer-g4bl/transport/XXOUTPUTXX";
 $settings   .= "%G4BLOUTPUTDIR .";
 $settings   .= "%MOMENTUM $opt_p";
 
-$settings   .= "%G4BLTRACKFILE p$opt_p-muprod0003-BLTrackFile2_PDGidXXOPTIDXX_DetEMuPiFromTarget.txt";
+$settings   .= "%G4BLTRACKFILE p$opt_p-$opt_m-BLTrackFile2_PDGidXXOPTIDXX_DetEMuPiFromTarget.txt";
 
 my $setting, $nsetting, $isetting, $fsetting;
 if ($opt_s) {
@@ -74,7 +78,7 @@ foreach $ipart (@ids) {
             $steerCard = $card{$ipart};
         }
         my $setpoint = $isetting + $iloop*($fsetting - $isetting)/$nsetting;
-        my $sname = "p$opt_p-$setting=$setpoint-$steerCard";
+        my $sname = "p$opt_p-$opt_m-$setting=$setpoint-$steerCard";
         (my $snnoi = $sname) =~ s/\.i$//;
         copy ("../$steerCard", "$sname");
         changeSetting($sname, $setting, $setpoint);
