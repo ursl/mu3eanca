@@ -1,0 +1,107 @@
+#!/bin/perl
+
+# ----------------------------------------------------------------------
+# g4bl-runAllTransport
+# ====================
+#
+#
+# History 2022/05/23 first shot
+#
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use File::Copy;
+use Getopt::Std;
+
+getopts('c:df:i:o:p:s:');
+
+my $run = "/psi/home/langenegger/mu3e/mu3eanca/slurm/run";
+
+my @ids = ("-13", "211", "0");
+my %card = ("-13" => "mu0001.i",
+            "211" => "pi0001.i",
+            "0" =>  "all0001.i");
+
+# -- provide particle identity 
+if ($opt_i) {
+    @ids = ();
+    @ids = ($opt_i);
+}
+
+# -- provide steering card
+if (!$opt_c) {
+    $opt_c = "mu0001.i";
+    if ($opt_i) {
+        $opt_c = $card{$opt_i};
+        print "bla $opt_i -> $opt_c \n";
+    } else {
+        $opt_c = "nada";
+    }
+}
+
+if (!$opt_f) {
+    $opt_f = "p28-muprod0003-BLTrackFile2_PDGid0_DetEMuPiFromTarget.txt";
+}
+
+if (!$opt_p) {
+    $opt_p = 28;
+}
+
+my $slurmcsh = "/psi/home/langenegger/mu3e/mu3eanca/slurm/slurm-g4bl-pioneer.csh"; 
+
+my $settings = "STORAGE1 /psi/home/langenegger/data/slurm/pioneer-g4bl/transport/XXOUTPUTXX";
+$settings   .= "%G4BLOUTPUTDIR .";
+$settings   .= "%MOMENTUM $opt_p";
+
+$settings   .= "%G4BLTRACKFILE p$opt_p-muprod0003-BLTrackFile2_PDGidXXOPTIDXX_DetEMuPiFromTarget.txt";
+
+my $setting, $nsetting, $isetting, $fsetting;
+if ($opt_s) {
+    ($setting, $nsetting, $isetting, $fsetting) = split(/,/, $opt_s);
+    print "$setting in $nsetting steps from $isetting to $fsetting\n";
+}
+
+foreach $ipart (@ids) {
+    print "ipart = $ipart\n";
+    for ($iloop = 0; $iloop < $nsetting; $iloop++) {
+        my $steerCard = $opt_c;
+        if ($opt_c eq "nada") {
+            $steerCard = $card{$ipart};
+        }
+        my $setpoint = $isetting + $iloop*($fsetting - $isetting)/$nsetting;
+        my $sname = "p$opt_p-$setting=$setpoint-$steerCard";
+        (my $snnoi = $sname) =~ s/\.i$//;
+        copy ("../$steerCard", "$sname");
+        changeSetting($sname, $setting, $setpoint);
+        ($jsettings = $settings) =~ s/PDGidXXOPTIDXX/PDGid$ipart/g;
+        $jsettings =~ s/XXOUTPUTXX/$snnoi/g;
+        print "run -c $slurmcsh -r \'$jsettings\' $sname\n"; 
+        if ($opt_d) {
+            print "  not submitting\n";
+        } else {
+            system("$run -c $slurmcsh -r \'$jsettings\' $sname");
+        }
+    }
+}
+
+# ----------------------------------------------------------------------
+sub changeSetting {
+    (my $file, $setting, $setpoint) = @_;
+    print "file: $file\n";
+    copy ("$file", "$file.bak");
+    open(IN, "<$file.bak") or die $!;
+    open(OUT, ">$file") or die $!;
+    while(<IN>) {
+        if (/param $setting/) {
+            print OUT "param $setting=$setpoint\n";
+        } else {
+            print OUT $_;
+        }
+    }
+    close(IN);
+    close(OUT);
+    unlink("$file.bak");
+}
