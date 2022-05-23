@@ -4,6 +4,12 @@
 # g4bl-runAllTransport
 # ====================
 #
+# NOTE: The output goes to /psi/home/langenegger/data/slurm/pioneer-g4bl/transport/
+#
+# cd /psi/home/langenegger/data/g4bl/pioneer-g4bl/pioneer/transport/scan1
+# g4bl-runAllTransport -s QSK41set,3,-0.72,-0.6
+# g4bl-runAllTransport -s QSK41set,3,-0.72,-0.6 -p 55
+# g4bl-runAllTransport -s QSK41set,3,-0.72,-0.6 -p 85 -i 211
 #
 # History 2022/05/23 first shot
 #
@@ -16,7 +22,7 @@
 use File::Copy;
 use Getopt::Std;
 
-getopts('c:df:i:o:p:s:');
+getopts('c:di:p:s:');
 
 my $run = "/psi/home/langenegger/mu3e/mu3eanca/slurm/run";
 
@@ -40,10 +46,6 @@ if (!$opt_c) {
     } else {
         $opt_c = "nada";
     }
-}
-
-if (!$opt_f) {
-    $opt_f = "p28-muprod0003-BLTrackFile2_PDGid0_DetEMuPiFromTarget.txt";
 }
 
 if (!$opt_p) {
