@@ -1,18 +1,18 @@
 #!/bin/perl
 
 # ----------------------------------------------------------------------
-# g4bl-runAllTransport
-# ====================
+# g4bl-runTransportScan
+# =====================
 #
 # NOTE: The output goes to /psi/home/langenegger/data/slurm/pioneer-g4bl/transport/
 #
 # cd /psi/home/langenegger/data/g4bl/pioneer-g4bl/pioneer/transport/scan1
-# g4bl-runAllTransport -s QSK41set,3,-0.72,-0.6
-# g4bl-runAllTransport -s QSK41set,3,-0.72,-0.6 -p 55
-# g4bl-runAllTransport -s QSK41set,3,-0.72,-0.6 -p 85 -i 211
+# g4bl-runTransportScan -s QSK41set,3,-0.72,-0.6
+# g4bl-runTransportScan -s QSK41set,3,-0.72,-0.6 -p 55
+# g4bl-runTransportScan -s QSK41set,3,-0.72,-0.6 -p 85 -i 211
 #
 # History 2022/05/23 first shot
-#
+#         2022/05/24 name change
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #

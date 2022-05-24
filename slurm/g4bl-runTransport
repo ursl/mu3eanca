@@ -6,6 +6,12 @@
 #
 # NOTE: The output goes to /psi/home/langenegger/data/slurm/pioneer-g4bl/transport/
 #
+# options: -l     local running
+#          -p 28  momentum choice
+#
+#
+#
+# Usage examples:
 # cd /psi/home/langenegger/data/g4bl/pioneer-g4bl/pioneer/transport/
 # g4bl-runTransport -p 55 pi0001.i pi0002.i
 # g4bl-runTransport [-l] -p 55 -s megcol pi0001.i pi0002.i
