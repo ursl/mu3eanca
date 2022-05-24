@@ -1,6 +1,10 @@
+// ----------------------------------------------------------------------
 // -- original by MK
 // -- changed to reflect new data structure in 2022
-
+// 
+// -- Usage: produceAllMergedNoiseFiles()
+//           after editing vector<int> runlist to contain all desired runs
+// ----------------------------------------------------------------------
 using namespace::std;
 
 // -- dump vnoise into noise mask file
@@ -190,7 +194,7 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
   // find noisy pixels per chipID
   std::map<int, std::vector<std::pair<uint8_t, uint8_t>>> noisy_pixels;
   std::uint64_t hits_total = 0;
-  int noise_limit(0);
+  double noise_limit(0);
 
   vector<string> vPrint;
   
@@ -223,6 +227,7 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
     // -- noise defined as mean(nhits) + NSIGMA*sigma
     int NSIGMA(20);
     noise_limit = h1->GetMean() + NSIGMA*h1->GetRMS() + 0.5;
+    noise_limit = 0.5;
     cout << "chipID " << chipID
          << " (maximum: " << h2->GetMaximum() << ") mean(nhit) = " << h1->GetMean() << " RMS = " << h1->GetRMS()
          << " noise level = " << noise_limit
@@ -238,15 +243,15 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
         int nhit = static_cast<int>(hitmaps.at(chipID)->GetBinContent(nx, ny)); 
         // -- if the noise limit is 0 then there will be NO noisy pixels
         if ((noise_limit > 0) && (nhit > noise_limit)) {
-          std::cout << "Chip ID " << chipID << ", Found noisy pixel at " << nx-1 << ", " << ny-1
-                    << " nhits = " << nhit << " noise_limit = " << noise_limit
-                    << std::endl;
+          if (DBX) std::cout << "Chip ID " << chipID << ", Found noisy pixel at " << nx-1 << ", " << ny-1
+			     << " nhits = " << nhit << " noise_limit = " << noise_limit
+			     << std::endl;
           tot_noisy_pixels++;
           noisy_pixels[chipID].push_back(std::pair<uint8_t, uint8_t>(nx-1, ny-1));
-          vNoise.push_back(0xff);
+          vNoise.push_back(0x0);
           spix += string(Form("%d/%d(%d) ", nx-1, ny-1, nhit));
         } else {
-          vNoise.push_back(0x0);
+          vNoise.push_back(0xff);
         }
       }
       // -- fill up to 255
@@ -258,7 +263,7 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
     std::cout << " with a  total of " << tot_noisy_pixels << " (" << tot_noisy_pixels*100/64000 << "%)\n";
     writeNoiseMaskFile(vNoise, runnumber, chipID);
 
-    vPrint.push_back(Form("chipID %3d, n. level = %2d, N(n. pixels) = %d %s",
+    vPrint.push_back(Form("chipID %3d, n. level = %5.3f, N(n. pixels) = %d %s",
                           chipID, noise_limit, tot_noisy_pixels, spix.c_str()));
     vNoise.clear();
   }
@@ -302,7 +307,7 @@ void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID) {
 void summarize(vector<uint8_t> vnoise) {
   for (unsigned int i = 0; i < vnoise.size(); ++i){
     pair<int, int> a = colrowFromIdx(i);
-    if ((0 != vnoise[i]) && (0xda != vnoise[i])) {
+    if ((0xff != vnoise[i]) && (0xda != vnoise[i])) {
       cout << Form("pix: %d/%d ", a.first, a.second);
     }
   }
@@ -332,9 +337,9 @@ void addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
 
   for (unsigned int i = 0; i < vread.size(); ++i){
     pair<int, int> a = colrowFromIdx(i);
-    if ((0 == vnoise[i]) && (0 != vread[i])) {
-      if (0xda != vread[i]) cout << Form("run %d setting col/row = %3d/%3d to %x",
-                                         runnumber, a.first, a.second, vread[i])
+    if ((0xff == vnoise[i]) && (0xff != vread[i])) {
+      if (0xda != vread[i]) cout << Form("run %d change setting chip/col/row = %3d/%3d/%3d from %x to %x",
+                                         runnumber, chipID, a.first, a.second, vnoise[i], vread[i])
                                  << endl;
       vnoise[i] = vread[i];
     }
@@ -346,10 +351,9 @@ void addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
 // ----------------------------------------------------------------------
 // -- combines all runs into one mask file
 // ----------------------------------------------------------------------
-void mergeNoiseFiles(int chipID) {
-  vector<int> runlist = {215, 216, 220};
+void mergeNoiseFiles(int chipID, vector<int> runlist) {
   vector<uint8_t> vnoise;
-  for (int i = 0; i < 256*256; ++i) vnoise.push_back(0);
+  for (int i = 0; i < 256*256; ++i) vnoise.push_back(0xff);
 
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
     addNoiseMaskFile(vnoise, runlist[irun], chipID);
@@ -364,15 +368,16 @@ void mergeNoiseFiles(int chipID) {
 // -- merging all runs into single mask file
 // ----------------------------------------------------------------------
 void produceAllMergedNoiseFiles() {
+  //  vector<int> runlist = {215, 216, 220};
+  vector<int> runlist = {311};
 
-  vector<int> runlist = {215, 216, 220};
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
     writeNoisyPixelsMaskFiles(runlist[irun]);
   }
 
   
   for (int i = 0; i < 128; ++i) {
-    mergeNoiseFiles(i);
+    mergeNoiseFiles(i, runlist);
   }
 
 
@@ -384,6 +389,8 @@ void produceAllMergedNoiseFiles() {
 
 // ----------------------------------------------------------------------
 void plotLVDS(int run) {
+  TCanvas c0;
+  TLatex *tl = new TLatex();
   gStyle->SetOptStat(0);
   TH1D *hRatio = (TH1D*)gROOT->FindObject("hRatio"); hRatio->SetLineColor(kRed);
   TH1D *hTotal = (TH1D*)gROOT->FindObject("hTotal");
