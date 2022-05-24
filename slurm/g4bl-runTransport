@@ -1,0 +1,79 @@
+#!/bin/perl
+
+# ----------------------------------------------------------------------
+# g4bl-runAllTransport
+# ====================
+#
+# NOTE: The output goes to /psi/home/langenegger/data/slurm/pioneer-g4bl/transport/
+#
+# cd /psi/home/langenegger/data/g4bl/pioneer-g4bl/pioneer/transport/
+# g4bl-runTransport -p 55 pi0001.i pi0002.i
+# g4bl-runTransport [-l] -p 55 -s megcol pi0001.i pi0002.i
+#
+# History 2022/05/24 first shot
+#
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use File::Copy;
+use Getopt::Std;
+
+getopts('di:lm:p:s:');
+
+my $run = "/psi/home/langenegger/mu3e/mu3eanca/slurm/run";
+
+# -- provide particle identity 
+if ($opt_i) {
+    @ids = ();
+    @ids = ($opt_i);
+}
+
+if (!$opt_p) {
+    $opt_p = 28;
+}
+
+if (!$opt_s) {
+    $opt_s = "std";
+}
+
+if (!$opt_m) {
+    $opt_m = "muprod0003";
+}
+
+my $slurmcsh = "/psi/home/langenegger/mu3e/mu3eanca/slurm/slurm-g4bl-pioneer.csh"; 
+
+my $settings = "STORAGE1 /psi/home/langenegger/data/slurm/pioneer-g4bl/transport/XXOUTPUTXX";
+$settings   .= "%G4BLOUTPUTDIR .";
+$settings   .= "%MOMENTUM $opt_p";
+$settings   .= "%G4BLTRACKFILE p$opt_p-$opt_m-BLTrackFile2_PDGidXXOPTIDXX_DetEMuPiFromTarget.txt";
+
+for ($iloop = 0; $iloop <= $#ARGV; $iloop++) {
+    my $ipart = 211;
+    my $steerCard = $ARGV[$iloop];
+    if ($steerCard =~ /mu/) {
+        $ipart = -13;
+    }
+    if ($steerCard =~ /all/) {
+        $ipart = 0;
+    }
+    print "-> $steerCard \n";
+    my $sname = "p$opt_p-$opt_m-$opt_s-$steerCard";
+    (my $snnoi = $sname) =~ s/\.i$//;
+    copy ("$steerCard", "$sname");
+    ($jsettings = $settings) =~ s/PDGidXXOPTIDXX/PDGid$ipart/g;
+    $jsettings =~ s/XXOUTPUTXX/$snnoi/g;
+    print "run -c $slurmcsh -r \'$jsettings\' $sname\n"; 
+    if ($opt_d) {
+        print "  not submitting\n";
+    } else {
+        if ($opt_l) {
+            system("$run -c $slurmcsh -r \'$jsettings\' $sname");
+        } else {
+            system("$run -m local -c $slurmcsh -r \'$jsettings\' $sname &");
+        }
+    }
+}
+
