@@ -375,7 +375,7 @@ void mergeNoiseFiles(int chipID, vector<int> runlist) {
 // -- main function reading all trees (producing per-run files) and
 // -- merging all runs into single mask file
 // ----------------------------------------------------------------------
-void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 0.5) {
+void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5) {
   if (modeNoiseLimit < 1) {
     cout << "produceAllMergedNoiseFiles(int modeNoiseLimit, double noiseLevel)" << endl;
     cout << " modeNoiseLimit = 1: noiseLevel provides absolute number of noise threshold, noise_limit = noiseLevel" << endl;
@@ -384,7 +384,7 @@ void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 0.5
     return;
   }
   //  vector<int> runlist = {215, 216, 220};
-  vector<int> runlist = {311};
+  vector<int> runlist = {311, 332, 347};
 
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
     writeNoisyPixelsMaskFiles(runlist[irun], modeNoiseLimit, noiseLevel);
