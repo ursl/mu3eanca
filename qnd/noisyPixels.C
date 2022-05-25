@@ -2,8 +2,11 @@
 // -- original by MK
 // -- changed to reflect new data structure in 2022
 // 
-// -- Usage: produceAllMergedNoiseFiles()
-//           after editing vector<int> runlist to contain all desired runs
+// -- Usage examples:
+//           produceAllMergedNoiseFiles()
+//           produceAllMergedNoiseFiles(1, 1.5)
+//           produceAllMergedNoiseFiles(2, 10)
+//           ** after editing vector<int> runlist to contain all desired runs ** 
 // ----------------------------------------------------------------------
 using namespace::std;
 
@@ -53,7 +56,7 @@ int idxFromColRow(int col, int row) {
 // ----------------------------------------------------------------------
 // -- read noise information for all chips from a tree for one run
 // ----------------------------------------------------------------------
-void writeNoisyPixelsMaskFiles(int runnumber) {
+void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLevel) {
   cout << "writeNoisyPixelsMaskFiles for " << Form("dataTree%05d.root", runnumber) << endl;
 
   // https://mattermost.gitlab.rlp.net/mu3e/pl/qk3t7i7t53gqubqbucjpggzdna
@@ -174,11 +177,13 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
     b_isInCluster->GetEntry(tentry);  
     if (VERBOSE) cout << "processing event .. " << ievt << " with nhit = " << v_col->size()
                       << " tentry = " << tentry
-                      <<  " MIDASEventID = "  << (v_MIDASEventID->size() > 0? Form("%d", v_MIDASEventID->at(0)): "n/a")
+                      <<  " MIDASEventID = "
+		      << (v_MIDASEventID->size() > 0? Form("%d", v_MIDASEventID->at(0)): "n/a")
                       << " sizes = " << v_MIDASEventID->size() << "/" << v_col->size()
                       << endl;
     for (int ihit = 0; ihit < v_col->size(); ++ihit) {
-      if (VERBOSE) cout << Form("col/row/chip = %d/%d/%d", v_col->at(ihit), v_row->at(ihit), v_chipID->at(ihit)) << endl;
+      if (VERBOSE) cout << Form("col/row/chip = %d/%d/%d", v_col->at(ihit), v_row->at(ihit), v_chipID->at(ihit))
+			<< endl;
       hitmaps.at(v_chipID->at(ihit))->Fill(v_col->at(ihit), v_row->at(ihit));
 
       hTotal->Fill(v_chipID->at(ihit));
@@ -194,8 +199,7 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
   // find noisy pixels per chipID
   std::map<int, std::vector<std::pair<uint8_t, uint8_t>>> noisy_pixels;
   std::uint64_t hits_total = 0;
-  double noise_limit(0);
-
+  
   vector<string> vPrint;
   
   bool DBX(false);
@@ -212,7 +216,7 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
       }
     }
     hits_total = hits_total * 1.111111; // correct for missing pixels at the chip border
-    noise_limit = 10. * hits_total/64000;
+    //noise_limit = 10. * hits_total/64000;
     noisy_pixels[chipID] = std::vector<std::pair<uint8_t, uint8_t> >();
     
 
@@ -224,12 +228,16 @@ void writeNoisyPixelsMaskFiles(int runnumber) {
         noisemaps.at(chipID)->Fill(h2->GetBinContent(nx, ny));
       }
     }
-    // -- noise defined as mean(nhits) + NSIGMA*sigma
-    int NSIGMA(20);
-    noise_limit = h1->GetMean() + NSIGMA*h1->GetRMS() + 0.5;
-    noise_limit = 0.5;
+    // -- determine noise_limit, based on modeNoiseLevel and noiseLevel
+    double noise_limit(0.);
+    if (1 == modeNoiseLimit) {
+      noise_limit = noiseLevel;
+    } else if (2 == modeNoiseLimit) {
+      noise_limit = h1->GetMean() + noiseLevel*h1->GetRMS() + 0.5;
+    }
     cout << "chipID " << chipID
-         << " (maximum: " << h2->GetMaximum() << ") mean(nhit) = " << h1->GetMean() << " RMS = " << h1->GetRMS()
+         << " (maximum: " << h2->GetMaximum() << ") mean(nhit) = " << h1->GetMean()
+	 << " RMS = " << h1->GetRMS()
          << " noise level = " << noise_limit
          << endl;
     
@@ -367,12 +375,19 @@ void mergeNoiseFiles(int chipID, vector<int> runlist) {
 // -- main function reading all trees (producing per-run files) and
 // -- merging all runs into single mask file
 // ----------------------------------------------------------------------
-void produceAllMergedNoiseFiles() {
+void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 0.5) {
+  if (modeNoiseLimit < 1) {
+    cout << "produceAllMergedNoiseFiles(int modeNoiseLimit, double noiseLevel)" << endl;
+    cout << " modeNoiseLimit = 1: noiseLevel provides absolute number of noise threshold, noise_limit = noiseLevel" << endl;
+    cout << " modeNoiseLimit = 2: noiseLevel gives MSIGMA for noise_limit = <nhit> + noiseLevel*h1->RMS(nhit) + 0.5" << endl;
+    cout << " -> make your choice and try again!" << endl;
+    return;
+  }
   //  vector<int> runlist = {215, 216, 220};
   vector<int> runlist = {311};
 
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
-    writeNoisyPixelsMaskFiles(runlist[irun]);
+    writeNoisyPixelsMaskFiles(runlist[irun], modeNoiseLimit, noiseLevel);
   }
 
   
