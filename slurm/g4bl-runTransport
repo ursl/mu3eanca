@@ -14,7 +14,7 @@
 # Usage examples:
 # cd /psi/home/langenegger/data/g4bl/pioneer-g4bl/pioneer/transport/
 # g4bl-runTransport -p 55 pi0001.i pi0002.i
-# g4bl-runTransport [-l] -p 55 -s megcol pi0001.i pi0002.i
+# g4bl-runTransport [-l] -p 55 -n triplettoff -s "%QSK41set 0." pi0001.i
 #
 # History 2022/05/24 first shot
 #
@@ -27,7 +27,7 @@
 use File::Copy;
 use Getopt::Std;
 
-getopts('di:lm:p:s:');
+getopts('di:lm:n:p:s:');
 
 my $run = "/psi/home/langenegger/mu3e/mu3eanca/slurm/run";
 
@@ -41,8 +41,8 @@ if (!$opt_p) {
     $opt_p = 28;
 }
 
-if (!$opt_s) {
-    $opt_s = "std";
+if (!$opt_n) {
+    $opt_n = "std";
 }
 
 if (!$opt_m) {
@@ -55,6 +55,9 @@ my $settings = "STORAGE1 /psi/home/langenegger/data/slurm/pioneer-g4bl/transport
 $settings   .= "%G4BLOUTPUTDIR .";
 $settings   .= "%MOMENTUM $opt_p";
 $settings   .= "%G4BLTRACKFILE p$opt_p-$opt_m-BLTrackFile2_PDGidXXOPTIDXX_DetEMuPiFromTarget.txt";
+if ($opt_s) {
+    $settings   .= $opt_s;
+}
 
 for ($iloop = 0; $iloop <= $#ARGV; $iloop++) {
     my $ipart = 211;
@@ -66,7 +69,9 @@ for ($iloop = 0; $iloop <= $#ARGV; $iloop++) {
         $ipart = 0;
     }
     print "-> $steerCard \n";
-    my $sname = "p$opt_p-$opt_m-$opt_s-$steerCard";
+    my $sname = "p$opt_p-$opt_m-$opt_n-$steerCard";
+    $sname =~ s/\%//g;
+    $sname =~ s/\s//g;
     (my $snnoi = $sname) =~ s/\.i$//;
     copy ("$steerCard", "$sname");
     ($jsettings = $settings) =~ s/PDGidXXOPTIDXX/PDGid$ipart/g;
@@ -76,9 +81,9 @@ for ($iloop = 0; $iloop <= $#ARGV; $iloop++) {
         print "  not submitting\n";
     } else {
         if ($opt_l) {
-            system("$run -c $slurmcsh -r \'$jsettings\' $sname");
-        } else {
             system("$run -m local -c $slurmcsh -r \'$jsettings\' $sname &");
+        } else {
+            system("$run -c $slurmcsh -r \'$jsettings\' $sname");
         }
     }
 }
