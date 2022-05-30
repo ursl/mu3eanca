@@ -2,14 +2,110 @@
 // -- changed to reflect new data structure in 2022
 
 #include "../common/json.h"
-//#include "nlohmann/json.hpp"
 
 using namespace::std;
 
 
 map<int, vector<pair<int, int> > > gChipNoisyPixels; 
 
-using json = NLOHMANN::json;
+// ----------------------------------------------------------------------
+struct sensor {
+  int layer, localLadder, simLadder,  confLadder, simChip, runChip, ladderChip,  direction; 
+  TVector3 v;
+};
+
+map<int, struct sensor> gDetectorChips;
+
+
+// ----------------------------------------------------------------------
+int getValInt(string line) {
+  replaceAll(line, ",", "");
+  replaceAll(line, " ", "");
+  size_t icol = line.rfind(":");
+  string snum = line.substr(icol+1);
+  cout << "int  snum ->" << snum << "<-" << endl;
+  return atoi(snum.c_str());
+}
+
+// ----------------------------------------------------------------------
+float getValFloat(string line) {
+  replaceAll(line, ",", "");
+  replaceAll(line, " ", "");
+  size_t icol = line.rfind(":");
+  string snum = line.substr(icol+1);
+  cout << "float snum ->" << snum << "<-" << endl;
+  return atof(snum.c_str());
+}
+
+// ----------------------------------------------------------------------
+vector<string> readEntry(vector<string> lines, int &iLine) {
+  cout << "reading from line " << iLine << endl;
+  vector<string> result;
+  // -- counters for opening and closing braces
+  int ibrace(0); 
+  // -- start from indicated iLine
+  for (unsigned int i = iLine; i < lines.size(); ++i) {
+    if (string::npos != lines[i].find("{")) ++ibrace;
+    if (string::npos != lines[i].find("}")) --ibrace;
+    result.push_back(lines[i]); 
+    if (0 == ibrace) {
+      iLine = i + 1;
+      break;
+    }
+  }
+
+  return result;
+  
+}
+
+
+// ----------------------------------------------------------------------
+struct sensor fillEntry(vector<string> lines) {
+  struct sensor chip; 
+  for (unsigned int i = 0; i < lines.size(); ++i) {
+    if (string::npos != lines[i].find("runChip")) {
+      chip.runChip = getValInt(lines[i]);
+    }
+    if (string::npos != lines[i].find("v")) {
+      chip.v.SetX(getValFloat(lines[i+1]));
+      chip.v.SetY(getValFloat(lines[i+2]));
+      chip.v.SetZ(getValFloat(lines[i+3]));
+    }
+  }
+  return chip;
+}
+
+
+// ----------------------------------------------------------------------
+void readJSON(string filename = "../common/sensors_mapping_220525.json") {
+  vector<string> allLines; 
+  ifstream INS;
+  string sline;
+  INS.open(filename);
+  while (getline(INS, sline)) {
+    allLines.push_back(sline);
+  }   
+  cout << "read " << allLines.size() << " lines" << endl;
+  
+  int iLine(1);
+  vector<string> sentry = readEntry(allLines, iLine); 
+  struct sensor chip; 
+  while (sentry.size() > 0) {
+    chip = fillEntry(sentry); 
+    gDetectorChips.insert(make_pair(chip.runChip, chip));
+    sentry = readEntry(allLines, iLine);
+    if (iLine == allLines.size() - 1) break;
+  }
+  chip = fillEntry(sentry);
+  gDetectorChips.insert(make_pair(chip.runChip, chip));
+  
+  for (map<int, struct sensor>::iterator it = gDetectorChips.begin(); it != gDetectorChips.end(); ++it) {
+    cout << it->second.runChip << ": v = (" << it->second.v.X() << ", " << it->second.v.Y() << ", " << it->second.v.Z() << ")" << endl;
+  }
+                        
+}
+
+
 
 
 // ----------------------------------------------------------------------
@@ -147,11 +243,7 @@ void fillAllNoisyPixels(string dir = ".") {
 void plotNoisyPixels(string dir = ".") {
   int OK(0); 
 
-  ifstream i("../common/sensors_mapping_220525.json");
-  json jMap;
-  i >> jMap;
-  
-  
+ 
   gChipNoisyPixels.clear();
   for (int i = 0; i < 120; ++i) {
     vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dir.c_str(), i));
