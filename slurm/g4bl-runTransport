@@ -13,6 +13,8 @@
 #
 # Usage examples:
 # cd /psi/home/langenegger/data/g4bl/pioneer-g4bl/pioneer/transport/
+# g4bl-runTransport -p 65 -m muprod0002 -n iQSKv0 pi0002.i
+# g4bl-runTransport -p 65 -m muprod0002 -n iQSKv1 -s 'QSK41cur=24.075 QSK42cur=-41.088 QSK43cur=26.710' pi0004.i
 # g4bl-runTransport -p 55 pi0001.i pi0002.i
 # g4bl-runTransport [-l] -p 55 -n triplettoff -s "%QSK41set 0." pi0001.i
 #
@@ -56,10 +58,11 @@ $settings   .= "%G4BLOUTPUTDIR .";
 $settings   .= "%MOMENTUM $opt_p";
 $settings   .= "%G4BLTRACKFILE p$opt_p-$opt_m-BLTrackFile2_PDGidXXOPTIDXX_DetEMuPiFromTarget.txt";
 if ($opt_s) {
-    $settings   .= "%SETTINGS $opt_s";
+    $settings   .= "%SETTINGS \"$opt_s\" ";
 }
 
 for ($iloop = 0; $iloop <= $#ARGV; $iloop++) {
+    # -- add particle ID based on steering file
     my $ipart = 211;
     my $steerCard = $ARGV[$iloop];
     if ($steerCard =~ /mu/) {
@@ -68,8 +71,15 @@ for ($iloop = 0; $iloop <= $#ARGV; $iloop++) {
     if ($steerCard =~ /all/) {
         $ipart = 0;
     }
-    print "-> $steerCard \n";
-    my $sname = "p$opt_p-$opt_m-$opt_n-$steerCard";
+    # -- add modified opt_s
+    my $sname;
+    my $sopts = "";
+    if ($opt_s) {
+        ($sopts = $opt_s) =~ s/\s/_/g;
+        $sname = "p$opt_p-$opt_m-$opt_n-$sopts-$steerCard";
+    } else {
+        $sname = "p$opt_p-$opt_m-$opt_n-$steerCard";
+    }
     $sname =~ s/\%//g;
     $sname =~ s/\s//g;
     (my $snnoi = $sname) =~ s/\.i$//;
