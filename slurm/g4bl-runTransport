@@ -56,7 +56,7 @@ $settings   .= "%G4BLOUTPUTDIR .";
 $settings   .= "%MOMENTUM $opt_p";
 $settings   .= "%G4BLTRACKFILE p$opt_p-$opt_m-BLTrackFile2_PDGidXXOPTIDXX_DetEMuPiFromTarget.txt";
 if ($opt_s) {
-    $settings   .= $opt_s;
+    $settings   .= "%SETTINGS $opt_s";
 }
 
 for ($iloop = 0; $iloop <= $#ARGV; $iloop++) {
