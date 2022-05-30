@@ -1,10 +1,15 @@
 // -- original by MK
 // -- changed to reflect new data structure in 2022
 
+#include "../common/json.h"
+//#include "nlohmann/json.hpp"
+
 using namespace::std;
 
 
 map<int, vector<pair<int, int> > > gChipNoisyPixels; 
+
+using json = NLOHMANN::json;
 
 
 // ----------------------------------------------------------------------
@@ -87,7 +92,7 @@ void summaryMaskFile(string filename) {
 void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise) {
   vector<pair<int, int> > vnp;
   for (unsigned int i = 0; i < vnoise.size(); ++i){
-    if ((0 != vnoise[i]) && (0xda != vnoise[i])) {
+    if ((0xff != vnoise[i]) && (0xda != vnoise[i])) {
       pair<int, int> a = colrowFromIdx(i);
       vnp.push_back(a);
     }
@@ -101,25 +106,62 @@ void fillAllNoisyPixels(string dir = ".") {
   int OK(0); 
   gChipNoisyPixels.clear();
 
-  for (int i = 0; i < 128; ++i) {
+  for (int i = 0; i < 120; ++i) {
     vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dir.c_str(), i));
     if (validNoise(vnoise)) {
       fillNoisyPixels(i, vnoise);
     }
   }
 
-  TH1D *h1 = new TH1D("hnoise", Form("noisy pixels/chips (%s)", dir.c_str()), 50, 0., 1000.);
+  int noiseMax(-1), npix(0);
   map<int, vector<pair<int, int> > >::iterator it; 
   for (it = gChipNoisyPixels.begin(); it != gChipNoisyPixels.end(); ++it) {
-    cout << "chip " << it->first << " it->size() = " << it->second.size() << endl;
+    npix = it->second.size(); 
+    cout << "chip " << it->first << " it->size() = " << npix << endl;
+    if (npix > noiseMax) {
+      cout << "noiseMax = " << noiseMax << " -> " << npix << endl;
+      noiseMax = npix;
+    }
+  }
+
+  int hMax = (noiseMax/10000 + 1)*10000;
+  cout << "noiseMax = " << noiseMax << " -> " << hMax << endl;
+  
+  TH1D *h1 = new TH1D("hnoise", Form("noisy pixels/chips (%s)", dir.c_str()), 100, 0., hMax);
+  h1->SetNdivisions(508, "X");
+  for (it = gChipNoisyPixels.begin(); it != gChipNoisyPixels.end(); ++it) {
+    //    cout << "chip " << it->first << " it->size() = " << it->second.size() << endl;
     h1->Fill(it->second.size());
   }
-  h1->Draw();
+  hpl(h1, "fillblue");
   if (dir == ".") {
     c0.SaveAs("nNoisyPixels.pdf");
   } else {
     c0.SaveAs(Form("nNoisyPixels-%s.pdf", dir.c_str()));
   }
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotNoisyPixels(string dir = ".") {
+  int OK(0); 
+
+  ifstream i("../common/sensors_mapping_220525.json");
+  json jMap;
+  i >> jMap;
+  
+  
+  gChipNoisyPixels.clear();
+  for (int i = 0; i < 120; ++i) {
+    vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dir.c_str(), i));
+    if (validNoise(vnoise)) {
+      fillNoisyPixels(i, vnoise);
+    }
+  }
+
+  
+
 }
 
 
