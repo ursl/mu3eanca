@@ -8,6 +8,7 @@ setenv JOB
 setenv STEERFILE    $JOB.i
 setenv ROOTFILENAME $JOB.root
 setenv MOMENTUM     
+setenv SETTINGS     
 setenv STORAGE1
 setenv SITE
 setenv G4BLOUTPUTDIR
@@ -63,9 +64,9 @@ ls -l
 
 # PIONEER_SlantedTgtE_prod-40009.i histoFile=PIONEER_SlantedTgtE_prod-40009.root
 echo "----------------------------------------------------------------------"
-echo "g4bl $STEERFILE histoFile=$ROOTFILENAME momentum=$MOMENTUM"
+echo "g4bl $STEERFILE histoFile=$ROOTFILENAME momentum=$MOMENTUM $SETTINGS"
 echo "----------------------------------------------------------------------"
-g4bl $STEERFILE histoFile=$ROOTFILENAME  momentum=$MOMENTUM |& tee g4bl.log
+g4bl $STEERFILE histoFile=$ROOTFILENAME  momentum=$MOMENTUM $SETTINGS |& tee g4bl.log
 date
 ls -rtl
 
