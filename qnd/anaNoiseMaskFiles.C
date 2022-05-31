@@ -1,6 +1,3 @@
-// -- original by MK
-// -- changed to reflect new data structure in 2022
-
 #include "../common/json.h"
 
 using namespace::std;
@@ -211,7 +208,7 @@ void summaryMaskFile(string filename) {
 // ----------------------------------------------------------------------
 // -- fill gChipNoisyPixels for a chipID
 // ----------------------------------------------------------------------
-void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise) {
+void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise, map<int, vector<pair<int, int> > > &map1) {
   vector<pair<int, int> > vnp;
   for (unsigned int i = 0; i < vnoise.size(); ++i){
     if ((0xff != vnoise[i]) && (0xda != vnoise[i])) {
@@ -219,9 +216,58 @@ void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise) {
       vnp.push_back(a);
     }
   }
-  gChipNoisyPixels.insert(make_pair(chipID, vnp));  
+  map1.insert(make_pair(chipID, vnp));  
 }
 
+
+// ----------------------------------------------------------------------
+void cmpNoiseMasks(string dir = ".", string name1 = "noiseMaskFile", string name2 = "noiseMaskFile-run352") {
+  gStyle->SetHistMinimumZero();
+  int OK(0); 
+
+  map<int, vector<pair<int, int> > > map1;
+  map<int, vector<pair<int, int> > > map2;
+
+  readJSON();
+  
+  for (int i = 0; i < 120; ++i) {
+    vector<uint8_t> vnoise = readFile(Form("%s/%s-chipID%d", dir.c_str(), name1.c_str(), i));
+    if (validNoise(vnoise)) {
+      fillNoisyPixels(i, vnoise, map1);
+    }
+  }
+  
+  for (int i = 0; i < 120; ++i) {
+    vector<uint8_t> vnoise = readFile(Form("%s/%s-chipID%d", dir.c_str(), name2.c_str(), i));
+    if (validNoise(vnoise)) {
+      fillNoisyPixels(i, vnoise, map2);
+    }
+  }
+
+  double hMax(20000.);
+  TH1D *h1 = new TH1D("hnmap1", Form("noisy pixels/chips (%s)", name1.c_str()), 100, 0., hMax);
+  TH1D *h2 = new TH1D("hnmap2", Form("noisy pixels/chips (%s)", name2.c_str()), 100, 0., hMax);
+  TH1D *h0 = new TH1D("hdmap", Form("difference (%s - %s)", name2.c_str(), name1.c_str()), 100, -5000., 5000.);
+
+  
+  map<int, vector<pair<int, int> > >::iterator it; 
+  for (it = map1.begin(); it != map1.end(); ++it) {
+    int npix1 = it->second.size(); 
+    int npix2(npix1);
+    if (map2.find(it->first) != map2.end()) {
+      npix2 = map2[it->first].size();
+    } else {
+      cout << it->first << " not found in map2" << endl;
+    }
+    if (npix1 - npix2 != 0) cout << "npix1 = " << npix1 << " npix2 = " << npix2 << endl;
+    h1->Fill(npix1);
+    h2->Fill(npix2);
+    h0->Fill(npix2-npix1);
+  }
+
+  h0->Draw();
+  
+}
 
 // ----------------------------------------------------------------------
 void fillAllNoisyPixels(string dir = ".") {
@@ -234,7 +280,7 @@ void fillAllNoisyPixels(string dir = ".") {
   for (int i = 0; i < 120; ++i) {
     vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dir.c_str(), i));
     if (validNoise(vnoise)) {
-      fillNoisyPixels(i, vnoise);
+      fillNoisyPixels(i, vnoise, gChipNoisyPixels);
     }
   }
 
@@ -316,7 +362,7 @@ void plotNoisyPixels(string dir = ".") {
   for (int i = 0; i < 120; ++i) {
     vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dir.c_str(), i));
     if (validNoise(vnoise)) {
-      fillNoisyPixels(i, vnoise);
+      fillNoisyPixels(i, vnoise, gChipNoisyPixels);
     }
   }
 
@@ -346,7 +392,7 @@ void compareNsig() {
     for (int i = 0; i < 128; ++i) {
       vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dirs[idir].c_str(), i));
       if (validNoise(vnoise)) {
-        fillNoisyPixels(i, vnoise);
+        fillNoisyPixels(i, vnoise, gChipNoisyPixels);
       }
     }
     
