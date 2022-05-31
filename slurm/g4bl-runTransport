@@ -14,11 +14,13 @@
 # Usage examples:
 # cd /psi/home/langenegger/data/g4bl/pioneer-g4bl/pioneer/transport/
 # g4bl-runTransport -p 65 -m muprod0002 -n iQSKv0 pi0002.i
-# g4bl-runTransport -p 65 -m muprod0002 -n iQSKv1 -s 'QSK41cur=24.075 QSK42cur=-41.088 QSK43cur=26.710' pi0004.i
+# g4bl-runTransport -p 65 -m muprod0002 -n iQSKv1 -s 'QSK41cur=-24.075 QSK42cur=41.088 QSK43cur=-26.710' pi0004.i
 # g4bl-runTransport -p 55 pi0001.i pi0002.i
-# g4bl-runTransport [-l] -p 55 -n triplettoff -s "%QSK41set 0." pi0001.i
+# g4bl-runTransport [-l] -p 55 -n triplettoff -s sQSK41set=0.' pi0001.i
 #
 # History 2022/05/24 first shot
+#         2022/05/30 allow setting g4bl parameters with -s
+#         2022/05/31 no longer put g4bl parameters into filename, but count up 
 #
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -71,14 +73,17 @@ for ($iloop = 0; $iloop <= $#ARGV; $iloop++) {
     if ($steerCard =~ /all/) {
         $ipart = 0;
     }
-    # -- add modified opt_s
+    # -- add counter in case steerCard already exists
     my $sname;
-    my $sopts = "";
-    if ($opt_s) {
-        ($sopts = $opt_s) =~ s/\s/_/g;
-        $sname = "p$opt_p-$opt_m-$opt_n-$sopts-$steerCard";
-    } else {
-        $sname = "p$opt_p-$opt_m-$opt_n-$steerCard";
+    $sname = "p$opt_p-$opt_m-$opt_n-$steerCard";
+    if (-e $sname) {
+        my $cnt = 1;
+        ($stest = $sname) =~ s/$opt_n/$opt_n-n$cnt/; 
+        while (-e $stest) {
+            $cnt++;
+            ($stest = $sname) =~ s/$opt_n/$opt_n-n$cnt/; 
+        }
+        $sname = $stest;
     }
     $sname =~ s/\%//g;
     $sname =~ s/\s//g;
