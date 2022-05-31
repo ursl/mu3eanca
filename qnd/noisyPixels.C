@@ -10,8 +10,8 @@
 // ----------------------------------------------------------------------
 using namespace::std;
 
-// -- dump vnoise into noise mask file
-void writeNoiseMaskFile(vector<uint8_t> vnoise, int runnumber, int chipID);
+// -- dump vnoise into noise mask filev
+void writeNoiseMaskFile(vector<uint8_t> vnoise, int runnumber, int chipID, string name);
 
 
 // ----------------------------------------------------------------------
@@ -56,7 +56,7 @@ int idxFromColRow(int col, int row) {
 // ----------------------------------------------------------------------
 // -- read noise information for all chips from a tree for one run
 // ----------------------------------------------------------------------
-void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLevel) {
+void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLevel, string name) {
   cout << "writeNoisyPixelsMaskFiles for " << Form("dataTree%05d.root", runnumber) << endl;
 
   // https://mattermost.gitlab.rlp.net/mu3e/pl/qk3t7i7t53gqubqbucjpggzdna
@@ -269,7 +269,7 @@ void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLe
       }
     }
     std::cout << " with a  total of " << tot_noisy_pixels << " (" << tot_noisy_pixels*100/64000 << "%)\n";
-    writeNoiseMaskFile(vNoise, runnumber, chipID);
+    writeNoiseMaskFile(vNoise, runnumber, chipID, name);
 
     vPrint.push_back(Form("chipID %3d, n. level = %5.3f, N(n. pixels) = %d %s",
                           chipID, noise_limit, tot_noisy_pixels, spix.c_str()));
@@ -293,12 +293,12 @@ void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLe
 // ----------------------------------------------------------------------
 // -- dump vector<uint8_t> into mask file
 // ----------------------------------------------------------------------
-void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID) {
+void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID, string name) {
   string filename("");
   if (runnumber > 0) {
-    filename = Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID);
+    filename = Form("noiseMaskFile%s-run%d-chipID%d", name.c_str(), runnumber, chipID);
   } else {
-    filename = Form("noiseMaskFile-chipID%d", chipID);
+    filename = Form("noiseMaskFile%s-chipID%d", name.c_str(), chipID);
   }
 
   ofstream o(filename); 
@@ -359,7 +359,7 @@ void addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
 // ----------------------------------------------------------------------
 // -- combines all runs into one mask file
 // ----------------------------------------------------------------------
-void mergeNoiseFiles(int chipID, vector<int> runlist) {
+void mergeNoiseFiles(int chipID, vector<int> runlist, string name) {
   vector<uint8_t> vnoise;
   for (int i = 0; i < 256*256; ++i) vnoise.push_back(0xff);
 
@@ -367,7 +367,7 @@ void mergeNoiseFiles(int chipID, vector<int> runlist) {
     addNoiseMaskFile(vnoise, runlist[irun], chipID);
   }
 
-  writeNoiseMaskFile(vnoise, -1, chipID);
+  writeNoiseMaskFile(vnoise, -1, chipID, name);
 }
 
 
@@ -375,7 +375,7 @@ void mergeNoiseFiles(int chipID, vector<int> runlist) {
 // -- main function reading all trees (producing per-run files) and
 // -- merging all runs into single mask file
 // ----------------------------------------------------------------------
-void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5) {
+void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5, string name = "") {
   if (modeNoiseLimit < 1) {
     cout << "produceAllMergedNoiseFiles(int modeNoiseLimit, double noiseLevel)" << endl;
     cout << " modeNoiseLimit = 1: noiseLevel provides absolute number of noise threshold, noise_limit = noiseLevel" << endl;
@@ -384,15 +384,16 @@ void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5
     return;
   }
   //  vector<int> runlist = {215, 216, 220};
-  vector<int> runlist = {311, 332, 347};
+  //  vector<int> runlist = {311, 332, 347};
+  vector<int> runlist = {311, 332, 347, 360, 361, 362, 363, 364, 365, 366};
 
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
-    writeNoisyPixelsMaskFiles(runlist[irun], modeNoiseLimit, noiseLevel);
+    writeNoisyPixelsMaskFiles(runlist[irun], modeNoiseLimit, noiseLevel, name);
   }
 
   
   for (int i = 0; i < 128; ++i) {
-    mergeNoiseFiles(i, runlist);
+    mergeNoiseFiles(i, runlist, name);
   }
 
 
