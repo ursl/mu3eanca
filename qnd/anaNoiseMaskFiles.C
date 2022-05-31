@@ -5,9 +5,6 @@
 
 using namespace::std;
 
-
-map<int, vector<pair<int, int> > > gChipNoisyPixels; 
-
 // ----------------------------------------------------------------------
 struct sensor {
   int layer, localLadder, simLadder,  confLadder, simChip, runChip, ladderChip,  direction; 
@@ -15,6 +12,7 @@ struct sensor {
 };
 
 map<int, struct sensor> gDetectorChips;
+map<int, vector<pair<int, int> > > gChipNoisyPixels; 
 
 
 // ----------------------------------------------------------------------
@@ -66,6 +64,9 @@ struct sensor fillEntry(vector<string> lines) {
     if (string::npos != lines[i].find("runChip")) {
       chip.runChip = getValInt(lines[i]);
     }
+    if (string::npos != lines[i].find("layer")) {
+      chip.layer = getValInt(lines[i]);
+    }
     if (string::npos != lines[i].find("v")) {
       chip.v.SetX(getValFloat(lines[i+1]));
       chip.v.SetY(getValFloat(lines[i+2]));
@@ -99,10 +100,35 @@ void readJSON(string filename = "../common/sensors_mapping_220525.json") {
   chip = fillEntry(sentry);
   gDetectorChips.insert(make_pair(chip.runChip, chip));
   
+  TH2D *hl0 = new TH2D("hl0", "inner layer", 6, -42., 63., 8, -3.15, 3.15);
+  TH2D *hl1 = new TH2D("hl1", "outer layer", 6, -42., 63., 10, -3.15, 3.15);
+
   for (map<int, struct sensor>::iterator it = gDetectorChips.begin(); it != gDetectorChips.end(); ++it) {
-    cout << it->second.runChip << ": v = (" << it->second.v.X() << ", " << it->second.v.Y() << ", " << it->second.v.Z() << ")" << endl;
+    int layer = (it->second.v.Perp() > 40.? 1:0);
+    cout << it->second.runChip << ": v = (" << it->second.v.X() << ", " << it->second.v.Y() << ", " << it->second.v.Z() << ")"
+         << " phi = " << it->second.v.Phi()
+         << " r = " << it->second.v.Perp()
+         << endl;
+    if (0 == layer) {
+      if (1 == it->second.layer) {
+        cout << "XXXXXXXXXXXXXXX layer mismatch" << endl;
+      }
+      hl0->Fill(it->second.v.Z(), it->second.v.Phi(), it->second.runChip);
+    } else {
+      if (0 == it->second.layer) {
+        cout << "XXXXXXXXXXXXXXX layer mismatch" << endl;
+      }
+      hl1->Fill(it->second.v.Z(), it->second.v.Phi(), it->second.runChip);
+    }
   }
-                        
+
+  gStyle->SetOptStat(0);
+  hl0->SetMinimum(-1.);
+  hl0->Draw("textcol");
+  c0.SaveAs("l0.pdf");
+  hl1->Draw("textcol");
+  c0.SaveAs("l1.pdf");
+  
 }
 
 
@@ -199,9 +225,12 @@ void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise) {
 
 // ----------------------------------------------------------------------
 void fillAllNoisyPixels(string dir = ".") {
+  gStyle->SetHistMinimumZero();
   int OK(0); 
   gChipNoisyPixels.clear();
 
+  readJSON();
+  
   for (int i = 0; i < 120; ++i) {
     vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dir.c_str(), i));
     if (validNoise(vnoise)) {
@@ -222,18 +251,57 @@ void fillAllNoisyPixels(string dir = ".") {
 
   int hMax = (noiseMax/10000 + 1)*10000;
   cout << "noiseMax = " << noiseMax << " -> " << hMax << endl;
+
+  TH2D *hl0 = new TH2D("hl0n", "noisy pixels (inner layer)", 6, -42., 63., 8, -3.15, 3.15);
+  TH2D *hl1 = new TH2D("hl1n", "noisy pixels (outer layer)", 6, -42., 63., 10, -3.15, 3.15);
+
+  TH2D *hChip = new TH2D("hChip", "noisy pixels", 256, 0., 256., 250, 0., 250.);
+
   
   TH1D *h1 = new TH1D("hnoise", Form("noisy pixels/chips (%s)", dir.c_str()), 100, 0., hMax);
   h1->SetNdivisions(508, "X");
   for (it = gChipNoisyPixels.begin(); it != gChipNoisyPixels.end(); ++it) {
     //    cout << "chip " << it->first << " it->size() = " << it->second.size() << endl;
     h1->Fill(it->second.size());
+    for (unsigned int ipix = 0; ipix < it->second.size(); ++ipix) {
+      hChip->Fill(it->second[ipix].first, it->second[ipix].second); 
+    }
+
+    if (0 == gDetectorChips[it->first].layer) {
+      hl0->Fill(gDetectorChips[it->first].v.Z(), gDetectorChips[it->first].v.Phi(), it->second.size());
+    }
+
+    if (1 == gDetectorChips[it->first].layer) {
+      hl1->Fill(gDetectorChips[it->first].v.Z(), gDetectorChips[it->first].v.Phi(), it->second.size());
+    }
   }
   hpl(h1, "fillblue");
   if (dir == ".") {
     c0.SaveAs("nNoisyPixels.pdf");
   } else {
     c0.SaveAs(Form("nNoisyPixels-%s.pdf", dir.c_str()));
+  }
+
+  hl0->Draw("coltext");
+  if (dir == ".") {
+    c0.SaveAs("nNoisyPixels-zphi-l0.pdf");
+  } else {
+    c0.SaveAs(Form("nNoisyPixels-zphi-l0-%s.pdf", dir.c_str()));
+  }
+
+  hl1->Draw("coltext");
+  if (dir == ".") {
+    c0.SaveAs("nNoisyPixels-zphi-l1.pdf");
+  } else {
+    c0.SaveAs(Form("nNoisyPixels-zphi-l1-%s.pdf", dir.c_str()));
+  }
+
+
+  hChip->Draw("colz");
+  if (dir == ".") {
+    c0.SaveAs("mapNoisyPixels.pdf");
+  } else {
+    c0.SaveAs(Form("mapNoisyPixels-%s.pdf", dir.c_str()));
   }
 }
 
