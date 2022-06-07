@@ -75,7 +75,7 @@ struct sensor fillEntry(vector<string> lines) {
 
 
 // ----------------------------------------------------------------------
-void readJSON(string filename = "../common/sensors_mapping_220525.json") {
+void readJSON(string filename = "../common/sensors_mapping_220531.json") {
   vector<string> allLines; 
   ifstream INS;
   string sline;
