@@ -13,6 +13,38 @@ map<int, vector<pair<int, int> > > gChipNoisyPixels;
 
 
 // ----------------------------------------------------------------------
+bool skipChip(int chipID) {
+
+  if (chipID > 119) return true;
+  
+  // https://mattermost.gitlab.rlp.net/mu3e/pl/qk3t7i7t53gqubqbucjpggzdna
+  vector<int> skipList = {
+    54, 55, 56, 57, 58, 59,
+    114, 115, 116, 117, 118, 119,
+    // Layer0:
+    62, 68, 10, 11, 15, 20,
+    // Layer1:
+    95, 36, 96, 101,
+    // 3 links not working:
+    // (Mask all runs)
+    // Layer0:
+    71, 70, 69, 12, 13, 14, 16, 17, 81,
+    // Layer1:
+    27, 34, 106, 50, 52,
+    // 3 link errors:
+    // (Mask for runs so far?)
+    // Layer0:
+    5, 78,
+    // Layer1:
+    41
+  };
+
+  if (skipList.end() != find(skipList.begin(), skipList.end(), chipID)) return true;
+
+  return false; 
+}
+
+// ----------------------------------------------------------------------
 int getValInt(string line) {
   replaceAll(line, ",", "");
   replaceAll(line, " ", "");
@@ -221,7 +253,64 @@ void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise, map<int, vector<pair<i
 
 
 // ----------------------------------------------------------------------
-void cmpNoiseMasks(string dir = ".", string name1 = "noiseMaskFile", string name2 = "noiseMaskFile-run352") {
+void noisyPixelsPerRun(string dir = "nmf", string name = "noiseMaskFileMay") {
+
+  map<int, vector<pair<int, int> > > map1;
+  //  vector<int> runlist = {311, 332, 347}; 
+
+  // vector<int> runlist = {
+  //   311, 312, 313,
+  //   320, 321, 322, 323, 325,
+  //   332, 333, 334, 336, 337,
+  //   341, 343, 345, 346, 347, 348
+  // };
+
+  vector<int> runlist = {
+    311, 312, 313,
+    320, 321, 322, 323, 325,
+    332, 333, 334, 336, 337,
+    341, 343, 345, 346, 347, 348,
+    350, 352, 353, 354, 355, 356, 357, 358, 359,
+    360, 362, 363, 364, 365, 366
+  };
+  TH2D *hnmap = new TH2D("hnmap", "run vs noisy pixels/chip", 120, 0., 120.,
+                         runlist.size(), 0., runlist.size());
+  
+  for (int irun = 0; irun < runlist.size(); ++irun) {
+    hnmap->GetYaxis()->SetBinLabel(irun+1, Form("%d", runlist[irun]));
+    map1.clear();
+    for (int i = 0; i < 120; ++i) {
+      if (skipChip(i)) continue;
+
+      vector<uint8_t> vnoise = readFile(Form("%s/%s-run%d-chipID%d", dir.c_str(), name.c_str(), runlist[irun], i));
+      if (validNoise(vnoise)) {
+        fillNoisyPixels(i, vnoise, map1);
+      }
+    }
+
+    map<int, vector<pair<int, int> > >::iterator it; 
+    for (it = map1.begin(); it != map1.end(); ++it) {
+      int npix1 = it->second.size(); 
+      hnmap->Fill(it->first, irun, npix1);
+    }
+  }
+
+  gStyle->SetOptStat(0);
+  gPad->SetLogz(1);
+  shrinkPad(0.1, 0.1, 0.15);
+  hnmap->GetXaxis()->SetTitle("chipID");
+  hnmap->GetYaxis()->SetTitle("run number");
+  hnmap->Draw("colz");
+  string pdfname = "noisyPixelsPerRun-" + name + ".pdf";
+  c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str())); 
+}
+
+
+// ----------------------------------------------------------------------
+void cmpNoiseMasks(string dir = "nmf",
+                   string name1 = "noiseMaskFile",
+                   string name2 = "noiseMaskFile-run352",
+                   string pdfname = "diff.pdf") {
   gStyle->SetHistMinimumZero();
   int OK(0); 
 
@@ -231,6 +320,7 @@ void cmpNoiseMasks(string dir = ".", string name1 = "noiseMaskFile", string name
   readJSON();
   
   for (int i = 0; i < 120; ++i) {
+    if (skipChip(i)) continue;
     vector<uint8_t> vnoise = readFile(Form("%s/%s-chipID%d", dir.c_str(), name1.c_str(), i));
     if (validNoise(vnoise)) {
       fillNoisyPixels(i, vnoise, map1);
@@ -238,6 +328,7 @@ void cmpNoiseMasks(string dir = ".", string name1 = "noiseMaskFile", string name
   }
   
   for (int i = 0; i < 120; ++i) {
+    if (skipChip(i)) continue;
     vector<uint8_t> vnoise = readFile(Form("%s/%s-chipID%d", dir.c_str(), name2.c_str(), i));
     if (validNoise(vnoise)) {
       fillNoisyPixels(i, vnoise, map2);
@@ -247,30 +338,69 @@ void cmpNoiseMasks(string dir = ".", string name1 = "noiseMaskFile", string name
   double hMax(20000.);
   TH1D *h1 = new TH1D("hnmap1", Form("noisy pixels/chips (%s)", name1.c_str()), 100, 0., hMax);
   TH1D *h2 = new TH1D("hnmap2", Form("noisy pixels/chips (%s)", name2.c_str()), 100, 0., hMax);
-  TH1D *h0 = new TH1D("hdmap", Form("difference (%s - %s)", name2.c_str(), name1.c_str()), 100, -5000., 5000.);
-
+  TH1D *h0 = new TH1D("hndiff", Form("difference (%s - %s)", name2.c_str(), name1.c_str()), 100, -5000., 5000.);
+  h0->SetNdivisions(508, "X");
   
+  TH1D *hn1 = new TH1D("hn1", "", 120, 0., 120.);
+  hn1->SetLineColor(kBlack);
+  hn1->SetLineWidth(2);
+  TH1D *hn2 = new TH1D("hn2", "", 120, 0., 120.);
+  hn2->SetLineColor(kRed);
+  hn2->SetLineWidth(2);
+
   map<int, vector<pair<int, int> > >::iterator it; 
   for (it = map1.begin(); it != map1.end(); ++it) {
     int npix1 = it->second.size(); 
+    hn1->Fill(it->first, npix1);
+    h1->Fill(npix1);
     int npix2(npix1);
     if (map2.find(it->first) != map2.end()) {
       npix2 = map2[it->first].size();
+      hn2->Fill(it->first, npix2);
+      h2->Fill(npix2);
+      h0->Fill(npix2-npix1);
     } else {
       cout << it->first << " not found in map2" << endl;
     }
     if (npix1 - npix2 != 0) cout << "npix1 = " << npix1 << " npix2 = " << npix2 << endl;
-    h1->Fill(npix1);
-    h2->Fill(npix2);
-    h0->Fill(npix2-npix1);
   }
 
+  gPad->SetLogy(1);
+  hn1->SetMinimum(0.5);
+  hn1->Draw("hist");  
+  hn2->Draw("histsame");  
+
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(kBlack);
+  tl->DrawLatexNDC(0.1, 0.94, "noisy pixels/chip");
+  tl->SetTextSize(0.04);
+  tl->SetTextColor(kBlack);
+  tl->DrawLatexNDC(0.47, 0.95, name1.c_str());
+  tl->SetTextColor(kRed);
+  tl->DrawLatexNDC(0.47, 0.91, name2.c_str());
+  
+  c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str())); 
+
+  gPad->SetLogy(0);
+  gStyle->SetOptStat(1);
+  //  gROOT->ForceStyle();
+  h0->SetMinimum(0.);
   h0->Draw();
+  tl->SetTextSize(0.03);
+  tl->SetTextColor(kBlack);
+  tl->DrawLatexNDC(0.6, 0.85, Form("overflow: "));
+  tl->DrawLatexNDC(0.8, 0.85, Form("%5.1f", h0->GetBinContent(h0->GetNbinsX())));
+  tl->DrawLatexNDC(0.6, 0.80, Form("underflow:"));
+  tl->DrawLatexNDC(0.8, 0.80, Form("%5.1f", h0->GetBinContent(0)));
+
+
+  string dname = "diff-" + pdfname;  
+  c0.SaveAs(Form("%s/%s", dir.c_str(), dname.c_str())); 
   
 }
 
 // ----------------------------------------------------------------------
-void fillAllNoisyPixels(string dir = ".") {
+void fillAllNoisyPixels(string dir = "nmf", string namestub = "noiseMaskFile") {
   gStyle->SetHistMinimumZero();
   int OK(0); 
   gChipNoisyPixels.clear();
@@ -278,7 +408,7 @@ void fillAllNoisyPixels(string dir = ".") {
   readJSON();
   
   for (int i = 0; i < 120; ++i) {
-    vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dir.c_str(), i));
+    vector<uint8_t> vnoise = readFile(Form("%s/%s-chipID%d", dir.c_str(), namestub.c_str(), i));
     if (validNoise(vnoise)) {
       fillNoisyPixels(i, vnoise, gChipNoisyPixels);
     }
@@ -354,7 +484,7 @@ void fillAllNoisyPixels(string dir = ".") {
 
 
 // ----------------------------------------------------------------------
-void plotNoisyPixels(string dir = ".") {
+void plotNoisyPixels(string dir = "nmf") {
   int OK(0); 
 
  
