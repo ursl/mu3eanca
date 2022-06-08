@@ -11,7 +11,7 @@
 using namespace::std;
 
 // -- dump vnoise into noise mask filev
-void writeNoiseMaskFile(vector<uint8_t> vnoise, int runnumber, int chipID, string name);
+void writeNoiseMaskFile(vector<uint8_t> vnoise, int runnumber, int chipID, string name, string dir);
 
 
 // ----------------------------------------------------------------------
@@ -56,8 +56,8 @@ int idxFromColRow(int col, int row) {
 // ----------------------------------------------------------------------
 // -- read noise information for all chips from a tree for one run
 // ----------------------------------------------------------------------
-void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLevel, string name) {
-  cout << "writeNoisyPixelsMaskFiles for " << Form("dataTree%05d.root", runnumber) << endl;
+void writeNoisyPixelsMaskFiles(string rootdir, int runnumber, int modeNoiseLimit, double noiseLevel, string name, string dir = ".") {
+  cout << "writeNoisyPixelsMaskFiles for " << Form("%s/dataTree%05d.root", rootdir.c_str(), runnumber) << endl;
 
   // https://mattermost.gitlab.rlp.net/mu3e/pl/qk3t7i7t53gqubqbucjpggzdna
   vector<int> skipList = {
@@ -83,15 +83,15 @@ void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLe
 
   
   // open file
-  auto * infile = new TFile(Form("dataTree%05d.root", runnumber), "OPEN");
+  auto * infile = new TFile(Form("%s/dataTree%05d.root", rootdir.c_str(), runnumber), "OPEN");
   std::stringstream ss;
 
   // get tree from file
   auto * tree = (TTree *) infile->FindObjectAny("HitData");
 
-  TH1F *hErrors = new TH1F("hErrors", "hErrors", 128, 0., 128.);
-  TH1F *hTotal  = new TH1F("hTotal", "hTotal", 128, 0., 128.);
-  TH1F *hRatio  = new TH1F("hRatio", Form("Error ratio (row > 249) run %d", runnumber), 128, 0., 128.); hRatio->Sumw2(kTRUE);
+  TH1F *hErrors = new TH1F("hErrors", "hErrors", 120, 0., 120.);
+  TH1F *hTotal  = new TH1F("hTotal", "hTotal", 120, 0., 120.);
+  TH1F *hRatio  = new TH1F("hRatio", Form("Error ratio (row > 249) run %d", runnumber), 120, 0., 120.); hRatio->Sumw2(kTRUE);
 
   hErrors->Reset();
   hTotal->Reset();
@@ -110,7 +110,7 @@ void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLe
   // create hitmap histo
   std::vector<TH2F *> hitmaps;
   std::vector<TH1F *> noisemaps;
-  for (int i=0; i<128; i++) {
+  for (int i=0; i<120; i++) {
     ss.str("");
     ss << Form("hitmap_run%d_chipID%d", runnumber, i);
     hitmaps.push_back(new TH2F(ss.str().c_str(), ss.str().c_str(), 256, 0, 256, 250, 0, 250));
@@ -182,6 +182,10 @@ void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLe
                       << " sizes = " << v_MIDASEventID->size() << "/" << v_col->size()
                       << endl;
     for (int ihit = 0; ihit < v_col->size(); ++ihit) {
+      if (v_chipID->at(ihit) > 119) {
+        cout << Form("LVDS error: col/row/chip = %d/%d/%d", v_col->at(ihit), v_row->at(ihit), v_chipID->at(ihit)) << endl;
+        continue;
+      }
       if (VERBOSE) cout << Form("col/row/chip = %d/%d/%d", v_col->at(ihit), v_row->at(ihit), v_chipID->at(ihit))
 			<< endl;
       hitmaps.at(v_chipID->at(ihit))->Fill(v_col->at(ihit), v_row->at(ihit));
@@ -204,7 +208,7 @@ void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLe
   
   bool DBX(false);
   for (int chipID : unique_chipIDs) {
-    if (chipID >= 128) continue;
+    if (chipID >= 120) continue;
     if (skipList.end() != find(skipList.begin(), skipList.end(), chipID)) {
       //      continue;
     }
@@ -269,14 +273,14 @@ void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLe
       }
     }
     std::cout << " with a  total of " << tot_noisy_pixels << " (" << tot_noisy_pixels*100/64000 << "%)\n";
-    writeNoiseMaskFile(vNoise, runnumber, chipID, name);
+    writeNoiseMaskFile(vNoise, runnumber, chipID, name, dir);
 
     vPrint.push_back(Form("chipID %3d, n. level = %5.3f, N(n. pixels) = %d %s",
                           chipID, noise_limit, tot_noisy_pixels, spix.c_str()));
     vNoise.clear();
   }
 
-  ofstream o(Form("summaryNoiseMaskFile-run%d.txt", runnumber)); 
+  ofstream o(Form("%s/summaryNoiseMaskFile%s-run%d.txt", dir.c_str(), name.c_str(), runnumber)); 
   cout << "Summary of noisy (n.) pixels for run "  << runnumber << endl;
   o << "Summary of noisy (n.) pixels for run "  << runnumber << endl;
   for (unsigned int i = 0; i < vPrint.size(); ++i) {
@@ -293,12 +297,12 @@ void writeNoisyPixelsMaskFiles(int runnumber, int modeNoiseLimit, double noiseLe
 // ----------------------------------------------------------------------
 // -- dump vector<uint8_t> into mask file
 // ----------------------------------------------------------------------
-void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID, string name) {
+void writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chipID, string name, string dir) {
   string filename("");
   if (runnumber > 0) {
-    filename = Form("noiseMaskFile%s-run%d-chipID%d", name.c_str(), runnumber, chipID);
+    filename = Form("%s/noiseMaskFile%s-run%d-chipID%d", dir.c_str(), name.c_str(), runnumber, chipID);
   } else {
-    filename = Form("noiseMaskFile%s-chipID%d", name.c_str(), chipID);
+    filename = Form("%s/noiseMaskFile%s-chipID%d", dir.c_str(), name.c_str(), chipID);
   }
 
   ofstream o(filename); 
@@ -325,8 +329,8 @@ void summarize(vector<uint8_t> vnoise) {
 // ----------------------------------------------------------------------
 // -- produce summary of a mask file
 // ----------------------------------------------------------------------
-void summaryMaskFile(string filename) {
-  vector<uint8_t> vnoise = readFile(filename);
+void summaryMaskFile(string filename, string dir = ".") {
+  vector<uint8_t> vnoise = readFile(Form("%s/%s", dir.c_str(), filename.c_str()));
   cout << filename << ": ";
   summarize(vnoise);
 }
@@ -336,8 +340,8 @@ void summaryMaskFile(string filename) {
 // ----------------------------------------------------------------------
 // -- adds a run to the vector<uint8_t>
 // ----------------------------------------------------------------------
-void addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
-  vector<uint8_t> vread = readFile(Form("noiseMaskFile-run%d-chipID%d", runnumber, chipID));
+void addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID, string name, string dir = ".") {
+  vector<uint8_t> vread = readFile(Form("%s/noiseMaskFile%s-run%d-chipID%d", dir.c_str(), name.c_str(), runnumber, chipID));
 
   if (0 == vread.size()) {
     return;
@@ -359,15 +363,15 @@ void addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID) {
 // ----------------------------------------------------------------------
 // -- combines all runs into one mask file
 // ----------------------------------------------------------------------
-void mergeNoiseFiles(int chipID, vector<int> runlist, string name) {
+void mergeNoiseFiles(int chipID, vector<int> runlist, string name, string dir) {
   vector<uint8_t> vnoise;
   for (int i = 0; i < 256*256; ++i) vnoise.push_back(0xff);
 
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
-    addNoiseMaskFile(vnoise, runlist[irun], chipID);
+    addNoiseMaskFile(vnoise, runlist[irun], chipID, name, dir);
   }
 
-  writeNoiseMaskFile(vnoise, -1, chipID, name);
+  writeNoiseMaskFile(vnoise, -1, chipID, name, dir);
 }
 
 
@@ -375,9 +379,11 @@ void mergeNoiseFiles(int chipID, vector<int> runlist, string name) {
 // -- main function reading all trees (producing per-run files) and
 // -- merging all runs into single mask file
 // ----------------------------------------------------------------------
-void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5, string name = "") {
+void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5,
+                                string name = "", string dir = ".",
+                                string rootdir = "/Users/ursl/data/mu3e/run2022/root_output_files/") {
   if (modeNoiseLimit < 1) {
-    cout << "produceAllMergedNoiseFiles(int modeNoiseLimit, double noiseLevel)" << endl;
+    cout << "produceAllMergedNoiseFiles(int modeNoiseLimit, double noiseLevel, string name)" << endl;
     cout << " modeNoiseLimit = 1: noiseLevel provides absolute number of noise threshold, noise_limit = noiseLevel" << endl;
     cout << " modeNoiseLimit = 2: noiseLevel gives MSIGMA for noise_limit = <nhit> + noiseLevel*h1->RMS(nhit) + 0.5" << endl;
     cout << " -> make your choice and try again!" << endl;
@@ -385,20 +391,31 @@ void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5
   }
   //  vector<int> runlist = {215, 216, 220};
   //  vector<int> runlist = {311, 332, 347};
-  vector<int> runlist = {311, 332, 347, 360, 361, 362, 363, 364, 365, 366};
+  //  vector<int> runlist = {311, 332, 347, 360, 361, 362, 363, 364, 365, 366};
+
+  // vector<int> runlist = {
+  //   311, 312, 313,
+  //   320, 321, 322, 323, 325,
+  //   332, 333, 334, 336, 337,
+  //   341, 343, 345, 346, 347, 348,
+  //   350, 352, 353, 354, 355, 356, 357, 358, 359,
+  //   360, 362, 363, 364, 365, 366
+  // };
+
+  vector<int> runlist = {311, 332};
 
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
-    writeNoisyPixelsMaskFiles(runlist[irun], modeNoiseLimit, noiseLevel, name);
+    writeNoisyPixelsMaskFiles(rootdir, runlist[irun], modeNoiseLimit, noiseLevel, name, dir);
   }
 
   
-  for (int i = 0; i < 128; ++i) {
-    mergeNoiseFiles(i, runlist, name);
+  for (int i = 0; i < 120; ++i) {
+    mergeNoiseFiles(i, runlist, name, dir);
   }
 
 
-  for (int i = 0; i < 128; ++i) {
-    summaryMaskFile(Form("noiseMaskFile-chipID%d", i));
+  for (int i = 0; i < 120; ++i) {
+    summaryMaskFile(Form("noiseMaskFile%s-chipID%d", name.c_str(), i), dir);
   }
 
 }
