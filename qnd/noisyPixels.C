@@ -390,6 +390,7 @@ void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5
     return;
   }
   //  vector<int> runlist = {215, 216, 220};
+  //  vector<int> runlist = {311, 332};
   //  vector<int> runlist = {311, 332, 347};
   //  vector<int> runlist = {311, 332, 347, 360, 361, 362, 363, 364, 365, 366};
 
@@ -397,12 +398,19 @@ void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5
   //   311, 312, 313,
   //   320, 321, 322, 323, 325,
   //   332, 333, 334, 336, 337,
-  //   341, 343, 345, 346, 347, 348,
-  //   350, 352, 353, 354, 355, 356, 357, 358, 359,
-  //   360, 362, 363, 364, 365, 366
+  //   341, 343, 345, 346, 347, 348
   // };
 
-  vector<int> runlist = {311, 332};
+  
+  vector<int> runlist = {
+    311, 312, 313,
+    320, 321, 322, 323, 325,
+    332, 333, 334, 336, 337,
+    341, 343, 345, 346, 347, 348,
+    350, 352, 353, 354, 355, 356, 357, 358, 359,
+    360, 362, 363, 364, 365, 366
+  };
+
 
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
     writeNoisyPixelsMaskFiles(rootdir, runlist[irun], modeNoiseLimit, noiseLevel, name, dir);
