@@ -15,7 +15,7 @@ void writeNoiseMaskFile(vector<uint8_t> vnoise, int runnumber, int chipID, strin
 
 
 // ----------------------------------------------------------------------
-vector<uint8_t> readFile(string filename) {
+vector<uint8_t> readMaskFile(string filename) {
   // -- open the file
   streampos fileSize;
   ifstream file;
@@ -350,7 +350,7 @@ void summarize(vector<uint8_t> vnoise) {
 // -- produce summary of a mask file
 // ----------------------------------------------------------------------
 void summaryMaskFile(string filename, string dir = ".") {
-  vector<uint8_t> vnoise = readFile(Form("%s/%s", dir.c_str(), filename.c_str()));
+  vector<uint8_t> vnoise = readMaskFile(Form("%s/%s", dir.c_str(), filename.c_str()));
   cout << filename << ": ";
   summarize(vnoise);
 }
@@ -361,7 +361,7 @@ void summaryMaskFile(string filename, string dir = ".") {
 // -- adds a run to the vector<uint8_t>
 // ----------------------------------------------------------------------
 void addNoiseMaskFile(vector<uint8_t> &vnoise, int runnumber, int chipID, string name, string dir = ".") {
-  vector<uint8_t> vread = readFile(Form("%s/noiseMaskFile%s-run%d-chipID%d", dir.c_str(), name.c_str(), runnumber, chipID));
+  vector<uint8_t> vread = readMaskFile(Form("%s/noiseMaskFile%s-run%d-chipID%d", dir.c_str(), name.c_str(), runnumber, chipID));
 
   if (0 == vread.size()) {
     return;
