@@ -324,7 +324,7 @@ void noisyPixelsPerRun(string dir = "nmf", bool checkLVDS = true, string name = 
   hnmap->GetXaxis()->SetTitle("chipID");
   hnmap->GetYaxis()->SetTitle("run number");
   hnmap->Draw("colz");
-  string pdfname = Form("noisyPixelsPerRun%s", (checkLVDS?"-noLVDSerrors-":"")) + name + ".pdf";
+  string pdfname = Form("noisyPixelsPerRun%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str());
   c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str())); 
 }
 
@@ -488,10 +488,18 @@ void fillAllNoisyPixels(string dir = "nmf", bool checkLVDS = false, string name 
     }
   }
   hpl(h1, "fillblue");
+  tl->SetTextSize(0.05);
+  tl->DrawLatexNDC(0.4, 0.85, Form("mean: "));
+  tl->DrawLatexNDC(0.7, 0.85, Form("%5.1f", h1->GetMean()));
+  tl->DrawLatexNDC(0.4, 0.80, Form("RMS: "));
+  tl->DrawLatexNDC(0.7, 0.80, Form("%5.1f", h1->GetRMS()));
+  tl->DrawLatexNDC(0.4, 0.75, Form("overflow:"));
+  tl->DrawLatexNDC(0.7, 0.75, Form("%5.1f", h1->GetBinContent(h1->GetNbinsX())));
+  
   if (dir == ".") {
     c0.SaveAs("nNoisyPixels.pdf");
   } else {
-    string pdfname = Form("nNoisyPixels%s", (checkLVDS?"-noLVDSerrors-":"")) + name + ".pdf";
+    string pdfname = Form("nNoisyPixels%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str());
     c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
   }
 
@@ -499,7 +507,7 @@ void fillAllNoisyPixels(string dir = "nmf", bool checkLVDS = false, string name 
   if (dir == ".") {
     c0.SaveAs("nNoisyPixels-zphi-l0.pdf");
   } else {
-    string pdfname = Form("nNoisyPixels-zphi-l0%s", (checkLVDS?"-noLVDSerrors-":"")) + name + ".pdf";
+    string pdfname = Form("nNoisyPixels-zphi-l0%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str());
     c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
   }
 
@@ -507,7 +515,7 @@ void fillAllNoisyPixels(string dir = "nmf", bool checkLVDS = false, string name 
   if (dir == ".") {
     c0.SaveAs("nNoisyPixels-zphi-l1.pdf");
   } else {
-    string pdfname = Form("nNoisyPixels-zphi-l1%s", (checkLVDS?"-noLVDSerrors-":"")) + name + ".pdf";
+    string pdfname = Form("nNoisyPixels-zphi-l1%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str());
     c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
   }
 
@@ -516,7 +524,7 @@ void fillAllNoisyPixels(string dir = "nmf", bool checkLVDS = false, string name 
   if (dir == ".") {
     c0.SaveAs("mapNoisyPixels.pdf");
   } else {
-    string pdfname = Form("mapNoisyPixels%s", (checkLVDS?"-noLVDSerrors-":"")) + name + ".pdf";
+    string pdfname = Form("mapNoisyPixels%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str());
     c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
   }
 
@@ -525,31 +533,12 @@ void fillAllNoisyPixels(string dir = "nmf", bool checkLVDS = false, string name 
   if (dir == ".") {
     c0.SaveAs("mapNoisyPixelsClean.pdf");
   } else {
-    string pdfname = Form("mapNoisyPixelsClean%s", (checkLVDS?"-noLVDSerrors-":"")) + name + ".pdf";
+    string pdfname = Form("mapNoisyPixelsClean%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str()); 
     c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
   }
 }
 
 
-
-// ----------------------------------------------------------------------
-void plotNoisyPixels(string dir = "nmf") {
-  int OK(0); 
-
- 
-  gChipNoisyPixels.clear();
-  for (int i = 0; i < 120; ++i) {
-    if (skipChip(i)) continue;
-    vector<uint8_t> vnoise = readFile(Form("%s/noiseMaskFile-chipID%d", dir.c_str(), i));
-    if (badLVDS(vnoise)) continue;
-    if (validNoise(vnoise)) {
-      fillNoisyPixels(i, vnoise, gChipNoisyPixels);
-    }
-  }
-
-  
-
-}
 
 
 // ----------------------------------------------------------------------
@@ -595,4 +584,15 @@ void compareNsig() {
   tl->DrawLatex(0.16, 0.85, "noise level #equiv mean(nhit) + msig * RMS(nhit) + 0.5");
   
   c0.SaveAs("meanNumberNoisyPixels-msig.pdf");
+}
+
+
+// ----------------------------------------------------------------------
+void plotAll(string dir = "nmf0", string name = "noiseMaskFilenmf0") {
+  fillAllNoisyPixels(dir, false, name);
+  fillAllNoisyPixels(dir, true, name);
+
+  noisyPixelsPerRun(dir, false, name);
+  noisyPixelsPerRun(dir, true, name);
+
 }
