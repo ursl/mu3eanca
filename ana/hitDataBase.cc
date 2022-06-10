@@ -8,7 +8,7 @@
 
 
 // ----------------------------------------------------------------------
-hitDataBase::hitDataBase(TChain *chain, string treeName): fVerbose(0), fMode(UNSET) {
+hitDataBase::hitDataBase(TChain *chain, string treeName): fVerbose(0) {
   cout << "==> hitDataBase: constructor..." << endl;
   if (chain == 0) {
     cout << "You need to pass a chain!" << endl;
@@ -23,6 +23,14 @@ hitDataBase::hitDataBase(TChain *chain, string treeName): fVerbose(0), fMode(UNS
 
   setupTree();
   
+}
+
+
+// ----------------------------------------------------------------------
+hitDataBase::~hitDataBase() {
+  cout << "==> hitDataBase: destructor ..." << endl;
+  if (!fpChain) return;
+  delete fpChain->GetCurrentFile();
 }
 
 
@@ -86,13 +94,6 @@ void hitDataBase::initVariables() {
 
 
 // ----------------------------------------------------------------------
-hitDataBase::~hitDataBase() {
-  cout << "==> hitDataBase: destructor ..." << endl;
-  if (!fpChain) return;
-  delete fpChain->GetCurrentFile();
-}
-
-// ----------------------------------------------------------------------
 void hitDataBase::openHistFile(string filename) {
   fpHistFile = new TFile(filename.c_str(), "RECREATE");
   fpHistFile->cd();
@@ -140,28 +141,6 @@ void hitDataBase::readCuts(string filename, int dump) {
     if (buffer[0] == '#') {continue;}
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
-
-    // if (!strcmp(CutName, "TYPE")) {
-    //   TYPE = int(CutValue); ok = 1;
-    //   if (dump) cout << "TYPE:           " << TYPE << endl;
-    // }
-
-    // if (!strcmp(CutName, "PTLO")) {
-    //   PTLO = CutValue; ok = 1;
-    //   if (dump) cout << "PTLO:           " << PTLO << " GeV" << endl;
-    //   ibin = 11;
-    //   hcuts->SetBinContent(ibin, PTLO);
-    //   hcuts->GetXaxis()->SetBinLabel(ibin, "p_{T}^{min}(l) [GeV]");
-    // }
-
-    // if (!strcmp(CutName, "PTHI")) {
-    //   PTHI = CutValue; ok = 1;
-    //   if (dump) cout << "PTHI:           " << PTHI << " GeV" << endl;
-    //   ibin = 12;
-    //   hcuts->SetBinContent(ibin, PTHI);
-    //   hcuts->GetXaxis()->SetBinLabel(ibin, "p_{T}^{max}(l) [GeV]");
-    // }
-
 
     if (!ok) cout << "==> hitDataBase: ERROR: Don't know about variable " << CutName << endl;
   }
@@ -243,7 +222,7 @@ int hitDataBase::loop(int nevents, int start) {
   int VERBOSE(0);
   for (Long64_t ievt = 0; ievt < fnentries; ++ievt) {
     VERBOSE = 0; 
-    if (0 == ievt%100) VERBOSE = 1;
+    if (0 == ievt%1000) VERBOSE = 1;
     Long64_t tentry = fpChain->LoadTree(ievt);
     fb_runID->GetEntry(tentry);  
     fb_MIDASEventID->GetEntry(tentry);  
@@ -269,6 +248,8 @@ int hitDataBase::loop(int nevents, int start) {
                       << (fv_MIDASEventID->size() > 0? Form("%d", fv_MIDASEventID->at(0)): "n/a")
                       << " sizes = " << fv_MIDASEventID->size() << "/" << fv_col->size()
                       << endl;
+
+    eventProcessing();
   }
 
   return 0;
