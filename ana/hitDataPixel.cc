@@ -68,6 +68,9 @@ void hitDataPixel::bookHist(int runnumber) {
 
 // ----------------------------------------------------------------------
 void hitDataPixel::eventProcessing() {
+  TH1D *htotall = (TH1D*)fpHistFile->Get(Form("allchiptot_run%d", fRun));
+  //  cout << "htotall = " << htotall << endl;
+  
   for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
     int chipID = fv_chipID->at(ihit); 
     // -- weed out scintillator
@@ -81,6 +84,8 @@ void hitDataPixel::eventProcessing() {
     int col    = fv_col->at(ihit); 
     int tot    = fv_tot->at(ihit); 
     ((TH1D*)fpHistFile->Get("allchiptot_run0"))->Fill(tot);
+    htotall->Fill(tot);
+
     if (fBadChips[chipID] > 0) {
       //      ((TH1D*)gROOT->Find("allchiptot"))->Fill(tot);
       continue;

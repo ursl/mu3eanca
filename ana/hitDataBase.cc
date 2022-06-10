@@ -74,13 +74,16 @@ void hitDataBase::fillHist() {
 
 // ----------------------------------------------------------------------
 void hitDataBase::bookHist(int i) {
-  cout << "==> hitDataBase: bookHist> " << endl;
+  static bool first(true);
+  cout << "==> hitDataBase: bookHist> " << i << endl;
 
   // -- Reduced Tree
-  fTree = new TTree("events", "events");
-  fTree->Branch("run",      &fRun,       "run/I");
-  fTree->Branch("evt",      &fEvt,       "evt/I");
-
+  if (first) {
+    fTree = new TTree("events", "events");
+    fTree->Branch("run",      &fRun,       "run/I");
+    fTree->Branch("evt",      &fEvt,       "evt/I");
+    first = false;
+  }
 
 }
 
@@ -219,7 +222,7 @@ int hitDataBase::loop(int nevents, int start) {
 
   uint64_t fnentries = fpChain->GetEntries();
   cout << "----------------------------------------------------------------------" << endl;
-  int VERBOSE(0);
+  int VERBOSE(0), oldRun(0);
   for (Long64_t ievt = 0; ievt < fnentries; ++ievt) {
     VERBOSE = 0; 
     if (0 == ievt%1000) VERBOSE = 1;
@@ -248,8 +251,16 @@ int hitDataBase::loop(int nevents, int start) {
                       << (fv_MIDASEventID->size() > 0? Form("%d", fv_MIDASEventID->at(0)): "n/a")
                       << " sizes = " << fv_MIDASEventID->size() << "/" << fv_col->size()
                       << endl;
-
+    
+    fRun =  (fv_runID->size() > 0? fv_runID->at(0): 0);
+    fEvt = (fv_MIDASEventID->size() > 0? fv_MIDASEventID->at(0): -1);
+    if (fRun != oldRun) {
+      oldRun = fv_runID->at(0);
+      bookHist(fv_runID->at(0));
+    }
+    
     eventProcessing();
+
   }
 
   return 0;
