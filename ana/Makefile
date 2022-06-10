@@ -42,7 +42,7 @@ EXTHEADERS    = -I..
 
 # -- Files
 #CSTUFF =
-READER = trBase.o trGen.o trRec.o plotResults.o # plotClass.o
+READER = hitDataBase.o trBase.o trGen.o trRec.o plotResults.o # plotClass.o
 
 DICT = ${READER:.o=Dict.o}
 DICTHEADERS = ${READER:.o=Dict.h}
@@ -80,7 +80,8 @@ all: vars prep lib bin
 lib: prep $(addprefix obj/,$(CSTUFF) $(READER)  $(DICT))
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(DICT)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit $(UTIL)/lib/libAnaUtil.so
 
-bin: lib obj/runTreeReader.o  obj/runPlot.o
+bin: lib obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o
+	$(LD) $(LDFLAGS) -o bin/runHitDataAna obj/runHitDataAna.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runTreeReader obj/runTreeReader.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runPlot obj/runPlot.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
 
@@ -91,7 +92,7 @@ prep:
 
 # -- clean up
 clean:
-	rm -f $(addprefix obj/,$(READER) $(DICT) $(CSTUFF) runTreeReader.o runPlot.o)
+	rm -f $(addprefix obj/,$(READER) $(DICT) $(CSTUFF) runHitDataAna.o runTreeReader.o runPlot.o)
 	rm -f $(DICTHEADERS)  $(DICTSOURCES)
 	rm -f bin/*
 	rm -f lib/*
