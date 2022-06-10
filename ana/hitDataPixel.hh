@@ -24,6 +24,9 @@ public:
   void        bookHist(int runnumber);
   void        eventProcessing();
 
+private:
+  int fChipID, fcol, frow, ftot, fqual; 
+  
 };
 
 
