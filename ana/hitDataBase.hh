@@ -16,28 +16,58 @@
 
 #define DR      57.29577951
 
+// -- index for histogram maps
+struct hID {
+  hID(int R = 0, int C = -1, std::string N = "nada"): run(R), chipID(C), name(N){};
+  // -- required for std::map
+  bool operator<(const hID& h2) const {
+    if (run < h2.run) {
+      return true;
+    } else if (chipID < h2.chipID) {
+      return true;
+    } else if (name < h2.name) {
+      return true;
+    }
+    return false;      
+  }
+
+  int run, chipID;
+  std::string name;
+};
+
 class hitDataBase {
 public:
   hitDataBase(TChain *tree, std::string para);
-  virtual            ~hitDataBase();
+  virtual ~hitDataBase();
 
-  virtual void        setupTree();
-  virtual void        openHistFile(std::string filename);
-  virtual void        closeHistFile();
-  virtual void        bookHist(int i);
-  virtual void        readCuts(std::string filename, int dump = 1);
+  virtual void         setupTree();
+  virtual void         openHistFile(std::string filename);
+  virtual void         closeHistFile();
+  virtual void         bookHist(int i);
+  virtual void         readCuts(std::string filename, int dump = 1);
 
-  virtual void        startAnalysis();
-  virtual void        endAnalysis();
-  virtual int         loop(int nevents = 1, int start = -1);
-  virtual TFile*      getFile() {return fpChain->GetCurrentFile();}
-  virtual void        eventProcessing();
-  virtual void        initVariables();
-  virtual void        fillHist();
-  virtual void        setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
+  virtual void         startAnalysis();
+  virtual void         endAnalysis();
+  virtual int          loop(int nevents = 1, int start = -1);
+  virtual TFile*       getFile() {return fpChain->GetCurrentFile();}
+  virtual void         eventProcessing();
+  virtual void         initVariables();
+  virtual void         fillHist();
+  virtual void         setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
 
-  std::pair<int, int> colrowFromIdx(int idx);
-  int                 idxFromColRow(int col, int row);
+  std::pair<int, int>  colrowFromIdx(int idx);
+  int                  idxFromColRow(int col, int row);
+
+  bool                 validNoise(const std::vector<uint8_t> &v);
+  bool                 badLVDS(const std::vector<uint8_t> &v);
+  bool                 unclean(const std::vector<uint8_t> &v, int maxNoise);
+  bool                 skipChip(int idx);
+
+  std::vector<uint8_t> readMaskFile(std::string filename);
+  void                 fillNoisyPixels(int chipID, std::vector<uint8_t> &vnoise,
+                                       std::map<std::pair<int, int>, std::vector<std::pair<int, int> > > &map1);
+  void                 readNoiseMaskFiles(int runnumber, std::string dir = "nmf");
+
 
   int  fVerbose;
 
@@ -57,10 +87,10 @@ protected:
   // -- Output histogram/tree pointers
   TTree       *fTree;
 
-
-  std::map<int, std::vector<std::pair<int, int> > > fChipNoisyPixels; 
-  std::map<int, int> fBadChips; 
-
+  // -- indexed with pair<run, chipID>
+  std::map<struct hID, TH1*>      fChipHistograms;
+  std::map<std::pair<int, int>, std::vector<std::pair<int, int> > > fChipNoisyPixels; 
+  std::map<int, int> fChipQuality; 
 
   std::vector<unsigned int>  *fv_runID, *fv_MIDASEventID, *fv_ts2, *fv_hitTime,
     *fv_headerTime, *fv_headerTimeMajor, *fv_subHeaderTime, *fv_trigger,
@@ -75,5 +105,6 @@ protected:
 
 };
 
+std::ostream & operator << (std::ostream& , const hID&);
 
 #endif

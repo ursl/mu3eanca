@@ -50,6 +50,147 @@ int hitDataBase::idxFromColRow(int col, int row) {
 
 
 // ----------------------------------------------------------------------
+bool hitDataBase::validNoise(const vector<uint8_t> &v) {
+  for (unsigned int i = 0; i < v.size(); ++i) {
+    if (0 != v[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+// ----------------------------------------------------------------------
+bool hitDataBase::badLVDS(const vector<uint8_t> &v) {
+  bool badLVDS(true);
+  if (validNoise(v)) {
+    if (0 == v[0xff]) badLVDS = false;
+  }
+  return badLVDS;
+}
+
+
+// ----------------------------------------------------------------------
+bool hitDataBase::unclean(const vector<uint8_t> &v, int maxNoise) {
+  int cnt(0);
+  if (validNoise(v)) {
+    for (unsigned int i = 0; i < v.size(); ++i) {
+      if ((0xda == v[i]) && (0xda == v[i+1])) {
+        i += 5; //??
+        continue;
+      }
+      if (0 == v[i]) ++cnt;
+    }
+    if (cnt < maxNoise) return false;
+  }
+  return true;
+}
+
+
+// ----------------------------------------------------------------------
+void hitDataBase::fillNoisyPixels(int chipID, vector<uint8_t> &vnoise,
+                                  map<pair<int, int>, vector<pair<int, int> > > &map1) {
+  vector<pair<int, int> > vnp;
+  for (unsigned int i = 0; i < vnoise.size(); ++i){
+    if ((0xda == vnoise[i]) && (0xda == vnoise[i+1])) {
+      i += 5; // skip the trailer
+      continue;
+    }
+    if (0xff != vnoise[i]) {
+      pair<int, int> a = colrowFromIdx(i);
+      vnp.push_back(a);
+    }
+  }
+  map1.insert(make_pair(make_pair(fRun, chipID), vnp));  
+}
+
+// ----------------------------------------------------------------------
+vector<uint8_t> hitDataBase::readMaskFile(string filename) {
+  // -- open the file
+  streampos fileSize;
+  ifstream file;
+  file.open(filename.c_str(), std::ios::binary);
+  if (!file) {
+    cout << "file ->" << filename << "<- not found, skipping" << endl;
+    vector<uint8_t> fileData;
+    return fileData;
+  }
+  
+  // -- get its size
+  file.seekg(0, std::ios::end);
+  fileSize = file.tellg();
+  file.seekg(0, std::ios::beg);
+  
+  // -- read the data
+  vector<uint8_t> fileData(fileSize);
+  file.read((char*) &fileData[0], fileSize);
+  file.close();
+  
+  return fileData;
+}
+
+
+// ----------------------------------------------------------------------
+void hitDataBase::readNoiseMaskFiles(int runnumber, string dir) {
+  int maxNoise(1000);
+  string name("noiseMaskFilenmf"); 
+  fChipNoisyPixels.clear();
+  for (int i = 0; i < 120; ++i) {
+    vector<uint8_t> vnoise;
+    if (runnumber > 0) {
+      vnoise = readMaskFile(Form("%s/%s-run%d-chipID%d", dir.c_str(), name.c_str(), runnumber, i));
+    } else {
+      vnoise = readMaskFile(Form("%s/%s-chipID%d", dir.c_str(), name.c_str(), i));
+    }
+    if (validNoise(vnoise)) {
+      fillNoisyPixels(i, vnoise, fChipNoisyPixels);
+    }
+    fChipQuality[i] = 0;  // every chip must be in here
+    if (skipChip(i))               fChipQuality[i] |= 2; 
+    if (badLVDS(vnoise))           fChipQuality[i] |= 4; 
+    if (unclean(vnoise, maxNoise)) fChipQuality[i] |= 8; 
+  }
+
+  // -- scintillator 
+  fChipQuality[120] = 1;  
+
+  // -- add fake chipID
+  for (int i = 121; i < 130; ++i) {
+    fChipQuality[i] = 4;  
+  }
+}
+
+// ----------------------------------------------------------------------
+bool hitDataBase::skipChip(int chipID) {
+  if (chipID > 119) return true;
+  // https://mattermost.gitlab.rlp.net/mu3e/pl/qk3t7i7t53gqubqbucjpggzdna
+  vector<int> skipList = {
+    54, 55, 56, 57, 58, 59,
+    114, 115, 116, 117, 118, 119,
+    // Layer0:
+    62, 68, 10, 11, 15, 20,
+    // Layer1:
+    95, 36, 96, 101,
+    // 3 links not working:
+    // (Mask all runs)
+    // Layer0:
+    71, 70, 69, 12, 13, 14, 16, 17, 81,
+    // Layer1:
+    27, 34, 106, 50, 52,
+    // 3 link errors:
+    // (Mask for runs so far?)
+    // Layer0:
+    5, 78,
+    // Layer1:
+    41
+  };
+  if (skipList.end() != find(skipList.begin(), skipList.end(), chipID)) return true;
+  return false; 
+}
+
+
+
+// ----------------------------------------------------------------------
 void hitDataBase::startAnalysis() {
   cout << "hitDataBase::startAnalysis() wrong class " << endl;
 }
@@ -75,7 +216,9 @@ void hitDataBase::fillHist() {
 // ----------------------------------------------------------------------
 void hitDataBase::bookHist(int i) {
   static bool first(true);
-  cout << "==> hitDataBase: bookHist> " << i << endl;
+  cout << "==> hitDataBase: bookHist> run " << i << endl;
+
+  fpHistFile->cd();
 
   // -- Reduced Tree
   if (first) {
@@ -225,7 +368,7 @@ int hitDataBase::loop(int nevents, int start) {
   int VERBOSE(0), oldRun(0);
   for (Long64_t ievt = 0; ievt < fnentries; ++ievt) {
     VERBOSE = 0; 
-    if (0 == ievt%1000) VERBOSE = 1;
+    if (0 == ievt%step) VERBOSE = 1;
     Long64_t tentry = fpChain->LoadTree(ievt);
     fb_runID->GetEntry(tentry);  
     fb_MIDASEventID->GetEntry(tentry);  
@@ -255,8 +398,9 @@ int hitDataBase::loop(int nevents, int start) {
     fRun =  (fv_runID->size() > 0? fv_runID->at(0): 0);
     fEvt = (fv_MIDASEventID->size() > 0? fv_MIDASEventID->at(0): -1);
     if (fRun != oldRun) {
-      oldRun = fv_runID->at(0);
-      bookHist(fv_runID->at(0));
+      oldRun = fRun;
+      bookHist(fRun);
+      readNoiseMaskFiles(fRun, "nmf");
     }
     
     eventProcessing();
@@ -267,3 +411,7 @@ int hitDataBase::loop(int nevents, int start) {
 
 }
 
+// ----------------------------------------------------------------------
+ostream & operator << (ostream& o, const struct hID& h) {
+  return o << Form("run/chip/name = %d/%d/%s", h.run, h.chipID, h.name.c_str());
+}

@@ -36,43 +36,74 @@ hitDataPixel::~hitDataPixel() {
 
 // ----------------------------------------------------------------------
 void hitDataPixel::bookHist(int runnumber) {
+  static bool first(true);
   hitDataBase::bookHist(runnumber);
-  stringstream ss;
+  cout << "==> hitDataPixel: bookHist> run " << runnumber << endl;
+ 
+  string n("");
+  struct hID a; 
+  if (first) {
+    first = false;
+    fTree->Branch("chipID",   &fChipID,  "chipID/I");
+    fTree->Branch("col",      &fcol,     "col/I");
+    fTree->Branch("row",      &frow,     "row/I");
+    fTree->Branch("tot",      &ftot,     "tot/I");
+    fTree->Branch("qual",     &fqual,    "qual/I");
 
-  fpHistFile->cd();
-  // -- create hitmap histo
-  TH2D *hitmap = new TH2D(Form("hitmap_run%d", runnumber), Form("hits, run %d", runnumber), 256, 0, 256, 250, 0, 250);
-  TH1D *hittot = new TH1D(Form("hittot_run%d", runnumber), Form("hits, run %d", runnumber), 32, 0, 256.);
-  hittot->SetMinimum(0);
-  TH1D *allchiptot = new TH1D(Form("allchiptot_run%d", runnumber), Form("all chips, run %d", runnumber), 32, 0, 256.);
-  allchiptot->SetMinimum(0);
-  TH1D *badchiptot = new TH1D(Form("badchiptot_run%d", runnumber), Form("bad chips, run %d", runnumber), 32, 0, 256.);
-  badchiptot->SetMinimum(0);
-  TH1D *noisytot = new TH1D(Form("noisytot_run%d", runnumber), Form("noisy pixels, run %d", runnumber), 32, 0, 256.);
-  noisytot->SetMinimum(0);
-  for (int i=0; i<120; i++) {
-    ss.str("");
-    ss << Form("hitmap_run%d_chipID%d", runnumber, i);
-    new TH2D(ss.str().c_str(), ss.str().c_str(), 256, 0, 256, 250, 0, 250);
-    // cout << "created " << ss.str().c_str() << endl;
-    ss.str("");
-    ss << Form("hittot_run%d_chipID%d", runnumber, i);
-    new TH1D(ss.str().c_str(), ss.str().c_str(), 32, 0, 256.);
-    // cout << "created " << ss.str().c_str() << endl;
+    // -- create unified hitmap histo
+    n = Form("hitmap_run%d", 0);
+    a = hID(0, -1, "hitmap");
+    fChipHistograms.insert(make_pair(a, new TH2D(n.c_str(), n.c_str(), 256, 0, 256, 250, 0, 250)));
+    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    
+    n = Form("hittot_run%d", 0);
+    a = hID(0, -1, "hit_tot");
+    fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
+    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    
+    n = Form("badchiptot_run%d", 0);
+    a = hID(0, -1, "badchiptot");
+    fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
+    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    
+    n = Form("noisytot_run%d", 0);
+    a = hID(0, -1, "noisytot");
+    fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
+    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+
     
   }
 
-  
+  for (int i = 0; i < 120; ++i) {
+    n = Form("hittot_run%d_chipID%d", runnumber, i);
+    a = hID(fRun, i, "hit_tot");
+    fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
+    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    n = Form("hitmap_run%d_chipID%d", runnumber, i);
+    a = hID(fRun, i, "hitmap"); 
+    fChipHistograms.insert(make_pair(a, new TH2D(n.c_str(), n.c_str(), 256, 0, 256, 250, 0, 250)));
+    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+  }
+
 }
 
 
 // ----------------------------------------------------------------------
 void hitDataPixel::eventProcessing() {
-  TH1D *htotall = (TH1D*)fpHistFile->Get(Form("allchiptot_run%d", fRun));
+  //  TH1D *htotall = (TH1D*)fpHistFile->Get(Form("allchiptot_run%d", fRun));
   //  cout << "htotall = " << htotall << endl;
-  
+
+  struct hID ahm(fRun, 0, "hitmap");
+  struct hID aht(fRun, 0, "hit_tot");
+  struct hID ahm0(0, -1, "hitmap");
+  struct hID aht0(0, -1, "hit_tot");
+  struct hID ahn0(0, -1, "noisytot");
+
   for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
     int chipID = fv_chipID->at(ihit); 
+    ahm.chipID = chipID;
+    aht.chipID = chipID;
+    
     // -- weed out scintillator
     if (120 == chipID) {
       //      cout << "scintillator hit" << endl;
@@ -83,33 +114,29 @@ void hitDataPixel::eventProcessing() {
     int row    = fv_row->at(ihit);
     int col    = fv_col->at(ihit); 
     int tot    = fv_tot->at(ihit); 
-    ((TH1D*)fpHistFile->Get("allchiptot_run0"))->Fill(tot);
-    htotall->Fill(tot);
+    //    fChipHistograms[hid(0, -1, "hittot")]->Fill(tot);
 
-    if (fBadChips[chipID] > 0) {
+    if (fChipQuality[chipID] > 0) {
       //      ((TH1D*)gROOT->Find("allchiptot"))->Fill(tot);
       continue;
     }
     
-    // -- this must stay because chipID > 119 are NOT in gBadChips
-    //FIXME    if (skipChip(chipID)) continue;
-    
-    // vector<pair<int, int> > vnoise = gChipNoisyPixels[chipID];
+    // vector<pair<int, int> > vnoise = fChipNoisyPixels[make_pair(fRun, chipID)];
     // if (vnoise.end() != find(vnoise.begin(), vnoise.end(), make_pair(col, row))) {
     //   //        cout << "noisy pixel on chip = " << chipID << " at col/row = " << col << "/" << row << endl;
     //   noisytot->Fill(tot);
     //   continue;
     // }
-    // //      cout << "filling chipID = " << chipID << " col/row = " << col << "/" << row << endl;
     // hitmaps.at(chipID)->Fill(col, row);
     // hittots.at(chipID)->Fill(tot);
-    
-    // hitmap->Fill(col, row);
-    // hittot->Fill(tot);
-  }    
 
-
-
-
+    fChipHistograms[ahm]->Fill(col, row);
+    ((TH2D*)fChipHistograms[ahm0])->Fill(col, row);
+    fChipHistograms[aht]->Fill(tot);
+    ((TH1D*)fChipHistograms[aht0])->Fill(tot);
+  }
 }
+
+
+
 
