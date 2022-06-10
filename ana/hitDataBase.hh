@@ -49,10 +49,10 @@ protected:
   std::string fCutFile;        // contains file with the cut definitions
 
   // -- Pre-filled variables
-  int          fNentries;      // number of events in chain; filled in trBase::trBase()
-  int          fChainEvent;    // current sequential event number in chain; filled in trBase::loop()
-  int          fEvt;           // current event number; filled in derived classes in commonVar()
-  int          fRun;           // current run number; filled in derived classes in commonVar()
+  int          fNentries;      // number of events in chain; filled in hitDataBase::hitDataBase()
+  int          fChainEvent;    // current sequential event number in chain; filled in hitDataBase::loop()
+  int          fEvt;           // current event number; filled in derived classes in hitDataBase::loop()
+  int          fRun;           // current run number; filled in derived classes in hitDataBase::loop()
 
   // -- Output histogram/tree pointers
   TTree       *fTree;
