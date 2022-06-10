@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #include <TROOT.h>
 #include <TBranch.h>
@@ -23,7 +24,7 @@ public:
   virtual void        setupTree();
   virtual void        openHistFile(std::string filename);
   virtual void        closeHistFile();
-  virtual void        bookHist();
+  virtual void        bookHist(int i);
   virtual void        readCuts(std::string filename, int dump = 1);
 
   virtual void        startAnalysis();

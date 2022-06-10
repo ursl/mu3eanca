@@ -73,7 +73,7 @@ void hitDataBase::fillHist() {
 }
 
 // ----------------------------------------------------------------------
-void hitDataBase::bookHist() {
+void hitDataBase::bookHist(int i) {
   cout << "==> hitDataBase: bookHist> " << endl;
 
   // -- Reduced Tree
@@ -105,7 +105,7 @@ void hitDataBase::closeHistFile() {
   if (fpHistFile) {
     cout << "==> hitDataBase: Writing " << fpHistFile->GetName() << endl;
     fpHistFile->cd();
-    //  fpHistFile->Write();
+    fpHistFile->Write();
     fpHistFile->Close();
     delete fpHistFile;
   } else {
