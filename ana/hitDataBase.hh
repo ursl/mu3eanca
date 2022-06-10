@@ -20,8 +20,6 @@ public:
   hitDataBase(TChain *tree, std::string para);
   virtual            ~hitDataBase();
 
-  enum MODE {UNSET, NOISE, PIXEL};
-
   virtual void        setupTree();
   virtual void        openHistFile(std::string filename);
   virtual void        closeHistFile();
@@ -41,7 +39,6 @@ public:
   int                 idxFromColRow(int col, int row);
 
   int  fVerbose;
-  MODE fMode;
 
 protected:
   int         fCurrent;        // current tree number in chain

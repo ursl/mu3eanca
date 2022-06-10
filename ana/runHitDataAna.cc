@@ -18,6 +18,7 @@
 #include "util/util.hh"
 
 #include "hitDataBase.hh"
+#include "hitDataPixel.hh"
 
 using namespace std;
 
@@ -176,8 +177,8 @@ int main(int argc, char *argv[]) {
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   hitDataBase *a = NULL;
   if (string::npos != mode.find("pixel")) {
-    cout << "instantiating hitDataBase with mode " << mode << endl;
-    a = new hitDataBase(chain, treeName);
+    cout << "instantiating hitDataPixel with mode " << mode << endl;
+    a = new hitDataPixel(chain, treeName);
   }
   
   if (a) {
