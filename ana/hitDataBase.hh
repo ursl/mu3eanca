@@ -65,7 +65,7 @@ public:
 
   std::vector<uint8_t> readMaskFile(std::string filename);
   void                 fillNoisyPixels(int chipID, std::vector<uint8_t> &vnoise,
-                                       std::map<std::pair<int, int>, std::vector<std::pair<int, int> > > &map1);
+                                       std::map<int, std::vector<std::pair<int, int> > > &map1);
   void                 readNoiseMaskFiles(int runnumber, std::string dir = "nmf");
 
 
@@ -89,7 +89,9 @@ protected:
 
   // -- indexed with pair<run, chipID>
   std::map<struct hID, TH1*>      fChipHistograms;
-  std::map<std::pair<int, int>, std::vector<std::pair<int, int> > > fChipNoisyPixels; 
+
+  // -- index with chipID
+  std::map<int, std::vector<std::pair<int, int> > > fChipNoisyPixels; 
   std::map<int, int> fChipQuality; 
 
   std::vector<unsigned int>  *fv_runID, *fv_MIDASEventID, *fv_ts2, *fv_hitTime,

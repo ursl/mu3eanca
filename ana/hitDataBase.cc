@@ -89,7 +89,7 @@ bool hitDataBase::unclean(const vector<uint8_t> &v, int maxNoise) {
 
 // ----------------------------------------------------------------------
 void hitDataBase::fillNoisyPixels(int chipID, vector<uint8_t> &vnoise,
-                                  map<pair<int, int>, vector<pair<int, int> > > &map1) {
+                                  map<int, vector<pair<int, int> > > &map1) {
   vector<pair<int, int> > vnp;
   for (unsigned int i = 0; i < vnoise.size(); ++i){
     if ((0xda == vnoise[i]) && (0xda == vnoise[i+1])) {
@@ -101,7 +101,7 @@ void hitDataBase::fillNoisyPixels(int chipID, vector<uint8_t> &vnoise,
       vnp.push_back(a);
     }
   }
-  map1.insert(make_pair(make_pair(fRun, chipID), vnp));  
+  map1.insert(make_pair(chipID, vnp));  
 }
 
 // ----------------------------------------------------------------------
@@ -280,7 +280,6 @@ void hitDataBase::readCuts(string filename, int dump) {
 
   TH1D *hcuts = new TH1D("hcuts", "", 1000, 0., 1000.);
   hcuts->GetXaxis()->SetBinLabel(1, fn.c_str());
-  int ibin;
 
   while (is.getline(buffer, 200, '\n')) {
     ok = 0;
@@ -390,6 +389,8 @@ int hitDataBase::loop(int nevents, int start) {
     fb_isInCluster->GetEntry(tentry);  
     if (VERBOSE) cout << "processing event .. " << ievt << " with nhit = " << fv_col->size()
                       << " tentry = " << tentry
+                      <<  " run = "
+                      << (fv_runID->size() > 0? fv_runID->at(0): 0)
                       <<  " MIDASEventID = "
                       << (fv_MIDASEventID->size() > 0? Form("%d", fv_MIDASEventID->at(0)): "n/a")
                       << " sizes = " << fv_MIDASEventID->size() << "/" << fv_col->size()
@@ -399,8 +400,10 @@ int hitDataBase::loop(int nevents, int start) {
     fEvt = (fv_MIDASEventID->size() > 0? fv_MIDASEventID->at(0): -1);
     if (fRun != oldRun) {
       oldRun = fRun;
-      bookHist(fRun);
-      readNoiseMaskFiles(fRun, "nmf");
+      if (fRun > 0) {
+        bookHist(fRun);
+        readNoiseMaskFiles(fRun, "nmf");
+      }
     }
     
     eventProcessing();

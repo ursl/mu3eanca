@@ -70,10 +70,20 @@ void hitDataPixel::bookHist(int runnumber) {
     a = hID(0, -1, "noisytot");
     fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
     cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
-
-    
   }
 
+  // -- create per-run unified histograms
+  n = Form("hitmap_run%d", runnumber);
+  a = hID(fRun, -1, "hitmap");
+  fChipHistograms.insert(make_pair(a, new TH2D(n.c_str(), n.c_str(), 256, 0, 256, 250, 0, 250)));
+  cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+
+  n = Form("hittot_run%d", runnumber);
+  a = hID(fRun, -1, "hit_tot");
+  fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
+  cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+
+  
   for (int i = 0; i < 120; ++i) {
     n = Form("hittot_run%d_chipID%d", runnumber, i);
     a = hID(fRun, i, "hit_tot");
@@ -97,8 +107,12 @@ void hitDataPixel::eventProcessing() {
   struct hID aht(fRun, 0, "hit_tot");
   struct hID ahm0(0, -1, "hitmap");
   struct hID aht0(0, -1, "hit_tot");
+  struct hID aht0r(fRun, -1, "hit_tot");
+
   struct hID ahn0(0, -1, "noisytot");
 
+  //  vector<pair<int, int> > vnoise = fChipNoisyPixels[chipID)];
+  
   for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
     int chipID = fv_chipID->at(ihit); 
     ahm.chipID = chipID;
@@ -121,19 +135,20 @@ void hitDataPixel::eventProcessing() {
       continue;
     }
     
-    // vector<pair<int, int> > vnoise = fChipNoisyPixels[make_pair(fRun, chipID)];
-    // if (vnoise.end() != find(vnoise.begin(), vnoise.end(), make_pair(col, row))) {
-    //   //        cout << "noisy pixel on chip = " << chipID << " at col/row = " << col << "/" << row << endl;
-    //   noisytot->Fill(tot);
-    //   continue;
-    // }
-    // hitmaps.at(chipID)->Fill(col, row);
-    // hittots.at(chipID)->Fill(tot);
+    if (fChipNoisyPixels[chipID].end() != find(fChipNoisyPixels[chipID].begin(),
+                                               fChipNoisyPixels[chipID].end(),
+                                               make_pair(col, row))) {
+      //        cout << "noisy pixel on chip = " << chipID << " at col/row = " << col << "/" << row << endl;
+      //      noisytot->Fill(tot);
+      continue;
+    }
 
     fChipHistograms[ahm]->Fill(col, row);
     ((TH2D*)fChipHistograms[ahm0])->Fill(col, row);
     fChipHistograms[aht]->Fill(tot);
     ((TH1D*)fChipHistograms[aht0])->Fill(tot);
+    ((TH1D*)fChipHistograms[aht0r])->Fill(tot);
+
   }
 }
 
