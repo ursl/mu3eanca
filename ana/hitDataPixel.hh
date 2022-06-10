@@ -21,6 +21,7 @@ public:
   hitDataPixel(TChain *tree, std::string para);
   ~hitDataPixel();
 
+  void        bookHist(int runnumber);
   void        eventProcessing();
 
 };
