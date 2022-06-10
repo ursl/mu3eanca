@@ -21,6 +21,23 @@ hitDataBase::hitDataBase(TChain *chain, string treeName): fVerbose(0), fMode(UNS
        << " entries = " <<   fNentries
        << endl;
 
+  setupTree();
+  
+}
+
+
+// ----------------------------------------------------------------------
+pair<int, int> hitDataBase::colrowFromIdx(int idx) {
+  int col = idx/256;
+  int row = idx%256;
+  return make_pair(col, row);
+}
+
+
+// ----------------------------------------------------------------------
+int hitDataBase::idxFromColRow(int col, int row) {
+  int idx = col*256 + row;
+  return idx; 
 }
 
 
@@ -84,12 +101,15 @@ void hitDataBase::openHistFile(string filename) {
 
 // ----------------------------------------------------------------------
 void hitDataBase::closeHistFile() {
-  cout << "==> hitDataBase: Writing " << fpHistFile->GetName() << endl;
-  fpHistFile->cd();
-  //  fpHistFile->Write();
-  fpHistFile->Close();
-  delete fpHistFile;
-
+  if (fpHistFile) {
+    cout << "==> hitDataBase: Writing " << fpHistFile->GetName() << endl;
+    fpHistFile->cd();
+    //  fpHistFile->Write();
+    fpHistFile->Close();
+    delete fpHistFile;
+  } else {
+    cout << "no output histogram file defined" << endl;
+  }
 }
 
 // --------------------------------------------------------------------------------------------------
@@ -151,6 +171,41 @@ void hitDataBase::readCuts(string filename, int dump) {
 
 
 // ----------------------------------------------------------------------
+void hitDataBase::setupTree() {
+  fv_runID = 0, fv_MIDASEventID = 0, fv_ts2 = 0, fv_hitTime = 0,
+    fv_headerTime = 0, fv_headerTimeMajor = 0, fv_subHeaderTime = 0, fv_trigger = 0,
+    fv_isInCluster = 0;
+  fv_col = 0, fv_row = 0, fv_chipID = 0, fv_fpgaID = 0, fv_chipIDRaw = 0,
+    fv_tot = 0, fv_isMUSR = 0, fv_hitType = 0, fv_layer = 0;
+  fb_runID = 0, fb_col = 0, fb_row = 0, fb_chipID = 0, fb_MIDASEventID = 0,
+    fb_ts2 = 0, fb_hitTime = 0,
+    fb_headerTime = 0, fb_headerTimeMajor = 0, fb_subHeaderTime = 0, fb_trigger = 0,
+    fb_isInCluster = 0,
+    fb_fpgaID = 0, fb_chipIDRaw = 0, fb_tot = 0, fb_isMUSR = 0, fb_hitType = 0, fb_layer = 0;
+
+
+  fpChain->SetBranchAddress("runID", &fv_runID, &fb_runID);
+  fpChain->SetBranchAddress("MIDASEventID", &fv_MIDASEventID, &fb_MIDASEventID);
+  fpChain->SetBranchAddress("col", &fv_col, &fb_col);
+  fpChain->SetBranchAddress("row", &fv_row, &fb_row);
+  fpChain->SetBranchAddress("fpgaID", &fv_fpgaID, &fb_fpgaID);
+  fpChain->SetBranchAddress("chipID", &fv_chipID, &fb_chipID);
+  fpChain->SetBranchAddress("chipIDRaw", &fv_chipIDRaw, &fb_chipIDRaw);
+  fpChain->SetBranchAddress("tot", &fv_tot, &fb_tot);
+  fpChain->SetBranchAddress("ts2", &fv_ts2, &fb_ts2);
+  fpChain->SetBranchAddress("hitTime", &fv_hitTime, &fb_hitTime);
+  fpChain->SetBranchAddress("headerTime", &fv_headerTime, &fb_headerTime);
+  fpChain->SetBranchAddress("headerTimeMajor", &fv_headerTimeMajor, &fb_headerTimeMajor);
+  fpChain->SetBranchAddress("subHeaderTime", &fv_subHeaderTime, &fb_subHeaderTime);
+  fpChain->SetBranchAddress("isMUSR", &fv_isMUSR, &fb_isMUSR);
+  fpChain->SetBranchAddress("hitType", &fv_hitType, &fb_hitType);
+  fpChain->SetBranchAddress("trigger", &fv_trigger, &fb_trigger);
+  fpChain->SetBranchAddress("layer", &fv_layer, &fb_layer);
+  fpChain->SetBranchAddress("isInCluster", &fv_isInCluster, &fb_isInCluster);
+}
+
+
+// ----------------------------------------------------------------------
 int hitDataBase::loop(int nevents, int start) {
   int maxEvents(0);
 
@@ -183,28 +238,38 @@ int hitDataBase::loop(int nevents, int start) {
   if (maxEvents < 10000)   step = 500;
   if (maxEvents < 1000)    step = 100;
 
-  // Long64_t nbytes = 0, nb = 0;
-  // for (Long64_t jentry = 0; jentry < maxEvents; ++jentry) {
-  //   Long64_t ientry = LoadTree(jentry);
-  //   if (ientry < 0) break;
-  //   nb = fpChain->GetEntry(jentry);   nbytes += nb;
-
-  //   // -- fill common variables (fEvt, fRun, etc)
-  //   fChainEvent = jentry;
-  //   this->commonVar();
-
-  //   if (jentry%step == 0) {
-  //     TTimeStamp ts;
-  //     cout  << " (runId: " << Form("%8d", fRun)
-  //           << ", eventId: " << Form("%8d", fEvt)
-  //           << ", chainEvt: " << Form("%10d", fChainEvent)
-  //           << ", time now: " << ts.AsString("lc")
-  //           << ")" << endl;
-  //   }
-
-
-  //   eventProcessing();
-  // }
+  uint64_t fnentries = fpChain->GetEntries();
+  cout << "----------------------------------------------------------------------" << endl;
+  int VERBOSE(0);
+  for (Long64_t ievt = 0; ievt < fnentries; ++ievt) {
+    VERBOSE = 0; 
+    if (0 == ievt%100) VERBOSE = 1;
+    Long64_t tentry = fpChain->LoadTree(ievt);
+    fb_runID->GetEntry(tentry);  
+    fb_MIDASEventID->GetEntry(tentry);  
+    fb_col->GetEntry(tentry);  
+    fb_row->GetEntry(tentry);  
+    fb_fpgaID->GetEntry(tentry);  
+    fb_chipID->GetEntry(tentry);  
+    fb_chipIDRaw->GetEntry(tentry);  
+    fb_tot->GetEntry(tentry);  
+    fb_ts2->GetEntry(tentry);  
+    fb_hitTime->GetEntry(tentry);  
+    fb_headerTime->GetEntry(tentry);  
+    fb_headerTimeMajor->GetEntry(tentry);  
+    fb_subHeaderTime->GetEntry(tentry);  
+    fb_isMUSR->GetEntry(tentry);  
+    fb_hitType->GetEntry(tentry);  
+    fb_trigger->GetEntry(tentry);  
+    fb_layer->GetEntry(tentry);  
+    fb_isInCluster->GetEntry(tentry);  
+    if (VERBOSE) cout << "processing event .. " << ievt << " with nhit = " << fv_col->size()
+                      << " tentry = " << tentry
+                      <<  " MIDASEventID = "
+                      << (fv_MIDASEventID->size() > 0? Form("%d", fv_MIDASEventID->at(0)): "n/a")
+                      << " sizes = " << fv_MIDASEventID->size() << "/" << fv_col->size()
+                      << endl;
+  }
 
   return 0;
 
