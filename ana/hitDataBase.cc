@@ -111,7 +111,7 @@ vector<uint8_t> hitDataBase::readMaskFile(string filename) {
   ifstream file;
   file.open(filename.c_str(), std::ios::binary);
   if (!file) {
-    cout << "file ->" << filename << "<- not found, skipping" << endl;
+    // cout << "file ->" << filename << "<- not found, skipping" << endl;
     vector<uint8_t> fileData;
     return fileData;
   }
@@ -135,6 +135,8 @@ void hitDataBase::readNoiseMaskFiles(int runnumber, string dir) {
   int maxNoise(1000);
   string name("noiseMaskFilenmf"); 
   fChipNoisyPixels.clear();
+  cout << "reading noise mask files for run " << runnumber << endl;
+  cout << "chipIDs w/o files: "; 
   for (int i = 0; i < 120; ++i) {
     vector<uint8_t> vnoise;
     if (runnumber > 0) {
@@ -144,13 +146,16 @@ void hitDataBase::readNoiseMaskFiles(int runnumber, string dir) {
     }
     if (validNoise(vnoise)) {
       fillNoisyPixels(i, vnoise, fChipNoisyPixels);
+    } else {
+      cout << i << " "; 
     }
     fChipQuality[i] = 0;  // every chip must be in here
     if (skipChip(i))               fChipQuality[i] |= 2; 
     if (badLVDS(vnoise))           fChipQuality[i] |= 4; 
     if (unclean(vnoise, maxNoise)) fChipQuality[i] |= 8; 
   }
-
+  cout << endl;
+  
   // -- scintillator 
   fChipQuality[120] = 1;  
 

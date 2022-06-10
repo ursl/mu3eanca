@@ -39,7 +39,8 @@ void hitDataPixel::bookHist(int runnumber) {
   static bool first(true);
   hitDataBase::bookHist(runnumber);
   cout << "==> hitDataPixel: bookHist> run " << runnumber << endl;
- 
+
+  bool DBX(false);
   string n("");
   struct hID a; 
   if (first) {
@@ -54,47 +55,50 @@ void hitDataPixel::bookHist(int runnumber) {
     n = Form("hitmap_run%d", 0);
     a = hID(0, -1, "hitmap");
     fChipHistograms.insert(make_pair(a, new TH2D(n.c_str(), n.c_str(), 256, 0, 256, 250, 0, 250)));
-    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
     
     n = Form("hittot_run%d", 0);
     a = hID(0, -1, "hit_tot");
     fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
-    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
     
     n = Form("badchiptot_run%d", 0);
     a = hID(0, -1, "badchiptot");
     fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
-    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
     
     n = Form("noisytot_run%d", 0);
     a = hID(0, -1, "noisytot");
     fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
-    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
   }
 
-  // -- create per-run unified histograms
-  n = Form("hitmap_run%d", runnumber);
-  a = hID(fRun, -1, "hitmap");
-  fChipHistograms.insert(make_pair(a, new TH2D(n.c_str(), n.c_str(), 256, 0, 256, 250, 0, 250)));
-  cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
-
-  n = Form("hittot_run%d", runnumber);
-  a = hID(fRun, -1, "hit_tot");
-  fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
-  cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
-
-  
   for (int i = 0; i < 120; ++i) {
     n = Form("hittot_run%d_chipID%d", runnumber, i);
     a = hID(fRun, i, "hit_tot");
     fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
-    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
     n = Form("hitmap_run%d_chipID%d", runnumber, i);
     a = hID(fRun, i, "hitmap"); 
     fChipHistograms.insert(make_pair(a, new TH2D(n.c_str(), n.c_str(), 256, 0, 256, 250, 0, 250)));
-    cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
   }
 
+  // -- create per-run unified histograms
+  if (runnumber > 0) {
+    n = Form("hitmap_run%d", runnumber);
+    a = hID(fRun, -1, "hitmap");
+    fChipHistograms.insert(make_pair(a, new TH2D(n.c_str(), n.c_str(), 256, 0, 256, 250, 0, 250)));
+    if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    
+    n = Form("hittot_run%d", runnumber);
+    a = hID(fRun, -1, "hit_tot");
+    fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
+    if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+  }
+  
+
+  
 }
 
 
@@ -107,6 +111,7 @@ void hitDataPixel::eventProcessing() {
   struct hID aht(fRun, 0, "hit_tot");
   struct hID ahm0(0, -1, "hitmap");
   struct hID aht0(0, -1, "hit_tot");
+  struct hID ahm0r(fRun, -1, "hitmap");
   struct hID aht0r(fRun, -1, "hit_tot");
 
   struct hID ahn0(0, -1, "noisytot");
@@ -120,35 +125,37 @@ void hitDataPixel::eventProcessing() {
     
     // -- weed out scintillator
     if (120 == chipID) {
-      //      cout << "scintillator hit" << endl;
       continue;
     }  
-    //    continue;
 
     int row    = fv_row->at(ihit);
     int col    = fv_col->at(ihit); 
     int tot    = fv_tot->at(ihit); 
-    //    fChipHistograms[hid(0, -1, "hittot")]->Fill(tot);
 
     if (fChipQuality[chipID] > 0) {
-      //      ((TH1D*)gROOT->Find("allchiptot"))->Fill(tot);
       continue;
     }
     
     if (fChipNoisyPixels[chipID].end() != find(fChipNoisyPixels[chipID].begin(),
                                                fChipNoisyPixels[chipID].end(),
                                                make_pair(col, row))) {
-      //        cout << "noisy pixel on chip = " << chipID << " at col/row = " << col << "/" << row << endl;
-      //      noisytot->Fill(tot);
       continue;
+    } else {
+      
     }
-
+    
     fChipHistograms[ahm]->Fill(col, row);
     ((TH2D*)fChipHistograms[ahm0])->Fill(col, row);
+    ((TH2D*)fChipHistograms[ahm0r])->Fill(col, row);
     fChipHistograms[aht]->Fill(tot);
     ((TH1D*)fChipHistograms[aht0])->Fill(tot);
     ((TH1D*)fChipHistograms[aht0r])->Fill(tot);
 
+    // EMPTY??
+    // root [4] hitmap_run0_chipID24->Draw("colz")
+    // root [5] hittot_run0_chipID24->Draw()
+
+    
   }
 }
 
