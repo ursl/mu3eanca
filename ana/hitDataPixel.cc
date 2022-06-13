@@ -6,7 +6,6 @@
 //
 // ----------------------------------------------------------------------
 
-
 // ----------------------------------------------------------------------
 hitDataPixel::hitDataPixel(TChain *chain, string treeName): hitDataBase(chain, treeName) {
   cout << "==> hitDataPixel: constructor..." << endl;
@@ -20,6 +19,8 @@ hitDataPixel::hitDataPixel(TChain *chain, string treeName): hitDataBase(chain, t
   cout << "==> hitDataPixel: constructor fpChain: " << fpChain << "/" << fpChain->GetName()
        << " entries = " <<   fNentries
        << endl;
+
+  readJSON("../common/sensors_mapping_220531.json", "results"); 
   
   setupTree();
   
@@ -35,6 +36,123 @@ hitDataPixel::~hitDataPixel() {
 
 
 // ----------------------------------------------------------------------
+int hitDataPixel::getValInt(string line) {
+  replaceAll(line, ",", "");
+  replaceAll(line, " ", "");
+  size_t icol = line.rfind(":");
+  string snum = line.substr(icol+1);
+  cout << "int  snum ->" << snum << "<-" << endl;
+  return atoi(snum.c_str());
+}
+
+// ----------------------------------------------------------------------
+float hitDataPixel::getValFloat(string line) {
+  replaceAll(line, ",", "");
+  replaceAll(line, " ", "");
+  size_t icol = line.rfind(":");
+  string snum = line.substr(icol+1);
+  cout << "float snum ->" << snum << "<-" << endl;
+  return atof(snum.c_str());
+}
+
+// ----------------------------------------------------------------------
+vector<string> hitDataPixel::readEntry(vector<string> lines, int &iLine) {
+  cout << "reading from line " << iLine << endl;
+  vector<string> result;
+  // -- counters for opening and closing braces
+  int ibrace(0); 
+  // -- start from indicated iLine
+  for (unsigned int i = iLine; i < lines.size(); ++i) {
+    if (string::npos != lines[i].find("{")) ++ibrace;
+    if (string::npos != lines[i].find("}")) --ibrace;
+    result.push_back(lines[i]); 
+    if (0 == ibrace) {
+      iLine = i + 1;
+      break;
+    }
+  }
+
+  return result;
+  
+}
+
+
+// ----------------------------------------------------------------------
+struct sensor hitDataPixel::fillEntry(vector<string> lines) {
+  struct sensor chip; 
+  for (unsigned int i = 0; i < lines.size(); ++i) {
+    if (string::npos != lines[i].find("runChip")) {
+      chip.runChip = getValInt(lines[i]);
+    }
+    if (string::npos != lines[i].find("layer")) {
+      chip.layer = getValInt(lines[i]);
+    }
+    if (string::npos != lines[i].find("v")) {
+      chip.v.SetX(getValFloat(lines[i+1]));
+      chip.v.SetY(getValFloat(lines[i+2]));
+      chip.v.SetZ(getValFloat(lines[i+3]));
+    }
+  }
+  return chip;
+}
+
+
+// ----------------------------------------------------------------------
+void hitDataPixel::readJSON(string filename, string dir) {
+  vector<string> allLines; 
+  ifstream INS;
+  string sline;
+  INS.open(filename);
+  while (getline(INS, sline)) {
+    allLines.push_back(sline);
+  }   
+  cout << "read " << allLines.size() << " lines" << endl;
+  
+  int iLine(1);
+  vector<string> sentry = readEntry(allLines, iLine); 
+  struct sensor chip; 
+  while (sentry.size() > 0) {
+    chip = fillEntry(sentry); 
+    fDetectorChips.insert(make_pair(chip.runChip, chip));
+    sentry = readEntry(allLines, iLine);
+    if (iLine == allLines.size() - 1) break;
+  }
+  chip = fillEntry(sentry);
+  fDetectorChips.insert(make_pair(chip.runChip, chip));
+  
+  TH2D *hl0 = new TH2D("hl0", "inner layer", 6, -42., 63., 8, -3.15, 3.15);
+  TH2D *hl1 = new TH2D("hl1", "outer layer", 6, -42., 63., 10, -3.15, 3.15);
+
+  for (map<int, struct sensor>::iterator it = fDetectorChips.begin(); it != fDetectorChips.end(); ++it) {
+    int layer = (it->second.v.Perp() > 40.? 1:0);
+    cout << it->second.runChip << ": v = (" << it->second.v.X() << ", " << it->second.v.Y() << ", " << it->second.v.Z() << ")"
+         << " phi = " << it->second.v.Phi()
+         << " r = " << it->second.v.Perp()
+         << endl;
+    if (0 == layer) {
+      if (1 == it->second.layer) {
+        cout << "XXXXXXXXXXXXXXX layer mismatch" << endl;
+      }
+      hl0->Fill(it->second.v.Z(), it->second.v.Phi(), it->second.runChip);
+    } else {
+      if (0 == it->second.layer) {
+        cout << "XXXXXXXXXXXXXXX layer mismatch" << endl;
+      }
+      hl1->Fill(it->second.v.Z(), it->second.v.Phi(), it->second.runChip);
+    }
+  }
+
+  // gStyle->SetOptStat(0);
+  // hl0->SetMinimum(-1.);
+  // hl0->Draw("textcol");
+  // c0.SaveAs(Form("%s/l0.pdf", dir.c_str()));
+  // hl1->Draw("textcol");
+  // c0.SaveAs(Form("%s/l1.pdf", dir.c_str()));
+  
+}
+
+
+// ----------------------------------------------------------------------
 void hitDataPixel::bookHist(int runnumber) {
   static bool first(true);
   hitDataBase::bookHist(runnumber);
@@ -46,6 +164,7 @@ void hitDataPixel::bookHist(int runnumber) {
   if (first) {
     first = false;
     fTree->Branch("chipID",   &fChipID,  "chipID/I");
+    fTree->Branch("layer",    &flayer,   "layer/I");
     fTree->Branch("col",      &fcol,     "col/I");
     fTree->Branch("row",      &frow,     "row/I");
     fTree->Branch("tot",      &ftot,     "tot/I");
@@ -105,13 +224,32 @@ void hitDataPixel::bookHist(int runnumber) {
 
 
 // ----------------------------------------------------------------------
-int hitDataPixel::cntChipHits(int chipid) {
+int hitDataPixel::countChipHits(int chipid) {
   int cnt(0); 
   for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
     if (chipid == fv_chipID->at(ihit)) ++cnt;
   }
   return cnt;
 }
+
+// ----------------------------------------------------------------------
+int hitDataPixel::getLayer(int chipid) {
+  int layer(0); 
+  static map<int, int> layerCache;
+  if (layerCache.end() == layerCache.find(chipid)) {
+    for (map<int, struct sensor>::iterator it = fDetectorChips.begin(); it != fDetectorChips.end(); ++it) {
+      if (chipid == it->second.runChip) {
+        layer = it->second.layer;
+        layerCache[chipid] = layer;
+        break;
+      }
+    }
+  } else {
+    layer = layerCache[chipid];
+  }
+  return layer;
+}
+
 
 
 // ----------------------------------------------------------------------
@@ -141,6 +279,7 @@ void hitDataPixel::eventProcessing() {
     
     frow  = fv_row->at(ihit);
     fcol  = fv_col->at(ihit); 
+
     if (fChipNoisyPixels[fChipID].end() != find(fChipNoisyPixels[fChipID].begin(),
                                                 fChipNoisyPixels[fChipID].end(),
                                                 make_pair(fcol, frow))) {
@@ -159,12 +298,13 @@ void hitDataPixel::eventProcessing() {
       continue;
     }  
 
-    fChipHits = cntChipHits(fChipID);
+    fChipHits = countChipHits(fChipID);
     
     frow  = fv_row->at(ihit);
     fcol  = fv_col->at(ihit); 
     ftot  = fv_tot->at(ihit); 
-
+    flayer = getLayer(fChipID);
+    
     if (fChipQuality[fChipID] > 0) {
       continue;
     }
