@@ -119,41 +119,43 @@ void hitDataPixel::eventProcessing() {
   //  vector<pair<int, int> > vnoise = fChipNoisyPixels[chipID)];
   
   for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
-    int chipID = fv_chipID->at(ihit); 
-    aht.setRunChip(fRun, chipID);
+    fChipID = fv_chipID->at(ihit); 
+    aht.setRunChip(fRun, fChipID);
     
     // -- weed out scintillator
-    if (120 == chipID) {
+    if (120 == fChipID) {
       continue;
     }  
 
-    int row    = fv_row->at(ihit);
-    int col    = fv_col->at(ihit); 
-    int tot    = fv_tot->at(ihit); 
+    frow  = fv_row->at(ihit);
+    fcol  = fv_col->at(ihit); 
+    ftot  = fv_tot->at(ihit); 
 
-    if (fChipQuality[chipID] > 0) {
+    if (fChipQuality[fChipID] > 0) {
       continue;
     }
     
-    if (fChipNoisyPixels[chipID].end() != find(fChipNoisyPixels[chipID].begin(),
-                                               fChipNoisyPixels[chipID].end(),
-                                               make_pair(col, row))) {
+    if (fChipNoisyPixels[fChipID].end() != find(fChipNoisyPixels[fChipID].begin(),
+                                               fChipNoisyPixels[fChipID].end(),
+                                               make_pair(fcol, frow))) {
       continue;
     } else {
       
     }
     
-    ahm.setRunChip(fRun, chipID); ((TH2D*)fChipHistograms[ahm])->Fill(col, row);
-    ahm.setRunChip(0, -1);        ((TH2D*)fChipHistograms[ahm])->Fill(col, row);
-    ahm.setRunChip(fRun, -1);     ((TH2D*)fChipHistograms[ahm])->Fill(col, row);
-    ahm.setRunChip(0, chipID);    ((TH2D*)fChipHistograms[ahm])->Fill(col, row);
+    ahm.setRunChip(fRun, fChipID); ((TH2D*)fChipHistograms[ahm])->Fill(fcol, frow);
+    ahm.setRunChip(0, -1);        ((TH2D*)fChipHistograms[ahm])->Fill(fcol, frow);
+    ahm.setRunChip(fRun, -1);     ((TH2D*)fChipHistograms[ahm])->Fill(fcol, frow);
+    ahm.setRunChip(0, fChipID);    ((TH2D*)fChipHistograms[ahm])->Fill(fcol, frow);
     
-    aht.setRunChip(fRun, chipID); ((TH1D*)fChipHistograms[aht])->Fill(tot);
-    aht.setRunChip(0, -1);        ((TH1D*)fChipHistograms[aht])->Fill(tot);
-    aht.setRunChip(fRun, -1);     ((TH1D*)fChipHistograms[aht])->Fill(tot);
-    aht.setRunChip(0, chipID);    ((TH1D*)fChipHistograms[aht])->Fill(tot);
+    aht.setRunChip(fRun, fChipID); ((TH1D*)fChipHistograms[aht])->Fill(ftot);
+    aht.setRunChip(0, -1);        ((TH1D*)fChipHistograms[aht])->Fill(ftot);
+    aht.setRunChip(fRun, -1);     ((TH1D*)fChipHistograms[aht])->Fill(ftot);
+    aht.setRunChip(0, fChipID);    ((TH1D*)fChipHistograms[aht])->Fill(ftot);
+    
 
-   
+    fTree->Fill();
+    
   }
 }
 
