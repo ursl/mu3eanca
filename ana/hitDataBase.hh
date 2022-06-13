@@ -19,6 +19,10 @@
 // -- index for histogram maps
 struct hID {
   hID(int R = 0, int C = -1, std::string N = "nada"): run(R), chipID(C), name(N){};
+  void setRunChip(int R, int C) {
+    run = R;
+    chipID = C;
+  }
   // -- required for std::map
   bool operator<(const hID& h2) const {
     if (run < h2.run) {
