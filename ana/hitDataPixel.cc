@@ -50,6 +50,8 @@ void hitDataPixel::bookHist(int runnumber) {
     fTree->Branch("row",      &frow,     "row/I");
     fTree->Branch("tot",      &ftot,     "tot/I");
     fTree->Branch("qual",     &fqual,    "qual/I");
+    fTree->Branch("nchip",    &fChipHits,"nchip/I");
+    fTree->Branch("nevt",     &fEvtHits, "nevt/I");
 
     // -- create unified hitmap histo
     n = Form("hitmap_run%d", 0);
@@ -103,6 +105,16 @@ void hitDataPixel::bookHist(int runnumber) {
 
 
 // ----------------------------------------------------------------------
+int hitDataPixel::cntChipHits(int chipid) {
+  int cnt(0); 
+  for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
+    if (chipid == fv_chipID->at(ihit)) ++cnt;
+  }
+  return cnt;
+}
+
+
+// ----------------------------------------------------------------------
 void hitDataPixel::eventProcessing() {
   //  TH1D *htotall = (TH1D*)fpHistFile->Get(Form("allchiptot_run%d", fRun));
   //  cout << "htotall = " << htotall << endl;
@@ -116,8 +128,28 @@ void hitDataPixel::eventProcessing() {
 
   struct hID ahn0(0, -1, "noisytot");
 
-  //  vector<pair<int, int> > vnoise = fChipNoisyPixels[chipID)];
-  
+  // -- count good hits in this event
+  fEvtHits = 0;
+  for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
+    fChipID = fv_chipID->at(ihit); 
+    if (120 == fChipID) {
+      continue;
+    }  
+    if (fChipQuality[fChipID] > 0) {
+      continue;
+    }
+    
+    frow  = fv_row->at(ihit);
+    fcol  = fv_col->at(ihit); 
+    if (fChipNoisyPixels[fChipID].end() != find(fChipNoisyPixels[fChipID].begin(),
+                                                fChipNoisyPixels[fChipID].end(),
+                                                make_pair(fcol, frow))) {
+      continue;
+    } 
+    ++fEvtHits;
+  }
+
+  // -- now do real analysis
   for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
     fChipID = fv_chipID->at(ihit); 
     aht.setRunChip(fRun, fChipID);
@@ -127,6 +159,8 @@ void hitDataPixel::eventProcessing() {
       continue;
     }  
 
+    fChipHits = cntChipHits(fChipID);
+    
     frow  = fv_row->at(ihit);
     fcol  = fv_col->at(ihit); 
     ftot  = fv_tot->at(ihit); 
