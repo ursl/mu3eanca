@@ -120,8 +120,7 @@ void hitDataPixel::eventProcessing() {
   
   for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
     int chipID = fv_chipID->at(ihit); 
-    ahm.chipID = chipID;
-    aht.chipID = chipID;
+    aht.setRunChip(fRun, chipID);
     
     // -- weed out scintillator
     if (120 == chipID) {
@@ -144,18 +143,17 @@ void hitDataPixel::eventProcessing() {
       
     }
     
-    fChipHistograms[ahm]->Fill(col, row);
-    ((TH2D*)fChipHistograms[ahm0])->Fill(col, row);
-    ((TH2D*)fChipHistograms[ahm0r])->Fill(col, row);
-    fChipHistograms[aht]->Fill(tot);
-    ((TH1D*)fChipHistograms[aht0])->Fill(tot);
-    ((TH1D*)fChipHistograms[aht0r])->Fill(tot);
-
-    // EMPTY??
-    // root [4] hitmap_run0_chipID24->Draw("colz")
-    // root [5] hittot_run0_chipID24->Draw()
-
+    ahm.setRunChip(fRun, chipID); ((TH2D*)fChipHistograms[ahm])->Fill(col, row);
+    ahm.setRunChip(0, -1);        ((TH2D*)fChipHistograms[ahm])->Fill(col, row);
+    ahm.setRunChip(fRun, -1);     ((TH2D*)fChipHistograms[ahm])->Fill(col, row);
+    ahm.setRunChip(0, chipID);    ((TH2D*)fChipHistograms[ahm])->Fill(col, row);
     
+    aht.setRunChip(fRun, chipID); ((TH1D*)fChipHistograms[aht])->Fill(tot);
+    aht.setRunChip(0, -1);        ((TH1D*)fChipHistograms[aht])->Fill(tot);
+    aht.setRunChip(fRun, -1);     ((TH1D*)fChipHistograms[aht])->Fill(tot);
+    aht.setRunChip(0, chipID);    ((TH1D*)fChipHistograms[aht])->Fill(tot);
+
+   
   }
 }
 
