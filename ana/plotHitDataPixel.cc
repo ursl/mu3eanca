@@ -55,7 +55,7 @@ void plotHitDataPixel::resetHistograms(bool deleteThem) {
 // ----------------------------------------------------------------------
 void plotHitDataPixel::makeAll(string what) {
   fHistFile = TFile::Open(fHistFileName.c_str(), "RECREATE");
-
+  
   play();
   closeHistFile();
 }
@@ -63,7 +63,11 @@ void plotHitDataPixel::makeAll(string what) {
 
 // ----------------------------------------------------------------------
 void plotHitDataPixel::play() {
-
+  TTree *t = getTree("pixelData");
+  t->Print();
+  gFile->ls();
+  TH2D *h2 = new TH2D("hitmap", "", 256, 0., 256., 250, 0., 250.);
+  //  TTree*t = (TTree*)
 }
 
 // ----------------------------------------------------------------------

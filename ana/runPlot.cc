@@ -15,6 +15,7 @@
 #include "TTimeStamp.h"
 
 #include "plotResults.hh"
+#include "plotHitDataPixel.hh"
 
 using namespace std;
 // ----------------------------------------------------------------------
@@ -25,15 +26,31 @@ int main(int argc, char *argv[]) {
 
   string progName  = argv[0];
 
-  string dir("results"), cuts("nada"), files("nada"), plot("nada"), mode("nada"), setup("nada"), rootfilename("nada"), syear("0");
+  string dir("results"), cuts("nada"), files("nada"),
+    plot("nada"), mode("nada"), setup("nada"),
+    rootfilename("nada"), syear("0");
   int year(0);
 
   // -- command line arguments
   for (int i = 0; i < argc; i++){                             //
+    if (!strcmp(argv[i], "-f"))  {files = argv[++i];}         //
     if (!strcmp(argv[i], "-m"))  {mode  = argv[++i];}         //
     if (!strcmp(argv[i], "-p"))  {plot  = argv[++i];}         //
     if (!strcmp(argv[i], "-r"))  {rootfilename  = argv[++i];} // output
     if (!strcmp(argv[i], "-s"))  {setup = argv[++i];}         //
+  }
+
+  // -- HitData Pixel
+  if (string::npos != plot.find("hitdatapixel")) {
+    cout << "hallo" << endl;
+    gROOT->Clear();  gROOT->DeleteAll();
+    plotHitDataPixel a(dir, files, cuts, setup);
+    if (rootfilename != "nada") a.changeSetup(dir, rootfilename, setup);
+    if (mode != "nada") {
+      a.makeAll(mode);
+    } else {
+      a.makeAll();
+    }
   }
 
   // -- results
@@ -49,7 +66,7 @@ int main(int argc, char *argv[]) {
   }
 
   TTimeStamp ts1;
-  cout << "end time: " << ts1.AsString("lc") << ", this is the end, my friend." << endl;
+  cout << "end time:   " << ts1.AsString("lc") << ", this is the end, my friend." << endl;
 
 
   return 0;
