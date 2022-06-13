@@ -23,10 +23,11 @@ public:
 
   void        bookHist(int runnumber);
   void        eventProcessing();
+  int         cntChipHits(int chipid);
 
 private:
   int fChipID, fcol, frow, ftot, fqual; 
-  
+  int fChipHits, fEvtHits; 
 };
 
 
