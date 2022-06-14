@@ -41,7 +41,7 @@ public:
   int    getLayer(int chipid);
 
 private:
-  int fChipID, fcol, frow, ftot, fqual, flayer; 
+  int fChipID, fcol, frow, ftot, ftot2, fqual, flayer; 
   int fChipHits, fEvtHits; 
   
   std::map<int, struct sensor> fDetectorChips;

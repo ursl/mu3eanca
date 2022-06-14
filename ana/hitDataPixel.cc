@@ -168,6 +168,7 @@ void hitDataPixel::bookHist(int runnumber) {
     fTree->Branch("col",      &fcol,     "col/I");
     fTree->Branch("row",      &frow,     "row/I");
     fTree->Branch("tot",      &ftot,     "tot/I");
+    fTree->Branch("tot2",     &ftot2,    "tot2/I");
     fTree->Branch("qual",     &fqual,    "qual/I");
     fTree->Branch("nchip",    &fChipHits,"nchip/I");
     fTree->Branch("nevt",     &fEvtHits, "nevt/I");
