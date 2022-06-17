@@ -304,6 +304,7 @@ void hitDataPixel::eventProcessing() {
     frow  = fv_row->at(ihit);
     fcol  = fv_col->at(ihit); 
     ftot  = fv_tot->at(ihit); 
+    ftot2 = fv_tot->at(ihit); 
     flayer = getLayer(fChipID);
     
     if (fChipQuality[fChipID] > 0) {
