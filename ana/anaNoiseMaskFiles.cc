@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 
 #include <TH2D.h>
 #include <TStyle.h>
@@ -210,6 +211,18 @@ void summarize(vector<uint8_t> vnoise) {
 
 
 // ----------------------------------------------------------------------
+// -- dump vector<uint8_t> into mask file
+// ----------------------------------------------------------------------
+void writeNoiseMaskFile(vector<uint8_t> noise, string ofilename) {
+  ofstream o(ofilename); 
+  for (unsigned int i = 0; i < noise.size(); ++i) {
+    o << noise[i];
+  }
+  o.close();
+}
+
+
+// ----------------------------------------------------------------------
 // -- produce summary of a mask file
 // ----------------------------------------------------------------------
 void summaryMaskFile(string filename) {
@@ -241,6 +254,53 @@ void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise,
 
 
 // ----------------------------------------------------------------------
+// -- adds a run to the vector<uint8_t>
+// ----------------------------------------------------------------------
+void addNoiseMaskFile(vector<uint8_t> &vnoise, string name) {
+  vector<uint8_t> vread = readFile(Form("%s", name.c_str()));
+  cout << name; 
+  summarize(vread);
+  
+  if (0 == vread.size()) {
+    return;
+  }
+  
+  for (unsigned int i = 0; i < vread.size(); ++i){
+    pair<int, int> a = colrowFromIdx(i);
+    if ((0xda == vnoise[i]) && (0xda == vnoise[i+1])) {
+      i += 5; //??
+      continue;
+    }
+ 
+    if ((0xff == vnoise[i]) && (0xff != vread[i])) {
+      if (VERBOSE > 1) cout << Form("file %s change setting col/row = %3d/%3d from %x to %x",
+                                    name.c_str(), a.first, a.second, vnoise[i], vread[i])
+                            << endl;
+      vnoise[i] = vread[i];
+    }
+  }
+ 
+}
+ 
+ 
+// ----------------------------------------------------------------------
+// -- combines all runs into one mask file and summarizes the combination
+// ----------------------------------------------------------------------
+void mergeNoiseFiles(vector<string> filelist) {
+  vector<uint8_t> vnoise;
+  for (int i = 0; i < 256*256; ++i) vnoise.push_back(0xff);
+  
+  for (unsigned int ifile = 0; ifile < filelist.size(); ++ifile) {
+    addNoiseMaskFile(vnoise, filelist[ifile]);
+  }
+
+  writeNoiseMaskFile(vnoise, "combination");
+  summaryMaskFile("combination");
+  remove("combination");
+}
+ 
+
+// ----------------------------------------------------------------------
 // -- main
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
@@ -248,15 +308,28 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i],"-h")) {
       cout << "List of arguments:" << endl;
-      cout << "-h             prints this message and exits" << endl;
-      cout << "-s filename    summarize noisemask with filename" << endl;
-      cout << "-v level       set verbosity level " << endl;
+      cout << "-h               prints this message and exits" << endl;
+      cout << "-c file1 file2   combine various noisemaskfiles for a single chip" << endl;
+      cout << "-s filename      summarize noisemask with filename" << endl;
+      cout << "-v level         set verbosity level " << endl;
       return 0;
     }
 
+    if (!strcmp(argv[i],"-c"))  {
+      string filename = argv[++i];
+      vector<string> fnames; 
+      for (int j = i+1; j < argc; ++j) {
+        fnames.push_back(argv[j]);
+      }
+      mergeNoiseFiles(fnames);
+      return 0; 
+    }
+
+    
     if (!strcmp(argv[i],"-s"))  {
       string filename = argv[++i];
       summaryMaskFile(filename);
+      return 0; 
     }
 
     if (!strcmp(argv[i],"-v"))  {
