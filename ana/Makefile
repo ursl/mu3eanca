@@ -36,7 +36,7 @@ LDFLAGS       = -g #?? -Wl -rpath$(ROOTSYS)
 SOFLAGS       = -shared  #?? -Wl -rpath
 
 CXXFLAGS     += $(ROOTCFLAGS)
-GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lTMVAGui # -lRooFitCore -lRooFit
+GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lTMVAGui
 EXTHEADERS    = -I..
 
 
