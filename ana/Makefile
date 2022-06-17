@@ -36,7 +36,7 @@ LDFLAGS       = -g #?? -Wl -rpath$(ROOTSYS)
 SOFLAGS       = -shared  #?? -Wl -rpath
 
 CXXFLAGS     += $(ROOTCFLAGS)
-GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lTMVAGui -lRooFitCore -lRooFit
+GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lTMVAGui # -lRooFitCore -lRooFit
 EXTHEADERS    = -I..
 
 
@@ -81,11 +81,11 @@ all: vars prep lib bin
 lib: prep $(addprefix obj/,$(CSTUFF) $(READER)  $(DICT))
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(DICT)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit $(UTIL)/lib/libAnaUtil.so
 
-bin: lib obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o
+bin: lib obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o obj/anaNoiseMaskFiles.o
 	$(LD) $(LDFLAGS) -o bin/runHitDataAna obj/runHitDataAna.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runTreeReader obj/runTreeReader.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runPlot obj/runPlot.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
-
+	$(LD) $(LDFLAGS) -o bin/anaNoiseMaskFiles obj/anaNoiseMaskFiles.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
 # -- preparatory setup
 prep:
 	mkdir -p obj bin lib
