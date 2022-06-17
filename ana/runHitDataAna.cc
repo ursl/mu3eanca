@@ -19,6 +19,7 @@
 
 #include "hitDataBase.hh"
 #include "hitDataPixel.hh"
+#include "hitDataNoise.hh"
 
 using namespace std;
 
@@ -179,6 +180,11 @@ int main(int argc, char *argv[]) {
   if (string::npos != mode.find("pixel")) {
     cout << "instantiating hitDataPixel with mode " << mode << endl;
     a = new hitDataPixel(chain, treeName);
+  }
+
+  if (string::npos != mode.find("noise")) {
+    cout << "instantiating hitDataNoise " << endl;
+    a = new hitDataNoise(chain, treeName);
   }
   
   if (a) {
