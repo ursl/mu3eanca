@@ -42,7 +42,7 @@ EXTHEADERS    = -I..
 
 # -- Files
 #CSTUFF =
-READER = hitDataBase.o hitDataPixel.o plotHitDataPixel.o \
+READER = hitDataNoise.o hitDataPixel.o hitDataBase.o plotHitDataPixel.o \
          trBase.o trGen.o trRec.o plotResults.o # plotClass.o
 
 DICT = ${READER:.o=Dict.o}
