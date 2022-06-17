@@ -13,15 +13,10 @@
 #include <TTimeStamp.h>
 
 #include "hitDataBase.hh"
+#include "sensor.hh"
 #include "util/util.hh"
 
 #define DR      57.29577951
-
-// ----------------------------------------------------------------------
-struct sensor {
-  int layer, localLadder, simLadder,  confLadder, simChip, runChip, ladderChip,  direction; 
-  TVector3 v;
-};
 
 // ----------------------------------------------------------------------
 class hitDataPixel : public hitDataBase {
