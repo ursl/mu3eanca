@@ -24,6 +24,7 @@ public:
 
   void   bookHist(int runnumber);
   void   eventProcessing();
+  void   runEndAnalysis(int runnumber);
   void   readJSON(std::string filename, std::string dir = "."); 
   int    getValInt(std::string line);
   float  getValFloat(std::string line);

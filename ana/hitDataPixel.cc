@@ -325,6 +325,7 @@ void hitDataPixel::eventProcessing() {
 }
 
 
-
+// ----------------------------------------------------------------------
+void hitDataPixel::runEndAnalysis(int runnumber) {}
 
 

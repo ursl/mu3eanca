@@ -409,22 +409,31 @@ int hitDataBase::loop(int nevents, int start, bool readMaskFiles) {
     fRun =  (fv_runID->size() > 0? fv_runID->at(0): 0);
     fEvt = (fv_MIDASEventID->size() > 0? fv_MIDASEventID->at(0): -1);
     if (fRun != oldRun) {
-      oldRun = fRun;
       if (fRun > 0) {
+        if (oldRun > 0) runEndAnalysis(oldRun);
         bookHist(fRun);
         if (readMaskFiles) {
           readNoiseMaskFiles(fRun, "nmf");
         }
       }
+      oldRun = fRun;
     }
     
     eventProcessing();
 
   }
 
+  // -- dump final results for the final run
+  runEndAnalysis(fRun);
+  
   return 0;
 
 }
+
+
+// ----------------------------------------------------------------------=
+void hitDataBase::runEndAnalysis(int runnumber) {}
+
 
 // ----------------------------------------------------------------------
 ostream & operator << (ostream& o, const struct hID& h) {

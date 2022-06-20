@@ -51,6 +51,7 @@ public:
 
   virtual void         startAnalysis();
   virtual void         endAnalysis();
+  virtual void         runEndAnalysis(int oldrun);
   virtual int          loop(int nevents = 1, int start = -1, bool readMaskFiles = false);
   virtual void         eventProcessing();
   virtual void         initVariables();

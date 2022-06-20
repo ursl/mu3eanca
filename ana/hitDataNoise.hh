@@ -27,7 +27,7 @@ public:
   void   bookHist(int runnumber);
   void   eventProcessing();
 
-  void   endAnalysis();
+  void   runEndAnalysis(int runnumber);
   void   writeNoiseMaskFile(std::vector<uint8_t> noise, int runnumber, int chipID,
                             std::string name, std::string dir);
  
