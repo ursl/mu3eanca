@@ -16,8 +16,6 @@
 #include "sensor.hh"
 #include "util/util.hh"
 
-#define DR      57.29577951
-
 // ----------------------------------------------------------------------
 class hitDataPixel : public hitDataBase {
 public:
@@ -36,12 +34,10 @@ public:
   int    getLayer(int chipid);
 
 private:
-  int fChipID, fcol, frow, ftot, ftot2, fqual, flayer; 
   int fChipHits, fEvtHits; 
   
   std::map<int, struct sensor> fDetectorChips;
 
 };
-
 
 #endif

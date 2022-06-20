@@ -12,18 +12,11 @@ hitDataPixel::hitDataPixel(TChain *chain, string treeName): hitDataBase(chain, t
   if (chain == 0) {
     cout << "You need to pass a chain!" << endl;
   }
-  fpChain = chain;
-  fChainName = treeName;
-
-  fNentries = fpChain->GetEntries();
   cout << "==> hitDataPixel: constructor fpChain: " << fpChain << "/" << fpChain->GetName()
        << " entries = " <<   fNentries
        << endl;
 
   readJSON("../common/sensors_mapping_220531.json", "results"); 
-  
-  setupTree();
-  
 }
 
 
@@ -252,12 +245,8 @@ int hitDataPixel::getLayer(int chipid) {
 }
 
 
-
 // ----------------------------------------------------------------------
 void hitDataPixel::eventProcessing() {
-  //  TH1D *htotall = (TH1D*)fpHistFile->Get(Form("allchiptot_run%d", fRun));
-  //  cout << "htotall = " << htotall << endl;
-
   struct hID ahm(fRun, 0, "hitmap");
   struct hID aht(fRun, 0, "hit_tot");
   struct hID ahm0(0, -1, "hitmap");
@@ -334,6 +323,7 @@ void hitDataPixel::eventProcessing() {
     
   }
 }
+
 
 
 
