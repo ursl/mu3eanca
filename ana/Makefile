@@ -9,9 +9,10 @@
 #    no submodule because of constant changes in util
 UTIL = ../util
 
-ROOTCINT      = $(ROOTSYS)/bin/rootcint
-ROOTCFLAGS    = $(shell $(ROOTSYS)/bin/root-config --cflags)
-ROOTGLIBS     = $(shell $(ROOTSYS)/bin/root-config --glibs)
+ROOTCINT      = rootcling
+ROOTCFLAGS    = $(shell root-config --cflags)
+ROOTGLIBS     = $(shell root-config --glibs)
+ROOTLDFLAGS   = $(shell root-config --ldflags)
 
 ifdef SCRAM_ARCH
   CXX         := $(shell scramv1 tool info gcc-cxxcompiler | grep CXX= | sed s/CXX=//)
@@ -86,6 +87,7 @@ bin: lib obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o obj/anaNoiseMask
 	$(LD) $(LDFLAGS) -o bin/runTreeReader obj/runTreeReader.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runPlot obj/runPlot.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/anaNoiseMaskFiles obj/anaNoiseMaskFiles.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
+
 # -- preparatory setup
 prep:
 	mkdir -p obj bin lib
