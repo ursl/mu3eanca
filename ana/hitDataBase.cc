@@ -406,8 +406,9 @@ int hitDataBase::loop(int nevents, int start, bool readMaskFiles) {
                       << " sizes = " << fv_MIDASEventID->size() << "/" << fv_col->size()
                       << endl;
     
-    fRun =  (fv_runID->size() > 0? fv_runID->at(0): 0);
+    fRun = (fv_runID->size() > 0? fv_runID->at(0): -1);
     fEvt = (fv_MIDASEventID->size() > 0? fv_MIDASEventID->at(0): -1);
+    if (fRun < 0) continue;
     if (fRun != oldRun) {
       if (fRun > 0) {
         if (oldRun > 0) runEndAnalysis(oldRun);
