@@ -10,13 +10,13 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TTree.h>
+#include <TH1F.h>
+#include <TH2F.h>
 #include <TTimeStamp.h>
 
 #include "hitDataBase.hh"
 #include "sensor.hh"
 #include "util/util.hh"
-
-#define DR      57.29577951
 
 // ----------------------------------------------------------------------
 class hitDataNoise : public hitDataBase {
@@ -26,17 +26,24 @@ public:
 
   void   bookHist(int runnumber);
   void   eventProcessing();
-  void   readJSON(std::string filename, std::string dir = "."); 
-  int    getValInt(std::string line);
-  float  getValFloat(std::string line);
-  std::vector<std::string> readEntry(std::vector<std::string> lines, int &iLine);
-  struct sensor fillEntry(std::vector<std::string> lines);
 
-private:
+  void   endAnalysis();
+  void   writeNoiseMaskFile(std::vector<uint8_t> noise, int runnumber, int chipID,
+                            std::string name, std::string dir);
+ 
   
-  std::map<int, struct sensor> fDetectorChips;
+private:
+ 
+  std::vector<TH2F *> fhitmaps;
+  std::vector<TH1F *> fnoisemaps;
+ 
+  std::vector<int> funique_chipIDs;
+  TH1F* fhErrors, *fhTotal, *fhRatio; 
+ 
+  int         fModeNoiseLimit;
+  double      fNoiseLevel;
+  std::string fName, fDir;
 
 };
-
 
 #endif

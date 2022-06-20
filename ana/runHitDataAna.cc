@@ -26,7 +26,7 @@ using namespace std;
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // %% Usage examples:
-// %% FIXME
+// %% bin/runHitDataAna -f ~/data/mu3e/run2022/root_output_files/dataTree00347.root -p noise
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 int main(int argc, char *argv[]) {
@@ -39,7 +39,8 @@ int main(int argc, char *argv[]) {
   int dirspec(0);
   int nevents(-1), start(-1);
   int verbose(-99);
-
+  bool readMaskFiles(true);
+  
   // Change the MaxTreeSize to 100 GB (default since root v5.26)
   TTree::SetMaxTreeSize(100000000000ll); // 100 GB
 
@@ -49,7 +50,8 @@ int main(int argc, char *argv[]) {
   string cutFile("tree.default.cuts");
 
   string treeName("HitData");
-  string mode("pixel");
+  string proc("noise");
+  string mode("1/1.5"); //noiseMode/noiseLevel
   string histfile("");
 
   // -- command line arguments
@@ -59,15 +61,16 @@ int main(int argc, char *argv[]) {
       cout << "-c filename    chain definition file" << endl;
       cout << "-C filename    file with cuts" << endl;
       cout << "-D path        where to put the output" << endl;
-      cout << "-f filename    single file instead of chain" << endl;
-      cout << "-m {noise|...} mode" << endl;
-      cout << "-n integer     number of events to run on" << endl;
-      cout << "-s number      seed for random number generator" << endl;
-      cout << "-S start       starting event number" << endl;
-      cout << "-t treename    in case it is not HitData" << endl;
-      cout << "-o filename    set output file" << endl;
-      cout << "-v level       set verbosity level" << endl;
-      cout << "-h             prints this message and exits" << endl;
+      cout << "-f filename          single file instead of chain" << endl;
+      cout << "-m {noise|...}       mode details for proc" << endl;
+      cout << "-n integer           number of events to run on" << endl;
+      cout << "-p {noise|pixel|...} proc" << endl;
+      cout << "-s number            seed for random number generator" << endl;
+      cout << "-S start             starting event number" << endl;
+      cout << "-t treename          in case it is not HitData" << endl;
+      cout << "-o filename          set output file" << endl;
+      cout << "-v level             set verbosity level" << endl;
+      cout << "-h                   prints this message and exits" << endl;
       return 0;
     }
     if (!strcmp(argv[i],"-c"))  {fileName   = string(argv[++i]); file = 0; }     // file with chain definition
@@ -76,6 +79,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-f"))  {fileName   = string(argv[++i]); file = 1; }     // single file instead of chain
     if (!strcmp(argv[i],"-m"))  {mode       = string(argv[++i]); }               // mode
     if (!strcmp(argv[i],"-n"))  {nevents    = atoi(argv[++i]); }                 // number of events to run
+    if (!strcmp(argv[i],"-p"))  {proc       = string(argv[++i]); }               // proc
     if (!strcmp(argv[i],"-o"))  {histfile   = string(argv[++i]); }               // set output file
     if (!strcmp(argv[i],"-S"))  {start = atoi(argv[++i]); }                      // set start event number
     if (!strcmp(argv[i],"-t"))  {treeName   = string(argv[++i]); }               // set tree name
@@ -177,14 +181,15 @@ int main(int argc, char *argv[]) {
 
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   hitDataBase *a = NULL;
-  if (string::npos != mode.find("pixel")) {
-    cout << "instantiating hitDataPixel with mode " << mode << endl;
+  if (string::npos != proc.find("pixel")) {
+    cout << "instantiating hitDataPixel with proc " << proc << endl;
     a = new hitDataPixel(chain, treeName);
   }
 
-  if (string::npos != mode.find("noise")) {
+  if (string::npos != proc.find("noise")) {
     cout << "instantiating hitDataNoise " << endl;
     a = new hitDataNoise(chain, treeName);
+    readMaskFiles = false; 
   }
   
   if (a) {
@@ -194,7 +199,7 @@ int main(int argc, char *argv[]) {
     a->bookHist(0);
 
     a->startAnalysis();
-    a->loop(nevents, start);
+    a->loop(nevents, start, readMaskFiles);
     a->endAnalysis();
     a->closeHistFile();
   }
