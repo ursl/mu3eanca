@@ -378,7 +378,6 @@ int hitDataBase::loop(int nevents, int start, bool readMaskFiles) {
   for (Long64_t ievt = 0; ievt < fnentries; ++ievt) {
     VERBOSE = 0; 
     if (0 == ievt%step) VERBOSE = 1;
-    VERBOSE = 1;
     Long64_t tentry = fpChain->LoadTree(ievt);
     fb_runID->GetEntry(tentry);  
     fb_MIDASEventID->GetEntry(tentry);  

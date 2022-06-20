@@ -45,8 +45,9 @@ int main(int argc, char *argv[]) {
   TTree::SetMaxTreeSize(100000000000ll); // 100 GB
 
   // -- Some defaults
-  string dirBase(".");               // this could point to "/home/ursl/data/root/."
+  string dirBase(".");                      // this could point to "/home/ursl/data/root/."
   string dirName("results"); dirspec = 1;   // and this to, e.g. "bmm", "bee", "bem", ...
+  string oDirName(dirName);
   string cutFile("tree.default.cuts");
 
   string treeName("HitData");
@@ -114,8 +115,10 @@ int main(int argc, char *argv[]) {
         if (dirspec) {
           if (dirName[0] == '/') {
             histfile = dirName + "/" + histfile;
+            oDirName = dirName; 
           } else {
             histfile = dirBase + "/" + dirName + "/" + histfile;
+            oDirName = dirBase + "/" + dirName; 
           }
         }
       }
@@ -126,6 +129,7 @@ int main(int argc, char *argv[]) {
       histfile =  bla + "." + fn + ".root";
       if (dirspec) {
         histfile = dirBase + "/" + dirName + "/" + histfile;
+        oDirName = dirBase + "/" + dirName;
       }
     }  else if (file == 1) {
       // -- single file input
@@ -139,8 +143,10 @@ int main(int argc, char *argv[]) {
       if (dirspec) {
         if (dirName[0] == '/') {
           histfile = dirName + "/" + histfile;
+          oDirName = dirBase;
         } else {
           histfile = dirBase + "/" + dirName + "/" + histfile;
+          oDirName = dirBase + "/" + dirName;
         }
       }
     }
@@ -194,6 +200,7 @@ int main(int argc, char *argv[]) {
   
   if (a) {
     a->setVerbosity(verbose);
+    a->setOutputDirectoryName(oDirName);
     a->openHistFile(histfile);
     //    a->readCuts(cutFile.c_str(), 1);
     a->bookHist(0);
