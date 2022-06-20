@@ -37,29 +37,52 @@ void hitDataNoise::bookHist(int runnumber) {
   if (runnumber < 1) return;
  
   static bool first(true);
-  hitDataBase::bookHist(runnumber);
-  cout << "==> hitDataNoise: bookHist> run " << runnumber << endl;
- 
-  // -- create one per chipID, irrespective of it is present. Ignore the original setup ("get unique chipID")
-  for (int i = 0; i < 120; ++i) {
-    funique_chipIDs.emplace_back(i);
-  }
-  
-  // -- create hitmap histo
   stringstream ss;
-  for (int i=0; i<120; i++) {
-    ss.str("");
-    ss << Form("hitmap_run%d_chipID%d", runnumber, i);
-    fhitmaps.push_back(new TH2F(ss.str().c_str(), ss.str().c_str(), 256, 0, 256, 250, 0, 250));
-    ss.str("");
-    ss << Form("noisemap_run%d_chipID%d", runnumber, i);
-    fnoisemaps.push_back(new TH1F(ss.str().c_str(), ss.str().c_str(), 2000, 0, 2000));
-    // cout << "created " << ss.str().c_str() << endl;
+  if (first) {
+    first = false;
+    hitDataBase::bookHist(runnumber);
+    cout << "==> hitDataNoise: bookHist> run " << runnumber << endl;
+    
+    // -- create one per chipID, irrespective of it is present. Ignore the original setup ("get unique chipID")
+    for (int i = 0; i < 120; ++i) {
+      funique_chipIDs.emplace_back(i);
+    }
+
+    // -- create hitmap histo
+    for (int i=0; i<120; i++) {
+      ss.str("");
+      ss << Form("hitmap_run%d_chipID%d", runnumber, i);
+      fhitmaps.push_back(new TH2F(ss.str().c_str(), ss.str().c_str(), 256, 0, 256, 250, 0, 250));
+      ss.str("");
+      ss << Form("noisemap_run%d_chipID%d", runnumber, i);
+      fnoisemaps.push_back(new TH1F(ss.str().c_str(), ss.str().c_str(), 2000, 0, 2000));
+      // cout << "created " << ss.str().c_str() << endl;
+    }
+    
+    fhErrors = new TH1F("hErrors", "hErrors", 120, 0., 120.);
+    fhTotal  = new TH1F("hTotal", "hTotal", 120, 0., 120.);
+    fhRatio  = new TH1F("hRatio", Form("Error ratio (row > 249) run %d", fRun), 120, 0., 120.);
+  } else {
+    fpHistFile->cd();
+    fpHistFile->Write();
+
+    for (int i=0; i<120; i++) {
+      delete fhitmaps[i];
+      delete fnoisemaps[i];
+    }
+    fhitmaps.clear();
+    fnoisemaps.clear();
+    
+    for (int i=0; i<120; i++) {
+      ss.str("");
+      ss << Form("hitmap_run%d_chipID%d", runnumber, i);
+      fhitmaps.push_back(new TH2F(ss.str().c_str(), ss.str().c_str(), 256, 0, 256, 250, 0, 250));
+      ss.str("");
+      ss << Form("noisemap_run%d_chipID%d", runnumber, i);
+      fnoisemaps.push_back(new TH1F(ss.str().c_str(), ss.str().c_str(), 2000, 0, 2000));
+      // cout << "created " << ss.str().c_str() << endl;
+    }
   }
-  
-  fhErrors = new TH1F("hErrors", "hErrors", 120, 0., 120.);
-  fhTotal  = new TH1F("hTotal", "hTotal", 120, 0., 120.);
-  fhRatio  = new TH1F("hRatio", Form("Error ratio (row > 249) run %d", fRun), 120, 0., 120.);
   
   fhRatio->Sumw2(kTRUE);
   fhErrors->Reset();
@@ -99,17 +122,13 @@ void hitDataNoise::eventProcessing() {
 
 
 // ----------------------------------------------------------------------
-void hitDataNoise::endAnalysis() {
+void hitDataNoise::runEndAnalysis(int runnumber) {
+  cout << "==> runEndAnalysis for run = " << runnumber << endl;
   fhRatio->Divide(fhErrors, fhTotal);
   
   printNonZero(fhErrors);
 
-  // LVDS error: col/row/chip = 13/208/126
-  //   1    0.000  ..    1.000 :        1.000 +/-        1.000
-  //  42   41.000  ..   42.000 :     3209.000 +/-       56.648
-  //  90   89.000  ..   90.000 :     7016.000 +/-       83.762
-  
-  // find noisy pixels per chipID
+  // -- find noisy pixels per chipID
   std::map<int, std::vector<std::pair<uint8_t, uint8_t>>> noisy_pixels;
   vector<string> vPrint;
   
@@ -182,16 +201,16 @@ void hitDataNoise::endAnalysis() {
       }
     }
     std::cout << " with a  total of " << tot_noisy_pixels << " (" << tot_noisy_pixels*100/64000 << "%)\n";
-    writeNoiseMaskFile(vNoise, fRun, chipID, fSuffix, fOutputDirectoryName);
+    writeNoiseMaskFile(vNoise, runnumber, chipID, fSuffix, fOutputDirectoryName);
 
     vPrint.push_back(Form("chipID %3d, n. level = %5.3f, N(n. pixels) = %d %s",
                           chipID, noise_limit, tot_noisy_pixels, spix.c_str()));
     vNoise.clear();
   }
 
-  ofstream o(Form("%s/summaryNoiseMaskFile%s-run%d.txt", fOutputDirectoryName.c_str(), fSuffix.c_str(), fRun)); 
-  cout << "Summary of noisy (n.) pixels for run "  << fRun << endl;
-  o << "Summary of noisy (n.) pixels for run "  << fRun << endl;
+  ofstream o(Form("%s/summaryNoiseMaskFile%s-run%d.txt", fOutputDirectoryName.c_str(), fSuffix.c_str(), runnumber)); 
+  cout << "Summary of noisy (n.) pixels for run "  << runnumber << endl;
+  o << "Summary of noisy (n.) pixels for run "  << runnumber << endl;
   for (unsigned int i = 0; i < vPrint.size(); ++i) {
     cout << vPrint[i] << endl;
     o << vPrint[i] << endl;
