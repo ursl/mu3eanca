@@ -42,8 +42,6 @@ private:
  
   int         fModeNoiseLimit;
   double      fNoiseLevel;
-  std::string fName, fDir;
-
 };
 
 #endif

@@ -44,7 +44,6 @@ public:
   hitDataBase(TChain *tree, std::string para);
   virtual ~hitDataBase();
 
-  virtual void         setupTree();
   virtual void         openHistFile(std::string filename);
   virtual void         closeHistFile();
   virtual void         bookHist(int i);
@@ -53,12 +52,14 @@ public:
   virtual void         startAnalysis();
   virtual void         endAnalysis();
   virtual int          loop(int nevents = 1, int start = -1, bool readMaskFiles = false);
-  virtual TFile*       getFile() {return fpChain->GetCurrentFile();}
   virtual void         eventProcessing();
   virtual void         initVariables();
   virtual void         fillHist();
-  virtual void         setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
 
+  void                 setupTree();
+  TFile*               getFile() {return fpChain->GetCurrentFile();}
+  void                 setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
+  void                 setOutputDirectoryName(std::string oname) {fOutputDirectoryName = oname; }
   std::pair<int, int>  colrowFromIdx(int idx);
   int                  idxFromColRow(int col, int row);
 
@@ -81,6 +82,7 @@ protected:
   TFile       *fpHistFile;     // for output histograms and reduced trees
   std::string fChainName;      // the name of the chain file
   std::string fCutFile;        // contains file with the cut definitions
+  std::string fOutputDirectoryName, fSuffix; 
 
   // -- Pre-filled variables
   int          fNentries;      // number of events in chain; filled in hitDataBase::hitDataBase()
