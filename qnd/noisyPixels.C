@@ -427,15 +427,20 @@ void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5
   // };
 
   
-  vector<int> runlist = {
-    311, 312, 313,
-    320, 321, 322, 323, 325,
-    332, 333, 334, 336, 337,
-    341, 343, 345, 346, 347, 348,
-    350, 352, 353, 354, 355, 356, 357, 358, 359,
-    360, 362, 363, 364, 365, 366
-  };
+  // -- all of May 2022
+  // vector<int> runlist = {
+  //   311, 312, 313,
+  //   320, 321, 322, 323, 325,
+  //   332, 333, 334, 336, 337,
+  //   341, 343, 345, 346, 347, 348,
+  //   350, 352, 353, 354, 355, 356, 357, 358, 359,
+  //   360, 362, 363, 364, 365, 366
+  // };
 
+  // -- threshold lowering/masking attempt in June 2022
+  vector<int> runlist = {311, 332, 347, 442, 443, 510, 512, 514, 518, 519, 520, 522, 524};
+
+  
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
     writeNoisyPixelsMaskFiles(rootdir, runlist[irun], modeNoiseLimit, noiseLevel, name, dir);
   }
