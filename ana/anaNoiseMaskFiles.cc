@@ -308,20 +308,32 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i],"-h")) {
       cout << "List of arguments:" << endl;
-      cout << "-h               prints this message and exits" << endl;
-      cout << "-c file1 file2   combine various noisemaskfiles for a single chip" << endl;
-      cout << "-s filename      summarize noisemask with filename" << endl;
-      cout << "-v level         set verbosity level " << endl;
+      cout << "-h                prints this message and exits" << endl;
+      cout << "-c file1 file2    combine various noisemaskfiles for a single chip" << endl;
+      cout << "-r run1,run2,run3 combine noisemaskfiles for all chips for given runs" << endl;
+      cout << "-s filename       summarize noisemask with filename" << endl;
+      cout << "-v level          set verbosity level " << endl;
       return 0;
     }
 
+    if (!strcmp(argv[i],"-v"))  {
+      VERBOSE = atoi(argv[++i]);
+    }      
+
     if (!strcmp(argv[i],"-c"))  {
-      string filename = argv[++i];
       vector<string> fnames; 
       for (int j = i+1; j < argc; ++j) {
         fnames.push_back(argv[j]);
       }
       mergeNoiseFiles(fnames);
+      return 0; 
+    }
+
+    if (!strcmp(argv[i],"-r"))  {
+      vector<string> runlist = split(argv[++i], ',');
+      for (int j = 0; j < runlist.size(); ++j) {
+        cout << "j = " << j << " run = " << runlist[j] << endl;
+      }
       return 0; 
     }
 
@@ -332,9 +344,6 @@ int main(int argc, char *argv[]) {
       return 0; 
     }
 
-    if (!strcmp(argv[i],"-v"))  {
-      VERBOSE = atoi(argv[++i]);
-    }      
 
   }
   return 0;
