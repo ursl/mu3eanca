@@ -15,9 +15,10 @@ hitDataBase::hitDataBase(TChain *chain, string treeName): fVerbose(0) {
   }
   fpChain = chain;
   fChainName = treeName;
-
   fNentries = fpChain->GetEntries();
+
   cout << "==> hitDataBase: constructor fpChain: " << fpChain << "/" << fpChain->GetName()
+       << " treename = " << fChainName
        << " entries = " <<   fNentries
        << endl;
 
@@ -301,6 +302,7 @@ void hitDataBase::readCuts(string filename, int dump) {
 
 // ----------------------------------------------------------------------
 void hitDataBase::setupTree() {
+  cout << "hitDataBase::setupTree()" << endl;
   fv_runID = 0, fv_MIDASEventID = 0, fv_ts2 = 0, fv_hitTime = 0,
     fv_headerTime = 0, fv_headerTimeMajor = 0, fv_subHeaderTime = 0, fv_trigger = 0,
     fv_isInCluster = 0;
@@ -335,11 +337,14 @@ void hitDataBase::setupTree() {
 
 
 // ----------------------------------------------------------------------
-int hitDataBase::loop(int nevents, int start) {
+int hitDataBase::loop(int nevents, int start, bool readMaskFiles) {
   int maxEvents(0);
 
-  cout << "==> hitDataBase: Chain " << fChainName << " has a total of " << fNentries << " events" << endl;
-
+  cout << "==> hitDataBase: Chain " << fChainName
+       << " has a total of " << fNentries << " events"
+       << (readMaskFiles? " reading mask files": " NOT reading mask files")
+       << endl;
+  
   // -- Setup for restricted running (not yet foolproof, i.e. bugfree)
   if (nevents < 0) {
     maxEvents = fNentries;
@@ -373,6 +378,7 @@ int hitDataBase::loop(int nevents, int start) {
   for (Long64_t ievt = 0; ievt < fnentries; ++ievt) {
     VERBOSE = 0; 
     if (0 == ievt%step) VERBOSE = 1;
+    VERBOSE = 1;
     Long64_t tentry = fpChain->LoadTree(ievt);
     fb_runID->GetEntry(tentry);  
     fb_MIDASEventID->GetEntry(tentry);  
@@ -407,7 +413,9 @@ int hitDataBase::loop(int nevents, int start) {
       oldRun = fRun;
       if (fRun > 0) {
         bookHist(fRun);
-        readNoiseMaskFiles(fRun, "nmf");
+        if (readMaskFiles) {
+          readNoiseMaskFiles(fRun, "nmf");
+        }
       }
     }
     

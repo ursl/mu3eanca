@@ -52,7 +52,7 @@ public:
 
   virtual void         startAnalysis();
   virtual void         endAnalysis();
-  virtual int          loop(int nevents = 1, int start = -1);
+  virtual int          loop(int nevents = 1, int start = -1, bool readMaskFiles = false);
   virtual TFile*       getFile() {return fpChain->GetCurrentFile();}
   virtual void         eventProcessing();
   virtual void         initVariables();
@@ -91,6 +91,9 @@ protected:
   // -- Output histogram/tree pointers
   TTree       *fTree;
 
+  int fChipID, fcol, frow, ftot, ftot2, fqual, flayer; 
+
+  
   // -- indexed with pair<run, chipID>
   std::map<struct hID, TH1*>      fChipHistograms;
 
