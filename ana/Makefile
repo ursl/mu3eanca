@@ -24,13 +24,6 @@ else
   endif
 endif
 
-ROOT6 = $(shell $(ROOTSYS)/bin/root-config --version)
-ifneq ($(findstring 6.,$(ROOT6)),)
-ROOT6         = "yes"
-else
-ROOT6         = "no"
-endif
-
 CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
 LD            = $(CXX)
 LDFLAGS       = -g #?? -Wl -rpath$(ROOTSYS)
@@ -62,15 +55,11 @@ $(addprefix obj/,%.o) : %.cc
 
 %Dict.cc : %.hh %LinkDef.h
 	$(ROOTCINT) -f $@ -c $(EXTHEADERS) $^
-ifeq ($(ROOT6),"yes")
 	mv $(subst Dict.cc,Dict_rdict.pcm,$@) lib
-endif
 
 %Dict.cc : %.hh
 	$(ROOTCINT) -f $@ -c $(EXTHEADERS) $<
-ifeq ($(ROOT6),"yes")
 	mv $(subst Dict.cc,Dict_rdict.pcm,$@) lib
-endif
 
 $(addprefix lib/,%.pcm) :
 	cd lib && ln -s $< && cd -
