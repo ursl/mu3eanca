@@ -2,8 +2,14 @@
 #include "hitDataIncludes.hh"
 
 // ----------------------------------------------------------------------
-// Run with: see derived classes!
+// -- Usage
+// --------
 //
+// bin/runHitDataAna -f ~/data/mu3e/run2022/root_output_files/dataTree00442.root -D nmf -p noise
+// bin/runHitDataAna -c chains/nmfchain -D nmfchain -p noise > & ! chain.log
+//
+// noise mask files are dumped per run.
+// combine them ad libitum with anaNoiseMaskFiles
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
