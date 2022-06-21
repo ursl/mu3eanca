@@ -427,10 +427,12 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-r"))  {
       vector<string> srunlist = split(argv[++i], ',');
       vector<int> runlist;
+      cout << "combining runs "; 
       for (int j = 0; j < srunlist.size(); ++j) {
         runlist.push_back(atoi(srunlist[j].c_str()));
-        cout << "j = " << j << " run = " << runlist[j] << endl;
+        cout << runlist[j] << " ";
       }
+      cout << endl;
       mergeRunNoiseFiles(runlist, outputdir);
       return 0; 
     }
