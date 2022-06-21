@@ -260,8 +260,8 @@ void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise,
 // ----------------------------------------------------------------------
 void addNoiseMaskFile(vector<uint8_t> &vnoise, string name) {
   vector<uint8_t> vread = readFile(Form("%s", name.c_str()));
-  cout << name; 
-  summarize(vread);
+  // cout << name; 
+  // summarize(vread);
   
   if (0 == vread.size()) {
     return;
@@ -271,7 +271,7 @@ void addNoiseMaskFile(vector<uint8_t> &vnoise, string name) {
     if ((0xda == vnoise[i]) && (0xda == vnoise[i+1])) {
       // -- update error flag in case it is set
       if (0x00 != vread[i+5]) {
-        vnoise[i] = vread[i];
+        vnoise[i+5] = vread[i+5];
       }
       i += 5; //??
       continue;
@@ -290,7 +290,7 @@ void addNoiseMaskFile(vector<uint8_t> &vnoise, string name) {
  
  
 // ----------------------------------------------------------------------
-// -- combines files into one mask file and summarizes the combination
+// -- merge files into one mask file and summarizes the combination
 // ----------------------------------------------------------------------
 void mergeNoiseFiles(vector<string> filelist) {
   vector<uint8_t> vnoise;
@@ -303,6 +303,49 @@ void mergeNoiseFiles(vector<string> filelist) {
   writeNoiseMaskFile(vnoise, "combination");
   summaryMaskFile("combination");
   remove("combination");
+}
+
+
+// ----------------------------------------------------------------------
+// -- compare two files summarizes the difference
+// ----------------------------------------------------------------------
+void compareNoiseFiles(vector<string> filelist) {
+  assert(2 == filelist.size());
+
+  vector<uint8_t> vnoise1;
+  for (int i = 0; i < 256*256; ++i) vnoise1.push_back(0xff);
+  vector<uint8_t> vnoise2;
+  for (int i = 0; i < 256*256; ++i) vnoise2.push_back(0xff);
+
+  addNoiseMaskFile(vnoise1, filelist[0]);
+  addNoiseMaskFile(vnoise2, filelist[1]);
+  assert(vnoise1.size() == vnoise2.size());
+
+  bool errCodeDiff(false);
+  int  cntNoiseDiff(0);
+  for (unsigned int i = 0; i < vnoise1.size(); ++i) {
+    if ((0xda == vnoise1[i]) && (0xda == vnoise1[i+1])) {
+      // -- update error flag in case it is set
+      if (vnoise1[i+5] != vnoise2[i+5]) {
+        errCodeDiff = true;
+      }
+      i += 5; //??
+      continue;
+    }
+ 
+    if (vnoise1[i] != vnoise2[i]) {
+      pair<int, int> a = colrowFromIdx(i);
+      ++cntNoiseDiff;
+      if (VERBOSE > 1) cout << Form("different setting col/row = %3d/%3d from %x to %x in %s vs. %s",
+                                    a.first, a.second, vnoise1[i], vnoise1[i],
+                                    filelist[0].c_str(), filelist[1].c_str()
+                                    )
+                            << endl;
+    }
+  }
+  cout << "Difference of number of noisy pixels = " << cntNoiseDiff
+       << ", difference in errCode = " <<  errCodeDiff
+       << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -344,7 +387,8 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-h")) {
       cout << "List of arguments: (provide -v as first argument!)" << endl;
       cout << "-h                prints this message and exits" << endl;
-      cout << "-c file1 file2    combine various noisemaskfiles for a single chip" << endl;
+      cout << "-c file1 file2    compare two noisemaskfiles" << endl;
+      cout << "-m file1 file2    merge various noisemaskfiles for a single chip" << endl;
       cout << "-o outputdir      set output directory" << endl;
       cout << "-r run1,run2,run3 combine noisemaskfiles for all chips for given runs" << endl;
       cout << "-s filename       summarize noisemask with filename" << endl;
@@ -358,8 +402,19 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-v"))  {++i; continue;}
     if (!strcmp(argv[i],"-o"))  {++i; continue;}
 
-    // -- combine specific files
+    // -- compare two files and print difference
     if (!strcmp(argv[i],"-c"))  {
+      vector<string> fnames; 
+      for (int j = i+1; j < argc; ++j) {
+        fnames.push_back(argv[j]);
+      }
+      compareNoiseFiles(fnames);
+      return 0; 
+    }
+
+    
+    // -- merge specific files and summarize
+    if (!strcmp(argv[i],"-m"))  {
       vector<string> fnames; 
       for (int j = i+1; j < argc; ++j) {
         fnames.push_back(argv[j]);
