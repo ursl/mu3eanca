@@ -1,0 +1,134 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# updateNoiseMaskRepo
+# ===================
+#           
+# Updates the local repo on switch0 with the noise mask files.
+# Can either
+#   - update with a single run incrementally
+#   - update for a list of runs
+#
+# This script relies on per-run noise mask files in subdirectory nmf/.
+# If these files are missing, it will create them (only for single run update mode!)
+# For that, the lib/bin targets in mu3eanca/ana must have been built
+#
+# Usage:   cd .../mu3eanca/ana
+#          ../perl/updateNoiseMaskRepo {-r runnumber | -l runlist} [-u] [-o] [-m "additional commit message"]
+#
+# Options: -u           update local repo on switch0
+#          -o           update ODB 
+#          -r run       add run to maskfiles          
+#          -l r1,r2,... combine runs r1,r2,... into maskfile
+#          -m comment   add comment to commit message and into readme.txt line
+#
+# Examples: cd .../mu3eanca/ana
+#           ../perl/updateNoiseMaskRepo -l 540,541 -u -m "switch to updateNoiseMaskRepo"
+#           ../perl/updateNoiseMaskRepo -r 538 -u -o 
+#
+#
+# History 2022/06/21 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('l:m:or:u');
+
+my $swrepo  = "pixel-maskfiles";
+my $basedir = "/home/mu3e/.ursl/mu3eanca/ana/nmf";
+#my $rootdir = "/home/mu3e/analyzer/build/analyzer/root_output_files";
+my $rootdir = "/data1/run2022/analyzer_output/root_output_files";
+
+# -- there MUST be a runnumber 
+if (!$opt_r && !$opt_l) {
+    print("missing runnumber or runlist for update!\n");
+    die("Usage: ./updateNoiseMaskRepo  {-r runnumber | -l runlist}\n");
+}
+
+# -- check that the runnumber is OK
+my $summary = "summaryNoiseMaskFile-run".$opt_r.".txt";
+if ($opt_r && !-e "$basedir/$summary") {
+    # -- try to run analyzer
+    print("$basedir/$summary does not exist, trying to produce it\n");
+    print("bin/runHitDataAna -f $rootdir/dataTree00$opt_r.root -D nmf -p noise\n");
+    system("bin/runHitDataAna -f $rootdir/dataTree00$opt_r.root -D nmf -p noise");
+    # -- check again
+    if (!-e "$basedir/$summary") {
+	die ("file $basedir/$summary does not exist! exit\n");
+    }
+} else {
+    print("file $basedir/$summary exists, proceeding\n");
+}    
+
+my $runlist = `cat /home/mu3e/.ursl/mu3eanca/ana/nmf/runlist`;
+chop($runlist);
+if ($opt_l) {
+    $runlist = $opt_l;
+}
+
+if ($opt_r) {
+    $runlist = $runlist . ",$opt_r";
+}
+
+unlink("/home/mu3e/.ursl/mu3eanca/ana/nmf/runlist");
+print("dump $runlist into /home/mu3e/.ursl/mu3eanca/ana/nmf/runlist\n");
+system("echo $runlist > /home/mu3e/.ursl/mu3eanca/ana/nmf/runlist");
+
+print("bin/anaNoiseMaskFiles -p noise -o nmf -r $runlist\n");
+system("bin/anaNoiseMaskFiles -p noise -o nmf -r $runlist");
+
+chdir("/home/mu3e/pixel-maskfiles");
+my $lastTag = `git describe --tags`;
+chop($lastTag);
+($newTag = $lastTag) =~ s/v//;
+$newTag++;
+$newTag = sprintf("v%0.3d", $newTag);
+print("last tag: $lastTag, new tag: $newTag\n");
+
+# -- in case you'd like to pass an additional comment to the commit message/readme.txt
+my $cimessage = ""; 
+if ($opt_r) {
+    $cimessage = "$newTag   added run $opt_r to maskfiles ";
+}
+
+if ($opt_l) {
+    $cimessage = "$newTag   combine runs $opt_l into maskfiles ";
+}
+
+if ($opt_m) {
+    $cimessage = $cimessage . $opt_m;
+}
+
+print("Updating local git repo\n");
+print ("/usr/bin/cp $basedir/noiseMaskFile-chipID* .\n");
+system("/usr/bin/cp $basedir/noiseMaskFile-chipID* .");
+
+print ("/usr/bin/cp $basedir/$summary .\n");
+system("/usr/bin/cp $basedir/$summary .");
+
+print ("/usr/bin/echo $cimessage >> readme.txt\n");
+system("/usr/bin/echo $cimessage >> readme.txt");
+
+print ("/usr/bin/git add $summary \n");
+system("/usr/bin/git add $summary ");
+
+print ("/usr/bin/git commit -a -m \"$cimessage\" \n");
+system("/usr/bin/git commit -a -m \"$cimessage\" ");
+
+print ("/usr/bin/git tag $newTag \n");
+system("/usr/bin/git tag $newTag ");
+
+if ($opt_u) {
+    chdir("/home/mu3e/pixel-maskfiles");
+    system("/usr/bin/rsync -rtpl . switch0:$swrepo");
+    if ($opt_o) {
+	print("updating ODB\n");
+	chdir("$basedir/../..");
+	system("perl/pixelNoiseMaskFiles -N -T");
+    }
+} else {
+    print("option -u not provided, not rsync'ing to switch0\n");
+}
