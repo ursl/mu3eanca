@@ -616,7 +616,8 @@ int main(int argc, char *argv[]) {
 
     // -- make plots
     if (!strcmp(argv[i],"-p"))  {
-      makePlots();
+      string dirname = argv[++i];
+      makePlots(dirname);
       return 0; 
     }
 
