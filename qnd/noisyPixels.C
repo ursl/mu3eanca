@@ -438,7 +438,7 @@ void produceAllMergedNoiseFiles(int modeNoiseLimit = -1, double noiseLevel = 1.5
   // };
 
   // -- threshold lowering/masking attempt in June 2022
-  vector<int> runlist = {311, 332, 347, 442, 443, 510, 512, 514, 518, 519, 520, 522, 524};
+  vector<int> runlist = {311,332,347,442,443,510,512,514,518,519,520,522,524};
 
   
   for (unsigned int irun = 0; irun < runlist.size(); ++irun) {
