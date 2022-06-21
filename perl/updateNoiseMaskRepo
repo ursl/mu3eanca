@@ -125,9 +125,11 @@ if ($opt_u) {
     chdir("/home/mu3e/pixel-maskfiles");
     system("/usr/bin/rsync -rtpl . switch0:$swrepo");
     if ($opt_o) {
-	print("updating ODB\n");
-	chdir("$basedir/../..");
-	system("perl/pixelNoiseMaskFiles -N -T");
+        print("updating ODB\n");
+        chdir("$basedir/../..");
+        system("perl/pixelNoiseMaskFiles -N -T");
+    } else {
+        print("option -o not provided, not writing to ODB\n");
     }
 } else {
     print("option -u not provided, not rsync'ing to switch0\n");
