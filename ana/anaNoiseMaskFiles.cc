@@ -5,6 +5,7 @@
 #include <TH2D.h>
 #include <TStyle.h>
 #include <TCanvas.h>
+#include <TLatex.h>
 
 #include "sensor.hh"
 #include "util/util.hh"
@@ -17,6 +18,42 @@ map<int, vector<pair<int, int> > > gChipNoisyPixels;
 
 int VERBOSE(0); 
 int NCHIP(120);
+
+string gJSON("../common/sensors_mapping_220531.json"); 
+
+
+// ----------------------------------------------------------------------
+bool skipChip(int chipID) {
+
+  if (chipID > 119) return true;
+  
+  // https://mattermost.gitlab.rlp.net/mu3e/pl/qk3t7i7t53gqubqbucjpggzdna
+  vector<int> skipList = {
+    54, 55, 56, 57, 58, 59,
+    114, 115, 116, 117, 118, 119,
+    // Layer0:
+    62, 68, 10, 11, 15, 20,
+    // Layer1:
+    95, 36, 96, 101,
+    // 3 links not working:
+    // (Mask all runs)
+    // Layer0:
+    71, 70, 69, 12, 13, 14, 16, 17, 81,
+    // Layer1:
+    27, 34, 106, 50, 52,
+    // 3 link errors:
+    // (Mask for runs so far?)
+    // Layer0:
+    5, 78,
+    // Layer1:
+    41
+  };
+
+  if (skipList.end() != find(skipList.begin(), skipList.end(), chipID)) return true;
+
+  return false; 
+}
+
 
 // ----------------------------------------------------------------------
 int getValInt(string line) {
@@ -137,6 +174,7 @@ void readJSON(string filename, string dir = ".") {
 }
 
 
+
 // ----------------------------------------------------------------------
 bool validNoise(const vector<uint8_t> &v) {
   for (unsigned int i = 0; i < v.size(); ++i) {
@@ -146,6 +184,17 @@ bool validNoise(const vector<uint8_t> &v) {
   }
   return false;
 }
+
+
+// ----------------------------------------------------------------------
+bool badLVDS(const vector<uint8_t> &v) {
+  bool badLVDS(true);
+  if (validNoise(v)) {
+    if (0 == v[0xff]) badLVDS = false;
+  }
+  return badLVDS;
+}
+
 
 // ----------------------------------------------------------------------
 vector<uint8_t> readFile(string filename) {
@@ -185,6 +234,145 @@ int idxFromColRow(int col, int row) {
   int idx = col*256 + row;
   return idx; 
 }
+
+
+// ----------------------------------------------------------------------
+// -- fill gChipNoisyPixels for a chipID
+// ----------------------------------------------------------------------
+void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise,
+                     map<int, vector<pair<int, int> > > &map1) {
+  vector<pair<int, int> > vnp;
+
+  for (unsigned int i = 0; i < vnoise.size(); ++i){
+    if ((0xda == vnoise[i]) && (0xda == vnoise[i+1])) {
+      i += 5; //??
+      continue;
+    }
+    if (0xff != vnoise[i]) {
+      pair<int, int> a = colrowFromIdx(i);
+      vnp.push_back(a);
+    }
+  }
+  map1.insert(make_pair(chipID, vnp));  
+}
+
+
+// ----------------------------------------------------------------------
+void makePlots(string dir = "nmf", bool checkLVDS = false, string name = "noiseMaskFile") {
+  TCanvas c0("c0","--c0--",2303,0,656,700);
+  gStyle->SetHistMinimumZero();
+  int OK(0); 
+  gChipNoisyPixels.clear();
+
+  readJSON(gJSON, dir);
+  
+  for (int i = 0; i < 120; ++i) {
+    if (skipChip(i)) continue;
+    vector<uint8_t> vnoise = readFile(Form("%s/%s-chipID%d", dir.c_str(), name.c_str(), i));
+    if (checkLVDS && badLVDS(vnoise)) continue;
+    if (validNoise(vnoise)) {
+      fillNoisyPixels(i, vnoise, gChipNoisyPixels);
+    }
+  }
+
+  int noiseMax(-1), npix(0);
+  map<int, vector<pair<int, int> > >::iterator it; 
+  for (it = gChipNoisyPixels.begin(); it != gChipNoisyPixels.end(); ++it) {
+    npix = it->second.size(); 
+    cout << "chip " << it->first << " it->size() = " << npix << endl;
+    if (npix > noiseMax) {
+      cout << "noiseMax = " << noiseMax << " -> " << npix << endl;
+      noiseMax = npix;
+    }
+  }
+
+  int hMax = (noiseMax/10000 + 1)*10000;
+  cout << "noiseMax = " << noiseMax << " -> " << hMax << endl;
+
+  TH2D *hl0 = new TH2D("hl0n", Form("noisy pixels inner layer %s", (checkLVDS?"(no LVDS errors)":"")),
+                       6, -42., 63., 8, -3.15, 3.15);
+  TH2D *hl1 = new TH2D("hl1n", Form("noisy pixels outer layer %s", (checkLVDS?"(no LVDS errors)":"")),
+                       6, -42., 63., 10, -3.15, 3.15);
+
+  TH2D *hChip = new TH2D("hChip", Form("noisy pixels %s", (checkLVDS?"(no LVDS errors)":"")),
+                         256, 0., 256., 250, 0., 250.);
+  TH2D *hChipClean = new TH2D("hChipClean", Form("noisy pixels 'clean' %s", (checkLVDS?"(no LVDS errors)":"")),
+                         256, 0., 256., 250, 0., 250.);
+
+  
+  TH1D *h1 = new TH1D("hnoise", Form("noisy pixels/chip %s", (checkLVDS?"(no LVDS errors)":"")),
+                      100, 0., hMax);
+  h1->SetNdivisions(508, "X");
+  for (it = gChipNoisyPixels.begin(); it != gChipNoisyPixels.end(); ++it) {
+    //    cout << "chip " << it->first << " it->size() = " << it->second.size() << endl;
+    h1->Fill(it->second.size());
+    for (unsigned int ipix = 0; ipix < it->second.size(); ++ipix) {
+      hChip->Fill(it->second[ipix].first, it->second[ipix].second); 
+      if (it->second.size() < 1000) {
+        hChipClean->Fill(it->second[ipix].first, it->second[ipix].second); 
+      }
+    }
+    
+    if (0 == gDetectorChips[it->first].layer) {
+      hl0->Fill(gDetectorChips[it->first].v.Z(), gDetectorChips[it->first].v.Phi(), it->second.size());
+    }
+
+    if (1 == gDetectorChips[it->first].layer) {
+      hl1->Fill(gDetectorChips[it->first].v.Z(), gDetectorChips[it->first].v.Phi(), it->second.size());
+    }
+  }
+  hpl(h1, "fillblue");
+  TLatex *tl = new TLatex();
+  tl->SetTextSize(0.05);
+  tl->DrawLatexNDC(0.4, 0.85, Form("mean: "));
+  tl->DrawLatexNDC(0.7, 0.85, Form("%5.1f", h1->GetMean()));
+  tl->DrawLatexNDC(0.4, 0.80, Form("RMS: "));
+  tl->DrawLatexNDC(0.7, 0.80, Form("%5.1f", h1->GetRMS()));
+  tl->DrawLatexNDC(0.4, 0.75, Form("overflow:"));
+  tl->DrawLatexNDC(0.7, 0.75, Form("%5.1f", h1->GetBinContent(h1->GetNbinsX())));
+  
+  if (dir == ".") {
+    c0.SaveAs("nNoisyPixels.pdf");
+  } else {
+    string pdfname = Form("nNoisyPixels%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str());
+    c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
+  }
+
+  hl0->Draw("coltext");
+  if (dir == ".") {
+    c0.SaveAs("nNoisyPixels-zphi-l0.pdf");
+  } else {
+    string pdfname = Form("nNoisyPixels-zphi-l0%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str());
+    c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
+  }
+
+  hl1->Draw("coltext");
+  if (dir == ".") {
+    c0.SaveAs("nNoisyPixels-zphi-l1.pdf");
+  } else {
+    string pdfname = Form("nNoisyPixels-zphi-l1%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str());
+    c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
+  }
+
+
+  hChip->Draw("colz");
+  if (dir == ".") {
+    c0.SaveAs("mapNoisyPixels.pdf");
+  } else {
+    string pdfname = Form("mapNoisyPixels%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str());
+    c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
+  }
+
+
+  hChipClean->Draw("colz");
+  if (dir == ".") {
+    c0.SaveAs("mapNoisyPixelsClean.pdf");
+  } else {
+    string pdfname = Form("mapNoisyPixelsClean%s-%s.pdf", (checkLVDS?"-noLVDSerrors":""), name.c_str()); 
+    c0.SaveAs(Form("%s/%s", dir.c_str(), pdfname.c_str()));
+  }
+}
+
 
 
 // ----------------------------------------------------------------------
@@ -234,25 +422,6 @@ void summaryMaskFile(string filename) {
 }
 
 
-// ----------------------------------------------------------------------
-// -- fill gChipNoisyPixels for a chipID
-// ----------------------------------------------------------------------
-void fillNoisyPixels(int chipID, vector<uint8_t> &vnoise,
-                     map<int, vector<pair<int, int> > > &map1) {
-  vector<pair<int, int> > vnp;
-
-  for (unsigned int i = 0; i < vnoise.size(); ++i){
-    if ((0xda == vnoise[i]) && (0xda == vnoise[i+1])) {
-      i += 5; //??
-      continue;
-    }
-    if (0xff != vnoise[i]) {
-      pair<int, int> a = colrowFromIdx(i);
-      vnp.push_back(a);
-    }
-  }
-  map1.insert(make_pair(chipID, vnp));  
-}
 
 
 // ----------------------------------------------------------------------
@@ -390,6 +559,7 @@ int main(int argc, char *argv[]) {
       cout << "-c file1 file2    compare two noisemaskfiles" << endl;
       cout << "-m file1 file2    merge various noisemaskfiles for a single chip" << endl;
       cout << "-o outputdir      set output directory" << endl;
+      cout << "-p                plot creation" << endl;
       cout << "-r run1,run2,run3 combine noisemaskfiles for all chips for given runs" << endl;
       cout << "-s filename       summarize noisemask with filename" << endl;
       cout << "-v level          set verbosity level " << endl;
@@ -441,6 +611,12 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-s"))  {
       string filename = argv[++i];
       summaryMaskFile(filename);
+      return 0; 
+    }
+
+    // -- make plots
+    if (!strcmp(argv[i],"-p"))  {
+      makePlots();
       return 0; 
     }
 
