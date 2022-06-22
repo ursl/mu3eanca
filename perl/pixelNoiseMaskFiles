@@ -13,6 +13,7 @@
 #
 # History 2022/05/20 first shot
 #         2022/05/23 add -N
+#         2022/06/22 obtain hash of currently checked out commit, not HEAD
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
