@@ -579,6 +579,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-h")) {
       cout << "List of arguments: (provide -v as first argument!)" << endl;
       cout << "-h                prints this message and exits" << endl;
+      cout << "-f VAL            fill (new) noisemaskfiles with value VAL" << endl;
       cout << "-c file1 file2    compare two noisemaskfiles" << endl;
       cout << "-m file1 file2    merge various noisemaskfiles for a single chip" << endl;
       cout << "-o outputdir      set output directory" << endl;
@@ -605,7 +606,29 @@ int main(int argc, char *argv[]) {
       return 0; 
     }
 
-    
+    // -- fill (new) mask files with value VAL
+    if (!strcmp(argv[i],"-f"))  {
+      int VAL(0);
+      VAL = atoi(argv[i+1]);
+      cout << "Creating new mask files with VAL = " << VAL << endl;
+      vector<uint8_t> vmask;
+      for (int icol = 0; icol < 256; ++icol) {
+        for (int irow = 0; irow < 250; ++irow) {
+          vmask.push_back(VAL);
+        }
+        vmask.push_back(0xda);
+        vmask.push_back(0xda);
+        vmask.push_back(0xda);
+        vmask.push_back(icol);
+        vmask.push_back(0xda);
+        vmask.push_back(0);
+      }
+      for (int ichip = 0; ichip < NCHIP; ++ichip) {
+        writeNoiseMaskFile(vmask, Form("noiseMaskFile-chipID%d", ichip));        
+      }
+      return 0; 
+    }
+
     // -- merge specific files and summarize
     if (!strcmp(argv[i],"-m"))  {
       vector<string> fnames; 
