@@ -77,8 +77,8 @@ unlink("/home/mu3e/.ursl/mu3eanca/ana/nmf/runlist");
 print("dump $runlist into /home/mu3e/.ursl/mu3eanca/ana/nmf/runlist\n");
 system("echo $runlist > /home/mu3e/.ursl/mu3eanca/ana/nmf/runlist");
 
-print("bin/anaNoiseMaskFiles -p noise -o nmf -r $runlist\n");
-system("bin/anaNoiseMaskFiles -p noise -o nmf -r $runlist");
+print("bin/anaNoiseMaskFiles -o nmf -r $runlist\n");
+system("bin/anaNoiseMaskFiles -o nmf -r $runlist");
 
 chdir("/home/mu3e/pixel-maskfiles");
 my $lastTag = `git describe --tags`;
