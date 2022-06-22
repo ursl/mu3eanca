@@ -566,6 +566,7 @@ void mergeRunNoiseFiles(vector<int> runlist, string dir = ".") {
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
   string outputdir(".");
+
   // -- command line arguments
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i],"-v"))  {
