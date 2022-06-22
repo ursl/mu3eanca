@@ -582,9 +582,9 @@ int main(int argc, char *argv[]) {
       cout << "-c file1 file2    compare two noisemaskfiles" << endl;
       cout << "-m file1 file2    merge various noisemaskfiles for a single chip" << endl;
       cout << "-o outputdir      set output directory" << endl;
-      cout << "-p                plot creation" << endl;
+      cout << "-p                plots" << endl;
       cout << "-r run1,run2,run3 combine noisemaskfiles for all chips for given runs" << endl;
-      cout << "-s filename       summarize noisemask with filename" << endl;
+      cout << "-s file1 file2    summarize noisemasks for all filenames" << endl;
       cout << "-v level          set verbosity level " << endl;
       return 0;
     }
@@ -632,8 +632,9 @@ int main(int argc, char *argv[]) {
 
     // -- summarize a single noise mask file
     if (!strcmp(argv[i],"-s"))  {
-      string filename = argv[++i];
-      summaryMaskFile(filename);
+      for (int j = i+1; j < argc; ++j) {
+        summaryMaskFile(argv[j]);
+      }
       return 0; 
     }
 
