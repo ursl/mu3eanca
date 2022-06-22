@@ -57,7 +57,8 @@ if ($opt_N) {
 
 if ($opt_T) {
     if (!$opt_d) {
-        @tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git rev-parse HEAD && cd -'`;
+#        @tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git rev-parse HEAD && cd -'`;
+        @tag = `ssh mu3eswitch0 'cd /home/mu3e/pixel-maskfiles && git --no-pager show --pretty=%H -s && cd -'`;
         $githash = substr $tag[0], 0, -1;
     }
     print "set GitHash $githash \r\n";
