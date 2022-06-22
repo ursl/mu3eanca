@@ -113,6 +113,12 @@ struct sensor fillEntry(vector<string> lines) {
       chip.v.SetZ(getValFloat(lines[i+3]));
     }
   }
+  if (skipChip(chip.runChip)) {
+    chip.status = 1;
+  } else {
+    chip.status = 0;
+  }
+  
   return chip;
 }
 
@@ -267,7 +273,9 @@ void makePlots(string dir = "nmf", bool checkLVDS = false, string name = "noiseM
   readJSON(gJSON, dir);
   
   for (int i = 0; i < 120; ++i) {
-    if (skipChip(i)) continue;
+    if (skipChip(i)) {
+      continue;
+    }
     vector<uint8_t> vnoise = readFile(Form("%s/%s-chipID%d", dir.c_str(), name.c_str(), i));
     if (checkLVDS && badLVDS(vnoise)) continue;
     if (validNoise(vnoise)) {
@@ -289,18 +297,20 @@ void makePlots(string dir = "nmf", bool checkLVDS = false, string name = "noiseM
   int hMax = (noiseMax/10000 + 1)*10000;
   cout << "noiseMax = " << noiseMax << " -> " << hMax << endl;
 
-  TH2D *hl0 = new TH2D("hl0n", Form("noisy pixels inner layer %s", (checkLVDS?"(no LVDS errors)":"")),
+  TH2D *hl0 = new TH2D("hl0n", Form("masked pixels inner layer %s", (checkLVDS?"(no LVDS errors)":"")),
                        6, -42., 63., 8, -3.15, 3.15);
-  TH2D *hl1 = new TH2D("hl1n", Form("noisy pixels outer layer %s", (checkLVDS?"(no LVDS errors)":"")),
+  hl0->SetMinimum(0.);
+  TH2D *hl1 = new TH2D("hl1n", Form("masked pixels outer layer %s", (checkLVDS?"(no LVDS errors)":"")),
                        6, -42., 63., 10, -3.15, 3.15);
+  hl1->SetMinimum(0.);
 
-  TH2D *hChip = new TH2D("hChip", Form("noisy pixels %s", (checkLVDS?"(no LVDS errors)":"")),
+  TH2D *hChip = new TH2D("hChip", Form("masked pixels %s", (checkLVDS?"(no LVDS errors)":"")),
                          256, 0., 256., 250, 0., 250.);
-  TH2D *hChipClean = new TH2D("hChipClean", Form("noisy pixels 'clean' %s", (checkLVDS?"(no LVDS errors)":"")),
+  TH2D *hChipClean = new TH2D("hChipClean", Form("masked pixels 'clean' %s", (checkLVDS?"(no LVDS errors)":"")),
                          256, 0., 256., 250, 0., 250.);
 
   
-  TH1D *h1 = new TH1D("hnoise", Form("noisy pixels/chip %s", (checkLVDS?"(no LVDS errors)":"")),
+  TH1D *h1 = new TH1D("hnoise", Form("masked pixels/chip %s", (checkLVDS?"(no LVDS errors)":"")),
                       100, 0., hMax);
   h1->SetNdivisions(508, "X");
   for (it = gChipNoisyPixels.begin(); it != gChipNoisyPixels.end(); ++it) {
@@ -321,6 +331,19 @@ void makePlots(string dir = "nmf", bool checkLVDS = false, string name = "noiseM
       hl1->Fill(gDetectorChips[it->first].v.Z(), gDetectorChips[it->first].v.Phi(), it->second.size());
     }
   }
+
+  // -- flag erroneous chips
+  for (map<int, struct sensor>::iterator it = gDetectorChips.begin(); it != gDetectorChips.end(); ++it) {
+    if (0 != it->second.status) {
+      if (0 == it->second.layer) {
+        hl0->Fill(it->second.v.Z(), it->second.v.Phi(), -1);
+      }
+      if (1 == it->second.layer) {
+        hl1->Fill(it->second.v.Z(), it->second.v.Phi(), -1);
+      }
+    }
+  }
+  
   hpl(h1, "fillblue");
   TLatex *tl = new TLatex();
   tl->SetTextSize(0.05);
@@ -617,7 +640,8 @@ int main(int argc, char *argv[]) {
     // -- make plots
     if (!strcmp(argv[i],"-p"))  {
       string dirname = argv[++i];
-      makePlots(dirname);
+      makePlots(dirname, true);
+      makePlots(dirname, false);
       return 0; 
     }
 
