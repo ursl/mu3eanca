@@ -95,7 +95,7 @@ protected:
   TTree       *fTree;
 
   int fChipID, fcol, frow, ftot, ftot2, fqual, flayer; 
-
+  int ffpgaID, fheaderTime; 
   
   // -- indexed with pair<run, chipID>
   std::map<struct hID, TH1*>      fChipHistograms;
