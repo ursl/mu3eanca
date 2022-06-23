@@ -37,6 +37,9 @@ public:
 private:
   int fChipHits, fEvtHits; 
   
+  // -- indexed with pair<run, chipID>
+  std::map<struct hID, TH1*>      fCorrelations;
+
   std::map<int, struct sensor> fDetectorChips;
 
 };

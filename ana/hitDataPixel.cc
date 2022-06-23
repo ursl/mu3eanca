@@ -30,27 +30,30 @@ hitDataPixel::~hitDataPixel() {
 
 // ----------------------------------------------------------------------
 int hitDataPixel::getValInt(string line) {
+  bool DBX(false);
   replaceAll(line, ",", "");
   replaceAll(line, " ", "");
   size_t icol = line.rfind(":");
   string snum = line.substr(icol+1);
-  cout << "int  snum ->" << snum << "<-" << endl;
+  if (DBX) cout << "int  snum ->" << snum << "<-" << endl;
   return atoi(snum.c_str());
 }
 
 // ----------------------------------------------------------------------
 float hitDataPixel::getValFloat(string line) {
+  bool DBX(false);
   replaceAll(line, ",", "");
   replaceAll(line, " ", "");
   size_t icol = line.rfind(":");
   string snum = line.substr(icol+1);
-  cout << "float snum ->" << snum << "<-" << endl;
+  if (DBX) cout << "float snum ->" << snum << "<-" << endl;
   return atof(snum.c_str());
 }
 
 // ----------------------------------------------------------------------
 vector<string> hitDataPixel::readEntry(vector<string> lines, int &iLine) {
-  cout << "reading from line " << iLine << endl;
+  bool DBX(false);
+  if (DBX)  cout << "reading from line " << iLine << endl;
   vector<string> result;
   // -- counters for opening and closing braces
   int ibrace(0); 
@@ -156,15 +159,17 @@ void hitDataPixel::bookHist(int runnumber) {
   struct hID a; 
   if (first) {
     first = false;
-    fTree->Branch("chipID",   &fChipID,  "chipID/I");
-    fTree->Branch("layer",    &flayer,   "layer/I");
-    fTree->Branch("col",      &fcol,     "col/I");
-    fTree->Branch("row",      &frow,     "row/I");
-    fTree->Branch("tot",      &ftot,     "tot/I");
-    fTree->Branch("tot2",     &ftot2,    "tot2/I");
-    fTree->Branch("qual",     &fqual,    "qual/I");
-    fTree->Branch("nchip",    &fChipHits,"nchip/I");
-    fTree->Branch("nevt",     &fEvtHits, "nevt/I");
+    fTree->Branch("chipID",     &fChipID,  "chipID/I");
+    fTree->Branch("layer",      &flayer,   "layer/I");
+    fTree->Branch("col",        &fcol,     "col/I");
+    fTree->Branch("row",        &frow,     "row/I");
+    fTree->Branch("tot",        &ftot,     "tot/I");
+    fTree->Branch("tot2",       &ftot2,    "tot2/I");
+    fTree->Branch("qual",       &fqual,    "qual/I");
+    fTree->Branch("nchip",      &fChipHits,"nchip/I");
+    fTree->Branch("nevt",       &fEvtHits, "nevt/I");
+    fTree->Branch("fpgaID",     &ffpgaID, "fpgaID/I");
+    fTree->Branch("headerTime", &fheaderTime, "headerTime/I");
 
     // -- create unified hitmap histo
     n = Form("hitmap_run%d", 0);
@@ -186,6 +191,7 @@ void hitDataPixel::bookHist(int runnumber) {
     a = hID(0, -1, "noisytot");
     fChipHistograms.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 32, 0, 256.)));
     if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+
   }
 
   for (int i = 0; i < 120; ++i) {
@@ -196,11 +202,22 @@ void hitDataPixel::bookHist(int runnumber) {
     n = Form("hitmap_run%d_chipID%d", runnumber, i);
     a = hID(fRun, i, "hitmap"); 
     fChipHistograms.insert(make_pair(a, new TH2D(n.c_str(), n.c_str(), 256, 0, 256, 250, 0, 250)));
-    if (DBX) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    if (1) cout << "book hID: " << a << ": " << n << " ptr: " << fChipHistograms[a] << endl;
+    
   }
-
+  
   // -- create per-run unified histograms
   if (runnumber > 0) {
+
+    for (int i = 0; i < 120; ++i) {
+      for (int ij = i; ij < 120; ++ij) {
+        n = Form("dt_run%d_chipID%d", runnumber, i*1000+ij);
+        a = hID(fRun, i*1000+ij, "dt");
+        fCorrelations.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 200, -1000., 1000.)));
+        if (1) cout << "book hID: " << a << ": " << n << " ptr: " << fCorrelations[a] << endl;
+      }
+    }
+
     n = Form("hitmap_run%d", runnumber);
     a = hID(fRun, -1, "hitmap");
     fChipHistograms.insert(make_pair(a, new TH2D(n.c_str(), n.c_str(), 256, 0, 256, 250, 0, 250)));
@@ -247,6 +264,8 @@ int hitDataPixel::getLayer(int chipid) {
 
 // ----------------------------------------------------------------------
 void hitDataPixel::eventProcessing() {
+  struct hID adt(fRun, 0, "dt");
+
   struct hID ahm(fRun, 0, "hitmap");
   struct hID aht(fRun, 0, "hit_tot");
   struct hID ahm0(0, -1, "hitmap");
@@ -256,10 +275,13 @@ void hitDataPixel::eventProcessing() {
 
   struct hID ahn0(0, -1, "noisytot");
 
+
   // -- count good hits in this event
   fEvtHits = 0;
   for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
     fChipID = fv_chipID->at(ihit); 
+    fheaderTime = fv_headerTime->at(ihit); 
+    ffpgaID = fv_fpgaID->at(ihit); 
     if (120 == fChipID) {
       continue;
     }  
@@ -278,6 +300,33 @@ void hitDataPixel::eventProcessing() {
     ++fEvtHits;
   }
 
+  for (int ihit = 0; ihit < fv_fpgaID->size(); ++ihit) {
+    fChipID = fv_chipID->at(ihit); 
+    fheaderTime = fv_headerTime->at(ihit); 
+    ffpgaID = fv_fpgaID->at(ihit); 
+    if (fChipQuality[fChipID] > 0) {
+      continue;
+    }
+    for (int ijhit = ihit+1; ijhit < fv_fpgaID->size(); ++ijhit) {
+      int chipID     = fv_chipID->at(ijhit); 
+      int fpgaID2    = fv_fpgaID->at(ijhit); 
+      int headerTime = fv_headerTime->at(ijhit); 
+      int dt = fheaderTime - headerTime; 
+      if (fChipQuality[chipID] > 0) {
+        continue;
+      }
+      if (fpgaID2 == ffpgaID) {
+        int cid = fChipID*1000+chipID; 
+        if (chipID < fChipID) {
+          cid = chipID*1000+fChipID;
+        }
+        adt.setRunChip(fRun, cid);
+        //        cout << adt << " " << fCorrelations[adt] << endl;
+        ((TH1D*)fCorrelations[adt])->Fill(dt);
+      }
+    }
+  }
+  
   // -- now do real analysis
   for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
     fChipID = fv_chipID->at(ihit); 
@@ -318,7 +367,7 @@ void hitDataPixel::eventProcessing() {
     aht.setRunChip(fRun, -1);     ((TH1D*)fChipHistograms[aht])->Fill(ftot);
     aht.setRunChip(0, fChipID);    ((TH1D*)fChipHistograms[aht])->Fill(ftot);
     
-
+    //    cout << "filling tree " << fheaderTime << endl;
     fTree->Fill();
     
   }

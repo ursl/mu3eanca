@@ -134,7 +134,7 @@ vector<uint8_t> hitDataBase::readMaskFile(string filename) {
 // ----------------------------------------------------------------------
 void hitDataBase::readNoiseMaskFiles(int runnumber, string dir) {
   int maxNoise(1000);
-  string name("noiseMaskFilenmf"); 
+  string name("noiseMaskFile"); 
   fChipNoisyPixels.clear();
   cout << "reading noise mask files for run " << runnumber << endl;
   cout << "chipIDs w/o files: "; 
@@ -341,7 +341,7 @@ int hitDataBase::loop(int nevents, int start, bool readMaskFiles) {
   int maxEvents(0);
 
   cout << "==> hitDataBase: Chain " << fChainName
-       << " has a total of " << fNentries << " events"
+       << " has a total of " << fNentries << " events, "
        << (readMaskFiles? " reading mask files": " NOT reading mask files")
        << endl;
   
