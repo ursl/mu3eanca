@@ -213,7 +213,7 @@ void hitDataPixel::bookHist(int runnumber) {
       for (int ij = i; ij < 120; ++ij) {
         n = Form("dt_run%d_chipID%d", runnumber, i*1000+ij);
         a = hID(fRun, i*1000+ij, "dt");
-        fCorrelations.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 200, -1000., 1000.)));
+        fCorrelations.insert(make_pair(a, new TH1D(n.c_str(), n.c_str(), 200, -100., 100.)));
         if (1) cout << "book hID: " << a << ": " << n << " ptr: " << fCorrelations[a] << endl;
       }
     }
