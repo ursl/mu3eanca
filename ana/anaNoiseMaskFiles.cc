@@ -21,6 +21,7 @@ int NCHIP(120);
 
 string gJSON("../common/sensors_mapping_220531.json"); 
 
+int gTotal(0);
 
 // ----------------------------------------------------------------------
 bool skipChip(int chipID) {
@@ -417,6 +418,7 @@ void summarize(vector<uint8_t> vnoise) {
     }
   }
   if (VERBOSE > 0) cout  << endl;
+  gTotal += cntNoisy;
   cout << " Number of noisy pixels = " << cntNoisy
        << (errCode>0? Form(", errCode = %d", errCode): "")
        << endl;
@@ -656,9 +658,11 @@ int main(int argc, char *argv[]) {
 
     // -- summarize a single noise mask file
     if (!strcmp(argv[i],"-s"))  {
+      gTotal = 0; 
       for (int j = i+1; j < argc; ++j) {
         summaryMaskFile(argv[j]);
       }
+      cout << "counted a total of " << gTotal << " noisy pixels" << endl;
       return 0; 
     }
 
