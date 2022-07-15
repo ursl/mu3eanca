@@ -1,4 +1,8 @@
 #include "skimMu3e.hh"
+
+#include <TObjString.h>
+#include <TString.h>
+
 #include "hitDataIncludes.hh"
 
 // ----------------------------------------------------------------------
@@ -37,6 +41,39 @@ skimMu3e::~skimMu3e() {
   if (!fpChain) return;
   delete fpChain->GetCurrentFile();
 }
+
+
+// ----------------------------------------------------------------------
+void skimMu3e::fillChipMapping() {
+  TObjString *ps1 = (TObjString*)gFile->Get("sensor_alignment");
+  string cstring = ps1->GetString().Data();
+  
+  cout << cstring << endl;
+  int idxRun(0), idxRunV(0), idxSim(0), idxSimV(0);
+  while (1){
+    idxRun  = cstring.find("runChip\":", idxRun);
+    if (idxRun == string::npos) break;
+    idxRunV = cstring.find(",", idxRun+1);
+    string sRunChip = cstring.substr(idxRun + string("runChip:\"").size(),
+                                     idxRunV - idxRun - string("simChip:\"").size());
+    int runChip = atoi(sRunChip.c_str());
+      
+    idxSim  = cstring.find("simChip\":", idxRunV);
+    idxSimV = cstring.find(",", idxSim+1);
+    string sSimChip = cstring.substr(idxSim + string("simChip:\"").size(),
+                                     idxSimV - idxSim - string("simChip:\"").size());
+    int simChip = atoi(sSimChip.c_str());
+   
+    fMapSensorId2ChipID.insert(make_pair(simChip, runChip));
+    //    cout << sRunChip << " -> " << sSimChip << " ... " << runChip << " -> " << simChip << endl;
+   
+    idxRun = idxSim;
+  }
+  
+}
+
+
+
 
 
 // ----------------------------------------------------------------------
@@ -217,8 +254,9 @@ void skimMu3e::eventProcessing() {
   // -- count good hits in this event
   for (int ihit = 0; ihit < fv_hit_pixelid->size(); ++ihit) {
     unsigned int pixelId = fv_hit_pixelid->at(ihit); 
-
+    
     const uint32_t sensorId = pixelId >> 16;
+    fChipID = fMapSensorId2ChipID[sensorId];
     frow = pixelId & 0xFF;
     fcol = (pixelId >> 8) & 0xFF;
 
@@ -567,4 +605,35 @@ void skimMu3e::writeNoiseMaskFile(vector<uint8_t> noise, int runnumber, int chip
     o << noise[i];
   }
   o.close();
+}
+
+// ----------------------------------------------------------------------
+int getValInt(string line) {
+  replaceAll(line, ",", "");
+  replaceAll(line, " ", "");
+  size_t icol = line.rfind(":");
+  string snum = line.substr(icol+1);
+  cout << "int  snum ->" << snum << "<-" << endl;
+  return atoi(snum.c_str());
+}
+
+// ----------------------------------------------------------------------
+vector<string> readEntry(vector<string> lines, int &iLine) {
+  cout << "reading from line " << iLine << endl;
+  vector<string> result;
+  // -- counters for opening and closing braces
+  int ibrace(0); 
+  // -- start from indicated iLine
+  for (unsigned int i = iLine; i < lines.size(); ++i) {
+    if (string::npos != lines[i].find("{")) ++ibrace;
+    if (string::npos != lines[i].find("}")) --ibrace;
+    result.push_back(lines[i]); 
+    if (0 == ibrace) {
+      iLine = i + 1;
+      break;
+    }
+  }
+ 
+  return result;
+  
 }

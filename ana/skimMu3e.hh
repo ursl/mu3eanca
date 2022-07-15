@@ -68,6 +68,7 @@ public:
   std::pair<int, int>  colrowFromIdx(int idx);
   int                  idxFromColRow(int col, int row);
 
+  void                 fillChipMapping();
   bool                 validNoise(const std::vector<uint8_t> &v);
   bool                 badLVDS(const std::vector<uint8_t> &v);
   bool                 unclean(const std::vector<uint8_t> &v, int maxNoise);
@@ -110,6 +111,9 @@ protected:
   std::map<int, std::vector<std::pair<int, int> > > fChipNoisyPixels; 
   std::map<int, int> fChipQuality; 
 
+  // -- map between sensorID and chipID
+  std::map<int, int> fMapSensorId2ChipID;
+  
   std::vector<unsigned int>  *fv_hit_pixelid, *fv_hit_timestamp;
   TBranch *fb_hit_pixelid, *fb_hit_timestamp;
 

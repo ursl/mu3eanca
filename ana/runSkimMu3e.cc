@@ -190,6 +190,8 @@ int main(int argc, char *argv[]) {
   }
   
   if (a) {
+    a->fillChipMapping();
+    //    return 0;
     a->setVerbosity(verbose);
     a->setOutputDirectoryName(oDirName);
     a->openHistFile(histfile);
