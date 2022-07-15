@@ -110,17 +110,8 @@ protected:
   std::map<int, std::vector<std::pair<int, int> > > fChipNoisyPixels; 
   std::map<int, int> fChipQuality; 
 
-  std::vector<unsigned int>  *fv_runID, *fv_MIDASEventID, *fv_ts2, *fv_hitTime,
-    *fv_headerTime, *fv_headerTimeMajor, *fv_subHeaderTime, *fv_trigger,
-    *fv_isInCluster;
-  std::vector<unsigned char>  *fv_col, *fv_row, *fv_chipID, *fv_fpgaID, *fv_chipIDRaw,
-    *fv_tot, *fv_isMUSR, *fv_hitType, *fv_layer;
-  TBranch *fb_runID, *fb_col, *fb_row, *fb_chipID, *fb_MIDASEventID,
-    *fb_ts2, *fb_hitTime,
-    *fb_headerTime, *fb_headerTimeMajor, *fb_subHeaderTime, *fb_trigger,
-    *fb_isInCluster,
-    *fb_fpgaID, *fb_chipIDRaw, *fb_tot, *fb_isMUSR, *fb_hitType, *fb_layer;
-
+  std::vector<unsigned int>  *fv_hit_pixelid, *fv_hit_timestamp;
+  TBranch *fb_hit_pixelid, *fb_hit_timestamp;
 
   std::vector<TH2F *> fhitmaps;
   std::vector<TH1F *> fnoisemaps;

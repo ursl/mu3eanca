@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
     a->setOutputDirectoryName(oDirName);
     a->openHistFile(histfile);
     //    a->readCuts(cutFile.c_str(), 1);
-    a->bookHist(0);
+    a->bookHist(1);
 
     a->startAnalysis();
     a->loop(nevents, start, readMaskFiles);

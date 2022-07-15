@@ -213,12 +213,15 @@ void skimMu3e::endAnalysis() {
 
 // ----------------------------------------------------------------------
 void skimMu3e::eventProcessing() {
-  int VERBOSE(0);
+  int VERBOSE(1);
   // -- count good hits in this event
-  for (int ihit = 0; ihit < fv_col->size(); ++ihit) {
-    fChipID = fv_chipID->at(ihit); 
-    frow  = fv_row->at(ihit);
-    fcol  = fv_col->at(ihit); 
+  for (int ihit = 0; ihit < fv_hit_pixelid->size(); ++ihit) {
+    unsigned int pixelId = fv_hit_pixelid->at(ihit); 
+
+    const uint32_t sensorId = pixelId >> 16;
+    frow = pixelId & 0xFF;
+    fcol = (pixelId >> 8) & 0xFF;
+
     if (fChipID > 119) {
       if (VERBOSE) cout << Form("LVDS error: col/row/chip = %d/%d/%d", fcol, frow, fChipID)
                         << endl;
@@ -379,36 +382,10 @@ void skimMu3e::readCuts(string filename, int dump) {
 // ----------------------------------------------------------------------
 void skimMu3e::setupTree() {
   cout << "skimMu3e::setupTree()" << endl;
-  fv_runID = 0, fv_MIDASEventID = 0, fv_ts2 = 0, fv_hitTime = 0,
-    fv_headerTime = 0, fv_headerTimeMajor = 0, fv_subHeaderTime = 0, fv_trigger = 0,
-    fv_isInCluster = 0;
-  fv_col = 0, fv_row = 0, fv_chipID = 0, fv_fpgaID = 0, fv_chipIDRaw = 0,
-    fv_tot = 0, fv_isMUSR = 0, fv_hitType = 0, fv_layer = 0;
-  fb_runID = 0, fb_col = 0, fb_row = 0, fb_chipID = 0, fb_MIDASEventID = 0,
-    fb_ts2 = 0, fb_hitTime = 0,
-    fb_headerTime = 0, fb_headerTimeMajor = 0, fb_subHeaderTime = 0, fb_trigger = 0,
-    fb_isInCluster = 0,
-    fb_fpgaID = 0, fb_chipIDRaw = 0, fb_tot = 0, fb_isMUSR = 0, fb_hitType = 0, fb_layer = 0;
+  fv_hit_pixelid = 0, fv_hit_timestamp = 0;
 
-
-  fpChain->SetBranchAddress("runID", &fv_runID, &fb_runID);
-  fpChain->SetBranchAddress("MIDASEventID", &fv_MIDASEventID, &fb_MIDASEventID);
-  fpChain->SetBranchAddress("col", &fv_col, &fb_col);
-  fpChain->SetBranchAddress("row", &fv_row, &fb_row);
-  fpChain->SetBranchAddress("fpgaID", &fv_fpgaID, &fb_fpgaID);
-  fpChain->SetBranchAddress("chipID", &fv_chipID, &fb_chipID);
-  fpChain->SetBranchAddress("chipIDRaw", &fv_chipIDRaw, &fb_chipIDRaw);
-  fpChain->SetBranchAddress("tot", &fv_tot, &fb_tot);
-  fpChain->SetBranchAddress("ts2", &fv_ts2, &fb_ts2);
-  fpChain->SetBranchAddress("hitTime", &fv_hitTime, &fb_hitTime);
-  fpChain->SetBranchAddress("headerTime", &fv_headerTime, &fb_headerTime);
-  fpChain->SetBranchAddress("headerTimeMajor", &fv_headerTimeMajor, &fb_headerTimeMajor);
-  fpChain->SetBranchAddress("subHeaderTime", &fv_subHeaderTime, &fb_subHeaderTime);
-  fpChain->SetBranchAddress("isMUSR", &fv_isMUSR, &fb_isMUSR);
-  fpChain->SetBranchAddress("hitType", &fv_hitType, &fb_hitType);
-  fpChain->SetBranchAddress("trigger", &fv_trigger, &fb_trigger);
-  fpChain->SetBranchAddress("layer", &fv_layer, &fb_layer);
-  fpChain->SetBranchAddress("isInCluster", &fv_isInCluster, &fb_isInCluster);
+  fpChain->SetBranchAddress("hit_pixelid", &fv_hit_pixelid, &fb_hit_pixelid);
+  fpChain->SetBranchAddress("hit_timestamp", &fv_hit_timestamp, &fb_hit_timestamp);
 }
 
 
@@ -455,53 +432,19 @@ int skimMu3e::loop(int nevents, int start, bool readMaskFiles) {
     VERBOSE = 0; 
     if (0 == ievt%step) VERBOSE = 1;
     Long64_t tentry = fpChain->LoadTree(ievt);
-    fb_runID->GetEntry(tentry);  
-    fb_MIDASEventID->GetEntry(tentry);  
-    fb_col->GetEntry(tentry);  
-    fb_row->GetEntry(tentry);  
-    fb_fpgaID->GetEntry(tentry);  
-    fb_chipID->GetEntry(tentry);  
-    fb_chipIDRaw->GetEntry(tentry);  
-    fb_tot->GetEntry(tentry);  
-    fb_ts2->GetEntry(tentry);  
-    fb_hitTime->GetEntry(tentry);  
-    fb_headerTime->GetEntry(tentry);  
-    fb_headerTimeMajor->GetEntry(tentry);  
-    fb_subHeaderTime->GetEntry(tentry);  
-    fb_isMUSR->GetEntry(tentry);  
-    fb_hitType->GetEntry(tentry);  
-    fb_trigger->GetEntry(tentry);  
-    fb_layer->GetEntry(tentry);  
-    fb_isInCluster->GetEntry(tentry);  
-    if (VERBOSE) cout << "processing event .. " << ievt << " with nhit = " << fv_col->size()
+    fb_hit_pixelid->GetEntry(tentry);  
+    fb_hit_timestamp->GetEntry(tentry);  
+
+    if (VERBOSE) cout << "processing event .. " << ievt << " with nhit = " << fv_hit_pixelid->size()
                       << " tentry = " << tentry
-                      <<  " run = "
-                      << (fv_runID->size() > 0? fv_runID->at(0): 0)
-                      <<  " MIDASEventID = "
-                      << (fv_MIDASEventID->size() > 0? Form("%d", fv_MIDASEventID->at(0)): "n/a")
-                      << " sizes = " << fv_MIDASEventID->size() << "/" << fv_col->size()
                       << endl;
-    
-    fRun = (fv_runID->size() > 0? fv_runID->at(0): -1);
-    fEvt = (fv_MIDASEventID->size() > 0? fv_MIDASEventID->at(0): -1);
-    if (fRun < 0) continue;
-    if (fRun != oldRun) {
-      if (fRun > 0) {
-        if (oldRun > 0) runEndAnalysis(oldRun);
-        bookHist(fRun);
-        if (readMaskFiles) {
-          readNoiseMaskFiles(fRun, "nmf");
-        }
-      }
-      oldRun = fRun;
-    }
     
     eventProcessing();
 
   }
 
   // -- dump final results for the final run
-  runEndAnalysis(fRun);
+  runEndAnalysis(1);
   
   return 0;
 
