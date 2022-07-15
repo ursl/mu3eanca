@@ -29,6 +29,7 @@
 #
 #
 # History 2022/06/21 first shot
+#         2022/07/15 add option '-c' to run on complete data of a given run (mu3eTree*.root)
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
