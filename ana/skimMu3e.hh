@@ -69,6 +69,7 @@ public:
   int                  idxFromColRow(int col, int row);
 
   void                 fillChipMapping();
+  void                 setRunnumber(int run) {fRun = run;}
   bool                 validNoise(const std::vector<uint8_t> &v);
   bool                 badLVDS(const std::vector<uint8_t> &v);
   bool                 unclean(const std::vector<uint8_t> &v, int maxNoise);

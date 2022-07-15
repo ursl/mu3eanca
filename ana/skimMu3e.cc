@@ -48,7 +48,7 @@ void skimMu3e::fillChipMapping() {
   TObjString *ps1 = (TObjString*)gFile->Get("sensor_alignment");
   string cstring = ps1->GetString().Data();
   
-  cout << cstring << endl;
+  //  cout << cstring << endl;
   int idxRun(0), idxRunV(0), idxSim(0), idxSimV(0);
   while (1){
     idxRun  = cstring.find("runChip\":", idxRun);
@@ -244,13 +244,13 @@ void skimMu3e::startAnalysis() {
 
 // ----------------------------------------------------------------------
 void skimMu3e::endAnalysis() {
-  cout << "skimMu3e::endAnalysis() wrong class " << endl;
+
 }
 
 
 // ----------------------------------------------------------------------
 void skimMu3e::eventProcessing() {
-  int VERBOSE(1);
+  int VERBOSE(0);
   // -- count good hits in this event
   for (int ihit = 0; ihit < fv_hit_pixelid->size(); ++ihit) {
     unsigned int pixelId = fv_hit_pixelid->at(ihit); 
@@ -482,7 +482,7 @@ int skimMu3e::loop(int nevents, int start, bool readMaskFiles) {
   }
 
   // -- dump final results for the final run
-  runEndAnalysis(1);
+  runEndAnalysis(fRun);
   
   return 0;
 
