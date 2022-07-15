@@ -18,6 +18,7 @@
 #
 # Options: -u           update local repo on switch0
 #          -o           update ODB 
+#          -c           run on complete data (this implies the presence of mu3e, not hitData)
 #          -r run       add run to maskfiles          
 #          -l r1,r2,... combine runs r1,r2,... into maskfile
 #          -m comment   add comment to commit message and into readme.txt line
@@ -35,7 +36,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('l:m:or:u');
+getopts('cl:m:or:u');
 
 my $swrepo  = "pixel-maskfiles";
 my $basedir = "/home/mu3e/.ursl/mu3eanca/ana/nmf";
@@ -48,13 +49,21 @@ if (!$opt_r && !$opt_l) {
     die("Usage: ./updateNoiseMaskRepo  {-r runnumber | -l runlist}\n");
 }
 
+my $run5 = sprintf("%05d", $opt_r);
+
 # -- check that the runnumber is OK
 my $summary = "summaryNoiseMaskFile-run".$opt_r.".txt";
 if ($opt_r && !-e "$basedir/$summary") {
     # -- try to run analyzer
-    print("$basedir/$summary does not exist, trying to produce it\n");
-    print("bin/runHitDataAna -f $rootdir/dataTree00$opt_r.root -D nmf -p noise\n");
-    system("bin/runHitDataAna -f $rootdir/dataTree00$opt_r.root -D nmf -p noise");
+    if ($opt_c) {
+        print("$basedir/$summary does not exist, trying to produce it\n");
+        print("bin/runSkimMu3e -f $rootdir/mu3eTree$run5.root -D nmf -p noise\n");
+        system("bin/runSkimMu3e -f $rootdir/mu3eTree$run5.root -D nmf -p noise");
+    } else {
+        print("$basedir/$summary does not exist, trying to produce it\n");
+        print("bin/runHitDataAna -f $rootdir/dataTree$run5.root -D nmf -p noise\n");
+        system("bin/runHitDataAna -f $rootdir/dataTree$run5.root -D nmf -p noise");
+    }
     # -- check again
     if (!-e "$basedir/$summary") {
 	die ("file $basedir/$summary does not exist! exit\n");
