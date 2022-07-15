@@ -36,7 +36,7 @@ EXTHEADERS    = -I..
 
 # -- Files
 #CSTUFF =
-READER = hitDataNoise.o hitDataPixel.o hitDataBase.o plotHitDataPixel.o \
+READER = skimMu3e.o hitDataNoise.o hitDataPixel.o hitDataBase.o plotHitDataPixel.o \
          trBase.o trGen.o trRec.o plotResults.o # plotClass.o
 
 DICT = ${READER:.o=Dict.o}
@@ -71,7 +71,8 @@ all: vars prep lib bin
 lib: prep $(addprefix obj/,$(CSTUFF) $(READER)  $(DICT))
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(DICT)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit $(UTIL)/lib/libAnaUtil.so
 
-bin: lib obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o obj/anaNoiseMaskFiles.o
+bin: lib obj/runSkimMu3e.o obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o obj/anaNoiseMaskFiles.o
+	$(LD) $(LDFLAGS) -o bin/runSkimMu3e obj/runSkimMu3e.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runHitDataAna obj/runHitDataAna.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runTreeReader obj/runTreeReader.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runPlot obj/runPlot.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
