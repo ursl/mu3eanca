@@ -43,8 +43,9 @@ my $swrepo  = "pixel-maskfiles";
 my $basedir = "/home/mu3e/.ursl/mu3eanca/ana/nmf";
 #my $rootdir = "/home/mu3e/analyzer/build/analyzer/root_output_files";
 #my $rootdir = "/data1/run2022/analyzer_output/root_output_files";
-my $rootdir = "/data1/run2022/analyzer_output/online/root_output_files";
-
+#my $rootdir = "/data1/run2022/analyzer_output/online/root_output_files";
+my $rootdir = "/data1/run2022/analyzer_output/offline/testing/root_output_files/";
+    
 # -- there MUST be a runnumber 
 if (!$opt_r && !$opt_l) {
     print("missing runnumber or runlist for update!\n");
