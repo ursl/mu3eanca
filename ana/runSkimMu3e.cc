@@ -14,6 +14,8 @@
 #include "TUnixSystem.h"
 #include "TSystem.h"
 #include "TKey.h"
+#include <TObjString.h>
+#include <TString.h>
 
 #include "util/util.hh"
 
@@ -52,7 +54,9 @@ int main(int argc, char *argv[]) {
   string proc("noise");
   string mode("1/1.5"); //noiseMode/noiseLevel
   string histfile("");
+  int    runnumber(0);
 
+  
   // -- command line arguments
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i],"-h")) {
@@ -64,6 +68,7 @@ int main(int argc, char *argv[]) {
       cout << "-m {noise|...}       mode details for proc" << endl;
       cout << "-n integer           number of events to run on" << endl;
       cout << "-p {noise|pixel|...} proc" << endl;
+      cout << "-r runnumber         the runnumber in case its not in the file" << endl;
       cout << "-s number            seed for random number generator" << endl;
       cout << "-S start             starting event number" << endl;
       cout << "-o filename          set output file" << endl;
@@ -77,8 +82,9 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-f"))  {fileName   = string(argv[++i]); file = 1; }     // single file instead of chain
     if (!strcmp(argv[i],"-m"))  {mode       = string(argv[++i]); }               // mode
     if (!strcmp(argv[i],"-n"))  {nevents    = atoi(argv[++i]); }                 // number of events to run
-    if (!strcmp(argv[i],"-p"))  {proc       = string(argv[++i]); }               // proc
     if (!strcmp(argv[i],"-o"))  {histfile   = string(argv[++i]); }               // set output file
+    if (!strcmp(argv[i],"-p"))  {proc       = string(argv[++i]); }               // proc
+    if (!strcmp(argv[i],"-r"))  {runnumber  = atoi(argv[++i]); }                 // runnumber
     if (!strcmp(argv[i],"-S"))  {start = atoi(argv[++i]); }                      // set start event number
     if (!strcmp(argv[i],"-v"))  {verbose    = atoi(argv[++i]); }                 // set verbosity level
   }
@@ -191,7 +197,21 @@ int main(int argc, char *argv[]) {
   
   if (a) {
     a->fillChipMapping();
-    //    return 0;
+    if (runnumber > 0) {
+      cout << "Manually set runNumber = " << runnumber << endl;
+      a->setRunnumber(runnumber);
+    } else {
+      TObjString *ps1 = (TObjString*)gFile->Get("runNumber");
+      if (ps1) {
+        string cstring = ps1->GetString().Data();
+        runnumber = atoi(cstring.c_str());
+        cout << "Found runNumber = " << runnumber << " in rootfile" << endl;
+        a->setRunnumber(runnumber);
+      } else {
+        cout << "runnnumber not set manually and not found in rootfile. This, my friend, is the end." << endl;
+        exit(0);
+      }
+    }
     a->setVerbosity(verbose);
     a->setOutputDirectoryName(oDirName);
     a->openHistFile(histfile);
