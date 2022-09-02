@@ -339,7 +339,6 @@ namespace mu3e {
       G4Transform3D transform;
 
       rotM.rotateY(M_PI*CLHEP::rad);
-      //      rotM.rotateX(M_PI/2*CLHEP::rad);
 
       double phi;
       double dphi = 2 * M_PI / detector->nribbons;
@@ -363,13 +362,15 @@ namespace mu3e {
       // -- rename entities
       vector<G4VPhysicalVolume*>::iterator ipv = solidFibreSmb->GetVolumesIterator();
       unsigned int nipv = solidFibreSmb->GetImprintsCount();
+      cout << "solidFibreSmb->GetImprintsCount() = " << solidFibreSmb->GetImprintsCount() << endl;
       string simpr("SMB_DS");
       if (mirrored) simpr = "SMB_US";
       char ssmb[100], sasic[100];
       int nSmb(-1);
-      //      while (*ipv) {
-      for (int i = 0; i < nipv; ++i, ipv++) {
+      int DBX(1); 
+      while (1) {
         string sname = (*ipv)->GetName(); 
+        // -- PCB
         if (string::npos != sname.find("Pcb_")) {
           double phi = (*ipv)->GetTranslation().phi()*57.2957795131; 
           if (phi < 0) phi += 360.;
@@ -381,69 +382,156 @@ namespace mu3e {
             if (nSmb > 11) nSmb -= 12;
           }
           sprintf(ssmb, "%s_%d", simpr.c_str(), nSmb);
-          cout << "*ipv->GetName() = " << sname << " trsl = "
-               << (*ipv)->GetTranslation()
-               << " phi = " << phi
-               << " -> nSmb = " << nSmb
-               << " -> ssmb = " << ssmb
-               << endl;
+          if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                        << (*ipv)->GetTranslation()
+                        << " phi = " << phi
+                        << " -> nSmb = " << nSmb
+                        << " -> ssmb = " << ssmb
+                        << endl;
           (*ipv)->SetName(ssmb); 
+          (*ipv)->GetLogicalVolume()->SetName(ssmb); 
+          (*ipv)->GetLogicalVolume()->SetName(ssmb); 
+          ++ipv;
+          sname = (*ipv)->GetName();
         }
+
+        // -- MuTrigs
         if (string::npos != sname.find("Asic_")) {
           if (mirrored) {
             int iasic(0);
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic++);
+            if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                          << (*ipv)->GetTranslation()
+                          << " phi = " << phi
+                          << " -> sasic = " << sasic
+                          << endl;
+            (*ipv)->SetName(sasic); 
+            
+            ++ipv;
+            sname = (*ipv)->GetName();
+            sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic++);
+            if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                          << (*ipv)->GetTranslation()
+                          << " phi = " << phi
+                          << " -> sasic = " << sasic
+                          << endl;
             (*ipv)->SetName(sasic); 
         
             ++ipv;
+            sname = (*ipv)->GetName();
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic++);
+            if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                          << (*ipv)->GetTranslation()
+                          << " phi = " << phi
+                          << " -> sasic = " << sasic
+                          << endl;
             (*ipv)->SetName(sasic); 
         
             ++ipv;
+            sname = (*ipv)->GetName();
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic++);
-            (*ipv)->SetName(sasic); 
-        
-            ++ipv;
-            sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic++);
+            if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                          << (*ipv)->GetTranslation()
+                          << " phi = " << phi
+                          << " -> sasic = " << sasic
+                          << endl;
             (*ipv)->SetName(sasic); 
           } else {
             int iasic(3);
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic--);
+            if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                          << (*ipv)->GetTranslation()
+                          << " phi = " << phi
+                          << " -> sasic = " << sasic
+                          << endl;
             (*ipv)->SetName(sasic); 
         
             ++ipv;
+            sname = (*ipv)->GetName();
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic--);
+            if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                          << (*ipv)->GetTranslation()
+                          << " phi = " << phi
+                          << " -> sasic = " << sasic
+                          << endl;
             (*ipv)->SetName(sasic); 
         
             ++ipv;
+            sname = (*ipv)->GetName();
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic--);
+            if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                          << (*ipv)->GetTranslation()
+                          << " phi = " << phi
+                          << " -> sasic = " << sasic
+                          << endl;
             (*ipv)->SetName(sasic); 
         
             ++ipv;
+            sname = (*ipv)->GetName();
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic--);
+            if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                          << (*ipv)->GetTranslation()
+                          << " phi = " << phi
+                          << " -> sasic = " << sasic
+                          << endl;
             (*ipv)->SetName(sasic); 
           }
-          continue;
+
+          ++ipv;
+          sname = (*ipv)->GetName();
         }
+
+        // -- remaining chips
         if (string::npos != sname.find("Chip")) {
           int ichip(0);
           sprintf(sasic, "%s_%d_CHIP_%d", simpr.c_str(), nSmb, ichip++);
+          if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                        << (*ipv)->GetTranslation()
+                        << " phi = " << phi
+                        << " -> sasic = " << sasic
+                        << endl;
           (*ipv)->SetName(sasic); 
           ++ipv;
+          sname = (*ipv)->GetName();
 
           sprintf(sasic, "%s_%d_CHIP_%d", simpr.c_str(), nSmb, ichip++);
+          if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                        << (*ipv)->GetTranslation()
+                        << " phi = " << phi
+                        << " -> sasic = " << sasic
+                        << endl;
           (*ipv)->SetName(sasic); 
           ++ipv;
+          sname = (*ipv)->GetName();
 
           sprintf(sasic, "%s_%d_CHIP_%d", simpr.c_str(), nSmb, ichip++);
+          if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                        << (*ipv)->GetTranslation()
+                        << " phi = " << phi
+                        << " -> sasic = " << sasic
+                        << endl;
           (*ipv)->SetName(sasic); 
 
-          continue;
+          ++ipv;
+          sname = (*ipv)->GetName();
         }
+
+        // -- final components
         if (string::npos != sname.find("Connector_")) {
           sprintf(sasic, "%s_%d_CONN", simpr.c_str(), nSmb);
+          if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
+                        << (*ipv)->GetTranslation()
+                        << " phi = " << phi
+                        << " -> sasic = " << sasic
+                        << endl;
           (*ipv)->SetName(sasic); 
-          continue;
+        }
+
+        // -- exit loop
+        if (11 == nSmb) {
+          break;
+        } else {
+          ++ipv;
         }
       }
 
