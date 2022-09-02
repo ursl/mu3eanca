@@ -1,0 +1,13 @@
+# 2022/09/01 status in 4.6
+# 2022/09/02 after migration to mu3e-dev-smb, not based on 4.6 anymore
+# 2022/09/02 added histogram writing to RunAction
+# 2022/09/02 fixed renaming loop
+cd /psi/home/langenegger/data/mu3e-dev-smb
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreSupport.h mu3eSim/src/Mu3eFibreSupport.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eRunAction.cpp mu3eSim/src/Mu3eRunAction.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/run1.mac run/run1.mac
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreSmbSD.cpp mu3eSim/src/Mu3eFibreSmbSD.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreSmbSD.h mu3eSim/src/Mu3eFibreSmbSD.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreSupport.cpp mu3eSim/src/Mu3eFibreSupport.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/setup.csh setup.csh

@@ -97,10 +97,10 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   int iy = fPlanePosZ->GetYaxis()->FindBin(feePos.y());
 
   if (1) std::cout << "SmbSD> "
-                   << prePoint->GetTouchable()->GetCopyNumber(0)
-                   << "/"
+                   << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
+                   << prePoint->GetTouchable()->GetCopyNumber(1) << "  ->"
                    << prePoint->GetTouchable()->GetVolume()->GetName()
-                   << "-> feeID = " << feeId
+                   << "<- feeID = " << feeId
                    << " edep = " << edep
                    << " (r) = " << feePos.x() << "/" << feePos.y() << "/" << feePos.z()
                    << " W(r) = " << hitPos.x() << "/" << hitPos.y() << "/" << hitPos.z()
@@ -151,6 +151,9 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
 // ----------------------------------------------------------------------
 void Mu3eFibreSmbSD::writeStat() {
+  gDirectory->mkdir("FibreSmb");
+  gDirectory->cd("FibreSmb");
+
   double evendtime = (Mu3eEvent::GetInstance()->startTime + Mu3eEvent::GetInstance()->frameLength) /s;
   TH1F * hFibreSmbDose = new TH1F("hFibreSmbDose", TString::Format("Fibre Smb Dose (time = %f)", evendtime), 200, 0, 200);
   hFibreSmbDose->GetXaxis()->SetTitle("fibre Smb");
@@ -177,8 +180,7 @@ void Mu3eFibreSmbSD::writeStat() {
   fRadialOutElx1a->Write();
   fRadialOutEly1a->Write();
   
-
-  
+  gDirectory->cd("..");
 }
 
 // ----------------------------------------------------------------------
