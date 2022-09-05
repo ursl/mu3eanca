@@ -200,7 +200,7 @@ G4VPhysicalVolume* Mu3eExperimentConstruction::Construct() {
         fibreTrackerConstruction->Construct();
     }
 
-    if(phase > 0 && outerTrackerConstruction != nullptr) {
+    if(/*ul*/0 && phase > 0 && outerTrackerConstruction != nullptr) {
         tile = new mu3e::sim::Tile(digicfg);
         auto tileSD = new Mu3eTileSD(
             "mu3e/TileSensorSD",

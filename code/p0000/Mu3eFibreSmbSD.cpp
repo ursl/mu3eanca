@@ -82,8 +82,23 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
   G4int apdgid = TMath::Abs(aStep->GetTrack()->GetDynamicParticle()->GetPDGcode());
   
+  // -- this is not very meaningful
   uint32_t feeId = prePoint->GetTouchable()->GetCopyNumber(0) 
     + 100*prePoint->GetTouchable()->GetCopyNumber(1);
+
+  // -- this should correspond to the specbook
+  string smbName = prePoint->GetTouchable()->GetVolume()->GetName();
+  int sign = (string::npos != smbName.find("SMB_US")?-1:+1);
+  int smbNumber(0);
+  if (sign > 0) {
+    cout << "scanning for SMB_DS as sign = " << sign << endl;
+    sscanf(smbName.c_str(), "SMB_DS_%d", &smbNumber);
+  } else {
+    cout << "scanning for SMB_US as sign = "  << sign << endl;
+    sscanf(smbName.c_str(), "SMB_US_%d", &smbNumber);
+  }
+  int32_t smbId = smbNumber*sign;;
+  
   
   auto feePos   = prePoint->GetTouchable()->GetTranslation();
   auto hitPos   = prePoint->GetPosition();
@@ -96,11 +111,12 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   int ix = fPlanePosZ->GetXaxis()->FindBin(feePos.x());
   int iy = fPlanePosZ->GetYaxis()->FindBin(feePos.y());
 
-  if (1) std::cout << "SmbSD> "
+  if (1) std::cout << "SmbSD> " 
                    << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
                    << prePoint->GetTouchable()->GetCopyNumber(1) << "  ->"
                    << prePoint->GetTouchable()->GetVolume()->GetName()
                    << "<- feeID = " << feeId
+                   << "<- smbID = " << smbId
                    << " edep = " << edep
                    << " (r) = " << feePos.x() << "/" << feePos.y() << "/" << feePos.z()
                    << " W(r) = " << hitPos.x() << "/" << hitPos.y() << "/" << hitPos.z()
@@ -110,7 +126,7 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
   // -- keep a record which fedID is where
   if (feePos.z() > 0) {
-    fPlanePosZ->SetBinContent(ix, iy, feeId);
+    fPlanePosZ->SetBinContent(ix, iy, smbId);
     
     if (11 == apdgid) {
       fRadialOutElpz1->Fill(localPos.y(), feeId);
@@ -122,7 +138,7 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
     }
     
   } else {
-    fPlaneNegZ->SetBinContent(ix, iy, feeId);
+    fPlaneNegZ->SetBinContent(ix, iy, smbId);
     if (11 == apdgid) {
       fRadialOutElmz1->Fill(localPos.y(), feeId);
 
