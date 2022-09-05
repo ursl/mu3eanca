@@ -56,7 +56,7 @@
       "deadWidth" : 3.0,
       "inactiveFrameSize" : 0.09,
       "pixelSize" : 0.08,
-      "nLayers" : 1,
+      "nLayers" : 0,
       "nZSensors" : 6,
       "zSpacing" : 0.04
     },
@@ -67,7 +67,7 @@
       "deadWidth" : 3.0,
       "inactiveFrameSize" : 0.09,
       "pixelSize" : 0.08,
-      "nLayers" : 1,
+      "nLayers" : 0,
       "nZSensors3" : 17,
       "nZSensors4" : 18,
       "zSpacing" : 0.04
