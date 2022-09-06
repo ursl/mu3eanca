@@ -95,14 +95,14 @@ namespace mu3e::sim {
                             i,
                             0);
         }
-        if(Mu3eDigiCfg::Instance().verbose >= 1) {
+        //ul        if(Mu3eDigiCfg::Instance().verbose >= 1) {
           G4cout << "Ribbon " << i << " (" << ribbon->width << ", " << ribbon->height << "," << ribbon->length << ") phi: " << phi
                  << " rIn(" << rIn << ") rho(" << position.getRho() << ")"
                  << " stagger/2 = " << fRibbonStagger/2
                  << " pos " << position
                  << G4endl;
           printf("    [%d] phi = %.3f, rho = %.3f\n", i, phi, position.getRho());
-        }
+          //ul        }
 
         rotM.rotateZ(dphi);
       }

@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::string> confFiles;
 
     if(confFiles.empty()) confFiles.emplace_back("simvis.json");
+    //    if(confFiles.empty()) confFiles.emplace_back("sim.json");
 
     auto& detcfg = Mu3eDetectorCfg::Instance();
     auto& digicfg = Mu3eDigiCfg::Instance();
