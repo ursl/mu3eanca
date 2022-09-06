@@ -4,11 +4,12 @@
 # cpFilesFromGitDir
 # ===================
 #
-# Usage: ./cpFiles [-m "message"] -g gitdir
+# Usage: ./cpFiles [-m "message"] -g gitdir -f file
 #
 # History  2022/09/01 first shot
 #          2022/09/02 add cpBack to export to anywhere, plus opt_m
 #          2022/09/06 improve dbx option to provide more information
+#          2022/09/07 add opt_f to allow pulling a single file
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -17,7 +18,7 @@
 
 use File::Basename;
 use Getopt::Std;
-getopts('dg:m:');
+getopts('df:g:m:');
 
 # -- current "project" for backup storage
 my $basedir = `pwd`;
@@ -40,6 +41,9 @@ if ($opt_d) {
 }
 
 foreach $file (@files) {
+    if ($opt_f && !($file =~ $opt_f)) {
+        next;
+    }
     if (!$opt_d) {
         print("cp $gitdir/$file .\n");
         system("/bin/cp -a $gitdir/$file ."); # preserve time and do not follow symlinks
