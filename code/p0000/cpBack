@@ -5,6 +5,7 @@
 # 2022/09/05 ported offset Mu3eFibreDetector ribbon layout
 # 2022/09/05 added visdetector.json
 # 2022/09/06 change to simvis.json (including detectorvis.json)in mu3eVis
+# 2022/09/06 draw axes
 cd /psi/home/langenegger/data/mu3e-dev-smb
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/mu3eVis.cpp mu3eSim/mu3eVis.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp

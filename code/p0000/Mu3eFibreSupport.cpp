@@ -298,7 +298,7 @@ namespace mu3e {
 
         G4cout << "fibreMPPC " << i << " added at phi: " << phi
                << " at z " << pMin.getZ() << " " << pMax.getZ() << G4endl;
-        // Epoxy
+        // -- Epoxy
         new G4PVPlacement(transform,
                           volumeFibreMppcEpoxy,
                           "fibreMppcEpoxy",
@@ -308,7 +308,7 @@ namespace mu3e {
                           0);
         position.setZ(position.z() + MppcThicknessEpoxy/2. + MppcThickness/2.);
         transform = G4Transform3D(rotM, position);
-        // Mppc
+        // -- Mppc
         new G4PVPlacement(transform,
                           volumeFibreMppc,
                           "fibreMppc",
@@ -318,7 +318,7 @@ namespace mu3e {
                           0);
         positionPcb.setZ(position.z() + MppcThickness/2. + MppcThicknessPcb/2.);
         transform = G4Transform3D(rotM, positionPcb);
-        // Mppc Pcb
+        // -- Mppc Pcb
         new G4PVPlacement(transform,
                           volumeFibreMppcPcb,
                           "fibreMppcPcb",
