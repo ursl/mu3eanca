@@ -111,7 +111,8 @@
         "1" : "trapezium"
       },
       "geometry" : 0,
-      "rOffset" : 0.0
+      "rOffset" : 0.0,
+      "stagger" : 12.5
     },
     "mppcs" : {
       "width" : 32.0,

@@ -31,9 +31,9 @@ namespace mu3e { namespace sim {
       G4LogicalVolume* volumeFibreMppc;
       G4LogicalVolume* volumeFibreMppcSiO2;
       G4LogicalVolume* volumeFibreMppcPcb;
-      G4LogicalVolume* fVolumeFibreSmb;
-      G4LogicalVolume* fVolumeFibreSmbPcb;
-      G4LogicalVolume* fVolumeFibreSmbAsic[4];
+      G4LogicalVolume* fVolumeFibreSmbPcb[2];
+      //      G4LogicalVolume* fVolumeFibreSmb;
+      //      G4LogicalVolume* fVolumeFibreSmbAsic[4];
 
       FibreDetector* detector;
 
@@ -160,7 +160,7 @@ namespace mu3e { namespace sim {
       void PlaceMppcInSupport(G4LogicalVolume *, bool mirrored = false);
       
       // G4AssemblyVolume* makeSmb0();
-      G4AssemblyVolume* makeSmb();
+      G4AssemblyVolume* makeSmb(int index);
       void PlaceSmbInSupport(G4LogicalVolume *, bool mirrored = false);
     };
     

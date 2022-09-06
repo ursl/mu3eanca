@@ -66,7 +66,7 @@ namespace mu3e {
       volume = new G4LogicalVolume(   solidFibreSupport,
                                       materials.He,
                                       "fibreSupport");
-      // -- mirror volume. This is upstream!
+      // -- mirror volume. This is upstream (US)!
       fVolumeM = new G4LogicalVolume(   solidFibreSupport,
                                         materials.He,
                                         "fibreSupport");
@@ -132,32 +132,6 @@ namespace mu3e {
                                                solidFibreMppcPcb,
                                                materials.Si,
                                                "fibreMppcPcb");
-
-      G4VSolid* solidFibreSmbPcb   = new G4Box("fibreSmbPcb",
-                                               fSmbPcbWidth1/2., fSmbPcbLength1/2.,
-                                               fSmbPcbThickness/2.);
-      
-      G4VSolid* solidFibreSmbAsic   = new G4Box("fibreSmbAsic",
-                                                fSmbAsicWidth/2., fSmbAsicLength/2.,
-                                                fSmbAsicThickness/2.);
-      
-
-      G4RotationMatrix* yRot = new G4RotationMatrix(); 
-      G4ThreeVector zTrans(0, 10, 10);
-      G4UnionSolid* solidFibreSmb = new G4UnionSolid("solidFibreSmbPcb+solidFibreSmbAsic",
-                                                     solidFibreSmbPcb,
-                                                     solidFibreSmbAsic,
-                                                     yRot,
-                                                     zTrans);
-      
-      
-      // fVolumeFibreSmbPcb = new G4LogicalVolume(solidFibreSmbPcb,
-      //                                          materials.Si,
-      //                                          "fibreSmbPcb");
-      
-      // fVolumeFibreSmb = new G4LogicalVolume(solidFibreSmb,
-      //                                       materials.Si,
-      //                                       "fibreSmb");
 
       if (1) new G4PVPlacement(nullptr,
                                {0, 0, -lengtPlate/2. + length/2.},    
@@ -236,12 +210,15 @@ namespace mu3e {
       Mu3eConstruction::visVolume(volumeFibreMppcPcb, {0.0,0.7,0.0},
                                   Mu3eConstruction::PHYSICAL|
                                   Mu3eConstruction::FIBRE);
-      Mu3eConstruction::visVolume(fVolumeFibreSmbPcb, {0.5,0.7,0.0},
+      Mu3eConstruction::visVolume(fVolumeFibreSmbPcb[0], {0.8,0.2,0.4},
                                   Mu3eConstruction::PHYSICAL|
                                   Mu3eConstruction::FIBRE);
-      Mu3eConstruction::visVolume(fVolumeFibreSmb, {0.8,0.8,0.8},
+      Mu3eConstruction::visVolume(fVolumeFibreSmbPcb[1], {0.2,0.2,0.8},
                                   Mu3eConstruction::PHYSICAL|
                                   Mu3eConstruction::FIBRE);
+      // Mu3eConstruction::visVolume(fVolumeFibreSmb, {0.8,0.8,0.8},
+      //                             Mu3eConstruction::PHYSICAL|
+      //                             Mu3eConstruction::FIBRE);
       
       Mu3eConstruction::visVolume(volume, {1,1,1},Mu3eConstruction::FIBRE);
       Mu3eConstruction::visVolume(fVolumeM, {1,1,1},Mu3eConstruction::FIBRE);
@@ -278,20 +255,11 @@ namespace mu3e {
                        + detector->ribbon->height/2.);
 	  
         }
-        if (mirrored) {
-          if(i%2==1) {
-            position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 6.5*mm);
-          } else {
-            position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 19.0*mm);
-          }
+        if(i%2==1) {
+          position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 6.5*mm);
         } else {
-          if(i%2==1) {
-            position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 6.5*mm);
-          } else {
-            position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 19.0*mm);
-          }
+          position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 19.0*mm);
         }
-        //	position.setZ(position.z() - length/2. + MppcThicknessEpoxy/2.);
         transform = G4Transform3D(rotM, position);
         G4ThreeVector pMax, pMin;
         vol->GetSolid()->BoundingLimits(pMin, pMax);
@@ -342,12 +310,13 @@ namespace mu3e {
 
       double phi;
       double dphi = 2 * M_PI / detector->nribbons;
-      if (mirrored) dphi *= -1.;
+      //      if (mirrored) dphi *= -1.;
       // -- y = 0 is between two ribbons. Therefore start with offset. Mirror this here as well.
       rotM.rotateX(+M_PI/2*CLHEP::rad);
       rotM.rotateY(0.*CLHEP::rad);
       rotM.rotateZ(dphi/2);
-      G4AssemblyVolume *solidFibreSmb = makeSmb();
+      int index = (mirrored?1:0);
+      G4AssemblyVolume *solidFibreSmb = makeSmb(index);
      
       for(unsigned int i = 0; i < detector->nribbons; ++i) {
         phi = dphi/2 + i * dphi;
@@ -363,19 +332,23 @@ namespace mu3e {
       vector<G4VPhysicalVolume*>::iterator ipv = solidFibreSmb->GetVolumesIterator();
       unsigned int nipv = solidFibreSmb->GetImprintsCount();
       cout << "solidFibreSmb->GetImprintsCount() = " << solidFibreSmb->GetImprintsCount() << endl;
-      string simpr("SMB_DS");
-      if (mirrored) simpr = "SMB_US";
+      string simpr("SMB");
       char ssmb[100], sasic[100];
       int nSmb(-1);
       int DBX(1); 
+      if (DBX) cout << "Renaming components for mirrored = " << mirrored
+                    << ", i.e. simpr = " << simpr
+                    << endl;
       while (1) {
         string sname = (*ipv)->GetName(); 
-        // -- PCB
+        // -- SMB PCB
+        // -- numerology non-trivial because of rotation of mirrored volume (in Mu3eFibreTrackerConstruction)
         if (string::npos != sname.find("Pcb_")) {
           double phi = (*ipv)->GetTranslation().phi()*57.2957795131; 
           if (phi < 0) phi += 360.;
           if (mirrored) {
-            nSmb = 2 - static_cast<int>(phi)/30;
+            nSmb = 8 - static_cast<int>(phi)/30;
+            if (nSmb > 11) nSmb -= 12;
             if (nSmb < 0) nSmb += 12;
           } else {
             nSmb = 9 + static_cast<int>(phi)/30;
@@ -402,7 +375,6 @@ namespace mu3e {
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic++);
             if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                           << (*ipv)->GetTranslation()
-                          << " phi = " << phi
                           << " -> sasic = " << sasic
                           << endl;
             (*ipv)->SetName(sasic); 
@@ -412,7 +384,6 @@ namespace mu3e {
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic++);
             if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                           << (*ipv)->GetTranslation()
-                          << " phi = " << phi
                           << " -> sasic = " << sasic
                           << endl;
             (*ipv)->SetName(sasic); 
@@ -422,7 +393,6 @@ namespace mu3e {
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic++);
             if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                           << (*ipv)->GetTranslation()
-                          << " phi = " << phi
                           << " -> sasic = " << sasic
                           << endl;
             (*ipv)->SetName(sasic); 
@@ -432,7 +402,6 @@ namespace mu3e {
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic++);
             if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                           << (*ipv)->GetTranslation()
-                          << " phi = " << phi
                           << " -> sasic = " << sasic
                           << endl;
             (*ipv)->SetName(sasic); 
@@ -441,7 +410,6 @@ namespace mu3e {
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic--);
             if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                           << (*ipv)->GetTranslation()
-                          << " phi = " << phi
                           << " -> sasic = " << sasic
                           << endl;
             (*ipv)->SetName(sasic); 
@@ -451,7 +419,6 @@ namespace mu3e {
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic--);
             if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                           << (*ipv)->GetTranslation()
-                          << " phi = " << phi
                           << " -> sasic = " << sasic
                           << endl;
             (*ipv)->SetName(sasic); 
@@ -461,7 +428,6 @@ namespace mu3e {
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic--);
             if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                           << (*ipv)->GetTranslation()
-                          << " phi = " << phi
                           << " -> sasic = " << sasic
                           << endl;
             (*ipv)->SetName(sasic); 
@@ -471,7 +437,6 @@ namespace mu3e {
             sprintf(sasic, "%s_%d_ASIC_%d", simpr.c_str(), nSmb, iasic--);
             if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                           << (*ipv)->GetTranslation()
-                          << " phi = " << phi
                           << " -> sasic = " << sasic
                           << endl;
             (*ipv)->SetName(sasic); 
@@ -487,7 +452,6 @@ namespace mu3e {
           sprintf(sasic, "%s_%d_CHIP_%d", simpr.c_str(), nSmb, ichip++);
           if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                         << (*ipv)->GetTranslation()
-                        << " phi = " << phi
                         << " -> sasic = " << sasic
                         << endl;
           (*ipv)->SetName(sasic); 
@@ -497,7 +461,6 @@ namespace mu3e {
           sprintf(sasic, "%s_%d_CHIP_%d", simpr.c_str(), nSmb, ichip++);
           if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                         << (*ipv)->GetTranslation()
-                        << " phi = " << phi
                         << " -> sasic = " << sasic
                         << endl;
           (*ipv)->SetName(sasic); 
@@ -507,7 +470,6 @@ namespace mu3e {
           sprintf(sasic, "%s_%d_CHIP_%d", simpr.c_str(), nSmb, ichip++);
           if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                         << (*ipv)->GetTranslation()
-                        << " phi = " << phi
                         << " -> sasic = " << sasic
                         << endl;
           (*ipv)->SetName(sasic); 
@@ -521,7 +483,6 @@ namespace mu3e {
           sprintf(sasic, "%s_%d_CONN", simpr.c_str(), nSmb);
           if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                         << (*ipv)->GetTranslation()
-                        << " phi = " << phi
                         << " -> sasic = " << sasic
                         << endl;
           (*ipv)->SetName(sasic); 
@@ -539,9 +500,8 @@ namespace mu3e {
     }
 
 
-
     // ----------------------------------------------------------------------
-    G4AssemblyVolume* FibreSupport::makeSmb() {
+    G4AssemblyVolume* FibreSupport::makeSmb(int index) {
       using CLHEP::mm;
       using CLHEP::radian;
       
@@ -593,19 +553,23 @@ namespace mu3e {
                                                         yRot,
                                                         zTrans);
   
-      fVolumeFibreSmbPcb = new G4LogicalVolume(solidFibreSMBPcb,
+      fVolumeFibreSmbPcb[index] = new G4LogicalVolume(solidFibreSMBPcb,
                                                materials.Kapton,
                                                "fibreSMBPcb");
 
       G4VisAttributes *pVA  = new G4VisAttributes;
-      pVA->SetColour(G4Colour(0.8, 0.2, 0.4, 0.5));
+      if (0 == index) {
+        pVA->SetColour(G4Colour(0.8, 0.2, 0.4, 0.5));
+      } else {
+        pVA->SetColour(G4Colour(0.2, 0.2, 0.8, 0.5));
+      }
       pVA->SetForceSolid(true);
-      fVolumeFibreSmbPcb->SetVisAttributes(pVA);
+      fVolumeFibreSmbPcb[index]->SetVisAttributes(pVA);
 
       G4SDManager *sdManager = G4SDManager::GetSDMpointer();
       G4VSensitiveDetector *sdSmb = sdManager->FindSensitiveDetector("mu3e/FibreSmbSD");
       cout << "sdSmb = " << sdSmb << endl;
-      fVolumeFibreSmbPcb->SetSensitiveDetector(sdSmb); 
+      fVolumeFibreSmbPcb[index]->SetSensitiveDetector(sdSmb); 
     
   
       // -- create complete board as assembly, first PCB
@@ -621,25 +585,25 @@ namespace mu3e {
       Ta.setY(0.);
       Ta.setZ(0.);
       Tr = G4Transform3D(Ra,Ta);
-      solidFibreSMB->AddPlacedVolume(fVolumeFibreSmbPcb, Tr);
+      solidFibreSMB->AddPlacedVolume(fVolumeFibreSmbPcb[index], Tr);
   
       // -- add 4 asics
       for (unsigned int i = 0; i < 4; ++i) {
-        fVolumeFibreSmbAsic[i] = new G4LogicalVolume(solidFibreSMBAsic,
+        G4LogicalVolume* pa = new G4LogicalVolume(solidFibreSMBAsic,
                                                      materials.Si,
                                                      "fibreSMBAsic");
        
         G4VisAttributes *pVA2  = new G4VisAttributes;
         pVA2->SetColour(G4Colour(0., 0., 0.));
         pVA2->SetForceSolid(true);
-        fVolumeFibreSmbAsic[i]->SetVisAttributes(pVA2);
+        pa->SetVisAttributes(pVA2);
     
         Ta.setX(0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - i*(fSMBAsicWidth + fSMBAsicDeltaChip));
         Ta.setY(-0.5*(fSMBPcbLength1 - fSMBAsicWidth) + fSMBAsicDeltaFront);
         Ta.setZ(0.5*(fSMBPcbThickness + fSMBAsicThickness));
     
         Tr = G4Transform3D(rotm, Ta);
-        solidFibreSMB->AddPlacedVolume(fVolumeFibreSmbAsic[i], Tr);
+        solidFibreSMB->AddPlacedVolume(pa, Tr);
       }
 
 
