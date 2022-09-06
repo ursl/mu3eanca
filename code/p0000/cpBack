@@ -4,7 +4,9 @@
 # 2022/09/02 fixed renaming loop
 # 2022/09/05 ported offset Mu3eFibreDetector ribbon layout
 # 2022/09/05 added visdetector.json
+# 2022/09/06 change to simvis.json (including detectorvis.json)in mu3eVis
 cd /psi/home/langenegger/data/mu3e-dev-smb
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/mu3eVis.cpp mu3eSim/mu3eVis.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreDetector.h mu3eSim/src/Mu3eFibreDetector.h
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreRibbon.h mu3eSim/src/Mu3eFibreRibbon.h
@@ -15,5 +17,6 @@ cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/vis.mac run/vis.mac
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreSmbSD.cpp mu3eSim/src/Mu3eFibreSmbSD.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreSmbSD.h mu3eSim/src/Mu3eFibreSmbSD.h
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreSupport.cpp mu3eSim/src/Mu3eFibreSupport.cpp
-cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/visdetector.json run/visdetector.json
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/detectorvis.json run/detectorvis.json
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/simvis.json run/simvis.json
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/setup.csh setup.csh
