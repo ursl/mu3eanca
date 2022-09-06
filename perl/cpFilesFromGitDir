@@ -6,8 +6,9 @@
 #
 # Usage: ./cpFiles [-m "message"] -g gitdir
 #
-# History  2022/09/02 add cpBack to export to anywhere, plus opt_m
-#          2022/09/01 first shot
+# History  2022/09/01 first shot
+#          2022/09/02 add cpBack to export to anywhere, plus opt_m
+#          2022/09/06 improve dbx option to provide more information
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -33,6 +34,11 @@ if ($opt_g) {
 my @files = getFileList();
 
 # -- copy files
+if ($opt_d) {
+    print("===========================\n");
+    print("==>dbx file for copying\n");
+}
+
 foreach $file (@files) {
     if (!$opt_d) {
         print("cp $gitdir/$file .\n");
@@ -43,28 +49,40 @@ foreach $file (@files) {
 }
 
 # -- write cpBack to allow copying these files to anywhere (if you replace the first line in cpBack)
-my $preamble = "";    
-if (-e "cpBack") {
-    open(IN, "cpBack") || die  "Hm?\n";
-    while(<IN>){
-        if (/^#/) {
-            $preamble .= $_;
+if (!$opt_d) {
+    my $preamble = "";    
+    if (-e "cpBack") {
+        open(IN, "cpBack") || die  "Hm?\n";
+        while(<IN>){
+            if (/^#/) {
+                $preamble .= $_;
+            }
         }
+        close(IN);
+    }
+    
+    open(IN, ">cpBack") || die "cannot open cpBack file\n";
+    print IN "$preamble";
+    if ($opt_m) {
+        print IN "# $opt_m\n";
+    }
+    print IN "cd $gitdir\n";
+    foreach $file (@files) {
+        my($barefile, $directories) = fileparse($file);
+        print IN "cp $basedir/$barefile $file\n";
     }
     close(IN);
+} else {
+    print("dbx $opt_m\n");
+    chdir($gitdir);
+    print("===========================\n");
+    print("==>dbx show stats diff\n");
+    system("git --no-pager diff --stat");
+    print("===========================\n");
+    print("==>dbx show untracked files\n");
+    system("git ls-files -o |grep -v _build |grep -v '~'");
+    chdir($basedir);
 }
-
-open(IN, ">cpBack") || die "cannot open cpBack file\n";
-print IN "$preamble";
-if ($opt_m) {
-    print IN "# $opt_m\n";
-}
-print IN "cd $gitdir\n";
-foreach $file (@files) {
-    my($barefile, $directories) = fileparse($file);
-    print IN "cp $basedir/$barefile $file\n";
-}
-close(IN);
 
 # ----------------------------------------------------------------------
 sub getFileList {
