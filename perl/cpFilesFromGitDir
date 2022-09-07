@@ -4,12 +4,16 @@
 # cpFilesFromGitDir
 # ===================
 #
-# Usage: ./cpFiles [-m "message"] -g gitdir -f file
+# Usage:    ./cpFiles [-m "message"] [-d] [-c] [-f file] -g gitdir
 #
-# History  2022/09/01 first shot
-#          2022/09/02 add cpBack to export to anywhere, plus opt_m
-#          2022/09/06 improve dbx option to provide more information
-#          2022/09/07 add opt_f to allow pulling a single file
+# Examples: cd ~/mu3e/mu3eanca/code/p0000
+#           ../../perl/cpFilesFromGitDir -m "2022/09/06 bla" -g ~/data/mu3e-dev-smb
+#
+# History   2022/09/01 first shot
+#           2022/09/02 add cpBack to export to anywhere, plus opt_m
+#           2022/09/06 improve dbx option to provide more information
+#           2022/09/06 add opt_f to allow pulling a single file
+#           2022/09/07 add opt_c to compare the local files with repo
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -18,7 +22,7 @@
 
 use File::Basename;
 use Getopt::Std;
-getopts('df:g:m:');
+getopts('cdf:g:m:');
 
 # -- current "project" for backup storage
 my $basedir = `pwd`;
@@ -44,6 +48,13 @@ foreach $file (@files) {
     if ($opt_f && !($file =~ $opt_f)) {
         next;
     }
+    if ($opt_c) {
+        print("$file\n");
+        my($barefile, $directories) = fileparse($file);
+        system("diff $barefile $gitdir/$file");
+        next;
+    }
+
     if (!$opt_d) {
         print("cp $gitdir/$file .\n");
         system("/bin/cp -a $gitdir/$file ."); # preserve time and do not follow symlinks
