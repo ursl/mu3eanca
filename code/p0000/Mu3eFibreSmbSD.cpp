@@ -19,30 +19,33 @@ using namespace std;
 // ----------------------------------------------------------------------
 Mu3eFibreSmbSD::Mu3eFibreSmbSD(const G4String& name) : G4VSensitiveDetector(name) {
 
+  fSmbPosZ = new TH1F("SmbPosZ", "SMB hits, global position for positive z", 1000, 100., 200.);
+  fSmbNegZ = new TH1F("SmbNegZ", "SMB hits, global position for negative z", 1000, -200., -100.);
 
-  fPlanePosZ = new TH2F("PlanePosZ", "position of Smb (asic) SD for z > 0", 100, -100., 100., 100, -100., 100.);
-  fPlaneNegZ = new TH2F("PlaneNegZ", "position of Smb (asic) SD for z < 0", 100, -100., 100., 100, -100., 100.);
+  
+  fPlanePosZ = new TH2F("PlanePosZ", "position of Smb (asic) SD for z > 0", 200, -200., 200., 200, -200., 200.);
+  fPlaneNegZ = new TH2F("PlaneNegZ", "position of Smb (asic) SD for z < 0", 200, -200., 200., 200, -200., 200.);
   
   fRadialOutElpz1  = new TH2F("RadialOutElpz1", "e +z z-position at Smb local coord",
-			     60, -30., 30., 200, 0., 200.);
+			     70, -30., 40., 250, 0., 250.);
   fRadialOutElpz2  = new TH2F("RadialOutElpz2", "e +z z-position at Smb world coord",
-			     40, 140., 160., 200, 0., 200.);
+			     80, 100., 180., 250, 0., 250.);
   fRadialOutElpz3  = new TH2F("RadialOutElpz3", "e +z z-position at Smb edep",
-			     40, 140., 160., 200, 0., 200.);
+			     80, 100., 180., 250, 0., 250.);
 
   fRadialOutElmz1  = new TH2F("RadialOutElmz1", "e -z z-position at Smb local coord",
-			     60, -30., 30., 200, 0., 200.);
+			     70, -30., 40., 250, 0., 250.);
   fRadialOutElmz2  = new TH2F("RadialOutElmz2", "e -z z-position at Smb world coord",
-			     40, -160., -140., 200, 0., 200.);
+			     40, -160., -140., 250, 0., 250.);
   fRadialOutElmz3  = new TH2F("RadialOutElmz3", "e -z z-position at Smb edep",
-			     40, -160., -140., 200, 0., 200.);
+			     40, -160., -140., 250, 0., 250.);
 
 
-  fRadialOutElx1 = new TH2F("RadialOutElmx1", "e x-position +z at Smb local coord", 60, -30., 30., 200, 0., 200.);
-  fRadialOutEly1 = new TH2F("RadialOutElmy1", "e y-position +z at Smb local coord", 60, -30., 30., 200, 0., 200.);
+  fRadialOutElx1 = new TH2F("RadialOutElmx1", "e x-position +z at Smb local coord", 60, -30., 30., 250, 0., 250.);
+  fRadialOutEly1 = new TH2F("RadialOutElmy1", "e y-position +z at Smb local coord", 60, -30., 30., 250, 0., 250.);
 
-  fRadialOutElx1a = new TH2F("RadialOutElmx1a", "e x-position -z at Smb local coord", 60, -30., 30., 200, 0., 200.);
-  fRadialOutEly1a = new TH2F("RadialOutElmy1a", "e y-position -z at Smb local coord", 60, -30., 30., 200, 0., 200.);
+  fRadialOutElx1a = new TH2F("RadialOutElmx1a", "e x-position -z at Smb local coord", 60, -30., 30., 250, 0., 250.);
+  fRadialOutEly1a = new TH2F("RadialOutElmy1a", "e y-position -z at Smb local coord", 60, -30., 30., 250, 0., 250.);
 
   for (unsigned int i = 0; i < 200; ++i) {
     fDose[i] += 0.;
@@ -86,23 +89,17 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   uint32_t feeId = prePoint->GetTouchable()->GetCopyNumber(0) 
     + 100*prePoint->GetTouchable()->GetCopyNumber(1);
 
-  // -- this should correspond to the specbook
-  string smbName = prePoint->GetTouchable()->GetVolume()->GetName();
-  int sign = (string::npos != smbName.find("SMB_US")?-1:+1);
-  int smbNumber(0);
-  if (sign > 0) {
-    cout << "scanning for SMB_DS as sign = " << sign << endl;
-    sscanf(smbName.c_str(), "SMB_DS_%d", &smbNumber);
-  } else {
-    cout << "scanning for SMB_US as sign = "  << sign << endl;
-    sscanf(smbName.c_str(), "SMB_US_%d", &smbNumber);
-  }
-  int32_t smbId = smbNumber*sign;;
-  
-  
   auto feePos   = prePoint->GetTouchable()->GetTranslation();
   auto hitPos   = prePoint->GetPosition();
   auto localPos = prePoint->GetTouchable()->GetHistory()->GetTopTransform().TransformPoint(hitPos);
+
+  // -- this should correspond to the specbook
+  string smbName = prePoint->GetTouchable()->GetVolume()->GetName();
+  int smbNumber(0);
+  cout << "scanning for SMB_ " << endl;
+  sscanf(smbName.c_str(), "SMB_%d", &smbNumber);
+  int sign = (feePos.z() > 0? 1: -1);
+  int32_t smbId = smbNumber*sign;;
   
 
   bool entry = (prePoint->GetStepStatus() == fGeomBoundary);
@@ -119,13 +116,16 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
                    << "<- smbID = " << smbId
                    << " edep = " << edep
                    << " (r) = " << feePos.x() << "/" << feePos.y() << "/" << feePos.z()
+                   << " ix/iy = " << ix << "/" << iy
                    << " W(r) = " << hitPos.x() << "/" << hitPos.y() << "/" << hitPos.z()
-                   << " local(r) = " << localPos.x() << "/" << localPos.y() << "/" << localPos.z()
+           //                   << " local(r) = " << localPos.x() << "/" << localPos.y() << "/" << localPos.z()
                    << " e/e = " << entry << "/" << exit
                    << std::endl;
 
   // -- keep a record which fedID is where
   if (feePos.z() > 0) {
+    fSmbPosZ->Fill(hitPos.z());
+
     fPlanePosZ->SetBinContent(ix, iy, smbId);
     
     if (11 == apdgid) {
@@ -138,6 +138,7 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
     }
     
   } else {
+    fSmbNegZ->Fill(hitPos.z());
     fPlaneNegZ->SetBinContent(ix, iy, smbId);
     if (11 == apdgid) {
       fRadialOutElmz1->Fill(localPos.y(), feeId);
@@ -182,6 +183,9 @@ void Mu3eFibreSmbSD::writeStat() {
   fPlanePosZ->Write();
   fPlaneNegZ->Write();
 
+  fSmbPosZ->Write();
+  fSmbNegZ->Write();
+  
   fRadialOutElpz1->Write();
   fRadialOutElpz2->Write();
   fRadialOutElpz3->Write();
