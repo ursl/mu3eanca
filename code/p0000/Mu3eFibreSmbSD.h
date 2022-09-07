@@ -32,6 +32,8 @@ private:
   static const std::vector<double> df_e;
   static const std::vector<double> df_n;
 
+  TH1F *fSmbPosZ, *fSmbNegZ;
+
   TH2F *fPlanePosZ, *fPlaneNegZ;
   TH2F *fRadialOutElpz1, *fRadialOutElpz2, *fRadialOutElpz3;
   TH2F *fRadialOutElmz1, *fRadialOutElmz2, *fRadialOutElmz3;
