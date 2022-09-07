@@ -8,6 +8,7 @@
 # 2022/09/06 draw axes
 # 2022/09/06 add stagger to detector.json
 # 2022/09/06 SMB numbering is now correct US and DS, staggering of ribbons back in (but MPPC not yet adjacent to ribbons)
+# 2022/09/07 fine-tuning position of MPPC wrt ribbons
 cd /psi/home/langenegger/data/mu3e-dev-smb
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/mu3eVis.cpp mu3eSim/mu3eVis.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp

@@ -256,9 +256,11 @@ namespace mu3e {
 	  
         }
         if(i%2==1) {
-          position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 6.5*mm);
+          //          position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 6.5*mm);
+          position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 14.15*mm);
         } else {
-          position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 19.0*mm);
+          //          position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 19.0*mm);
+          position.setZ(length/2. + MppcThicknessEpoxy/2. - MppcLength/2. - 26.6*mm);
         }
         transform = G4Transform3D(rotM, position);
         G4ThreeVector pMax, pMin;
