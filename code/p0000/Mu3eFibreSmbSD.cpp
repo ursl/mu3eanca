@@ -25,6 +25,14 @@ Mu3eFibreSmbSD::Mu3eFibreSmbSD(const G4String& name) : G4VSensitiveDetector(name
   
   fPlanePosZ = new TH2F("PlanePosZ", "position of Smb (asic) SD for z > 0", 200, -200., 200., 200, -200., 200.);
   fPlaneNegZ = new TH2F("PlaneNegZ", "position of Smb (asic) SD for z < 0", 200, -200., 200., 200, -200., 200.);
+
+  for (int ix = 1; ix <= fPlanePosZ->GetNbinsX(); ++ix) {
+    for (int iy = 1; iy <= fPlanePosZ->GetNbinsY(); ++iy) {
+      fPlanePosZ->SetBinContent(ix, iy, -2.);
+      fPlaneNegZ->SetBinContent(ix, iy, -2.);
+    }
+  }
+
   
   fRadialOutElpz1  = new TH2F("RadialOutElpz1", "e +z z-position at Smb local coord",
 			     70, -30., 40., 250, 0., 250.);
@@ -75,7 +83,7 @@ void Mu3eFibreSmbSD::Initialize(G4HCofThisEvent*) {
 G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   G4double edep = aStep->GetTotalEnergyDeposit();
   cout << "Mu3eFibreSmbSD::ProcessHits> Hallo, edep = " << edep << endl;
-  if (edep <= 0) return false;
+  //  if (edep <= 0) return false;
   auto prePoint  = aStep->GetPreStepPoint();
   auto postPoint = aStep->GetPostStepPoint();
 
@@ -96,7 +104,6 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   // -- this should correspond to the specbook
   string smbName = prePoint->GetTouchable()->GetVolume()->GetName();
   int smbNumber(0);
-  cout << "scanning for SMB_ " << endl;
   sscanf(smbName.c_str(), "SMB_%d", &smbNumber);
   int sign = (feePos.z() > 0? 1: -1);
   int32_t smbId = smbNumber*sign;;
@@ -118,7 +125,6 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
                    << " (r) = " << feePos.x() << "/" << feePos.y() << "/" << feePos.z()
                    << " ix/iy = " << ix << "/" << iy
                    << " W(r) = " << hitPos.x() << "/" << hitPos.y() << "/" << hitPos.z()
-           //                   << " local(r) = " << localPos.x() << "/" << localPos.y() << "/" << localPos.z()
                    << " e/e = " << entry << "/" << exit
                    << std::endl;
 
@@ -152,15 +158,16 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
     // -- TODO: normalize to bin volume!
   }
 
-  G4double dose_c = 0;
-  //  int pid = aStep->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
-  G4double cubicVolume = prePoint->GetPhysicalVolume()->GetLogicalVolume()->GetSolid()->GetCubicVolume();
-  G4double density = prePoint->GetMaterial()->GetDensity();
-  //G4cout << "DEBUG density " << density << " " << density/kg << " " << (density/kg * cubicVolume) << G4endl;
-  dose_c    = edep/joule / ( density/kg * cubicVolume );
-  dose_c *= prePoint->GetWeight();
-  fDose[feeId] += dose_c;
-  
+  if (edep > 0) {
+    G4double dose_c = 0;
+    //  int pid = aStep->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
+    G4double cubicVolume = prePoint->GetPhysicalVolume()->GetLogicalVolume()->GetSolid()->GetCubicVolume();
+    G4double density = prePoint->GetMaterial()->GetDensity();
+    //G4cout << "DEBUG density " << density << " " << density/kg << " " << (density/kg * cubicVolume) << G4endl;
+    dose_c    = edep/joule / ( density/kg * cubicVolume );
+    dose_c *= prePoint->GetWeight();
+    fDose[feeId] += dose_c;
+  }
 
   return true;
 }
