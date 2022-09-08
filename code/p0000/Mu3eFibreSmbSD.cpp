@@ -19,13 +19,20 @@ using namespace std;
 // ----------------------------------------------------------------------
 Mu3eFibreSmbSD::Mu3eFibreSmbSD(const G4String& name) : G4VSensitiveDetector(name) {
 
+  int nbins(1000);
+  double zmin(100.), zmax(200.);
+  
   fSmbPosZ = new TH1F("SmbPosZ", "SMB hits, global position for positive z", 1000, 100., 200.);
   fSmbNegZ = new TH1F("SmbNegZ", "SMB hits, global position for negative z", 1000, -200., -100.);
 
-  
+  for (int i = 0; i < 12; ++i) {
+    fSmbZ.insert(make_pair(+100+i, new TH1F(Form("SmbPosZ_%d", i), Form("SMB hits, global pos for +z, iSMB=%d", i), nbins, +zmin, +zmax)));
+    fSmbZ.insert(make_pair(-100-i, new TH1F(Form("SmbNegZ_%d", i), Form("SMB hits, global pos for +z, iSMB=%d", i), nbins, -zmax, -zmin)));
+  }
+
   fPlanePosZ = new TH2F("PlanePosZ", "position of Smb (asic) SD for z > 0", 200, -200., 200., 200, -200., 200.);
   fPlaneNegZ = new TH2F("PlaneNegZ", "position of Smb (asic) SD for z < 0", 200, -200., 200., 200, -200., 200.);
-
+  
   for (int ix = 1; ix <= fPlanePosZ->GetNbinsX(); ++ix) {
     for (int iy = 1; iy <= fPlanePosZ->GetNbinsY(); ++iy) {
       fPlanePosZ->SetBinContent(ix, iy, -2.);
@@ -131,7 +138,9 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   // -- keep a record which fedID is where
   if (feePos.z() > 0) {
     fSmbPosZ->Fill(hitPos.z());
+    fSmbZ[100+smbNumber]->Fill(hitPos.z());
 
+    
     fPlanePosZ->SetBinContent(ix, iy, smbId);
     
     if (11 == apdgid) {
@@ -145,6 +154,7 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
     
   } else {
     fSmbNegZ->Fill(hitPos.z());
+    fSmbZ[-100-smbNumber]->Fill(hitPos.z());
     fPlaneNegZ->SetBinContent(ix, iy, smbId);
     if (11 == apdgid) {
       fRadialOutElmz1->Fill(localPos.y(), feeId);
@@ -190,6 +200,11 @@ void Mu3eFibreSmbSD::writeStat() {
   fPlanePosZ->Write();
   fPlaneNegZ->Write();
 
+  for (int i = 0; i < 12; ++i) {
+    fSmbZ[+100 + i]->Write();
+    fSmbZ[-100 - i]->Write();
+  }    
+  
   fSmbPosZ->Write();
   fSmbNegZ->Write();
   
