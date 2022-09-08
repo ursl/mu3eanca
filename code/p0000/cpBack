@@ -10,6 +10,9 @@
 # 2022/09/06 SMB numbering is now correct US and DS, staggering of ribbons back in (but MPPC not yet adjacent to ribbons)
 # 2022/09/07 fine-tuning position of MPPC wrt ribbons
 # 2022/09/07 changes to histogramming (of SMB, not MuTrig)
+# 2022/09/08 
+# 2022/09/08 
+# 2022/09/08 remove commented old code; adapted dimensions
 cd /psi/home/langenegger/data/mu3e-dev-smb
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/mu3eVis.cpp mu3eSim/mu3eVis.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp

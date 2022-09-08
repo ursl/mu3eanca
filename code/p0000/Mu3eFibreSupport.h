@@ -32,8 +32,6 @@ namespace mu3e { namespace sim {
       G4LogicalVolume* volumeFibreMppcSiO2;
       G4LogicalVolume* volumeFibreMppcPcb;
       G4LogicalVolume* fVolumeFibreSmbPcb[2];
-      //      G4LogicalVolume* fVolumeFibreSmb;
-      //      G4LogicalVolume* fVolumeFibreSmbAsic[4];
 
       FibreDetector* detector;
 
@@ -46,39 +44,8 @@ namespace mu3e { namespace sim {
       double rInSup          =   39 * CLHEP::mm;
       double lengthSup       =  165 * CLHEP::mm;
       double rPlate          =   15 * CLHEP::mm;
-      double lengtPlate      =   50 * CLHEP::mm;
-
-      // width:   25.622mm
-      // length:  43.507mm
-      // thickness: 1.07mm
-      //
-      // +--------------+  +---- ~11.1mm
-      // | D            |  v
-      // |              +-----+
-      // | D                  | 
-      // |                    | 15.658mm
-      // | D                  |
-      // |              +-----+
-      // | D            |<------ ~5.0mm
-      // +--------------+
-      // 
-      // ASICS: 5mm square
-      // 7.9mm away from front edge
-      // 1.05mm separation between chips
-      // -> (25.622 - (4*5 + 3*1.05)) /2 = 1.236mm from side edge
-      
-      double fSmbPcbLength1     = 43.5   * CLHEP::mm;
-      double fSmbPcbWidth1      = 25.6   * CLHEP::mm;
-      double fSmbPcbThickness   = 1.07   * CLHEP::mm;
-      double fSmbPcbLength2     = 11.1   * CLHEP::mm;
-      double fSmbPcbWidth2      = 15.7   * CLHEP::mm;
-      //      double fSmbAsicLength     = 5.0    * CLHEP::mm;
-      double fSmbAsicLength     = 30.0   * CLHEP::mm;
-      double fSmbAsicWidth      = 5.0    * CLHEP::mm;
-      double fSmbAsicThickness  = 1.0    * CLHEP::mm; // FIXME??
-      double fSmbAsicDeltaFront = 7.9    * CLHEP::mm; 
-      double fSmbAsicDeltaSide  = 2*1.236* CLHEP::mm; 
-      double fSmbAsicDeltaChip  = 1.05   * CLHEP::mm; 
+      //ul      double lengtPlate      =   50 * CLHEP::mm;
+      double lengtPlate      =   55.5 * CLHEP::mm;
 
       // -- additions for the new SMB (as of mid 2022)
       G4LogicalVolume* fVolumeFibreSMBChip1;
@@ -87,27 +54,26 @@ namespace mu3e { namespace sim {
       G4LogicalVolume* fVolumeFibreSMBConnector;
 
       /*
-
-        +---------------------------------------+
-        |                         +--+          |
-        |           Chip3         |  |          |
+               +---------------------------------------+
+               |                         +--+          |
+               |           Chip3         |  |          |
         +------+                         +--+          |
         | C                                            |
         | o                              +--+          |
         | n     C                        |  |          |
         | n      h                       +--+          |
-        (2)| e       i                                    | fSMBPcbWidth1
+     (2)| e       i                                    | fSMBPcbWidth1
         | c        p                     +--+          |
         | t         1                    |  |          |
         | o                              +--+          |
         | r                                            |
         +------+                         +--+          |
-        ^   |         Chip2           |  | (1)      |   (1) fSMBAsicDeltaFront
-        |   |                         +--+          |   (2) fSMBPcbWidth2
-        |   +---------------------------------------+
-        |                fSMBPcbLength1
-        |
-        +--SMBPcbLength2
+           ^   |         Chip2           |  | (1)      |   (1) fSMBAsicDeltaFront
+           |   |                         +--+          |   (2) fSMBPcbWidth2
+           |   +---------------------------------------+
+           |                fSMBPcbLength1
+           |
+           +--SMBPcbLength2
 
       */
 
@@ -159,7 +125,6 @@ namespace mu3e { namespace sim {
       // -- allow mirrored version for proper staggering of support components
       void PlaceMppcInSupport(G4LogicalVolume *, bool mirrored = false);
       
-      // G4AssemblyVolume* makeSmb0();
       G4AssemblyVolume* makeSmb(int index);
       void PlaceSmbInSupport(G4LogicalVolume *, bool mirrored = false);
     };
