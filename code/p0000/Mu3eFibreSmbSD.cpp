@@ -27,7 +27,7 @@ Mu3eFibreSmbSD::Mu3eFibreSmbSD(const G4String& name) : G4VSensitiveDetector(name
 
   for (int i = 0; i < 12; ++i) {
     fSmbZ.insert(make_pair(+100+i, new TH1F(Form("SmbPosZ_%d", i), Form("SMB hits, global pos for +z, iSMB=%d", i), nbins, +zmin, +zmax)));
-    fSmbZ.insert(make_pair(-100-i, new TH1F(Form("SmbNegZ_%d", i), Form("SMB hits, global pos for +z, iSMB=%d", i), nbins, -zmax, -zmin)));
+    fSmbZ.insert(make_pair(-100-i, new TH1F(Form("SmbNegZ_%d", i), Form("SMB hits, global pos for -z, iSMB=%d", i), nbins, -zmax, -zmin)));
   }
 
   fPlanePosZ = new TH2F("PlanePosZ", "position of Smb (asic) SD for z > 0", 200, -200., 200., 200, -200., 200.);
@@ -112,9 +112,7 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   string smbName = prePoint->GetTouchable()->GetVolume()->GetName();
   int smbNumber(0);
   sscanf(smbName.c_str(), "SMB_%d", &smbNumber);
-  int sign = (feePos.z() > 0? 1: -1);
-  int32_t smbId = smbNumber*sign;;
-  
+  int32_t smbId = smbNumber;
 
   bool entry = (prePoint->GetStepStatus() == fGeomBoundary);
   bool exit  = (postPoint->GetStepStatus() == fGeomBoundary);
@@ -139,10 +137,8 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   if (feePos.z() > 0) {
     fSmbPosZ->Fill(hitPos.z());
     fSmbZ[100+smbNumber]->Fill(hitPos.z());
-
-    
+   
     fPlanePosZ->SetBinContent(ix, iy, smbId);
-    
     if (11 == apdgid) {
       fRadialOutElpz1->Fill(localPos.y(), feeId);
       fRadialOutElx1->Fill(localPos.x(), feeId);
@@ -151,14 +147,12 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
       fRadialOutElpz2->Fill(hitPos.z(), feeId);
       fRadialOutElpz3->Fill(hitPos.z(), feeId, edep);
     }
-    
   } else {
     fSmbNegZ->Fill(hitPos.z());
     fSmbZ[-100-smbNumber]->Fill(hitPos.z());
     fPlaneNegZ->SetBinContent(ix, iy, smbId);
     if (11 == apdgid) {
       fRadialOutElmz1->Fill(localPos.y(), feeId);
-
       fRadialOutElx1a->Fill(localPos.x(), feeId);
       fRadialOutEly1a->Fill(localPos.z(), feeId);
 
