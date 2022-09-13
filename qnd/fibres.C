@@ -33,6 +33,8 @@ void zPosition() {
 void rphiPosition() {
   gFile->cd("stat/FibreSmb");
 
+  gStyle->SetOptStat(0);
+  
   c0.SetCanvasSize(1200, 600);
   zone(2, 1);
   c0.cd(2);
