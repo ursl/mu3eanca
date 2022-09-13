@@ -149,7 +149,7 @@ namespace mu3e {
                                false,
                                0);
 
-      // -- mirror volume
+      // -- mirror volume. This is upstream (US)!
       if (1) new G4PVPlacement(nullptr,
                                {0, 0, -lengtPlate/2. + length/2.},
                                volumeFibreSupportPlate,
@@ -348,11 +348,13 @@ namespace mu3e {
         // -- numerology non-trivial because of rotation of mirrored volume (in Mu3eFibreTrackerConstruction)
         if (string::npos != sname.find("Pcb_")) {
           double phi = (*ipv)->GetTranslation().phi()*57.2957795131; 
+          double phiOrig = phi;
           if (phi < 0) phi += 360.;
           if (mirrored) {
+            // -- upstream, i.e. z < 0
             nSmb = 8 - static_cast<int>(phi)/30;
+            if (nSmb < 0)  nSmb += 12;
             if (nSmb > 11) nSmb -= 12;
-            if (nSmb < 0) nSmb += 12;
           } else {
             nSmb = 9 + static_cast<int>(phi)/30;
             if (nSmb > 11) nSmb -= 12;
@@ -360,6 +362,7 @@ namespace mu3e {
           sprintf(ssmb, "%s_%d", simpr.c_str(), nSmb);
           if (DBX) cout << "*ipv->GetName() = " << sname << " trsl = "
                         << (*ipv)->GetTranslation()
+                        << " phiOrig = " << phiOrig
                         << " phi = " << phi
                         << " -> nSmb = " << nSmb
                         << " -> ssmb = " << ssmb
@@ -492,11 +495,16 @@ namespace mu3e {
         }
 
         // -- exit loop
-        if (11 == nSmb) {
-          break;
+        if (!mirrored) {
+          if (11 == nSmb) {
+            break;
+          }
         } else {
-          ++ipv;
+          if (6 == nSmb) {
+            break;
+          }
         }
+        ++ipv;
       }
 
       
