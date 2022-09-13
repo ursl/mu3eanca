@@ -1,4 +1,4 @@
-#include "Mu3eFibreSmbSD.h"
+#include "Mu3eFibreSmbMuTrigSD.h"
 
 #include "Mu3eEvent.h"
 
@@ -17,26 +17,30 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-Mu3eFibreSmbSD::Mu3eFibreSmbSD(const G4String& name) : G4VSensitiveDetector(name) {
+Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveDetector(name) {
 
   int nbins(1000);
   double zmin(100.), zmax(200.);
   
-  fSmbPosZ = new TH1F("SmbPosZ", "SMB hits, global position for positive z", 1000, 100., 200.);
-  fSmbNegZ = new TH1F("SmbNegZ", "SMB hits, global position for negative z", 1000, -200., -100.);
+  fSmbMuTrigPosZ = new TH1F("SmbMuTrigPosZ", "SMB MuTrig hits, global position for positive z", 1000, 100., 200.);
+  fSmbMuTrigNegZ = new TH1F("SmbMuTrigNegZ", "SMB MuTrighits, global position for negative z", 1000, -200., -100.);
 
   for (int i = 0; i < 12; ++i) {
-    fSmbZ.insert(make_pair(+100+i, new TH1F(Form("SmbPosZ_%d", i), Form("SMB hits, global pos for +z, iSMB=%d", i), nbins, +zmin, +zmax)));
-    fSmbZ.insert(make_pair(-100-i, new TH1F(Form("SmbNegZ_%d", i), Form("SMB hits, global pos for -z, iSMB=%d", i), nbins, -zmax, -zmin)));
+    fSmbMuTrigZ.insert(make_pair(+100+i, new TH1F(Form("SmbMuTrigPosZ_%d", i),
+                                                  Form("SMB MuTrig hits, global pos for +z, iSMB=%d", i),
+                                                  nbins, +zmin, +zmax)));
+    fSmbMuTrigZ.insert(make_pair(-100-i, new TH1F(Form("SmbMuTrigNegZ_%d", i),
+                                                  Form("SMB MuTrig hits, global pos for -z, iSMB=%d", i),
+                                                  nbins, -zmax, -zmin)));
   }
 
-  fPlanePosZ = new TH2F("PlanePosZ", "Smb ID for z > 0 (DS)", 200, -200., 200., 200, -200., 200.);
-  fPlaneNegZ = new TH2F("PlaneNegZ", "Smb ID for z < 0 (US)", 200, -200., 200., 200, -200., 200.);
+  fSmbMuTrigPlanePosZ = new TH2F("SmbMuTrigPlanePosZ", "Smb MuTrig ID for z > 0 (DS)", 400, -200., 200., 400, -200., 200.);
+  fSmbMuTrigPlaneNegZ = new TH2F("SmbMuTrigPlaneNegZ", "Smb MuTrig ID for z < 0 (US)", 400, -200., 200., 400, -200., 200.);
   
-  for (int ix = 1; ix <= fPlanePosZ->GetNbinsX(); ++ix) {
-    for (int iy = 1; iy <= fPlanePosZ->GetNbinsY(); ++iy) {
-      fPlanePosZ->SetBinContent(ix, iy, -2.);
-      fPlaneNegZ->SetBinContent(ix, iy, -2.);
+  for (int ix = 1; ix <= fSmbMuTrigPlanePosZ->GetNbinsX(); ++ix) {
+    for (int iy = 1; iy <= fSmbMuTrigPlanePosZ->GetNbinsY(); ++iy) {
+      fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, -2.);
+      fSmbMuTrigPlaneNegZ->SetBinContent(ix, iy, -2.);
     }
   }
 
@@ -75,22 +79,21 @@ Mu3eFibreSmbSD::Mu3eFibreSmbSD(const G4String& name) : G4VSensitiveDetector(name
 
 
 // ----------------------------------------------------------------------
-Mu3eFibreSmbSD::~Mu3eFibreSmbSD() {
+Mu3eFibreSmbMuTrigSD::~Mu3eFibreSmbMuTrigSD() {
 
 }
 
 
 // ----------------------------------------------------------------------
-void Mu3eFibreSmbSD::Initialize(G4HCofThisEvent*) {
+void Mu3eFibreSmbMuTrigSD::Initialize(G4HCofThisEvent*) {
 
 }
 
 
 // ----------------------------------------------------------------------
-G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
+G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   G4double edep = aStep->GetTotalEnergyDeposit();
-  int DBX(0);
-  if (DBX) cout << "Mu3eFibreSmbSD::ProcessHits> Hallo, edep = " << edep << endl;
+  cout << "Mu3eFibreSmbMuTrigSD::ProcessHits> Hallo, edep = " << edep << endl;
   //  if (edep <= 0) return false;
   auto prePoint  = aStep->GetPreStepPoint();
   auto postPoint = aStep->GetPostStepPoint();
@@ -111,36 +114,37 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
   // -- this should correspond to the specbook
   string smbName = prePoint->GetTouchable()->GetVolume()->GetName();
-  int smbNumber(-1);
-  sscanf(smbName.c_str(), "SMB_%d", &smbNumber);
+  int smbNumber(-1), muTrigNumber(-1);
+  sscanf(smbName.c_str(), "SMB_%d_ASIC_%d", &smbNumber, &muTrigNumber);
   int32_t smbId = smbNumber;
-  if (DBX) cout << "smbNumber = " << smbNumber << " smbName = " << smbName << endl;
+  cout << "smbNumber = " << smbNumber << " muTrigNumber = " << muTrigNumber << " smbName = " << smbName << endl;
   
   bool entry = (prePoint->GetStepStatus() == fGeomBoundary);
   bool exit  = (postPoint->GetStepStatus() == fGeomBoundary);
     
-  int ix = fPlanePosZ->GetXaxis()->FindBin(feePos.x());
-  int iy = fPlanePosZ->GetYaxis()->FindBin(feePos.y());
+  int ix = fSmbMuTrigPlanePosZ->GetXaxis()->FindBin(feePos.x());
+  int iy = fSmbMuTrigPlanePosZ->GetYaxis()->FindBin(feePos.y());
 
-  if (DBX) std::cout << "SmbSD> " 
-                     << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
-                     << prePoint->GetTouchable()->GetCopyNumber(1) << "  ->"
-                     << prePoint->GetTouchable()->GetVolume()->GetName()
-                     << "<- feeID = " << feeId
-                     << "<- smbID = " << smbId
-                     << " edep = " << edep
-                     << " (r) = " << feePos.x() << "/" << feePos.y() << "/" << feePos.z()
-                     << " ix/iy = " << ix << "/" << iy
-                     << " W(r) = " << hitPos.x() << "/" << hitPos.y() << "/" << hitPos.z()
-                     << " e/e = " << entry << "/" << exit
-                     << std::endl;
+  if (1) std::cout << "SmbMuTrigSD> " 
+                   << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
+                   // << prePoint->GetTouchable()->GetCopyNumber(1) << " "
+                   // << prePoint->GetTouchable()->GetVolume()->GetName()
+                   // << " feeID = " << feeId
+                   // << " smbID = " << smbId
+                   << " muTrigNumber = " << muTrigNumber
+                   << " edep = " << edep
+                   << " (r) = " << feePos.x() << "/" << feePos.y() << "/" << feePos.z()
+                   << " ix/iy = " << ix << "/" << iy
+                   << " W(r) = " << hitPos.x() << "/" << hitPos.y() << "/" << hitPos.z()
+                   << " e/e = " << entry << "/" << exit
+                   << std::endl;
 
   // -- keep a record which fedID is where
   if (feePos.z() > 0) {
-    fSmbPosZ->Fill(hitPos.z());
-    fSmbZ[100+smbNumber]->Fill(hitPos.z());
+    fSmbMuTrigPosZ->Fill(hitPos.z());
+    fSmbMuTrigZ[100+smbNumber]->Fill(hitPos.z());
    
-    fPlanePosZ->SetBinContent(ix, iy, smbId);
+    fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, smbId);
     if (11 == apdgid) {
       fRadialOutElpz1->Fill(localPos.y(), feeId);
       fRadialOutElx1->Fill(localPos.x(), feeId);
@@ -150,9 +154,9 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
       fRadialOutElpz3->Fill(hitPos.z(), feeId, edep);
     }
   } else {
-    fSmbNegZ->Fill(hitPos.z());
-    fSmbZ[-100-smbNumber]->Fill(hitPos.z());
-    fPlaneNegZ->SetBinContent(ix, iy, smbId);
+    fSmbMuTrigNegZ->Fill(hitPos.z());
+    fSmbMuTrigZ[-100-smbNumber]->Fill(hitPos.z());
+    fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, smbId);
     if (11 == apdgid) {
       fRadialOutElmz1->Fill(localPos.y(), feeId);
       fRadialOutElx1a->Fill(localPos.x(), feeId);
@@ -180,9 +184,9 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
 
 // ----------------------------------------------------------------------
-void Mu3eFibreSmbSD::writeStat() {
-  gDirectory->mkdir("FibreSmb");
-  gDirectory->cd("FibreSmb");
+void Mu3eFibreSmbMuTrigSD::writeStat() {
+  gDirectory->mkdir("FibreSmbMuTrig");
+  gDirectory->cd("FibreSmbMuTrig");
 
   double evendtime = (Mu3eEvent::GetInstance()->startTime + Mu3eEvent::GetInstance()->frameLength) /s;
   TH1F * hFibreSmbDose = new TH1F("hFibreSmbDose", TString::Format("Fibre Smb Dose (time = %f)", evendtime), 200, 0, 200);
@@ -193,16 +197,16 @@ void Mu3eFibreSmbSD::writeStat() {
   }
   hFibreSmbDose->Write();
 
-  fPlanePosZ->Write();
-  fPlaneNegZ->Write();
+  fSmbMuTrigPlanePosZ->Write();
+  fSmbMuTrigPlaneNegZ->Write();
 
   for (int i = 0; i < 12; ++i) {
-    fSmbZ[+100 + i]->Write();
-    fSmbZ[-100 - i]->Write();
+    fSmbMuTrigZ[+100 + i]->Write();
+    fSmbMuTrigZ[-100 - i]->Write();
   }    
   
-  fSmbPosZ->Write();
-  fSmbNegZ->Write();
+  fSmbMuTrigPosZ->Write();
+  fSmbMuTrigNegZ->Write();
   
   fRadialOutElpz1->Write();
   fRadialOutElpz2->Write();
@@ -222,14 +226,14 @@ void Mu3eFibreSmbSD::writeStat() {
 }
 
 // ----------------------------------------------------------------------
-void Mu3eFibreSmbSD::EndOfEvent(G4HCofThisEvent*) {
+void Mu3eFibreSmbMuTrigSD::EndOfEvent(G4HCofThisEvent*) {
 
 }
 
 // ----------------------------------------------------------------------
 // http://ieeexplore.ieee.org/document/273529
 // data from http://www.sr-niel.org/Simulation/516481niel_e.html
-double Mu3eFibreSmbSD::damageFunction(double energy) {
+double Mu3eFibreSmbMuTrigSD::damageFunction(double energy) {
   if(energy <= df_e.front()) return df_n.front();
   if(energy >= df_e.back())  return df_n.back();
 
@@ -246,7 +250,7 @@ double Mu3eFibreSmbSD::damageFunction(double energy) {
 // ----------------------------------------------------------------------
 // damage function for electrons / 95 MeVmb (neutron equivalent)
 // http://www.sr-niel.org/Simulation/516481niel_e.html
-const std::vector<double> Mu3eFibreSmbSD::df_e{
+const std::vector<double> Mu3eFibreSmbMuTrigSD::df_e{
   00000.10,  00000.15,  00000.20,  00000.25,  00000.30,  00000.35,  00000.40,
     00000.45,  00000.50,  00000.55,  00000.60,  00000.65,  00000.70,  00000.75,
     00000.80,  00000.85,  00000.90,  00000.95,  00001.00,  00001.50,  00002.00,
@@ -263,7 +267,7 @@ const std::vector<double> Mu3eFibreSmbSD::df_e{
     }; // MEV
 
 // ----------------------------------------------------------------------
-const std::vector<double> Mu3eFibreSmbSD::df_n {
+const std::vector<double> Mu3eFibreSmbMuTrigSD::df_n {
   0.        ,  0.        ,  0.        ,  0.00121725,  0.00287333,
     0.00419408,  0.00531324,  0.00629959,  0.00719216,  0.00801404,
     0.00878142,  0.00950412,  0.01018902,  0.01084152,  0.01146603,

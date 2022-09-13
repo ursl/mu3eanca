@@ -9,6 +9,7 @@
 
 #include "Mu3eFibreMppcSD.h"
 #include "Mu3eFibreSmbSD.h"
+#include "Mu3eFibreSmbMuTrigSD.h"
 
 #include <G4Box.hh>
 #include <G4Polycone.hh>
@@ -325,7 +326,8 @@ namespace mu3e {
         phi = dphi/2 + i * dphi;
         position =  {-std::sin(phi), std::cos(phi), 0};
         positionPcb = position * (rInSup + rPlate);
-        positionPcb.setZ(position.z() - length/2.  - 1.3*CLHEP::cm);
+        // positionPcb.setZ(position.z() - length/2.  - 1.3*CLHEP::cm);
+        positionPcb.setZ(position.z() - length/2.  - 0.7*CLHEP::cm);
         transform = G4Transform3D(rotM, positionPcb);
         solidFibreSmb->MakeImprint(vol, transform);
         rotM.rotateZ(dphi);
@@ -598,12 +600,17 @@ namespace mu3e {
       Tr = G4Transform3D(Ra,Ta);
       solidFibreSMB->AddPlacedVolume(fVolumeFibreSmbPcb[index], Tr);
   
+
+      G4VSensitiveDetector *sdSmbMuTrig = sdManager->FindSensitiveDetector("mu3e/FibreSmbMuTrigSD");
+      cout << "sdSmbMuTrig = " << sdSmbMuTrig << endl;
+
       // -- add 4 asics
       for (unsigned int i = 0; i < 4; ++i) {
         G4LogicalVolume* pa = new G4LogicalVolume(solidFibreSMBAsic,
                                                      materials.Si,
                                                      "fibreSMBAsic");
-       
+        pa->SetSensitiveDetector(sdSmbMuTrig);
+        
         G4VisAttributes *pVA2  = new G4VisAttributes;
         pVA2->SetColour(G4Colour(0., 0., 0.));
         pVA2->SetForceSolid(true);

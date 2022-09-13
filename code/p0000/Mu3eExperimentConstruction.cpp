@@ -13,6 +13,7 @@
 #include "Mu3eTrackerSD.h"
 #include "Mu3eFibreSD.h"
 #include "Mu3eFibreSmbSD.h"
+#include "Mu3eFibreSmbMuTrigSD.h"
 #include "Mu3eTileSD.h"
 #include "Mu3eTileSipmSD.h"
 #include "Mu3eKaptonFlapSD.h"
@@ -192,10 +193,14 @@ G4VPhysicalVolume* Mu3eExperimentConstruction::Construct() {
         G4SDManager::GetSDMpointer()->AddNewDetector(fibreSD);
         ribbon->fibre->coreVolume->SetSensitiveDetector(fibreSD);
 
-        // -- SMB ASIC SD 
+        // -- SMB SD 
         auto fibreSmbSD = new Mu3eFibreSmbSD("mu3e/FibreSmbSD");
         G4SDManager::GetSDMpointer()->AddNewDetector(fibreSmbSD);
-        
+
+        // -- SMB MuTrig SD 
+        auto fibreSmbMuTrigSD = new Mu3eFibreSmbMuTrigSD("mu3e/FibreSmbMuTrigSD");
+        G4SDManager::GetSDMpointer()->AddNewDetector(fibreSmbMuTrigSD);
+
         fibreTrackerConstruction = new mu3e::sim::FibreTrackerConstruction(ribbon, cfg, digicfg, logicalExperiment);
         fibreTrackerConstruction->Construct();
     }
