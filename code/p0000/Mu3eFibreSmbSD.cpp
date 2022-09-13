@@ -30,8 +30,8 @@ Mu3eFibreSmbSD::Mu3eFibreSmbSD(const G4String& name) : G4VSensitiveDetector(name
     fSmbZ.insert(make_pair(-100-i, new TH1F(Form("SmbNegZ_%d", i), Form("SMB hits, global pos for -z, iSMB=%d", i), nbins, -zmax, -zmin)));
   }
 
-  fPlanePosZ = new TH2F("PlanePosZ", "position of Smb (asic) SD for z > 0", 200, -200., 200., 200, -200., 200.);
-  fPlaneNegZ = new TH2F("PlaneNegZ", "position of Smb (asic) SD for z < 0", 200, -200., 200., 200, -200., 200.);
+  fPlanePosZ = new TH2F("PlanePosZ", "Smb ID for z > 0 (DS)", 200, -200., 200., 200, -200., 200.);
+  fPlaneNegZ = new TH2F("PlaneNegZ", "Smb ID for z < 0 (US)", 200, -200., 200., 200, -200., 200.);
   
   for (int ix = 1; ix <= fPlanePosZ->GetNbinsX(); ++ix) {
     for (int iy = 1; iy <= fPlanePosZ->GetNbinsY(); ++iy) {
@@ -110,10 +110,11 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
   // -- this should correspond to the specbook
   string smbName = prePoint->GetTouchable()->GetVolume()->GetName();
-  int smbNumber(0);
+  int smbNumber(-1);
   sscanf(smbName.c_str(), "SMB_%d", &smbNumber);
   int32_t smbId = smbNumber;
-
+  cout << "smbNumber = " << smbNumber << " smbName = " << smbName << endl;
+  
   bool entry = (prePoint->GetStepStatus() == fGeomBoundary);
   bool exit  = (postPoint->GetStepStatus() == fGeomBoundary);
     
