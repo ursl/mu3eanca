@@ -12,6 +12,7 @@
 #include "Mu3eFibreSD.h"
 #include "Mu3eFibreMppcSD.h"
 #include "Mu3eFibreSmbSD.h"
+#include "Mu3eFibreSmbMuTrigSD.h"
 #include "Mu3eKaptonFlapSD.h"
 
 #include "G4Run.hh"
@@ -157,6 +158,8 @@ void Mu3eRunAction::EndOfRunAction(const G4Run* run) {
     if(fibreMppcSD) fibreMppcSD->writeStat();
     auto fibreSmbSD = mu3e::g4::SDManager::findSD<Mu3eFibreSmbSD>("mu3e/FibreSmbSD");
     if(fibreSmbSD) fibreSmbSD->writeStat();
+    auto fibreSmbMuTrigSD = mu3e::g4::SDManager::findSD<Mu3eFibreSmbMuTrigSD>("mu3e/FibreSmbMuTrigSD");
+    if(fibreSmbMuTrigSD) fibreSmbMuTrigSD->writeStat();
     auto tileSD = mu3e::g4::SDManager::findSD<Mu3eTileSD>("mu3e/TileSensorSD");
     if(tileSD) tileSD->writeStat();
     auto tilesipmSD = mu3e::g4::SDManager::findSD<Mu3eTileSipmSD>("mu3e/TileSipmSD");
