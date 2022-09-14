@@ -649,9 +649,27 @@ namespace mu3e {
 
       // MuTrig0
       Ta.setX(0.5*(fSMBPcbWidth1 - fSMBMuTrigWidth - 2.*fSMBMuTrigDeltaSide) - 0.*(fSMBMuTrigWidth + fSMBMuTrigDeltaChip));
-      Ta.setY(-0.5*(fSMBPcbLength1 - fSMBMuTrigWidth) + fSMBMuTrigDeltaFront);
+      Ta.setY(-0.5*(fSMBPcbLength1 + fSMBChip2Width) + fSMBChip2DeltaFront);
+      //      Ta.setY(-0.5*(fSMBPcbLength1 - fSMBMuTrigWidth) + fSMBMuTrigDeltaFront);
       Ta.setZ(0.5*(fSMBPcbThickness + fSMBChip2Thickness));
+      //      Ta.setZ(0.5*(fSMBPcbThickness + fSMBMuTrigThickness));
 
+      cout << "Mutrig0" << endl;
+      cout << "Ta.setX = " << 0.5*(fSMBPcbWidth1 - fSMBMuTrigWidth - 2.*fSMBMuTrigDeltaSide) - 0*(fSMBMuTrigWidth + fSMBMuTrigDeltaChip) << endl;
+      cout << "Ta.setY = " << -0.5*(fSMBPcbLength1 - fSMBMuTrigWidth) + fSMBMuTrigDeltaFront << endl;
+      // MuTrig0 original
+      // Ta.setX(0.5*(fSMBPcbWidth1 - fSMBMuTrigWidth - 2.*fSMBMuTrigDeltaSide) - i*(fSMBMuTrigWidth + fSMBMuTrigDeltaChip));
+      // Ta.setY(-0.5*(fSMBPcbLength1 - fSMBMuTrigWidth) + fSMBMuTrigDeltaFront);
+      // Ta.setZ(0.5*(fSMBPcbThickness + fSMBMuTrigThickness));
+
+      cout << "Chip2" << endl;
+      cout << "Ta.setX = " << 0.5*(-fSMBPcbWidth1 + fSMBChip2Width + 2.*fSMBChip2DeltaSide) << endl;
+      cout << "Ta.setY = " << -0.5*(fSMBPcbLength1 - fSMBChip2Width) + fSMBChip2DeltaFront << endl;
+
+      // Chip2 original
+      // Ta.setX(0.5*(-fSMBPcbWidth1 + fSMBChip2Width + 2.*fSMBChip2DeltaSide));
+      // Ta.setY(-0.5*(fSMBPcbLength1 - fSMBChip2Width) + fSMBChip2DeltaFront);
+      // Ta.setZ(0.5*(fSMBPcbThickness + fSMBChip2Thickness));
       
       Tr = G4Transform3D(rotm, Ta);
       solidFibreSMB->AddPlacedVolume(pa, Tr);
