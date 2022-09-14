@@ -37,11 +37,11 @@ private:
   
   TH2F *fSmbMuTrigPlanePosZ, *fSmbMuTrigPlaneNegZ;
 
-  TH2F *fRadialOutElpz1, *fRadialOutElpz2, *fRadialOutElpz3;
-  TH2F *fRadialOutElmz1, *fRadialOutElmz2, *fRadialOutElmz3;
+  TH2F *fSmbMutrigRadialOutElpz1, *fSmbMutrigRadialOutElpz2, *fSmbMutrigRadialOutElpz3;
+  TH2F *fSmbMutrigRadialOutElmz1, *fSmbMutrigRadialOutElmz2, *fSmbMutrigRadialOutElmz3;
 
-  TH2F *fRadialOutElx1, *fRadialOutEly1;
-  TH2F *fRadialOutElx1a, *fRadialOutEly1a;
+  TH2F *fSmbMutrigRadialOutElx1, *fSmbMutrigRadialOutEly1;
+  TH2F *fSmbMutrigRadialOutElx1a, *fSmbMutrigRadialOutEly1a;
 
 
 };

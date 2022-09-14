@@ -19,6 +19,8 @@ using namespace std;
 // ----------------------------------------------------------------------
 Mu3eFibreSmbSD::Mu3eFibreSmbSD(const G4String& name) : G4VSensitiveDetector(name) {
 
+  cout << "Mu3eFibreSmbSD::Mu3eFibreSmbSD ctor" << endl;
+  
   int nbins(1000);
   double zmin(100.), zmax(200.);
   
@@ -135,6 +137,9 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
                      << " e/e = " << entry << "/" << exit
                      << std::endl;
 
+  // FIXME
+  return true;
+  
   // -- keep a record which fedID is where
   if (feePos.z() > 0) {
     fSmbPosZ->Fill(hitPos.z());
