@@ -19,20 +19,13 @@ using namespace std;
 // ----------------------------------------------------------------------
 Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveDetector(name) {
 
+  cout << "Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD ctor" << endl;
+  
   int nbins(1000);
   double zmin(100.), zmax(200.);
   
   fSmbMuTrigPosZ = new TH1F("SmbMuTrigPosZ", "SMB MuTrig hits, global position for positive z", 1000, 100., 200.);
   fSmbMuTrigNegZ = new TH1F("SmbMuTrigNegZ", "SMB MuTrighits, global position for negative z", 1000, -200., -100.);
-
-  for (int i = 0; i < 12; ++i) {
-    fSmbMuTrigZ.insert(make_pair(+100+i, new TH1F(Form("SmbMuTrigPosZ_%d", i),
-                                                  Form("SMB MuTrig hits, global pos for +z, iSMB=%d", i),
-                                                  nbins, +zmin, +zmax)));
-    fSmbMuTrigZ.insert(make_pair(-100-i, new TH1F(Form("SmbMuTrigNegZ_%d", i),
-                                                  Form("SMB MuTrig hits, global pos for -z, iSMB=%d", i),
-                                                  nbins, -zmax, -zmin)));
-  }
 
   fSmbMuTrigPlanePosZ = new TH2F("SmbMuTrigPlanePosZ", "Smb MuTrig ID for z > 0 (DS)", 400, -200., 200., 400, -200., 200.);
   fSmbMuTrigPlaneNegZ = new TH2F("SmbMuTrigPlaneNegZ", "Smb MuTrig ID for z < 0 (US)", 400, -200., 200., 400, -200., 200.);
@@ -45,35 +38,35 @@ Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveD
   }
 
   
-  fRadialOutElpz1  = new TH2F("RadialOutElpz1", "e +z z-position at Smb local coord",
+  fSmbMutrigRadialOutElpz1  = new TH2F("SmbMutrigRadialOutElpz1", "e +z z-position at Smb local coord",
 			     70, -30., 40., 250, 0., 250.);
-  fRadialOutElpz2  = new TH2F("RadialOutElpz2", "e +z z-position at Smb world coord",
+  fSmbMutrigRadialOutElpz2  = new TH2F("SmbMutrigRadialOutElpz2", "e +z z-position at Smb world coord",
 			     80, 100., 180., 250, 0., 250.);
-  fRadialOutElpz3  = new TH2F("RadialOutElpz3", "e +z z-position at Smb edep",
+  fSmbMutrigRadialOutElpz3  = new TH2F("SmbMutrigRadialOutElpz3", "e +z z-position at Smb edep",
 			     80, 100., 180., 250, 0., 250.);
 
-  fRadialOutElmz1  = new TH2F("RadialOutElmz1", "e -z z-position at Smb local coord",
+  fSmbMutrigRadialOutElmz1  = new TH2F("SmbMutrigRadialOutElmz1", "e -z z-position at Smb local coord",
 			     70, -30., 40., 250, 0., 250.);
-  fRadialOutElmz2  = new TH2F("RadialOutElmz2", "e -z z-position at Smb world coord",
+  fSmbMutrigRadialOutElmz2  = new TH2F("SmbMutrigRadialOutElmz2", "e -z z-position at Smb world coord",
 			     40, -160., -140., 250, 0., 250.);
-  fRadialOutElmz3  = new TH2F("RadialOutElmz3", "e -z z-position at Smb edep",
+  fSmbMutrigRadialOutElmz3  = new TH2F("SmbMutrigRadialOutElmz3", "e -z z-position at Smb edep",
 			     40, -160., -140., 250, 0., 250.);
 
 
-  fRadialOutElx1 = new TH2F("RadialOutElmx1", "e x-position +z at Smb local coord", 60, -30., 30., 250, 0., 250.);
-  fRadialOutEly1 = new TH2F("RadialOutElmy1", "e y-position +z at Smb local coord", 60, -30., 30., 250, 0., 250.);
+  fSmbMutrigRadialOutElx1 = new TH2F("SmbMutrigRadialOutElmx1", "e x-position +z at Smb local coord", 60, -30., 30., 250, 0., 250.);
+  fSmbMutrigRadialOutEly1 = new TH2F("SmbMutrigRadialOutElmy1", "e y-position +z at Smb local coord", 60, -30., 30., 250, 0., 250.);
 
-  fRadialOutElx1a = new TH2F("RadialOutElmx1a", "e x-position -z at Smb local coord", 60, -30., 30., 250, 0., 250.);
-  fRadialOutEly1a = new TH2F("RadialOutElmy1a", "e y-position -z at Smb local coord", 60, -30., 30., 250, 0., 250.);
+  fSmbMutrigRadialOutElx1a = new TH2F("SmbMutrigRadialOutElmx1a", "e x-position -z at Smb local coord", 60, -30., 30., 250, 0., 250.);
+  fSmbMutrigRadialOutEly1a = new TH2F("SmbMutrigRadialOutElmy1a", "e y-position -z at Smb local coord", 60, -30., 30., 250, 0., 250.);
 
   for (unsigned int i = 0; i < 200; ++i) {
     fDose[i] += 0.;
   }
   
-  // *fPosZRadialInMup;
-  // fPosZRadialOutMun, *fPosZRadialInMun;
-  // fPosZRadialOutElp, *fPosZRadialInElp;
-  // fPosZRadialOutEln, *fPosZRadialInEln;
+  // *fPosZSmbMutrigRadialInMup;
+  // fPosZSmbMutrigRadialOutMun, *fPosZSmbMutrigRadialInMun;
+  // fPosZSmbMutrigRadialOutElp, *fPosZSmbMutrigRadialInElp;
+  // fPosZSmbMutrigRadialOutEln, *fPosZSmbMutrigRadialInEln;
   
 }
 
@@ -93,7 +86,7 @@ void Mu3eFibreSmbMuTrigSD::Initialize(G4HCofThisEvent*) {
 // ----------------------------------------------------------------------
 G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   G4double edep = aStep->GetTotalEnergyDeposit();
-  cout << "Mu3eFibreSmbMuTrigSD::ProcessHits> Hallo, edep = " << edep << endl;
+  //  cout << "Mu3eFibreSmbMuTrigSD::ProcessHits> Hallo, edep = " << edep << endl;
   //  if (edep <= 0) return false;
   auto prePoint  = aStep->GetPreStepPoint();
   auto postPoint = aStep->GetPostStepPoint();
@@ -117,7 +110,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   int smbNumber(-1), muTrigNumber(-1);
   sscanf(smbName.c_str(), "SMB_%d_ASIC_%d", &smbNumber, &muTrigNumber);
   int32_t smbId = smbNumber;
-  cout << "smbNumber = " << smbNumber << " muTrigNumber = " << muTrigNumber << " smbName = " << smbName << endl;
+  //  cout << "smbNumber = " << smbNumber << " muTrigNumber = " << muTrigNumber << " smbName = " << smbName << endl;
   
   bool entry = (prePoint->GetStepStatus() == fGeomBoundary);
   bool exit  = (postPoint->GetStepStatus() == fGeomBoundary);
@@ -125,7 +118,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   int ix = fSmbMuTrigPlanePosZ->GetXaxis()->FindBin(feePos.x());
   int iy = fSmbMuTrigPlanePosZ->GetYaxis()->FindBin(feePos.y());
 
-  if (1) std::cout << "SmbMuTrigSD> " 
+  if (1) std::cout << "SmbMuTrigSD> " << smbName << " " 
                    << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
                    // << prePoint->GetTouchable()->GetCopyNumber(1) << " "
                    // << prePoint->GetTouchable()->GetVolume()->GetName()
@@ -139,31 +132,32 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
                    << " e/e = " << entry << "/" << exit
                    << std::endl;
 
+  // FIXME
+  return true;
+  
   // -- keep a record which fedID is where
   if (feePos.z() > 0) {
     fSmbMuTrigPosZ->Fill(hitPos.z());
-    fSmbMuTrigZ[100+smbNumber]->Fill(hitPos.z());
    
     fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, smbId);
     if (11 == apdgid) {
-      fRadialOutElpz1->Fill(localPos.y(), feeId);
-      fRadialOutElx1->Fill(localPos.x(), feeId);
-      fRadialOutEly1->Fill(localPos.z(), feeId);
+      fSmbMutrigRadialOutElpz1->Fill(localPos.y(), feeId);
+      fSmbMutrigRadialOutElx1->Fill(localPos.x(), feeId);
+      fSmbMutrigRadialOutEly1->Fill(localPos.z(), feeId);
 	
-      fRadialOutElpz2->Fill(hitPos.z(), feeId);
-      fRadialOutElpz3->Fill(hitPos.z(), feeId, edep);
+      fSmbMutrigRadialOutElpz2->Fill(hitPos.z(), feeId);
+      fSmbMutrigRadialOutElpz3->Fill(hitPos.z(), feeId, edep);
     }
   } else {
     fSmbMuTrigNegZ->Fill(hitPos.z());
-    fSmbMuTrigZ[-100-smbNumber]->Fill(hitPos.z());
     fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, smbId);
     if (11 == apdgid) {
-      fRadialOutElmz1->Fill(localPos.y(), feeId);
-      fRadialOutElx1a->Fill(localPos.x(), feeId);
-      fRadialOutEly1a->Fill(localPos.z(), feeId);
+      fSmbMutrigRadialOutElmz1->Fill(localPos.y(), feeId);
+      fSmbMutrigRadialOutElx1a->Fill(localPos.x(), feeId);
+      fSmbMutrigRadialOutEly1a->Fill(localPos.z(), feeId);
 
-      fRadialOutElmz2->Fill(hitPos.z(), feeId);
-      fRadialOutElmz3->Fill(hitPos.z(), feeId, edep);
+      fSmbMutrigRadialOutElmz2->Fill(hitPos.z(), feeId);
+      fSmbMutrigRadialOutElmz3->Fill(hitPos.z(), feeId, edep);
     }
     // -- TODO: normalize to bin volume!
   }
@@ -185,6 +179,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
 // ----------------------------------------------------------------------
 void Mu3eFibreSmbMuTrigSD::writeStat() {
+  cout << "Mu3eFibreSmbMuTrigSD::writeStat()" << endl;
   gDirectory->mkdir("FibreSmbMuTrig");
   gDirectory->cd("FibreSmbMuTrig");
 
@@ -200,27 +195,22 @@ void Mu3eFibreSmbMuTrigSD::writeStat() {
   fSmbMuTrigPlanePosZ->Write();
   fSmbMuTrigPlaneNegZ->Write();
 
-  for (int i = 0; i < 12; ++i) {
-    fSmbMuTrigZ[+100 + i]->Write();
-    fSmbMuTrigZ[-100 - i]->Write();
-  }    
-  
   fSmbMuTrigPosZ->Write();
   fSmbMuTrigNegZ->Write();
   
-  fRadialOutElpz1->Write();
-  fRadialOutElpz2->Write();
-  fRadialOutElpz3->Write();
+  fSmbMutrigRadialOutElpz1->Write();
+  fSmbMutrigRadialOutElpz2->Write();
+  fSmbMutrigRadialOutElpz3->Write();
 
-  fRadialOutElmz1->Write();
-  fRadialOutElmz2->Write();
-  fRadialOutElmz3->Write();
+  fSmbMutrigRadialOutElmz1->Write();
+  fSmbMutrigRadialOutElmz2->Write();
+  fSmbMutrigRadialOutElmz3->Write();
 
-  fRadialOutElx1->Write();
-  fRadialOutEly1->Write();
+  fSmbMutrigRadialOutElx1->Write();
+  fSmbMutrigRadialOutEly1->Write();
 
-  fRadialOutElx1a->Write();
-  fRadialOutEly1a->Write();
+  fSmbMutrigRadialOutElx1a->Write();
+  fSmbMutrigRadialOutEly1a->Write();
   
   gDirectory->cd("..");
 }
