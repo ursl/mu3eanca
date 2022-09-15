@@ -31,7 +31,7 @@ namespace mu3e { namespace sim {
       G4LogicalVolume* volumeFibreMppc;
       G4LogicalVolume* volumeFibreMppcSiO2;
       G4LogicalVolume* volumeFibreMppcPcb;
-      G4LogicalVolume* fVolumeFibreSmbPcb[2];
+      G4LogicalVolume* fVolumeFibreSmbPcb;
 
       FibreDetector* detector;
 
@@ -62,7 +62,7 @@ namespace mu3e { namespace sim {
         | o                              +--+          |
         | r                                            |
         +------+                         +--+          |
-           ^   |         Chip2           |  | (1)      |   (1) fSMBMuTrigDeltaFront
+           ^   |         Chip2           |  | (1)      |   (1) fSMBAsicDeltaFront
            |   |                         +--+          |   (2) fSMBPcbWidth2
            |   +---------------------------------------+
            |                fSMBPcbLength1
@@ -79,9 +79,9 @@ namespace mu3e { namespace sim {
       double fSMBPcbLength2     = 11.0   * CLHEP::mm;
       double fSMBPcbWidth2      = 16.0   * CLHEP::mm;
 
-      double fSMBMuTrigWidth      = 5.0  * CLHEP::mm;
+      double fSMBAsicWidth      = 5.0  * CLHEP::mm;
       //FIXME      double fSMBAsicThickness  = 0.3  * CLHEP::mm;
-      double fSMBMuTrigThickness  = 2.0  * CLHEP::mm;
+      double fSMBAsicThickness  = 2.0  * CLHEP::mm;
 
       double fSMBChip1Width     = 5.7  * CLHEP::mm;
       double fSMBChip1Thickness = 0.75 * CLHEP::mm;
@@ -94,9 +94,9 @@ namespace mu3e { namespace sim {
       double fSMBConnectorWidth     =  7.1  * CLHEP::mm;
       double fSMBConnectorThickness =  0.35 * CLHEP::mm;
 
-      double fSMBMuTrigDeltaFront = 16.3 * CLHEP::mm;    // chip rhs wrt 55.5 (right edge)
-      double fSMBMuTrigDeltaSide  = 1.05 * CLHEP::mm;  
-      double fSMBMuTrigDeltaChip  = 1.30 * CLHEP::mm; 
+      double fSMBAsicDeltaFront = 16.3 * CLHEP::mm;    // chip rhs wrt 55.5 (right edge)
+      double fSMBAsicDeltaSide  = 1.05 * CLHEP::mm;  
+      double fSMBAsicDeltaChip  = 1.30 * CLHEP::mm; 
 
 
       double fSMBChip1DeltaCenter = 42.79 * CLHEP::mm; // chip center wrt 55.5 (right edge)
