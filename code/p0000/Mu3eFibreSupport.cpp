@@ -640,7 +640,7 @@ namespace mu3e {
       tz = 0.5*(fSMBPcbThickness + fSMBChip2Thickness); 
 
       // -- override with asic 0
-      tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 0*(fSMBAsicWidth + fSMBAsicDeltaChip);
+      //      tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 0*(fSMBAsicWidth + fSMBAsicDeltaChip);
       ty = -0.5*(fSMBPcbLength1 - fSMBAsicWidth) + fSMBAsicDeltaFront;
       tz = 0.5*(fSMBPcbThickness + fSMBAsicThickness);
 
