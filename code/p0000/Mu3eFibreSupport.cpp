@@ -37,7 +37,7 @@ namespace mu3e {
       std::cout << "DEBUG length " << length << " lengthSup = " << lengthSup << std::endl;
       if (lengthSup < length) length = lengthSup;
       length -=  detector->length/2.;
-      lengtPlateOffset = lengtPlate - length;
+      lengtPlateOffset = lengtPlate - length; // -- useless and not used
       MppcThicknessEpoxy = cfg.getFibreMppcEpoxyThickness() * mm;
       MppcThickness = cfg.getFibreMppcThickness() * mm;
       MppcThicknessPcb = cfg.getFibreMppcPcbThickness() * mm;
@@ -50,7 +50,7 @@ namespace mu3e {
       rOut = detector->rOut + PcbHeightTop;
 
       const int n = 4;
-      double zPlane[n] = { -(lengtPlate-length/2.), -length/2.,    -length/2., length/2.};
+      double zPlane[n] = { -(lengtPlate-length/2.) - 20., -length/2.,    -length/2., length/2. + 20.};
       double rInner[n] = { rIn,                     rIn,           rIn,        rIn};
       double rOuter[n] = { rIn + rPlate,            rIn + rPlate,  rOut,       rOut};
 
@@ -61,9 +61,11 @@ namespace mu3e {
                                                    2.0 * M_PI * CLHEP::radian,
                                                    n, zPlane, rInner, rOuter);
 
-      std::cout << "DEBUG length " << length << " ";
-      std::cout << "rOut " << rOut << " lengtPlate = " << lengtPlate;
-      std::cout << std::endl;
+      cout << "----------------------------------------------------------------------" << endl;
+      cout << "DEBUG length " << length  << " rOut " << rOut << " lengtPlate = " << lengtPlate << endl;
+      cout << "zPlane: " << zPlane[0] << ", " << zPlane[1] << ", " << zPlane[2] << ", " << zPlane[3]<< endl;
+      cout << "rInner: " << rInner[0] << endl;
+      cout << "rOuter: " << rOuter[0] << ", "  << rOuter[1] << ", "  << rOuter[2] << ", "  << rOuter[3] << endl;
 
       volume = new G4LogicalVolume(   solidFibreSupport,
                                       materials.He,
@@ -79,11 +81,15 @@ namespace mu3e {
                                                     lengtPlate/2.,
                                                     0, 2*M_PI);
 
+
+      cout << "solidFibreSupportPlate: lengtPlate/2. = " << lengtPlate/2. << endl;
+      
       G4VSolid* solidFibreSupportHolder = new G4Tubs(
                                                      "fibreSupportHolder",
                                                      rIn+rPlate, rOut,
                                                      (length - MppcLength - zOffset)/2.,
                                                      0, 2*M_PI);
+      cout << "solidFibreSupportHolder:  (length - MppcLength - zOffset)/2. = " << (length - MppcLength - zOffset)/2. << endl;
 
       if (1) volumeFibreSupportPlate = new G4LogicalVolume(
                                                            solidFibreSupportPlate,
@@ -141,15 +147,19 @@ namespace mu3e {
                                "fibreSupportPlate",
                                volume,
                                false,
-                               0);
+                               0, true);
+      cout << "fibreSupportPlate placement at z = " << -lengtPlate/2. + length/2. << endl;
+
       if (1) new G4PVPlacement(nullptr,
                                {0, 0, + MppcLength/2. + zOffset/2. - 10*mm},
                                volumeFibreSupportHolder,
                                "fibreSupportHolder",
                                volume,
                                false,
-                               0);
+                               0, true);
+      cout << "fibreSupportHolder placement at z = " << + MppcLength/2. + zOffset/2. - 10*mm << endl;
 
+      
       // -- mirror volume. This is upstream (US)!
       if (1) new G4PVPlacement(nullptr,
                                {0, 0, -lengtPlate/2. + length/2.},
@@ -157,14 +167,14 @@ namespace mu3e {
                                "fibreSupportPlate",
                                fVolumeM,
                                false,
-                               0);
+                               0, true);
       if (1) new G4PVPlacement(nullptr,
                                {0, 0, + MppcLength/2. + zOffset/2.},
                                volumeFibreSupportHolder,
                                "fibreSupportHolder",
                                fVolumeM,
                                false,
-                               0);
+                               0, true);
 
       
       // place SiO2 in Mppc
@@ -174,7 +184,7 @@ namespace mu3e {
                         "fibreMppcSiO2",
                         volumeFibreMppc,
                         false,
-                        0);
+                        0, true);
       //G4cout << "Ribbon " << i << " added at phi: " << phi << " at radius " << position.getRho() << G4endl;
 
       PlaceMppcInSupport(volume);

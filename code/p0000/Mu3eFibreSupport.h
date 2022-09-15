@@ -43,7 +43,7 @@ namespace mu3e { namespace sim {
       double PcbHeightBottom = 4.05 * CLHEP::mm;
       double rInSup          =   39 * CLHEP::mm;
       double lengthSup       =  165 * CLHEP::mm;
-      double rPlate          =   15 * CLHEP::mm;
+      double rPlate          =   13 * CLHEP::mm;
       //ul      double lengtPlate      =   50 * CLHEP::mm;
       double lengtPlate      =   55.5 * CLHEP::mm;
 
