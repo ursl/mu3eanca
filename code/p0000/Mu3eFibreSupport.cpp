@@ -586,6 +586,8 @@ namespace mu3e {
 
       G4VSensitiveDetector *sdSmbMuTrig = sdManager->FindSensitiveDetector("mu3e/FibreSmbMuTrigSD");
 
+      bool DOASIC(false);
+      
       G4LogicalVolume* pa = new G4LogicalVolume(solidFibreSMBAsic0, materials.Si, "fibreSMBAsic0");
       pa->SetSensitiveDetector(sdSmbMuTrig);
       pa->SetVisAttributes(pVAa);
@@ -595,7 +597,7 @@ namespace mu3e {
       Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBAsic0 T = (" << tx << "," << ty << "," << tz << ")" << endl;
-      solidFibreSMB->AddPlacedVolume(pa, Tr);
+      if (DOASIC) solidFibreSMB->AddPlacedVolume(pa, Tr);
 
       pa = new G4LogicalVolume(solidFibreSMBAsic1, materials.Si, "fibreSMBAsic1");
       pa->SetSensitiveDetector(sdSmbMuTrig);
@@ -604,7 +606,7 @@ namespace mu3e {
       Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBAsic1 T = (" << tx << "," << ty << "," << tz << ")" << endl;
-      solidFibreSMB->AddPlacedVolume(pa, Tr);
+      if (DOASIC) solidFibreSMB->AddPlacedVolume(pa, Tr);
 
       pa = new G4LogicalVolume(solidFibreSMBAsic2, materials.Si, "fibreSMBAsic2");
       pa->SetSensitiveDetector(sdSmbMuTrig);
@@ -613,7 +615,7 @@ namespace mu3e {
       Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBAsic2 T = (" << tx << "," << ty << "," << tz << ")" << endl;
-      solidFibreSMB->AddPlacedVolume(pa, Tr);
+      if (DOASIC) solidFibreSMB->AddPlacedVolume(pa, Tr);
 
       pa = new G4LogicalVolume(solidFibreSMBAsic3, materials.Si, "fibreSMBAsic3");
       pa->SetSensitiveDetector(sdSmbMuTrig);
@@ -622,7 +624,7 @@ namespace mu3e {
       Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBAsic3 T = (" << tx << "," << ty << "," << tz << ")" << endl;
-      solidFibreSMB->AddPlacedVolume(pa, Tr);
+      if (DOASIC) solidFibreSMB->AddPlacedVolume(pa, Tr);
 
       // -- add chip #2
       pa = new G4LogicalVolume(solidFibreSMBChip2, materials.Si, "fibreSMBChip2");
@@ -637,6 +639,12 @@ namespace mu3e {
       ty = -0.5*(fSMBPcbLength1 - fSMBChip2Width) + fSMBChip2DeltaFront;
       tz = 0.5*(fSMBPcbThickness + fSMBChip2Thickness); 
 
+      // -- override with asic 0
+      tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 0*(fSMBAsicWidth + fSMBAsicDeltaChip);
+      ty = -0.5*(fSMBPcbLength1 - fSMBAsicWidth) + fSMBAsicDeltaFront;
+      tz = 0.5*(fSMBPcbThickness + fSMBAsicThickness);
+
+      
       Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBChip2 T = (" << tx << "," << ty << "," << tz << ")" << endl;
