@@ -30,6 +30,7 @@
 # 2022/09/15 remove asics; move chip2 to asic 0(y,z), but at chip2(x) and see nothing in chip2!
 # 2022/09/15 move asics to y = 5; see hits in asics at +/-144
 # 2022/09/15 enable renaming
+# 2022/09/15 mistake: reduced rPlat
 cd /psi/home/langenegger/data/mu3e-dev-smb
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/mu3eVis.cpp mu3eSim/mu3eVis.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp

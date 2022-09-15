@@ -119,11 +119,13 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   int iy = fSmbMuTrigPlanePosZ->GetYaxis()->FindBin(feePos.y());
 
   if (1) std::cout << "SmbMuTrigSD> " << smbName << " " 
-                   << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
+           //                   << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
                    // << prePoint->GetTouchable()->GetCopyNumber(1) << " "
                    // << prePoint->GetTouchable()->GetVolume()->GetName()
                    // << " feeID = " << feeId
                    // << " smbID = " << smbId
+                   << " r = " << TMath::Sqrt(feePos.x()*feePos.x() + feePos.y()*feePos.y())
+                   << " z = " << feePos.z()
                    << " muTrigNumber = " << muTrigNumber
                    << " edep = " << edep
                    << " (r) = " << feePos.x() << "/" << feePos.y() << "/" << feePos.z()
