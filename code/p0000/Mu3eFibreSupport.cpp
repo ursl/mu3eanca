@@ -344,7 +344,7 @@ namespace mu3e {
       if (DBX) cout << "Renaming components for mirrored = " << mirrored
                     << ", i.e. simpr = " << simpr
                     << endl;
-      while (0) {
+      while (1) {
         string sname = (*ipv)->GetName(); 
         // -- SMB PCB
         // -- numerology non-trivial because of rotation of mirrored volume (in Mu3eFibreTrackerConstruction)
