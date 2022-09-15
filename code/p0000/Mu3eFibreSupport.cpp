@@ -212,9 +212,9 @@ namespace mu3e {
       Mu3eConstruction::visVolume(volumeFibreMppcPcb, {0.0,0.7,0.0},
                                   Mu3eConstruction::PHYSICAL|
                                   Mu3eConstruction::FIBRE);
-      Mu3eConstruction::visVolume(fVolumeFibreSmbPcb, {0.8,0.2,0.4},
-                                  Mu3eConstruction::PHYSICAL|
-                                  Mu3eConstruction::FIBRE);
+      // Mu3eConstruction::visVolume(fVolumeFibreSmbPcb, {0.8,0.2,0.4},
+      //                             Mu3eConstruction::PHYSICAL|
+      //                             Mu3eConstruction::FIBRE);
       // Mu3eConstruction::visVolume(fVolumeFibreSmbPcb[1], {0.2,0.2,0.8},
       //                             Mu3eConstruction::PHYSICAL|
       //                             Mu3eConstruction::FIBRE);
@@ -549,7 +549,7 @@ namespace mu3e {
       G4ThreeVector yTrans(0., 0.5*(fSMBPcbLength1+fSMBPcbLength2), 0.);
       G4UnionSolid* solidFibreSMBPcb = new G4UnionSolid("solidFibreSMBPcb", solidFibreSMBPcb1, solidFibreSMBPcb2, yRot, yTrans);
   
-      fVolumeFibreSmbPcb = new G4LogicalVolume(solidFibreSMBPcb, materials.Kapton, "fibreSMBPcb");
+      G4LogicalVolume *volumeFibreSmbPcb = new G4LogicalVolume(solidFibreSMBPcb, materials.Kapton, "fibreSMBPcb");
 
       G4VisAttributes *pVA  = new G4VisAttributes;
       if (0 == index) {
@@ -558,14 +558,13 @@ namespace mu3e {
         pVA->SetColour(G4Colour(0.2, 0.2, 0.8, 0.5));
       }
       pVA->SetForceSolid(true);
-      fVolumeFibreSmbPcb->SetVisAttributes(pVA);
+      volumeFibreSmbPcb->SetVisAttributes(pVA);
 
       G4SDManager *sdManager = G4SDManager::GetSDMpointer();
       G4VSensitiveDetector *sdSmb = sdManager->FindSensitiveDetector("mu3e/FibreSmbSD");
       cout << "sdSmb = " << sdSmb << endl;
-      fVolumeFibreSmbPcb->SetSensitiveDetector(sdSmb); 
-    
-  
+      volumeFibreSmbPcb->SetSensitiveDetector(sdSmb); 
+      
       // -- create complete board as assembly, first PCB
       G4RotationMatrix Ra;
       G4ThreeVector Ta;
@@ -575,14 +574,12 @@ namespace mu3e {
       Ra.rotateZ(0.);
   
       double tx(0.), ty(0.), tz(0.);
-      Ta.setX(tx);
-      Ta.setY(ty);
-      Ta.setZ(tz);
+      Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(Ra,Ta);
-      solidFibreSMB->AddPlacedVolume(fVolumeFibreSmbPcb, Tr);
+      solidFibreSMB->AddPlacedVolume(volumeFibreSmbPcb, Tr);
 
       
-      // -- add 4 asics (unrolled for loop because of superstition)
+      // -- add 4 asics (unrolled for-loop because of superstition)
       G4VisAttributes *pVAa  = new G4VisAttributes;
       pVAa->SetColour(G4Colour(0., 0., 0.));
       pVAa->SetForceSolid(true);
@@ -595,9 +592,7 @@ namespace mu3e {
       tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 0*(fSMBAsicWidth + fSMBAsicDeltaChip);
       ty = -0.5*(fSMBPcbLength1 - fSMBAsicWidth) + fSMBAsicDeltaFront;
       tz = 0.5*(fSMBPcbThickness + fSMBAsicThickness);
-      Ta.setX(tx);
-      Ta.setY(ty);
-      Ta.setZ(tz);
+      Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBAsic0 T = (" << tx << "," << ty << "," << tz << ")" << endl;
       solidFibreSMB->AddPlacedVolume(pa, Tr);
@@ -606,7 +601,7 @@ namespace mu3e {
       pa->SetSensitiveDetector(sdSmbMuTrig);
       pa->SetVisAttributes(pVAa);
       tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 1*(fSMBAsicWidth + fSMBAsicDeltaChip);
-      Ta.setX(tx);
+      Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBAsic1 T = (" << tx << "," << ty << "," << tz << ")" << endl;
       solidFibreSMB->AddPlacedVolume(pa, Tr);
@@ -615,7 +610,7 @@ namespace mu3e {
       pa->SetSensitiveDetector(sdSmbMuTrig);
       pa->SetVisAttributes(pVAa);
       tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 2*(fSMBAsicWidth + fSMBAsicDeltaChip);
-      Ta.setX(tx);
+      Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBAsic2 T = (" << tx << "," << ty << "," << tz << ")" << endl;
       solidFibreSMB->AddPlacedVolume(pa, Tr);
@@ -624,7 +619,7 @@ namespace mu3e {
       pa->SetSensitiveDetector(sdSmbMuTrig);
       pa->SetVisAttributes(pVAa);
       tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 3*(fSMBAsicWidth + fSMBAsicDeltaChip);
-      Ta.setX(tx);
+      Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBAsic3 T = (" << tx << "," << ty << "," << tz << ")" << endl;
       solidFibreSMB->AddPlacedVolume(pa, Tr);
@@ -642,9 +637,7 @@ namespace mu3e {
       ty = -0.5*(fSMBPcbLength1 - fSMBChip2Width) + fSMBChip2DeltaFront;
       tz = 0.5*(fSMBPcbThickness + fSMBChip2Thickness); 
 
-      Ta.setX(tx);
-      Ta.setY(ty);
-      Ta.setZ(tz);
+      Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBChip2 T = (" << tx << "," << ty << "," << tz << ")" << endl;
       solidFibreSMB->AddPlacedVolume(pa, Tr);
