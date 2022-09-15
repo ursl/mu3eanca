@@ -212,12 +212,12 @@ namespace mu3e {
       Mu3eConstruction::visVolume(volumeFibreMppcPcb, {0.0,0.7,0.0},
                                   Mu3eConstruction::PHYSICAL|
                                   Mu3eConstruction::FIBRE);
-      Mu3eConstruction::visVolume(fVolumeFibreSmbPcb[0], {0.8,0.2,0.4},
+      Mu3eConstruction::visVolume(fVolumeFibreSmbPcb, {0.8,0.2,0.4},
                                   Mu3eConstruction::PHYSICAL|
                                   Mu3eConstruction::FIBRE);
-      Mu3eConstruction::visVolume(fVolumeFibreSmbPcb[1], {0.2,0.2,0.8},
-                                  Mu3eConstruction::PHYSICAL|
-                                  Mu3eConstruction::FIBRE);
+      // Mu3eConstruction::visVolume(fVolumeFibreSmbPcb[1], {0.2,0.2,0.8},
+      //                             Mu3eConstruction::PHYSICAL|
+      //                             Mu3eConstruction::FIBRE);
       // Mu3eConstruction::visVolume(fVolumeFibreSmb, {0.8,0.8,0.8},
       //                             Mu3eConstruction::PHYSICAL|
       //                             Mu3eConstruction::FIBRE);
@@ -527,10 +527,10 @@ namespace mu3e {
       G4VSolid* solidFibreSMBPcb2   = new G4Box("fibreSMBPcb2", fSMBPcbWidth2/2., fSMBPcbLength2/2., fSMBPcbThickness/2.);
   
       // -- the MuTRIG ASIC
-      // G4VSolid* solidFibreSMBAsic0   = new G4Box("fibreSMBAsic0", fSMBAsicWidth/2., fSMBAsicWidth/2., fSMBAsicThickness/2.);
-      // G4VSolid* solidFibreSMBAsic1   = new G4Box("fibreSMBAsic1", fSMBAsicWidth/2., fSMBAsicWidth/2., fSMBAsicThickness/2.);
-      // G4VSolid* solidFibreSMBAsic2   = new G4Box("fibreSMBAsic2", fSMBAsicWidth/2., fSMBAsicWidth/2., fSMBAsicThickness/2.);
-      // G4VSolid* solidFibreSMBAsic3   = new G4Box("fibreSMBAsic3", fSMBAsicWidth/2., fSMBAsicWidth/2., fSMBAsicThickness/2.);
+      G4VSolid* solidFibreSMBAsic0   = new G4Box("fibreSMBAsic0", fSMBAsicWidth/2., fSMBAsicWidth/2., fSMBAsicThickness/2.);
+      G4VSolid* solidFibreSMBAsic1   = new G4Box("fibreSMBAsic1", fSMBAsicWidth/2., fSMBAsicWidth/2., fSMBAsicThickness/2.);
+      G4VSolid* solidFibreSMBAsic2   = new G4Box("fibreSMBAsic2", fSMBAsicWidth/2., fSMBAsicWidth/2., fSMBAsicThickness/2.);
+      G4VSolid* solidFibreSMBAsic3   = new G4Box("fibreSMBAsic3", fSMBAsicWidth/2., fSMBAsicWidth/2., fSMBAsicThickness/2.);
 
       // -- rotated chip next to the interposer
       G4VSolid* solidFibreSMBChip1   = new G4Box("fibreSMBChip1", fSMBChip1Width/2., fSMBChip1Width/2., fSMBChip1Thickness/2.);
@@ -544,26 +544,12 @@ namespace mu3e {
       // -- Connector at narrow end
       G4VSolid* solidFibreSMBConnector = new G4Box("fibreSMBConnector", fSMBConnectorLength/2., fSMBConnectorWidth/2., fSMBConnectorThickness/2.);
 
-
-      // -- the four MuTrig
-      G4VSolid* solidFibreSMBChip5   = new G4Box("fibreSMBMuChip5", fSMBMuTrigWidth/2., fSMBMuTrigWidth/2., fSMBMuTrigThickness/2.);
-      G4VSolid* solidFibreSMBMuTrig1   = new G4Box("fibreSMBMuTrig1", fSMBMuTrigWidth/2., fSMBMuTrigWidth/2., fSMBMuTrigThickness/2.);
-      G4VSolid* solidFibreSMBMuTrig2   = new G4Box("fibreSMBMuTrig2", fSMBMuTrigWidth/2., fSMBMuTrigWidth/2., fSMBMuTrigThickness/2.);
-      G4VSolid* solidFibreSMBMuTrig3   = new G4Box("fibreSMBMuTrig3", fSMBMuTrigWidth/2., fSMBMuTrigWidth/2., fSMBMuTrigThickness/2.);
-
-      
       // -- create PCB (non-rectangular) shape
       G4RotationMatrix* yRot = new G4RotationMatrix(); 
-      G4ThreeVector zTrans(0., 0.5*(fSMBPcbLength1+fSMBPcbLength2), 0.);
-      G4UnionSolid* solidFibreSMBPcb = new G4UnionSolid("solidFibreSMBPcb",
-                                                        solidFibreSMBPcb1, 
-                                                        solidFibreSMBPcb2,
-                                                        yRot,
-                                                        zTrans);
+      G4ThreeVector yTrans(0., 0.5*(fSMBPcbLength1+fSMBPcbLength2), 0.);
+      G4UnionSolid* solidFibreSMBPcb = new G4UnionSolid("solidFibreSMBPcb", solidFibreSMBPcb1, solidFibreSMBPcb2, yRot, yTrans);
   
-      fVolumeFibreSmbPcb[index] = new G4LogicalVolume(solidFibreSMBPcb,
-                                                      materials.Kapton,
-                                                      "fibreSMBPcb");
+      fVolumeFibreSmbPcb = new G4LogicalVolume(solidFibreSMBPcb, materials.Kapton, "fibreSMBPcb");
 
       G4VisAttributes *pVA  = new G4VisAttributes;
       if (0 == index) {
@@ -572,12 +558,12 @@ namespace mu3e {
         pVA->SetColour(G4Colour(0.2, 0.2, 0.8, 0.5));
       }
       pVA->SetForceSolid(true);
-      fVolumeFibreSmbPcb[index]->SetVisAttributes(pVA);
+      fVolumeFibreSmbPcb->SetVisAttributes(pVA);
 
       G4SDManager *sdManager = G4SDManager::GetSDMpointer();
       G4VSensitiveDetector *sdSmb = sdManager->FindSensitiveDetector("mu3e/FibreSmbSD");
       cout << "sdSmb = " << sdSmb << endl;
-      fVolumeFibreSmbPcb[index]->SetSensitiveDetector(sdSmb); 
+      fVolumeFibreSmbPcb->SetSensitiveDetector(sdSmb); 
     
   
       // -- create complete board as assembly, first PCB
@@ -586,55 +572,65 @@ namespace mu3e {
       G4Transform3D Tr;
       G4AssemblyVolume* solidFibreSMB = new G4AssemblyVolume();
   
-      //  Ra.rotateZ(M_PI*radian);
       Ra.rotateZ(0.);
   
-      Ta.setX(0.);
-      Ta.setY(0.);
-      Ta.setZ(0.);
+      double tx(0.), ty(0.), tz(0.);
+      Ta.setX(tx);
+      Ta.setY(ty);
+      Ta.setZ(tz);
       Tr = G4Transform3D(Ra,Ta);
-      solidFibreSMB->AddPlacedVolume(fVolumeFibreSmbPcb[index], Tr);
+      solidFibreSMB->AddPlacedVolume(fVolumeFibreSmbPcb, Tr);
 
-      // -- add 4 asics
+      
+      // -- add 4 asics (unrolled for loop because of superstition)
       G4VisAttributes *pVAa  = new G4VisAttributes;
       pVAa->SetColour(G4Colour(0., 0., 0.));
       pVAa->SetForceSolid(true);
 
       G4VSensitiveDetector *sdSmbMuTrig = sdManager->FindSensitiveDetector("mu3e/FibreSmbMuTrigSD");
-        
-      // G4LogicalVolume* pa = new G4LogicalVolume(solidFibreSMBAsic0, materials.Si, "fibreSMBAsic0");
-      // pa->SetSensitiveDetector(sdSmbMuTrig);
-      // pa->SetVisAttributes(pVAa);
-      // Ta.setX(0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 0*(fSMBAsicWidth + fSMBAsicDeltaChip));
-      // Ta.setY(-0.5*(fSMBPcbLength1 - fSMBAsicWidth) + fSMBAsicDeltaFront);
-      // Ta.setZ(0.5*(fSMBPcbThickness + fSMBAsicThickness));
-      // Tr = G4Transform3D(rotm, Ta);
-      // solidFibreSMB->AddPlacedVolume(pa, Tr);
 
-      // pa = new G4LogicalVolume(solidFibreSMBAsic1, materials.Si, "fibreSMBAsic1");
-      // pa->SetSensitiveDetector(sdSmbMuTrig);
-      // pa->SetVisAttributes(pVAa);
-      // Ta.setX(0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 1*(fSMBAsicWidth + fSMBAsicDeltaChip));
-      // Tr = G4Transform3D(rotm, Ta);
-      // solidFibreSMB->AddPlacedVolume(pa, Tr);
+      G4LogicalVolume* pa = new G4LogicalVolume(solidFibreSMBAsic0, materials.Si, "fibreSMBAsic0");
+      pa->SetSensitiveDetector(sdSmbMuTrig);
+      pa->SetVisAttributes(pVAa);
+      tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 0*(fSMBAsicWidth + fSMBAsicDeltaChip);
+      ty = -0.5*(fSMBPcbLength1 - fSMBAsicWidth) + fSMBAsicDeltaFront;
+      tz = 0.5*(fSMBPcbThickness + fSMBAsicThickness);
+      Ta.setX(tx);
+      Ta.setY(ty);
+      Ta.setZ(tz);
+      Tr = G4Transform3D(rotm, Ta);
+      cout << "Placement fibreSMBAsic0 T = (" << tx << "," << ty << "," << tz << ")" << endl;
+      solidFibreSMB->AddPlacedVolume(pa, Tr);
 
-      // pa = new G4LogicalVolume(solidFibreSMBAsic2, materials.Si, "fibreSMBAsic2");
-      // pa->SetSensitiveDetector(sdSmbMuTrig);
-      // pa->SetVisAttributes(pVAa);
-      // Ta.setX(0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 2*(fSMBAsicWidth + fSMBAsicDeltaChip));
-      // Tr = G4Transform3D(rotm, Ta);
-      // solidFibreSMB->AddPlacedVolume(pa, Tr);
+      pa = new G4LogicalVolume(solidFibreSMBAsic1, materials.Si, "fibreSMBAsic1");
+      pa->SetSensitiveDetector(sdSmbMuTrig);
+      pa->SetVisAttributes(pVAa);
+      tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 1*(fSMBAsicWidth + fSMBAsicDeltaChip);
+      Ta.setX(tx);
+      Tr = G4Transform3D(rotm, Ta);
+      cout << "Placement fibreSMBAsic1 T = (" << tx << "," << ty << "," << tz << ")" << endl;
+      solidFibreSMB->AddPlacedVolume(pa, Tr);
 
-      // pa = new G4LogicalVolume(solidFibreSMBAsic3, materials.Si, "fibreSMBAsic3");
-      // pa->SetSensitiveDetector(sdSmbMuTrig);
-      // pa->SetVisAttributes(pVAa);
-      // Ta.setX(0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 3*(fSMBAsicWidth + fSMBAsicDeltaChip));
-      // Tr = G4Transform3D(rotm, Ta);
-      // solidFibreSMB->AddPlacedVolume(pa, Tr);
+      pa = new G4LogicalVolume(solidFibreSMBAsic2, materials.Si, "fibreSMBAsic2");
+      pa->SetSensitiveDetector(sdSmbMuTrig);
+      pa->SetVisAttributes(pVAa);
+      tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 2*(fSMBAsicWidth + fSMBAsicDeltaChip);
+      Ta.setX(tx);
+      Tr = G4Transform3D(rotm, Ta);
+      cout << "Placement fibreSMBAsic2 T = (" << tx << "," << ty << "," << tz << ")" << endl;
+      solidFibreSMB->AddPlacedVolume(pa, Tr);
 
-  
+      pa = new G4LogicalVolume(solidFibreSMBAsic3, materials.Si, "fibreSMBAsic3");
+      pa->SetSensitiveDetector(sdSmbMuTrig);
+      pa->SetVisAttributes(pVAa);
+      tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 3*(fSMBAsicWidth + fSMBAsicDeltaChip);
+      Ta.setX(tx);
+      Tr = G4Transform3D(rotm, Ta);
+      cout << "Placement fibreSMBAsic3 T = (" << tx << "," << ty << "," << tz << ")" << endl;
+      solidFibreSMB->AddPlacedVolume(pa, Tr);
+
       // -- add chip #2
-      G4LogicalVolume *pa = new G4LogicalVolume(solidFibreSMBChip2, materials.Si, "fibreSMBChip2");
+      pa = new G4LogicalVolume(solidFibreSMBChip2, materials.Si, "fibreSMBChip2");
       pa->SetSensitiveDetector(sdSmbMuTrig);
       
       G4VisAttributes *pVA2  = new G4VisAttributes;
@@ -642,40 +638,16 @@ namespace mu3e {
       pVA2->SetForceSolid(true);
       pa->SetVisAttributes(pVA2);
   
-      // chip2
-      // Ta.setX(0.5*(-fSMBPcbWidth1 + fSMBChip2Width + 2.*fSMBChip2DeltaSide));
-      // Ta.setY(-0.5*(fSMBPcbLength1 - fSMBChip2Width) + fSMBChip2DeltaFront);
-      // Ta.setZ(0.5*(fSMBPcbThickness + fSMBChip2Thickness));
+      tx = 0.5*(-fSMBPcbWidth1 + fSMBChip2Width + 2.*fSMBChip2DeltaSide); 
+      ty = -0.5*(fSMBPcbLength1 - fSMBChip2Width) + fSMBChip2DeltaFront;
+      tz = 0.5*(fSMBPcbThickness + fSMBChip2Thickness); 
 
-      // MuTrig0
-      Ta.setX(0.5*(fSMBPcbWidth1 - fSMBMuTrigWidth - 2.*fSMBMuTrigDeltaSide) - 0.*(fSMBMuTrigWidth + fSMBMuTrigDeltaChip));
-      Ta.setY(-0.5*(fSMBPcbLength1 + fSMBChip2Width) + fSMBChip2DeltaFront);
-      //      Ta.setY(-0.5*(fSMBPcbLength1 - fSMBMuTrigWidth) + fSMBMuTrigDeltaFront);
-      Ta.setZ(0.5*(fSMBPcbThickness + fSMBChip2Thickness));
-      //      Ta.setZ(0.5*(fSMBPcbThickness + fSMBMuTrigThickness));
-
-      cout << "Mutrig0" << endl;
-      cout << "Ta.setX = " << 0.5*(fSMBPcbWidth1 - fSMBMuTrigWidth - 2.*fSMBMuTrigDeltaSide) - 0*(fSMBMuTrigWidth + fSMBMuTrigDeltaChip) << endl;
-      cout << "Ta.setY = " << -0.5*(fSMBPcbLength1 - fSMBMuTrigWidth) + fSMBMuTrigDeltaFront << endl;
-      // MuTrig0 original
-      // Ta.setX(0.5*(fSMBPcbWidth1 - fSMBMuTrigWidth - 2.*fSMBMuTrigDeltaSide) - i*(fSMBMuTrigWidth + fSMBMuTrigDeltaChip));
-      // Ta.setY(-0.5*(fSMBPcbLength1 - fSMBMuTrigWidth) + fSMBMuTrigDeltaFront);
-      // Ta.setZ(0.5*(fSMBPcbThickness + fSMBMuTrigThickness));
-
-      cout << "Chip2" << endl;
-      cout << "Ta.setX = " << 0.5*(-fSMBPcbWidth1 + fSMBChip2Width + 2.*fSMBChip2DeltaSide) << endl;
-      cout << "Ta.setY = " << -0.5*(fSMBPcbLength1 - fSMBChip2Width) + fSMBChip2DeltaFront << endl;
-
-      // Chip2 original
-      // Ta.setX(0.5*(-fSMBPcbWidth1 + fSMBChip2Width + 2.*fSMBChip2DeltaSide));
-      // Ta.setY(-0.5*(fSMBPcbLength1 - fSMBChip2Width) + fSMBChip2DeltaFront);
-      // Ta.setZ(0.5*(fSMBPcbThickness + fSMBChip2Thickness));
-      
+      Ta.setX(tx);
+      Ta.setY(ty);
+      Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
+      cout << "Placement fibreSMBChip2 T = (" << tx << "," << ty << "," << tz << ")" << endl;
       solidFibreSMB->AddPlacedVolume(pa, Tr);
-
-
-
       
       // -- add chip #3
       pa = new G4LogicalVolume(solidFibreSMBChip3, materials.Si, "fibreSMBChip3");
@@ -686,13 +658,16 @@ namespace mu3e {
       pVA3->SetForceSolid(true);
       pa->SetVisAttributes(pVA3);
       
-      Ta.setX(0.5*(-fSMBPcbWidth1 + fSMBChip3Width + 2.*fSMBChip3DeltaSide));
-      Ta.setY(-0.5*(fSMBPcbLength1 - fSMBChip3Width) + fSMBChip3DeltaFront);
-      Ta.setZ(0.5*(fSMBPcbThickness + fSMBChip3Thickness));
+      tx = 0.5*(-fSMBPcbWidth1 + fSMBChip3Width + 2.*fSMBChip3DeltaSide);
+      ty = -0.5*(fSMBPcbLength1 - fSMBChip3Width) + fSMBChip3DeltaFront;
+      tz = 0.5*(fSMBPcbThickness + fSMBChip3Thickness);
       
+      Ta.setX(tx);
+      Ta.setY(ty);
+      Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
+      cout << "Placement fibreSMBChip3 T = (" << tx << "," << ty << "," << tz << ")" << endl;
       solidFibreSMB->AddPlacedVolume(pa, Tr);
-
 
       // -- add chip #1
       pa = new G4LogicalVolume(solidFibreSMBChip1, materials.Si, "fibreSMBChip1");
@@ -703,36 +678,21 @@ namespace mu3e {
       pVA1->SetForceSolid(true);
       pa->SetVisAttributes(pVA1);
   
-      Ta.setX(0.);
-      Ta.setY(-0.5*fSMBPcbLength1 + fSMBChip1DeltaCenter);
-      Ta.setZ(0.5*(fSMBPcbThickness + fSMBChip1Thickness));
+      tx = 0.;
+      ty = -0.5*fSMBPcbLength1 + fSMBChip1DeltaCenter;
+      tz = 0.5*(fSMBPcbThickness + fSMBChip1Thickness);
   
+      Ta.setX(tx);
+      Ta.setY(ty);
+      Ta.setZ(tz);
       rotm.rotateZ(-M_PI/4*CLHEP::rad);
       Tr = G4Transform3D(rotm, Ta);
+      cout << "Placement fibreSMBChip1 T = (" << tx << "," << ty << "," << tz << ")" << endl;
       solidFibreSMB->AddPlacedVolume(pa, Tr);
-
-
       // -- rotate back
       rotm.rotateZ(+M_PI/4*CLHEP::rad);
 
-      // // -- add Chip5 = MuTrig0
-      // pa = new G4LogicalVolume(solidFibreSMBChip5, materials.Si, "fibreSMBChip5");
-      // pa->SetSensitiveDetector(sdSmbMuTrig);
-      
-      // G4VisAttributes *pVAa0  = new G4VisAttributes;
-      // pVAa0->SetColour(G4Colour(0., 0., 0.));
-      // pVAa0->SetForceSolid(true);
-      // pa->SetVisAttributes(pVAa0);
-  
-      // Ta.setX(0.5*(fSMBPcbWidth1 - fSMBMuTrigWidth - 2.*fSMBMuTrigDeltaSide) - 0.*(fSMBMuTrigWidth + fSMBMuTrigDeltaChip));
-      // Ta.setY(-0.5*(fSMBPcbLength1 - fSMBMuTrigWidth) + fSMBMuTrigDeltaFront);
-      // Ta.setZ(0.5*(fSMBPcbThickness + fSMBMuTrigThickness));
-      // Tr = G4Transform3D(rotm, Ta);
-      // solidFibreSMB->AddPlacedVolume(pa, Tr);
-
-
-
-      
+     
       // -- add connector
       pa = new G4LogicalVolume(solidFibreSMBConnector, materials.Si, "fibreSMBConnector");
       
