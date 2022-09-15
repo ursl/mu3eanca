@@ -586,13 +586,14 @@ namespace mu3e {
 
       G4VSensitiveDetector *sdSmbMuTrig = sdManager->FindSensitiveDetector("mu3e/FibreSmbMuTrigSD");
 
-      bool DOASIC(false);
+      bool DOASIC(true);
       
       G4LogicalVolume* pa = new G4LogicalVolume(solidFibreSMBAsic0, materials.Si, "fibreSMBAsic0");
       pa->SetSensitiveDetector(sdSmbMuTrig);
       pa->SetVisAttributes(pVAa);
       tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 0*(fSMBAsicWidth + fSMBAsicDeltaChip);
       ty = -0.5*(fSMBPcbLength1 - fSMBAsicWidth) + fSMBAsicDeltaFront;
+      ty = 5.0;
       tz = 0.5*(fSMBPcbThickness + fSMBAsicThickness);
       Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
@@ -639,12 +640,6 @@ namespace mu3e {
       ty = -0.5*(fSMBPcbLength1 - fSMBChip2Width) + fSMBChip2DeltaFront;
       tz = 0.5*(fSMBPcbThickness + fSMBChip2Thickness); 
 
-      // -- override with asic 0
-      //      tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 0*(fSMBAsicWidth + fSMBAsicDeltaChip);
-      ty = -0.5*(fSMBPcbLength1 - fSMBAsicWidth) + fSMBAsicDeltaFront;
-      tz = 0.5*(fSMBPcbThickness + fSMBAsicThickness);
-
-      
       Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);
       cout << "Placement fibreSMBChip2 T = (" << tx << "," << ty << "," << tz << ")" << endl;
