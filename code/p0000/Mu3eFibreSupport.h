@@ -80,8 +80,7 @@ namespace mu3e { namespace sim {
       double fSMBPcbWidth2      = 16.0   * CLHEP::mm;
 
       double fSMBAsicWidth      = 5.0  * CLHEP::mm;
-      //FIXME      double fSMBAsicThickness  = 0.3  * CLHEP::mm;
-      double fSMBAsicThickness  = 1.0  * CLHEP::mm;
+      double fSMBAsicThickness  = 0.3  * CLHEP::mm;
 
       double fSMBChip1Width     = 5.7  * CLHEP::mm;
       double fSMBChip1Thickness = 0.75 * CLHEP::mm;

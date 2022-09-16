@@ -26,7 +26,7 @@ protected:
 
 private:
 
-  std::map<uint32_t, double> fDose;
+  std::map<std::string, double> fDose;
   // damage function for electrons / 95 MeVmb (neutron equivalent)
   // http://www.sr-niel.org/Simulation/516481niel_e.html
   static const std::vector<double> df_e;
