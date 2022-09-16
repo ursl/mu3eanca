@@ -49,10 +49,11 @@ namespace mu3e {
       rIn = rInSup;//detector->rIn - 6 * mm;
       rOut = detector->rOut + PcbHeightTop;
 
+      double rExtra(3.0);
       const int n = 4;
-      double zPlane[n] = { -(lengtPlate-length/2.) - 20., -length/2.,    -length/2., length/2. + 20.};
-      double rInner[n] = { rIn,                     rIn,           rIn,        rIn};
-      double rOuter[n] = { rIn + rPlate,            rIn + rPlate,  rOut,       rOut};
+      double zPlane[n] = { -(lengtPlate-length/2.) - 20., -length/2.,            -length/2., length/2. + 20.};
+      double rInner[n] = { rIn,                           rIn,                   rIn,        rIn};
+      double rOuter[n] = { rIn + rPlate + rExtra,         rIn + rPlate + rExtra, rOut,       rOut};
 
 
       G4VSolid* solidFibreSupport = new G4Polycone(
@@ -75,6 +76,7 @@ namespace mu3e {
                                         materials.He,
                                         "fibreSupport");
 
+      // -- SMB are mounted on this
       G4VSolid* solidFibreSupportPlate = new G4Tubs(
                                                     "fibreSupportPlate",
                                                     rIn, rIn+rPlate,
@@ -84,6 +86,7 @@ namespace mu3e {
 
       cout << "solidFibreSupportPlate: lengtPlate/2. = " << lengtPlate/2. << endl;
       
+      // -- the green ring outside of support plate
       G4VSolid* solidFibreSupportHolder = new G4Tubs(
                                                      "fibreSupportHolder",
                                                      rIn+rPlate, rOut,
@@ -603,7 +606,7 @@ namespace mu3e {
       pa->SetVisAttributes(pVAa);
       tx = 0.5*(fSMBPcbWidth1 - fSMBAsicWidth - 2.*fSMBAsicDeltaSide) - 0*(fSMBAsicWidth + fSMBAsicDeltaChip);
       ty = -0.5*(fSMBPcbLength1 - fSMBAsicWidth) + fSMBAsicDeltaFront;
-      ty = 5.0;
+      //      ty = 0.0;
       tz = 0.5*(fSMBPcbThickness + fSMBAsicThickness);
       Ta.setX(tx); Ta.setY(ty); Ta.setZ(tz);
       Tr = G4Transform3D(rotm, Ta);

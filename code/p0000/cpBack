@@ -32,6 +32,7 @@
 # 2022/09/15 enable renaming
 # 2022/09/15 mistake: reduced rPlat
 # 2022/09/15 correction: increase rPlate = 18mm
+# 2022/09/16 add rExtra and move ASICs to proper place; see many ASIC hits
 cd /psi/home/langenegger/data/mu3e-dev-smb
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/mu3eVis.cpp mu3eSim/mu3eVis.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp
