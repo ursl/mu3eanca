@@ -37,6 +37,28 @@ Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveD
     }
   }
 
+  // -- per-ASIC histograms
+  for (unsigned int iz = 0; iz  < 2; ++iz) {
+    string sz("US");
+    if (1 == iz) sz = string("DS");
+    for (unsigned int ismb = 0; ismb < 12; ++ismb) {
+      for (unsigned int iasic = 0; iasic < 4; ++iasic) {
+        string sn = Form("%s_smb%d_asic%d_gz", sz.c_str(), ismb, iasic);
+        fSmbMuTrigGZ.insert(make_pair(sn, new TH1F(sn.c_str(), Form("MuTrig hits, global z for %s %s", sz.c_str(), sn.c_str()),
+                                                   nbins, +zmin, +zmax)));
+        sn = Form("%s_smb%d_asic%d_edep", sz.c_str(), ismb, iasic);
+        fSmbMuTrigEdep.insert(make_pair(sn, new TH1F(sn.c_str(), Form("MuTrig hits, Edep for %s %s", sz.c_str(), sn.c_str()),
+                                                     100, 0., 0.5)));
+        sn = Form("%s_smb%d_asic%d_lz", sz.c_str(), ismb, iasic);
+        fSmbMuTrigEdep.insert(make_pair(sn, new TH1F(sn.c_str(), Form("MuTrig hits, local z for %s %s", sz.c_str(), sn.c_str()),
+                                                     nbins, -10., +10.)));
+        
+        sn = Form("%s_smb%d_asic%d_lxy", sz.c_str(), ismb, iasic);
+        fSmbMuTrigLXY.insert(make_pair(sn, new TH2F(sn.c_str(), Form("MuTrig hits, local xy for %s %s", sz.c_str(), sn.c_str()),
+                                                    100, -20., +20., 100, -50., +50.)));
+      }
+    }
+  }
   
   fSmbMutrigRadialOutElpz1  = new TH2F("SmbMutrigRadialOutElpz1", "e +z z-position at Smb local coord",
 			     70, -30., 40., 250, 0., 250.);
@@ -86,8 +108,7 @@ void Mu3eFibreSmbMuTrigSD::Initialize(G4HCofThisEvent*) {
 // ----------------------------------------------------------------------
 G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   G4double edep = aStep->GetTotalEnergyDeposit();
-  //  cout << "Mu3eFibreSmbMuTrigSD::ProcessHits> Hallo, edep = " << edep << endl;
-  //  if (edep <= 0) return false;
+  if (edep <= 0) return false;
   auto prePoint  = aStep->GetPreStepPoint();
   auto postPoint = aStep->GetPostStepPoint();
 
