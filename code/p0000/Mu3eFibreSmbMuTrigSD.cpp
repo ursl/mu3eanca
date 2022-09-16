@@ -24,8 +24,8 @@ Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveD
   int nbins(1000);
   double zmin(100.), zmax(200.);
   
-  fSmbMuTrigPosZ = new TH1F("SmbMuTrigPosZ", "SMB MuTrig hits, global position for positive z", 1000, 100., 200.);
-  fSmbMuTrigNegZ = new TH1F("SmbMuTrigNegZ", "SMB MuTrighits, global position for negative z", 1000, -200., -100.);
+  fSmbMuTrigPosZ = new TH1F("SmbMuTrigPosZ", "SMB MuTrig hits, global position for positive z", 3000, 120., 150.);
+  fSmbMuTrigNegZ = new TH1F("SmbMuTrigNegZ", "SMB MuTrighits, global position for negative z", 3000, -150., -120.);
 
   fSmbMuTrigPlanePosZ = new TH2F("SmbMuTrigPlanePosZ", "Smb MuTrig ID for z > 0 (DS)", 400, -200., 200., 400, -200., 200.);
   fSmbMuTrigPlaneNegZ = new TH2F("SmbMuTrigPlaneNegZ", "Smb MuTrig ID for z < 0 (US)", 400, -200., 200., 400, -200., 200.);
@@ -43,19 +43,43 @@ Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveD
     if (1 == iz) sz = string("DS");
     for (unsigned int ismb = 0; ismb < 12; ++ismb) {
       for (unsigned int iasic = 0; iasic < 4; ++iasic) {
-        string sn = Form("%s_smb%d_asic%d_gz", sz.c_str(), ismb, iasic);
-        fSmbMuTrigGZ.insert(make_pair(sn, new TH1F(sn.c_str(), Form("MuTrig hits, global z for %s %s", sz.c_str(), sn.c_str()),
+        // -- names for ASIC histograms
+        string sn = Form("%s_SMB%d_ASIC%d", sz.c_str(), ismb, iasic);
+        string sh = Form("%s_gz", sn.c_str());
+        // -- names for SMB histograms (summing all ASICs)
+        string sns = Form("%s_SMB%d", sz.c_str(), ismb);
+        string shs = Form("%s_gz", sns.c_str());
+        cout << "booking sn ->" << sn << "<- with histogram name sh ->" << sh << "<-" << endl;
+        // -- global z
+        fSmbMuTrigGZ.insert(make_pair(sn, new TH1F(sh.c_str(), Form("MuTrig hits, global z for %s %s", sz.c_str(), sn.c_str()),
                                                    nbins, +zmin, +zmax)));
-        sn = Form("%s_smb%d_asic%d_edep", sz.c_str(), ismb, iasic);
-        fSmbMuTrigEdep.insert(make_pair(sn, new TH1F(sn.c_str(), Form("MuTrig hits, Edep for %s %s", sz.c_str(), sn.c_str()),
+        if (0 == iasic) fSmbMuTrigGZ.insert(make_pair(sns, new TH1F(shs.c_str(), Form("MuTrig hits, global z for %s %s", sz.c_str(), sns.c_str()),
+                                                                    nbins, +zmin, +zmax)));
+
+        // -- edep
+        sh = Form("%s_edep", sn.c_str());
+        fSmbMuTrigEdep.insert(make_pair(sn, new TH1F(sh.c_str(), Form("MuTrig hits, Edep for %s %s", sz.c_str(), sn.c_str()),
                                                      100, 0., 0.5)));
-        sn = Form("%s_smb%d_asic%d_lz", sz.c_str(), ismb, iasic);
-        fSmbMuTrigEdep.insert(make_pair(sn, new TH1F(sn.c_str(), Form("MuTrig hits, local z for %s %s", sz.c_str(), sn.c_str()),
+        shs = Form("%s_edep", sns.c_str());
+        if (0 == iasic) fSmbMuTrigEdep.insert(make_pair(sns, new TH1F(shs.c_str(), Form("MuTrig hits, Edep for %s %s", sz.c_str(), sns.c_str()),
+                                                                      100, 0., 0.5)));
+
+        // -- lz
+        sh = Form("%s_lz", sn.c_str());
+        fSmbMuTrigLZ.insert(make_pair(sn, new TH1F(sh.c_str(), Form("MuTrig hits, local z for %s %s", sz.c_str(), sn.c_str()),
                                                      nbins, -10., +10.)));
-        
-        sn = Form("%s_smb%d_asic%d_lxy", sz.c_str(), ismb, iasic);
-        fSmbMuTrigLXY.insert(make_pair(sn, new TH2F(sn.c_str(), Form("MuTrig hits, local xy for %s %s", sz.c_str(), sn.c_str()),
+        shs = Form("%s_lz", sns.c_str());
+        if (0 == iasic) fSmbMuTrigLZ.insert(make_pair(sns, new TH1F(shs.c_str(), Form("MuTrig hits, local z for %s %s", sz.c_str(), sns.c_str()),
+                                                                    nbins, -10., +10.)));
+
+        // -- lxy
+        sh = Form("%s_lxy", sn.c_str());
+        fSmbMuTrigLXY.insert(make_pair(sn, new TH2F(sh.c_str(), Form("MuTrig hits, local xy for %s %s", sz.c_str(), sn.c_str()),
                                                     100, -20., +20., 100, -50., +50.)));
+
+        shs = Form("%s_lxy", sns.c_str());
+        if (0 == iasic) fSmbMuTrigLXY.insert(make_pair(sns, new TH2F(shs.c_str(), Form("MuTrig hits, local xy for %s %s", sz.c_str(), sns.c_str()),
+                                                                     100, -20., +20., 100, -50., +50.)));
       }
     }
   }
@@ -119,8 +143,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   G4int apdgid = TMath::Abs(aStep->GetTrack()->GetDynamicParticle()->GetPDGcode());
   
   // -- this is not very meaningful
-  uint32_t feeId = prePoint->GetTouchable()->GetCopyNumber(0) 
-    + 100*prePoint->GetTouchable()->GetCopyNumber(1);
+  uint32_t feeId = prePoint->GetTouchable()->GetCopyNumber(0) + 100*prePoint->GetTouchable()->GetCopyNumber(1);
 
   auto feePos   = prePoint->GetTouchable()->GetTranslation();
   auto hitPos   = prePoint->GetPosition();
@@ -130,8 +153,6 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   string smbName = prePoint->GetTouchable()->GetVolume()->GetName();
   int smbNumber(-1), muTrigNumber(-1);
   sscanf(smbName.c_str(), "SMB_%d_ASIC_%d", &smbNumber, &muTrigNumber);
-  int32_t smbId = smbNumber;
-  //  cout << "smbNumber = " << smbNumber << " muTrigNumber = " << muTrigNumber << " smbName = " << smbName << endl;
   
   bool entry = (prePoint->GetStepStatus() == fGeomBoundary);
   bool exit  = (postPoint->GetStepStatus() == fGeomBoundary);
@@ -155,14 +176,31 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
                    << " e/e = " << entry << "/" << exit
                    << std::endl;
 
-  // FIXME
-  return true;
+  if (smbNumber < 0) return false; 
+  if (muTrigNumber < 0) return false; 
+  
+  // -- ASIC level histograms
+  string sn = Form("%s_SMB%d_ASIC%d", (feePos.z()>0?"US":"DS"), smbNumber, muTrigNumber);
+  cout << "filling sn = " << sn << endl;
+  fSmbMuTrigGZ[sn]->Fill(hitPos.z());
+  fSmbMuTrigEdep[sn]->Fill(edep);
+  fSmbMuTrigLZ[sn]->Fill(localPos.z());
+  fSmbMuTrigLXY[sn]->Fill(localPos.x(), localPos.y());
+
+  // -- SMB integrated
+  string sns = Form("%s_SMB%d", (feePos.z()>0?"US":"DS"), smbNumber);
+  cout << "filling sns = " << sns << endl;
+  fSmbMuTrigGZ[sns]->Fill(hitPos.z());
+  fSmbMuTrigEdep[sns]->Fill(edep);
+  fSmbMuTrigLZ[sns]->Fill(localPos.z());
+  fSmbMuTrigLXY[sns]->Fill(localPos.x(), localPos.y());
+
   
   // -- keep a record which fedID is where
   if (feePos.z() > 0) {
     fSmbMuTrigPosZ->Fill(hitPos.z());
    
-    fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, smbId);
+    fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, muTrigNumber);
     if (11 == apdgid) {
       fSmbMutrigRadialOutElpz1->Fill(localPos.y(), feeId);
       fSmbMutrigRadialOutElx1->Fill(localPos.x(), feeId);
@@ -173,7 +211,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
     }
   } else {
     fSmbMuTrigNegZ->Fill(hitPos.z());
-    fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, smbId);
+    fSmbMuTrigPlaneNegZ->SetBinContent(ix, iy, muTrigNumber);
     if (11 == apdgid) {
       fSmbMutrigRadialOutElmz1->Fill(localPos.y(), feeId);
       fSmbMutrigRadialOutElx1a->Fill(localPos.x(), feeId);
@@ -215,6 +253,20 @@ void Mu3eFibreSmbMuTrigSD::writeStat() {
   }
   hFibreSmbDose->Write();
 
+
+  map<string, TH1F*>::iterator iend = fSmbMuTrigGZ.end();
+  for (map<string, TH1F*>::iterator ih = fSmbMuTrigGZ.begin(); ih != iend; ++ih) ih->second->Write();
+
+  iend = fSmbMuTrigEdep.end();
+  for (map<string, TH1F*>::iterator ih = fSmbMuTrigEdep.begin(); ih != iend; ++ih) ih->second->Write();
+
+  iend = fSmbMuTrigLZ.end();
+  for (map<string, TH1F*>::iterator ih = fSmbMuTrigLZ.begin(); ih != iend; ++ih) ih->second->Write();
+
+  map<string, TH2F*>::iterator i2end = fSmbMuTrigLXY.end();
+  for (map<string, TH2F*>::iterator ih = fSmbMuTrigLXY.begin(); ih != i2end; ++ih) ih->second->Write();
+
+  
   fSmbMuTrigPlanePosZ->Write();
   fSmbMuTrigPlaneNegZ->Write();
 
