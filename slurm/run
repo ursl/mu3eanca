@@ -162,9 +162,12 @@ foreach $jobfile (@ARGV) {
     # -- Cut off trailing mac/i extension
     #    $rest = substr($jobFile, 0, rindex($jobFile, '/')+1);
     #    $jobFile =~ s/$rest//;
-    ($job = $jobFile) =~ s/\.mac//g;
-    ($job = $jobFile) =~ s/\.i//g;
-
+    if ($jobFile =~ /\.i/) {
+        ($job = $jobFile) =~ s/\.i//;
+    } else {
+        ($job = $jobFile) =~ s/\.mac//;
+    }
+    
     # -- Cut off everything except the number
     $number    = $job;
     $number = substr($job, rindex($job, '-')+1, length($job));
