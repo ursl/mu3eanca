@@ -92,8 +92,7 @@ void Mu3eFibreSmbSD::Initialize(G4HCofThisEvent*) {
 G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   G4double edep = aStep->GetTotalEnergyDeposit();
   int DBX(0);
-  if (DBX) cout << "Mu3eFibreSmbSD::ProcessHits> Hallo, edep = " << edep << endl;
-  //  if (edep <= 0) return false;
+  if (edep <= 0) return false;
   auto prePoint  = aStep->GetPreStepPoint();
   auto postPoint = aStep->GetPostStepPoint();
 
@@ -116,7 +115,7 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   int smbNumber(-1);
   sscanf(smbName.c_str(), "SMB_%d", &smbNumber);
   int32_t smbId = smbNumber;
-  if (DBX) cout << "smbNumber = " << smbNumber << " smbName = " << smbName << endl;
+  if (DBX > 1) cout << "smbNumber = " << smbNumber << " smbName = " << smbName << endl;
   
   bool entry = (prePoint->GetStepStatus() == fGeomBoundary);
   bool exit  = (postPoint->GetStepStatus() == fGeomBoundary);
@@ -124,7 +123,7 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   int ix = fPlanePosZ->GetXaxis()->FindBin(feePos.x());
   int iy = fPlanePosZ->GetYaxis()->FindBin(feePos.y());
 
-  if (DBX) std::cout << "SmbSD> " 
+  if (DBX > 0) std::cout << "SmbSD> " 
                      << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
                      << prePoint->GetTouchable()->GetCopyNumber(1) << "  ->"
                      << prePoint->GetTouchable()->GetVolume()->GetName()
@@ -137,8 +136,6 @@ G4bool Mu3eFibreSmbSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
                      << " e/e = " << entry << "/" << exit
                      << std::endl;
 
-  // FIXME
-  return true;
   
   // -- keep a record which fedID is where
   if (feePos.z() > 0) {
