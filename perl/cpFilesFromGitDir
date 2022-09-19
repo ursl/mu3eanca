@@ -14,6 +14,7 @@
 #           2022/09/06 improve dbx option to provide more information
 #           2022/09/06 add opt_f to allow pulling a single file
 #           2022/09/07 add opt_c to compare the local files with repo
+#           2022/09/19 skip tar files, jobs.list, and symlinks (introduce skipList and tar check)
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -28,6 +29,16 @@ getopts('cdf:g:m:');
 my $basedir = `pwd`;
 chop($basedir);
 
+# -- skip list
+my @skiplist = ("jobs.list",
+                "tar.gz",
+                "cryogenics.bin",
+                "field.bin",
+                "hauge1.bin",
+                "sig.bin",
+                "sig2.bin"
+    );              
+
 # -- where to get the files from 
 my $gitdir = "/psi/home/langenegger/data/mu3e-4.6-smb";
 if ($opt_g) {
@@ -37,6 +48,7 @@ if ($opt_g) {
 }
 
 my @files = getFileList();
+my @cpFiles = (); 
 
 # -- copy files
 if ($opt_d) {
@@ -45,12 +57,21 @@ if ($opt_d) {
 }
 
 foreach $file (@files) {
+    my($barefile, $directories) = fileparse($file);
+    if (grep(/$barefile/, @skiplist)) {
+        print("found $file in skiplist\n");
+        next;
+    }
+    if ($barefile =~ /tar.gz/) {
+        print("identified $barefile as tar file\n");
+        next;
+    }
+
     if ($opt_f && !($file =~ $opt_f)) {
         next;
     }
     if ($opt_c) {
         print("$file\n");
-        my($barefile, $directories) = fileparse($file);
         system("diff $barefile $gitdir/$file");
         next;
     }
@@ -61,6 +82,7 @@ foreach $file (@files) {
     } else {
         print("dbx cp $gitdir/$file .\n");
     }
+    push(@cpFiles, $file);
 }
 
 # -- write cpBack to allow copying these files to anywhere (if you replace the first line in cpBack)
@@ -82,7 +104,7 @@ if (!$opt_d) {
         print IN "# $opt_m\n";
     }
     print IN "cd $gitdir\n";
-    foreach $file (@files) {
+    foreach $file (@cpFiles) {
         my($barefile, $directories) = fileparse($file);
         print IN "cp $basedir/$barefile $file\n";
     }
