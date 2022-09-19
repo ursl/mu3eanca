@@ -51,7 +51,12 @@ namespace mu3e {
 
       double rExtra(3.0);
       const int n = 4;
-      double zPlane[n] = { -(lengtPlate-length/2.) - 20., -length/2.,            -length/2., length/2. + 20.};
+      double zPlane[n] = {
+        -(lengtPlate-length/2.) - 20.,
+        -length/2.,
+        -length/2.,
+        length/2. + 20.
+      };
       double rInner[n] = { rIn,                           rIn,                   rIn,        rIn};
       double rOuter[n] = { rIn + rPlate + rExtra,         rIn + rPlate + rExtra, rOut,       rOut};
 
@@ -92,7 +97,8 @@ namespace mu3e {
                                                      rIn+rPlate, rOut,
                                                      (length - MppcLength - zOffset)/2.,
                                                      0, 2*M_PI);
-      cout << "solidFibreSupportHolder:  (length - MppcLength - zOffset)/2. = " << (length - MppcLength - zOffset)/2. << endl;
+      cout << "solidFibreSupportHolder:  (length - MppcLength - zOffset)/2. = "
+           << (length - MppcLength - zOffset)/2. << endl;
 
       if (1) volumeFibreSupportPlate = new G4LogicalVolume(
                                                            solidFibreSupportPlate,
@@ -340,7 +346,7 @@ namespace mu3e {
         position =  {-std::sin(phi), std::cos(phi), 0};
         positionPcb = position * (rInSup + rPlate);
         // positionPcb.setZ(position.z() - length/2.  - 1.3*CLHEP::cm);
-        positionPcb.setZ(position.z() - length/2.  - 0.7*CLHEP::cm);
+        positionPcb.setZ(position.z() - length/2.  - 0.47*CLHEP::cm);
         transform = G4Transform3D(rotM, positionPcb);
         solidFibreSmb->MakeImprint(vol, transform);
         rotM.rotateZ(dphi);

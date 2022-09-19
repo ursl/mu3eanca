@@ -56,25 +56,33 @@ Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveD
         cout << "booking sn ->" << sn << "<- with histogram name sh ->" << sh << "<-" << endl;
 
         // -- global z
-        fSmbMuTrigGZ.insert(make_pair(sn, new TH1F(sh.c_str(), Form("MuTrig hits, global z for %s %s", sz.c_str(), sn.c_str()),
+        fSmbMuTrigGZ.insert(make_pair(sn, new TH1F(sh.c_str(),
+                                                   Form("MuTrig hits, global z for %s %s",
+                                                        sz.c_str(), sn.c_str()),
                                                    nbins, +zmin, +zmax)));
-        if (0 == iasic) fSmbMuTrigGZ.insert(make_pair(sns, new TH1F(shs.c_str(), Form("MuTrig hits, global z for %s %s", sz.c_str(), sns.c_str()),
+        if (0 == iasic) fSmbMuTrigGZ.insert(make_pair(sns, new TH1F(shs.c_str(),
+                                                                    Form("MuTrig hits, global z for %s %s",
+                                                                         sz.c_str(), sns.c_str()),
                                                                     nbins, +zmin, +zmax)));
 
         // -- edep
         sh = Form("%s_edep", sn.c_str());
-        fSmbMuTrigEdep.insert(make_pair(sn, new TH1F(sh.c_str(), Form("MuTrig hits, Edep for %s %s", sz.c_str(), sn.c_str()),
+        fSmbMuTrigEdep.insert(make_pair(sn, new TH1F(sh.c_str(), Form("MuTrig hits, Edep for %s %s",
+                                                                      sz.c_str(), sn.c_str()),
                                                      100, 0., 0.5)));
         shs = Form("%s_edep", sns.c_str());
-        if (0 == iasic) fSmbMuTrigEdep.insert(make_pair(sns, new TH1F(shs.c_str(), Form("MuTrig hits, Edep for %s %s", sz.c_str(), sns.c_str()),
+        if (0 == iasic) fSmbMuTrigEdep.insert(make_pair(sns, new TH1F(shs.c_str(), Form("MuTrig hits, Edep for %s %s",
+                                                                                        sz.c_str(), sns.c_str()),
                                                                       100, 0., 1.0)));
 
         // -- lz
         sh = Form("%s_lz", sn.c_str());
-        fSmbMuTrigLZ.insert(make_pair(sn, new TH1F(sh.c_str(), Form("MuTrig hits, local z for %s %s", sz.c_str(), sn.c_str()),
+        fSmbMuTrigLZ.insert(make_pair(sn, new TH1F(sh.c_str(), Form("MuTrig hits, local z for %s %s",
+                                                                    sz.c_str(), sn.c_str()),
                                                      nbins, -1., +1.)));
         shs = Form("%s_lz", sns.c_str());
-        if (0 == iasic) fSmbMuTrigLZ.insert(make_pair(sns, new TH1F(shs.c_str(), Form("MuTrig hits, local z for %s %s", sz.c_str(), sns.c_str()),
+        if (0 == iasic) fSmbMuTrigLZ.insert(make_pair(sns, new TH1F(shs.c_str(), Form("MuTrig hits, local z for %s %s",
+                                                                                      sz.c_str(), sns.c_str()),
                                                                     nbins, -1., +1.)));
 
         // -- lxy
@@ -83,25 +91,26 @@ Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveD
                                                     100, -5., +5., 100, -5., +5.)));
 
         shs = Form("%s_lxy", sns.c_str());
-        if (0 == iasic) fSmbMuTrigLXY.insert(make_pair(sns, new TH2F(shs.c_str(), Form("MuTrig hits, local xy for %s %s", sz.c_str(), sns.c_str()),
+        if (0 == iasic) fSmbMuTrigLXY.insert(make_pair(sns, new TH2F(shs.c_str(), Form("MuTrig hits, local xy for %s %s",
+                                                                                       sz.c_str(), sns.c_str()),
                                                                      100, -5., +5., 100, -5., +5.)));
       }
     }
   }
   
   fSmbMutrigRadialOutElpz1  = new TH2F("SmbMutrigRadialOutElpz1", "e +z z-position at Smb local coord",
-			     70, -30., 40., 250, 0., 250.);
+                                       70, -30., 40., 100, -50., 50.);
   fSmbMutrigRadialOutElpz2  = new TH2F("SmbMutrigRadialOutElpz2", "e +z z-position at Smb world coord",
-			     80, 100., 180., 250, 0., 250.);
+                                       80, 100., 180., 100, -50., 50.);
   fSmbMutrigRadialOutElpz3  = new TH2F("SmbMutrigRadialOutElpz3", "e +z z-position at Smb edep",
-			     80, 100., 180., 250, 0., 250.);
+                                       80, 100., 180., 100, -50., 50.);
 
   fSmbMutrigRadialOutElmz1  = new TH2F("SmbMutrigRadialOutElmz1", "e -z z-position at Smb local coord",
-			     70, -30., 40., 250, 0., 250.);
+                                       70, -30., 40., 100, -50., 50.);
   fSmbMutrigRadialOutElmz2  = new TH2F("SmbMutrigRadialOutElmz2", "e -z z-position at Smb world coord",
-			     40, -160., -140., 250, 0., 250.);
+                                       80, -180., -100., 100, -50., 50.);
   fSmbMutrigRadialOutElmz3  = new TH2F("SmbMutrigRadialOutElmz3", "e -z z-position at Smb edep",
-			     40, -160., -140., 250, 0., 250.);
+                                       40, -180., -100., 100, -50., 50.);
 
 
   fSmbMutrigRadialOutElx1 = new TH2F("SmbMutrigRadialOutElmx1", "e x-position +z at Smb local coord", 60, -30., 30., 250, 0., 250.);
@@ -145,9 +154,6 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
   G4int apdgid = TMath::Abs(aStep->GetTrack()->GetDynamicParticle()->GetPDGcode());
   
-  // -- this is not very meaningful
-  uint32_t feeId = prePoint->GetTouchable()->GetCopyNumber(0) + 100*prePoint->GetTouchable()->GetCopyNumber(1);
-
   auto feePos   = prePoint->GetTouchable()->GetTranslation();
   auto hitPos   = prePoint->GetPosition();
   auto localPos = prePoint->GetTouchable()->GetHistory()->GetTopTransform().TransformPoint(hitPos);
@@ -156,6 +162,15 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   string smbName = prePoint->GetTouchable()->GetVolume()->GetName();
   int smbNumber(-1), muTrigNumber(-1);
   sscanf(smbName.c_str(), "SMB_%d_ASIC_%d", &smbNumber, &muTrigNumber);
+
+  // -- calculate from smbNumber and muTrigNumber
+  int sign = (feePos.z() > 0.? 1.: -1.);
+  int feeId(-50);
+  if (sign < 0) {
+    feeId = sign*(smbNumber+1)*4 + sign*muTrigNumber;
+  } else {
+    feeId = sign*smbNumber*4 + sign*muTrigNumber;
+  }
   
   bool entry = (prePoint->GetStepStatus() == fGeomBoundary);
   bool exit  = (postPoint->GetStepStatus() == fGeomBoundary);
@@ -205,9 +220,9 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
    
     fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, muTrigNumber);
     if (11 == apdgid) {
-      fSmbMutrigRadialOutElpz1->Fill(localPos.y(), feeId);
+      fSmbMutrigRadialOutElpz1->Fill(localPos.z(), feeId);
       fSmbMutrigRadialOutElx1->Fill(localPos.x(), feeId);
-      fSmbMutrigRadialOutEly1->Fill(localPos.z(), feeId);
+      fSmbMutrigRadialOutEly1->Fill(localPos.y(), feeId);
 	
       fSmbMutrigRadialOutElpz2->Fill(TMath::Abs(hitPos.z()), feeId);
       fSmbMutrigRadialOutElpz3->Fill(TMath::Abs(hitPos.z()), feeId, edep);
@@ -216,9 +231,9 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
     fSmbMuTrigNegZ->Fill(TMath::Abs(hitPos.z()));
     fSmbMuTrigPlaneNegZ->SetBinContent(ix, iy, muTrigNumber);
     if (11 == apdgid) {
-      fSmbMutrigRadialOutElmz1->Fill(localPos.y(), feeId);
+      fSmbMutrigRadialOutElmz1->Fill(localPos.z(), feeId);
       fSmbMutrigRadialOutElx1a->Fill(localPos.x(), feeId);
-      fSmbMutrigRadialOutEly1a->Fill(localPos.z(), feeId);
+      fSmbMutrigRadialOutEly1a->Fill(localPos.y(), feeId);
 
       fSmbMutrigRadialOutElmz2->Fill(TMath::Abs(hitPos.z()), feeId);
       fSmbMutrigRadialOutElmz3->Fill(TMath::Abs(hitPos.z()), feeId, edep);
