@@ -59,11 +59,11 @@ if ($opt_d) {
 foreach $file (@files) {
     my($barefile, $directories) = fileparse($file);
     if (grep(/$barefile/, @skiplist)) {
-        print("found $file in skiplist\n");
+        print("skip $file ... found $barefile in skiplist\n");
         next;
     }
     if ($barefile =~ /tar.gz/) {
-        print("identified $barefile as tar file\n");
+        print("skip $file ... identified $barefile as tar file\n");
         next;
     }
 
