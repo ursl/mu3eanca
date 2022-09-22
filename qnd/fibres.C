@@ -69,26 +69,35 @@ void zPosition() {
 
 
 // ----------------------------------------------------------------------
-void rphiPosition() {
-  gFile->cd("stat/FibreSmb");
+void rphiPosition(string dir = "FibreSmb") {
+  gFile->cd(Form("stat/%s", dir.c_str()));
+  string hname = "Plane";
+  tl->SetTextSize(0.04);
+  if (string::npos != dir.find("MuTrig")) {
+    hname = "SmbMuTrigPlane";
+    tl->SetTextSize(0.02);
+  }
 
   gStyle->SetOptStat(0);
   
   c0.SetCanvasSize(1200, 600);
   zone(2, 1);
   c0.cd(2);
-  TH2D *h2 = (TH2D*)gDirectory->Get("PlanePosZ");
+  TH2D *h2 = (TH2D*)gDirectory->Get(Form("%sPosZ", hname.c_str()));
   h2->Draw("axis");
-  tl->SetTextSize(0.04);
   tl->SetTextColor(kBlack);
   tl->SetNDC(kFALSE);
   for (int ix = 1; ix <= h2->GetNbinsX(); ++ix) {
     for (int iy = 1; iy <= h2->GetNbinsY(); ++iy) {
       if (h2->GetBinContent(ix, iy) > -1) {
+        double phi = TVector2(ix - 0.5*h2->GetNbinsX(), iy - 0.5*h2->GetNbinsY()).Phi()*57.; 
         cout << "x/y = " << h2->GetXaxis()->GetBinLowEdge(ix)
              << "/" << h2->GetYaxis()->GetBinLowEdge(iy)
              << " SMB = " << Form("%d", static_cast<int>(h2->GetBinContent(ix, iy)))
+             << " phi = " << phi
              << endl;
+        tl->SetTextAngle(phi);
+            
         tl->DrawLatex(h2->GetXaxis()->GetBinLowEdge(ix),
                       h2->GetYaxis()->GetBinLowEdge(iy),
                       Form("%d", static_cast<int>(h2->GetBinContent(ix, iy))));
@@ -97,15 +106,18 @@ void rphiPosition() {
   }
 
   c0.cd(1);
-  TH2D *h3 = (TH2D*)gDirectory->Get("PlaneNegZ");
+  TH2D *h3 = (TH2D*)gDirectory->Get(Form("%sNegZ", hname.c_str()));
   h3->Draw("axis");
   for (int ix = 1; ix <= h3->GetNbinsX(); ++ix) {
     for (int iy = 1; iy <= h3->GetNbinsY(); ++iy) {
       if (h3->GetBinContent(ix, iy) > -1) {
+        double phi = TVector2(ix - 0.5*h2->GetNbinsX(), iy - 0.5*h2->GetNbinsY()).Phi()*57.; 
         cout << "x/y = " << h3->GetXaxis()->GetBinLowEdge(ix)
              << "/" << h3->GetYaxis()->GetBinLowEdge(iy)
              << " SMB = " << Form("%d", static_cast<int>(h3->GetBinContent(ix, iy)))
+             << " phi = " << phi
              << endl;
+        tl->SetTextAngle(phi);
         tl->DrawLatex(h3->GetXaxis()->GetBinLowEdge(ix),
                       h3->GetYaxis()->GetBinLowEdge(iy),
                       Form("%d", static_cast<int>(h3->GetBinContent(ix, iy))));
@@ -113,7 +125,52 @@ void rphiPosition() {
     }
   }
 
-  c0.SaveAs("fibres-rphiPosition.pdf");
+  c0.SaveAs(Form("fibres-%s-rphiPosition.pdf", dir.c_str()));
 
   
+}
+
+
+// ----------------------------------------------------------------------
+void addMuTRIG(string hname, string opt = "") {
+  gFile->cd("stat/FibreSmbMuTrig");
+
+  c0.SetCanvasSize(1800, 900);
+  zone(2,1);
+  gStyle->SetOptStat(0);
+
+  TH1D *h1(0), *hSumDS(0), *hSumUS(0);
+  for (int i = 0; i < 12; ++i) {
+    h1 = (TH1D*)gDirectory->Get(Form("DS_SMB%d_%s", i, hname.c_str()));
+    if (0 == i) {
+      hSumDS = h1;
+      hSumDS->SetTitle(Form("DS global %s position for MuTRIGs", hname.c_str()));
+    } else {
+      hSumDS->Add(h1);
+    }
+  }
+
+  hSumDS->Draw(opt.c_str());
+
+  c0.cd(2);
+  for (int i = 0; i < 12; ++i) {
+    h1 = (TH1D*)gDirectory->Get(Form("US_SMB%d_%s", i, hname.c_str()));
+    if (0 == i) {
+      hSumUS = h1;
+      hSumUS->SetTitle(Form("US global %s position for MuTRIGs", hname.c_str()));
+    } else {
+      hSumUS->Add(h1);
+    }
+  }
+  hSumUS->Draw(opt.c_str());
+
+  c0.SaveAs("fibres-mutrig-%s.pdf", hname.c_str());
+  
+}
+
+// ----------------------------------------------------------------------
+void addMuTRIG() {
+  addMuTRIG("gz", "");
+  addMuTRIG("lxy", "colz");
+  addMuTRIG("edep", "");
 }
