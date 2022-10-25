@@ -180,7 +180,7 @@ void addMuTRIG() {
 
 
 // ----------------------------------------------------------------------
-void dose() {
+void dose(double inTargetTotal = 19200000, double muonStopsPhase1 = 1.e15) {
   TH1F *h1 = (TH1F*) gFile->Get("stat/FibreSmbMuTrig/hFibreSmbDose"); 
   h1->GetXaxis()->SetTitle("");
   h1->GetYaxis()->SetTitle("Dose [Gy]");
@@ -198,8 +198,17 @@ void dose() {
   // -- remove most of the bin labels
   for (int ibin = 1; ibin <= h1->GetNbinsX(); ++ibin) {
     h1->SetBinContent(ibin, h1->GetBinContent(ibin)*(njobs*dt));
+    if (1 == ibin%4) {
+      string sname = h1->GetXaxis()->GetBinLabel(ibin);
+      if (string::npos != sname.find("US")){
+        replaceAll(sname, "US", "DS");
+      } else {
+        replaceAll(sname, "DS", "US");
+      }
+      h1->GetXaxis()->SetBinLabel(ibin, sname.c_str());
+    }
+
     if (0 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
-    //    if (1 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
     if (2 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
     if (3 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
   }
@@ -207,5 +216,23 @@ void dose() {
   h1->SetTitle(Form("Fibre MuTRIG Dose (time = %f sec)", njobs*dt));
   h1->Draw();
 
-  c0.SaveAs("fibres-FibreSmbMuTrig-dose.pdf");
+  c0.SaveAs("fibres-FibreSmbMuTrig-dose-sumjobs.pdf");
+
+  // -- scale up to 1e15 muon stops
+  double sf = muonStopsPhase1/inTargetTotal;
+  h1->Scale(sf);
+
+  double n = muonStopsPhase1; 
+  double expoN  = TMath::Log10(n);
+  cout << "original expoN = " << expoN << endl;
+
+  double mantN  = n / TMath::Power(10, static_cast<int>(expoN));
+  cout << "original mantN = " << mantN << endl;
+
+  h1->SetTitle(Form("Fibre MuTRIG Dose (n_{#mu}^{stop} = %1.0fE%2.0f)", mantN, expoN));
+  h1->Draw("hist");
+  
+  c0.SaveAs("fibres-FibreSmbMuTrig-dose-phase1.pdf");
+
 }
+
