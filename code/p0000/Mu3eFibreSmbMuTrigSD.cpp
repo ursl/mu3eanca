@@ -198,7 +198,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   if (muTrigNumber < 0) return false; 
   
   // -- ASIC level histograms
-  string sn = Form("%s_SMB%d_ASIC%d", (feePos.z()>0?"US":"DS"), smbNumber, muTrigNumber);
+  string sn = Form("%s_SMB%d_ASIC%d", (feePos.z()>0?"DS":"US"), smbNumber, muTrigNumber);
   if (DBX > 1) cout << "filling sn = " << sn << endl;
   fSmbMuTrigGZ[sn]->Fill(TMath::Abs(hitPos.z()));
   fSmbMuTrigEdep[sn]->Fill(edep);
@@ -206,7 +206,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   fSmbMuTrigLXY[sn]->Fill(localPos.x(), localPos.y());
 
   // -- SMB integrated
-  string sns = Form("%s_SMB%d", (feePos.z()>0?"US":"DS"), smbNumber);
+  string sns = Form("%s_SMB%d", (feePos.z()>0?"DS":"US"), smbNumber);
   if (DBX > 1) cout << "filling sns = " << sns << endl;
   fSmbMuTrigGZ[sns]->Fill(TMath::Abs(hitPos.z()));
   fSmbMuTrigEdep[sns]->Fill(edep);
