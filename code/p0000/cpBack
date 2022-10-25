@@ -37,6 +37,7 @@
 # 2022/09/16 fill and write histograms
 # 2022/09/16 fine-tuning binning, added fDose
 # 2022/09/19 improve SMB z position; histogramming updates for e-
+# 2022/09/23 fix US vs DS labeling bug
 cd /psi/home/langenegger/data/mu3e-dev-smb
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/mu3eVis.cpp mu3eSim/mu3eVis.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp
