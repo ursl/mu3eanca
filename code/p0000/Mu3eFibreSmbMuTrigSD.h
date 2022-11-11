@@ -33,8 +33,9 @@ private:
   static const std::vector<double> df_n;
 
   TH1F *fSmbMuTrigPosZ, *fSmbMuTrigNegZ;
+  TH2F *fSmbMuTrigNegZ_xy, *fSmbMuTrigPosZ_xy;
   std::map<std::string, TH1F*> fSmbMuTrigGZ, fSmbMuTrigEdep, fSmbMuTrigLZ; 
-  std::map<std::string, TH2F*> fSmbMuTrigLXY;
+  std::map<std::string, TH2F*> fSmbMuTrigLXY, fSmbMuTrigGXY;
   
   TH2F *fSmbMuTrigPlanePosZ, *fSmbMuTrigPlaneNegZ;
 
