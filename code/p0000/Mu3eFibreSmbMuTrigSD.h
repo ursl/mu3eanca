@@ -32,6 +32,8 @@ private:
   static const std::vector<double> df_e;
   static const std::vector<double> df_n;
 
+  TH1F *fMuTrigEdep, *fMuTrigEdepCombined;
+
   TH1F *fSmbMuTrigPosZ, *fSmbMuTrigNegZ;
   TH2F *fSmbMuTrigNegZ_xy, *fSmbMuTrigPosZ_xy;
   std::map<std::string, TH1F*> fSmbMuTrigGZ, fSmbMuTrigEdep, fSmbMuTrigLZ; 
