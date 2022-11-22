@@ -23,6 +23,10 @@ Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveD
   
   int nbins(1000);
   double zmin(100.), zmax(200.);
+
+  fMuTrigEdep = new TH1F("MuTrigEdep", "MuTrigEdep", 100, 0., 1.);
+  fMuTrigEdepCombined = new TH1F("MuTrigEdepCombined", "MuTrigEdepCombined", 100, 0., 1.);
+
   
   fSmbMuTrigPosZ = new TH1F("SmbMuTrigPosZ", "SMB MuTrig hits, |z| global position for positive z", 3000, 120., 150.);
   fSmbMuTrigNegZ = new TH1F("SmbMuTrigNegZ", "SMB MuTrighits, |z| global position for negative z", 3000, 120., 150.);
@@ -160,6 +164,10 @@ void Mu3eFibreSmbMuTrigSD::Initialize(G4HCofThisEvent*) {
 // ----------------------------------------------------------------------
 G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   int DBX(0);
+  static double frameEdep(0.);
+  static int    frameCnt(0);
+  static string frameSn("");
+  
   G4double edep = aStep->GetTotalEnergyDeposit();
   if (edep <= 0) return false;
   auto prePoint  = aStep->GetPreStepPoint();
@@ -170,6 +178,8 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   //   1: upstream   z < 0
 
   G4int apdgid = TMath::Abs(aStep->GetTrack()->GetDynamicParticle()->GetPDGcode());
+  G4double partKE = aStep->GetTrack()->GetDynamicParticle()->GetKineticEnergy();
+  G4double stepL = aStep->GetStepLength();
   
   auto feePos   = prePoint->GetTouchable()->GetTranslation();
   auto hitPos   = prePoint->GetPosition();
@@ -197,7 +207,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
   if (DBX > 0) std::cout << "SmbMuTrigSD> " << smbName << " " 
                  //                   << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
-                 // << prePoint->GetTouchable()->GetCopyNumber(1) << " "
+                 // << prePoint->GetTouchable()->GetCopyNqumber(1) << " "
                  // << prePoint->GetTouchable()->GetVolume()->GetName()
                  // << " feeID = " << feeId
                  // << " smbID = " << smbId
@@ -263,15 +273,44 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
   if (edep > 0) {
     G4double dose_c = 0;
-    //  int pid = aStep->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
+     int pid = aStep->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
     G4double cubicVolume = prePoint->GetPhysicalVolume()->GetLogicalVolume()->GetSolid()->GetCubicVolume();
-    G4double density = prePoint->GetMaterial()->GetDensity();
-    //G4cout << "DEBUG density " << density << " " << density/kg << " " << (density/kg * cubicVolume) << G4endl;
+    G4double density = prePoint->GetMaterial()->GetDensity(); // 2.3; /*DBX FIXME */
     dose_c    = edep/joule / ( density/kg * cubicVolume );
     dose_c *= prePoint->GetWeight();
     fDose[sn] += dose_c;
-  }
+    std::cout.precision(3);
 
+    if (1) cout << "MuTrig DEBUG " << std::scientific
+                << " edep = " << edep
+                << " dose_c = " << dose_c
+                << " sn = " << sn
+                << " stepL = " << stepL
+                << " r = " << std::fixed << localPos.x()
+                << "/" << localPos.y()
+                << "/" << localPos.z()            
+                << " R = " << std::fixed << hitPos.x()
+                << "/" << hitPos.y()
+                << "/" << hitPos.z()            
+                << " KE = " << partKE
+                << endl;
+
+
+    fMuTrigEdep->Fill(edep);
+    if (sn == frameSn) {
+      // -- same sname, so add up
+      frameEdep += edep;
+      ++frameCnt;
+    } else {
+      // -- new sname, so fill and reset
+      cout << "   move on from " << frameSn << ", filling " << frameEdep << endl;
+      fMuTrigEdepCombined->Fill(frameEdep);
+      frameSn   = sn; 
+      frameEdep = edep;
+      frameCnt  = 1;
+    }
+  }
+  
   return true;
 }
 
@@ -289,7 +328,7 @@ void Mu3eFibreSmbMuTrigSD::writeStat() {
 
   TH1F * hFibreSmbDose2 = new TH1F("hFibreSmbDose2", TString::Format("Fibre Smb Dose "), 100, 0, 100);
   hFibreSmbDose2->GetXaxis()->SetTitle("fibre Smb MuTrig");
-  hFibreSmbDose2->GetYaxis()->SetTitle("dose/time [Gy]");
+  hFibreSmbDose2->GetYaxis()->SetTitle("dose [Gy]");
 
 
   int ibin(1); 
@@ -342,6 +381,9 @@ void Mu3eFibreSmbMuTrigSD::writeStat() {
 
   fSmbMutrigRadialOutElx1a->Write();
   fSmbMutrigRadialOutEly1a->Write();
+
+  fMuTrigEdep->Write();
+  fMuTrigEdepCombined->Write();
   
   gDirectory->cd("..");
 }
