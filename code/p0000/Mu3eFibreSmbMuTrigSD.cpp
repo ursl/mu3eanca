@@ -273,7 +273,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
   if (edep > 0) {
     G4double dose_c = 0;
-     int pid = aStep->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
+    int pid = aStep->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
     G4double cubicVolume = prePoint->GetPhysicalVolume()->GetLogicalVolume()->GetSolid()->GetCubicVolume();
     G4double density = prePoint->GetMaterial()->GetDensity(); // 2.3; /*DBX FIXME */
     dose_c    = edep/joule / ( density/kg * cubicVolume );
@@ -281,7 +281,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
     fDose[sn] += dose_c;
     std::cout.precision(3);
 
-    if (1) cout << "MuTrig DEBUG " << std::scientific
+    if (DBX > 0) cout << "MuTrig DEBUG " << std::scientific
                 << " edep = " << edep
                 << " dose_c = " << dose_c
                 << " sn = " << sn
@@ -303,7 +303,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
       ++frameCnt;
     } else {
       // -- new sname, so fill and reset
-      cout << "   move on from " << frameSn << ", filling " << frameEdep << endl;
+      if (DBX > 1) cout << "   move on from " << frameSn << ", filling " << frameEdep << endl;
       fMuTrigEdepCombined->Fill(frameEdep);
       frameSn   = sn; 
       frameEdep = edep;
