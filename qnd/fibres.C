@@ -274,7 +274,7 @@ void dose2(double inTargetTotal = 19200000, double muonStopsPhase1 = 2.6e15) {
   double mantN  = n / TMath::Power(10, static_cast<int>(expoN));
   cout << "original mantN = " << mantN << endl;
 
-  h1->SetTitle(Form("Fibre MuTRIG Dose (n_{#mu}^{stop} = %1.0fE%2.0f)", mantN, expoN));
+  h1->SetTitle(Form("Fibre MuTRIG Dose (n_{#mu}^{stop} = %1.1fE%2.0f)", mantN, expoN));
   h1->Draw("hist");
   
   c0.SaveAs("fibres-FibreSmbMuTrig-dose2-phase1.pdf");
