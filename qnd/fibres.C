@@ -246,15 +246,8 @@ void dose2(double inTargetTotal = 19200000, double muonStopsPhase1 = 2.6e15) {
   shrinkPad(0.2, 0.15);
   h1->Draw();
 
-  float dt(0.);
-  sscanf(h1->GetTitle(), "Fibre Smb Dose (time = %f)", &dt);
-  int NFIBERS(96);
-  double njobs = h1->GetEntries()/NFIBERS;
-  cout << "dt = " << dt << " total time = " << njobs*dt << endl;
-
   // -- remove most of the bin labels
   for (int ibin = 1; ibin <= h1->GetNbinsX(); ++ibin) {
-    h1->SetBinContent(ibin, h1->GetBinContent(ibin)*(njobs*dt));
     if (1 == ibin%4) {
       string sname = h1->GetXaxis()->GetBinLabel(ibin);
       h1->GetXaxis()->SetBinLabel(ibin, sname.c_str());
@@ -265,7 +258,7 @@ void dose2(double inTargetTotal = 19200000, double muonStopsPhase1 = 2.6e15) {
     if (3 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
   }
 
-  h1->SetTitle(Form("Fibre MuTRIG Dose (time = %f sec)", njobs*dt));
+  h1->SetTitle("Fibre MuTRIG Dose");
   h1->Draw();
 
   c0.SaveAs("fibres-FibreSmbMuTrig-dose2-sumjobs.pdf");
