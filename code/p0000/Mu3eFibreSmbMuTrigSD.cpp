@@ -23,9 +23,18 @@ Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveD
   
   int nbins(1000);
   double zmin(100.), zmax(200.);
+
+  fMuTrigEdep = new TH1F("MuTrigEdep", "MuTrigEdep", 100, 0., 1.);
+  fMuTrigEdepCombined = new TH1F("MuTrigEdepCombined", "MuTrigEdepCombined", 100, 0., 1.);
+
   
   fSmbMuTrigPosZ = new TH1F("SmbMuTrigPosZ", "SMB MuTrig hits, |z| global position for positive z", 3000, 120., 150.);
   fSmbMuTrigNegZ = new TH1F("SmbMuTrigNegZ", "SMB MuTrighits, |z| global position for negative z", 3000, 120., 150.);
+
+  fSmbMuTrigPosZ_xy = new TH2F("fSmbMuTrigPosZ_xy", "SMB MuTrighits, xy global position for positive z",
+                               200, -100., 100., 200, -100., 100.);
+  fSmbMuTrigNegZ_xy = new TH2F("fSmbMuTrigNegZ_xy", "SMB MuTrighits, xy global position for negative z",
+                               200, -100., 100., 200, -100., 100.);
 
   fSmbMuTrigPlanePosZ = new TH2F("SmbMuTrigPlanePosZ", "Smb MuTrig ID for z > 0 (DS)", 400, -200., 200., 400, -200., 200.);
   fSmbMuTrigPlaneNegZ = new TH2F("SmbMuTrigPlaneNegZ", "Smb MuTrig ID for z < 0 (US)", 400, -200., 200., 400, -200., 200.);
@@ -94,6 +103,18 @@ Mu3eFibreSmbMuTrigSD::Mu3eFibreSmbMuTrigSD(const G4String& name) : G4VSensitiveD
         if (0 == iasic) fSmbMuTrigLXY.insert(make_pair(sns, new TH2F(shs.c_str(), Form("MuTrig hits, local xy for %s %s",
                                                                                        sz.c_str(), sns.c_str()),
                                                                      100, -5., +5., 100, -5., +5.)));
+
+        // -- gxy
+        sh = Form("%s_gxy", sn.c_str());
+        fSmbMuTrigGXY.insert(make_pair(sn, new TH2F(sh.c_str(), Form("MuTrig hits, global xy for %s %s", sz.c_str(), sn.c_str()),
+                                                    200, -100., +100., 200, -100., +100.)));
+
+        shs = Form("%s_gxy", sns.c_str());
+        if (0 == iasic) fSmbMuTrigGXY.insert(make_pair(sns, new TH2F(shs.c_str(), Form("MuTrig hits, global xy for %s %s",
+                                                                                       sz.c_str(), sns.c_str()),
+                                                                     200, -100., +100., 200, -100., +100.)));
+
+
       }
     }
   }
@@ -143,6 +164,10 @@ void Mu3eFibreSmbMuTrigSD::Initialize(G4HCofThisEvent*) {
 // ----------------------------------------------------------------------
 G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   int DBX(0);
+  static double frameEdep(0.);
+  static int    frameCnt(0);
+  static string frameSn("");
+  
   G4double edep = aStep->GetTotalEnergyDeposit();
   if (edep <= 0) return false;
   auto prePoint  = aStep->GetPreStepPoint();
@@ -153,6 +178,8 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   //   1: upstream   z < 0
 
   G4int apdgid = TMath::Abs(aStep->GetTrack()->GetDynamicParticle()->GetPDGcode());
+  G4double partKE = aStep->GetTrack()->GetDynamicParticle()->GetKineticEnergy();
+  G4double stepL = aStep->GetStepLength();
   
   auto feePos   = prePoint->GetTouchable()->GetTranslation();
   auto hitPos   = prePoint->GetPosition();
@@ -180,7 +207,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
 
   if (DBX > 0) std::cout << "SmbMuTrigSD> " << smbName << " " 
                  //                   << prePoint->GetTouchable()->GetCopyNumber(0) << "/"
-                 // << prePoint->GetTouchable()->GetCopyNumber(1) << " "
+                 // << prePoint->GetTouchable()->GetCopyNqumber(1) << " "
                  // << prePoint->GetTouchable()->GetVolume()->GetName()
                  // << " feeID = " << feeId
                  // << " smbID = " << smbId
@@ -204,6 +231,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   fSmbMuTrigEdep[sn]->Fill(edep);
   fSmbMuTrigLZ[sn]->Fill(localPos.z());
   fSmbMuTrigLXY[sn]->Fill(localPos.x(), localPos.y());
+  fSmbMuTrigGXY[sn]->Fill(hitPos.x(), hitPos.y());
 
   // -- SMB integrated
   string sns = Form("%s_SMB%d", (feePos.z()>0?"DS":"US"), smbNumber);
@@ -212,11 +240,13 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
   fSmbMuTrigEdep[sns]->Fill(edep);
   fSmbMuTrigLZ[sns]->Fill(localPos.z());
   fSmbMuTrigLXY[sns]->Fill(localPos.x(), localPos.y());
+  fSmbMuTrigGXY[sns]->Fill(hitPos.x(), hitPos.y());
 
   
   // -- keep a record which fedID is where
   if (feePos.z() > 0) {
     fSmbMuTrigPosZ->Fill(TMath::Abs(hitPos.z()));
+    fSmbMuTrigPosZ_xy->Fill(hitPos.x(), hitPos.y());
    
     fSmbMuTrigPlanePosZ->SetBinContent(ix, iy, muTrigNumber);
     if (11 == apdgid) {
@@ -229,6 +259,7 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
     }
   } else {
     fSmbMuTrigNegZ->Fill(TMath::Abs(hitPos.z()));
+    fSmbMuTrigNegZ_xy->Fill(hitPos.x(), hitPos.y());
     fSmbMuTrigPlaneNegZ->SetBinContent(ix, iy, muTrigNumber);
     if (11 == apdgid) {
       fSmbMutrigRadialOutElmz1->Fill(localPos.z(), feeId);
@@ -238,20 +269,48 @@ G4bool Mu3eFibreSmbMuTrigSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
       fSmbMutrigRadialOutElmz2->Fill(TMath::Abs(hitPos.z()), feeId);
       fSmbMutrigRadialOutElmz3->Fill(TMath::Abs(hitPos.z()), feeId, edep);
     }
-    // -- TODO: normalize to bin volume!
   }
 
   if (edep > 0) {
     G4double dose_c = 0;
-    //  int pid = aStep->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
+    int pid = aStep->GetTrack()->GetParticleDefinition()->GetPDGEncoding();
     G4double cubicVolume = prePoint->GetPhysicalVolume()->GetLogicalVolume()->GetSolid()->GetCubicVolume();
-    G4double density = prePoint->GetMaterial()->GetDensity();
-    //G4cout << "DEBUG density " << density << " " << density/kg << " " << (density/kg * cubicVolume) << G4endl;
+    G4double density = prePoint->GetMaterial()->GetDensity(); // 2.3; /*DBX FIXME */
     dose_c    = edep/joule / ( density/kg * cubicVolume );
     dose_c *= prePoint->GetWeight();
     fDose[sn] += dose_c;
-  }
+    std::cout.precision(3);
 
+    if (DBX > 0) cout << "MuTrig DEBUG " << std::scientific
+                << " edep = " << edep
+                << " dose_c = " << dose_c
+                << " sn = " << sn
+                << " stepL = " << stepL
+                << " r = " << std::fixed << localPos.x()
+                << "/" << localPos.y()
+                << "/" << localPos.z()            
+                << " R = " << std::fixed << hitPos.x()
+                << "/" << hitPos.y()
+                << "/" << hitPos.z()            
+                << " KE = " << partKE
+                << endl;
+
+
+    fMuTrigEdep->Fill(edep);
+    if (sn == frameSn) {
+      // -- same sname, so add up
+      frameEdep += edep;
+      ++frameCnt;
+    } else {
+      // -- new sname, so fill and reset
+      if (DBX > 1) cout << "   move on from " << frameSn << ", filling " << frameEdep << endl;
+      fMuTrigEdepCombined->Fill(frameEdep);
+      frameSn   = sn; 
+      frameEdep = edep;
+      frameCnt  = 1;
+    }
+  }
+  
   return true;
 }
 
@@ -267,15 +326,24 @@ void Mu3eFibreSmbMuTrigSD::writeStat() {
   hFibreSmbDose->GetXaxis()->SetTitle("fibre Smb MuTrig");
   hFibreSmbDose->GetYaxis()->SetTitle("dose/time [Gy/s]");
 
+  TH1F * hFibreSmbDose2 = new TH1F("hFibreSmbDose2", TString::Format("Fibre Smb Dose "), 100, 0, 100);
+  hFibreSmbDose2->GetXaxis()->SetTitle("fibre Smb MuTrig");
+  hFibreSmbDose2->GetYaxis()->SetTitle("dose [Gy]");
+
 
   int ibin(1); 
   map<string, double>::iterator i0end = fDose.end();
   for (map<string, double>::iterator ih = fDose.begin(); ih != i0end; ++ih) {
     hFibreSmbDose->SetBinContent(ibin, ih->second/evendtime);
     hFibreSmbDose->GetXaxis()->SetBinLabel(ibin, ih->first.c_str());
+
+    hFibreSmbDose2->SetBinContent(ibin, ih->second);
+    hFibreSmbDose2->GetXaxis()->SetBinLabel(ibin, ih->first.c_str());
+
     ++ibin;
   }
   hFibreSmbDose->Write();
+  hFibreSmbDose2->Write();
 
 
   map<string, TH1F*>::iterator i1end = fSmbMuTrigGZ.end();
@@ -289,6 +357,9 @@ void Mu3eFibreSmbMuTrigSD::writeStat() {
 
   map<string, TH2F*>::iterator i2end = fSmbMuTrigLXY.end();
   for (map<string, TH2F*>::iterator ih = fSmbMuTrigLXY.begin(); ih != i2end; ++ih) ih->second->Write();
+
+  i2end = fSmbMuTrigGXY.end();
+  for (map<string, TH2F*>::iterator ih = fSmbMuTrigGXY.begin(); ih != i2end; ++ih) ih->second->Write();
 
   
   fSmbMuTrigPlanePosZ->Write();
@@ -310,6 +381,9 @@ void Mu3eFibreSmbMuTrigSD::writeStat() {
 
   fSmbMutrigRadialOutElx1a->Write();
   fSmbMutrigRadialOutEly1a->Write();
+
+  fMuTrigEdep->Write();
+  fMuTrigEdepCombined->Write();
   
   gDirectory->cd("..");
 }
