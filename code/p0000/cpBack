@@ -41,7 +41,8 @@
 # 2022/11/11 add global xy position histograms
 # 2022/11/22 debugging the dosis that is too large
 # 2022/11/23 move dbx printout behind DBX
-cd /psi/home/langenegger/data/mu3e-dev-smb
+# 2022/11/25 end of work
+cd /psi/home/langenegger/data/mu3e-dev-smb/
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/mu3eVis.cpp mu3eSim/mu3eVis.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0000/Mu3eFibreDetector.h mu3eSim/src/Mu3eFibreDetector.h
