@@ -4,7 +4,17 @@
 # cpFilesFromGitDir
 # ===================
 #
-# Usage:    ./cpFiles [-m "message"] [-d] [-c] [-f file] -g gitdir
+# Make copies of files in some git directory that are not committed
+# 
+#
+# Usage:    ./cpFiles [-m "message"] [-b] [-d] [-c] [-f file] -g gitdir
+#
+#           -b bootstrap: get all files that are not in (origin) dev, i.e. `git diff --name-only remotes/origin/dev`
+#           -d debug mode
+#           -c compare
+#           -f only a single file
+#           -g specify git directory
+#           -m message to be put into cpBack
 #
 # Examples: cd ~/mu3e/mu3eanca/code/p0000
 #           ../../perl/cpFilesFromGitDir -m "2022/09/06 bla" -g ~/data/mu3e-dev-smb
@@ -23,7 +33,7 @@
 
 use File::Basename;
 use Getopt::Std;
-getopts('cdf:g:m:');
+getopts('bcdf:g:m:');
 
 # -- current "project" for backup storage
 my $basedir = `pwd`;
@@ -124,7 +134,11 @@ if (!$opt_d) {
 # ----------------------------------------------------------------------
 sub getFileList {
     chdir($gitdir);
-    @git = `git st --porcelain`;
+    if ($opt_b) {
+        @git = `git diff --name-only remotes/origin/dev`;
+    } else {
+        @git = `git st --porcelain`;
+    }
     chdir($basedir);
     @lfiles = ();
     foreach $file (@git) {
