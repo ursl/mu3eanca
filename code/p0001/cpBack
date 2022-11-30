@@ -1,0 +1,20 @@
+# 2022/11/30 first validation in dev and final fixes
+# 2022/11/30 first validation in dev and final fixes; get all changed files
+cd /psi/home/langenegger/data/mu3e-test-dev-smb
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/mu3eVis.cpp mu3eSim/mu3eVis.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreDetector.h mu3eSim/src/Mu3eFibreDetector.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreRibbon.cpp mu3eSim/src/Mu3eFibreRibbon.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreRibbon.h mu3eSim/src/Mu3eFibreRibbon.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreSmbMuTrigSD.cpp mu3eSim/src/Mu3eFibreSmbMuTrigSD.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreSmbMuTrigSD.h mu3eSim/src/Mu3eFibreSmbMuTrigSD.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreSmbSD.cpp mu3eSim/src/Mu3eFibreSmbSD.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreSmbSD.h mu3eSim/src/Mu3eFibreSmbSD.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreSupport.cpp mu3eSim/src/Mu3eFibreSupport.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreSupport.h mu3eSim/src/Mu3eFibreSupport.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eFibreTrackerConstruction.cpp mu3eSim/src/Mu3eFibreTrackerConstruction.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eRunAction.cpp mu3eSim/src/Mu3eRunAction.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/Mu3eDetectorCfg.h mu3eTools/src/Mu3eDetectorCfg.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/detector.json run/detector.json
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/run1.mac run/run1.mac
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0001/CMakeLists.txt util/CMakeLists.txt
