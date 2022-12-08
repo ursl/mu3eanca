@@ -237,7 +237,7 @@ void dose(double inTargetTotal = 19200000, double muonStopsPhase1 = 1.e15) {
 }
 
 // ----------------------------------------------------------------------
-void dose2(double inTargetTotal = 19200000, double muonStopsPhase1 = 2.6e15) {
+void dose2(double inTargetTotal = 25600000, double muonStopsPhase1 = 2.6e15) {
   TH1F *h1 = (TH1F*) gFile->Get("stat/FibreSmbMuTrig/hFibreSmbDose2"); 
   h1->GetXaxis()->SetTitle("");
   h1->GetYaxis()->SetTitle("Dose [Gy]");
