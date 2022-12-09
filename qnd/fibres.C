@@ -276,6 +276,7 @@ void dose2(double inTargetTotal = 25600000, double muonStopsPhase1 = 2.6e15) {
 
   h1->SetTitle(Form("Fibre MuTRIG Dose (n_{#mu}^{stop} = %1.1fE%2.0f)", mantN, expoN));
   h1->SetLineWidth(2);
+  h1->SetAxisRange(0., 97., "X");
   h1->Draw("hist");
   
   c0.SaveAs("fibres-FibreSmbMuTrig-dose2-phase1.pdf");
