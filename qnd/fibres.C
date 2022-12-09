@@ -275,9 +275,81 @@ void dose2(double inTargetTotal = 25600000, double muonStopsPhase1 = 2.6e15) {
   cout << "original mantN = " << mantN << endl;
 
   h1->SetTitle(Form("Fibre MuTRIG Dose (n_{#mu}^{stop} = %1.1fE%2.0f)", mantN, expoN));
+  h1->SetLineWidth(2);
   h1->Draw("hist");
   
   c0.SaveAs("fibres-FibreSmbMuTrig-dose2-phase1.pdf");
 
 }
 
+// ----------------------------------------------------------------------
+void rphiMuTrig() {
+  gStyle->SetOptStat(0);
+  zone();
+  shrinkPad(0.15, 0.15);
+  TH2F *hu = (TH2F*)gFile->Get("stat/FibreSmbMuTrig/SmbMuTrigPlaneNegZ");
+  TH2F *hd = (TH2F*)gFile->Get("stat/FibreSmbMuTrig/SmbMuTrigPlanePosZ");
+  
+  hu->SetAxisRange(-60., 60., "X");
+  hu->SetAxisRange(-60., 60., "Y");
+  hu->GetXaxis()->SetTitle("x [mm]");
+  hu->GetXaxis()->SetTitleSize(0.05);
+  hu->GetYaxis()->SetTitle("y [mm]");
+  hu->GetYaxis()->SetTitleSize(0.05);
+  hu->SetNdivisions(505, "Z");
+  hu->SetMinimum(-0.01);
+
+  hd->SetAxisRange(-60., 60., "X");
+  hd->SetAxisRange(-60., 60., "Y");
+  hd->GetXaxis()->SetTitle("x [mm]");
+  hd->GetXaxis()->SetTitleSize(0.05);
+  hd->GetYaxis()->SetTitle("y [mm]");
+  hd->GetYaxis()->SetTitleSize(0.05);
+  hd->SetMinimum(-0.01);
+  hd->SetNdivisions(505, "Z");
+
+  hu->Draw("colz");
+  c0.SaveAs("fibres-us-rphi-MuTrig.pdf");
+
+  hd->Draw("colz");
+  c0.SaveAs("fibres-ds-rphi-MuTrig.pdf");
+}
+
+
+// ----------------------------------------------------------------------
+void rphiSmb() {
+  gStyle->SetOptStat(0);
+  zone();
+  shrinkPad(0.15, 0.15);
+  TH2F *hu = (TH2F*)gFile->Get("stat/FibreSmb/PlaneNegZ");
+  TH2F *hd = (TH2F*)gFile->Get("stat/FibreSmb/PlanePosZ");
+  
+  hu->SetAxisRange(-60., 60., "X");
+  hu->SetAxisRange(-60., 60., "Y");
+  hu->GetXaxis()->SetTitle("x [mm]");
+  hu->GetXaxis()->SetTitleSize(0.05);
+  hu->GetYaxis()->SetTitle("y [mm]");
+  hu->GetYaxis()->SetTitleSize(0.05);
+  hu->SetMinimum(-0.01);
+
+  hd->SetAxisRange(-60., 60., "X");
+  hd->SetAxisRange(-60., 60., "Y");
+  hd->GetXaxis()->SetTitle("x [mm]");
+  hd->GetXaxis()->SetTitleSize(0.05);
+  hd->GetYaxis()->SetTitle("y [mm]");
+  hd->GetYaxis()->SetTitleSize(0.05);
+  hd->SetMinimum(-0.01);
+
+  hu->Draw("colz");
+  c0.SaveAs("fibres-us-rphi-SMB.pdf");
+
+  hd->Draw("colz");
+  c0.SaveAs("fibres-ds-rphi-SMB.pdf");
+}
+
+
+// ----------------------------------------------------------------------
+void allGeometryPlots() {
+  rphiSmb();
+  rphiMuTrig();  
+}
