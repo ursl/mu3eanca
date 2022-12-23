@@ -2,6 +2,9 @@
 // -- r ~/data/mu3e/mu3e-dev-smb/run-combined.root
 // -- .L fibres.C
 // -- zPosition()
+//
+// NOTE: For the rphi displays you MUST use a single-run file.
+//       Else you get the SUM of the IDs ...
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
@@ -309,10 +312,31 @@ void rphiMuTrig() {
   hd->SetMinimum(-0.01);
   hd->SetNdivisions(505, "Z");
 
-  hu->Draw("colz");
+  hu->Draw("axis");
+  tl->SetNDC(kFALSE);
+  tl->SetTextSize(0.03);
+  for (int ix = 1; ix <= hu->GetNbinsX(); ++ix) {
+    for (int iy = 1; iy <= hu->GetNbinsY(); ++iy) {
+      if (hu->GetBinContent(ix, iy) > -1)
+        tl->DrawLatex(hu->GetXaxis()->GetBinCenter(ix),
+                      hu->GetYaxis()->GetBinCenter(iy),
+                      Form("%d", static_cast<int>(hu->GetBinContent(ix, iy))));
+    }
+  }
+  
   c0.SaveAs("fibres-us-rphi-MuTrig.pdf");
-
-  hd->Draw("colz");
+  
+  hd->Draw("axis");
+  tl->SetNDC(kFALSE);
+  tl->SetTextSize(0.03);
+  for (int ix = 1; ix <= hd->GetNbinsX(); ++ix) {
+    for (int iy = 1; iy <= hd->GetNbinsY(); ++iy) {
+      if (hd->GetBinContent(ix, iy) > -1)
+        tl->DrawLatex(hd->GetXaxis()->GetBinCenter(ix),
+                      hd->GetYaxis()->GetBinCenter(iy),
+                      Form("%d", static_cast<int>(hd->GetBinContent(ix, iy))));
+    }
+  }
   c0.SaveAs("fibres-ds-rphi-MuTrig.pdf");
 }
 
@@ -341,10 +365,30 @@ void rphiSmb() {
   hd->GetYaxis()->SetTitleSize(0.05);
   hd->SetMinimum(-0.01);
 
-  hu->Draw("colz");
+  hu->Draw("axis");
+  tl->SetNDC(kFALSE);
+  tl->SetTextSize(0.05);
+  for (int ix = 1; ix <= hu->GetNbinsX(); ++ix) {
+    for (int iy = 1; iy <= hu->GetNbinsY(); ++iy) {
+      if (hu->GetBinContent(ix, iy) > -1)
+        tl->DrawLatex(hu->GetXaxis()->GetBinCenter(ix),
+                      hu->GetYaxis()->GetBinCenter(iy),
+                      Form("%d", static_cast<int>(hu->GetBinContent(ix, iy))));
+    }
+  }
   c0.SaveAs("fibres-us-rphi-SMB.pdf");
 
-  hd->Draw("colz");
+  hd->Draw("axis");
+  tl->SetNDC(kFALSE);
+  tl->SetTextSize(0.05);
+  for (int ix = 1; ix <= hd->GetNbinsX(); ++ix) {
+    for (int iy = 1; iy <= hd->GetNbinsY(); ++iy) {
+      if (hd->GetBinContent(ix, iy) > -1)
+        tl->DrawLatex(hd->GetXaxis()->GetBinCenter(ix),
+                      hd->GetYaxis()->GetBinCenter(iy),
+                      Form("%d", static_cast<int>(hd->GetBinContent(ix, iy))));
+    }
+  }
   c0.SaveAs("fibres-ds-rphi-SMB.pdf");
 }
 
