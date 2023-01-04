@@ -246,23 +246,30 @@ void dose2(double inTargetTotal = 25600000, double muonStopsPhase1 = 2.6e15) {
   h1->GetYaxis()->SetTitle("Dose [Gy]");
   gStyle->SetOptStat(0);
   zone();
-  shrinkPad(0.2, 0.15);
+  shrinkPad(0.05, 0.15);
   h1->Draw();
 
   // -- remove most of the bin labels
+  string sname("");
+  h1->GetXaxis()->SetTickSize(0.015);
   for (int ibin = 1; ibin <= h1->GetNbinsX(); ++ibin) {
+    h1->GetXaxis()->SetLabelOffset(-0.08);
     if (1 == ibin%4) {
-      string sname = h1->GetXaxis()->GetBinLabel(ibin);
+      sname = h1->GetXaxis()->GetBinLabel(ibin);
+      h1->GetXaxis()->SetBinLabel(ibin, "");
+    }
+
+    if (2 == ibin%4) {
       h1->GetXaxis()->SetBinLabel(ibin, sname.c_str());
     }
 
-    if (0 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
-    if (2 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
     if (3 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
+
+    if (0 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
   }
 
   h1->SetTitle("Fibre MuTRIG Dose");
-  h1->Draw();
+  h1->Draw("e");
 
   c0.SaveAs("fibres-FibreSmbMuTrig-dose2-sumjobs.pdf");
 
@@ -282,7 +289,10 @@ void dose2(double inTargetTotal = 25600000, double muonStopsPhase1 = 2.6e15) {
   h1->SetAxisRange(0., 95., "X");
   h1->SetMinimum(0.);
   h1->GetXaxis()->SetNdivisions(-24, false);
-  h1->Draw("hist");
+  h1->Draw("e");
+
+  tl->DrawTextNDC(0.20, 0.4, "downstream");
+  tl->DrawTextNDC(0.65, 0.4, "upstream");
   
   c0.SaveAs("fibres-FibreSmbMuTrig-dose2-phase1.pdf");
 
