@@ -1,0 +1,18 @@
+# 2023/01/05 another attempt to achieve closure
+# 2023/01/05 another attempt to achieve closure
+cd /psi/home/langenegger/data/test0
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eExperimentConstruction.cpp mu3eSim/src/Mu3eExperimentConstruction.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreDetector.h mu3eSim/src/Mu3eFibreDetector.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreRibbon.cpp mu3eSim/src/Mu3eFibreRibbon.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreRibbon.h mu3eSim/src/Mu3eFibreRibbon.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreSmbMuTrigSD.cpp mu3eSim/src/Mu3eFibreSmbMuTrigSD.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreSmbMuTrigSD.h mu3eSim/src/Mu3eFibreSmbMuTrigSD.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreSmbSD.cpp mu3eSim/src/Mu3eFibreSmbSD.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreSmbSD.h mu3eSim/src/Mu3eFibreSmbSD.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreSupport.cpp mu3eSim/src/Mu3eFibreSupport.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreSupport.h mu3eSim/src/Mu3eFibreSupport.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eFibreTrackerConstruction.cpp mu3eSim/src/Mu3eFibreTrackerConstruction.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eRunAction.cpp mu3eSim/src/Mu3eRunAction.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/Mu3eDetectorCfg.h mu3eTools/src/Mu3eDetectorCfg.h
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/detector.json run/detector.json
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0002/run1.mac run/run1.mac
