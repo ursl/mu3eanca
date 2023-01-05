@@ -410,3 +410,39 @@ void allGeometryPlots() {
   rphiSmb();
   rphiMuTrig();  
 }
+
+
+// ----------------------------------------------------------------------
+void compare2Files(string file1 = "/psi/home/langenegger/data/test0/run/directory/mu3e_run_000779.root",
+                   string file2 = "/psi/home/langenegger/data/mu3e-dev/run/directory/mu3e_run_000779.root") {
+  TFile *f1 = TFile::Open(file1.c_str());
+  TFile *f2 = TFile::Open(file2.c_str());
+  TTree *t1 = (TTree*)f1->Get("mu3e"); t1->SetLineColor(kBlue);
+  TTree *t2 = (TTree*)f2->Get("mu3e"); t2->SetLineColor(kRed);
+
+  vector<string> vars = {"traj_pz", "traj_px", "traj_py"
+      , "Nfibrehit", "fibrehit_fibre", "fibrehit_time", "fibrehit_mppc_hitsL", "fibrehit_mppc_hitsR"
+      , "fibrehit_ampL", "fibrehit_ampR", "fibrehit_mc_i", "fibrehit_mc_n", "Nfibredetectorhit"
+      , "fibredetectorhit_time", "fibredetectorhit_secondary", "fibredetectorhit_ribbon"
+      , "fibredetectorhit_mc_i", "fibredetectorhit_mc_n"
+      , "Nfibremppc", "fibremppc_mppc", "fibremppc_col", "fibremppc_timestamp"
+      , "fibremppc_mc_i", "fibremppc_mc_n", "fibremppc_amplitude", "fibremppc_time"
+      , "fibremppc_nfibres", "fibremppc_crosstalk", "fibremppc_pathlength"
+      , "fibremppc_time_prod", "fibremppc_time_hist"
+      };
+
+  gPad->SetLogy(1);
+  tl->SetTextSize(0.03);
+  tl->SetTextAngle(90.);
+  for (unsigned int i = 0; i < vars.size(); ++i) {
+    string pdfname("cmp-");
+    t1->Draw(vars[i].c_str(), "", "hist");
+    t2->Draw(vars[i].c_str(), "", "esame");
+    tl->SetTextColor(kBlue);
+    tl->DrawLatexNDC(0.94, 0.2, "ursl-fibres-smb-radiation");
+    tl->SetTextColor(kRed);
+    tl->DrawLatexNDC(0.97, 0.2, "dev (2023/01/05)");
+    pdfname += vars[i] + ".pdf";
+    c0.SaveAs(pdfname.c_str());
+  }
+}
