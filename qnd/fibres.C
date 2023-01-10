@@ -298,6 +298,74 @@ void dose2(double inTargetTotal = 25600000, double muonStopsPhase1 = 2.6e15) {
 
 }
 
+
+// ----------------------------------------------------------------------
+// -- same as dose2 but it reads in n histograms from run-out.root
+//    from addHist2RootFile::addRuns()
+//    by default it uses 1000 jobs with 30kFrames
+void dose3(int run1 = 40000, int run2 = 40999,
+           double inTargetTotal = 256480654, double muonStopsPhase1 = 2.6e15) {
+  TH1F *h1 = (TH1F*)gFile->Get(Form("run%d_hFibreSmbDose2", run1)); 
+  h1->Reset();
+  for (int irun = run1; irun <= run2; ++irun) {
+    h1->Add((TH1F*)gFile->Get(Form("run%d_hFibreSmbDose2", irun)));
+  }
+  h1->GetXaxis()->SetTitle("");
+  h1->GetYaxis()->SetTitle("Dose [Gy]");
+  gStyle->SetOptStat(0);
+  zone();
+  shrinkPad(0.05, 0.15);
+  h1->Draw();
+
+  // -- remove most of the bin labels
+  string sname("");
+  h1->GetXaxis()->SetTickSize(0.015);
+  for (int ibin = 1; ibin <= h1->GetNbinsX(); ++ibin) {
+    h1->GetXaxis()->SetLabelOffset(-0.08);
+    if (1 == ibin%4) {
+      sname = h1->GetXaxis()->GetBinLabel(ibin);
+      h1->GetXaxis()->SetBinLabel(ibin, "");
+    }
+
+    if (2 == ibin%4) {
+      h1->GetXaxis()->SetBinLabel(ibin, sname.c_str());
+    }
+
+    if (3 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
+
+    if (0 == ibin%4) h1->GetXaxis()->SetBinLabel(ibin, "");
+  }
+
+  h1->SetTitle("Fibre MuTRIG Dose");
+  h1->Draw("e");
+
+  c0.SaveAs("fibres-FibreSmbMuTrig-dose2-sumjobs.pdf");
+
+  // -- scale up to 1e15 muon stops
+  double sf = muonStopsPhase1/inTargetTotal;
+  h1->Scale(sf);
+
+  double n = muonStopsPhase1; 
+  double expoN  = TMath::Log10(n);
+  cout << "original expoN = " << expoN << endl;
+
+  double mantN  = n / TMath::Power(10, static_cast<int>(expoN));
+  cout << "original mantN = " << mantN << endl;
+
+  h1->SetTitle(Form("Fibre MuTRIG Dose (n_{#mu}^{stop} = %1.1fE%2.0f)", mantN, expoN));
+  h1->SetLineWidth(2);
+  h1->SetAxisRange(0., 95., "X");
+  h1->SetMinimum(0.);
+  h1->GetXaxis()->SetNdivisions(-24, false);
+  h1->Draw("e");
+
+  tl->DrawTextNDC(0.20, 0.4, "downstream");
+  tl->DrawTextNDC(0.65, 0.4, "upstream");
+  
+  c0.SaveAs("fibres-FibreSmbMuTrig-dose2-phase1.pdf");
+
+}
+
 // ----------------------------------------------------------------------
 void rphiMuTrig() {
   gStyle->SetOptStat(0);
