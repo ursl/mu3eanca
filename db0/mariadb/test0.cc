@@ -24,8 +24,7 @@ int loops = 2;
 static sql::Driver * driver = nullptr;
 
 static sql::Connection *
-get_connection(const std::string & host, const std::string & user, const std::string & pass, bool useTls=TEST_USETLS)
-{
+get_connection(const std::string & host, const std::string & user, const std::string & pass, bool useTls=TEST_USETLS) {
   try {
     /* There will be concurrency problem if we had threads, but don't have, then it's ok */
     if (!driver) {
