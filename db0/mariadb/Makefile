@@ -9,7 +9,7 @@ endif
 
 all:
 	/usr/bin/c++ $(INCMARIADB) -O2 -g -DNDEBUG -std=gnu++11 -o test0.o -c test0.cc
-	/usr/bin/c++ -O2 -g -DNDEBUG -rdynamic test0.o -o test0  
+	/usr/bin/c++ -O2 -g -DNDEBUG -rdynamic test0.o -o test0 $(LIBMARIADB)
 #=======
 #all:
 #	test1 test0
