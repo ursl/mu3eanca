@@ -23,8 +23,8 @@ int loops = 2;
 
 static sql::Driver * driver = nullptr;
 
-static sql::Connection *
-get_connection(const std::string & host, const std::string & user, const std::string & pass, bool useTls=TEST_USETLS) {
+static sql::Connection *get_connection(const std::string & host, const std::string & user,
+                                       const std::string & pass, bool useTls=TEST_USETLS) {
   try {
     /* There will be concurrency problem if we had threads, but don't have, then it's ok */
     if (!driver) {
@@ -34,6 +34,7 @@ get_connection(const std::string & host, const std::string & user, const std::st
     if (loops % 2 && !useTls) {
       return driver->connect(host, user, pass);
     } else {
+      std::cout << "driver->connect" << std::endl;
       sql::ConnectOptionsMap connection_properties;
       connection_properties["hostName"]= host;
       connection_properties["userName"]= user;
@@ -60,12 +61,9 @@ get_connection(const std::string & host, const std::string & user, const std::st
 static void driver_test_new_driver_exception() {
 }
 
-/* {{{	*/
-int main(int argc, const char **argv)
-{
+int main(int argc, const char **argv) {
   driver_test_new_driver_exception();
 
   return run_tests(argc, argv);
 }
-/* }}} */
 
