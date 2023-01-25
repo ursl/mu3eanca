@@ -3,7 +3,7 @@ ifeq ($(OSTYPE),darwin)
   INCMARIADB = /opt/software/mariadbpp/include/mariadb++/
   LIBMARIADB = /opt/software/mariadbpp/lib/
 else
-  INCMARIADB = -I/home/l_tester/mariadb-connector-cpp/libmariadb/include -I/home/l_tester/mariadb-connector-cpp/include/conncpp
+  INCMARIADB = -I/home/l_tester/mariadb-connector-cpp/libmariadb/include -I/home/l_tester/mariadb-connector-cpp/include
   LIBMARIADB = /usr/local/lib64/mariadb/libmariadb.so.3 /usr/local/lib64/mariadb/libmariadbcpp.so
 endif
 
