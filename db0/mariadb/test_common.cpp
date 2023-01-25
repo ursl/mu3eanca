@@ -2612,7 +2612,8 @@ int run_tests(int argc, const char **argv) {
 
   for (i = 0 ; i < loops; ++i) {
     last_error_total = total_errors;
-                printf("# 0 - total_errors %d, last_error_total = %d\n", total_errors, last_error_total);
+                printf("# 0 - total_errors %d, last_error_total = %d\n",
+                       total_errors, last_error_total);
     const std::string host(argc >=2 ? argv[1] : HOST_ENV_OR_DEFAULT);
     std::cout << "# Host=" << host << std::endl;
 	std::cout << "# User=" << user << std::endl;
