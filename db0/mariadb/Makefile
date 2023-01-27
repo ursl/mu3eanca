@@ -7,9 +7,18 @@ else
   LIBMARIADB = /usr/local/lib64/mariadb/libmariadb.so.3 /usr/local/lib64/mariadb/libmariadbcpp.so
 endif
 
-all:
+all: test0 test2
 	/usr/bin/c++ $(INCMARIADB) -O2 -g -DNDEBUG -std=gnu++11 -o test0.o -c test0.cc
 	/usr/bin/c++ -O2 -g -DNDEBUG -rdynamic test0.o -o test0 $(LIBMARIADB)
+
+test2:
+	/usr/bin/c++ $(INCMARIADB) -O2 -g -DNDEBUG -std=gnu++11 -o test2.o -c test2.cc
+	/usr/bin/c++ -O2 -g -DNDEBUG -rdynamic test2.o -o test2 $(LIBMARIADB)
+
+test0:
+	/usr/bin/c++ $(INCMARIADB) -O2 -g -DNDEBUG -std=gnu++11 -o test0.o -c test0.cc
+	/usr/bin/c++ -O2 -g -DNDEBUG -rdynamic test0.o -o test0 $(LIBMARIADB)
+
 #=======
 #all:
 #	test1 test0
@@ -25,4 +34,4 @@ all:
 #>>>>>>> 609f835b198617b6defef7e67c75153640e12c12
 
 clean:
-	rm -f *.o test0 test1
+	rm -f *.o test0 test1 test2
