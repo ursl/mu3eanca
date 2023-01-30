@@ -44,11 +44,11 @@ int loops = 2;
 
 static sql::Driver * driver = nullptr;
 
-/* {{{	*/
-static sql::Connection *
-get_connection(const std::string & host, const std::string & user, const std::string & pass, bool useTls=TEST_USETLS) {
+// ----------------------------------------------------------------------
+static sql::Connection *get_connection(const std::string & host,
+                                       const std::string & user,
+                                       const std::string & pass, bool useTls=TEST_USETLS) {
   try {
-    /* There will be concurrency problem if we had threads, but don't have, then it's ok */
     if (!driver) {
       driver = sql::mariadb::get_driver_instance();
     }
@@ -61,8 +61,6 @@ get_connection(const std::string & host, const std::string & user, const std::st
       connection_properties["userName"]= user;
       connection_properties["password"]= pass;
       connection_properties["useTls"]=   useTls ? "true" : "false";
-      /* We need to run tests for client- and server-side prepared statements. That also gives
-       much more sense for these tests to be run twice */
       connection_properties["useServerPrepStmts"] = "true";
 
       return driver->connect(connection_properties);
@@ -73,15 +71,15 @@ get_connection(const std::string & host, const std::string & user, const std::st
     throw;
   }
 }
-/* }}} */
+
 
 #define DRIVER_TEST 1
 #define TEST_COMMON_TAP_NAME "driver_test"
 
 #include "test_common.cpp"
 
-static void driver_test_new_driver_exception()
-{
+// ----------------------------------------------------------------------
+static void driver_test_new_driver_exception() {
   // We do not export Driver interface implementation
   /*try {
     new sql::mariadb::MariaDbDriver();
@@ -89,11 +87,94 @@ static void driver_test_new_driver_exception()
   } catch (sql::InvalidArgumentException&) { }*/
 }
 
-/* {{{	*/
-int main(int argc, const char **argv)
-{
+
+// ----------------------------------------------------------------------
+void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
+  std::unique_ptr<sql::Statement> stmt(conn->createStatement());
+  sql::ResultSet *res;
+
+  conn->setSchema("Mu3e");
+  res = stmt->executeQuery("select RunNumber, RunDescription, Mu3eSchema, StartTime, EndTime  from RunCollection");
+  while (res->next()) {
+    cout << "\t... MySQL replies: ";
+    /* Access column data by alias or column name */
+    cout << res->getString("StartTime") << endl;
+    cout << "\t... MySQL says it again: ";
+    /* Access column data by numeric offset, 1 is the first column */
+    cout << res->getString(1) << endl;
+  }
+  
+}
+
+
+// ----------------------------------------------------------------------
+vector<string> runCommand(std::unique_ptr<sql::Connection> conn, string cmd) {
+  std::unique_ptr<sql::Statement> stmt(conn->createStatement());
+
+  stmt->execute(cmd.c_str());
+
+  std::unique_ptr<sql::ResultSet> rset(stmt->getResultSet());
+  int found = 0;
+  vector<string> lines; 
+  while (rset->next()) {
+    std::string engine(rset->getString("Engine")), support(rset->getString("Support"));
+    std::cout << "# " << engine << "::" << support << std::endl;
+    if (engine == "InnoDB" && (support == "YES" || support == "DEFAULT")) {
+      found = 1;
+      break;
+    }
+  }
+
+}
+
+
+
+// ----------------------------------------------------------------------
+int main(int argc, const char **argv) {
   driver_test_new_driver_exception();
 
-  return run_tests(argc, argv);
+  std::unique_ptr<sql::Connection> conn;
+  int last_error_total = 0;
+  int i;
+
+  const std::string host(argc >=2 ? argv[1] : HOST_ENV_OR_DEFAULT);
+  const std::string user(argc >=3 ? argv[2] : UID_ENV_OR_DEFAULT);
+  const std::string pass(argc >=4 ? argv[3] : PASSWD_ENV_OR_DEFAULT);
+  const std::string database(argc >=5 ? argv[4] : SCHEMA_ENV_OR_DEFAULT);
+  const bool useTls= USETLS_ENV_OR_DEFAULT;
+  
+  std::cout << "# Host=" << host << std::endl;
+  std::cout << "# User=" << user << std::endl;
+  
+  std::string connect_method("unknown");
+  if (host.find("tcp://", (size_t)0) != std::string::npos) {
+    connect_method = "tcp";
+  } else if (host.find("unix://", (size_t)0) != std::string::npos) {
+    connect_method = "socket";
+  } else {
+    connect_method = "socket";
+  }		
+  
+  std::cout << "# connect_method=" << connect_method << std::endl;
+  
+  try {
+    conn.reset(get_connection(host, user, pass, useTls));
+  } catch (sql::SQLException &e) {
+    printf("\n# ERR: Caught sql::SQLException at %s::%d  [%s] (%d/%s)\n",
+           CPPCONN_FUNC, __LINE__, e.what(), e.getErrorCode(), e.getSQLStateCStr());
+    printf("not ok\n");
+    return 1;
+  }
+  
+  if (!conn->isValid(10)) {
+    printf("\n# ERR: Connection is not valid at %s::%d\n", CPPCONN_FUNC, __LINE__);
+    printf("not ok\n");
+    return 1;
+  } else {
+    std::cout << "all is well" << std::endl;
+  }
+
+  executeQuery(conn, "");
+  
+  return 0;
 }
-/* }}} */
