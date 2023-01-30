@@ -96,12 +96,13 @@ void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
   conn->setSchema("Mu3e");
   res = stmt->executeQuery("select RunNumber, RunDescription, Mu3eSchema, StartTime, EndTime  from RunCollection");
   while (res->next()) {
-    cout << "\t... MySQL replies: ";
-    /* Access column data by alias or column name */
-    cout << res->getString("StartTime") << endl;
-    cout << "\t... MySQL says it again: ";
-    /* Access column data by numeric offset, 1 is the first column */
-    cout << res->getString(1) << endl;
+    cout << "RunNumber: " << res->getString("RunNumber") << endl;
+    // Access column data by alias or column name 
+    cout << "StartTime: " << res->getString("StartTime") << endl;
+    // Access column data by numeric offset, 1 is the first column 
+    // cout << res->getString(1) << endl;
+    // playing
+    cout << "Mu3eSchema: " << res->getString("Mu3eSchema") << endl;
   }
   
 }
