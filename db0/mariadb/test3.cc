@@ -152,7 +152,6 @@ void executeWrite(std::unique_ptr<sql::Connection> & conn, int first, int nruns)
       EndTime = string(buff);
     }
 
-    
     stringstream s;
     s << "("
       << "'" << irun << "', "
@@ -171,7 +170,10 @@ void executeWrite(std::unique_ptr<sql::Connection> & conn, int first, int nruns)
       << ")";
 
     string SQL1 = s.str();
-    cout << SQL0+SQL1 << endl;
+    string SQL = SQL0+SQL1;
+    cout << SQL << endl;
+
+    sql::ResultSet *res = stmt->executeQuery(SQL);
   }
 }
 
