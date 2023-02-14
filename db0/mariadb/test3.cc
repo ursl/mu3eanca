@@ -90,13 +90,30 @@ static void driver_test_new_driver_exception() {
   } catch (sql::InvalidArgumentException&) { }*/
 }
 
+// ----------------------------------------------------------------------
+void executeMakeRuns(std::unique_ptr<sql::Connection> & conn) {
+  std::unique_ptr<sql::Statement> stmt(conn->createStatement());
+  sql::ResultSet *res;
 
+  std::string SQL0 = "drop table if exists runs";
+
+  res = stmt->executeQuery(SQL0);
+
+  
+  std::string SQL = "create table runs(_id int, StartTime datetime, EndTime datetime, Frames int, DataSize bigint, BeamOn bool, Magnet bool, ShiftCrew varchar(100), RunDescription varchar(100), DeliveredCharge double, SciCatId varchar(100), MD5Sum bigint, primary key(_id));";
+
+  res = stmt->executeQuery(SQL);
+
+}
+  
 // ----------------------------------------------------------------------
 void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
   std::unique_ptr<sql::Statement> stmt(conn->createStatement());
   sql::ResultSet *res;
 
   std::string SQL = "select _id, StartTime, EndTime, Frames, DataSize, BeamOn, Magnet, ShiftCrew, RunDescription, DeliveredCharge, SciCatId, MD5Sum from runs";
+
+  std::ios_base::fmtflags f(cout.flags());
 
   res = stmt->executeQuery(SQL);
   cout << "res->rowsCount() = " << res->rowsCount() << endl;
@@ -214,10 +231,11 @@ int main(int argc, const char **argv) {
   int i;
 
   // -- command line arguments
-  bool doRead(false), doWrite(false);
+  bool doRead(false), doWrite(false), doMake(false);
   int first(-1), nruns(-1);
   string pass;
   for (int i = 0; i < argc; i++){
+    if (!strcmp(argv[i],"-c"))  {doMake = true;}
     if (!strcmp(argv[i],"-f"))  {first   = atoi(argv[++i]);}
     if (!strcmp(argv[i],"-n"))  {nruns   = atoi(argv[++i]);}
     if (!strcmp(argv[i],"-r"))  {doRead  = true;}
@@ -264,6 +282,10 @@ int main(int argc, const char **argv) {
     return 1;
   } else {
     std::cout << "all is well" << std::endl;
+  }
+
+  if (doMake) {
+    executeMakeRuns(conn);
   }
 
   if (doWrite) {
