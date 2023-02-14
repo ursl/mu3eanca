@@ -102,14 +102,17 @@ void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
   cout << "res->rowsCount() = " << res->rowsCount() << endl;
   while (res->next()) {
     cout << res->getInt(1) << " "
-         << res->getInt(2) << " "
+         << res->getString(2) << " "
          << res->getString(3) << " "
-         << res->getString(4) << " "
-         << res->getString(5) << " "
-         << res->getString(6) << " "
-         << res->getString(7) << " "
+         << res->getInt(4) << " "
+         << res->getInt(5) << " "
+         << res->getInt(6) << " "
+         << res->getInt(7) << " "
          << res->getString(8) << " "
          << res->getString(9) << " "
+         << res->getFloat(10) << " "
+         << res->getString(11) << " "
+         << res->getInt(12) << " "
          << endl;
     //cout << "RunNumber: " << res->getString("RunNumber") << endl;
   }
