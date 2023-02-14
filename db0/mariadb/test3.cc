@@ -96,7 +96,7 @@ void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
   std::unique_ptr<sql::Statement> stmt(conn->createStatement());
   sql::ResultSet *res;
 
-  std::string SQL = "select RunNumber, Mu3eSchema, StartTime, EndTime, Frames, DataSize, BeamOn, Magnet, RunType from RunCollection";
+  std::string SQL = "select _id, StartTime, EndTime, Frames, DataSize, BeamOn, Magnet, ShiftCrew, RunDescription, DeliveredCharge, SciCatId, MD5Sum from runs";
 
   res = stmt->executeQuery(SQL);
   cout << "res->rowsCount() = " << res->rowsCount() << endl;
@@ -118,36 +118,37 @@ void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
 // ----------------------------------------------------------------------
 void executeWrite(std::unique_ptr<sql::Connection> & conn, int first, int nruns) {
   unique_ptr<sql::Statement> stmt(conn->createStatement());
-  string SQL0 = "INSERT INTO RunCollection (RunNumber, Mu3eSchema, StartTime, EndTime, Frames, DataSize, BeamOn, Magnet, ShiftCrew, RunDescription, DeliveredCharge, SciCatId, RunType) VALUES ";
+  string SQL0 = "INSERT INTO runs (_id, StartTime, EndTime, Frames, DataSize, BeamOn, Magnet, ShiftCrew, RunDescription, DeliveredCharge, SciCatId, MD5Sum) VALUES ";
 
-  int Mu3eSchema(1001);
-  int BeamOn(1900);
+  bool BeamOn(true);
   int Frames(20100);
   int DataSize(30000001);
-  int DeliveredCharge(720000);
+  double DeliveredCharge(33.76);
   int RunType(22001);
-  float Magnet(1.1);
-  string StartTime, EndTime, ShiftCrew("N. Sense, S. Body"), RunDescription("test"), SciCatId("Mu3e-2023-000567");
+  bool Magnet(true);
+  string StartTime, EndTime, ShiftCrew("Peter Pan & Donald Duck"), RunDescription("A great data taking run"), SciCatId("Mu3e-2023-000567");
+  int MD5Sum(0xaf4544);
 
   char buff[70];
   struct tm my_time;
   my_time.tm_year = 123; // = year 2012
-  my_time.tm_mon  = 0;    // = 10th month
-  my_time.tm_mday = 31;   // = 9th day
+  my_time.tm_mon  = 1;    // = 10th month
+  my_time.tm_mday = 14;   // = 9th day
   my_time.tm_hour = 8;   // = 8 hours
   my_time.tm_min  = 5;   
   my_time.tm_sec  = 7;   
 
-  for (int irun = first; irun <= first+nruns; ++irun) {
+  for (int irun = first; irun < first+nruns; ++irun) {
     DataSize = 700456 + 44*irun;
     Frames   = 60000 + 7*irun;
 
-    my_time.tm_min += 1;    // add 1 min
+    my_time.tm_min = irun/58; 
+    my_time.tm_sec = irun%58; 
     if (strftime(buff, sizeof buff, "%Y-%m-%d %H:%M:%S", &my_time)) {
       StartTime = string(buff);
     }
     
-    my_time.tm_sec += 2;    // add 2 secs
+    my_time.tm_sec += 1;
     if (strftime(buff, sizeof buff, "%Y-%m-%d %H:%M:%S", &my_time)) {
       EndTime = string(buff);
     }
@@ -155,7 +156,6 @@ void executeWrite(std::unique_ptr<sql::Connection> & conn, int first, int nruns)
     stringstream s;
     s << "("
       << "'" << irun << "', "
-      << "'" << Mu3eSchema << "', "
       << "'" << StartTime << "', "
       << "'" << EndTime << "', "
       << "'" << Frames << "', "
@@ -166,7 +166,7 @@ void executeWrite(std::unique_ptr<sql::Connection> & conn, int first, int nruns)
       << "'" << RunDescription << "', "
       << "'" << DeliveredCharge << "', "
       << "'" << SciCatId << "', "
-      << "'" << RunType << "'"
+      << "'" << MD5Sum << "'"
       << ")";
 
     string SQL1 = s.str();
@@ -224,7 +224,6 @@ int main(int argc, const char **argv) {
 
 
   // -- Configure Connection
-
   string host("127.0.0.1");
   string user("root");
   string database("Mu3e");
