@@ -48,6 +48,20 @@ int loops = 2;
 static sql::Driver * driver = nullptr;
 
 // ----------------------------------------------------------------------
+double rd(){
+  return static_cast<double> (rand()/(static_cast<double> (RAND_MAX/800)))-400;
+}
+
+// ----------------------------------------------------------------------
+class StreamBufferData : public std::streambuf {
+public:
+  StreamBufferData(char *in_data, size_t in_size) {
+    setg(in_data, in_data, in_data + in_size);
+  }
+};
+
+
+// ----------------------------------------------------------------------
 static sql::Connection *get_connection(const std::string & host,
                                        const std::string & user,
                                        const std::string & pass, bool useTls=TEST_USETLS) {
@@ -105,7 +119,20 @@ void executeMakeRuns(std::unique_ptr<sql::Connection> & conn) {
   res = stmt->executeQuery(SQL);
 
 }
-  
+
+
+// ----------------------------------------------------------------------
+void executeMakeCalibrations(std::unique_ptr<sql::Connection> & conn) {
+  std::unique_ptr<sql::Statement> stmt(conn->createStatement());
+  sql::ResultSet *res;
+
+  std::string SQL0 = "drop table if exists calibrations";
+  res = stmt->executeQuery(SQL0);
+
+  std::string SQL = "create table calibrations(`Schema` int, Version int, StartRun int, EndRun int, Type varchar(100), Sensors mediumblob, primary key(`Schema`));";
+  res = stmt->executeQuery(SQL);
+}
+
 // ----------------------------------------------------------------------
 void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
   std::unique_ptr<sql::Statement> stmt(conn->createStatement());
@@ -136,7 +163,7 @@ void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
 }
 
 // ----------------------------------------------------------------------
-void executeWrite(std::unique_ptr<sql::Connection> & conn, int first, int nruns) {
+void executeWriteRuns(std::unique_ptr<sql::Connection> & conn, int first, int nruns) {
   unique_ptr<sql::Statement> stmt(conn->createStatement());
   string SQL0 = "INSERT INTO runs (_id, StartTime, EndTime, Frames, DataSize, BeamOn, Magnet, ShiftCrew, RunDescription, DeliveredCharge, SciCatId, MD5Sum) VALUES ";
 
@@ -195,6 +222,46 @@ void executeWrite(std::unique_ptr<sql::Connection> & conn, int first, int nruns)
 
     sql::ResultSet *res = stmt->executeQuery(SQL);
   }
+}
+
+
+// ----------------------------------------------------------------------
+void executeWriteCalibrations(std::unique_ptr<sql::Connection> & conn, int first, int nruns) {
+  unique_ptr<sql::PreparedStatement> stmt(conn->prepareStatement("INSERT INTO calibrations (`Schema`, Version, StartRun, EndRun, Type, Sensors) VALUES (?,?,?,?,?,?)"));
+
+  int Schema(1);
+  int Version(1);
+  int StartRun(-1);
+  int EndRun(-1);
+
+  stringstream s1;
+  
+  for (int irun = first; irun < first+nruns; ++irun) {
+    stmt->setInt(1, 1);
+    stmt->setInt(2, 1);
+    stmt->setInt(3, irun);
+    stmt->setInt(4, irun);
+    stmt->setString(5, "PixelAlignment");
+
+    for (int isens = 0; isens < 3; ++isens) {
+      s1 << "sid" << isens
+         << "vx" << 1.1 // rd()
+         << "vy" << 2.2 //rd()
+         << "vz" << 3.3 // rd()
+         << "cx" << 4.4 // rd()
+         << "cy" << 5.5 // rd()
+         << "rx" << 6.6 // rd()
+         << "ry" << 7.7 // rd()
+         << "rz" << 8.8 // rd()
+        ;
+    }
+    char *test_data = const_cast<char*>(s1.str().c_str());
+    StreamBufferData buffer0(test_data, strlen(s1.str().c_str()));
+    std::istream test_s0(&buffer0);
+    stmt->setBlob(1, &test_s0);
+    
+    //    sql::ResultSet *res = stmt->executeQuery(SQL);
+ }
 }
 
 
@@ -289,7 +356,8 @@ int main(int argc, const char **argv) {
   }
 
   if (doWrite) {
-    executeWrite(conn, first, nruns);
+    executeWriteRuns(conn, first, nruns);
+    executeWriteCalibrations(conn, first, nruns);
   }
   
   if (doRead) {
