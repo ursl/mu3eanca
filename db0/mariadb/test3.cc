@@ -1,35 +1,3 @@
-/*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
- *               2020, 2021 MariaDB Corporation AB
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, version 2.0, as
- * published by the Free Software Foundation.
- *
- * This program is also distributed with certain software (including
- * but not limited to OpenSSL) that is licensed under separate terms,
- * as designated in a particular file or component or in included license
- * documentation.  The authors of MySQL hereby grant you an
- * additional permission to link the program and your derivative works
- * with the separately licensed software that they have included with
- * MySQL.
- *
- * Without limiting anything contained in the foregoing, this file,
- * which is part of MySQL Connector/C++, is also subject to the
- * Universal FOSS Exception, version 1.0, a copy of which can be found at
- * http://oss.oracle.com/licenses/universal-foss-exception.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License, version 2.0, for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
- */
-
-
 #include "conncpp.hpp"
 
 #include "tests_config.h"
@@ -47,10 +15,166 @@ int loops = 2;
 
 static sql::Driver * driver = nullptr;
 
+
 // ----------------------------------------------------------------------
-double rd(){
-  return static_cast<double> (rand()/(static_cast<double> (RAND_MAX/800)))-400;
+void splitNibbles(char byte, char& nibbleH, char& nibbleL) {
+  nibbleH = (byte & 0xF0) >> 4;
+  nibbleL = (byte & 0xF);
 }
+
+
+// ----------------------------------------------------------------------
+char ascii(char x) {
+  if (0x0 == x) return 0x30;
+  if (0x1 == x) return 0x31;
+  if (0x2 == x) return 0x32;
+  if (0x3 == x) return 0x33;
+  if (0x4 == x) return 0x34;
+  if (0x5 == x) return 0x35;
+  if (0x6 == x) return 0x36;
+  if (0x7 == x) return 0x37;
+  if (0x8 == x) return 0x38;
+  if (0x9 == x) return 0x39;
+  if (0xa == x) return 0x41;
+  if (0xb == x) return 0x42;
+  if (0xc == x) return 0x43;
+  if (0xd == x) return 0x44;
+  if (0xe == x) return 0x45;
+  if (0xf == x) return 0x46;
+  return 'X';
+}
+
+// ----------------------------------------------------------------------
+char* printString(char* data, int size) {
+  char *sprt = new char[2*size+1];
+  char nibbleH, nibbleL;
+  for (int i = 0; i < size; ++i) {
+    splitNibbles(data[i], nibbleH, nibbleL);
+    sprt[2*i]     = nibbleH;
+    sprt[2*i + 1] = nibbleL;
+  }
+  sprt[2*size] = '\0';
+  return sprt;
+}
+
+// ----------------------------------------------------------------------
+void putInt(int intVal, char *p) {
+  memcpy(p, &intVal, sizeof(int));
+}
+
+// ----------------------------------------------------------------------
+int getInt(char *p, int len) {
+  int intVal(0);
+  memcpy(&intVal, p, sizeof intVal);
+  return intVal;
+}
+
+// ----------------------------------------------------------------------
+int getFloat(char *p, int len) {
+  float floatVal(0);
+  memcpy(&floatVal, p, sizeof floatVal);
+  return floatVal;
+}
+
+
+// ----------------------------------------------------------------------
+double rd(double id = 800){
+  return static_cast<double> (rand()/(static_cast<double> (RAND_MAX/id))) - 0.5*id;
+}
+
+
+// ----------------------------------------------------------------------
+struct blobData {
+  int sid;
+  double vx, vy, vz;
+  double colx, coly, colz;
+  double rowx, rowy, rowz;
+
+  char* serialize() {
+    int offset(0);
+    char *sd = new char[sizeof(blobData)+1];
+    if (0) cout << " sizeof(blobData) = " << sizeof(blobData)
+                << " sizeof(int) = " << sizeof(int)
+                << " sizeof(double) = " << sizeof(double)
+                << endl;
+    // -- sid
+    if (0) cout << "serialize sid = " << sid  << endl;
+    memcpy(sd, &sid, sizeof(int));
+    offset += sizeof(int);
+    // -- vx,vy,vz
+    if (0) cout << "serialize vx = " << vx
+                << " vy = " << vy 
+                << " vz = " << vz
+                << endl;
+    memcpy(sd + offset, &vx, sizeof(double));  offset += sizeof(double);
+    memcpy(sd + offset, &vy, sizeof(double));  offset += sizeof(double);
+    memcpy(sd + offset, &vz, sizeof(double));  offset += sizeof(double);
+
+    // -- colx,coly,colz
+    if (0) cout << "serialize colx = " << colx
+                << " coly = " << coly 
+                << " colz = " << colz
+                << endl;
+    memcpy(sd + offset, &colx, sizeof(double));  offset += sizeof(double);
+    memcpy(sd + offset, &coly, sizeof(double));  offset += sizeof(double);
+    memcpy(sd + offset, &colz, sizeof(double));  offset += sizeof(double);
+
+    // -- rowx,rowy,rowz
+    if (0) cout << "serialize rowx = " << rowx
+                << " rowy = " << rowy 
+                << " rowz = " << rowz
+                << endl;
+    memcpy(sd + offset, &rowx, sizeof(double));  offset += sizeof(double);
+    memcpy(sd + offset, &rowy, sizeof(double));  offset += sizeof(double);
+    memcpy(sd + offset, &rowz, sizeof(double));  offset += sizeof(double);
+
+    sd[offset] = '\0';
+    if (0) cout << "serialize sd ->" << printString(sd, offset) << "<-" << endl;
+    return sd;
+  }
+
+  void deSerialize(char *pdata) {
+    int offset(0);
+    memcpy(&sid, pdata, sizeof(int));
+    // cout << "sid = " << sid << endl;
+    // cout << "sd ->" << printString(pdata, sizeof(blobData)) << "<-" << endl;
+    offset = sizeof(int);
+    memcpy(&vx, pdata + offset, sizeof(double)); offset += sizeof(double); 
+    memcpy(&vy, pdata + offset, sizeof(double)); offset += sizeof(double); 
+    memcpy(&vz, pdata + offset, sizeof(double)); offset += sizeof(double); 
+
+    memcpy(&colx, pdata + offset, sizeof(double)); offset += sizeof(double); 
+    memcpy(&coly, pdata + offset, sizeof(double)); offset += sizeof(double); 
+    memcpy(&colz, pdata + offset, sizeof(double)); offset += sizeof(double); 
+
+    memcpy(&rowx, pdata + offset, sizeof(double)); offset += sizeof(double); 
+    memcpy(&rowy, pdata + offset, sizeof(double)); offset += sizeof(double); 
+    memcpy(&rowz, pdata + offset, sizeof(double)); offset += sizeof(double); 
+  }
+
+  void rnd(int id) {
+    sid  = id;
+    double did = static_cast<double>(id);
+    vx   = rd(did);
+    vy   = rd(did);
+    vz   = rd(did);
+    colx = rd(did);
+    coly = rd(did);
+    colz = rd(did);
+    rowx = rd(did);
+    rowy = rd(did);
+    rowz = rd(did);
+  }
+
+  void print() {
+    cout << "sid = " << sid
+         << " v(x/y/z) = (" << vx << "/" << vy << "/" << vz << ")"
+         << " c(x/y/z) = (" << colx << "/" << coly << "/" << colz << ")"
+         << " r(x/y/z) = (" << rowx << "/" << rowy << "/" << rowz << ")"
+         << endl;
+  }
+};
+
 
 // ----------------------------------------------------------------------
 class StreamBufferData : public std::streambuf {
@@ -64,7 +188,8 @@ public:
 // ----------------------------------------------------------------------
 static sql::Connection *get_connection(const std::string & host,
                                        const std::string & user,
-                                       const std::string & pass, bool useTls=TEST_USETLS) {
+                                       const std::string & pass,
+                                       bool useTls=TEST_USETLS) {
   try {
     if (!driver) {
       driver = sql::mariadb::get_driver_instance();
@@ -129,12 +254,12 @@ void executeMakeCalibrations(std::unique_ptr<sql::Connection> & conn) {
   std::string SQL0 = "drop table if exists calibrations";
   res = stmt->executeQuery(SQL0);
 
-  std::string SQL = "create table calibrations(`Schema` int, Version int, StartRun int, EndRun int, Type varchar(100), Sensors mediumblob, primary key(`Schema`));";
+  std::string SQL = "create table calibrations(_id int auto_increment, `Schema` int, Version int, StartRun int, EndRun int, Type varchar(100), Sensors mediumblob, primary key(_id));";
   res = stmt->executeQuery(SQL);
 }
 
 // ----------------------------------------------------------------------
-void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
+void executeReadRuns(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
   std::unique_ptr<sql::Statement> stmt(conn->createStatement());
   sql::ResultSet *res;
 
@@ -163,6 +288,29 @@ void executeQuery(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
 }
 
 // ----------------------------------------------------------------------
+void executeReadCalibrations(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
+  std::unique_ptr<sql::Statement> stmt(conn->createStatement());
+  sql::ResultSet *res;
+
+  std::string SQL = "select `Schema`, Version, StartRun, EndRun, Type, Sensors from calibrations";
+
+  std::ios_base::fmtflags f(cout.flags());
+
+  res = stmt->executeQuery(SQL);
+  cout << "res->rowsCount() = " << res->rowsCount() << endl;
+  blobData a;
+  char blobStr[21000];
+  while (res->next()) {
+    std::istream *blobPayload = res->getBlob("Sensors");
+    
+    std::istreambuf_iterator<char> isb = std::istreambuf_iterator<char>(*blobPayload);
+    blobPayload->get(blobStr, 21000);
+    a.deSerialize(blobStr); 
+    a.print();
+  }
+}
+
+// ----------------------------------------------------------------------
 void executeWriteRuns(std::unique_ptr<sql::Connection> & conn, int first, int nruns) {
   unique_ptr<sql::Statement> stmt(conn->createStatement());
   string SQL0 = "INSERT INTO runs (_id, StartTime, EndTime, Frames, DataSize, BeamOn, Magnet, ShiftCrew, RunDescription, DeliveredCharge, SciCatId, MD5Sum) VALUES ";
@@ -173,7 +321,8 @@ void executeWriteRuns(std::unique_ptr<sql::Connection> & conn, int first, int nr
   double DeliveredCharge(33.76);
   int RunType(22001);
   bool Magnet(true);
-  string StartTime, EndTime, ShiftCrew("Peter Pan & Donald Duck"), RunDescription("A great data taking run"), SciCatId("Mu3e-2023-000567");
+  string StartTime, EndTime, ShiftCrew("Peter Pan & Donald Duck"),
+    RunDescription("A great data taking run"), SciCatId("Mu3e-2023-000567");
   int MD5Sum(0xaf4544);
 
   char buff[70];
@@ -235,6 +384,8 @@ void executeWriteCalibrations(std::unique_ptr<sql::Connection> & conn, int first
   int EndRun(-1);
 
   stringstream s1;
+
+  blobData a;
   
   for (int irun = first; irun < first+nruns; ++irun) {
     stmt->setInt(1, 1);
@@ -243,28 +394,17 @@ void executeWriteCalibrations(std::unique_ptr<sql::Connection> & conn, int first
     stmt->setInt(4, irun);
     stmt->setString(5, "PixelAlignment");
 
-    for (int isens = 0; isens < 3; ++isens) {
-      s1 << "sid" << isens
-         << "vx" << 1.1 // rd()
-         << "vy" << 2.2 //rd()
-         << "vz" << 3.3 // rd()
-         << "cx" << 4.4 // rd()
-         << "cy" << 5.5 // rd()
-         << "rx" << 6.6 // rd()
-         << "ry" << 7.7 // rd()
-         << "rz" << 8.8 // rd()
-        ;
-    }
-    char *test_data = const_cast<char*>(s1.str().c_str());
-    StreamBufferData buffer0(test_data, strlen(s1.str().c_str()));
-    std::istream test_s0(&buffer0);
-    stmt->setBlob(1, &test_s0);
+    a.rnd(irun);
+    a.print();
     
-    //    sql::ResultSet *res = stmt->executeQuery(SQL);
+    char *test_data = a.serialize();
+    StreamBufferData buffer0(test_data, sizeof(blobData)+1);
+    std::istream test_s0(&buffer0);
+    stmt->setBlob(6, &test_s0);
+
+    bool ok = stmt->execute();
  }
 }
-
-
 
 
 // ----------------------------------------------------------------------
@@ -298,7 +438,7 @@ int main(int argc, const char **argv) {
   int i;
 
   // -- command line arguments
-  bool doRead(false), doWrite(false), doMake(false);
+  bool doRead(false), doWrite(false), doMake(false), doTest(false);
   int first(-1), nruns(-1);
   string pass;
   for (int i = 0; i < argc; i++){
@@ -308,6 +448,7 @@ int main(int argc, const char **argv) {
     if (!strcmp(argv[i],"-r"))  {doRead  = true;}
     if (!strcmp(argv[i],"-w"))  {doWrite = true;}
     if (!strcmp(argv[i],"-p"))  {pass    = argv[++i];}
+    if (!strcmp(argv[i],"-t"))  {doTest  = true;}
   }
 
 
@@ -353,6 +494,7 @@ int main(int argc, const char **argv) {
 
   if (doMake) {
     executeMakeRuns(conn);
+    executeMakeCalibrations(conn);
   }
 
   if (doWrite) {
@@ -361,10 +503,30 @@ int main(int argc, const char **argv) {
   }
   
   if (doRead) {
-    executeQuery(conn, "");
+    executeReadRuns(conn, "");
+    executeReadCalibrations(conn, "");
   }
 
-  
+  if (doTest) {
+    cout << "doTest" << endl;
+    int intVal(1);
+    char data[4];
+    memcpy(data, "D", 1);
+    memcpy(data+1, "E", 1);
+    memcpy(data+2, "A", 1);
+    memcpy(data+3, "D", 1);
+    cout << "data ->";
+    for (int i = 0; i < 4; ++i) cout << data[i];
+    cout << "<-" << endl;
+
+    char nibbleH, nibbleL;
+    data[0] = 0xDA;
+    data[0] = 47;
+    //    splitNibbles(data[0], nibbleH, nibbleL); 
+    //    char nibbleP[3];
+    cout << "printString ->" <<  printString(data, 2) << "<-" << endl;
+    
+  }
   
   return 0;
 }
