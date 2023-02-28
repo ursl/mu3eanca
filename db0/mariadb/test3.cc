@@ -22,11 +22,11 @@ static sql::Driver * driver = nullptr;
 // test3
 // -----
 //
-// clear, write, and read two databases: runs and calibrations
+// clear, write, and read two databases: `runs` and `calibrations`
 //
 // Usage:
 // ./test3 -c                           clear all databases
-// ./test3 -p PASSWD -w -n 200 -f 100   write 200 runs, starting with 100
+// ./test3 -p PASSWD -w -n 200 -f 0     write 200 runs, starting with 0
 // ./test3 -p PASSWD -r
 // ----------------------------------------------------------------------
 
