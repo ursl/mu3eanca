@@ -19,6 +19,20 @@ static sql::Driver * driver = nullptr;
 #define NSENS 3000
 
 // ----------------------------------------------------------------------
+// test3
+// -----
+//
+// clear, write, and read two databases: runs and calibrations
+//
+// Usage:
+// ./test3 -c                           clear all databases
+// ./test3 -p PASSWD -w -n 200 -f 100   write 200 runs, starting with 100
+// ./test3 -p PASSWD -r
+// ----------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------
 void splitNibbles(char byte, char& nibbleH, char& nibbleL) {
   nibbleH = (byte & 0xF0) >> 4;
   nibbleL = (byte & 0xF);
