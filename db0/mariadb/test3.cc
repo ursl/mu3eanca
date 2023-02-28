@@ -8,6 +8,7 @@
 
 #include <chrono>
 #include <time.h>
+#include <cstring>
 
 using namespace std;
 
@@ -15,6 +16,7 @@ int loops = 2;
 
 static sql::Driver * driver = nullptr;
 
+#define NSENS 3000
 
 // ----------------------------------------------------------------------
 void splitNibbles(char byte, char& nibbleH, char& nibbleL) {
@@ -44,23 +46,26 @@ char ascii(char x) {
   return 'X';
 }
 
+
 // ----------------------------------------------------------------------
 char* printString(char* data, int size) {
   char *sprt = new char[2*size+1];
   char nibbleH, nibbleL;
   for (int i = 0; i < size; ++i) {
     splitNibbles(data[i], nibbleH, nibbleL);
-    sprt[2*i]     = nibbleH;
-    sprt[2*i + 1] = nibbleL;
+    sprt[2*i]     = ascii(nibbleH);
+    sprt[2*i + 1] = ascii(nibbleL);
   }
   sprt[2*size] = '\0';
   return sprt;
 }
 
+
 // ----------------------------------------------------------------------
 void putInt(int intVal, char *p) {
   memcpy(p, &intVal, sizeof(int));
 }
+
 
 // ----------------------------------------------------------------------
 int getInt(char *p, int len) {
@@ -68,6 +73,7 @@ int getInt(char *p, int len) {
   memcpy(&intVal, p, sizeof intVal);
   return intVal;
 }
+
 
 // ----------------------------------------------------------------------
 int getFloat(char *p, int len) {
@@ -85,7 +91,7 @@ double rd(double id = 800){
 
 // ----------------------------------------------------------------------
 struct blobData {
-  int sid;
+  long int sid;
   double vx, vy, vz;
   double colx, coly, colz;
   double rowx, rowy, rowz;
@@ -99,8 +105,8 @@ struct blobData {
                 << endl;
     // -- sid
     if (0) cout << "serialize sid = " << sid  << endl;
-    memcpy(sd, &sid, sizeof(int));
-    offset += sizeof(int);
+    memcpy(sd, &sid, sizeof(long int));
+    offset += sizeof(long int);
     // -- vx,vy,vz
     if (0) cout << "serialize vx = " << vx
                 << " vy = " << vy 
@@ -135,10 +141,10 @@ struct blobData {
 
   void deSerialize(char *pdata) {
     int offset(0);
-    memcpy(&sid, pdata, sizeof(int));
+    memcpy(&sid, pdata, sizeof(long int));
     // cout << "sid = " << sid << endl;
     // cout << "sd ->" << printString(pdata, sizeof(blobData)) << "<-" << endl;
-    offset = sizeof(int);
+    offset = sizeof(long int);
     memcpy(&vx, pdata + offset, sizeof(double)); offset += sizeof(double); 
     memcpy(&vy, pdata + offset, sizeof(double)); offset += sizeof(double); 
     memcpy(&vz, pdata + offset, sizeof(double)); offset += sizeof(double); 
@@ -152,9 +158,9 @@ struct blobData {
     memcpy(&rowz, pdata + offset, sizeof(double)); offset += sizeof(double); 
   }
 
-  void rnd(int id) {
+  void rnd(int id, int irun = 0) {
     sid  = id;
-    double did = static_cast<double>(id);
+    double did = static_cast<double>(id + irun*100. + 1);
     vx   = rd(did);
     vy   = rd(did);
     vz   = rd(did);
@@ -220,6 +226,7 @@ static sql::Connection *get_connection(const std::string & host,
 
 #include "test_common.cpp"
 
+
 // ----------------------------------------------------------------------
 static void driver_test_new_driver_exception() {
   // We do not export Driver interface implementation
@@ -228,6 +235,7 @@ static void driver_test_new_driver_exception() {
     ensure("Exception not thrown", false);
   } catch (sql::InvalidArgumentException&) { }*/
 }
+
 
 // ----------------------------------------------------------------------
 void executeMakeRuns(std::unique_ptr<sql::Connection> & conn) {
@@ -258,6 +266,7 @@ void executeMakeCalibrations(std::unique_ptr<sql::Connection> & conn) {
   res = stmt->executeQuery(SQL);
 }
 
+
 // ----------------------------------------------------------------------
 void executeReadRuns(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
   std::unique_ptr<sql::Statement> stmt(conn->createStatement());
@@ -287,6 +296,7 @@ void executeReadRuns(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
   }
 }
 
+
 // ----------------------------------------------------------------------
 void executeReadCalibrations(std::unique_ptr<sql::Connection> & conn, string cmd = "") {
   std::unique_ptr<sql::Statement> stmt(conn->createStatement());
@@ -298,17 +308,31 @@ void executeReadCalibrations(std::unique_ptr<sql::Connection> & conn, string cmd
 
   res = stmt->executeQuery(SQL);
   cout << "res->rowsCount() = " << res->rowsCount() << endl;
+  
   blobData a;
-  char blobStr[21000];
+  size_t sizePixelSensors = NSENS*(sizeof(blobData)) + 1;
+  cout << "executeReadCalibrations sizeof(blobData) = " << sizeof(blobData) << " sizePixelSensors = " << sizePixelSensors << endl;
+  char blobStr[sizePixelSensors];
+  for (int i = 0; i < sizePixelSensors; ++i) blobStr[i] = 0;
+
   while (res->next()) {
+    int StartRun = res->getInt(3);
+    int EndRun = res->getInt(4);
     std::istream *blobPayload = res->getBlob("Sensors");
     
-    std::istreambuf_iterator<char> isb = std::istreambuf_iterator<char>(*blobPayload);
-    blobPayload->get(blobStr, 21000);
-    a.deSerialize(blobStr); 
-    a.print();
+    //    std::istreambuf_iterator<char> isb = std::istreambuf_iterator<char>(*blobPayload);
+    blobPayload->read(blobStr, sizePixelSensors);
+
+    // cout << "read/printString: " << printString(blobStr, sizePixelSensors) << endl;
+    for (int isens = 0; isens < NSENS; ++isens) {
+      a.deSerialize(blobStr + isens*sizeof(blobData)); 
+      if (isens == 0 || isens == 1 || isens == 2998 || isens == 2999) {
+        cout << "StartRun = " << StartRun << " EndRun = " << EndRun << " "; a.print();
+      }
+    }
   }
 }
+
 
 // ----------------------------------------------------------------------
 void executeWriteRuns(std::unique_ptr<sql::Connection> & conn, int first, int nruns) {
@@ -386,6 +410,11 @@ void executeWriteCalibrations(std::unique_ptr<sql::Connection> & conn, int first
   stringstream s1;
 
   blobData a;
+
+  size_t sizePixelSensors = NSENS*sizeof(blobData) + 1;
+  char pixelSensors[sizePixelSensors];
+  cout << "executeWriteCalibrations sizeof(blobData) = " << sizeof(blobData) << " sizePixelSensors = " << sizePixelSensors << endl;
+  for (int i = 0; i < sizePixelSensors; ++i) pixelSensors[i] = 0;
   
   for (int irun = first; irun < first+nruns; ++irun) {
     stmt->setInt(1, 1);
@@ -394,11 +423,17 @@ void executeWriteCalibrations(std::unique_ptr<sql::Connection> & conn, int first
     stmt->setInt(4, irun);
     stmt->setString(5, "PixelAlignment");
 
-    a.rnd(irun);
-    a.print();
-    
-    char *test_data = a.serialize();
-    StreamBufferData buffer0(test_data, sizeof(blobData)+1);
+    for (int isens = 0; isens < NSENS; ++isens) {
+      a.rnd(isens);
+      if (isens == 0 || isens == 1 || isens == 2998 || isens == 2999) {
+        cout << "StartRun = " << irun << " EndRun = " << irun << " "; 
+        a.print();
+      }
+      char *test_data = a.serialize();
+      memcpy(pixelSensors + isens*sizeof(blobData), test_data, sizeof(blobData));
+    }    
+    // cout << "write/printString: " <<  printString(pixelSensors, sizePixelSensors) << endl;
+    StreamBufferData buffer0(pixelSensors, sizePixelSensors);
     std::istream test_s0(&buffer0);
     stmt->setBlob(6, &test_s0);
 
@@ -426,7 +461,6 @@ vector<string> runCommand(std::unique_ptr<sql::Connection> conn, string cmd) {
   }
 
 }
-
 
 
 // ----------------------------------------------------------------------
