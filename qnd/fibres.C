@@ -303,12 +303,21 @@ void dose2(double inTargetTotal = 25600000, double muonStopsPhase1 = 2.6e15) {
 // -- same as dose2 but it reads in n histograms from run-out.root
 //    from addHist2RootFile::addRuns()
 //    by default it uses 1000 jobs with 30kFrames
+//
+//    count inTargetTotal:
+//    grep "    inTarget " tmp-run-400*/*.log | awk '{s+=$4;} END {printf "%.0f\n", s}'
+// ----------------------------------------------------------------------
 void dose3(int run1 = 40000, int run2 = 40999,
            double inTargetTotal = 256480654, double muonStopsPhase1 = 2.6e15) {
   TH1F *h1 = (TH1F*)gFile->Get(Form("run%d_hFibreSmbDose2", run1)); 
   h1->Reset();
   for (int irun = run1; irun <= run2; ++irun) {
-    h1->Add((TH1F*)gFile->Get(Form("run%d_hFibreSmbDose2", irun)));
+    TH1F *htmp = (TH1F*)gFile->Get(Form("run%d_hFibreSmbDose2", irun));
+    if (htmp) {
+      h1->Add(htmp);
+    } else {
+      cout << "histogram " << Form("run%d_hFibreSmbDose2", irun) << " not found" << endl;
+    }
   }
   h1->GetXaxis()->SetTitle("");
   h1->GetYaxis()->SetTitle("Dose [Gy]");
