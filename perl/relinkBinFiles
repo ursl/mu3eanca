@@ -1,0 +1,33 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# relinkBinFiles
+# ==============
+#
+# Usage:   cd .../mue3-dev/run
+#          ~/mu3e/mu3eanca/perl/relinkBinFiles
+#
+#
+# History 2023/03/06 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+my $dir = getcwd;
+
+if (!($dir =~ /run$/)) {
+    print("not in run, aborting\n");
+    exit(0);
+} else {
+    print("in run, proceeding\n");
+}
+
+system("rm cryogenics.bin* field.bin* hauge1.bin* sig2.bin* sig.bin*");
+system("ln -s ~/data/maps/cryogenics.bin");
+system("ln -s ~/data/maps/field.bin");
+system("ln -s ~/data/maps/hauge1.bin");
+system("ln -s ~/data/maps/sig2.bin");
+system("ln -s ~/data/maps/sig.bin");
+
