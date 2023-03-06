@@ -523,3 +523,28 @@ void compare2Files(string file1 = "/psi/home/langenegger/data/test0/run/director
     c0.SaveAs(pdfname.c_str());
   }
 }
+
+
+
+// ----------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------
+void plotHist(string hname, int run1 = 40000, int run2 = 40099) {
+  TH1F *hbase = (TH1F*)gFile->Get(Form("run%d_%s", run1, hname.c_str()));
+  hbase->Reset();
+  for (int irun = run1; irun <= run2; ++irun) {
+    TH1F *htmp = (TH1F*)gFile->Get(Form("run%d_%s", irun, hname.c_str()));
+    if (htmp) {
+      hbase->Add(htmp);
+    } else {
+      cout << "histogram " << Form("run%d_hFibreSmbDose2", irun) << " not found" << endl;
+    }
+  }
+
+  gStyle->SetOptStat(1);
+  zone();
+  shrinkPad(0.05, 0.15);
+  hbase->Draw();
+  
+  c0.SaveAs(Form("%s.pdf", hname.c_str()));
+}
