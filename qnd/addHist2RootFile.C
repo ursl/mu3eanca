@@ -38,6 +38,35 @@ void addHist2RootFile(string histname, string infile, string outfile) {
 
 
 // ----------------------------------------------------------------------
+void addAllHist2RootFile(string dirname, string infile, string outfile) {
+  
+  int runnumber(-1);
+  sscanf(infile.c_str(), "run-%d.root", &runnumber); 
+  
+  TFile *fIn  = TFile::Open(infile.c_str()); 
+  fIn->cd(dirname.c_str());
+  TIter next(gDirectory->GetListOfKeys());
+
+  TFile *fOut = TFile::Open(outfile.c_str(), "UPDATE");
+  cout << "outfile = " << outfile << endl;
+  
+  TKey *key(0);
+  while ((key = (TKey*)next())) {
+    if (gROOT->GetClass(key->GetClassName())->InheritsFrom("TDirectory")) continue;
+    if (!gROOT->GetClass(key->GetClassName())->InheritsFrom("TH1")) continue;
+    TH1 *h = (TH1*)key->ReadObj();
+    h->SetName(Form("run%d_%s", runnumber, h->GetName())); 
+    cout << "writing " << h->GetName() << " into " << fOut->GetName() << endl;
+    h->SetDirectory(fOut);
+    h->Write();
+  }
+  fOut->Close();
+
+  fIn->Close();
+}
+
+
+// ----------------------------------------------------------------------
 // tests: 9998 9999 
 void addRuns(int run1 = 40000, int run2 = 41000,
              string histname = "stat/FibreSmbMuTrig/hFibreSmbDose2",
@@ -75,6 +104,50 @@ void addRuns(int run1 = 40000, int run2 = 41000,
 
   for (unsigned int i = 0; i < vfiles.size(); ++i) {
     addHist2RootFile(histname, vfiles[i], outfile);
+  }
+
+  
+}
+
+
+// ----------------------------------------------------------------------
+// tests: 9998 9999 
+void addAllHistForRuns(int run1 = 40000, int run2 = 41000,
+             string dirname = "stat/Tiledose",
+             string outfile = "run-out.root") {
+  // -- must be in directory with the many rootfiles
+  string dirName = "."; 
+
+  vector<string> vfiles;
+  DIR *folder;
+  struct dirent *entry;
+  
+  folder = opendir(dirName.c_str());
+  if (folder == NULL) {
+    puts("Unable to read directory");
+    return(1);
+  } 
+  
+  while ((entry=readdir(folder))) {
+    int runnumber(-1);
+    sscanf(entry->d_name, "run-%d.root", &runnumber);
+    if (runnumber < 0) {
+      cout << "runnumber not parsed ->" << entry->d_name << "<-" << endl;
+      continue;
+    }
+    if (runnumber < run1) continue;
+    if (runnumber > run2) continue;
+    
+    if (8 == entry->d_type) {
+      vfiles.push_back(entry->d_name);
+    }
+  }
+  closedir(folder);
+  
+  sort(vfiles.begin(), vfiles.end());    
+
+  for (unsigned int i = 0; i < vfiles.size(); ++i) {
+    addAllHist2RootFile(dirname, vfiles[i], outfile);
   }
 
   
