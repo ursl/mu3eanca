@@ -537,7 +537,7 @@ void plotHist(string hname, int run1 = 40000, int run2 = 40099) {
     if (htmp) {
       hbase->Add(htmp);
     } else {
-      cout << "histogram " << Form("run%d_hFibreSmbDose2", irun) << " not found" << endl;
+      cout << "histogram " << Form("run%d_%s", irun, hname.c_str()) << " not found" << endl;
     }
   }
 
