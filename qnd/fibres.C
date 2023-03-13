@@ -375,6 +375,61 @@ void dose3(int run1 = 40000, int run2 = 40999,
 
 }
 
+
+// ----------------------------------------------------------------------
+// -- same as dose2 but it reads in n histograms from run-out.root
+//    from addHist2RootFile::addRuns()
+//    by default it uses 1000 jobs with 30kFrames
+//
+//    count inTargetTotal:
+//    grep "    inTarget " tmp-run-400*/*.log | awk '{s+=$4;} END {printf "%.0f\n", s}'
+// ----------------------------------------------------------------------
+void dose3Tiles(int run1 = 40000, int run2 = 40999,
+           double inTargetTotal = 256480654, double muonStopsPhase1 = 2.6e15) {
+  TH1F *h1 = (TH1F*)gFile->Get(Form("run%d_tileMutrigDose", run1)); 
+  h1->Reset();
+  for (int irun = run1; irun <= run2; ++irun) {
+    TH1F *htmp = (TH1F*)gFile->Get(Form("run%d_tileMutrigDose", irun));
+    if (htmp) {
+      h1->Add(htmp);
+    } else {
+      cout << "histogram " << Form("run%d_tileMutrigDose", irun) << " not found" << endl;
+    }
+  }
+  h1->GetXaxis()->SetTitle("");
+  h1->GetYaxis()->SetTitle("Dose [Gy]");
+  gStyle->SetOptStat(0);
+  zone();
+  shrinkPad(0.05, 0.15);
+  h1->Draw();
+
+  h1->SetTitle("Tile MuTRIG Dose");
+  h1->Draw("e");
+
+  c0.SaveAs("tiles-TileMuTrig-dose-sumjobs.pdf");
+
+  // -- scale up to 1e15 muon stops
+  double sf = muonStopsPhase1/inTargetTotal;
+  h1->Scale(sf);
+
+  double n = muonStopsPhase1; 
+  double expoN  = TMath::Log10(n);
+  cout << "original expoN = " << expoN << endl;
+
+  double mantN  = n / TMath::Power(10, static_cast<int>(expoN));
+  cout << "original mantN = " << mantN << endl;
+
+  h1->SetTitle(Form("Tile MuTRIG Dose (n_{#mu}^{stop} = %1.1fE%2.0f)", mantN, expoN));
+  h1->SetLineWidth(2);
+  h1->SetAxisRange(0., 200., "X");
+  h1->SetMinimum(0.);
+  h1->Draw("e");
+
+ 
+  c0.SaveAs("tiles-TileMuTrig-dose-phase1.pdf");
+
+}
+
 // ----------------------------------------------------------------------
 void rphiMuTrig() {
   gStyle->SetOptStat(0);
