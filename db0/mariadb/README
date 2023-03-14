@@ -1,0 +1,13 @@
+db0/mariadb
+===========
+
+- test0 simple first connection to db
+- test1 simple second connection to db
+- test3 clear, write, and read two databases: `runs` and `calibrations`
+  // Usage:
+  // ./test3 -c -p PASSWD                 clear all databases
+  // ./test3 -p PASSWD -w -n 200 -f 0     write 200 runs, starting with 0
+  // ./test3 -p PASSWD -r
+- test4 read constants and exercise 
+  // Usage:
+  // ./test4 -p PASSWD
