@@ -16,6 +16,8 @@ int loops = 2;
 
 static sql::Driver * driver = nullptr;
 
+bool gVerbose = false;
+
 #define NSENS 3000
 
 // ----------------------------------------------------------------------
@@ -25,7 +27,7 @@ static sql::Driver * driver = nullptr;
 // clear, write, and read two databases: `runs` and `calibrations`
 //
 // Usage:
-// ./test3 -c                           clear all databases
+// ./test3 -c -p PASSWD                 clear all databases
 // ./test3 -p PASSWD -w -n 200 -f 0     write 200 runs, starting with 0
 // ./test3 -p PASSWD -r
 // ----------------------------------------------------------------------
@@ -405,7 +407,7 @@ void executeWriteRuns(std::unique_ptr<sql::Connection> & conn, int first, int nr
 
     string SQL1 = s.str();
     string SQL = SQL0+SQL1;
-    cout << SQL << endl;
+    if (gVerbose) cout << SQL << endl;
 
     sql::ResultSet *res = stmt->executeQuery(SQL);
   }
@@ -439,9 +441,11 @@ void executeWriteCalibrations(std::unique_ptr<sql::Connection> & conn, int first
 
     for (int isens = 0; isens < NSENS; ++isens) {
       a.rnd(isens);
-      if (isens == 0 || isens == 1 || isens == 2998 || isens == 2999) {
-        cout << "StartRun = " << irun << " EndRun = " << irun << " "; 
-        a.print();
+      if (gVerbose) {
+        if (isens == 0 || isens == 1 || isens == 2998 || isens == 2999) {
+          cout << "StartRun = " << irun << " EndRun = " << irun << " "; 
+          a.print();
+        }
       }
       char *test_data = a.serialize();
       memcpy(pixelSensors + isens*sizeof(blobData), test_data, sizeof(blobData));
@@ -490,13 +494,14 @@ int main(int argc, const char **argv) {
   int first(-1), nruns(-1);
   string pass;
   for (int i = 0; i < argc; i++){
-    if (!strcmp(argv[i],"-c"))  {doMake = true;}
-    if (!strcmp(argv[i],"-f"))  {first   = atoi(argv[++i]);}
-    if (!strcmp(argv[i],"-n"))  {nruns   = atoi(argv[++i]);}
-    if (!strcmp(argv[i],"-r"))  {doRead  = true;}
-    if (!strcmp(argv[i],"-w"))  {doWrite = true;}
-    if (!strcmp(argv[i],"-p"))  {pass    = argv[++i];}
-    if (!strcmp(argv[i],"-t"))  {doTest  = true;}
+    if (!strcmp(argv[i],"-c"))  {doMake   = true;}
+    if (!strcmp(argv[i],"-f"))  {first    = atoi(argv[++i]);}
+    if (!strcmp(argv[i],"-n"))  {nruns    = atoi(argv[++i]);}
+    if (!strcmp(argv[i],"-r"))  {doRead   = true;}
+    if (!strcmp(argv[i],"-w"))  {doWrite  = true;}
+    if (!strcmp(argv[i],"-p"))  {pass     = argv[++i];}
+    if (!strcmp(argv[i],"-t"))  {doTest   = true;}
+    if (!strcmp(argv[i],"-v"))  {gVerbose = true;}
   }
 
 
