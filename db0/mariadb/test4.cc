@@ -25,7 +25,7 @@ static sql::Driver * driver = nullptr;
 // read constants and exercise 
 //
 // Usage:
-// time ./test4 
+// time ./test4 -p PASSWD
 // Sum = 8.85642e+06
 // ----------------------------------------------------------------------
 
@@ -378,7 +378,7 @@ int main(int argc, const char **argv) {
     blobData bd;
     a.push_back(bd);
   }
-  for (int i=0; i < 10000; ++i) {
+  for (int i=0; i < nruns; ++i) {
     int run = ranrun(maxrun);
     bool ok = getSensors(conn, run, a);
     if (0 == i%100) {
