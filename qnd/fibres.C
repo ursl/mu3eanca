@@ -385,7 +385,7 @@ void dose3(int run1 = 40000, int run2 = 40999,
 //    grep "    inTarget " tmp-run-400*/*.log | awk '{s+=$4;} END {printf "%.0f\n", s}'
 // ----------------------------------------------------------------------
 void dose3Tiles(int run1 = 40000, int run2 = 40999,
-           double inTargetTotal = 256480654, double muonStopsPhase1 = 2.6e15) {
+           double inTargetTotal = 2.9e7, double muonStopsPhase1 = 2.6e15) {
   TH1F *h1 = (TH1F*)gFile->Get(Form("run%d_tileMutrigDose", run1)); 
   h1->Reset();
   for (int irun = run1; irun <= run2; ++irun) {
@@ -410,24 +410,55 @@ void dose3Tiles(int run1 = 40000, int run2 = 40999,
 
   // -- scale up to 1e15 muon stops
   double sf = muonStopsPhase1/inTargetTotal;
+  cout << "inTargetTotal = " << inTargetTotal << " -> scale factor = " << sf << endl;
   h1->Scale(sf);
 
+  if (1) {
+    TH1F *hnew_us = new TH1F("hnew_us", "hnew_us", 13, 0., 13.);
+    TH1F *hnew_ds = new TH1F("hnew_ds", "hnew_ds", 13, 0., 13.);
+    for(int i=0;i<13;i++){
+      for(int j=0;j<7;j++){
+        hnew_us->Fill(12-i,h1->GetBinContent(i+j*13+1));
+        cout << "hnew_us: bin " << 12-i
+             << " i = " << i
+             << " j = " << j
+             << " bin = " << i+j*13+1
+             << " bin content = " << h1->GetBinContent(i+j*13+1)
+             << " bin total content = " << hnew_us->GetBinContent(12-i)
+             << endl;
+        hnew_ds->Fill(i,h1->GetBinContent(100+i+j*13+1));
+        cout << "      hnew_ds: bin " << 12-i
+             << " i = " << i
+             << " j = " << j
+             << " bin = " << 100+i+j*13+1
+             << " bin read content = " << h1->GetBinContent(100+i+j*13+1)
+             << " bin total content = " << hnew_ds->GetBinContent(i+1)
+             << endl;
+      }
+    }
+    hnew_us->Scale(1./7);
+    hnew_ds->Scale(1./7);
+
+    hnew_us->Draw("e");
+    c0.SaveAs("tiles-us-phase1.pdf");
+    hnew_ds->Draw("e");
+    c0.SaveAs("tiles-ds-phase1.pdf");
+    
+  }
+  
   double n = muonStopsPhase1; 
   double expoN  = TMath::Log10(n);
   cout << "original expoN = " << expoN << endl;
 
   double mantN  = n / TMath::Power(10, static_cast<int>(expoN));
   cout << "original mantN = " << mantN << endl;
-
+ 
   h1->SetTitle(Form("Tile MuTRIG Dose (n_{#mu}^{stop} = %1.1fE%2.0f)", mantN, expoN));
   h1->SetLineWidth(2);
   h1->SetAxisRange(0., 200., "X");
   h1->SetMinimum(0.);
   h1->Draw("e");
-
- 
   c0.SaveAs("tiles-TileMuTrig-dose-phase1.pdf");
-
 }
 
 // ----------------------------------------------------------------------
