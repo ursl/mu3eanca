@@ -282,8 +282,6 @@ bool getSensors(std::unique_ptr<sql::Connection> & conn, int run, vector<blobDat
 
   std::string SQL = "select `Schema`, Version, StartRun, EndRun, Type, Sensors from calibrations";
 
-  std::ios_base::fmtflags f(cout.flags());
-
   res = stmt->executeQuery(SQL);
   
   blobData a;
@@ -296,8 +294,9 @@ bool getSensors(std::unique_ptr<sql::Connection> & conn, int run, vector<blobDat
     std::istream *blobPayload = res->getBlob("Sensors");
     blobPayload->read(blobStr, sizePixelSensors);
     for (int isens = 0; isens < NSENS; ++isens) {
-      a.deSerialize(blobStr + isens*sizeof(blobData)); 
-      v[isens] = a;
+      // a.deSerialize(blobStr + isens*sizeof(blobData)); 
+      // v[isens] = a;
+      v[isens].deSerialize(blobStr + isens*sizeof(blobData)); 
     }
     result = true;
     delete blobPayload;
@@ -365,6 +364,7 @@ int main(int argc, const char **argv) {
     std::cout << "all is well" << std::endl;
   }
 
+  cout << "nruns = " << nruns << endl;
   cout << "maxrun() = " << maxRun(conn) << endl;
 
 
@@ -389,6 +389,11 @@ int main(int argc, const char **argv) {
     }
     if (ok) {
       for (auto sd : a){
+        cout << run << ": sensorid = "
+             << sd.sid
+             << " vx = " << sd.vx
+             << endl;
+
         sum += sd.vx;
         sum += sd.vy;
         sum += sd.vz;
