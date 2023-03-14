@@ -32,7 +32,8 @@ bool gVerbose = false;
 // ./test3 -p PASSWD -r
 // ----------------------------------------------------------------------
 
-
+// Note: performance not great
+// See:  https://stackoverflow.com/questions/9511476/speed-of-mysql-query-on-tables-containing-blob-depends-on-filesystem-cache
 
 // ----------------------------------------------------------------------
 void splitNibbles(char byte, char& nibbleH, char& nibbleL) {
