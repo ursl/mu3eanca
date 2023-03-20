@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "config": "^3.3.9",
+    "nano": "^10.1.2"
+  }
+}
