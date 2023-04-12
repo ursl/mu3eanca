@@ -11,12 +11,18 @@
 
 console.log('Server-side code running');
 
-const express = require('express');
 
+var config = require('config');
+const express = require('express');
 const app = express();
 
 // serve files from the public directory
 app.use(express.static('public'));
+
+var dbhoststring = 'http://' + config.get('db.username') + ":" + config.get('db.password')
+    + "@" + config.get('db.host') + ":" + config.get('db.port')
+var nano = require('nano')(dbhoststring);
+
 
 // start the express web server listening on 3000
 app.listen(3000, () => {
@@ -28,15 +34,27 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
+
+// add a document to the DB collection recording the click event
+app.post('/clicked', (req, res) => {
+  const click = {clickTime: new Date()};
+  console.log(click);
+//  console.log(db);
+
+  // db.collection('clicks').save(click, (err, result) => {
+  //   if (err) {
+  //     return console.log(err);
+  //   }
+  //   console.log('click added to db');
+  //   res.sendStatus(201);
+  // });
+});
+
 // const http = require('http');
-// var config = require('config');
 
 // var dt = require('./myfirstmodule');
 
 
-// var dbhoststring = 'http://' + config.get('db.username') + ":" + config.get('db.password')
-//     + "@" + config.get('db.host') + ":" + config.get('db.port')
-// var nano = require('nano')(dbhoststring);
 
 
 // const hostname = '127.0.0.1';
@@ -59,3 +77,5 @@ app.get('/', (req, res) => {
 // server.listen(port, hostname, () => {
 //     console.log(`LOG: Server running at http://${hostname}:${port}/`);
 // });
+
+
