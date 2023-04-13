@@ -23,59 +23,58 @@ var dbhoststring = 'http://' + config.get('db.username') + ":" + config.get('db.
     + "@" + config.get('db.host') + ":" + config.get('db.port')
 var nano = require('nano')(dbhoststring);
 
+var db_name = "counter";
+var db = nano.use(db_name);
 
-// start the express web server listening on 3000
+
+var counter = 0;
+
+// -- start the express web server listening on 3000
 app.listen(3000, () => {
   console.log('listening on 3000');
 });
 
-// serve the homepage
+// -- serve homepage
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
 
-// add a document to the DB collection recording the click event
+// -- add a document to the DB collection recording the click event with counter
 app.post('/clicked', (req, res) => {
-  const click = {clickTime: new Date()};
-  console.log(click);
-//  console.log(db);
-
-  // db.collection('clicks').save(click, (err, result) => {
-  //   if (err) {
-  //     return console.log(err);
-  //   }
-  //   console.log('click added to db');
-  //   res.sendStatus(201);
-  // });
+    counter++;
+    const click = {clickTime: new Date()};
+    console.log(click);
+    insert_doc({nano: true, clicktime: click, counter: counter}, 0);
+    console.log('click added to db');
 });
 
-// const http = require('http');
-
-// var dt = require('./myfirstmodule');
 
 
+// ----------------------------------------------------------------------
+function insert_doc(doc, tried) {
+    db.insert(doc,
+              function (error,http_body,http_headers) {
+                  if(error) {
+                      if(error.message === 'no_db_file'  && tried < 1) {
+                          // create database and retry
+                          return nano.db.create(db_name, function () {
+                              insert_doc(doc, tried+1);
+                          });
+                      }
+                      else { return console.log(error); }
+                  }
+                  console.log(http_body);
+              });
+}
 
-
-// const hostname = '127.0.0.1';
-// const port = 3000;
-
-// const server = http.createServer((req, res) => {
-//     res.statusCode = 200;
-//     //    res.setHeader('Content-Type', 'text/plain');
-//     res.setHeader('Content-Type', 'text/html');
-//     res.write('Hello World!!!! date and time: ' + dt.myDateTime() + '\n');
-//     res.write('req.url =  ' + req.url + '\n') ;
-//     res.write('<h2>The Button Element</h2>');
-//     res.write('<form action="" method="post">');
-//     res.write('<button name="foo" value="send">Send</button>');
-//     res.write('</form>');
-//     res.end('Good bye');
-// });
-
-
-// server.listen(port, hostname, () => {
-//     console.log(`LOG: Server running at http://${hostname}:${port}/`);
-// });
-
-
+// ----------------------------------------------------------------------
+// -- get the click data from the database
+app.get('/counter', (req, res) => {
+    console.log("read SOMETHING SOMEHOW from db");
+    
+    // db.collection('clicks').find().toArray((err, result) => {
+    //     if (err) return console.log(err);
+    //     res.send(result);
+    // });
+});
