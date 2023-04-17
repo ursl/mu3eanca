@@ -6,9 +6,6 @@
 // node app3.js
 // ----------------------------------------------------------------------
 
-
-
-
 console.log('Server-side code running');
 
 
@@ -28,6 +25,7 @@ var db = nano.use(db_name);
 
 
 var counter = 0;
+var rev;
 
 // -- start the express web server listening on 3000
 app.listen(3000, () => {
@@ -42,11 +40,16 @@ app.get('/', (req, res) => {
 
 // -- add a document to the DB collection recording the click event with counter
 app.post('/clicked', (req, res) => {
-    counter++;
-    const click = {clickTime: new Date()};
-    console.log(click);
-    insert_doc({nano: true, clicktime: click, counter: counter}, 0);
-    console.log('click added to db');
+    db.get('cnt', function(err, doc) {
+        counter = doc.counter;
+        rev = doc._rev;
+        counter++;
+        const click = {clickTime: new Date() + " counter ->" + counter + "<- // rev ->" + rev + "<-"};
+        console.log(click);
+        
+        insert_doc({_id: "cnt", _rev: rev, nano: true, clicktime: click, counter: counter}, 0);
+        console.log('click added to db');
+    });
 });
 
 
@@ -78,3 +81,6 @@ app.get('/counter', (req, res) => {
     //     res.send(result);
     // });
 });
+
+
+
