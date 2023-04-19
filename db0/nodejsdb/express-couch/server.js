@@ -41,14 +41,23 @@ app.get('/', (req, res) => {
 // -- add a document to the DB collection recording the click event with counter
 app.post('/clicked', (req, res) => {
     db.get('cnt', function(err, doc) {
-        counter = doc.counter;
-        rev = doc._rev;
-        counter++;
-        const click = {clickTime: new Date() + " counter ->" + counter + "<- // rev ->" + rev + "<-"};
-        console.log(click);
-        
-        insert_doc({_id: "cnt", _rev: rev, nano: true, clicktime: click, counter: counter}, 0);
-        console.log('click added to db');
+        if (err) {
+            console.log(err.message);
+            insert_doc({_id: "cnt", nano: true, clicktime: "nada", counter: 0}, 0);
+            res.sendStatus(201);
+        } else {
+            counter = doc.counter;
+            rev = doc._rev;
+            counter++;
+            const click = Date();
+            const text = click + " counter ->" + counter + "<- // rev ->" + rev + "<-";
+            console.log(text);
+            
+            insert_doc({_id: "cnt", _rev: rev, nano: true, clicktime: click, counter: counter}, 0);
+            console.log('click added to db');
+            res.send({rescnt: counter});
+//            res.append('rescnt', counter);
+        }
     });
 });
 
@@ -59,7 +68,7 @@ function insert_doc(doc, tried) {
     db.insert(doc,
               function (error,http_body,http_headers) {
                   if(error) {
-                      if(error.message === 'no_db_file'  && tried < 1) {
+                      if(error.message === 'no_db_file' && tried < 1) {
                           // create database and retry
                           return nano.db.create(db_name, function () {
                               insert_doc(doc, tried+1);
@@ -67,20 +76,18 @@ function insert_doc(doc, tried) {
                       }
                       else { return console.log(error); }
                   }
-                  console.log(http_body);
               });
 }
 
 // ----------------------------------------------------------------------
-// -- get the click data from the database
-app.get('/counter', (req, res) => {
-    console.log("read SOMETHING SOMEHOW from db");
-    
-    // db.collection('clicks').find().toArray((err, result) => {
-    //     if (err) return console.log(err);
-    //     res.send(result);
-    // });
+// get the click data from the database
+app.get('/clicks', (req, res) => {
+    db.get('cnt', function(err, doc) {
+        if (err) {
+            return console.log(err);
+        } else {
+            console.log("read something " + "cnt = " + doc.counter);
+            return doc.counter;
+        }
+    });
 });
-
-
-
