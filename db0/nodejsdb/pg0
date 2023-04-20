@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+// ----------------------------------------------------------------------
+// playground 0
+// ----------------------------------------------------------------------
+
+console.log("Hello world");
+
+// -- String interpolation: must have backticks!
+const name = 'Lev', time = 'today';
+console.log(`Hello ${name}, how are you ${time}?`);
+
+// -- class declaration 
+class Rectangle {
+    constructor(width, height) {
+        this.height = height;
+        this.width = width;
+    }
+}
+
+
+let a = new Rectangle(100, 20);
+console.log(`original a = ${a.width} x ${a.height}`);
+a.height = 25;
+console.log(`modified a = ${a.width} x ${a.height}`);
