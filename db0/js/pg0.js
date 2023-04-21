@@ -12,8 +12,8 @@ console.log(`Hello ${name}, how are you ${time}?`);
 
 // -- class declaration 
 class Rectangle {
-    width = 0;
-    height = 0;
+    let width = 0;
+    let height = 0;
     
     constructor(width, height) {
         this.height = height;
@@ -58,3 +58,11 @@ const p2 = new Point(10, 10);
 
 console.log(`static distance d = ${Point.sdistance(p1, p2)}`);
 console.log(`method distance d = ${p1.distance(p2)}`);
+
+// sys.exec
+// 
+// process.createChildProcess("cat");
+// cat.addListener("output", function(data) {
+//   if (data) sys.puts(data);
+// });
+//
