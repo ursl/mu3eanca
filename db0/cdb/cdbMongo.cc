@@ -64,33 +64,30 @@ void cdbMongo::init() {
   mongocxx::uri uri(fURI);
   fConn = mongocxx::client(uri);
   fDB = fConn["mu3e"];
+
+  // -- list all collections
+  if (0) {
+    auto cursor1 = fDB.list_collections();
+    for (const bsoncxx::document::view& doc :cursor1) {
+      bsoncxx::document::element ele = doc["name"];
+      string name = ele.get_utf8().value.to_string();
+      cout << " " << name << endl;
+    }
+  }
 }
 
 // ----------------------------------------------------------------------
 vector<string> cdbMongo::getGlobalTags() {
-  cout << "hallo" << endl;
 
-  auto cursor1 = fDB.list_collections();
-  for (const bsoncxx::document::view& doc :cursor1)    {
-    bsoncxx::document::element ele = doc["name"];
-    string name = ele.get_utf8().value.to_string();
-    cout << " " << name << endl;
-  }
-
-  mongocxx::collection collGT = fDB["globaltags"];
-  cout << "ciao" << endl;
-
-  mongocxx::cursor cursor = collGT.find({});
-  for(auto doc : cursor) {
-    std::cout << bsoncxx::to_json(doc) << std::endl;
-  }
-
-  
-
-  return std::vector<std::string>();
-    
-  if (fValidGlobalTags) {
-    return fGlobalTags; 
+  if (!fValidGlobalTags) {
+    mongocxx::cursor cursor = fDB["globaltags"].find({});
+    for(auto doc : cursor) {
+      assert(doc["_id"].type() == bsoncxx::type::k_oid);
+      string tname = string(doc["gt"].get_string().value).c_str();
+      fGlobalTags.push_back(tname); 
+    }
+    fValidGlobalTags = true;
+    return fGlobalTags;
   } else {
     return std::vector<std::string>();
   }
