@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
   cdb *db1 = new cdbAscii("ascii", "ascii");
   cout << "instantiated cdbAscii with name " << db1->getName() << endl;
   vector<string> gt = db1->getGlobalTags();
-  cout << "gt.size() = " << gt.size() << endl;
+  cout << "ascii gt list gt.size() = " << gt.size() << endl;
   for (auto it : gt) {
     cout << " " << it << endl;
   }
@@ -36,6 +36,10 @@ int main(int argc, char* argv[]) {
   cdb *md1 = new cdbMongo("mongo", ms);
   cout << "instantiated cdbMongo with name " << md1->getName() << endl;
   gt = md1->getGlobalTags();
+  cout << "mongodb gt list gt.size() = " << gt.size() << endl;
+  for (auto it : gt) {
+    cout << " " << it << endl;
+  }
 
   return 0;
 }
