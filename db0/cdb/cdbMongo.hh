@@ -19,6 +19,7 @@ public:
   void                     init();
   std::vector<std::string> getGlobalTags() override;
   std::vector<std::string> getTags(std::string gt);
+  std::vector<int>         getIovs(std::string tag);
 
 private: 
   mongocxx::client   fConn;

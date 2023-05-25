@@ -24,25 +24,41 @@ int main(int argc, char* argv[]) {
   cdb *db0 = new cdb("abstract", "nowhere");
   cout << "instantiated cdb with name " << db0->getName() << endl;
 
-  cdb *db1 = new cdbAscii("ascii", "ascii");
-  cout << "instantiated cdbAscii with name " << db1->getName() << endl;
-  vector<string> gt = db1->getGlobalTags();
-  cout << "ascii gt list gt.size() = " << gt.size() << endl;
-  for (auto it : gt) {
-    cout << " " << it << endl;
-  }
-
-  string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
-  cdb *md1 = new cdbMongo("mongo", ms);
-  cout << "instantiated cdbMongo with name " << md1->getName() << endl;
-  gt = md1->getGlobalTags();
-  cout << "mongodb gt list gt.size() = " << gt.size() << endl;
-  for (auto it : gt) {
-    vector<string> tags = md1->getTags(it);
-    cout << " " << it << ": ";
-    for (auto itt : tags) cout << itt << " ";
-    cout << endl;
+  if (1) {
+    cdb *db1 = new cdbAscii("ascii", "ascii");
+    cout << "instantiated cdbAscii with name " << db1->getName() << endl;
+    vector<string> gt = db1->getGlobalTags();
+    for (auto igt : gt) {
+      cout << "GT " << igt << endl;
+      vector<string> tags = db1->getTags(igt);
+      for (auto itt : tags) {
+        cout << " tag: " << itt << endl;
+        vector<int> iovs = db1->getIovs(itt);
+        for (auto ittt :  iovs) {
+          cout << "   iov " << ittt << endl;
+        }
+      }
+    }
   }
   
+  if (1) {
+    
+    string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
+    cdb *md1 = new cdbMongo("mongo", ms);
+    cout << "instantiated cdbMongo with name " << md1->getName() << endl;
+    vector<string> gt = md1->getGlobalTags();
+    for (auto igt : gt) {
+      cout << "GT " << igt << endl;
+      vector<string> tags = md1->getTags(igt);
+      for (auto itt : tags) {
+        cout << " tag: " << itt << endl;
+        vector<int> iovs = md1->getIovs(itt);
+        for (auto ittt :  iovs) {
+          cout << "   iov " << ittt << endl;
+        }
+      }
+    }
+  }
+
   return 0;
 }

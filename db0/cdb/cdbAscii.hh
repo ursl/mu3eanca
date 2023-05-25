@@ -3,6 +3,8 @@
 
 #include "cdb.hh"
 
+#include <map>
+
 // ----------------------------------------------------------------------
 // implementation class for an ASCII DB
 // ----------------------------------------------------------------------
@@ -15,13 +17,22 @@ public:
 
   void                     init();
   std::vector<std::string> getGlobalTags() override;
+  std::vector<std::string> getTags(std::string gt);
+  std::vector<int>         getIovs(std::string tag);
+
   std::vector<std::string> split(const std::string &s, char delim);
-  // -- helper function for above
+  void                     cleanupString(std::string &);
+  // -- helper functions for above
+  void                     replaceAll(std::string &s,
+                                      const std::string &from, const std::string &to);
   void                     split(const std::string &s, char delim,
                                  std::vector<std::string> &elems);
 
 private: 
 
+  std::map<std::string, std::vector<std::string>> fTagMap;
+  std::map<std::string, std::vector<int>> fIovMap;
+  
 };
 
 

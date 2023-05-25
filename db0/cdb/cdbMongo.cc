@@ -31,7 +31,8 @@ using bsoncxx::builder::basic::make_document;
 // -- populate mongo DB:
 // ----------------------------------------------------------------------
 
-/* -- global tags collection
+/*
+  // -- global tags collection
   mongosh
 
   use mu3e
@@ -44,6 +45,28 @@ using bsoncxx::builder::basic::make_document;
   db.globaltags.insert({gt: "mc23intrun", tags: ["pixelmc23intrun", "fibresmc23intrun", "tilesmc23ideal"]})
 
   db.globaltags.find()
+
+
+  // -- iovs collection
+  mongosh
+
+  use mu3e
+  db.iovs.drop()
+  db.createCollection("iovs")
+  db.iovs.insert({tag: "pixelir", iovs: [1,10,20,30,100,200]})
+  db.iovs.insert({tag: "fibresstart", iovs: [1,2,3,4,15,45,90,150]})
+  db.iovs.insert({tag: "tilesNada", iovs: [1]})
+  db.iovs.insert({tag: "pixelv0", iovs: [202,210,900]})
+  db.iovs.insert({tag: "fibresv11", iovs: [202,400,800]})
+  db.iovs.insert({tag: "tilesA", iovs: [202,300,700]})
+  db.iovs.insert({tag: "pixelmcideal", iovs: [1]})
+  db.iovs.insert({tag: "fibresmcideal", iovs: [1]})
+  db.iovs.insert({tag: "tilesmcideal", iovs: [1]})
+  db.iovs.insert({tag: "pixelmc23intrun", iovs: [200]})
+  db.iovs.insert({tag: "fibresmc23intrun", iovs: [150]})
+  db.iovs.insert({tag: "tilesmc23ideal", iovs: [1]})
+  db.iovs.find()
+
   
 */
 
@@ -111,6 +134,26 @@ vector<string> cdbMongo::getTags(string gt) {
       tags.push_back(tname); 
     }
   }
+
   return tags;
 }
 
+
+// ----------------------------------------------------------------------
+vector<int> cdbMongo::getIovs(std::string tag) {
+  std::vector<int> iovs; 
+
+  auto cursor_filtered =  fDB["iovs"].find(make_document(kvp("tag", tag)));
+  for (auto doc : cursor_filtered) {
+    // -- print it 
+    // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+    assert(doc["_id"].type() == bsoncxx::type::k_oid);
+    bsoncxx::array::view subarr{doc["iovs"].get_array()};
+    for (bsoncxx::array::element ele : subarr) {
+      int iov = ele.get_int32().value;
+      iovs.push_back(iov); 
+    }
+  }
+
+  return iovs;
+}
