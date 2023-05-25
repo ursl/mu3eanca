@@ -17,6 +17,7 @@ public:
   std::string                      getName() {return fName;}
   virtual std::vector<std::string> getGlobalTags() {return std::vector<std::string>();}
   virtual std::vector<std::string> getTags(std::string gt) {return std::vector<std::string>();}
+  virtual std::vector<int>         getIovs(std::string t) {return std::vector<int>();}
   
 protected: 
   std::string fName{"default"};
