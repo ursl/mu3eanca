@@ -38,8 +38,11 @@ int main(int argc, char* argv[]) {
   gt = md1->getGlobalTags();
   cout << "mongodb gt list gt.size() = " << gt.size() << endl;
   for (auto it : gt) {
-    cout << " " << it << endl;
+    vector<string> tags = md1->getTags(it);
+    cout << " " << it << ": ";
+    for (auto itt : tags) cout << itt << " ";
+    cout << endl;
   }
-
+  
   return 0;
 }

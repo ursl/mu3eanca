@@ -24,6 +24,8 @@ using bsoncxx::builder::stream::open_document;
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::sub_array;
 using bsoncxx::builder::basic::sub_document;
+using bsoncxx::builder::basic::make_document;
+
 
 // ----------------------------------------------------------------------
 // -- populate mongo DB:
@@ -81,7 +83,7 @@ vector<string> cdbMongo::getGlobalTags() {
 
   if (!fValidGlobalTags) {
     mongocxx::cursor cursor = fDB["globaltags"].find({});
-    for(auto doc : cursor) {
+    for (auto doc : cursor) {
       assert(doc["_id"].type() == bsoncxx::type::k_oid);
       string tname = string(doc["gt"].get_string().value).c_str();
       fGlobalTags.push_back(tname); 
@@ -92,5 +94,23 @@ vector<string> cdbMongo::getGlobalTags() {
     return std::vector<std::string>();
   }
 
+}
+
+// ----------------------------------------------------------------------
+vector<string> cdbMongo::getTags(string gt) {
+  std::vector<std::string> tags; 
+
+  auto cursor_filtered =  fDB["globaltags"].find(make_document(kvp("gt", gt)));
+  for (auto doc : cursor_filtered) {
+    // -- print it 
+    // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+    assert(doc["_id"].type() == bsoncxx::type::k_oid);
+    bsoncxx::array::view subarr{doc["tags"].get_array()};
+    for (bsoncxx::array::element ele : subarr) {
+      string tname = string(ele.get_string().value).c_str();
+      tags.push_back(tname); 
+    }
+  }
+  return tags;
 }
 
