@@ -33,18 +33,18 @@ $(addprefix obj/,%.o) : %.cc
 
 all: prep lib bin
 
-lib: $(addprefix obj/,$(FILES) main.o)
+lib: $(addprefix obj/,$(FILES) )
 #	$(CXX) $(INCMONGODB) -O0 -g -DNDEBUG -std=gnu++11 -o obj/main.o -c main.cc
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so 
 
 
-bin: obj/main.o obj/fillDB.o
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/main.o -o bin/main lib/libCDB.so $(LIBMONGODB)
+bin: obj/testCDB.o obj/fillDB.o
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB lib/libCDB.so $(LIBMONGODB)
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB)
 
 
 clean:
-	rm -f obj/*.o lib/*.so bin/main 
+	rm -f obj/*.o lib/*.so bin/testCDB
 
 # -- preparatory setup
 prep:
