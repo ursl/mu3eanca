@@ -19,10 +19,12 @@ void aFewRuns(cdb*, string globalTag);
 int main(int argc, char* argv[]) {
   
   // -- command line arguments
-	int verbose(0);
+	int mode(0), run(0), verbose(0);
 	string gt("dt23intrun");
   for (int i = 0; i < argc; i++){
 		if (!strcmp(argv[i], "-gt"))  {gt = string(argv[++i]);}
+		if (!strcmp(argv[i], "-m"))   {mode = atoi(argv[++i]);}
+		if (!strcmp(argv[i], "-r"))   {run = atoi(argv[++i]);}
 		if (!strcmp(argv[i], "-v"))   {verbose = atoi(argv[++i]);}
   }
   
@@ -40,10 +42,17 @@ int main(int argc, char* argv[]) {
 		cout << "----------------------------------------------------------------------" << endl;
 	}
 	
-	aFewRuns(db1, gt);  
-  cout << "-------------" << endl;
-	aFewRuns(md1, gt);  
-  return 0;
+	if (0 == mode) {
+		aFewRuns(db1, gt);  
+		cout << "-------------" << endl;
+		aFewRuns(md1, gt);  
+		return 0;
+	} else if (1 == mode) {
+		calAbs *cal0 = new calPixel(db1, gt);
+		cout << "run = " << run << " payload = " << cal0->getPayload(run) << endl;
+		calAbs *cal1 = new calPixel(md1, gt);
+		cout << "run = " << run << " payload = " << cal1->getPayload(run) << endl;
+	}
 }
 
 
@@ -75,8 +84,6 @@ void aFewRuns(cdb *db, string gt) {
   for (auto it: vruns) {
 		cout << "run = " << it << " payload = " << cal->getPayload(it) << endl;
   }   
-    
-    
 }
     
   
