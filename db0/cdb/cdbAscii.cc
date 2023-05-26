@@ -43,12 +43,7 @@ vector<string> cdbAscii::getGlobalTags() {
     }
     string sline;
     while (getline(INS, sline)) {
-      vector<string> tmptokens = split(sline, ',');
-      vector<string> tokens;
-      for (auto it : tmptokens) {
-        cleanupString(it);
-        tokens.push_back(it);
-      }
+      vector<string> tokens = split(sline, ',');
       if (tokens.size() > 0) {
         fGlobalTags.push_back(tokens[0]);
         vector<string> vtokens = tokens;
@@ -68,6 +63,9 @@ vector<string> cdbAscii::getGlobalTags() {
 
 // ----------------------------------------------------------------------
 vector<string> cdbAscii::getTags(string gt) {
+  if (!fValidGlobalTags) {
+    getGlobalTags();
+  }
   return fTagMap[gt];
 }
 
