@@ -16,6 +16,13 @@ void aFewRuns(cdb*, string globalTag);
 
 // ----------------------------------------------------------------------
 // testCDB
+// -------
+//
+// Examples:
+// bin/testCDB -gt dt23prompt -m 1 -r 1000
+// bin/testCDB -gt dt23intrun
+// bin/testCDB -gt dt23intrun -v 10
+// 
 // ----------------------------------------------------------------------
 
 
