@@ -7,15 +7,12 @@
 
 using namespace std;
 
-// ----------------------------------------------------------------------
-// cdbAscii::cdbAscii() : cdb() {
-// }
-
 
 // ----------------------------------------------------------------------
 bool bothAreSpaces(char lhs, char rhs) {
   return (lhs == rhs) && (lhs == ' ');
 }
+
 
 // ----------------------------------------------------------------------
 cdbAscii::cdbAscii(string name, string uri) : cdb(name, uri) {
@@ -108,8 +105,6 @@ vector<int> cdbAscii::getIovs(std::string tag) {
 
 // ----------------------------------------------------------------------
 string cdbAscii::getPayload(int irun, string t) {
-  string payload("not found"); 
-
   int iov(-1);
   vector<int> iovs = getIovs(t);
   for (auto it : iovs) {
@@ -121,7 +116,12 @@ string cdbAscii::getPayload(int irun, string t) {
   std::stringstream ssHash;
   ssHash << "tag_" << t << "_iov_" << iov;
   string hash = ssHash.str();
-  cout << "hash: " << hash << endl;
+
+  std::stringstream sspl;
+  sspl << "(cdbAscii> run = " << irun << " tag = " << t 
+       << " hash = " << hash 
+       << " not found)";
+  string payload = sspl.str();
 
   if (fTagIovPayloadMap.find(hash) == fTagIovPayloadMap.end()) {
     // -- read payloads from fURI
@@ -142,19 +142,10 @@ string cdbAscii::getPayload(int irun, string t) {
     INS.close();
     return fTagIovPayloadMap[hash];
   } else {
-    return payload;
+    return fTagIovPayloadMap[hash];
   }
 
-
-  
-  // for (auto it : fIovMap[t]) {
-  //   if (it == iov) {
-  //     return it;
-  //   }
-  // }
-
   return payload;
-
 }
 
 

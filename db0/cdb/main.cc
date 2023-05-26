@@ -6,20 +6,22 @@
 #include "cdbAscii.hh"
 #include "cdbMongo.hh"
 
+#include "calPixel.hh"
+
 
 using namespace std;
 
 void printStuff(cdb*);
-void aFewRuns(cdb*);
+void aFewRuns(cdb*, string globalTag);
 
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
   
   // -- command line arguments
-  //  int nruns(-1);
+	string gt("dt23intrun");
   for (int i = 0; i < argc; i++){
-    //    if (!strcmp(argv[i],"-n"))  {nruns   = atoi(argv[++i]);}
+		if (!strcmp(argv[i], "-gt"))  {gt = string(argv[++i]);}
   }
   
   cdb *db1 = new cdbAscii("ascii", "ascii");
@@ -32,7 +34,10 @@ int main(int argc, char* argv[]) {
   printStuff(db1);
   cout << "----------------------------------------------------------------------" << endl;
   printStuff(md1);
-  
+  cout << "----------------------------------------------------------------------" << endl;
+	aFewRuns(db1, gt);  
+  cout << "-------------" << endl;
+	aFewRuns(md1, gt);  
   return 0;
 }
 
@@ -58,10 +63,12 @@ void printStuff(cdb *db) {
 
 
 // ----------------------------------------------------------------------
-void aFewRuns(cdb *db) {
+void aFewRuns(cdb *db, string gt) {
+	cout << "DB " << db->getName() << endl;
   vector<int> vruns{23,24,25,56,90,156,157,201,202};
-  
+	calAbs *cal = new calPixel(db, gt);
   for (auto it: vruns) {
+		cout << "run = " << it << " payload = " << cal->getPayload(it) << endl;
   }   
     
     
