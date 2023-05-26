@@ -188,9 +188,9 @@ string cdbMongo::getPayload(int irun, string t) {
   string hash = ssHash.str();
 
   std::stringstream sspl;
-  sspl << "cdbMongo> run = " << irun << " tag = " << t 
+  sspl << "(cdbMongo> run = " << irun << " tag = " << t 
        << " hash = tag_" << t << "_iov_" 
-       << " not found";
+       << " not found)";
   string payload = sspl.str();
 
   auto cursor_filtered =  fDB["payloads"].find(make_document(kvp("hash", hash)));
