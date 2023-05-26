@@ -19,9 +19,11 @@ void aFewRuns(cdb*, string globalTag);
 int main(int argc, char* argv[]) {
   
   // -- command line arguments
+	int verbose(0);
 	string gt("dt23intrun");
   for (int i = 0; i < argc; i++){
 		if (!strcmp(argv[i], "-gt"))  {gt = string(argv[++i]);}
+		if (!strcmp(argv[i], "-v"))   {verbose = atoi(argv[++i]);}
   }
   
   cdb *db1 = new cdbAscii("ascii", "ascii");
@@ -31,10 +33,13 @@ int main(int argc, char* argv[]) {
   cdb *md1 = new cdbMongo("mongo", ms);
   cout << "instantiated cdbMongo with name " << md1->getName() << endl;
     
-  printStuff(db1);
-  cout << "----------------------------------------------------------------------" << endl;
-  printStuff(md1);
-  cout << "----------------------------------------------------------------------" << endl;
+  if (verbose > 9) {
+		printStuff(db1);
+		cout << "----------------------------------------------------------------------" << endl;
+		printStuff(md1);
+		cout << "----------------------------------------------------------------------" << endl;
+	}
+	
 	aFewRuns(db1, gt);  
   cout << "-------------" << endl;
 	aFewRuns(md1, gt);  
