@@ -34,7 +34,6 @@ $(addprefix obj/,%.o) : %.cc
 all: prep lib bin
 
 lib: $(addprefix obj/,$(FILES) )
-#	$(CXX) $(INCMONGODB) -O0 -g -DNDEBUG -std=gnu++11 -o obj/main.o -c main.cc
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so 
 
 
