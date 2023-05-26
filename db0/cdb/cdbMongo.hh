@@ -18,8 +18,9 @@ public:
 
   void                     init();
   std::vector<std::string> getGlobalTags() override;
-  std::vector<std::string> getTags(std::string gt);
-  std::vector<int>         getIovs(std::string tag);
+  std::vector<std::string> getTags(std::string gt) override;
+  std::vector<int>         getIovs(std::string tag) override;
+  std::string              getPayload(int irun, std::string t) override;
 
 private: 
   mongocxx::client   fConn;

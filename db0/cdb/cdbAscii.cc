@@ -78,7 +78,7 @@ vector<string> cdbAscii::getTags(string gt) {
 // ----------------------------------------------------------------------
 vector<int> cdbAscii::getIovs(std::string tag) {
   if (fIovMap.find(tag) == fIovMap.end()) {
-    // -- read global tags from fURI
+    // -- read iovs from fURI
     ifstream INS;
     string gtname = fURI + "/iovs.txt";
     INS.open(gtname);
@@ -103,6 +103,58 @@ vector<int> cdbAscii::getIovs(std::string tag) {
     return fIovMap[tag];
   }
  
+}
+
+
+// ----------------------------------------------------------------------
+string cdbAscii::getPayload(int irun, string t) {
+  string payload("not found"); 
+
+  int iov(-1);
+  vector<int> iovs = getIovs(t);
+  for (auto it : iovs) {
+    if (irun >= it) {
+      iov = it;
+    }
+  }
+  
+  std::stringstream ssHash;
+  ssHash << "tag_" << t << "_iov_" << iov;
+  string hash = ssHash.str();
+  cout << "hash: " << hash << endl;
+
+  if (fTagIovPayloadMap.find(hash) == fTagIovPayloadMap.end()) {
+    // -- read payloads from fURI
+    ifstream INS;
+    string gtname = fURI + "/payloads.txt";
+    INS.open(gtname);
+    if (INS.fail()) {
+      cout << "Error failed to open ->" << gtname << "<-" << endl;
+      return payload;
+    }
+    string sline;
+    while (getline(INS, sline)) {
+      vector<string> tokens = split(sline, ',');
+      if (tokens.size() > 0) {
+        fTagIovPayloadMap.insert(make_pair(tokens[0], tokens[1]));
+      }     
+    }
+    INS.close();
+    return fTagIovPayloadMap[hash];
+  } else {
+    return payload;
+  }
+
+
+  
+  // for (auto it : fIovMap[t]) {
+  //   if (it == iov) {
+  //     return it;
+  //   }
+  // }
+
+  return payload;
+
 }
 
 
@@ -148,4 +200,3 @@ void cdbAscii::cleanupString(string &s) {
 }
 
 
- 

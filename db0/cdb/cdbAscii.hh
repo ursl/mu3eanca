@@ -19,6 +19,7 @@ public:
   std::vector<std::string> getGlobalTags() override;
   std::vector<std::string> getTags(std::string gt);
   std::vector<int>         getIovs(std::string tag);
+  std::string              getPayload(int irun, std::string t);
 
   std::vector<std::string> split(const std::string &s, char delim);
   void                     cleanupString(std::string &);
@@ -32,6 +33,7 @@ private:
 
   std::map<std::string, std::vector<std::string>> fTagMap;
   std::map<std::string, std::vector<int>> fIovMap;
+  std::map<std::string, std::string> fTagIovPayloadMap;
   
 };
 
