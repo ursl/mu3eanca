@@ -1,4 +1,4 @@
-dt23intrun, pixelir, fibresstart, tilesNada
-dt23prompt, pixelv0, fibresv11, tilesA
-mcideal, pixelmcideal, fibresmcideal, tilesmcideal
-mc23intrun, pixelmc23intrun, fibresmc23intrun, tilesmc23ideal
+dt23intrun,pixelir,fibresstart,tilesNada
+dt23prompt,pixelv0,fibresv11,tilesA
+mc23intrun,pixelmc23intrun,fibresmc23intrun,tilesmc23ideal
+mcideal,pixelmcideal,fibresmcideal,tilesmcideal

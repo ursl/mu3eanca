@@ -1,6 +1,30 @@
-tag_pixelir_iov_1,payload1
-tag_pixelir_iov_10,payload10
-tag_pixelir_iov_20,payload20
-tag_pixelir_iov_30,payload30
-tag_pixelir_iov_100,payload100
-tag_pixelir_iov_200,payload200
+tag_fibresmc23intrun_iov_150,payload fibresmc23intrun for iov 150
+tag_fibresmcideal_iov_1,payload fibresmcideal for iov 1
+tag_fibresstart_iov_1,payload fibresstart for iov 1
+tag_fibresstart_iov_2,payload fibresstart for iov 2
+tag_fibresstart_iov_3,payload fibresstart for iov 3
+tag_fibresstart_iov_4,payload fibresstart for iov 4
+tag_fibresstart_iov_15,payload fibresstart for iov 15
+tag_fibresstart_iov_45,payload fibresstart for iov 45
+tag_fibresstart_iov_90,payload fibresstart for iov 90
+tag_fibresstart_iov_150,payload fibresstart for iov 150
+tag_fibresv11_iov_202,payload fibresv11 for iov 202
+tag_fibresv11_iov_400,payload fibresv11 for iov 400
+tag_fibresv11_iov_800,payload fibresv11 for iov 800
+tag_pixelir_iov_1,payload pixelir for iov 1
+tag_pixelir_iov_10,payload pixelir for iov 10
+tag_pixelir_iov_20,payload pixelir for iov 20
+tag_pixelir_iov_30,payload pixelir for iov 30
+tag_pixelir_iov_100,payload pixelir for iov 100
+tag_pixelir_iov_200,payload pixelir for iov 200
+tag_pixelmc23intrun_iov_200,payload pixelmc23intrun for iov 200
+tag_pixelmcideal_iov_1,payload pixelmcideal for iov 1
+tag_pixelv0_iov_202,payload pixelv0 for iov 202
+tag_pixelv0_iov_210,payload pixelv0 for iov 210
+tag_pixelv0_iov_900,payload pixelv0 for iov 900
+tag_tilesA_iov_202,payload tilesA for iov 202
+tag_tilesA_iov_300,payload tilesA for iov 300
+tag_tilesA_iov_700,payload tilesA for iov 700
+tag_tilesNada_iov_1,payload tilesNada for iov 1
+tag_tilesmc23ideal_iov_1,payload tilesmc23ideal for iov 1
+tag_tilesmcideal_iov_1,payload tilesmcideal for iov 1
