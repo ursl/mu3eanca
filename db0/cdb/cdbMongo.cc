@@ -175,8 +175,6 @@ vector<int> cdbMongo::getIovs(std::string tag) {
 
 // ----------------------------------------------------------------------
 string cdbMongo::getPayload(int irun, string t) {
-  string payload("not found"); 
-
   int iov(-1);
   vector<int> iovs = getIovs(t);
   for (auto it : iovs) {
@@ -188,7 +186,12 @@ string cdbMongo::getPayload(int irun, string t) {
   std::stringstream ssHash;
   ssHash << "tag_" << t << "_iov_" << iov;
   string hash = ssHash.str();
-  cout << "hash: " << hash << endl;
+
+  std::stringstream sspl;
+  sspl << "cdbMongo> run = " << irun << " tag = " << t 
+       << " hash = tag_" << t << "_iov_" 
+       << " not found";
+  string payload = sspl.str();
 
   auto cursor_filtered =  fDB["payloads"].find(make_document(kvp("hash", hash)));
   for (auto doc : cursor_filtered) {
