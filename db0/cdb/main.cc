@@ -39,7 +39,13 @@ int main(int argc, char* argv[]) {
         }
       }
     }
+
+    string pl = db1->getPayload(12, "pixelir");
+    cout << "pixel payload: " << pl << endl;
+
   }
+
+  cout << "----------------------------------------------------------------------" << endl;
   
   if (1) {
     
@@ -58,7 +64,10 @@ int main(int argc, char* argv[]) {
         }
       }
     }
-  }
 
+    string pl = md1->getPayload(12, "pixelir");
+    cout << "pixel payload: " << pl << endl;
+  }
+  
   return 0;
 }

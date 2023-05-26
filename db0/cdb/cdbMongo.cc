@@ -67,6 +67,20 @@ using bsoncxx::builder::basic::make_document;
   db.iovs.insert({tag: "tilesmc23ideal", iovs: [1]})
   db.iovs.find()
 
+  // -- payloads collection
+  mongosh
+
+  use mu3e
+  db.payloads.drop()
+  db.createCollection("payloads")
+  db.payloads.insert({hash: "tag_pixelir_iov_1", payload: "payload1"})
+  db.payloads.insert({hash: "tag_pixelir_iov_10", payload: "payload10"})
+  db.payloads.insert({hash: "tag_pixelir_iov_20", payload: "payload20"})
+  db.payloads.insert({hash: "tag_pixelir_iov_30", payload: "payload30"})
+  db.payloads.insert({hash: "tag_pixelir_iov_100", payload: "payload100"})
+  db.payloads.insert({hash: "tag_pixelir_iov_200", payload: "payload200"})
+  db.payloads.find()
+
   
 */
 
@@ -156,4 +170,34 @@ vector<int> cdbMongo::getIovs(std::string tag) {
   }
 
   return iovs;
+}
+
+
+// ----------------------------------------------------------------------
+string cdbMongo::getPayload(int irun, string t) {
+  string payload("not found"); 
+
+  int iov(-1);
+  vector<int> iovs = getIovs(t);
+  for (auto it : iovs) {
+    if (irun >= it) {
+      iov = it;
+    }
+  }
+  
+  std::stringstream ssHash;
+  ssHash << "tag_" << t << "_iov_" << iov;
+  string hash = ssHash.str();
+  cout << "hash: " << hash << endl;
+
+  auto cursor_filtered =  fDB["payloads"].find(make_document(kvp("hash", hash)));
+  for (auto doc : cursor_filtered) {
+    // -- print it 
+    // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+    assert(doc["_id"].type() == bsoncxx::type::k_oid);
+    string tname = string(doc["payload"].get_string().value).c_str();
+    return tname;
+  }
+
+  return payload;
 }
