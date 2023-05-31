@@ -37,7 +37,8 @@ lib: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so 
 
 
-bin: obj/testCDB.o obj/fillDB.o
+bin: obj/testRun.o obj/testCDB.o obj/fillDB.o
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testRun.o -o bin/testRun lib/libCDB.so $(LIBMONGODB)
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB lib/libCDB.so $(LIBMONGODB)
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB)
 
