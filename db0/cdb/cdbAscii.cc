@@ -72,7 +72,7 @@ vector<string> cdbAscii::getTags(string gt) {
 
 // ----------------------------------------------------------------------
 vector<int> cdbAscii::getIovs(std::string tag) {
-  if (fIovMap.find(tag) == fIovMap.end()) {
+  if (fTagIOVs.find(tag) == fTagIOVs.end()) {
     // -- read iovs from fURI
     ifstream INS;
     string gtname = fURI + "/iovs.txt";
@@ -89,13 +89,13 @@ vector<int> cdbAscii::getIovs(std::string tag) {
         for (unsigned int i = 1; i < tokens.size(); ++i) {
           vtokens.push_back(stoi(tokens[i]));
         }
-        fIovMap.insert(make_pair(tokens[0], vtokens));
+        fTagIOVs.insert(make_pair(tokens[0], vtokens));
       }     
     }
     INS.close();
-    return fIovMap[tag];
+    return fTagIOVs[tag];
   } else {
-    return fIovMap[tag];
+    return fTagIOVs[tag];
   }
  
 }

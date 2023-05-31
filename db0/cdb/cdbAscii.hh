@@ -3,8 +3,6 @@
 
 #include "cdb.hh"
 
-#include <map>
-
 // ----------------------------------------------------------------------
 // implementation class for an ASCII DB
 // ----------------------------------------------------------------------
@@ -32,7 +30,6 @@ public:
 private: 
 
   std::map<std::string, std::vector<std::string>> fTagMap;
-  std::map<std::string, std::vector<int>> fIovMap;
   std::map<std::string, std::string> fTagIovPayloadMap;
   
 };

@@ -3,9 +3,10 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 // ----------------------------------------------------------------------
-// abstract base class for DB access
+// abstract base class for DB access and tag/IOV management
 // ----------------------------------------------------------------------
 
 class cdb {
@@ -26,6 +27,7 @@ protected:
 
   bool fValidGlobalTags{false}; 
   std::vector<std::string> fGlobalTags;
+  std::map<std::string, std::vector<int>> fTagIOVs;
 };
 
 
