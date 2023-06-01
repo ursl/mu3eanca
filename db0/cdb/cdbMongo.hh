@@ -17,10 +17,13 @@ public:
   ~cdbMongo();
 
   void                     init();
-  std::vector<std::string> getGlobalTags() override;
-  std::vector<std::string> getTags(std::string gt) override;
-  std::vector<int>         getIovs(std::string tag) override;
   std::string              getPayload(int irun, std::string t) override;
+
+protected:
+	void readTags() override;
+  void readGlobalTags() override;
+  void readIOVs() override;
+
 
 private: 
   mongocxx::client   fConn;

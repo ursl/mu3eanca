@@ -14,10 +14,7 @@ public:
   ~cdbAscii();
 
   void                     init();
-  std::vector<std::string> getGlobalTags() override;
-  std::vector<std::string> getTags(std::string gt);
-  std::vector<int>         getIovs(std::string tag);
-  std::string              getPayload(int irun, std::string t);
+  std::string              getPayload(int irun, std::string t) override;
 
   std::vector<std::string> split(const std::string &s, char delim);
   void                     cleanupString(std::string &);
@@ -27,10 +24,12 @@ public:
   void                     split(const std::string &s, char delim,
                                  std::vector<std::string> &elems);
 
-private: 
+protected:
+	void readTags() override;
+	void readGlobalTags() override;
+	void readIOVs() override;
 
-  std::map<std::string, std::vector<std::string>> fTagMap;
-  std::map<std::string, std::string> fTagIovPayloadMap;
+private: 
   
 };
 
