@@ -42,16 +42,20 @@ int main(int argc, char* argv[]) {
   }
   
   cdb *db1 = new cdbAscii(gt, "ascii");
+  db1->setRunNumber(1);
   cout << "instantiated cdbAscii with global tag " << db1->getGlobalTag() << endl;
     
   string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
   cdb *md1 = new cdbMongo(gt, ms);
+  md1->setRunNumber(3);
   cout << "instantiated cdbMongo with global tag " << md1->getGlobalTag() << endl;
     
   if (verbose > 9) {
     cout << "-----cdbAscii:--------------------------------------------------------" << endl;
+    calAbs *cal = new calPixel(db1, gt);
     printStuff(db1);
     cout << "-----cdbMongo:--------------------------------------------------------" << endl;
+    calAbs *cal1 = new calPixel(md1, gt);
     printStuff(md1);
     cout << "----------------------------------------------------------------------" << endl;
   }
@@ -62,10 +66,10 @@ int main(int argc, char* argv[]) {
     aFewRuns(md1, gt);  
     return 0;
   } else if (1 == mode) {
-    calAbs *cal0 = new calPixel(db1, gt);
-    cout << "run = " << run << " payload = " << cal0->getPayload(run) << endl;
-    calAbs *cal1 = new calPixel(md1, gt);
-    cout << "run = " << run << " payload = " << cal1->getPayload(run) << endl;
+    calAbs *cal0 = new calPixel(db1, "pixel_ir");
+    cout << "run = " << run << " payload hash -> " << cal0->getHash() << "<-" << endl;
+    calAbs *cal1 = new calPixel(md1, "pixel_ir");
+    cout << "run = " << run << " payload hash -> " << cal1->getHash() << "<-" << endl;
   }
 }
 
@@ -93,11 +97,11 @@ void printStuff(cdb *db) {
 // ----------------------------------------------------------------------
 void aFewRuns(cdb *db, string gt) {
   cout << "DB " << db->getGlobalTag() << endl;
-	db->print(db->fIOVs); 
   vector<int> vruns{23,24,25,56,90,156,157,201,202};
-  calAbs *cal = new calPixel(db, gt);
+  calPixel *cal = new calPixel(db, "pixel_ir");
   for (auto it: vruns) {
-    cout << "run = " << it << " payload = " << cal->getPayload(it) << endl;
+    db->setRunNumber(it);
+    cout << "now for run = " << it << " payload hash ->" << cal->getHash() << "<-" << endl;
   }   
 }
     

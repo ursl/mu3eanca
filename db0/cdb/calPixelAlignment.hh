@@ -14,9 +14,11 @@ class calPixelAlignment : public calAbs {
 public:
   calPixelAlignment() = default;
   calPixelAlignment(cdb *db);
-  calPixelAlignment(cdb *db, std::string gt);
-  calPixelAlignment(cdb *db, std::string gt, std::string tag);
+  calPixelAlignment(cdb *db, std::string tag);
   ~calPixelAlignment();
+
+  std::string getName() override {return fPixelAlignmentTag;}
+  void        calculate() override;
 
 private:
   std::string fPixelAlignmentTag{"pixelalignment_"};

@@ -14,10 +14,12 @@ class calPixel : public calAbs {
 public:
   calPixel() = default;
   calPixel(cdb *db);
-  calPixel(cdb *db, std::string gt);
-  calPixel(cdb *db, std::string gt, std::string tag);
+  calPixel(cdb *db, std::string tag);
   ~calPixel();
-  
+
+  std::string getName() override {return fPixelTag;}
+  void        calculate() override;
+
 private:
   std::string fPixelTag{"pixel_"};
 };

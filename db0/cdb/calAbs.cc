@@ -5,46 +5,48 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-calAbs::calAbs(cdb *db) :
-  fDB(db),
-  fGlobalTag("unset"), fTag("unset") {
+calAbs::calAbs(cdb *db) : fDB(db), fTag("unset") {
 }
 
 
 // ----------------------------------------------------------------------
-calAbs::calAbs(cdb *db, string gt) :
-  fDB(db), fGlobalTag(gt), fTag("unset") {
+calAbs::calAbs(cdb *db, string tag) :
+  fDB(db), fTag(tag) {
 }
 
-
-// ----------------------------------------------------------------------
-calAbs::calAbs(cdb *db, string gt, string tag) :
-  fDB(db), fGlobalTag(gt), fTag(tag) {
-}
 
 
 // ----------------------------------------------------------------------
 calAbs::~calAbs() {
-  cout << "this is the end of calAbs with global tag = " << fGlobalTag
-       << " with tag = " << fTag
+  cout << "this is the end of calAbs with tag = " << fTag
        << endl;
 }
 
 
 // ----------------------------------------------------------------------
-string calAbs::getPayload(int irun) {
-	if (!fDB) return string("ERROR: no database handle provided");
+void calAbs::update() {
+  int irun = fDB->getRunNumber();
+	if (!fDB) {
+    cout << "ERROR: no database handle provided" << endl;
+    return;
+  }
   string hash = fDB->getHash(irun, fTag);
-  if (fTagIovPayloadMap.find(hash) == fTagIovPayloadMap.end()) {
+  if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
     cout << "calPixel::getPayload(" << irun
          << ") not cached, retrieve from DB"
+         << " irun ->" << irun << "<-"
+         << " fTag ->" << fTag << "<-"
+         << " hash ->" << hash << "<-"
          << endl;
     string payload = fDB->getPayload(hash);
-    fTagIovPayloadMap.insert(make_pair(hash, payload));
-    return payload;
+    fTagIOVPayloadMap.insert(make_pair(hash, payload));
+  } else {
+    cout << "calPixel::getPayload(" << irun
+         << ") cached"
+         << endl;
   }
-  cout << "calPixel::getPayload(" << irun
-       << ") cached"
-       << endl;
-  return fTagIovPayloadMap[hash];
+  if (hash != fHash) {
+    calculate();
+  }
+  fHash = hash; 
 }
