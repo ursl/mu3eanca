@@ -25,7 +25,7 @@ void cdb::init() {
 
 // ----------------------------------------------------------------------
 int cdb::whichIOV(int runnumber, string tag) {
-	int iov(1);
+	int iov(-1);
   for (auto it : fIOVs[tag]) {
     if (it > runnumber) {
 			return iov;
@@ -33,7 +33,7 @@ int cdb::whichIOV(int runnumber, string tag) {
 			iov = it;
 		}
   }
-	return -1; 
+	return iov; 
 }
 
 
