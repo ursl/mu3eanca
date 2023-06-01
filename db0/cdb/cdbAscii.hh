@@ -15,6 +15,7 @@ public:
 
   void                     init();
   std::string              getPayload(int irun, std::string t) override;
+  std::string              getPayload(std::string hash) override;
 
   std::vector<std::string> split(const std::string &s, char delim);
   void                     cleanupString(std::string &);

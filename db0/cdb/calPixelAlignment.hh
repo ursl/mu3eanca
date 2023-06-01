@@ -18,8 +18,6 @@ public:
   calPixelAlignment(cdb *db, std::string gt, std::string tag);
   ~calPixelAlignment();
 
-  std::string getPayload(int irun) override;
-  
 private:
   std::string fPixelAlignmentTag{"pixelalignment_"};
 };

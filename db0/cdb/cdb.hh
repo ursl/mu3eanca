@@ -17,11 +17,13 @@ public:
   ~cdb();
 
 	// -- access to metadata (in DB)
-  std::string                      getGlobalTag() {return fGT;}
-  virtual std::vector<std::string> getGlobalTags() {return fGlobalTags;}
-  virtual std::vector<std::string> getTags(std::string gt) {return fTags;}
-  virtual std::vector<int>         getIOVs(std::string t) {return fIOVs[t];}
-  virtual std::string              getPayload(int irun, std::string t) {return std::string();}
+  std::string                                  getGlobalTag() {return fGT;}
+  virtual std::vector<std::string>             getGlobalTags() {return fGlobalTags;}
+  virtual std::vector<std::string>             getTags(std::string gt) {return fTags;}
+  virtual std::vector<int>                     getIOVs(std::string t) {return fIOVs[t];}
+  virtual std::string                          getHash(int irun, std::string t);
+  virtual std::string                          getPayload(int irun, std::string t) {return std::string();}
+  virtual std::string                          getPayload(std::string hash) {return std::string();}
 
 	void setGlobalTag(std::string gt) {fGT = gt;}
 	void setRunNumber(int);

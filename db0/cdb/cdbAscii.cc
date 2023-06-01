@@ -110,17 +110,15 @@ void cdbAscii::readIOVs() {
 
 // ----------------------------------------------------------------------
 string cdbAscii::getPayload(int irun, string tag) {
-  int iov = whichIOV(irun, tag);
-
-  // -- hash is a misnomer here
-  std::stringstream ssHash;
-  ssHash << "tag_" << tag << "_iov_" << iov;
-  string hash = ssHash.str();
-
+  string hash = getHash(irun, tag); 
+  return getPayload(hash);
+}
+  
+// ----------------------------------------------------------------------
+string cdbAscii::getPayload(string hash) {
   // -- initialize with default
   std::stringstream sspl;
-  sspl << "(cdbAscii> run = " << irun << " tag = " << tag 
-       << " hash = " << hash 
+  sspl << "(cdbAscii>  hash = " << hash 
        << " not found)";
   string payload = sspl.str();
 

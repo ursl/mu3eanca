@@ -17,8 +17,6 @@ public:
   calPixel(cdb *db, std::string gt);
   calPixel(cdb *db, std::string gt, std::string tag);
   ~calPixel();
-
-  std::string getPayload(int irun) override;
   
 private:
   std::string fPixelTag{"pixel_"};
