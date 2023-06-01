@@ -23,6 +23,16 @@ using bsoncxx::builder::stream::open_document;
 
 using namespace std;
 
+// ----------------------------------------------------------------------
+// fillDB
+// ------
+//
+// Examples:
+// bin/fillDB
+// 
+// ----------------------------------------------------------------------
+
+
 
 int main(int argc, char* argv[]) {
 	ofstream ONS;
@@ -43,10 +53,10 @@ int main(int argc, char* argv[]) {
 	globaltags.drop();
 
 	map<string, vector<string>> iniGlobalTags = {
-		{"dt23intrun", {"pixelir", "fibresstart", "tilesNada"}}, 
-		{"dt23prompt", {"pixelv0", "fibresv11", "tilesA"}}, 
-		{"mcideal", {"pixelmcideal", "fibresmcideal", "tilesmcideal"}}, 
-		{"mc23intrun", {"pixelmc23intrun", "fibresmc23intrun", "tilesmc23ideal"}}
+		{"dt23intrun", {"pixel_ir", "pixelalignment_ir", "fibres_start", "tiles_Nada"}}, 
+		{"dt23prompt", {"pixel_v0", "pixelalignment_v0", "fibres_v11", "tiles_A"}}, 
+		{"mcideal", {"pixel_mcideal", "pixelalignment_mcideal", "fibres_mcideal", "tiles_mcideal"}}, 
+		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibres_mc23intrun", "tiles_mc23ideal"}}
 	};
 	
 	string fname = "ascii/globaltags.txt";
@@ -81,18 +91,22 @@ int main(int argc, char* argv[]) {
 	iovs.drop();
 
 	map<string, vector<int>> iniIovs = {
-		{"pixelir", {1,10,20,30,100,200}},
-		{"fibresstart", {1,2,3,4,15,45,90,150}},
-		{"tilesNada", {1}}, 
-		{"pixelv0", {202,210,900}}, 
-		{"fibresv11", {202,400,800}},
-		{"tilesA", {202,300,700}},
-		{"pixelmcideal", {1}},
-		{"fibresmcideal", {1}},
-		{"tilesmcideal", {1}},
-		{"pixelmc23intrun", {200}}, 
-		{"fibresmc23intrun", {150}},
-		{"tilesmc23ideal", {1}}
+		{"pixel_ir", {1,10,20,30,100,200}},
+		{"pixelalignment_ir", {1,200}},
+		{"fibres_start", {1,2,3,4,15,45,90,150}},
+		{"tiles_Nada", {1}}, 
+		{"pixel_v0", {202,210,900}}, 
+		{"pixelalignment_v0", {202,210,900}}, 
+		{"fibres_v11", {202,400,800}},
+		{"tiles_A", {202,300,700}},
+		{"pixel_mcideal", {1}},
+		{"pixelalignment_mcideal", {1}},
+		{"fibres_mcideal", {1}},
+		{"tiles_mcideal", {1}},
+		{"pixel_mc23intrun", {200}}, 
+		{"pixelalignment_mc23intrun", {200}}, 
+		{"fibres_mc23intrun", {150}},
+		{"tiles_mc23ideal", {1}}
 	};
 
 	fname = "ascii/iovs.txt";
