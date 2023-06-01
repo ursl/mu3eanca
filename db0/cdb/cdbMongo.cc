@@ -94,19 +94,20 @@ void cdbMongo::readTags() {
 
 // ----------------------------------------------------------------------
 void cdbMongo::readIOVs() {
-  fIOVs.clear();
-  auto cursor_filtered =  fDB["iovs"].find(make_document(kvp("tag", "FIXME")));
-  for (auto doc : cursor_filtered) {
+  auto cursor =  fDB["iovs"].find({});
+  for (auto doc : cursor) {
     // -- print it 
     // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
+    string tname = string(doc["tag"].get_string().value).c_str();
+    if (fTags.end() == find(fTags.begin(), fTags.end(), tname)) continue;
     bsoncxx::array::view subarr{doc["iovs"].get_array()};
     vector<int> viov; 
     for (bsoncxx::array::element ele : subarr) {
       int iov = ele.get_int32().value;
       viov.push_back(iov);
     }
-    fIOVs.insert(make_pair("FIXME", viov)); 
+    fIOVs.insert(make_pair(tname, viov)); 
   }
 
   return;
@@ -121,6 +122,7 @@ string cdbMongo::getPayload(int irun, string tag) {
   ssHash << "tag_" << tag << "_iov_" << iov;
   string hash = ssHash.str();
 
+  // -- initialize with default
   std::stringstream sspl;
   sspl << "(cdbMongo> run = " << irun << " tag = " << tag 
        << " hash = tag_" << tag << "_iov_" 

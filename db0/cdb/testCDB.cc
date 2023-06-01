@@ -93,6 +93,7 @@ void printStuff(cdb *db) {
 // ----------------------------------------------------------------------
 void aFewRuns(cdb *db, string gt) {
   cout << "DB " << db->getGlobalTag() << endl;
+	db->print(db->fIOVs); 
   vector<int> vruns{23,24,25,56,90,156,157,201,202};
   calAbs *cal = new calPixel(db, gt);
   for (auto it: vruns) {
