@@ -20,7 +20,8 @@ public:
   void                     cleanupString(std::string &);
   // -- helper functions for above
   void                     replaceAll(std::string &s,
-                                      const std::string &from, const std::string &to);
+                                      const std::string &from,
+                                      const std::string &to);
   void                     split(const std::string &s, char delim,
                                  std::vector<std::string> &elems);
 
