@@ -1,6 +1,7 @@
 #include "cdb.hh"
 
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -46,6 +47,16 @@ void cdb::setRunNumber(int runnumber) {
 		cout  << " do something!" << endl;
 		fRunNumber = runnumber;
 	}
+}
+
+
+// ----------------------------------------------------------------------
+string cdb::getHash(int runnumber, string tag) {
+  int iov = whichIOV(runnumber, tag);
+  // -- hash is a misnomer here
+  std::stringstream ssHash;
+  ssHash << "tag_" << tag << "_iov_" << iov;
+  return ssHash.str();
 }
 
 

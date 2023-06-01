@@ -37,9 +37,3 @@ calPixelAlignment::~calPixelAlignment() {
   cout << "this is the end of calPixelAlignment with global tag " << fGlobalTag  << endl;
 }
 
-
-// ----------------------------------------------------------------------
-string calPixelAlignment::getPayload(int irun) {
-	if (!fDB) return string("ERROR: no database handle provided");
-	return fDB->getPayload(irun, fTag);
-}

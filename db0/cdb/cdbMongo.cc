@@ -116,16 +116,17 @@ void cdbMongo::readIOVs() {
 
 // ----------------------------------------------------------------------
 string cdbMongo::getPayload(int irun, string tag) {
-  int iov = whichIOV(irun, tag);
-  
-  std::stringstream ssHash;
-  ssHash << "tag_" << tag << "_iov_" << iov;
-  string hash = ssHash.str();
+  string hash = getHash(irun, tag);
+  return getPayload(hash);
+}
 
+
+// ----------------------------------------------------------------------
+string cdbMongo::getPayload(string hash) {
+  
   // -- initialize with default
   std::stringstream sspl;
-  sspl << "(cdbMongo> run = " << irun << " tag = " << tag 
-       << " hash = tag_" << tag << "_iov_" 
+  sspl << "(cdbMongo> hash = " << hash 
        << " not found)";
   string payload = sspl.str();
 

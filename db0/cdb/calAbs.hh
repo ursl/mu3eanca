@@ -19,7 +19,7 @@ public:
   calAbs(cdb *db, std::string gt, std::string tag);
   ~calAbs();
 
-  virtual std::string              getPayload(int irun) {return std::string();}
+  std::string        getPayload(int irun);
   
 protected: 
 	cdb                                *fDB;

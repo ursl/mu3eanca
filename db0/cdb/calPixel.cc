@@ -39,9 +39,3 @@ calPixel::~calPixel() {
   cout << "this is the end of calPixel with global tag " << fGlobalTag  << endl;
 }
 
-
-// ----------------------------------------------------------------------
-string calPixel::getPayload(int irun) {
-	if (!fDB) return string("ERROR: no database handle provided");
-	return fDB->getPayload(irun, fTag);
-}
