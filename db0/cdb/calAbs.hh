@@ -15,7 +15,8 @@ class calAbs {
 public:
   calAbs() = default;
   calAbs(cdb *db);
-  calAbs(cdb *db, std::string name);
+  calAbs(cdb *db, std::string gt);
+  calAbs(cdb *db, std::string gt, std::string tag);
   ~calAbs();
 
   virtual std::string              getPayload(int irun) {return std::string();}
@@ -23,6 +24,7 @@ public:
 protected: 
 	cdb                                *fDB;
   std::string                        fGlobalTag;
+  std::string                        fTag;
   std::map<std::string, std::string> fTagIovPayloadMap;  // cache
 };
 

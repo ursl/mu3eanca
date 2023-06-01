@@ -15,12 +15,13 @@ public:
   calPixel() = default;
   calPixel(cdb *db);
   calPixel(cdb *db, std::string gt);
+  calPixel(cdb *db, std::string gt, std::string tag);
   ~calPixel();
 
   std::string getPayload(int irun) override;
   
 private:
-  std::string fPixelTag;
+  std::string fPixelTag{"pixel_"};
 };
 
 
