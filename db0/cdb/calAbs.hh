@@ -15,17 +15,20 @@ class calAbs {
 public:
   calAbs() = default;
   calAbs(cdb *db);
-  calAbs(cdb *db, std::string gt);
-  calAbs(cdb *db, std::string gt, std::string tag);
+  calAbs(cdb *db, std::string tag);
   ~calAbs();
 
-  std::string        getPayload(int irun);
+  virtual std::string getName() {return std::string("blurp");}
+  virtual void        calculate() {}
+
+  std::string         getHash() {return fHash;}
+  void                update();
   
 protected: 
 	cdb                                *fDB;
-  std::string                        fGlobalTag;
   std::string                        fTag;
-  std::map<std::string, std::string> fTagIovPayloadMap;  // cache
+  std::string                        fHash{"base"};
+  std::map<std::string, std::string> fTagIOVPayloadMap;  // cache
 };
 
 

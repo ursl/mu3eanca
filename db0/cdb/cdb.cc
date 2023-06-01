@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "calAbs.hh"
+
 using namespace std;
 
 // ----------------------------------------------------------------------
@@ -44,8 +46,10 @@ void cdb::setRunNumber(int runnumber) {
 			 << fRunNumber
 			 << endl;
 	if (runnumber != fRunNumber) {
-		cout  << " do something!" << endl;
 		fRunNumber = runnumber;
+    for (auto it: fCalibrations) {
+      it.second->update();
+    }
 	}
 }
 
@@ -92,4 +96,11 @@ void cdb::print(std::map<std::string, std::vector<int>> m) {
 		print(it.second);
 	}
 	cout << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void cdb::registerCalibration(string tag, calAbs *c) {
+  fCalibrations.insert(make_pair(tag, c));
+  cout << "Register " << c->getName() << " with tag ->" << tag << "<-" << endl;
 }
