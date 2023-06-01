@@ -117,6 +117,7 @@ string cdbAscii::getPayload(int irun, string tag) {
   ssHash << "tag_" << tag << "_iov_" << iov;
   string hash = ssHash.str();
 
+  // -- initialize with default
   std::stringstream sspl;
   sspl << "(cdbAscii> run = " << irun << " tag = " << tag 
        << " hash = " << hash 
