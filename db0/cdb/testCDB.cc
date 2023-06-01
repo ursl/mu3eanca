@@ -41,16 +41,17 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-v"))   {verbose = atoi(argv[++i]);}
   }
   
-  cdb *db1 = new cdbAscii("ascii", "ascii");
-  cout << "instantiated cdbAscii with name " << db1->getName() << endl;
+  cdb *db1 = new cdbAscii(gt, "ascii");
+  cout << "instantiated cdbAscii with global tag " << db1->getGlobalTag() << endl;
     
   string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
-  cdb *md1 = new cdbMongo("mongo", ms);
-  cout << "instantiated cdbMongo with name " << md1->getName() << endl;
+  cdb *md1 = new cdbMongo(gt, ms);
+  cout << "instantiated cdbMongo with global tag " << md1->getGlobalTag() << endl;
     
   if (verbose > 9) {
+    cout << "-----cdbAscii:--------------------------------------------------------" << endl;
     printStuff(db1);
-    cout << "----------------------------------------------------------------------" << endl;
+    cout << "-----cdbMongo:--------------------------------------------------------" << endl;
     printStuff(md1);
     cout << "----------------------------------------------------------------------" << endl;
   }
@@ -73,14 +74,14 @@ int main(int argc, char* argv[]) {
 void printStuff(cdb *db) {
   vector<string> gt = db->getGlobalTags();
   for (auto igt : gt) {
-    cout << "GT " << igt << endl;
+    // cout << "GT " << igt << endl;
     vector<string> tags = db->getTags(igt);
     for (auto itt : tags) {
-      cout << " tag: " << itt << endl;
-      vector<int> iovs = db->getIovs(itt);
-      for (auto ittt :  iovs) {
-        cout << "   iov " << ittt << endl;
-      }
+      // cout << " tag: " << itt << endl;
+      vector<int> iovs = db->getIOVs(itt);
+      // for (auto ittt :  iovs) {
+      //   cout << "   iov " << ittt << endl;
+      // }
     }
   }
   
@@ -91,7 +92,7 @@ void printStuff(cdb *db) {
 
 // ----------------------------------------------------------------------
 void aFewRuns(cdb *db, string gt) {
-  cout << "DB " << db->getName() << endl;
+  cout << "DB " << db->getGlobalTag() << endl;
   vector<int> vruns{23,24,25,56,90,156,157,201,202};
   calAbs *cal = new calPixel(db, gt);
   for (auto it: vruns) {
