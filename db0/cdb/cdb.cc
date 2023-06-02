@@ -20,6 +20,7 @@ cdb::~cdb() {
 
 // ----------------------------------------------------------------------
 void cdb::init() {
+  cout << "cdb::init() for GT = " << fGT << endl;
   readGlobalTags();
 	readTags();
 	readIOVs();
@@ -41,27 +42,31 @@ int cdb::whichIOV(int runnumber, string tag) {
 
 
 // ----------------------------------------------------------------------
-void cdb::setRunNumber(int runnumber) {
-  cout << "cdb::setRunNumber(" << runnumber << "), old runnumber = " 
-			 << fRunNumber
-       << " fCalibrations.size() = " << fCalibrations.size()
-			 << endl;
-	if (runnumber != fRunNumber) {
-		fRunNumber = runnumber;
-    for (auto it: fCalibrations) {
-      it.second->update();
-    }
-	}
-}
-
-
-// ----------------------------------------------------------------------
 string cdb::getHash(int runnumber, string tag) {
   int iov = whichIOV(runnumber, tag);
   // -- hash is a misnomer here
   std::stringstream ssHash;
   ssHash << "tag_" << tag << "_iov_" << iov;
+  cout << "cdb::getHash(" << runnumber << ", " << tag << ") = " << ssHash.str() << endl;
   return ssHash.str();
+}
+
+
+// ----------------------------------------------------------------------
+void cdb::setRunNumber(int runnumber) {
+  cout << "cdb::setRunNumber(" << runnumber << "), old runnumber = " 
+			 << fRunNumber
+       << " fCalibrations.size() = " << fCalibrations.size()
+			 << endl;
+
+	if (runnumber != fRunNumber) {
+		fRunNumber = runnumber;
+    // -- call update for all registered calibrations
+    //    each calibration will check with its tag/IOV whether an update is required
+    for (auto it: fCalibrations) {
+      it.second->update();
+    }
+	}
 }
 
 
