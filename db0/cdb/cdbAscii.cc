@@ -78,6 +78,8 @@ void cdbAscii::readTags() {
     }
   }
   INS.close();
+  cout << "cdbAscii::readTags> for GT = " << fGT << endl;
+  print(fTags);
 }
 
 
@@ -105,6 +107,9 @@ void cdbAscii::readIOVs() {
     }     
   }
   INS.close();
+
+  cout << "cdbAscii::readIOVs>" << endl;
+  print(fIOVs);
 }
 
 
