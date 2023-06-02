@@ -35,7 +35,7 @@ using namespace std;
 
 
 int main(int argc, char* argv[]) {
-	ofstream ONS;
+	ofstream ONS, JS;
 
 	auto builder = document{};
     
@@ -64,7 +64,10 @@ int main(int argc, char* argv[]) {
 	if (ONS.fail()) {
 		cout << "Error failed to open ->" << fname << "<-" << endl;
 	}
-	for (auto igt : iniGlobalTags) {
+
+	string jdir  = "ascii/globaltags";
+
+  for (auto igt : iniGlobalTags) {
 		auto array_builder = bsoncxx::builder::basic::array{};
 		for (auto it : igt.second) array_builder.append(it);
 		bsoncxx::document::value doc_value = builder
@@ -81,7 +84,16 @@ int main(int argc, char* argv[]) {
 			ONS << "," << it;
 		}
 		ONS << endl;
-	}
+
+    // -- JSON
+    JS.open(jdir + "/" + igt.first);
+    if (JS.fail()) {
+      cout << "Error failed to open " << jdir << "/" << igt.first << endl;
+    }
+    JS << bsoncxx::to_json(doc_value.view()) << endl;
+    JS.close();
+
+  }
 	ONS.close();
 
 	// ----------------------------------------------------------------------
@@ -110,6 +122,7 @@ int main(int argc, char* argv[]) {
 	};
 
 	fname = "ascii/iovs.txt";
+	jdir  = "ascii/iovs";
 	ONS.open(fname);
 	if (ONS.fail()) {
 		cout << "Error failed to open ->" << fname << "<-" << endl;
@@ -131,7 +144,16 @@ int main(int argc, char* argv[]) {
 			ONS << "," << it;
 		}
 		ONS << endl;
-	}
+
+    // -- JSON
+    JS.open(jdir + "/" + iiov.first);
+    if (JS.fail()) {
+      cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
+    }
+    JS << bsoncxx::to_json(doc_value.view()) << endl;
+    JS.close();
+
+  }
 	ONS.close();
 
 	// ----------------------------------------------------------------------
@@ -141,6 +163,7 @@ int main(int argc, char* argv[]) {
 	payloads.drop();
 
 	fname = "ascii/payloads.txt";
+	jdir = "ascii/payloads";
 	ONS.open(fname);
 	if (ONS.fail()) {
 		cout << "Error failed to open ->" << fname << "<-" << endl;
@@ -167,7 +190,16 @@ int main(int argc, char* argv[]) {
 			ONS << sh.str()
 					<< "," << sp.str()
 					<< endl;
-		}
+
+      // -- JSON
+      JS.open(jdir + "/" + iiov.first);
+      if (JS.fail()) {
+        cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
+      }
+      JS << bsoncxx::to_json(doc_value.view()) << endl;
+      JS.close();
+
+    }
 	}
 	ONS.close();
 
