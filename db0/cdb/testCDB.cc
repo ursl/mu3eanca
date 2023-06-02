@@ -5,6 +5,7 @@
 
 #include "cdbAscii.hh"
 #include "cdbMongo.hh"
+#include "CdbClassFactory.hh"
 
 #include "calPixel.hh"
 
@@ -42,7 +43,9 @@ int main(int argc, char* argv[]) {
   }
   
   cdb *db1 = new cdbAscii(gt, "ascii");
-  db1->setRunNumber(1);
+  db1->setRunNumber(3);
+
+  CdbClassFactory *cdbcf = CdbClassFactory::instance(db1);
   cout << "instantiated cdbAscii with global tag " << db1->getGlobalTag() << endl;
     
   string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
@@ -53,17 +56,18 @@ int main(int argc, char* argv[]) {
   if (verbose > 9) {
     cout << "-----cdbAscii:--------------------------------------------------------" << endl;
     calAbs *cal = new calPixel(db1, gt);
+    //    calAbs *cal = cdbcf->createClass("calPixel", "pixel_ir");    
+    cout << "-- now printStuff> " << endl;
     printStuff(db1);
-    cout << "-----cdbMongo:--------------------------------------------------------" << endl;
-    calAbs *cal1 = new calPixel(md1, gt);
-    printStuff(md1);
+    // cout << "-----cdbMongo:--------------------------------------------------------" << endl;
+    // calAbs *cal1 = new calPixel(md1, gt);
+    // //    calPixel *cal1 = cdbcf->createClassWithDB("calPixel", md1, "pixel_ir");    
+    // printStuff(md1);
     cout << "----------------------------------------------------------------------" << endl;
   }
   
   if (0 == mode) {
     aFewRuns(db1, gt);  
-    cout << "-------------" << endl;
-    aFewRuns(md1, gt);  
     return 0;
   } else if (1 == mode) {
     calAbs *cal0 = new calPixel(db1, "pixel_ir");

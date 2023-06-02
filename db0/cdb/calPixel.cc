@@ -6,7 +6,7 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 calPixel::calPixel(cdb *db) : calAbs(db) {
-  db->registerCalibration("thisshouldnothappen", this);
+  //  db->registerCalibration("thisshouldnothappen", this);
 }
 
 

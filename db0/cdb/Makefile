@@ -20,7 +20,7 @@ SOFLAGS       = -shared  #?? -Wl -rpath
 
 
 # -- CDB (Conditions DB) files
-FILES = cdb.o cdbAscii.o cdbMongo.o calAbs.o calPixel.o calPixelAlignment.o
+FILES = cdb.o cdbAscii.o cdbMongo.o calAbs.o calPixel.o calPixelAlignment.o CdbClassFactory.o
 
 
 # -- Default rules

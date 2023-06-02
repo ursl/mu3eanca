@@ -40,6 +40,7 @@ void calAbs::update() {
          << endl;
     string payload = fDB->getPayload(hash);
     fTagIOVPayloadMap.insert(make_pair(hash, payload));
+    fHash = hash; 
   } else {
     cout << "calPixel::getPayload(" << irun
          << ") cached"
@@ -48,5 +49,4 @@ void calAbs::update() {
   if (hash != fHash) {
     calculate();
   }
-  fHash = hash; 
 }
