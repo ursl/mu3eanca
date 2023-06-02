@@ -1,5 +1,5 @@
-# mu3e
-mu3e analysis and calibration software
+# mu3eanca
+MU3E ANalysis and CAlibration software
 
 Usage:
 
