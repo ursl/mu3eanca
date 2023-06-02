@@ -5,6 +5,7 @@
 
 #include "cdbAscii.hh"
 #include "cdbMongo.hh"
+#include "cdbJSON.hh"
 #include "CdbClassFactory.hh"
 
 #include "calPixel.hh"
@@ -46,6 +47,9 @@ int main(int argc, char* argv[]) {
   cdb *pDB(0);
   if (string::npos != db.find("ascii")) {
     pDB = new cdbAscii(gt, "ascii");
+  } else if (string::npos != db.find("json")) {
+    pDB = new cdbJSON(gt, "ascii");
+    return 0;
   } else if (string::npos != db.find("mongo")) {
     string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
     pDB = new cdbMongo(gt, ms);

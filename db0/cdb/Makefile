@@ -23,7 +23,9 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 
 
 # -- CDB (Conditions DB) files
-FILES = cdb.o cdbAscii.o cdbMongo.o calAbs.o calPixel.o calPixelAlignment.o CdbClassFactory.o
+FILES = cdb.o cdbAscii.o cdbMongo.o cdbJSON.o \
+        calAbs.o calPixel.o calPixelAlignment.o \
+        CdbClassFactory.o
 
 
 # -- Default rules
