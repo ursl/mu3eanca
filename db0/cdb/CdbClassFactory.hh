@@ -10,17 +10,19 @@ class cdb;
 // factory for calibration classes
 // ----------------------------------------------------------------------
 
-class cdbClassFactory {
+class CdbClassFactory {
 public:
-  static cdbClassFactory* instance();
-  calAbs* createClass(std::string name, cdb *db, std::string tag);
+  static CdbClassFactory* instance(cdb *);
+  calAbs* createClass(std::string name, std::string tag);
+  calAbs* createClassWithDB(std::string name, cdb *db, std::string tag);
 
 protected:
-  cdbClassFactory();
-  ~cdbClassFactory();
+  CdbClassFactory(cdb *);
+  ~CdbClassFactory();
 
 private:
-  static cdbClassFactory* fInstance; 
+  static CdbClassFactory* fInstance; 
+  cdb *fDB;
 };
 
 #endif

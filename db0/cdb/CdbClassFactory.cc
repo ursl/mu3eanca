@@ -4,6 +4,9 @@
 #include <map>
 
 #include "CdbClassFactory.hh"
+#include "cdb.hh"
+
+#include "calPixel.hh"
 
 using namespace std;
 
@@ -11,16 +14,16 @@ CdbClassFactory* CdbClassFactory::fInstance = 0;
 
 
 // ----------------------------------------------------------------------
-CdbClassFactory* CdbClassFactory::instance() {
+CdbClassFactory* CdbClassFactory::instance(cdb *db) {
   if (0 == fInstance) {
-    fInstance = new CdbClassFactory;
+    fInstance = new CdbClassFactory(db);
   }
-  return CdbClassFactory;
+  return fInstance;
 }
 
 
 // ----------------------------------------------------------------------
-CdbClassFactory::CdbClassFactory() {
+CdbClassFactory::CdbClassFactory(cdb *db) : fDB(db) {
   cout << "CdbClassFactory::CdbClassFactory()" << endl;
 }
 
@@ -32,7 +35,15 @@ CdbClassFactory::~CdbClassFactory() {
 
 
 // ----------------------------------------------------------------------
-calAbs* CdbClassFactory::createClass(string name, cdb *db, string tag) {
+calAbs* CdbClassFactory::createClass(string name, string tag) {
+  if (!name.compare("calPixel")) {
+    return new calPixel(fDB, tag);
+  }
+  return 0;
+}
+
+// ----------------------------------------------------------------------
+calAbs* CdbClassFactory::createClassWithDB(string name, cdb *db, string tag) {
   if (!name.compare("calPixel")) {
     return new calPixel(db, tag);
   }

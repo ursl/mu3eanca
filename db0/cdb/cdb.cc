@@ -44,6 +44,7 @@ int cdb::whichIOV(int runnumber, string tag) {
 void cdb::setRunNumber(int runnumber) {
   cout << "cdb::setRunNumber(" << runnumber << "), old runnumber = " 
 			 << fRunNumber
+       << " fCalibrations.size() = " << fCalibrations.size()
 			 << endl;
 	if (runnumber != fRunNumber) {
 		fRunNumber = runnumber;
