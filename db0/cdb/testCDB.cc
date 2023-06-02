@@ -50,9 +50,12 @@ int main(int argc, char* argv[]) {
     string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
     pDB = new cdbMongo(gt, ms);
   } 
-
+  if (verbose > 0) pDB->setVerbosity(verbose);
+  
   // -- calibration classes instantiation and registration must happen before setting the run number in the CBD
   CdbClassFactory *cdbcf = CdbClassFactory::instance(pDB);
+  if (verbose > 0) cdbcf->setVerbosity(verbose);
+
   calAbs *cal0 = cdbcf->createClass("calPixel", "pixel_ir");
     
   pDB->setRunNumber(3);

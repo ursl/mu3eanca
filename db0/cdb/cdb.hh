@@ -30,10 +30,14 @@ public:
   virtual std::string                          getPayload(std::string hash) {return std::string();}
 
 	void setGlobalTag(std::string gt) {fGT = gt;}
+	void setVerbosity(int v) {fVerbose = v;}
   
 	void setRunNumber(int);
 	int  getRunNumber() {return fRunNumber;}
 
+  void        setName(std::string n) {fName = n;}
+  std::string getName() {return fName;}
+  
   void registerCalibration(std::string tag, calAbs *c);
 
 	// -- utility functions
@@ -52,9 +56,11 @@ protected:
   std::string fGT{"GT unset"};
   std::string fURI{"URI unset"};
 
-	// -- should be replaced by IOV
+	// -- should be replaced by IOV class
 	int         fRunNumber{-1};
 
+  int fVerbose{0};
+  
 	// -- flag to indicate that all GTs have been read
   bool fValidGlobalTags{false}; 
 	// -- all global tags in the DB
@@ -66,6 +72,10 @@ protected:
 
   // -- map of tag, calibration classes to be notified of update requirements
   std::map<std::string, calAbs*> fCalibrations;
+
+  // -- know what you are
+  std::string fName{"CDB base"};
+
 };
 
 #endif

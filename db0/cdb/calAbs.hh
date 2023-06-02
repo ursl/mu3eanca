@@ -18,6 +18,7 @@ public:
   calAbs(cdb *db, std::string tag);
   ~calAbs();
 
+	void                setVerbosity(int v) {fVerbose = v;}
   virtual std::string getName() {return std::string("blurp");}
   virtual void        calculate() {}
 
@@ -27,7 +28,8 @@ public:
 protected: 
 	cdb                                *fDB;
   std::string                        fTag;
-  std::string                        fHash{"base"};
+  std::string                        fHash{"base_not_initialized"};
+  int                                fVerbose{0};
   std::map<std::string, std::string> fTagIOVPayloadMap;  // cache
 };
 

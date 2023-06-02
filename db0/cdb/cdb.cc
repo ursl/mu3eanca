@@ -14,13 +14,13 @@ cdb::cdb(string globaltag, string uri) : fGT(globaltag), fURI(uri) {
 
 // ----------------------------------------------------------------------
 cdb::~cdb() {
-  cout << "this is the end of CDB with global tag " << fGT << "." << endl;
+  if (fVerbose > 0) cout << "this is the end of CDB with global tag " << fGT << "." << endl;
 }
 
 
 // ----------------------------------------------------------------------
 void cdb::init() {
-  cout << "cdb::init() for GT = " << fGT << endl;
+  if (fVerbose > 0)  cout << "cdb::init() for GT = " << fGT << endl;
   readGlobalTags();
 	readTags();
 	readIOVs();
@@ -47,18 +47,18 @@ string cdb::getHash(int runnumber, string tag) {
   // -- hash is a misnomer here
   std::stringstream ssHash;
   ssHash << "tag_" << tag << "_iov_" << iov;
-  cout << "cdb::getHash(" << runnumber << ", " << tag << ") = " << ssHash.str() << endl;
+  if (fVerbose > 4) cout << "cdb::getHash(" << runnumber << ", " << tag << ") = " << ssHash.str() << endl;
   return ssHash.str();
 }
 
 
 // ----------------------------------------------------------------------
 void cdb::setRunNumber(int runnumber) {
-  cout << "cdb::setRunNumber(" << runnumber << "), old runnumber = " 
-			 << fRunNumber
-       << " fCalibrations.size() = " << fCalibrations.size()
-			 << endl;
-
+  if (fVerbose > 0)   cout << "cdb::setRunNumber(" << runnumber << "), old runnumber = " 
+                           << fRunNumber
+                           << " fCalibrations.size() = " << fCalibrations.size()
+                           << endl;
+  
 	if (runnumber != fRunNumber) {
 		fRunNumber = runnumber;
     // -- call update for all registered calibrations
@@ -108,5 +108,7 @@ void cdb::print(std::map<std::string, std::vector<int>> m) {
 // ----------------------------------------------------------------------
 void cdb::registerCalibration(string tag, calAbs *c) {
   fCalibrations.insert(make_pair(tag, c));
-  cout << "Register " << c->getName() << " with tag ->" << tag << "<-" << endl;
+  cout << "cdb::registerCalibration name ->" << c->getName()
+       << "<- with tag ->" << tag << "<-"
+       << endl;
 }

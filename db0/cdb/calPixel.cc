@@ -26,7 +26,7 @@ calPixel::~calPixel() {
 
 // ----------------------------------------------------------------------
 void calPixel::calculate() {
-  cout << "calPixel::calculate() with "
-       << "fHash ->" << fHash << "<-"
-       << endl;
+  if (fVerbose > 1) cout << "calPixel::calculate() with "
+                         << "fHash ->" << fHash << "<-"
+                         << endl;
 }

@@ -42,12 +42,14 @@ cdbMongo::~cdbMongo() { }
 
 // ----------------------------------------------------------------------
 void cdbMongo::init() {
+  fName = "mongodb"; 
   mongocxx::uri uri(fURI);
   fConn = mongocxx::client(uri);
   fDB = fConn["mu3e"];
 
   // -- list all collections
-  if (0) {
+  if (fVerbose > 4) {
+    cout << "list all collections " << endl;
     auto cursor1 = fDB.list_collections();
     for (const bsoncxx::document::view& doc :cursor1) {
       bsoncxx::document::element ele = doc["name"];
@@ -72,6 +74,7 @@ void cdbMongo::readGlobalTags() {
     }
     fValidGlobalTags = true;
   }
+  return;
 }
 
 
@@ -89,6 +92,11 @@ void cdbMongo::readTags() {
       fTags.push_back(tname); 
     }
   }
+  if (fVerbose > 0) {
+    cout << "cdbAscii::readTags> for GT = " << fGT << endl;
+    print(fTags);
+  }
+  return;
 }
 
 
@@ -110,6 +118,10 @@ void cdbMongo::readIOVs() {
     fIOVs.insert(make_pair(tname, viov)); 
   }
 
+  if (fVerbose > 1) {
+    cout << "cdbAscii::readIOVs>" << endl;
+    print(fIOVs);
+  }
   return;
 }
 
