@@ -37,6 +37,8 @@ CdbClassFactory::~CdbClassFactory() {
 // ----------------------------------------------------------------------
 calAbs* CdbClassFactory::createClass(string name, string tag) {
   if (!name.compare("calPixel")) {
+    if (fVerbose > 0) cout << "CdbClassFactory::createClass("
+                           << name << ", " << tag << ")" << endl;
     return new calPixel(fDB, tag);
   }
   return 0;
@@ -45,6 +47,10 @@ calAbs* CdbClassFactory::createClass(string name, string tag) {
 // ----------------------------------------------------------------------
 calAbs* CdbClassFactory::createClassWithDB(string name, cdb *db, string tag) {
   if (!name.compare("calPixel")) {
+    if (fVerbose > 0) cout << "CdbClassFactory::createClassWithDB("
+                           << name << ", " << db->getName()
+                           << ", " << tag << ")"
+                           << endl;
     return new calPixel(db, tag);
   }
   return 0;

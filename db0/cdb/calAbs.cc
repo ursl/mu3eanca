@@ -32,19 +32,19 @@ void calAbs::update() {
   }
   string hash = fDB->getHash(irun, fTag);
   if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
-    cout << "calPixel::getPayload(" << irun
-         << ") not cached, retrieve from DB"
-         << " irun ->" << irun << "<-"
-         << " fTag ->" << fTag << "<-"
-         << " hash ->" << hash << "<-"
-         << endl;
+    if (fVerbose > 0) cout << "calPixel::getPayload(" << irun
+                           << ") not cached, retrieve from DB"
+                           << " irun ->" << irun << "<-"
+                           << " fTag ->" << fTag << "<-"
+                           << " hash ->" << hash << "<-"
+                           << endl;
     string payload = fDB->getPayload(hash);
     fTagIOVPayloadMap.insert(make_pair(hash, payload));
     fHash = hash; 
   } else {
-    cout << "calPixel::getPayload(" << irun
-         << ") cached"
-         << endl;
+    if (fVerbose > 0) cout << "calPixel::getPayload(" << irun
+                           << ") cached"
+                           << endl;
   }
   if (hash != fHash) {
     calculate();

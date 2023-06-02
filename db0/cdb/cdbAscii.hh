@@ -10,7 +10,7 @@
 class cdbAscii: public cdb {
 public:
   cdbAscii() = default;
-  cdbAscii(std::string name, std::string uri);
+  cdbAscii(std::string gt, std::string uri);
   ~cdbAscii();
 
   void                     init();

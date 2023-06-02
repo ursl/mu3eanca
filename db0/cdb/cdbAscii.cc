@@ -26,6 +26,7 @@ cdbAscii::~cdbAscii() { }
 
 // ----------------------------------------------------------------------
 void cdbAscii::init() {
+  fName = "ascii"; 
   cdb::init();
 }
 
@@ -53,6 +54,7 @@ void cdbAscii::readGlobalTags() {
     INS.close();
     fValidGlobalTags = true;
   } 
+  return;
 }
 
 
@@ -78,8 +80,11 @@ void cdbAscii::readTags() {
     }
   }
   INS.close();
-  cout << "cdbAscii::readTags> for GT = " << fGT << endl;
-  print(fTags);
+  if (fVerbose > 0) {
+    cout << "cdbAscii::readTags> for GT = " << fGT << endl;
+    print(fTags);
+  }
+  return;
 }
 
 
@@ -108,8 +113,11 @@ void cdbAscii::readIOVs() {
   }
   INS.close();
 
-  cout << "cdbAscii::readIOVs>" << endl;
-  print(fIOVs);
+  if (fVerbose > 1) {
+    cout << "cdbAscii::readIOVs>" << endl;
+    print(fIOVs);
+  }
+  return;
 }
 
 
