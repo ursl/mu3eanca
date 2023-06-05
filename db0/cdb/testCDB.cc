@@ -47,14 +47,19 @@ int main(int argc, char* argv[]) {
   cdb *pDB(0);
   if (string::npos != db.find("ascii")) {
     pDB = new cdbAscii(gt, "ascii");
+    if (verbose > 0) pDB->setVerbosity(verbose);
   } else if (string::npos != db.find("json")) {
     pDB = new cdbJSON(gt, "ascii");
+    if (verbose > 0) pDB->setVerbosity(verbose);
     return 0;
   } else if (string::npos != db.find("mongo")) {
     string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
     pDB = new cdbMongo(gt, ms);
-  } 
-  if (verbose > 0) pDB->setVerbosity(verbose);
+    if (verbose > 0) pDB->setVerbosity(verbose);
+  } else {
+    cout << "ERROR: " << db << " not known." << endl;
+    return 0;
+  }
   
   // -- calibration classes instantiation and registration must happen before setting the run number in the CBD
   CdbClassFactory *cdbcf = CdbClassFactory::instance(pDB);
