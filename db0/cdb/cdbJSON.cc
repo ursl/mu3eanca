@@ -81,28 +81,25 @@ void cdbJSON::readTags() {
   string gtdir = fURI + "/globaltags/";
 
   ifstream INS;
-  for (auto it: fGlobalTags) {
-    string gtfile = gtdir + it;
-    INS.open(gtfile);
-    if (INS.fail()) {
-      cout << "Error failed to open ->" << gtfile << "<-" << endl;
-      return;
-    }
-
-    cout << "Read " << gtfile << endl;
-    std::stringstream buffer;
-    buffer << INS.rdbuf();
-    INS.close();
-
-    bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-    bsoncxx::array::view subarr{doc["tags"].get_array()};
-    for (bsoncxx::array::element ele : subarr) {
-      string tname = string(ele.get_string().value).c_str();
-      fTags.push_back(tname); 
-    }
-
-
+  string gtfile = gtdir + fGT;
+  INS.open(gtfile);
+  if (INS.fail()) {
+    cout << "Error failed to open ->" << gtfile << "<-" << endl;
+    return;
   }
+
+  cout << "Read " << gtfile << endl;
+  std::stringstream buffer;
+  buffer << INS.rdbuf();
+  INS.close();
+  
+  bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
+  bsoncxx::array::view subarr{doc["tags"].get_array()};
+  for (bsoncxx::array::element ele : subarr) {
+    string tname = string(ele.get_string().value).c_str();
+    fTags.push_back(tname); 
+  }
+  
   if (fVerbose > 0) {
     cout << "cdbJSON::readTags> for GT = " << fGT << endl;
     print(fTags);
