@@ -9,6 +9,9 @@
 #include "util/util.hh"
 
 #include <bsoncxx/json.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/stdx.hpp>
+#include <mongocxx/uri.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
@@ -30,6 +33,7 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 cdbJSON::cdbJSON(string gt, string uri) : cdb(gt, uri) {
+  fVerbose = 10;
   init();
 }
 
