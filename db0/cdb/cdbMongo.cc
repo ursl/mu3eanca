@@ -148,7 +148,7 @@ payload cdbMongo::getPayload(string hash) {
     // -- print it 
     // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
-    pl.fBLOB = string(doc["payload"].get_string().value).c_str();
+    pl.fBLOB = string(doc["BLOB"].get_string().value).c_str();
   }
 
   return pl;
