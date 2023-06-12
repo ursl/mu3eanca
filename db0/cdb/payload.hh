@@ -9,6 +9,7 @@ public:
   payload();
   int fLength;
   std::string fComment;
+  std::string fHash;
   std::string fBLOB;
 };
 

@@ -17,7 +17,7 @@ CXXFLAGS     += $(ROOTCFLAGS)
 
 LD            = $(CXX)
 LDFLAGS       = -g -O0  #?? -Wl -rpath$(ROOTSYS)
-SOFLAGS       = -shared  #?? -Wl -rpath
+SOFLAGS       = -g -shared  #?? -Wl -rpath
 
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 

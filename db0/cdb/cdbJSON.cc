@@ -112,13 +112,13 @@ void cdbJSON::readTags() {
 void cdbJSON::readIOVs() {
   // -- read iovs from fURI
   ifstream INS;
-  string gtdir = fURI + "/iovs/";
+  string dir = fURI + "/iovs/";
   
   for (auto it: fTags) {
-    string gtfile = gtdir + it;
-    INS.open(gtfile);
+    string file = dir + it;
+    INS.open(file);
     if (INS.fail()) {
-      cout << "Error failed to open ->" << gtfile << "<-" << endl;
+      cout << "Error failed to open ->" << file << "<-" << endl;
       return;
     }
 
@@ -155,26 +155,26 @@ payload cdbJSON::getPayload(string hash) {
   payload pl;
   pl.fComment = sspl.str();
   
-  // -- read payloads from fURI
+  // -- read payload for hash 
   ifstream INS;
-  string gtname = fURI + "/payloads.txt";
-  INS.open(gtname);
+  string filename = fURI + "/payloads/" + hash;
+  INS.open(filename);
   if (INS.fail()) {
-    cout << "Error failed to open ->" << gtname << "<-" << endl;
+    cout << "Error failed to open ->" << filename << "<-" << endl;
     return pl;
   }
-  string sline;
-  while (getline(INS, sline)) {
-    vector<string> tokens = split(sline, ',');
-    if (tokens.size() > 0) {
-      // -- search for hash
-      if (string::npos != tokens[0].find(hash)) {
-        pl.fBLOB = tokens[1];
-        break;
-      }
-    }     
-  }
+
+  std::stringstream buffer;
+  buffer << INS.rdbuf();
   INS.close();
+
+  bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
+  bsoncxx::array::view subarr{doc["BLOB"].get_array()};
+  for (bsoncxx::array::element ele : subarr) {
+    string tname = string(ele.get_string().value).c_str();
+    pl.fBLOB = tname; 
+  }
+  
 
   return pl;
 }
