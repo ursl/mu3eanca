@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
 					<< endl;
 
       // -- JSON
-      JS.open(jdir + "/" + iiov.first);
+      JS.open(jdir + "/" + sh.str());
       if (JS.fail()) {
         cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
       }
