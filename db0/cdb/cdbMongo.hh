@@ -16,9 +16,9 @@ public:
   cdbMongo(std::string name, std::string uri);
   ~cdbMongo();
 
-  void                     init();
-  std::string              getPayload(int irun, std::string t) override;
-  std::string              getPayload(std::string hash) override;
+  void     init();
+  payload  getPayload(int irun, std::string t) override;
+  payload  getPayload(std::string hash) override;
 
 protected:
 	void readTags() override;

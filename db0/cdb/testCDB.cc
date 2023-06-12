@@ -99,8 +99,8 @@ void printStuff(cdb *db) {
     }
   }
   
-  string pl = db->getPayload(12, "pixel_ir");
-  cout << "printStuff> pixel payload: " << pl << endl;
+  payload pl = db->getPayload(12, "pixel_ir");
+  cout << "printStuff> pixel payload: " << pl.fBLOB << endl;
 }
 
 
