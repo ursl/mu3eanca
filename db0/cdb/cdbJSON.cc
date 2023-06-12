@@ -112,71 +112,71 @@ void cdbJSON::readTags() {
 void cdbJSON::readIOVs() {
   // -- read iovs from fURI
   ifstream INS;
-  string gtname = fURI + "/iovs.txt";
-  INS.open(gtname);
-  if (INS.fail()) {
-    cout << "Error failed to open ->" << gtname << "<-" << endl;
-    return;
-  }
-  string sline;
-  while (getline(INS, sline)) {
-    vector<string> tokens = split(sline, ',');
-    if (tokens.size() > 0) {
-      // -- insert only those tags that are in the global tag
-      if (fTags.end() == find(fTags.begin(), fTags.end(), tokens[0])) continue;
-      vector<int> vtokens;
-      for (unsigned int i = 1; i < tokens.size(); ++i) {
-        vtokens.push_back(stoi(tokens[i]));
-      }
-      fIOVs.insert(make_pair(tokens[0], vtokens));
-    }     
-  }
-  INS.close();
+  string gtdir = fURI + "/iovs/";
+  
+  for (auto it: fTags) {
+    string gtfile = gtdir + it;
+    INS.open(gtfile);
+    if (INS.fail()) {
+      cout << "Error failed to open ->" << gtfile << "<-" << endl;
+      return;
+    }
 
-  if (fVerbose > 1) {
-    cout << "cdbJSON::readIOVs>" << endl;
-    print(fIOVs);
+    std::stringstream buffer;
+    buffer << INS.rdbuf();
+    INS.close();
+    
+    bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
+    bsoncxx::array::view subarr{doc["tags"].get_array()};
+    for (bsoncxx::array::element ele : subarr) {
+      string tname = string(ele.get_string().value).c_str();
+      fTags.push_back(tname); 
+    }
+
   }
+  
   return;
 }
 
 
 // ----------------------------------------------------------------------
-string cdbJSON::getPayload(int irun, string tag) {
+payload cdbJSON::getPayload(int irun, string tag) {
   string hash = getHash(irun, tag); 
   return getPayload(hash);
 }
 
 
 // ----------------------------------------------------------------------
-string cdbJSON::getPayload(string hash) {
+payload cdbJSON::getPayload(string hash) {
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(cdbJSON>  hash = " << hash 
        << " not found)";
-  string payload = sspl.str();
-
+  payload pl;
+  pl.fComment = sspl.str();
+  
   // -- read payloads from fURI
   ifstream INS;
   string gtname = fURI + "/payloads.txt";
   INS.open(gtname);
   if (INS.fail()) {
     cout << "Error failed to open ->" << gtname << "<-" << endl;
-    return payload;
+    return pl;
   }
   string sline;
   while (getline(INS, sline)) {
     vector<string> tokens = split(sline, ',');
     if (tokens.size() > 0) {
+      // -- search for hash
       if (string::npos != tokens[0].find(hash)) {
-        payload = tokens[1];
+        pl.fBLOB = tokens[1];
         break;
       }
     }     
   }
   INS.close();
 
-  return payload;
+  return pl;
 }
 
 

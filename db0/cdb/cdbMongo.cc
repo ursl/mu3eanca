@@ -127,29 +127,29 @@ void cdbMongo::readIOVs() {
 
 
 // ----------------------------------------------------------------------
-string cdbMongo::getPayload(int irun, string tag) {
+payload cdbMongo::getPayload(int irun, string tag) {
   string hash = getHash(irun, tag);
   return getPayload(hash);
 }
 
 
 // ----------------------------------------------------------------------
-string cdbMongo::getPayload(string hash) {
+payload cdbMongo::getPayload(string hash) {
   
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(cdbMongo> hash = " << hash 
        << " not found)";
-  string payload = sspl.str();
+  payload pl;
+  pl.fComment = sspl.str();
 
   auto cursor_filtered =  fDB["payloads"].find(make_document(kvp("hash", hash)));
   for (auto doc : cursor_filtered) {
     // -- print it 
     // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
-    string tname = string(doc["payload"].get_string().value).c_str();
-    return tname;
+    pl.fBLOB = string(doc["payload"].get_string().value).c_str();
   }
 
-  return payload;
+  return pl;
 }
