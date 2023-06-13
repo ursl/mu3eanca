@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <cassert>
 
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
