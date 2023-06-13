@@ -180,7 +180,8 @@ int main(int argc, char* argv[]) {
 			
 			bsoncxx::document::value doc_value = builder
 				<< "hash" << sh.str()
-				<< "payload" << sp.str()
+				<< "comment" << "testing"
+				<< "BLOB" << sp.str()
 				<< finalize; 
 			
 			bsoncxx::stdx::optional<mongocxx::result::insert_one> result = payloads.insert_one(doc_value.view());
@@ -188,11 +189,12 @@ int main(int argc, char* argv[]) {
 
 			// -- ASCII
 			ONS << sh.str()
+          << "," << "testing"
 					<< "," << sp.str()
 					<< endl;
 
       // -- JSON
-      JS.open(jdir + "/" + iiov.first);
+      JS.open(jdir + "/" + sh.str());
       if (JS.fail()) {
         cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
       }

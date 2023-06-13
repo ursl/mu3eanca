@@ -5,6 +5,8 @@
 #include <vector>
 #include <map>
 
+#include "payload.hh"
+
 class calAbs;
 
 // ----------------------------------------------------------------------
@@ -26,8 +28,8 @@ public:
 
   // -- access to payloads and IOVs
   virtual std::string                          getHash(int irun, std::string t);
-  virtual std::string                          getPayload(int irun, std::string t) {return std::string();}
-  virtual std::string                          getPayload(std::string hash) {return std::string();}
+  virtual payload                              getPayload(int irun, std::string t) {return payload();}
+  virtual payload                              getPayload(std::string hash) {return payload();}
 
 	void setGlobalTag(std::string gt) {fGT = gt;}
 	void setVerbosity(int v) {fVerbose = v;}

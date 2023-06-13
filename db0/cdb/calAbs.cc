@@ -38,8 +38,8 @@ void calAbs::update() {
                            << " fTag ->" << fTag << "<-"
                            << " hash ->" << hash << "<-"
                            << endl;
-    string payload = fDB->getPayload(hash);
-    fTagIOVPayloadMap.insert(make_pair(hash, payload));
+    payload pl = fDB->getPayload(hash);
+    fTagIOVPayloadMap.insert(make_pair(hash, pl));
     fHash = hash; 
   } else {
     if (fVerbose > 0) cout << "calPixel::getPayload(" << irun

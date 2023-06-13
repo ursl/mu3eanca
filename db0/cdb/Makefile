@@ -17,7 +17,7 @@ CXXFLAGS     += $(ROOTCFLAGS)
 
 LD            = $(CXX)
 LDFLAGS       = -g -O0  #?? -Wl -rpath$(ROOTSYS)
-SOFLAGS       = -shared  #?? -Wl -rpath
+SOFLAGS       = -g -shared  #?? -Wl -rpath
 
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 
@@ -25,7 +25,7 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 # -- CDB (Conditions DB) files
 FILES = cdb.o cdbAscii.o cdbMongo.o cdbJSON.o \
         calAbs.o calPixel.o calPixelAlignment.o \
-        CdbClassFactory.o
+        CdbClassFactory.o payload.o 
 
 
 # -- Default rules

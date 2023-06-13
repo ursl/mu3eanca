@@ -124,19 +124,20 @@ void cdbAscii::readIOVs() {
 
 
 // ----------------------------------------------------------------------
-string cdbAscii::getPayload(int irun, string tag) {
+payload cdbAscii::getPayload(int irun, string tag) {
   string hash = getHash(irun, tag); 
   return getPayload(hash);
 }
 
 
 // ----------------------------------------------------------------------
-string cdbAscii::getPayload(string hash) {
+payload cdbAscii::getPayload(string hash) {
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(cdbAscii>  hash = " << hash 
        << " not found)";
-  string payload = sspl.str();
+  payload pl; 
+  pl.fComment = sspl.str();
 
   // -- read payloads from fURI
   ifstream INS;
@@ -144,20 +145,20 @@ string cdbAscii::getPayload(string hash) {
   INS.open(gtname);
   if (INS.fail()) {
     cout << "Error failed to open ->" << gtname << "<-" << endl;
-    return payload;
+    return pl;
   }
   string sline;
   while (getline(INS, sline)) {
     vector<string> tokens = split(sline, ',');
     if (tokens.size() > 0) {
       if (string::npos != tokens[0].find(hash)) {
-        payload = tokens[1];
+        pl.fBLOB = tokens[1];
         break;
       }
     }     
   }
   INS.close();
 
-  return payload;
+  return pl;
 }
 
