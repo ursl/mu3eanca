@@ -12,12 +12,12 @@ LIBBOOST      = -L/usr/lib64 -lboost_serialization
 EXTHEADERS    = -I../..
 UTIL          = ../../util
 
-CXX          := /usr/bin/c++
+#CXX          := /usr/bin/c++
 
 CXXFLAGS     := -std=c++1z -g -O0 -Wall -fPIC -pipe  #CXXFLAGS     += $(ROOTCFLAGS)
 CXXFLAGS     += $(ROOTCFLAGS)
 
-LD            = $(CXX)
+LD           := $(CXX)
 LDFLAGS       = -g -O0  #?? -Wl -rpath$(ROOTSYS)
 SOFLAGS       = -g -shared  #?? -Wl -rpath
 
@@ -44,7 +44,7 @@ lib: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(UTIL)/lib/libAnaUtil.so $(GLIBS) 
 
 
-bin: obj/testRun.o obj/testCDB.o obj/fillDB.o obj/serializePixelAlignment.o
+bin: lib obj/testRun.o obj/testCDB.o obj/fillDB.o obj/serializePixelAlignment.o
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testRun.o -o bin/testRun $(LIBMONGODB) $(GLIBS) $(UTIL)/lib/libAnaUtil.so lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(GLIBS) $(UTIL)/lib/libAnaUtil.so lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(GLIBS) $(UTIL)/lib/libAnaUtil.so
