@@ -45,9 +45,7 @@ cdbJSON::~cdbJSON() { }
 // ----------------------------------------------------------------------
 void cdbJSON::init() {
   fName = "JSON"; 
-  readGlobalTags();
-  readTags();
-  //  cdb::init();
+  cdb::init();
 }
 
 
@@ -112,71 +110,72 @@ void cdbJSON::readTags() {
 void cdbJSON::readIOVs() {
   // -- read iovs from fURI
   ifstream INS;
-  string gtname = fURI + "/iovs.txt";
-  INS.open(gtname);
-  if (INS.fail()) {
-    cout << "Error failed to open ->" << gtname << "<-" << endl;
-    return;
-  }
-  string sline;
-  while (getline(INS, sline)) {
-    vector<string> tokens = split(sline, ',');
-    if (tokens.size() > 0) {
-      // -- insert only those tags that are in the global tag
-      if (fTags.end() == find(fTags.begin(), fTags.end(), tokens[0])) continue;
-      vector<int> vtokens;
-      for (unsigned int i = 1; i < tokens.size(); ++i) {
-        vtokens.push_back(stoi(tokens[i]));
-      }
-      fIOVs.insert(make_pair(tokens[0], vtokens));
-    }     
-  }
-  INS.close();
+  string dir = fURI + "/iovs/";
+  
+  for (auto it: fTags) {
+    string file = dir + it;
+    INS.open(file);
+    if (INS.fail()) {
+      cout << "Error failed to open ->" << file << "<-" << endl;
+      return;
+    }
 
-  if (fVerbose > 1) {
-    cout << "cdbJSON::readIOVs>" << endl;
-    print(fIOVs);
+    cout << " DBX it = " << it << endl;
+
+    
+    std::stringstream buffer;
+    buffer << INS.rdbuf();
+    INS.close();
+    
+    bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
+    bsoncxx::array::view subarr{doc["iovs"].get_array()};
+    vector<int> viov; 
+    for (bsoncxx::array::element ele : subarr) {
+      int iov = ele.get_int32().value;
+      cout << "   DBX iov = " << iov << endl;
+      viov.push_back(iov);
+    }
+    fIOVs.insert(make_pair(it, viov)); 
   }
+  
   return;
 }
 
 
 // ----------------------------------------------------------------------
-string cdbJSON::getPayload(int irun, string tag) {
+payload cdbJSON::getPayload(int irun, string tag) {
   string hash = getHash(irun, tag); 
   return getPayload(hash);
 }
 
 
 // ----------------------------------------------------------------------
-string cdbJSON::getPayload(string hash) {
+payload cdbJSON::getPayload(string hash) {
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(cdbJSON>  hash = " << hash 
        << " not found)";
-  string payload = sspl.str();
-
-  // -- read payloads from fURI
+  payload pl;
+  pl.fComment = sspl.str();
+  
+  // -- read payload for hash 
   ifstream INS;
-  string gtname = fURI + "/payloads.txt";
-  INS.open(gtname);
+  string filename = fURI + "/payloads/" + hash;
+  INS.open(filename);
   if (INS.fail()) {
-    cout << "Error failed to open ->" << gtname << "<-" << endl;
-    return payload;
+    cout << "Error failed to open ->" << filename << "<-" << endl;
+    return pl;
   }
-  string sline;
-  while (getline(INS, sline)) {
-    vector<string> tokens = split(sline, ',');
-    if (tokens.size() > 0) {
-      if (string::npos != tokens[0].find(hash)) {
-        payload = tokens[1];
-        break;
-      }
-    }     
-  }
-  INS.close();
 
-  return payload;
+  std::stringstream buffer;
+  buffer << INS.rdbuf();
+  INS.close();
+  
+  cout << "cdbJSON::getPayload() Read " << filename << " hash ->" << hash << "<-" << endl;
+  bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
+  pl.fBLOB = string(doc["BLOB"].get_string().value).c_str();
+
+  return pl;
 }
 
 

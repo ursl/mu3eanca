@@ -2,6 +2,7 @@
 #define CALABS_h
 
 #include "cdb.hh"
+#include "payload.hh"
 
 #include <string>
 #include <vector>
@@ -30,7 +31,7 @@ protected:
   std::string                        fTag;
   std::string                        fHash{"base_not_initialized"};
   int                                fVerbose{0};
-  std::map<std::string, std::string> fTagIOVPayloadMap;  // cache
+  std::map<std::string, payload>     fTagIOVPayloadMap;  // cache
 };
 
 
