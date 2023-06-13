@@ -7,6 +7,9 @@
 class payload {
 public:
   payload();
+  void print();
+  std::string printString();
+
   int fLength;
   std::string fComment;
   std::string fHash;
