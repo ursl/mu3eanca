@@ -173,7 +173,9 @@ payload cdbJSON::getPayload(string hash) {
   
   cout << "cdbJSON::getPayload() Read " << filename << " hash ->" << hash << "<-" << endl;
   bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-  pl.fBLOB = string(doc["BLOB"].get_string().value).c_str();
+  pl.fComment = string(doc["comment"].get_string().value).c_str();
+  pl.fHash    = string(doc["hash"].get_string().value).c_str();
+  pl.fBLOB    = string(doc["BLOB"].get_string().value).c_str();
 
   return pl;
 }
