@@ -45,9 +45,7 @@ cdbJSON::~cdbJSON() { }
 // ----------------------------------------------------------------------
 void cdbJSON::init() {
   fName = "JSON"; 
-  readGlobalTags();
-  readTags();
-  //  cdb::init();
+  cdb::init();
 }
 
 
@@ -122,17 +120,22 @@ void cdbJSON::readIOVs() {
       return;
     }
 
+    cout << " DBX it = " << it << endl;
+
+    
     std::stringstream buffer;
     buffer << INS.rdbuf();
     INS.close();
     
     bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-    bsoncxx::array::view subarr{doc["tags"].get_array()};
+    bsoncxx::array::view subarr{doc["iovs"].get_array()};
+    vector<int> viov; 
     for (bsoncxx::array::element ele : subarr) {
-      string tname = string(ele.get_string().value).c_str();
-      fTags.push_back(tname); 
+      int iov = ele.get_int32().value;
+      cout << "   DBX iov = " << iov << endl;
+      viov.push_back(iov);
     }
-
+    fIOVs.insert(make_pair(it, viov)); 
   }
   
   return;
@@ -167,14 +170,10 @@ payload cdbJSON::getPayload(string hash) {
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
-
-  bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-  bsoncxx::array::view subarr{doc["BLOB"].get_array()};
-  for (bsoncxx::array::element ele : subarr) {
-    string tname = string(ele.get_string().value).c_str();
-    pl.fBLOB = tname; 
-  }
   
+  cout << "cdbJSON::getPayload() Read " << filename << " hash ->" << hash << "<-" << endl;
+  bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
+  pl.fBLOB = string(doc["BLOB"].get_string().value).c_str();
 
   return pl;
 }
