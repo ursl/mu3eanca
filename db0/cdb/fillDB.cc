@@ -53,10 +53,10 @@ int main(int argc, char* argv[]) {
 	globaltags.drop();
 
 	map<string, vector<string>> iniGlobalTags = {
-		{"dt23intrun", {"pixel_ir", "pixelalignment_ir", "fibres_start", "tiles_Nada"}}, 
-		{"dt23prompt", {"pixel_v0", "pixelalignment_v0", "fibres_v11", "tiles_A"}}, 
-		{"mcideal", {"pixel_mcideal", "pixelalignment_mcideal", "fibres_mcideal", "tiles_mcideal"}}, 
-		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibres_mc23intrun", "tiles_mc23ideal"}}
+		{"dt23intrun", {"pixel_dt23intrun", "pixelalignment_dt23intrun", "fibres_start",      "tiles_Nada"}}, 
+		{"dt23prompt", {"pixel_v0",         "pixelalignment_v0",         "fibres_v11",        "tiles_A"}}, 
+		{"mcideal",    {"pixel_mcideal",    "pixelalignment_mcideal",    "fibres_mcideal",    "tiles_mcideal"}}, 
+		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibres_mc23intrun", "tiles_Nada"}}
 	};
 	
 	string fname = "ascii/globaltags.txt";
@@ -103,22 +103,25 @@ int main(int argc, char* argv[]) {
 	iovs.drop();
 
 	map<string, vector<int>> iniIovs = {
-		{"pixel_ir", {1,10,20,30,100,200}},
-		{"pixelalignment_ir", {1,200}},
-		{"fibres_start", {1,2,3,4,15,45,90,150}},
-		{"tiles_Nada", {1}}, 
-		{"pixel_v0", {202,210,900}}, 
-		{"pixelalignment_v0", {202,210,900}}, 
-		{"fibres_v11", {202,400,800}},
-		{"tiles_A", {202,300,700}},
-		{"pixel_mcideal", {1}},
-		{"pixelalignment_mcideal", {1}},
-		{"fibres_mcideal", {1}},
-		{"tiles_mcideal", {1}},
-		{"pixel_mc23intrun", {200}}, 
+		{"pixelalignment_dt23intrun", {1,200}},
+		{"pixelalignment_v0", {1,200}},
 		{"pixelalignment_mc23intrun", {200}}, 
-		{"fibres_mc23intrun", {150}},
-		{"tiles_mc23ideal", {1}}
+		{"pixelalignment_mcideal", {1}},
+    // 
+		{"pixel_dt23intrun", {1,10,20,30,100,200}},
+		{"pixel_v0", {202,210,900}}, 
+		{"pixel_mcideal", {1}},
+		{"pixel_mc23intrun", {200}}, 
+    //
+		{"tiles_Nada", {1}}, 
+		{"tiles_A", {202,300,700}},
+		{"tiles_mcideal", {1}},
+		{"tiles_mc23ideal", {1}},
+    //
+		{"fibres_start", {1,50}},
+		{"fibres_v11", {202,400,800}},
+		{"fibres_mcideal", {1}},
+		{"fibres_mc23intrun", {150}}
 	};
 
 	fname = "ascii/iovs.txt";
@@ -168,7 +171,10 @@ int main(int argc, char* argv[]) {
 	if (ONS.fail()) {
 		cout << "Error failed to open ->" << fname << "<-" << endl;
 	}
+
 	for (auto iiov: iniIovs) {
+    // -- do the pixelalignment separately below
+    if (string::npos != iiov.first.find("pixelalignment")) continue;
 		for (auto it : iiov.second) {
 			stringstream sh; 
 			sh << "tag_" << iiov.first;
@@ -200,10 +206,69 @@ int main(int argc, char* argv[]) {
       }
       JS << bsoncxx::to_json(doc_value.view()) << endl;
       JS.close();
-
     }
 	}
 	ONS.close();
+  
 
+  // -- pixelalignment
+	ONS.open(fname, std::ios_base::app);
+	for (auto iiov: iniIovs) {
+    if (string::npos == iiov.first.find("pixelalignment")) continue;
+		for (auto it : iiov.second) {
+			stringstream sh; 
+			sh << "tag_" << iiov.first;
+			sh << "_iov_" << it;
+			stringstream sp0, sp1;
+
+      std::ifstream file;
+      if (string::npos != iiov.first.find("intrun")) {
+        file.open("ascii/sensors-intrun.csv");
+      } else {
+        file.open("ascii/sensors-full.csv");
+      }
+      string sline; 
+      bool first(true);
+      while (getline(file, sline)) {
+        if (first) {
+          first = false;
+        } else {
+          sp0 << ",";
+        }
+        sp0 << sline;
+      }
+      file.close();
+      // -- kludge to remove trailing ","
+      string stmp = sp0.str();
+      cout << "stmp.size() = " << stmp.size() << endl;
+      stmp.erase(stmp.size(), 1);
+      sp1 << stmp; 
+			cout << sh.str() << "-> " << sp1.str() << endl;
+			
+			bsoncxx::document::value doc_value = builder
+				<< "hash" << sh.str()
+				<< "comment" << "testing"
+				<< "BLOB" << sp1.str()
+				<< finalize; 
+			
+			bsoncxx::stdx::optional<mongocxx::result::insert_one> result = payloads.insert_one(doc_value.view());
+			if (!result)  cout << "Failed to insert into iovs" << endl;
+
+			// -- ASCII
+			ONS << sh.str()
+          << "," << "testing"
+					<< "," << sp1.str()
+					<< endl;
+
+      // -- JSON
+      JS.open(jdir + "/" + sh.str());
+      if (JS.fail()) {
+        cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
+      }
+      JS << bsoncxx::to_json(doc_value.view()) << endl;
+      JS.close();
+    }
+	}
+  
 	return 0;
 }
