@@ -1,4 +1,0 @@
-dt23intrun,pixel_ir,pixelalignment_ir,fibres_start,tiles_Nada
-dt23prompt,pixel_v0,pixelalignment_v0,fibres_v11,tiles_A
-mc23intrun,pixel_mc23intrun,pixelalignment_mc23intrun,fibres_mc23intrun,tiles_mc23ideal
-mcideal,pixel_mcideal,pixelalignment_mcideal,fibres_mcideal,tiles_mcideal
