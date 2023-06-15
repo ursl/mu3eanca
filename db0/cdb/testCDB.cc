@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
   CdbClassFactory *cdbcf = CdbClassFactory::instance(pDB);
   if (verbose > 0) cdbcf->setVerbosity(verbose);
 
-  calAbs *cal0 = cdbcf->createClass("calPixel", "pixel_ir");
+  calAbs *cal0 = cdbcf->createClass("pixelalignment_");
     
   pDB->setRunNumber(3);
   cout << "set run number to " << pDB->getRunNumber() << endl;
@@ -88,7 +88,8 @@ void printStuff(cdb *db) {
   vector<string> gt = db->getGlobalTags();
   for (auto igt : gt) {
     cout << "GT " << igt << endl;
-    vector<string> tags = db->getTags(igt);
+    db->setGlobalTag(igt);
+    vector<string> tags = db->getTags();
     for (auto itt : tags) {
       cout << " tag: " << itt << endl;
       vector<int> iovs = db->getIOVs(itt);
@@ -98,7 +99,7 @@ void printStuff(cdb *db) {
     }
   }
   
-  payload pl = db->getPayload(12, "pixel_ir");
+  payload pl = db->getPayload(12, "pixelalignment_dt23intrun");
   cout << "printStuff> pixel payload: " << pl.printString() << endl;
 }
 

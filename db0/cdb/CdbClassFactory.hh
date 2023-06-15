@@ -13,8 +13,9 @@ class cdb;
 class CdbClassFactory {
 public:
   static CdbClassFactory* instance(cdb *);
+  calAbs* createClass(std::string name);
   calAbs* createClass(std::string name, std::string tag);
-  calAbs* createClassWithDB(std::string name, cdb *db, std::string tag);
+  calAbs* createClassWithDB(std::string name, std::string tag, cdb *db);
   void setVerbosity(int v) {fVerbose = v;}
 
 protected:
