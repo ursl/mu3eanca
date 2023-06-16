@@ -27,7 +27,15 @@ using namespace std;
 // fillDB
 // ------
 //
-// Examples:
+// requires ascii/sensors-*.csv
+//
+// sensors-full.csv and sensors-intrun.csv are direct CSV dumps of
+// alignment/sensors in mu3e root files.
+// 
+// sensors-full-1.csv and sensors-intrun-1.csv are manual edits of the above
+// to contain some numerical changes to see changes in the payload
+//
+// Usage:
 // bin/fillDB
 // 
 // ----------------------------------------------------------------------
