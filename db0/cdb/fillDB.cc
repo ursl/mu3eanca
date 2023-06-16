@@ -215,6 +215,7 @@ int main(int argc, char* argv[]) {
 	ONS.open(fname, std::ios_base::app);
 	for (auto iiov: iniIovs) {
     if (string::npos == iiov.first.find("pixelalignment")) continue;
+    int cnt(0); 
 		for (auto it : iiov.second) {
 			stringstream sh; 
 			sh << "tag_" << iiov.first;
@@ -223,9 +224,11 @@ int main(int argc, char* argv[]) {
 
       std::ifstream file;
       if (string::npos != iiov.first.find("intrun")) {
-        file.open("ascii/sensors-intrun.csv");
+        if (0 == cnt%2) file.open("ascii/sensors-intrun.csv");
+        if (1 == cnt%2) file.open("ascii/sensors-intrun-1.csv");
       } else {
-        file.open("ascii/sensors-full.csv");
+        if (0 == cnt%2) file.open("ascii/sensors-full.csv");
+        if (1 == cnt%2) file.open("ascii/sensors-full-1.csv");
       }
       string sline; 
       bool first(true);
