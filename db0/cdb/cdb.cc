@@ -107,8 +107,9 @@ void cdb::print(std::map<std::string, std::vector<int>> m) {
 
 // ----------------------------------------------------------------------
 void cdb::registerCalibration(string tag, calAbs *c) {
-  fCalibrations.insert(make_pair(tag, c));
   cout << "cdb::registerCalibration name ->" << c->getName()
        << "<- with tag ->" << tag << "<-"
        << endl;
+  fCalibrations.insert(make_pair(tag, c));
+  cout << "   done" << endl;
 }
