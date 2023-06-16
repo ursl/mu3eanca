@@ -9,6 +9,7 @@
 #include "CdbClassFactory.hh"
 
 #include "calPixel.hh"
+#include "calPixelAlignment.hh"
 
 
 using namespace std;
@@ -65,6 +66,7 @@ int main(int argc, char* argv[]) {
   if (verbose > 0) cdbcf->setVerbosity(verbose);
 
   calAbs *cal0 = cdbcf->createClass("pixelalignment_");
+  if (verbose > 0) cal0->setVerbosity(verbose);
     
   pDB->setRunNumber(3);
   cout << "set run number to " << pDB->getRunNumber() << endl;
@@ -107,10 +109,17 @@ void printStuff(cdb *db) {
 // ----------------------------------------------------------------------
 void aFewRuns(cdb *db, string gt, calAbs *cal) {
   cout << "DB " << db->getGlobalTag() << endl;
-  vector<int> vruns{23,24,25,56,90,156,157,201,202};
+  vector<int> vruns{23,24,157,201,202};
+  calPixelAlignment *al = dynamic_cast<calPixelAlignment*>(cal);
   for (auto it: vruns) {
     db->setRunNumber(it);
     cout << "now for run = " << it << " payload hash ->" << cal->getHash() << "<-" << endl;
+    double vx;
+    al->setVxAddr(&vx);
+    al->fillVars(1);
+    cout << "vx[1]  = " << vx << endl;
+    al->fillVars(33);
+    cout << "vx[33] = " << vx << endl;
   }   
 }
     

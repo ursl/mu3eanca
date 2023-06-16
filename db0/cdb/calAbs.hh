@@ -4,6 +4,7 @@
 #include "cdb.hh"
 #include "payload.hh"
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <map>
@@ -21,7 +22,7 @@ public:
 
 	void                setVerbosity(int v) {fVerbose = v;}
   virtual std::string getName() {return std::string("blurp");}
-  virtual void        calculate() {}
+  virtual void        calculate() {std::cout << "calAbs::calculate() wrong function" << std::endl;}
 
   std::string         getHash() {return fHash;}
   void                update();
