@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <dirent.h>  /// for directory reading
 
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
@@ -44,6 +45,7 @@ using namespace std;
 
 
 
+// ----------------------------------------------------------------------=
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
@@ -51,6 +53,15 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-json"))  {json = true;}
   }
+
+  // -- check whether directories for JSONs already exist
+  DIR *folder = opendir("ascii/payloads");
+  if (folder == NULL) {
+    system("mkdir -p ascii/payloads");
+    system("mkdir -p ascii/globaltags");
+    system("mkdir -p ascii/iovs");
+  }
+  closedir(folder);
   
   ofstream ONS, JS;
 
