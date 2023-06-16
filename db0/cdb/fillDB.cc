@@ -24,8 +24,10 @@ using bsoncxx::builder::stream::open_document;
 using namespace std;
 
 // ----------------------------------------------------------------------
-// fillDB
-// ------
+// fillDB [-json]
+// --------------
+//
+// -json  ONLY the JSON file-based DB is written, but not the mongo DB
 //
 // requires ascii/sensors-*.csv
 //
@@ -43,7 +45,14 @@ using namespace std;
 
 
 int main(int argc, char* argv[]) {
-	ofstream ONS, JS;
+
+  // -- command line arguments
+  bool json(0);
+  for (int i = 0; i < argc; i++){
+    if (!strcmp(argv[i], "-json"))  {json = true;}
+  }
+  
+  ofstream ONS, JS;
 
 	auto builder = document{};
     
@@ -52,13 +61,19 @@ int main(int argc, char* argv[]) {
   mongocxx::client client(uri);
 
   
-  mongocxx::database db = client["mu3e"];
+  mongocxx::database db;
+	mongocxx::collection globaltags;
+	mongocxx::collection iovs;
+	mongocxx::collection payloads;
+  if (!json) db = client["mu3e"];
     
 	// ----------------------------------------------------------------------
 	// -- global tags
 	// ----------------------------------------------------------------------
-	mongocxx::collection globaltags = db["globaltags"];
-	globaltags.drop();
+  if (!json) {
+    globaltags = db["globaltags"];
+    globaltags.drop();
+  }
 
 	map<string, vector<string>> iniGlobalTags = {
 		{"dt23intrun", {"pixel_dt23intrun", "pixelalignment_dt23intrun", "fibres_start",      "tiles_Nada"}}, 
@@ -83,9 +98,11 @@ int main(int argc, char* argv[]) {
 			<< "tags" << array_builder
 			<< finalize; 
 
-		bsoncxx::stdx::optional<mongocxx::result::insert_one> result = globaltags.insert_one(doc_value.view());
-		if (!result)  cout << "Failed to insert" << endl;
-
+		if (!json) {
+      bsoncxx::stdx::optional<mongocxx::result::insert_one> result = globaltags.insert_one(doc_value.view());
+      if (!result)  cout << "Failed to insert" << endl;
+    }
+    
 		// -- ASCII
 		ONS << igt.first;
 		for (auto it : igt.second) {
@@ -107,9 +124,11 @@ int main(int argc, char* argv[]) {
 	// ----------------------------------------------------------------------
 	// -- iovs
 	// ----------------------------------------------------------------------
-	mongocxx::collection iovs = db["iovs"];
-	iovs.drop();
-
+  if (!json) {
+    iovs = db["iovs"];
+    iovs.drop();
+  }
+  
 	map<string, vector<int>> iniIovs = {
 		{"pixelalignment_dt23intrun", {1,200}},
 		{"pixelalignment_v0", {1,200}},
@@ -146,9 +165,11 @@ int main(int argc, char* argv[]) {
 			<< "iovs" << array_builder
 			<< finalize; 
 		
-		bsoncxx::stdx::optional<mongocxx::result::insert_one> result = iovs.insert_one(doc_value.view());
-		if (!result)  cout << "Failed to insert into iovs" << endl;
-		
+    if (!json) {
+      bsoncxx::stdx::optional<mongocxx::result::insert_one> result = iovs.insert_one(doc_value.view());
+      if (!result)  cout << "Failed to insert into iovs" << endl;
+		}
+    
 		// -- ASCII
 		ONS << iiov.first;
 		for (auto it : iiov.second) {
@@ -170,8 +191,10 @@ int main(int argc, char* argv[]) {
 	// ----------------------------------------------------------------------
 	// -- payloads
 	// ----------------------------------------------------------------------
-	mongocxx::collection payloads = db["payloads"];
-	payloads.drop();
+  if (!json) {
+    payloads = db["payloads"];
+    payloads.drop();
+  }
 
 	fname = "ascii/payloads.txt";
 	jdir = "ascii/payloads";
@@ -197,10 +220,12 @@ int main(int argc, char* argv[]) {
 				<< "comment" << "testing"
 				<< "BLOB" << sp.str()
 				<< finalize; 
-			
-			bsoncxx::stdx::optional<mongocxx::result::insert_one> result = payloads.insert_one(doc_value.view());
-			if (!result)  cout << "Failed to insert into iovs" << endl;
 
+      if (!json) {
+        bsoncxx::stdx::optional<mongocxx::result::insert_one> result = payloads.insert_one(doc_value.view());
+        if (!result)  cout << "Failed to insert into iovs" << endl;
+      }
+      
 			// -- ASCII
 			ONS << sh.str()
           << "," << "testing"
@@ -262,9 +287,11 @@ int main(int argc, char* argv[]) {
 				<< "BLOB" << sp1.str()
 				<< finalize; 
 			
-			bsoncxx::stdx::optional<mongocxx::result::insert_one> result = payloads.insert_one(doc_value.view());
-			if (!result)  cout << "Failed to insert into iovs" << endl;
-
+      if (!json) {
+        bsoncxx::stdx::optional<mongocxx::result::insert_one> result = payloads.insert_one(doc_value.view());
+        if (!result)  cout << "Failed to insert into iovs" << endl;
+      }
+      
 			// -- ASCII
 			ONS << sh.str()
           << "," << "testing"
