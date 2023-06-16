@@ -270,6 +270,7 @@ int main(int argc, char* argv[]) {
       }
       JS << bsoncxx::to_json(doc_value.view()) << endl;
       JS.close();
+      ++cnt;
     }
 	}
   
