@@ -43,15 +43,16 @@ using namespace std;
 // 
 // ----------------------------------------------------------------------
 
-
-
 // ----------------------------------------------------------------------=
 int main(int argc, char* argv[]) {
 
+
   // -- command line arguments
   bool json(0);
+  string password("fixme");
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-json"))  {json = true;}
+    if (!strcmp(argv[i], "-pw"))  {password = argv[++i];}
   }
 
   // -- check whether directories for JSONs already exist
@@ -68,8 +69,13 @@ int main(int argc, char* argv[]) {
 	auto builder = document{};
     
   mongocxx::instance instance{};
-  mongocxx::uri uri("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
-  mongocxx::client client(uri);
+  mongocxx::uri URI;
+  if (string::npos != password.find("fixme")) {
+    URI = mongocxx::uri("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
+  } else {
+    URI = mongocxx::uri("mongodb+srv://urslangenegger:" + password + "@cdb0.fmlmtd8.mongodb.net/?retryWrites=true&w=majority");
+  }
+  mongocxx::client client(URI);
 
   
   mongocxx::database db;
