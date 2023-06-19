@@ -8,6 +8,7 @@ lib
 results
 data
 
+api-key.private
 
 # Prerequisites
 *.d
