@@ -14,7 +14,7 @@ else
   INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
   INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
   LIBMONGODB    = -lmongocxx -lbsoncxx
-
+  LIBCURL       = -L/usr/lib64 -lcurl
   LIBBOOST      = -L/usr/lib64 -lboost_serialization
 endif
 
@@ -34,7 +34,7 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 
 
 # -- CDB (Conditions DB) files
-FILES = cdb.o cdbAscii.o cdbMongo.o cdbJSON.o \
+FILES = cdb.o cdbAscii.o cdbMongo.o cdbJSON.o cdbRest.o \
         calAbs.o calPixel.o calPixelAlignment.o \
         CdbClassFactory.o payload.o 
 
@@ -54,10 +54,10 @@ lib: $(addprefix obj/,$(FILES) )
 
 
 bin: lib obj/testRun.o obj/testCDB.o obj/fillDB.o obj/serializePixelAlignment.o
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testRun.o -o bin/testRun $(LIBMONGODB) $(GLIBS) $(UTIL)/lib/libAnaUtil.so lib/libCDB.so 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(GLIBS) $(UTIL)/lib/libAnaUtil.so lib/libCDB.so 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(GLIBS) $(UTIL)/lib/libAnaUtil.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/serializePixelAlignment.o -o bin/spa $(LIBMONGODB) $(LIBBOOST) $(GLIBS) $(UTIL)/lib/libAnaUtil.so
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testRun.o -o bin/testRun $(LIBMONGODB) $(LIBCURL) $(GLIBS) $(UTIL)/lib/libAnaUtil.so lib/libCDB.so 
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) $(UTIL)/lib/libAnaUtil.so lib/libCDB.so 
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) $(UTIL)/lib/libAnaUtil.so
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/serializePixelAlignment.o -o bin/spa $(LIBMONGODB) $(LIBCURL) $(LIBBOOST) $(GLIBS) $(UTIL)/lib/libAnaUtil.so
 
 
 clean:

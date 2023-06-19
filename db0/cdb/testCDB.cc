@@ -6,6 +6,7 @@
 #include "cdbAscii.hh"
 #include "cdbMongo.hh"
 #include "cdbJSON.hh"
+#include "cdbRest.hh"
 #include "CdbClassFactory.hh"
 
 #include "calPixel.hh"
@@ -56,6 +57,12 @@ int main(int argc, char* argv[]) {
     string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
     pDB = new cdbMongo(gt, ms);
     if (verbose > 0) pDB->setVerbosity(verbose);
+  } else if (string::npos != db.find("rest")) {
+    string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/findOne");
+    pDB = new cdbRest(gt, ms);
+    if (verbose > 0) pDB->setVerbosity(verbose);
+    cout << "PREMATURE RETURNING" << endl;
+    return 0; 
   } else {
     cout << "ERROR: " << db << " not known." << endl;
     return 0;
