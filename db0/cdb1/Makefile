@@ -9,6 +9,7 @@ ifneq (,$(findstring merlin,$(LHOST)))
   INCMONGODB    = -I/psi/home/langenegger/data/mongo/install/include/mongocxx/v_noabi
   INCMONGODB   += -I/psi/home/langenegger/data/mongo/install/include/bsoncxx/v_noabi
   LIBMONGODB    = -L /psi/home/langenegger/data/mongo/install/lib64 -lmongocxx -lbsoncxx
+  LIBCURL       = -L/usr/lib64 -lcurl
   LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
 else
   INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
