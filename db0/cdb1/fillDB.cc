@@ -28,7 +28,7 @@ using namespace std;
 // fillDB [-json]
 // --------------
 //
-// -json  ONLY the JSON file-based DB is written, but not the mongo DB
+// -json  ONLY the JSON file-based DB is written, but not the mongo DB (useful for merlin)
 //
 // requires ../cdb0/ascii/sensors-*.csv
 //
