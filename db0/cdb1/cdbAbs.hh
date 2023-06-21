@@ -16,7 +16,7 @@ class calAbs;
 class cdbAbs {
 public:
   cdbAbs() = default;
-  cdbAbs(std::string gt, std::string uri);
+  cdbAbs(std::string gt, std::string uri, int verbose);
 	void init();
   ~cdbAbs();
 
@@ -57,12 +57,11 @@ protected:
 	
   std::string fGT{"GT unset"};
   std::string fURI{"URI unset"};
+  int fVerbose{0};
 
 	// -- should be replaced by IOV class
 	int         fRunNumber{-1};
 
-  int fVerbose{0};
-  
 	// -- flag to indicate that all GTs have been read
   bool fValidGlobalTags{false}; 
 	// -- all global tags in the DB

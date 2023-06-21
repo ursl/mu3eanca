@@ -46,17 +46,14 @@ int main(int argc, char* argv[]) {
 
   cdbAbs *pDB(0);
   if (string::npos != db.find("json")) {
-    pDB = new cdbJSON(gt, "json");
-    if (verbose > 0) pDB->setVerbosity(verbose);
+    pDB = new cdbJSON(gt, "json", verbose);
   } else if (string::npos != db.find("mongo")) {
     string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
-    pDB = new cdbMongo(gt, ms);
-    if (verbose > 0) pDB->setVerbosity(verbose);
+    pDB = new cdbMongo(gt, ms, verbose);
   } else if (string::npos != db.find("rest")) {
-    string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/findOne");
-    pDB = new cdbRest(gt, ms);
-    if (verbose > 0) pDB->setVerbosity(verbose);
-    cout << "PREMATURE RETURNING" << endl;
+    // string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/findOne");
+    string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
+    pDB = new cdbRest(gt, ms, verbose);
     return 0; 
   } else {
     cout << "ERROR: " << db << " not known." << endl;
