@@ -89,7 +89,6 @@ void cdbRest::readGlobalTags() {
           bsoncxx::array::view subarr{doc["tags"].get_array()};
           for (bsoncxx::array::element ele : subarr) {
             string tname = string(ele.get_string().value).c_str();
-            cout << "tname = " << tname << endl;
             fTags.push_back(tname); 
           }
         }
@@ -108,7 +107,7 @@ void cdbRest::readGlobalTags() {
 
 // ----------------------------------------------------------------------
 void cdbRest::readTags() {
-  // -- do nothing here
+  // -- do nothing here, all tags were filled in readGlobalTags already
   if (fVerbose > 0) {
     cout << "cdbRest::readTags()> for GT = " << fGT << ": ";
     print(fTags);
@@ -119,15 +118,30 @@ void cdbRest::readTags() {
 // ----------------------------------------------------------------------
 void cdbRest::readIOVs() {
   fCurlReadBuffer.clear();
-  // -- read iovs from fURI
-  // curl_easy_setopt(fCurl, CURLOPT_URL, fURIfind.c_str());
-  // curl_easy_setopt(fCurl, CURLOPT_POSTFIELDS, "{\"collection\":\"iovs\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"}");
-  // fCurlRes = curl_easy_perform(fCurl);
+  doCurl("iovs");
+  bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
 
-  //  bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
-  //  cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
-  exit(0);
- 
+  for (auto idoc : doc0) {
+    bsoncxx::array::view subarr{idoc.get_array()};
+    for (auto ele : subarr) {
+      bsoncxx::document::view doc = ele.get_document();
+      string tname = string(doc["tag"].get_string().value).c_str();
+      // -- look only at tags in fGT
+      if (fTags.end() == find(fTags.begin(), fTags.end(), tname)) continue;
+      bsoncxx::array::view subarr{doc["iovs"].get_array()};
+      vector<int> viov; 
+      for (bsoncxx::array::element ele : subarr) {
+        int iov = ele.get_int32().value;
+        viov.push_back(iov);
+      }
+      fIOVs.insert(make_pair(tname, viov)); 
+    }
+  }
+
+  if (fVerbose > 1) {
+    cout << "cdbRest::readIOVs>" << endl;
+    print(fIOVs);
+  }
   return;
 }
 
@@ -189,7 +203,6 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   } else {
     sapi = fURIfind;
   }
-  cout << "sapi.c_str() = " << sapi.c_str() << endl;
 
   curl_easy_setopt(curl, CURLOPT_URL, sapi.c_str());
 
@@ -212,12 +225,11 @@ void cdbRest::doCurl(string collection, string filter, string api) {
     sstr << "}";
   }
   string theString = sstr.str(); 
-  cout << "theString = " << theString << endl;
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, theString.c_str());
  
   CURLcode curlRes = curl_easy_perform(curl);
 
-  cout << "cdbRest::doCurl() got "
+  cout << "==:cdbRest::doCurl(\"" << collection << "\") got "
        << fCurlReadBuffer
        << endl;
 }
