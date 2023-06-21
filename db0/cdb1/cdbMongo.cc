@@ -103,7 +103,7 @@ void cdbMongo::readTags() {
     }
   }
   if (fVerbose > 0) {
-    cout << "cdbMongo::readTags> for GT = " << fGT << endl;
+    cout << "cdbMongo::readTags()> for GT = " << fGT << ": ";
     print(fTags);
   }
   return;
@@ -115,9 +115,10 @@ void cdbMongo::readIOVs() {
   auto cursor =  fDB["iovs"].find({});
   for (auto doc : cursor) {
     // -- print it 
-    // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+    //    cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
     string tname = string(doc["tag"].get_string().value).c_str();
+    // -- look only at tags in fGT
     if (fTags.end() == find(fTags.begin(), fTags.end(), tname)) continue;
     bsoncxx::array::view subarr{doc["iovs"].get_array()};
     vector<int> viov; 
