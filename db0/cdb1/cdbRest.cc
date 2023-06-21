@@ -155,31 +155,22 @@ payload cdbRest::getPayload(int irun, string tag) {
 
 // ----------------------------------------------------------------------
 payload cdbRest::getPayload(string hash) {
+
+  fCurlReadBuffer.clear();
+  stringstream sstr;
+  sstr << "\"hash\": \"" << hash << "\"";
+  string theFilter = sstr.str();
+  doCurl("payloads", theFilter);
+  bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
+
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(cdbRest>  hash = " << hash 
        << " not found)";
   payload pl;
   pl.fComment = sspl.str();
-  
-  // -- read payload for hash 
-  ifstream INS;
-  string filename = fURI + "/payloads/" + hash;
-  INS.open(filename);
-  if (INS.fail()) {
-    cout << "Error failed to open ->" << filename << "<-" << endl;
-    return pl;
-  }
 
-  std::stringstream buffer;
-  buffer << INS.rdbuf();
-  INS.close();
-  
-  cout << "cdbRest::getPayload() Read " << filename << " hash ->" << hash << "<-" << endl;
-  bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-  pl.fComment = string(doc["comment"].get_string().value).c_str();
-  pl.fHash    = string(doc["hash"].get_string().value).c_str();
-  pl.fBLOB    = string(doc["BLOB"].get_string().value).c_str();
+
 
   return pl;
 }
