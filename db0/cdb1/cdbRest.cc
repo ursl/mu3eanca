@@ -17,6 +17,7 @@
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/array.hpp>
 
+using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
 using bsoncxx::builder::stream::document;
@@ -90,7 +91,7 @@ void cdbRest::init() {
 // ----------------------------------------------------------------------
 void cdbRest::readGlobalTags() {
   fGlobalTags.clear();
-  cout << "cdbRest::readGlobalTags()" << endl;
+  cout << "cdbRest::readGlobalTags() fGT = " << fGT << endl;
   if (!fValidGlobalTags) {
     curl_easy_setopt(fCurl, CURLOPT_URL, fURIfind.c_str());
     curl_easy_setopt(fCurl, CURLOPT_POSTFIELDS, "{\"collection\":\"globaltags\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"}");
@@ -108,6 +109,15 @@ void cdbRest::readGlobalTags() {
         //cout << bsoncxx::to_json(doc) << endl;
         string tname = string(doc["gt"].get_string().value).c_str();
         fGlobalTags.push_back(tname); 
+
+        if (string::npos != tname.find(fGT)) {
+          bsoncxx::array::view subarr{doc["tags"].get_array()};
+          for (bsoncxx::array::element ele : subarr) {
+            string tname = string(ele.get_string().value).c_str();
+            cout << "tname = " << tname << endl;
+            fTags.push_back(tname); 
+          }
+        }
       }
 
     }
@@ -123,19 +133,11 @@ void cdbRest::readGlobalTags() {
 
 // ----------------------------------------------------------------------
 void cdbRest::readTags() {
-  fTags.clear();
-  curl_easy_setopt(fCurl, CURLOPT_URL, fURIfind.c_str());
-  curl_easy_setopt(fCurl, CURLOPT_POSTFIELDS, "{\"collection\":\"globaltags\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"}");
-  fCurlRes = curl_easy_perform(fCurl);
-  curl_easy_cleanup(fCurl);
-  
-  bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
-  //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
-
-
-  exit(0);
-  
-  return;
+  // -- do nothing here
+  if (fVerbose > 0) {
+    cout << "cdbMongo::readTags> for GT = " << fGT << endl;
+    print(fTags);
+  }
 }
 
 
