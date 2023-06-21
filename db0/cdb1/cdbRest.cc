@@ -155,11 +155,13 @@ payload cdbRest::getPayload(int irun, string tag) {
 
 // ----------------------------------------------------------------------
 payload cdbRest::getPayload(string hash) {
-
+  cout << "Hallo" << endl;
+  
   fCurlReadBuffer.clear();
   stringstream sstr;
   sstr << "\"hash\": \"" << hash << "\"";
   string theFilter = sstr.str();
+  cout << "theFilter = " << theFilter << endl;
   doCurl("payloads", theFilter);
   bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
 
@@ -169,8 +171,10 @@ payload cdbRest::getPayload(string hash) {
        << " not found)";
   payload pl;
   pl.fComment = sspl.str();
-
-
+  
+  for (auto idoc : doc0) {
+    cout << "idoc.type() = " <<  bsoncxx::to_string(idoc.type()) << endl;
+  }
 
   return pl;
 }
@@ -211,11 +215,12 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   sstr << "{\"collection\":\"" << collection
        << "\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"";
   if (string::npos  == filter.find("nada")) {
-    sstr << "\"filter\": " << filter << "}"; //    {\"hash\": \"tag_pixelalignment_dt23intrun_iov_200\"};
-  } else {
-    sstr << "}";
-  }
+    sstr << ", \"filter\": {" << filter << "}"; //    {\"hash\": \"tag_pixelalignment_dt23intrun_iov_200\"};
+  } 
+  sstr << "}";
+
   string theString = sstr.str(); 
+  cout << "theString = " << theString << endl;
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, theString.c_str());
  
   CURLcode curlRes = curl_easy_perform(curl);
