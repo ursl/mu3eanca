@@ -12,7 +12,7 @@
 class cdbRest: public cdbAbs {
 public:
   cdbRest() = default;
-  cdbRest(std::string gt, std::string uri);
+  cdbRest(std::string gt, std::string uri, int verbose);
   ~cdbRest();
 
   void                 init();
@@ -28,7 +28,9 @@ protected:
 private: 
   std::string fApiKey;
   CURL        *fCurl;
-  
+  std::string fURIfindOne, fURIfind, fCurlReadBuffer;
+  CURLcode    fCurlRes;
+
 };
 
 
