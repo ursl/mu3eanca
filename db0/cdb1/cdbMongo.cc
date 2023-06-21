@@ -32,7 +32,7 @@ mongocxx::instance instance{};
 
 
 // ----------------------------------------------------------------------
-cdbMongo::cdbMongo(string name, string uri) : cdbAbs(name, uri) {
+cdbMongo::cdbMongo(string name, string uri, int verbose) : cdbAbs(name, uri, verbose) {
   init();
 }
 
@@ -65,15 +65,24 @@ void cdbMongo::init() {
 // ----------------------------------------------------------------------
 void cdbMongo::readGlobalTags() {
   fGlobalTags.clear();
-  cout << "cdbMongo::readGlobalTags()" << endl;
+  cout << "cdbMongo::readGlobalTags() fValidGlobalTags = " << fValidGlobalTags << endl;
   if (!fValidGlobalTags) {
     mongocxx::cursor cursor = fDB["globaltags"].find({});
     for (auto doc : cursor) {
+      if (fVerbose > 1) {
+        cout << "cdbMongo::readGlobalTags()> "
+             << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed)
+             << endl;
+      }
       assert(doc["_id"].type() == bsoncxx::type::k_oid);
       string tname = string(doc["gt"].get_string().value).c_str();
       fGlobalTags.push_back(tname); 
     }
     fValidGlobalTags = true;
+  }
+  if (fVerbose > 0) {
+    cout << "cdbMongo::readGlobalTags()> fGlobalTags = ";
+    print(fGlobalTags);
   }
   return;
 }

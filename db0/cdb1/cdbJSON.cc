@@ -32,8 +32,7 @@ using bsoncxx::builder::basic::make_document;
 using namespace std;
 
 // ----------------------------------------------------------------------
-cdbJSON::cdbJSON(string gt, string uri) : cdbAbs(gt, uri) {
-  fVerbose = 10;
+cdbJSON::cdbJSON(string gt, string uri, int verbose) : cdbAbs(gt, uri, verbose) {
   init();
 }
 
