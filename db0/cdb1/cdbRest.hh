@@ -23,13 +23,10 @@ protected:
 	void readTags() override;
 	void readGlobalTags() override;
 	void readIOVs() override;
-
+  void doCurl(std::string collection, std::string filter = "nada", std::string api = "find"); 
   
 private: 
-  std::string fApiKey;
-  CURL        *fCurl;
-  std::string fURIfindOne, fURIfind, fCurlReadBuffer;
-  CURLcode    fCurlRes;
+  std::string        fApiKey, fURIfindOne, fURIfind, fCurlReadBuffer;
 
 };
 
