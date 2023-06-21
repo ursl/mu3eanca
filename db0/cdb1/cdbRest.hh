@@ -3,6 +3,8 @@
 
 #include "cdbAbs.hh"
 
+#include <curl/curl.h> 
+
 // ----------------------------------------------------------------------
 // implementation class for a RESTful access of payloads
 // ----------------------------------------------------------------------
@@ -25,6 +27,7 @@ protected:
   
 private: 
   std::string fApiKey;
+  CURL        *fCurl;
   
 };
 
