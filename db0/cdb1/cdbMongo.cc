@@ -103,7 +103,7 @@ void cdbMongo::readTags() {
     }
   }
   if (fVerbose > 0) {
-    cout << "cdbAscii::readTags> for GT = " << fGT << endl;
+    cout << "cdbMongo::readTags> for GT = " << fGT << endl;
     print(fTags);
   }
   return;
@@ -129,7 +129,7 @@ void cdbMongo::readIOVs() {
   }
 
   if (fVerbose > 1) {
-    cout << "cdbAscii::readIOVs>" << endl;
+    cout << "cdbMongo::readIOVs>" << endl;
     print(fIOVs);
   }
   return;
