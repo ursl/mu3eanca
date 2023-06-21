@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <sstream>
 #include <dirent.h>    /// for directory reading
-#include <curl/curl.h> /// for libcurl
 
 #include "util/util.hh"
 
@@ -61,31 +60,30 @@ void cdbRest::init() {
   INS.close();
   fApiKey = "api-key: " + fApiKey;
 
-  CURL *curl;
   CURLcode res;
   std::string readBuffer;
   
-  curl = curl_easy_init();
+  fCurl = curl_easy_init();
 
   struct curl_slist *headers=NULL;
   struct curl_slist *temp=NULL;
     
-  if (curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, fURI.c_str());
+  if (fCurl) {
+    curl_easy_setopt(fCurl, CURLOPT_URL, fURI.c_str());
 
     headers = curl_slist_append(headers, "Content-Type: application/json");
     headers = curl_slist_append(headers, "Access-Control-Request-Headers: *");
     headers = curl_slist_append(headers, fApiKey.c_str());
 
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(fCurl, CURLOPT_VERBOSE, 1L);
 
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "{\"collection\":\"payloads\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\", \"filter\": {\"hash\": \"tag_pixelalignment_dt23intrun_iov_200\"}}");
+    curl_easy_setopt(fCurl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(fCurl, CURLOPT_POSTFIELDS, "{\"collection\":\"payloads\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\", \"filter\": {\"hash\": \"tag_pixelalignment_dt23intrun_iov_200\"}}");
     
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-    res = curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
+    curl_easy_setopt(fCurl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+    curl_easy_setopt(fCurl, CURLOPT_WRITEDATA, &readBuffer);
+    res = curl_easy_perform(fCurl);
+    curl_easy_cleanup(fCurl);
 
     std::cout << readBuffer << std::endl;
   }
