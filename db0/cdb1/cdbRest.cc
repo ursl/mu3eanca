@@ -63,27 +63,6 @@ void cdbRest::init() {
   fURIfindOne = fURI + "findOne"; 
   fURIfind    = fURI + "find"; 
   
-  fCurl = curl_easy_init();
-
-  struct curl_slist *headers=NULL;
-  if (fCurl) {
-    curl_easy_setopt(fCurl, CURLOPT_URL, fURIfindOne.c_str());
-
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-    headers = curl_slist_append(headers, "Access-Control-Request-Headers: *");
-    headers = curl_slist_append(headers, fApiKey.c_str());
-
-    curl_easy_setopt(fCurl, CURLOPT_VERBOSE, 1L);
-    curl_easy_setopt(fCurl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(fCurl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
-    curl_easy_setopt(fCurl, CURLOPT_WRITEDATA, &fCurlReadBuffer);
-
-    curl_easy_setopt(fCurl, CURLOPT_POSTFIELDS, "{\"collection\":\"payloads\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\", \"filter\": {\"hash\": \"tag_pixelalignment_dt23intrun_iov_200\"}}");
-
-    //    fCurlRes = curl_easy_perform(fCurl);
-    //    curl_easy_cleanup(fCurl);
-    //    std::cout << fCurlReadBuffer << std::endl;
-  }
   cdbAbs::init();
 }
 
@@ -93,11 +72,7 @@ void cdbRest::readGlobalTags() {
   fGlobalTags.clear();
   cout << "cdbRest::readGlobalTags() fGT = " << fGT << endl;
   if (!fValidGlobalTags) {
-    curl_easy_setopt(fCurl, CURLOPT_URL, fURIfind.c_str());
-    curl_easy_setopt(fCurl, CURLOPT_POSTFIELDS, "{\"collection\":\"globaltags\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"}");
-    fCurlRes = curl_easy_perform(fCurl);
-    curl_easy_cleanup(fCurl);
-
+    doCurl("globaltags");
     bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
     //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
 
@@ -122,7 +97,7 @@ void cdbRest::readGlobalTags() {
 
     }
     if (fVerbose > 0) {
-      cout << "cdbMongo::readGlobalTags()> fGlobalTags = ";
+      cout << "cdbRest::readGlobalTags()> fGlobalTags = ";
       print(fGlobalTags);
     }
 
@@ -135,7 +110,7 @@ void cdbRest::readGlobalTags() {
 void cdbRest::readTags() {
   // -- do nothing here
   if (fVerbose > 0) {
-    cout << "cdbMongo::readTags> for GT = " << fGT << endl;
+    cout << "cdbRest::readTags()> for GT = " << fGT << ": ";
     print(fTags);
   }
 }
@@ -143,36 +118,16 @@ void cdbRest::readTags() {
 
 // ----------------------------------------------------------------------
 void cdbRest::readIOVs() {
+  fCurlReadBuffer.clear();
   // -- read iovs from fURI
-  ifstream INS;
-  string dir = fURI + "/iovs/";
-  
-  for (auto it: fTags) {
-    string file = dir + it;
-    INS.open(file);
-    if (INS.fail()) {
-      cout << "Error failed to open ->" << file << "<-" << endl;
-      return;
-    }
+  // curl_easy_setopt(fCurl, CURLOPT_URL, fURIfind.c_str());
+  // curl_easy_setopt(fCurl, CURLOPT_POSTFIELDS, "{\"collection\":\"iovs\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"}");
+  // fCurlRes = curl_easy_perform(fCurl);
 
-    cout << " DBX it = " << it << endl;
-
-    
-    std::stringstream buffer;
-    buffer << INS.rdbuf();
-    INS.close();
-    
-    bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-    bsoncxx::array::view subarr{doc["iovs"].get_array()};
-    vector<int> viov; 
-    for (bsoncxx::array::element ele : subarr) {
-      int iov = ele.get_int32().value;
-      cout << "   DBX iov = " << iov << endl;
-      viov.push_back(iov);
-    }
-    fIOVs.insert(make_pair(it, viov)); 
-  }
-  
+  //  bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
+  //  cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+  exit(0);
+ 
   return;
 }
 
@@ -216,3 +171,53 @@ payload cdbRest::getPayload(string hash) {
 }
 
 
+// ----------------------------------------------------------------------
+void cdbRest::doCurl(string collection, string filter, string api) {
+  CURL *curl = curl_easy_init();
+
+  if (!curl) {
+    cout << "cdbRest::init()> ERROR failed to setup curl?!" << endl;
+    exit(0);
+  }
+
+  fCurlReadBuffer.clear();
+  string sapi("");
+  if (string::npos != api.find("findOne")) {
+    sapi = fURIfindOne;
+  } else if (string::npos != api.find("find")) {
+    sapi = fURIfind;
+  } else {
+    sapi = fURIfind;
+  }
+  cout << "sapi.c_str() = " << sapi.c_str() << endl;
+
+  curl_easy_setopt(curl, CURLOPT_URL, sapi.c_str());
+
+  struct curl_slist *headers = NULL;
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  headers = curl_slist_append(headers, "Access-Control-Request-Headers: *");
+  headers = curl_slist_append(headers, fApiKey.c_str());
+  
+  //  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fCurlReadBuffer);
+
+  stringstream sstr;
+  sstr << "{\"collection\":\"" << collection
+       << "\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"";
+  if (string::npos  == filter.find("nada")) {
+    sstr << "\"filter\": " << filter << "}"; //    {\"hash\": \"tag_pixelalignment_dt23intrun_iov_200\"};
+  } else {
+    sstr << "}";
+  }
+  string theString = sstr.str(); 
+  cout << "theString = " << theString << endl;
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, theString.c_str());
+ 
+  CURLcode curlRes = curl_easy_perform(curl);
+
+  cout << "cdbRest::doCurl() got "
+       << fCurlReadBuffer
+       << endl;
+}
