@@ -72,28 +72,33 @@ void cdbRest::readGlobalTags() {
   cout << "cdbRest::readGlobalTags() fGT = " << fGT << endl;
   if (!fValidGlobalTags) {
     doCurl("globaltags");
-    bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
-    //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
 
-    for (auto idoc : doc0) {
-      bsoncxx::array::view subarr{idoc.get_array()};
-      for (auto ele : subarr) {
-        //cout << "ele.type() = " <<  bsoncxx::to_string(ele.type()) << endl;
-        bsoncxx::document::view doc = ele.get_document();
-        //cout << bsoncxx::to_json(doc) << endl;
-        string tname = string(doc["gt"].get_string().value).c_str();
-        fGlobalTags.push_back(tname); 
-
-        if (string::npos != tname.find(fGT)) {
-          bsoncxx::array::view subarr{doc["tags"].get_array()};
-          for (bsoncxx::array::element ele : subarr) {
-            string tname = string(ele.get_string().value).c_str();
-            fTags.push_back(tname); 
+    if (1) {
+      bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
+      //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      
+      for (auto idoc : doc0) {
+        bsoncxx::array::view subarr{idoc.get_array()};
+        for (auto ele : subarr) {
+          //cout << "ele.type() = " <<  bsoncxx::to_string(ele.type()) << endl;
+          bsoncxx::document::view doc = ele.get_document();
+          //cout << bsoncxx::to_json(doc) << endl;
+          string tname = string(doc["gt"].get_string().value).c_str();
+          fGlobalTags.push_back(tname); 
+          
+          if (string::npos != tname.find(fGT)) {
+            bsoncxx::array::view subarr{doc["tags"].get_array()};
+            for (bsoncxx::array::element ele : subarr) {
+              string tname = string(ele.get_string().value).c_str();
+              fTags.push_back(tname); 
+            }
           }
         }
       }
-
     }
+
+
+    
     if (fVerbose > 0) {
       cout << "cdbRest::readGlobalTags()> fGlobalTags = ";
       print(fGlobalTags);
@@ -162,6 +167,7 @@ payload cdbRest::getPayload(string hash) {
   string theFilter = sstr.str();
   cout << "theFilter = " << theFilter << endl;
   doCurl("payloads", theFilter);
+  stripOverhead();
   bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
 
   // -- initialize with default
@@ -172,7 +178,9 @@ payload cdbRest::getPayload(string hash) {
   pl.fComment = sspl.str();
   
   for (auto idoc : doc0) {
-    cout << "idoc.type() = " <<  bsoncxx::to_string(idoc.type()) << endl;
+    pl.fComment = string(idoc["comment"].get_string().value).c_str();
+    pl.fHash    = string(idoc["hash"].get_string().value).c_str();
+    pl.fBLOB    = string(idoc["BLOB"].get_string().value).c_str();
   }
 
   return pl;
@@ -219,19 +227,14 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   sstr << "}";
 
   string theString = sstr.str(); 
-  cout << "theString = " << theString << endl;
+  //  cout << "theString = " << theString << endl;
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, theString.c_str());
  
   CURLcode curlRes = curl_easy_perform(curl);
 
-  cout << "==:cdbRest::doCurl(\"" << collection << "\") got "
-       << fCurlReadBuffer
-       << endl;
-
-  stripOverhead();
-  cout << "stripOverhead "
-       << fCurlReadBuffer
-       << endl;
+  if (0) cout << "==:cdbRest::doCurl(\"" << collection << "\"): "
+              << fCurlReadBuffer
+              << endl;
 }
 
 
