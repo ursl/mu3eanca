@@ -63,7 +63,9 @@ calAbs* cdbClassFactory::createClass(string name) {
 calAbs* cdbClassFactory::createClass(string name, string tag) {
   if (!name.compare("pixelalignment_")) {
     if (fVerbose > 0) cout << "cdbClassFactory::createClass("
-                           << name << ", " << tag << ")" << endl;
+                           << name << ", " << tag << "), fDB = "
+                           << fDB 
+                           << endl;
     return new calPixelAlignment(fDB, tag);
   }
   return 0;
