@@ -54,7 +54,6 @@ int main(int argc, char* argv[]) {
     // string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/findOne");
     string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
     pDB = new cdbRest(gt, ms, verbose);
-    return 0; 
   } else {
     cout << "ERROR: " << db << " not known." << endl;
     return 0;

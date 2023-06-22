@@ -6,8 +6,6 @@
 #include <sstream>
 #include <dirent.h>  /// for directory reading
 
-#include "util/util.hh"
-
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/stdx.hpp>
