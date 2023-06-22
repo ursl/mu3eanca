@@ -20,7 +20,6 @@ else
 endif
 
 EXTHEADERS    = -I../..
-UTIL          = ../../util
 
 #CXX          := /usr/bin/c++
 
@@ -37,7 +36,8 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 # -- CDB (Conditions DB) files
 FILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
         calAbs.o calPixelAlignment.o \
-        cdbClassFactory.o payload.o 
+        cdbClassFactory.o \
+        payload.o cdbUtil.o
 
 
 # -- Default rules
@@ -51,12 +51,12 @@ $(addprefix obj/,%.o) : %.cc
 all: prep lib bin
 
 lib: $(addprefix obj/,$(FILES) )
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(UTIL)/lib/libAnaUtil.so $(GLIBS) 
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS) 
 
 
 bin: lib obj/testCDB.o obj/fillDB.o 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) $(UTIL)/lib/libAnaUtil.so lib/libCDB.so 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) $(UTIL)/lib/libAnaUtil.so
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so 
 
 clean:
 	rm -f obj/*.o lib/*.so bin/testCDB
