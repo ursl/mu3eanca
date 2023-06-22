@@ -288,7 +288,8 @@ int main(int argc, const char* argv[]) {
     cdbClassFactory *cFactory = cdbClassFactory::instance(pDB);
 
     calAbs *cal = cFactory->createClass("pixelalignment_");
-    pDB->setRunNumber(779);
+    pDB->setRunNumber(10);
+    //    pDB->setRunNumber(779);
  
 
     /**
