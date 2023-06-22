@@ -13,11 +13,14 @@ class cdb;
 
 class cdbClassFactory {
 public:
-  static cdbClassFactory* instance(cdbAbs *);
+  static cdbClassFactory* instance(cdbAbs *db = 0);
   calAbs* createClass(std::string name);
   calAbs* createClass(std::string name, std::string tag);
   calAbs* createClassWithDB(std::string name, std::string tag, cdbAbs *db);
-  void setVerbosity(int v) {fVerbose = v;}
+
+  cdbAbs* getDB()             {return fDB;}
+  void    setDB(cdbAbs *db)   {fDB = db;}
+  void    setVerbosity(int v) {fVerbose = v;}
 
 protected:
   cdbClassFactory(cdbAbs *);

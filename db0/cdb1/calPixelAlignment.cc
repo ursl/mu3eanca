@@ -14,8 +14,23 @@ calPixelAlignment::calPixelAlignment(cdbAbs *db) : calAbs(db) {
 
 
 // ----------------------------------------------------------------------
+bool calPixelAlignment::getNextID(uint32_t &ID) {
+  if (fMapConstantsIt == fMapConstants.end()) {
+    // -- reset
+    ID = 999999;
+    fMapConstantsIt = fMapConstants.begin();
+    return false;
+  } else {
+    ID = fMapConstantsIt->first;
+    fMapConstantsIt++;
+  }
+  return true;
+}
+
+
+// ----------------------------------------------------------------------
 calPixelAlignment::calPixelAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calPixelAlignment with tag ->" << fTag << "<-" 
+	cout << "calPixelAlignment created and registered with tag ->" << fTag << "<-" 
 			 << endl;
   db->registerCalibration(fTag, this);
 }
@@ -37,7 +52,7 @@ void calPixelAlignment::calculate() {
   vector<string> tokens = split(spl, ',');
   for (unsigned int i = 0; i < tokens.size(); i += 16) {
     constants a; 
-    a.id        = stoi(tokens[i]);
+    a.id        = static_cast<uint32_t>(stoi(tokens[i]));
     a.vx        = stod(tokens[i+1]);
     a.vy        = stod(tokens[i+2]);
     a.vz        = stod(tokens[i+3]);
@@ -56,5 +71,6 @@ void calPixelAlignment::calculate() {
 
     fMapConstants.insert(make_pair(a.id, a));
   }
+  fMapConstantsIt = fMapConstants.begin();
 }
 

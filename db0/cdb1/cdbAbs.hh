@@ -40,8 +40,10 @@ public:
   void        setName(std::string n) {fName = n;}
   std::string getName() {return fName;}
   
-  void registerCalibration(std::string tag, calAbs *c);
-
+  void    registerCalibration(std::string tag, calAbs *c);
+	void    printCalibrations();
+  calAbs* getCalibration(std::string name);
+  
 	// -- utility functions
 	void print(std::vector<int>, int istart = 0);
 	void print(std::vector<std::string>, int istart = 0);

@@ -12,6 +12,7 @@ cdbAbs::cdbAbs(string globaltag, string uri, int verbose) : fGT(globaltag), fURI
 
 }
 
+
 // ----------------------------------------------------------------------
 cdbAbs::~cdbAbs() {
   if (fVerbose > 0) cout << "this is the end of CDBABS with global tag " << fGT << "." << endl;
@@ -78,6 +79,7 @@ void cdbAbs::print(std::vector<int> v, int istart) {
 	cout << endl;
 }
 
+
 // ----------------------------------------------------------------------
 void cdbAbs::print(std::vector<std::string> v, int istart) {
 	for (unsigned int i = istart; i < v.size(); ++i) {
@@ -85,6 +87,7 @@ void cdbAbs::print(std::vector<std::string> v, int istart) {
 	}
 	cout << endl;
 }
+
 
 // ----------------------------------------------------------------------
 void cdbAbs::print(std::map<std::string, std::vector<std::string>> m) {
@@ -94,6 +97,7 @@ void cdbAbs::print(std::map<std::string, std::vector<std::string>> m) {
 	}
 	cout << endl;
 }
+
 
 // ----------------------------------------------------------------------
 void cdbAbs::print(std::map<std::string, std::vector<int>> m) {
@@ -112,4 +116,22 @@ void cdbAbs::registerCalibration(string tag, calAbs *c) {
        << endl;
   fCalibrations.insert(make_pair(tag, c));
   cout << "   done" << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void cdbAbs::printCalibrations() {
+  for (auto it: fCalibrations) {
+    cout << it.second->getName() << endl;
+  }
+}
+
+
+// ----------------------------------------------------------------------
+calAbs* cdbAbs::getCalibration(std::string name) {
+  for (auto it: fCalibrations) {
+    cout << "  looking at " << it.first << endl;
+    if (string::npos != it.first.find(name)) return it.second;
+  }  
+  return 0;
 }

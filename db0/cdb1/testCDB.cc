@@ -108,6 +108,11 @@ void printStuff(cdbAbs *db) {
 void aFewRuns(cdbAbs *db, string gt, calAbs *cal) {
   cout << "DB " << db->getGlobalTag() << endl;
   vector<int> vruns{23,24,157,201,202};
+  db->printCalibrations();
+
+  calAbs *cl = db->getCalibration("pixelalignment_");
+  std::cout << "cl = " << cl << std::endl;
+
   calPixelAlignment *al = dynamic_cast<calPixelAlignment*>(cal);
   for (auto it: vruns) {
     db->setRunNumber(it);
