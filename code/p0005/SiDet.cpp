@@ -48,6 +48,7 @@ SiDet::Hit::Hit(const Sensor& sensor, int row, int col, uint32_t timestamp_)
         // TODO: Check this!!
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+     
         // scale lengths by temperature parameters
         float scaled_width = sensor.width * sensor.deform.dTu;
         float scaled_length = sensor.length * sensor.deform.dTv;
@@ -100,6 +101,13 @@ void SiDet::makeClusters() {
     for(auto itj = std::next(iti); itj != end; ++itj) {
         const auto& hj = *itj;
 
+        if (hi->sensor.id.value() == 1) {
+          std::cout << "sensor.id.value() = " << hi->sensor.id.value()
+                    << " sensor.v.x = " << hi->sensor.v.x
+                    << std::endl;
+        }
+
+        
         if(hi->sensor.id.value() != hj->sensor.id.value()) break;
 
         int drow = std::abs(hi->row - hj->row);

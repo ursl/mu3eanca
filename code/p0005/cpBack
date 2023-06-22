@@ -1,4 +1,5 @@
 # initial mostly(?) working CBD1 integration
+# now with dbx printout confirming that different payloads get read with different runnumbers
 cd /psi/home/langenegger/data/mu3e
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/CMakeLists.txt mu3eTrirec/CMakeLists.txt
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/SiDet.cpp mu3eTrirec/src/SiDet.cpp
