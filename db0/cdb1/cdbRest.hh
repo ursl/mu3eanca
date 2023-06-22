@@ -24,6 +24,8 @@ protected:
 	void readGlobalTags() override;
 	void readIOVs() override;
   void doCurl(std::string collection, std::string filter = "nada", std::string api = "find"); 
+  // -- remove from fCurlReadBuffer "{"_id":"649042ec330d198bb5be6e19", ... ]}
+  void stripOverhead();
   
 private: 
   std::string        fApiKey, fURIfindOne, fURIfind, fCurlReadBuffer;

@@ -6,8 +6,6 @@
 #include <sstream>
 #include <dirent.h>    /// for directory reading
 
-#include "util/util.hh"
-
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/stdx.hpp>
@@ -16,6 +14,8 @@
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/array.hpp>
+
+#include "cdbUtil.hh"
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::stream::close_array;
@@ -38,7 +38,6 @@ static size_t cdbRestWriteCallback(void *contents, size_t size, size_t nmemb, vo
   ((std::string*)userp)->append((char*)contents, size * nmemb);
   return size * nmemb;
 }
-
 
 
 // ----------------------------------------------------------------------
@@ -228,4 +227,16 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   cout << "==:cdbRest::doCurl(\"" << collection << "\") got "
        << fCurlReadBuffer
        << endl;
+
+  stripOverhead();
+  cout << "stripOverhead "
+       << fCurlReadBuffer
+       << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void cdbRest::stripOverhead() {
+  replaceAll(fCurlReadBuffer, "{\"documents\":", "");
+  fCurlReadBuffer.pop_back();
 }
