@@ -1,4 +1,4 @@
-#include "cdb.hh"
+#include "cdbAbs.hh"
 
 #include <iostream>
 #include <sstream>
@@ -8,19 +8,19 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-cdb::cdb(string globaltag, string uri) : fGT(globaltag), fURI(uri) {
+cdbAbs::cdbAbs(string globaltag, string uri, int verbose) : fGT(globaltag), fURI(uri), fVerbose(verbose) {
 
 }
 
 // ----------------------------------------------------------------------
-cdb::~cdb() {
-  if (fVerbose > 0) cout << "this is the end of CDB with global tag " << fGT << "." << endl;
+cdbAbs::~cdbAbs() {
+  if (fVerbose > 0) cout << "this is the end of CDBABS with global tag " << fGT << "." << endl;
 }
 
 
 // ----------------------------------------------------------------------
-void cdb::init() {
-  if (fVerbose > 0)  cout << "cdb::init() for GT = " << fGT << endl;
+void cdbAbs::init() {
+  if (fVerbose > 0)  cout << "cdbAbs::init() for GT = " << fGT << endl;
   readGlobalTags();
 	readTags();
 	readIOVs();
@@ -28,7 +28,7 @@ void cdb::init() {
 
 
 // ----------------------------------------------------------------------
-int cdb::whichIOV(int runnumber, string tag) {
+int cdbAbs::whichIOV(int runnumber, string tag) {
 	int iov(-1);
   for (auto it : fIOVs[tag]) {
     if (it > runnumber) {
@@ -42,19 +42,19 @@ int cdb::whichIOV(int runnumber, string tag) {
 
 
 // ----------------------------------------------------------------------
-string cdb::getHash(int runnumber, string tag) {
+string cdbAbs::getHash(int runnumber, string tag) {
   int iov = whichIOV(runnumber, tag);
   // -- hash is a misnomer here
   std::stringstream ssHash;
   ssHash << "tag_" << tag << "_iov_" << iov;
-  if (fVerbose > 4) cout << "cdb::getHash(" << runnumber << ", " << tag << ") = " << ssHash.str() << endl;
+  if (fVerbose > 4) cout << "cdbAbs::getHash(" << runnumber << ", " << tag << ") = " << ssHash.str() << endl;
   return ssHash.str();
 }
 
 
 // ----------------------------------------------------------------------
-void cdb::setRunNumber(int runnumber) {
-  if (fVerbose > 0)   cout << "cdb::setRunNumber(" << runnumber << "), old runnumber = " 
+void cdbAbs::setRunNumber(int runnumber) {
+  if (fVerbose > 0)   cout << "cdbAbs::setRunNumber(" << runnumber << "), old runnumber = " 
                            << fRunNumber
                            << " fCalibrations.size() = " << fCalibrations.size()
                            << endl;
@@ -71,7 +71,7 @@ void cdb::setRunNumber(int runnumber) {
 
 
 // ----------------------------------------------------------------------
-void cdb::print(std::vector<int> v, int istart) {
+void cdbAbs::print(std::vector<int> v, int istart) {
 	for (unsigned int i = istart; i < v.size(); ++i) {
 		cout << v[i] << " ";
 	}
@@ -79,7 +79,7 @@ void cdb::print(std::vector<int> v, int istart) {
 }
 
 // ----------------------------------------------------------------------
-void cdb::print(std::vector<std::string> v, int istart) {
+void cdbAbs::print(std::vector<std::string> v, int istart) {
 	for (unsigned int i = istart; i < v.size(); ++i) {
 		cout << v[i] << " ";
 	}
@@ -87,7 +87,7 @@ void cdb::print(std::vector<std::string> v, int istart) {
 }
 
 // ----------------------------------------------------------------------
-void cdb::print(std::map<std::string, std::vector<std::string>> m) {
+void cdbAbs::print(std::map<std::string, std::vector<std::string>> m) {
 	for (auto it: m) {
 		cout << it.first << ": ";
 		print(it.second);
@@ -96,7 +96,7 @@ void cdb::print(std::map<std::string, std::vector<std::string>> m) {
 }
 
 // ----------------------------------------------------------------------
-void cdb::print(std::map<std::string, std::vector<int>> m) {
+void cdbAbs::print(std::map<std::string, std::vector<int>> m) {
 	for (auto it: m) {
 		cout << it.first << ": ";
 		print(it.second);
@@ -106,9 +106,10 @@ void cdb::print(std::map<std::string, std::vector<int>> m) {
 
 
 // ----------------------------------------------------------------------
-void cdb::registerCalibration(string tag, calAbs *c) {
-  fCalibrations.insert(make_pair(tag, c));
-  cout << "cdb::registerCalibration name ->" << c->getName()
+void cdbAbs::registerCalibration(string tag, calAbs *c) {
+  cout << "cdbAbs::registerCalibration name ->" << c->getName()
        << "<- with tag ->" << tag << "<-"
        << endl;
+  fCalibrations.insert(make_pair(tag, c));
+  cout << "   done" << endl;
 }

@@ -3,6 +3,7 @@
 
 #include <string>
 
+class cdbAbs;
 class calAbs;
 class cdb;
 
@@ -10,20 +11,21 @@ class cdb;
 // factory for calibration classes
 // ----------------------------------------------------------------------
 
-class CdbClassFactory {
+class cdbClassFactory {
 public:
-  static CdbClassFactory* instance(cdb *);
+  static cdbClassFactory* instance(cdbAbs *);
+  calAbs* createClass(std::string name);
   calAbs* createClass(std::string name, std::string tag);
-  calAbs* createClassWithDB(std::string name, cdb *db, std::string tag);
+  calAbs* createClassWithDB(std::string name, std::string tag, cdbAbs *db);
   void setVerbosity(int v) {fVerbose = v;}
 
 protected:
-  CdbClassFactory(cdb *);
-  ~CdbClassFactory();
+  cdbClassFactory(cdbAbs *);
+  ~cdbClassFactory();
 
 private:
-  static CdbClassFactory* fInstance; 
-  cdb *fDB;
+  static cdbClassFactory* fInstance; 
+  cdbAbs *fDB;
   int fVerbose{0};
 };
 

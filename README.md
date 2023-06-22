@@ -22,4 +22,4 @@ ln -s /to/some/place/run/data<br>
 bin/runTreeReader01 -f data/mu3e_trirec_000001.root -n 10 -D results<br>
 
 
-For db0 you need to install various dependencies (mariadb, mongodb, mongocxx, etc)
+For db0/cdb1 you do NOT need util, but other various external dependencies (mariadb, mongodb, mongocxx, etc)

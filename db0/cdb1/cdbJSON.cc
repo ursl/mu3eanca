@@ -6,8 +6,6 @@
 #include <sstream>
 #include <dirent.h>  /// for directory reading
 
-#include "util/util.hh"
-
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/stdx.hpp>
@@ -32,8 +30,7 @@ using bsoncxx::builder::basic::make_document;
 using namespace std;
 
 // ----------------------------------------------------------------------
-cdbJSON::cdbJSON(string gt, string uri) : cdb(gt, uri) {
-  fVerbose = 10;
+cdbJSON::cdbJSON(string gt, string uri, int verbose) : cdbAbs(gt, uri, verbose) {
   init();
 }
 
@@ -45,7 +42,7 @@ cdbJSON::~cdbJSON() { }
 // ----------------------------------------------------------------------
 void cdbJSON::init() {
   fName = "JSON"; 
-  cdb::init();
+  cdbAbs::init();
 }
 
 
@@ -173,7 +170,9 @@ payload cdbJSON::getPayload(string hash) {
   
   cout << "cdbJSON::getPayload() Read " << filename << " hash ->" << hash << "<-" << endl;
   bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-  pl.fBLOB = string(doc["BLOB"].get_string().value).c_str();
+  pl.fComment = string(doc["comment"].get_string().value).c_str();
+  pl.fHash    = string(doc["hash"].get_string().value).c_str();
+  pl.fBLOB    = string(doc["BLOB"].get_string().value).c_str();
 
   return pl;
 }
