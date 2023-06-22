@@ -1,5 +1,5 @@
-#ifndef CDB_h
-#define CDB_h
+#ifndef CDBABS_h
+#define CDBABS_h
 
 #include <string>
 #include <vector>
@@ -13,17 +13,17 @@ class calAbs;
 // abstract base class for DB access and tag/IOV management
 // ----------------------------------------------------------------------
 
-class cdb {
+class cdbAbs {
 public:
-  cdb() = default;
-  cdb(std::string gt, std::string uri);
+  cdbAbs() = default;
+  cdbAbs(std::string gt, std::string uri, int verbose);
 	void init();
-  ~cdb();
+  ~cdbAbs();
 
 	// -- access to metadata (in DB)
   std::string                                  getGlobalTag() {return fGT;}
   virtual std::vector<std::string>             getGlobalTags() {return fGlobalTags;}
-  virtual std::vector<std::string>             getTags(std::string gt) {return fTags;}
+  virtual std::vector<std::string>             getTags() {return fTags;}
   virtual std::vector<int>                     getIOVs(std::string t) {return fIOVs[t];}
 
   // -- access to payloads and IOVs
@@ -57,12 +57,11 @@ protected:
 	
   std::string fGT{"GT unset"};
   std::string fURI{"URI unset"};
+  int fVerbose{0};
 
 	// -- should be replaced by IOV class
 	int         fRunNumber{-1};
 
-  int fVerbose{0};
-  
 	// -- flag to indicate that all GTs have been read
   bool fValidGlobalTags{false}; 
 	// -- all global tags in the DB
@@ -76,7 +75,7 @@ protected:
   std::map<std::string, calAbs*> fCalibrations;
 
   // -- know what you are
-  std::string fName{"CDB base"};
+  std::string fName{"cdbAbs base"};
 
 };
 
