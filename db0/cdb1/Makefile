@@ -56,13 +56,12 @@ lib: $(addprefix obj/,$(FILES) )
 
 bin: lib obj/testCDB.o obj/fillDB.o 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so 
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS)  
 
 clean:
-	rm -f obj/*.o lib/*.so bin/testCDB
+	rm -f obj/*.o lib/*.so bin/testCDB bin/fillDB
 
 # -- preparatory setup
 prep:
 	mkdir -p obj bin lib
-	cd lib && ln -f -s ../$(UTIL)/lib/libAnaUtil.so && cd -
 
