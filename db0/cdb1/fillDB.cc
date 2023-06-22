@@ -30,7 +30,7 @@ using namespace std;
 //
 // -json  ONLY the JSON file-based DB is written, but not the mongo DB (useful for merlin)
 //
-// requires ../cdb0/ascii/sensors-*.csv
+// requires ../ascii/sensors-*.csv
 //
 // sensors-full.csv and sensors-intrun.csv are direct CSV dumps of
 // alignment/sensors in mu3e root files.
@@ -235,11 +235,11 @@ int main(int argc, char* argv[]) {
 
       std::ifstream file;
       if (string::npos != iiov.first.find("intrun")) {
-        if (0 == cnt%2) file.open("../cdb0/ascii/sensors-intrun.csv");
-        if (1 == cnt%2) file.open("../cdb0/ascii/sensors-intrun-1.csv");
+        if (0 == cnt%2) file.open("../ascii/sensors-intrun.csv");
+        if (1 == cnt%2) file.open("../ascii/sensors-intrun-1.csv");
       } else {
-        if (0 == cnt%2) file.open("../cdb0/ascii/sensors-full.csv");
-        if (1 == cnt%2) file.open("../cdb0/ascii/sensors-full-1.csv");
+        if (0 == cnt%2) file.open("../ascii/sensors-full.csv");
+        if (1 == cnt%2) file.open("../ascii/sensors-full-1.csv");
       }
       string sline; 
       bool first(true);
