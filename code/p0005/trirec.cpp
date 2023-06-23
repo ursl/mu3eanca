@@ -11,9 +11,9 @@
 
 #include <mu3e/util/RootFile.h>
 
+#include "Mu3eConditions.hh"
 #include "cdbAbs.hh"
 #include "cdbJSON.hh"
-#include "cdbClassFactory.hh"
 #include "calPixelAlignment.hh"
 
 #if defined(MU3E_TRIREC_DISPLAY)
@@ -283,13 +283,14 @@ int main(int argc, const char* argv[]) {
 
     int dbverbose(10); 
     cdbAbs *pDB(0);
-    pDB = new cdbJSON("dt23prompt", "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1/json", dbverbose);
+    std::string gt = "dt23prompt";
+    pDB = new cdbJSON(gt, "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1/json", dbverbose);
+    
+    Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
 
-    cdbClassFactory *cFactory = cdbClassFactory::instance(pDB);
-
-    calAbs *cal = cFactory->createClass("pixelalignment_");
-    pDB->setRunNumber(10);
-    //    pDB->setRunNumber(779);
+    calAbs *cal = pDC->createClass("pixelalignment_");
+    //    pDC->setRunNumber(10);
+    pDC->setRunNumber(779);
  
 
     /**
