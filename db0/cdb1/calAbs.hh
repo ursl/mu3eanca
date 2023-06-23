@@ -25,7 +25,7 @@ public:
   virtual void        calculate() {std::cout << "calAbs::calculate() wrong function" << std::endl;}
 
   std::string         getHash() {return fHash;}
-  void                update();
+  void                update(int irun);
   
 protected: 
 	cdbAbs                            *fDB;
