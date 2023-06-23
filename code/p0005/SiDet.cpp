@@ -7,7 +7,7 @@
 #include <mu3e/util/file.hpp>
 #include <mu3e/util/rand.hpp>
 
-#include "cdbClassFactory.hh"
+#include "Mu3eConditions.hh"
 #include "calPixelAlignment.hh"
 
 #include <algorithm>
@@ -340,19 +340,21 @@ void SiDet::readSensors(Sensor::map_t& sensors, TTree* tree) {
     }
 
     if (1) {
-      cdbClassFactory *cFactory = cdbClassFactory::instance();
-      cdbAbs *cdb = cFactory->getDB();
-      std::cout << "calibrations: " << std::endl;
-      cdb->printCalibrations();          
-      calAbs *cal = cdb->getCalibration("pixelalignment_");
+      Mu3eConditions *pDC = Mu3eConditions::instance();
+      std::cout << "Mu3eConditions with gt =  " << pDC->getGlobalTag()
+                << " and db = " << pDC->getDB()->getName()
+                << std::endl;
+      pDC->printCalibrations();          
+      calAbs *cal = pDC->getCalibration("pixelalignment_");
       std::cout << "cal = " << cal << std::endl;
       
       calPixelAlignment *cpa = dynamic_cast<calPixelAlignment*>(cal);
       uint32_t i(99999);
       std::cout << "HALLO SiDet::readSensors(...) cpa->getName() = " << cpa->getName() << std::endl;
       mu3e::root::alignment_sensors_t entry;
+      int cnt(0); 
       while (cpa->getNextID(i)) {
-        std::cout << "ID = " << i << std::endl;
+        std::cout << "ID = " << i << " (cnt = " << cnt++ << ")" << std::endl;
         
         entry.id = cpa->id(i); 
         entry.vx = cpa->vx(i); 
