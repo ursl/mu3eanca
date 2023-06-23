@@ -47,40 +47,38 @@ void cdbJSON::init() {
 
 
 // ----------------------------------------------------------------------
-void cdbJSON::readGlobalTags() {
-  fGlobalTags.clear();
+vector<string> cdbJSON::readGlobalTags(string gt) {
+  vector<string> v;
   cout << "cdbJSON::readGlobalTags()" << endl;
-  if (!fValidGlobalTags) {
-    // -- read global tags from fURI
-    string gtdir = fURI + "/globaltags";
-    cout << "gtdir = " << gtdir << endl;
-    vector<string> gtFiles = allFiles(gtdir);
-
-    ifstream INS;
-    for (auto it: gtFiles) {
-      // -- remove everything up to and including the last /
-      string::size_type pos = it.rfind("/");
-      string file = it.substr(pos+1);
-      fGlobalTags.push_back(file);
-      if (fVerbose > 0) cout << "JSON read GT " << file << endl;
-    }
+  // -- read global tags from fURI
+  string gtdir = fURI + "/globaltags";
+  cout << "gtdir = " << gtdir << endl;
+  vector<string> gtFiles = allFiles(gtdir);
+  
+  ifstream INS;
+  for (auto it: gtFiles) {
+    // -- remove everything up to and including the last /
+    string::size_type pos = it.rfind("/");
+    string file = it.substr(pos+1);
+    v.push_back(file);
+    if (fVerbose > 0) cout << "JSON read GT " << file << endl;
   }
-  return;
+  return v;
 }
 
 
 // ----------------------------------------------------------------------
-void cdbJSON::readTags() {
-  fTags.clear();
+vector<string> cdbJSON::readTags(string gt) {
+  vector<string> v;
   // -- read global tags from fURI
   string gtdir = fURI + "/globaltags/";
 
   ifstream INS;
-  string gtfile = gtdir + fGT;
+  string gtfile = gtdir + gt;
   INS.open(gtfile);
   if (INS.fail()) {
     cout << "Error failed to open ->" << gtfile << "<-" << endl;
-    return;
+    return v;
   }
 
   cout << "Read " << gtfile << endl;
@@ -92,29 +90,31 @@ void cdbJSON::readTags() {
   bsoncxx::array::view subarr{doc["tags"].get_array()};
   for (bsoncxx::array::element ele : subarr) {
     string tname = string(ele.get_string().value).c_str();
-    fTags.push_back(tname); 
+    v.push_back(tname); 
   }
   
   if (fVerbose > 0) {
-    cout << "cdbJSON::readTags> for GT = " << fGT << endl;
-    print(fTags);
+    cout << "cdbJSON::readTags> for GT = " << gt << endl;
+    print(v);
   }
-  return;
+  return v;
 }
 
 
 // ----------------------------------------------------------------------
-void cdbJSON::readIOVs() {
+map<string, vector<int>> cdbJSON::readIOVs(vector<string> tags) {
+  map<string, vector<int>> m;
+
   // -- read iovs from fURI
   ifstream INS;
   string dir = fURI + "/iovs/";
   
-  for (auto it: fTags) {
+  for (auto it: tags) {
     string file = dir + it;
     INS.open(file);
     if (INS.fail()) {
       cout << "Error failed to open ->" << file << "<-" << endl;
-      return;
+      return m;
     }
 
     cout << " DBX it = " << it << endl;
@@ -132,17 +132,10 @@ void cdbJSON::readIOVs() {
       cout << "   DBX iov = " << iov << endl;
       viov.push_back(iov);
     }
-    fIOVs.insert(make_pair(it, viov)); 
+    m.insert(make_pair(it, viov)); 
   }
   
-  return;
-}
-
-
-// ----------------------------------------------------------------------
-payload cdbJSON::getPayload(int irun, string tag) {
-  string hash = getHash(irun, tag); 
-  return getPayload(hash);
+  return m;
 }
 
 

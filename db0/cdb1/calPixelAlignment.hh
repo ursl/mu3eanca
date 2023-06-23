@@ -41,7 +41,7 @@ public:
   void fillVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
   
   std::string getName() override {return fPixelAlignmentTag;}
-  void        calculate() override;
+  void        calculate(std::string hash) override;
 
   bool        getNextID(uint32_t &ID);
   

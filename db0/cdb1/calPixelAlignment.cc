@@ -41,12 +41,12 @@ calPixelAlignment::~calPixelAlignment() {
 
 
 // ----------------------------------------------------------------------
-void calPixelAlignment::calculate() {
+void calPixelAlignment::calculate(string hash) {
   cout << "calPixelAlignment::calculate() with "
-       << "fHash ->" << fHash << "<-"
+       << "fHash ->" << hash << "<-"
        << endl;
   fMapConstants.clear();
-  string spl = fTagIOVPayloadMap[fHash].fBLOB;
+  string spl = fTagIOVPayloadMap[hash].fBLOB;
   vector<string> tokens = split(spl, ',');
   for (unsigned int i = 0; i < tokens.size(); i += 16) {
     constants a; 
@@ -69,6 +69,7 @@ void calPixelAlignment::calculate() {
 
     fMapConstants.insert(make_pair(a.id, a));
   }
+  // -- set iterator over all constants to start
   fMapConstantsIt = fMapConstants.begin();
 }
 

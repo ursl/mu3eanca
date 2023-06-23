@@ -67,60 +67,76 @@ void cdbRest::init() {
 
 
 // ----------------------------------------------------------------------
-void cdbRest::readGlobalTags() {
-  fGlobalTags.clear();
-  cout << "cdbRest::readGlobalTags() fGT = " << fGT << endl;
-  if (!fValidGlobalTags) {
-    doCurl("globaltags");
+vector<string> cdbRest::readGlobalTags(string gt) {
+  vector<string> v;
+  doCurl("globaltags");
+  
+  if (1) {
+    bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
+    //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+    
+    for (auto idoc : doc0) {
+      bsoncxx::array::view subarr{idoc.get_array()};
+      for (auto ele : subarr) {
+        //cout << "ele.type() = " <<  bsoncxx::to_string(ele.type()) << endl;
+        bsoncxx::document::view doc = ele.get_document();
+        //cout << bsoncxx::to_json(doc) << endl;
+        string tname = string(doc["gt"].get_string().value).c_str();
+        v.push_back(tname); 
+      }
+    }
+  }
+  
+  if (fVerbose > 0) {
+    cout << "cdbRest::readGlobalTags()> ";
+    print(v);
+  }
+  
+  return v;
+}
 
-    if (1) {
-      bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
-      //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
-      
-      for (auto idoc : doc0) {
-        bsoncxx::array::view subarr{idoc.get_array()};
-        for (auto ele : subarr) {
-          //cout << "ele.type() = " <<  bsoncxx::to_string(ele.type()) << endl;
-          bsoncxx::document::view doc = ele.get_document();
-          //cout << bsoncxx::to_json(doc) << endl;
-          string tname = string(doc["gt"].get_string().value).c_str();
-          fGlobalTags.push_back(tname); 
-          
-          if (string::npos != tname.find(fGT)) {
-            bsoncxx::array::view subarr{doc["tags"].get_array()};
-            for (bsoncxx::array::element ele : subarr) {
-              string tname = string(ele.get_string().value).c_str();
-              fTags.push_back(tname); 
-            }
+
+// ----------------------------------------------------------------------
+vector<string> cdbRest::readTags(string gt) {
+  vector<string> v;
+  doCurl("globaltags");
+  
+  if (1) {
+    bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
+    //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+    
+    for (auto idoc : doc0) {
+      bsoncxx::array::view subarr{idoc.get_array()};
+      for (auto ele : subarr) {
+        //cout << "ele.type() = " <<  bsoncxx::to_string(ele.type()) << endl;
+        bsoncxx::document::view doc = ele.get_document();
+        //cout << bsoncxx::to_json(doc) << endl;
+        string tname = string(doc["gt"].get_string().value).c_str();
+        
+        if (string::npos != tname.find(gt)) {
+          bsoncxx::array::view subarr{doc["tags"].get_array()};
+          for (bsoncxx::array::element ele : subarr) {
+            string tname = string(ele.get_string().value).c_str();
+            v.push_back(tname); 
           }
         }
       }
     }
-
-
-    
-    if (fVerbose > 0) {
-      cout << "cdbRest::readGlobalTags()> fGlobalTags = ";
-      print(fGlobalTags);
-    }
-
-    return;
   }
-}
-
-
-// ----------------------------------------------------------------------
-void cdbRest::readTags() {
-  // -- do nothing here, all tags were filled in readGlobalTags already
+  
   if (fVerbose > 0) {
-    cout << "cdbRest::readTags()> for GT = " << fGT << ": ";
-    print(fTags);
+    cout << "cdbRest::readGlobalTags()> tags = ";
+    print(v);
   }
+  
+  return v;
 }
 
 
 // ----------------------------------------------------------------------
-void cdbRest::readIOVs() {
+map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
+  map<string, vector<int>> m;
+
   fCurlReadBuffer.clear();
   doCurl("iovs");
   bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
@@ -131,30 +147,23 @@ void cdbRest::readIOVs() {
       bsoncxx::document::view doc = ele.get_document();
       string tname = string(doc["tag"].get_string().value).c_str();
       // -- look only at tags in fGT
-      if (fTags.end() == find(fTags.begin(), fTags.end(), tname)) continue;
+      if (tags.end() == find(tags.begin(), tags.end(), tname)) continue;
       bsoncxx::array::view subarr{doc["iovs"].get_array()};
       vector<int> viov; 
       for (bsoncxx::array::element ele : subarr) {
         int iov = ele.get_int32().value;
         viov.push_back(iov);
       }
-      fIOVs.insert(make_pair(tname, viov)); 
+      m.insert(make_pair(tname, viov)); 
     }
   }
 
   if (fVerbose > 1) {
     cout << "cdbRest::readIOVs>" << endl;
-    print(fIOVs);
+    print(m);
   }
-  return;
-}
-
-
-// ----------------------------------------------------------------------
-payload cdbRest::getPayload(int irun, string tag) {
-  string hash = getHash(irun, tag); 
-  return getPayload(hash);
-}
+  return m;
+}  
 
 
 // ----------------------------------------------------------------------
