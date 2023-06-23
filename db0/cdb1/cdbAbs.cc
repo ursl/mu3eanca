@@ -8,48 +8,23 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-cdbAbs::cdbAbs(string globaltag, string uri, int verbose) : fGT(globaltag), fURI(uri), fVerbose(verbose) {
-
+cdbAbs::cdbAbs(string globaltag, string uri, int verbose) : fURI(uri), fVerbose(verbose) {
+  
 }
 
 
 // ----------------------------------------------------------------------
 cdbAbs::~cdbAbs() {
-  if (fVerbose > 0) cout << "this is the end of CDBABS with global tag " << fGT << "." << endl;
+  if (fVerbose > 0) cout << "this is the end of CDBABS." << endl;
 }
 
 
 // ----------------------------------------------------------------------
 void cdbAbs::init() {
-  if (fVerbose > 0)  cout << "cdbAbs::init() for GT = " << fGT << endl;
-  readGlobalTags();
-	readTags();
-	readIOVs();
-}
-
-
-// ----------------------------------------------------------------------
-int cdbAbs::whichIOV(int runnumber, string tag) {
-	int iov(-1);
-  for (auto it : fIOVs[tag]) {
-    if (it > runnumber) {
-			return iov;
-    } else {
-			iov = it;
-		}
-  }
-	return iov; 
-}
-
-
-// ----------------------------------------------------------------------
-string cdbAbs::getHash(int runnumber, string tag) {
-  int iov = whichIOV(runnumber, tag);
-  // -- hash is a misnomer here
-  std::stringstream ssHash;
-  ssHash << "tag_" << tag << "_iov_" << iov;
-  if (fVerbose > 4) cout << "cdbAbs::getHash(" << runnumber << ", " << tag << ") = " << ssHash.str() << endl;
-  return ssHash.str();
+  if (fVerbose > 0)  cout << "cdbAbs::init() " << endl;
+  // readGlobalTags();
+	// readTags();
+	// readIOVs();
 }
 
 

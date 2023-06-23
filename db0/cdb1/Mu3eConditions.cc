@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>    // std::find
+#include <sstream>
 
 #include "Mu3eConditions.hh"
 #include "cdbAbs.hh"
@@ -15,17 +16,24 @@ Mu3eConditions* Mu3eConditions::fInstance = 0;
 
 
 // ----------------------------------------------------------------------
-Mu3eConditions* Mu3eConditions::instance(cdbAbs *db) {
+Mu3eConditions* Mu3eConditions::instance(std::string gt, cdbAbs *db) {
   if (0 == fInstance) {
-    fInstance = new Mu3eConditions(db);
+    fInstance = new Mu3eConditions(gt, db);
   }
   return fInstance;
 }
 
 
 // ----------------------------------------------------------------------
-Mu3eConditions::Mu3eConditions(cdbAbs *db) : fDB(db) {
-  cout << "Mu3eConditions::Mu3eConditions()" << endl;
+Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fGT(gt), fDB(db) {
+  cout << "Mu3eConditions::Mu3eConditions(" << gt
+       << ", " << (fDB? fDB->getName(): "no DB")
+       << ")" << endl;
+  if (fDB) {
+    fGlobalTags = fDB->readGlobalTags(fGT);
+    fTags       = fDB->readTags(fGT);
+    fIOVs       = fDB->readIOVs(fTags);
+  }
 }
 
 
@@ -37,10 +45,8 @@ Mu3eConditions::~Mu3eConditions() {
 
 // ----------------------------------------------------------------------
 calAbs* Mu3eConditions::createClass(string name) {
-  vector<string> tags = fDB->getTags();
-
   string tag("nada");
-  for (auto it : tags) {
+  for (auto it : fTags) {
     cout << "searching " << name << ", looking at " << it << endl; 
     if (string::npos != it.find(name)) {
       tag = it;
@@ -82,6 +88,7 @@ calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
                            << ", " << db->getName() << ")"
                            << endl;
     calAbs* a = new calPixelAlignment(db, tag);
+    a->setIOVs(getIOVs(tag));
     registerCalibration(tag, a);
     return a;
   }
@@ -111,7 +118,8 @@ void Mu3eConditions::setRunNumber(int runnumber) {
     // -- call update for all registered calibrations
     //    each calibration will check with its tag/IOV whether an update is required
     for (auto it: fCalibrations) {
-      it.second->update(runnumber);
+      cout << "call update runnumber = " << runnumber << " tag = " << it.first << endl;
+      it.second->update(getHash(runnumber, it.first));
     }
 	}
 }
@@ -134,3 +142,28 @@ void Mu3eConditions::printCalibrations() {
   }
 }
 
+
+
+// ----------------------------------------------------------------------
+int Mu3eConditions::whichIOV(int runnumber, string tag) {
+	int iov(-1);
+  for (auto it : fIOVs[tag]) {
+    if (it > runnumber) {
+			return iov;
+    } else {
+			iov = it;
+		}
+  }
+	return iov; 
+}
+
+
+// ----------------------------------------------------------------------
+string Mu3eConditions::getHash(int runnumber, string tag) {
+  int iov = whichIOV(runnumber, tag);
+  // -- hash is a misnomer here
+  std::stringstream ssHash;
+  ssHash << "tag_" << tag << "_iov_" << iov;
+  if (fVerbose > 4) cout << "calAbs::getHash(" << runnumber << ", " << tag << ") = " << ssHash.str() << endl;
+  return ssHash.str();
+}

@@ -20,18 +20,19 @@ public:
   calAbs(cdbAbs *db, std::string tag);
   ~calAbs();
 
+  void                setIOVs(std::vector<int> v) {fIOVs = v;}
 	void                setVerbosity(int v) {fVerbose = v;}
   virtual std::string getName() {return std::string("blurp");}
-  virtual void        calculate() {std::cout << "calAbs::calculate() wrong function" << std::endl;}
+  virtual std::string getHash() {return fHash;}
+  virtual void        calculate(std::string hash) {std::cout << "calAbs::calculate() ?" << std::endl;}
 
-  std::string         getHash() {return fHash;}
-  void                update(int irun);
+  void                update(std::string hash);
   
 protected: 
 	cdbAbs                            *fDB;
-  std::string                        fTag;
-  std::string                        fHash{"base_not_initialized"};
+  std::string                        fTag{"unset"}, fHash{"unset"};
   int                                fVerbose{0};
+  std::vector<int>                   fIOVs;  // set it up initially
   std::map<std::string, payload>     fTagIOVPayloadMap;  // cache
 };
 

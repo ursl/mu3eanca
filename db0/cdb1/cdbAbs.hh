@@ -20,18 +20,10 @@ public:
 	void init();
   ~cdbAbs();
 
-	// -- access to metadata (in DB)
-  std::string                                  getGlobalTag() {return fGT;}
-  virtual std::vector<std::string>             getGlobalTags() {return fGlobalTags;}
-  virtual std::vector<std::string>             getTags() {return fTags;}
-  virtual std::vector<int>                     getIOVs(std::string t) {return fIOVs[t];}
-
   // -- access to payloads and IOVs
-  virtual std::string                          getHash(int irun, std::string t);
-  virtual payload                              getPayload(int irun, std::string t) {return payload();}
-  virtual payload                              getPayload(std::string hash) {return payload();}
+  virtual payload         getPayload(int irun, std::string t) {return payload();}
+  virtual payload         getPayload(std::string hash) {return payload();}
 
-	void setGlobalTag(std::string gt) {fGT = gt;}
 	void setVerbosity(int v) {fVerbose = v;}
   
   void        setName(std::string n) {fName = n;}
@@ -43,25 +35,14 @@ public:
 	void print(std::map<std::string, std::vector<std::string>>);
 	void print(std::map<std::string, std::vector<int>>);
 
-protected: 
-	virtual void readGlobalTags() {};
-	virtual void readTags() {};
-	virtual void readIOVs() {};
+	virtual std::vector<std::string>                readGlobalTags(std::string gt) {return std::vector<std::string>();}
+	virtual std::vector<std::string>                readTags(std::string gt) {return std::vector<std::string>();}
+	virtual std::map<std::string, std::vector<int>> readIOVs(std::vector<std::string> tags) {return std::map<std::string, std::vector<int>>();}
 
-	int whichIOV(int run, std::string tag);
+protected: 
 	
-  std::string fGT{"GT unset"};
   std::string fURI{"URI unset"};
   int fVerbose{0};
-
-	// -- flag to indicate that all GTs have been read
-  bool fValidGlobalTags{false}; 
-	// -- all global tags in the DB
-  std::vector<std::string> fGlobalTags;                    
-	// -- for the set global tag
-  std::vector<std::string> fTags;
-  // -- list of IOVs for each tag for the set GT
-  std::map<std::string, std::vector<int>> fIOVs;           
 
   // -- know what you are
   std::string fName{"cdbAbs base"};

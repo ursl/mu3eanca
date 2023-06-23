@@ -63,35 +63,31 @@ void cdbMongo::init() {
 }
 
 // ----------------------------------------------------------------------
-void cdbMongo::readGlobalTags() {
-  fGlobalTags.clear();
-  cout << "cdbMongo::readGlobalTags() fValidGlobalTags = " << fValidGlobalTags << endl;
-  if (!fValidGlobalTags) {
-    mongocxx::cursor cursor = fDB["globaltags"].find({});
-    for (auto doc : cursor) {
-      if (fVerbose > 1) {
-        cout << "cdbMongo::readGlobalTags()> "
-             << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed)
-             << endl;
-      }
-      assert(doc["_id"].type() == bsoncxx::type::k_oid);
-      string tname = string(doc["gt"].get_string().value).c_str();
-      fGlobalTags.push_back(tname); 
+vector<string> cdbMongo::readGlobalTags(string gt) {
+  vector<string> v;
+  mongocxx::cursor cursor = fDB["globaltags"].find({});
+  for (auto doc : cursor) {
+    if (fVerbose > 1) {
+      cout << "cdbMongo::readGlobalTags()> "
+           << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed)
+           << endl;
     }
-    fValidGlobalTags = true;
+    assert(doc["_id"].type() == bsoncxx::type::k_oid);
+    string tname = string(doc["gt"].get_string().value).c_str();
+    v.push_back(tname); 
   }
   if (fVerbose > 0) {
-    cout << "cdbMongo::readGlobalTags()> fGlobalTags = ";
-    print(fGlobalTags);
+    cout << "cdbMongo::readGlobalTags()> readGlobalTags = ";
+    print(v);
   }
-  return;
+  return v;
 }
 
 
 // ----------------------------------------------------------------------
-void cdbMongo::readTags() {
-  fTags.clear();
-  auto cursor_filtered =  fDB["globaltags"].find(make_document(kvp("gt", fGT)));
+vector<string> cdbMongo::readTags(string gt) {
+  vector<string> v;
+  auto cursor_filtered =  fDB["globaltags"].find(make_document(kvp("gt", gt)));
   for (auto doc : cursor_filtered) {
     // -- print it 
     // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
@@ -99,19 +95,20 @@ void cdbMongo::readTags() {
     bsoncxx::array::view subarr{doc["tags"].get_array()};
     for (bsoncxx::array::element ele : subarr) {
       string tname = string(ele.get_string().value).c_str();
-      fTags.push_back(tname); 
+      v.push_back(tname); 
     }
   }
   if (fVerbose > 0) {
-    cout << "cdbMongo::readTags()> for GT = " << fGT << ": ";
-    print(fTags);
+    cout << "cdbMongo::readTags()> for GT = " << gt << ": ";
+    print(v);
   }
-  return;
+  return v;
 }
 
 
 // ----------------------------------------------------------------------
-void cdbMongo::readIOVs() {
+map<string, vector<int>> cdbMongo::readIOVs(vector<string> tags) {
+  map<string, vector<int>> m;
   auto cursor =  fDB["iovs"].find({});
   for (auto doc : cursor) {
     // -- print it 
@@ -119,28 +116,22 @@ void cdbMongo::readIOVs() {
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
     string tname = string(doc["tag"].get_string().value).c_str();
     // -- look only at tags in fGT
-    if (fTags.end() == find(fTags.begin(), fTags.end(), tname)) continue;
+    if (tags.end() == find(tags.begin(), tags.end(), tname)) continue;
     bsoncxx::array::view subarr{doc["iovs"].get_array()};
     vector<int> viov; 
     for (bsoncxx::array::element ele : subarr) {
       int iov = ele.get_int32().value;
       viov.push_back(iov);
     }
-    fIOVs.insert(make_pair(tname, viov)); 
+    m.insert(make_pair(tname, viov)); 
   }
 
   if (fVerbose > 1) {
     cout << "cdbMongo::readIOVs>" << endl;
-    print(fIOVs);
+    print(m);
   }
-  return;
-}
-
-
-// ----------------------------------------------------------------------
-payload cdbMongo::getPayload(int irun, string tag) {
-  string hash = getHash(irun, tag);
-  return getPayload(hash);
+  
+  return m;
 }
 
 

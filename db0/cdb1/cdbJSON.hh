@@ -14,14 +14,13 @@ public:
   ~cdbJSON();
 
   void                 init();
-  payload              getPayload(int irun, std::string t) override;
   payload              getPayload(std::string hash) override;
 
-protected:
-	void readTags() override;
-	void readGlobalTags() override;
-	void readIOVs() override;
+  std::vector<std::string>                 readGlobalTags(std::string gt) override;
+  std::vector<std::string>                 readTags(std::string gt) override;
+	std::map<std::string, std::vector<int> > readIOVs(std::vector<std::string> tags) override;
 
+protected:
   std::vector<std::string> allFiles(std::string dirName);
 
   

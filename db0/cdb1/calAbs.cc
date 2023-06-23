@@ -1,6 +1,7 @@
 #include "calAbs.hh"
 
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -24,32 +25,29 @@ calAbs::~calAbs() {
 
 
 // ----------------------------------------------------------------------
-void calAbs::update(int irun) {
+void calAbs::update(string hash) {
 	if (!fDB) {
     cout << "ERROR: no database handle provided" << endl;
     return;
   }
-  string hash = fDB->getHash(irun, fTag);
 
   if (fVerbose > 0) cout << "calAbs::update() hash = " << hash << endl;
   
   if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
-    if (fVerbose > 0) cout << "calAbs::getPayload(" << irun
+    if (fVerbose > 0) cout << "calAbs::getPayload(" << hash
                            << ") not cached, retrieve from DB"
-                           << " irun ->" << irun << "<-"
-                           << " fTag ->" << fTag << "<-"
-                           << " hash ->" << hash << "<-"
                            << endl;
     payload pl = fDB->getPayload(hash);
     fTagIOVPayloadMap.insert(make_pair(hash, pl));
-    fHash = hash; 
-    calculate();
+    calculate(hash);
+    fHash = hash;
   } else {
-    if (fVerbose > 0) cout << "calAbs::getPayload(" << irun
-                           << ") cached. fHash = " << fHash
+    if (fVerbose > 0) cout << "calAbs::getPayload(" << hash
+                           << ") cached."
                            << endl;
   }
   if (hash != fHash) {
-    calculate();
+    calculate(hash);
   }
 }
+
