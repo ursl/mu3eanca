@@ -9,7 +9,6 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 calPixelAlignment::calPixelAlignment(cdbAbs *db) : calAbs(db) {
-  db->registerCalibration("thisshouldnothappen", this);
 }
 
 
@@ -32,7 +31,6 @@ bool calPixelAlignment::getNextID(uint32_t &ID) {
 calPixelAlignment::calPixelAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
 	cout << "calPixelAlignment created and registered with tag ->" << fTag << "<-" 
 			 << endl;
-  db->registerCalibration(fTag, this);
 }
 
 

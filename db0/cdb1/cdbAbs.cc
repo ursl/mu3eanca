@@ -54,24 +54,6 @@ string cdbAbs::getHash(int runnumber, string tag) {
 
 
 // ----------------------------------------------------------------------
-void cdbAbs::setRunNumber(int runnumber) {
-  if (fVerbose > 0)   cout << "cdbAbs::setRunNumber(" << runnumber << "), old runnumber = " 
-                           << fRunNumber
-                           << " fCalibrations.size() = " << fCalibrations.size()
-                           << endl;
-  
-	if (runnumber != fRunNumber) {
-		fRunNumber = runnumber;
-    // -- call update for all registered calibrations
-    //    each calibration will check with its tag/IOV whether an update is required
-    for (auto it: fCalibrations) {
-      it.second->update();
-    }
-	}
-}
-
-
-// ----------------------------------------------------------------------
 void cdbAbs::print(std::vector<int> v, int istart) {
 	for (unsigned int i = istart; i < v.size(); ++i) {
 		cout << v[i] << " ";
@@ -109,29 +91,3 @@ void cdbAbs::print(std::map<std::string, std::vector<int>> m) {
 }
 
 
-// ----------------------------------------------------------------------
-void cdbAbs::registerCalibration(string tag, calAbs *c) {
-  cout << "cdbAbs::registerCalibration name ->" << c->getName()
-       << "<- with tag ->" << tag << "<-"
-       << endl;
-  fCalibrations.insert(make_pair(tag, c));
-  cout << "   done" << endl;
-}
-
-
-// ----------------------------------------------------------------------
-void cdbAbs::printCalibrations() {
-  for (auto it: fCalibrations) {
-    cout << it.second->getName() << endl;
-  }
-}
-
-
-// ----------------------------------------------------------------------
-calAbs* cdbAbs::getCalibration(std::string name) {
-  for (auto it: fCalibrations) {
-    cout << "  looking at " << it.first << endl;
-    if (string::npos != it.first.find(name)) return it.second;
-  }  
-  return 0;
-}

@@ -24,8 +24,7 @@ calAbs::~calAbs() {
 
 
 // ----------------------------------------------------------------------
-void calAbs::update() {
-  int irun = fDB->getRunNumber();
+void calAbs::update(int irun) {
 	if (!fDB) {
     cout << "ERROR: no database handle provided" << endl;
     return;

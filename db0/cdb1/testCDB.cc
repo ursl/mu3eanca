@@ -3,6 +3,7 @@
 #include <vector>
 #include <string.h>
 
+#include "Mu3eConditions.hh"
 #include "cdbMongo.hh"
 #include "cdbJSON.hh"
 #include "cdbRest.hh"
@@ -58,16 +59,22 @@ int main(int argc, char* argv[]) {
     cout << "ERROR: " << db << " not known." << endl;
     return 0;
   }
-  
-  // -- calibration classes instantiation and registration must happen before setting the run number in the CBD
-  cdbClassFactory *cdbcf = cdbClassFactory::instance(pDB);
-  if (verbose > 0) cdbcf->setVerbosity(verbose);
 
-  calAbs *cal0 = cdbcf->createClass("pixelalignment_");
+  Mu3eConditions *pMUC = Mu3eConditions::instance(pDB);
+  pMUC->setVerbosity(verbose);
+  
+  calAbs *cal0 = pMUC->createClass("pixelalignment_");
   if (verbose > 0) cal0->setVerbosity(verbose);
+  
+  // // -- calibration classes instantiation and registration must happen before setting the run number in the CBD
+  // cdbClassFactory *cdbcf = cdbClassFactory::instance(pDB);
+  // if (verbose > 0) cdbcf->setVerbosity(verbose);
+
+  // calAbs *cal0 = cdbcf->createClass("pixelalignment_");
+  // if (verbose > 0) cal0->setVerbosity(verbose);
     
-  pDB->setRunNumber(3);
-  cout << "set run number to " << pDB->getRunNumber() << endl;
+  pMUC->setRunNumber(3);
+  cout << "set run number to " << pMUC->getRunNumber() << endl;
 
   
   if (0 == mode) {
@@ -75,7 +82,7 @@ int main(int argc, char* argv[]) {
     printStuff(pDB);
     cout << "----------------------------------------------------------------------" << endl;
   } else if (1 == mode) {
-    cout << "run = " << pDB->getRunNumber() << " payload hash -> " << cal0->getHash() << "<-" << endl;
+    cout << "run = " << pMUC->getRunNumber() << " payload hash -> " << cal0->getHash() << "<-" << endl;
   } else if (2 == mode) {
     aFewRuns(pDB, gt, cal0);  
   }
@@ -108,14 +115,15 @@ void printStuff(cdbAbs *db) {
 void aFewRuns(cdbAbs *db, string gt, calAbs *cal) {
   cout << "DB " << db->getGlobalTag() << endl;
   vector<int> vruns{23,24,157,201,202};
-  db->printCalibrations();
+  Mu3eConditions *pMUC = Mu3eConditions::instance();
+  pMUC->printCalibrations();
 
-  calAbs *cl = db->getCalibration("pixelalignment_");
+  calAbs *cl = pMUC->getCalibration("pixelalignment_");
   std::cout << "cl = " << cl << std::endl;
 
   calPixelAlignment *al = dynamic_cast<calPixelAlignment*>(cal);
   for (auto it: vruns) {
-    db->setRunNumber(it);
+    pMUC->setRunNumber(it);
     cout << "now for run = " << it << " payload hash ->" << cal->getHash() << "<-" << endl;
     double vx;
     al->setVxAddr(&vx);
