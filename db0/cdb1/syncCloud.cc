@@ -22,6 +22,7 @@ using namespace std;
 
 string gApiKey, gCurlReadBuffer; 
 
+string gURI("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
 
 // ----------------------------------------------------------------------
 static size_t cdbRestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -30,14 +31,8 @@ static size_t cdbRestWriteCallback(void *contents, size_t size, size_t nmemb, vo
 }
 
 // ----------------------------------------------------------------------
-void doCurl(string collection, string payload, string api) {
+void writeCurl(string collection, string payload) {
   CURL *curl = curl_easy_init();
-
-  ifstream INS("api-key.private");
-  getline(INS, gApiKey);
-  INS.close();
-  gApiKey = "api-key: " + gApiKey;
-
  
   if (!curl) {
     cout << "cdbRest::init()> ERROR failed to setup curl?!" << endl;
@@ -45,7 +40,7 @@ void doCurl(string collection, string payload, string api) {
   }
 
   gCurlReadBuffer.clear();
-  string sapi("findOne");
+  string sapi = gURI + ("insertOne");
 
   curl_easy_setopt(curl, CURLOPT_URL, sapi.c_str());
 
@@ -54,18 +49,19 @@ void doCurl(string collection, string payload, string api) {
   headers = curl_slist_append(headers, "Access-Control-Request-Headers: *");
   headers = curl_slist_append(headers, gApiKey.c_str());
   
-  //  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &gCurlReadBuffer);
 
   stringstream sstr;
   sstr << "{\"collection\":\"" << collection
-       << "\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"";
+       << "\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\",";
+  sstr << " \"document\": " << payload;
   sstr << "}";
 
   string theString = sstr.str(); 
-  //  cout << "theString = " << theString << endl;
+  cout << "theString = " << theString << endl;
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, theString.c_str());
  
   CURLcode curlRes = curl_easy_perform(curl);
@@ -74,6 +70,7 @@ void doCurl(string collection, string payload, string api) {
               << gCurlReadBuffer
               << endl;
 }
+
 
 
 // ----------------------------------------------------------------------
@@ -93,6 +90,19 @@ int main(int argc, char* argv[]) {
     exit(1);
   }
 
+  ifstream INS("api-key.private");
+  getline(INS, gApiKey);
+  INS.close();
+  gApiKey = "api-key: " + gApiKey;
+
+  string collectionName("json/globaltags/mc23intrun"), collectionContents;
+  INS.open(collectionName);
+  getline(INS, collectionContents);
+  INS.close();
+  // cout << "collectionName ->" << collectionName << "<-" << endl;
+  // cout << "collectionContents ->" << collectionContents << "<-" << endl;
+
+  writeCurl("globaltags", collectionContents);
   
   
   
