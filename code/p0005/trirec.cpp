@@ -14,6 +14,7 @@
 #include "Mu3eConditions.hh"
 #include "cdbAbs.hh"
 #include "cdbJSON.hh"
+#include "cdbRest.hh"
 #include "calPixelAlignment.hh"
 
 #if defined(MU3E_TRIREC_DISPLAY)
@@ -281,18 +282,6 @@ struct trirec_t {
 int main(int argc, const char* argv[]) {
     namespace po = boost::program_options;
 
-    int dbverbose(10); 
-    cdbAbs *pDB(0);
-    std::string gt = "dt23prompt";
-    pDB = new cdbJSON(gt, "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1/json", dbverbose);
-    
-    Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
-
-    calAbs *cal = pDC->createClass("pixelalignment_");
-    //    pDC->setRunNumber(10);
-    pDC->setRunNumber(779);
- 
-
     /**
      * Handle ^C.
      *
@@ -326,10 +315,12 @@ int main(int argc, const char* argv[]) {
     std::vector<std::string> confFiles;
     int n = -1, skip = 0;
 
+    std::string dbconn("fixme");
     po::options_description opts;
     opts.add_options()
         ("input", po::value(&input), "input root file (mu3eSim)")
         ("output", po::value(&output), "output root file")
+        ("dbconn", po::value(&dbconn), "DB connection method (json,rest)")
         (",n", po::value(&n), "number of frames to process")
         ("skip,s", po::value(&skip), "number of frames to skip")
         ("conf", po::value(&confFiles), ".conf or .json file")
@@ -378,6 +369,27 @@ int main(int argc, const char* argv[]) {
 
     mu3e::rec::conf.verbose = verbose.n;
 
+ 
+    int dbverbose(10); 
+    cdbAbs *pDB(0);
+    std::string gt = "dt23prompt";
+    if (dbconn == "rest") {
+      pDB = new cdbRest(gt, "https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/",
+                        dbverbose);
+    } else if (dbconn == "json") {
+      pDB = new cdbJSON(gt, "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1/json", dbverbose);
+    } else {
+      std::cout << "NO DB connection defined. Exit!" << std::endl;
+      exit(1);
+    }
+    
+    Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
+
+    calAbs *cal = pDC->createClass("pixelalignment_");
+    //    pDC->setRunNumber(10);
+    pDC->setRunNumber(779);
+
+    
     if(vm.count("version")) {
         fmt::print("mu3e/rec {}\n", BOOST_PP_STRINGIZE(MU3E_VERSION));
         return 0;
