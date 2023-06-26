@@ -54,9 +54,10 @@ lib: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS) 
 
 
-bin: lib obj/testCDB.o obj/fillDB.o 
+bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS)  
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncCloud.o -o bin/syncCloud $(LIBCURL) $(GLIBS)  
 
 clean:
 	rm -f obj/*.o lib/*.so bin/testCDB bin/fillDB
