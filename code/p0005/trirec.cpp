@@ -316,11 +316,13 @@ int main(int argc, const char* argv[]) {
     int n = -1, skip = 0;
 
     std::string dbconn("fixme");
+    int run(779);
     po::options_description opts;
     opts.add_options()
         ("input", po::value(&input), "input root file (mu3eSim)")
         ("output", po::value(&output), "output root file")
         ("dbconn", po::value(&dbconn), "DB connection method (json,rest)")
+        ("run", po::value(&run), "run number")
         (",n", po::value(&n), "number of frames to process")
         ("skip,s", po::value(&skip), "number of frames to skip")
         ("conf", po::value(&confFiles), ".conf or .json file")
@@ -386,8 +388,8 @@ int main(int argc, const char* argv[]) {
     Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
 
     calAbs *cal = pDC->createClass("pixelalignment_");
-    //    pDC->setRunNumber(10);
-    pDC->setRunNumber(779);
+    std::cout << "setting run number " << run << std::endl;
+    pDC->setRunNumber(run);
 
     
     if(vm.count("version")) {
