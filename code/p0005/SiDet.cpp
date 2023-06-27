@@ -339,8 +339,8 @@ void SiDet::readSensors(Sensor::map_t& sensors, TTree* tree) {
         return;
     }
 
-    if (1) {
-      Mu3eConditions *pDC = Mu3eConditions::instance();
+    Mu3eConditions *pDC = Mu3eConditions::instance();
+    if (pDC->getDB()) {
       std::cout << "Mu3eConditions with gt =  " << pDC->getGlobalTag()
                 << " and db = " << pDC->getDB()->getName()
                 << std::endl;
@@ -395,9 +395,7 @@ void SiDet::readSensors(Sensor::map_t& sensors, TTree* tree) {
         sensor.deform.dTu = entry.dTu;
         sensor.deform.dTv = entry.dTv;
       }
-    }
-    
-    if (0) {
+    } else {
       mu3e::root::alignment_sensors_t entry(tree);
       entry.set_branch_address();
       

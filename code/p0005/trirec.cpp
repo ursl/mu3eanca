@@ -381,8 +381,8 @@ int main(int argc, const char* argv[]) {
     } else if (dbconn == "json") {
       pDB = new cdbJSON(gt, "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1/json", dbverbose);
     } else {
-      std::cout << "NO DB connection defined. Exit!" << std::endl;
-      exit(1);
+      std::cout << "NO DB connection defined. Use root:alignment/*" << std::endl;
+      //      exit(1);
     }
     
     Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
