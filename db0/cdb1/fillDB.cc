@@ -14,6 +14,8 @@
 #include <bsoncxx/builder/stream/array.hpp>
 #include <chrono>
 
+#include "cdbUtil.hh"
+#include "base64.hh"
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -68,7 +70,7 @@ int main(int argc, char* argv[]) {
 
 	auto builder = document{};
     
-  mongocxx::instance instance{};
+  //  mongocxx::instance instance{};
   mongocxx::uri URI;
   if (string::npos != password.find("fixme")) {
     URI = mongocxx::uri("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
@@ -231,38 +233,27 @@ int main(int argc, char* argv[]) {
 			stringstream sh; 
 			sh << "tag_" << iiov.first;
 			sh << "_iov_" << it;
-			stringstream sp0, sp1;
 
       std::ifstream file;
       if (string::npos != iiov.first.find("intrun")) {
-        if (0 == cnt%2) file.open("../ascii/sensors-intrun.csv");
-        if (1 == cnt%2) file.open("../ascii/sensors-intrun-1.csv");
+        if (0 == cnt%2) file.open("../ascii/sensors-intrun.bin");
+        if (1 == cnt%2) file.open("../ascii/sensors-intrun-1.bin");
       } else {
-        if (0 == cnt%2) file.open("../ascii/sensors-full.csv");
-        if (1 == cnt%2) file.open("../ascii/sensors-full-1.csv");
+        if (0 == cnt%2) file.open("../ascii/sensors-full.bin");
+        if (1 == cnt%2) file.open("../ascii/sensors-full-1.bin");
       }
-      string sline; 
-      bool first(true);
-      while (getline(file, sline)) {
-        if (first) {
-          first = false;
-        } else {
-          sp0 << ",";
-        }
-        sp0 << sline;
-      }
-      file.close();
-      // -- kludge to remove trailing ","
-      string stmp = sp0.str();
-      cout << "stmp.size() = " << stmp.size() << endl;
-      stmp.erase(stmp.size(), 1);
-      sp1 << stmp; 
-			cout << sh.str() << "-> " << sp1.str() << endl;
-			
+      vector<char> buffer(std::istreambuf_iterator<char>(file), {});
+      string sblob("");
+      for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
+      std::vector<char>::iterator ibuffer = buffer.begin();
+      long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+      cout << "header: " << hex
+           << header << endl;
+      
 			bsoncxx::document::value doc_value = builder
 				<< "hash" << sh.str()
 				<< "comment" << "testing"
-				<< "BLOB" << sp1.str()
+				<< "BLOB" << base64_encode(sblob)
 				<< finalize; 
 			
       if (!json) {
