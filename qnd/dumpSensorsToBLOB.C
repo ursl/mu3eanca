@@ -75,7 +75,7 @@ void printArray(ofstream &OS, std::array<char,8> v) {
 
 
 // ----------------------------------------------------------------------
-void writeBlob(string filename = "sensors.bin") {
+void writeBlob(string filename = "sensors.bin", bool modify = false) {
   TTree *t = (TTree*)gFile->Get("alignment/sensors");
   double vx, vy, vz;
   double rowx, rowy, rowz;
@@ -108,8 +108,12 @@ void writeBlob(string filename = "sensors.bin") {
 
   ofstream ONS;
   ONS.open(filename);
-  //  printArray(ONS, uint2Blob(header));
-  ONS << dumpArray(uint2Blob(header));
+  if (0) {
+    printArray(ONS, uint2Blob(header));
+  }
+  if (1) {
+    ONS << dumpArray(uint2Blob(header));
+  }
   
   char data[8], data1[8], data2[8]; 
   for (unsigned int i = 0; i < t->GetEntries(); ++i) {
@@ -121,11 +125,28 @@ void writeBlob(string filename = "sensors.bin") {
                 << " rest: " << nrow << "/" << ncol << "/" << width
                 << "/" << length << "/" << thickness << "/" << pixelSize
                 << endl;
+    double mx, my, mz;
+    if (modify) {
+      if (0 == i%2) {
+        mx = vx + 0.0001;
+        my = vy + 0.0001;
+        mz = vz + 0.0001;
+      } else {
+        mx = vx - 0.0001;
+        my = vy - 0.0001;
+        mz = vz - 0.0001;
+      }
+    } else {
+      mx = vx;
+      my = vy;
+      mz = vz;
+    }
+
     if (0) {
       printArray(ONS, uint2Blob(sensor));
-      printArray(ONS, double2Blob(vx));
-      printArray(ONS, double2Blob(vy));
-      printArray(ONS, double2Blob(vz));
+      printArray(ONS, double2Blob(mx));
+      printArray(ONS, double2Blob(my));
+      printArray(ONS, double2Blob(mz));
       printArray(ONS, double2Blob(rowx));
       printArray(ONS, double2Blob(rowy));
       printArray(ONS, double2Blob(rowz));
@@ -142,9 +163,9 @@ void writeBlob(string filename = "sensors.bin") {
     
     if (1) {
       ONS << dumpArray(uint2Blob(sensor)) 
-          << dumpArray(double2Blob(vx)) 
-          << dumpArray(double2Blob(vy)) 
-          << dumpArray(double2Blob(vz)) 
+          << dumpArray(double2Blob(mx)) 
+          << dumpArray(double2Blob(my)) 
+          << dumpArray(double2Blob(mz)) 
           << dumpArray(double2Blob(rowx))
           << dumpArray(double2Blob(rowy))
           << dumpArray(double2Blob(rowz))
@@ -165,7 +186,7 @@ void writeBlob(string filename = "sensors.bin") {
 
 
 // ----------------------------------------------------------------------
-std::array<char,8> getData(vector<char>::iterator it) {
+std::array<char,8> getData(vector<char>::iterator &it) {
   array<char,8> v;
   for (unsigned int i = 0; i < 8; ++i) {
     v[i] = *it;
@@ -191,26 +212,26 @@ void readBlob(string filename = "sensors.bin") {
   vector<char> buffer(std::istreambuf_iterator<char>(INS), {});
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  header = blob2UInt(getData(ibuffer)); ibuffer += 8;
+  header = blob2UInt(getData(ibuffer)); 
   cout << "header: " << hex << header << dec << endl;
 
   while (ibuffer != buffer.end()) {
-    sensor = blob2UInt(getData(ibuffer)); ibuffer += 8;
-    vx = blob2Double(getData(ibuffer)); ibuffer += 8;
-    vy = blob2Double(getData(ibuffer)); ibuffer += 8;
-    vz = blob2Double(getData(ibuffer)); ibuffer += 8;
-    rowx = blob2Double(getData(ibuffer)); ibuffer += 8;
-    rowy = blob2Double(getData(ibuffer)); ibuffer += 8;
-    rowz = blob2Double(getData(ibuffer)); ibuffer += 8;
-    colx = blob2Double(getData(ibuffer)); ibuffer += 8;
-    coly = blob2Double(getData(ibuffer)); ibuffer += 8;
-    colz = blob2Double(getData(ibuffer)); ibuffer += 8;
-    nrow = blob2Int(getData(ibuffer)); ibuffer += 8;
-    ncol = blob2Int(getData(ibuffer)); ibuffer += 8;
-    width = blob2Double(getData(ibuffer)); ibuffer += 8;
-    length = blob2Double(getData(ibuffer)); ibuffer += 8;
-    thickness = blob2Double(getData(ibuffer)); ibuffer += 8;
-    pixelSize = blob2Double(getData(ibuffer)); ibuffer += 8;
+    sensor = blob2UInt(getData(ibuffer));
+    vx = blob2Double(getData(ibuffer));
+    vy = blob2Double(getData(ibuffer));
+    vz = blob2Double(getData(ibuffer));
+    rowx = blob2Double(getData(ibuffer));
+    rowy = blob2Double(getData(ibuffer));
+    rowz = blob2Double(getData(ibuffer));
+    colx = blob2Double(getData(ibuffer));
+    coly = blob2Double(getData(ibuffer));
+    colz = blob2Double(getData(ibuffer));
+    nrow = blob2Int(getData(ibuffer));
+    ncol = blob2Int(getData(ibuffer));
+    width = blob2Double(getData(ibuffer));
+    length = blob2Double(getData(ibuffer));
+    thickness = blob2Double(getData(ibuffer));
+    pixelSize = blob2Double(getData(ibuffer));
     
     if (1) cout << "sensor = " << sensor
                 << " v x/y/z = " << vx << "/" << vy << "/" << vz
@@ -220,5 +241,4 @@ void readBlob(string filename = "sensors.bin") {
                 << "/" << length << "/" << thickness << "/" << pixelSize
                 << endl;
   }
-  
 }
