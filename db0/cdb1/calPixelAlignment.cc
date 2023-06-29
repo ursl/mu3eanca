@@ -1,9 +1,10 @@
 #include "calPixelAlignment.hh"
 
+#include "cdbUtil.hh"
+
 #include <iostream>
 #include <sstream>
 
-#include "cdbUtil.hh"
 
 using namespace std;
 
@@ -47,29 +48,36 @@ void calPixelAlignment::calculate(string hash) {
        << endl;
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
-  vector<string> tokens = split(spl, ',');
-  for (unsigned int i = 0; i < tokens.size(); i += 16) {
+
+  std::vector<char> buffer(spl.begin(), spl.end());
+  std::vector<char>::iterator ibuffer = buffer.begin();
+  
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+  cout << "header: " << hex << header << dec << endl;
+
+  while (ibuffer != buffer.end()) {
     constants a; 
-    a.id        = static_cast<uint32_t>(stoi(tokens[i]));
-    a.vx        = stod(tokens[i+1]);
-    a.vy        = stod(tokens[i+2]);
-    a.vz        = stod(tokens[i+3]);
-    a.rowx      = stod(tokens[i+4]);
-    a.rowy      = stod(tokens[i+5]);
-    a.rowz      = stod(tokens[i+6]);
-    a.colx      = stod(tokens[i+7]);
-    a.coly      = stod(tokens[i+8]);
-    a.colz      = stod(tokens[i+9]);
-    a.nrow      = stoi(tokens[i+10]);
-    a.ncol      = stoi(tokens[i+11]);
-    a.width     = stod(tokens[i+12]);
-    a.length    = stod(tokens[i+13]);
-    a.thickness = stod(tokens[i+14]);
-    a.pixelSize = stod(tokens[i+15]);
+    a.id = blob2UnsignedInt(getData(ibuffer));
+    a.vx = blob2Double(getData(ibuffer));
+    a.vy = blob2Double(getData(ibuffer));
+    a.vz = blob2Double(getData(ibuffer));
+    a.rowx = blob2Double(getData(ibuffer));
+    a.rowy = blob2Double(getData(ibuffer));
+    a.rowz = blob2Double(getData(ibuffer));
+    a.colx = blob2Double(getData(ibuffer));
+    a.coly = blob2Double(getData(ibuffer));
+    a.colz = blob2Double(getData(ibuffer));
+    a.nrow = blob2Int(getData(ibuffer));
+    a.ncol = blob2Int(getData(ibuffer));
+    a.width = blob2Double(getData(ibuffer));
+    a.length = blob2Double(getData(ibuffer));
+    a.thickness = blob2Double(getData(ibuffer));
+    a.pixelSize = blob2Double(getData(ibuffer));
 
     fMapConstants.insert(make_pair(a.id, a));
   }
-  // -- set iterator over all constants to start
+
+  // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
 

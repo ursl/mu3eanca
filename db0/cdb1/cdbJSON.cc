@@ -1,5 +1,7 @@
 #include "cdbJSON.hh"
 
+#include "base64.hh"
+
 #include <fstream>
 #include <iostream>
 #include <algorithm>
@@ -165,7 +167,7 @@ payload cdbJSON::getPayload(string hash) {
   bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
   pl.fComment = string(doc["comment"].get_string().value).c_str();
   pl.fHash    = string(doc["hash"].get_string().value).c_str();
-  pl.fBLOB    = string(doc["BLOB"].get_string().value).c_str();
+  pl.fBLOB    = base64_decode(string(doc["BLOB"].get_string().value));
 
   return pl;
 }
