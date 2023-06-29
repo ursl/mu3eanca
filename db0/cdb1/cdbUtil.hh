@@ -30,6 +30,8 @@ std::array<char,8> int2Blob(int a);
 std::array<char,8> uint2Blob(unsigned int a);
 std::array<char,8> double2Blob(double a);
 
+std::array<char,8> getData(std::vector<char>::iterator &it);
+
 std::string dumpArray(std::array<char,8> v);
 void printArray(std::ofstream &OS, std::array<char,8> v);
 

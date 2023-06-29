@@ -71,6 +71,17 @@ std::array<char,8> double2Blob(double a) {
 
 
 // ----------------------------------------------------------------------
+std::array<char,8> getData(vector<char>::iterator &it) {
+  array<char,8> v;
+  for (unsigned int i = 0; i < 8; ++i) {
+    v[i] = *it;
+    ++it;
+  }
+  return v;
+}
+
+
+// ----------------------------------------------------------------------
 string dumpArray(std::array<char,8> v) {
   stringstream sstr;
   for (auto it: v) sstr << it; 
