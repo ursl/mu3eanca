@@ -53,7 +53,7 @@ void calFibresAlignment::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-  cout << "header: " << hex << header << dec << endl;
+  cout << "calFibresAlignment header: " << hex << header << dec << endl;
 
   while (ibuffer != buffer.end()) {
     constants a; 
@@ -64,8 +64,8 @@ void calFibresAlignment::calculate(string hash) {
     a.fx = blob2Double(getData(ibuffer));
     a.fy = blob2Double(getData(ibuffer));
     a.fz = blob2Double(getData(ibuffer));
-    a.round = blob2Bool(getData(ibuffer));
-    a.square = blob2Bool(getData(ibuffer));
+    a.round = static_cast<bool>(blob2UInt(getData(ibuffer)));
+    a.square = static_cast<bool>(blob2UInt(getData(ibuffer)));
     a.diameter = blob2Double(getData(ibuffer));
 
     fMapConstants.insert(make_pair(a.id, a));
