@@ -31,9 +31,6 @@ public:
   double diameter(uint32_t id) {return fMapConstants[id].diameter;}
 
   void setVxAddr(double *ptr) {fpvx = ptr;}
-
-  void setVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
-  void fillVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
   
   std::string getName() override {return fFibresAlignmentTag;}
   void        calculate(std::string hash) override;
