@@ -235,12 +235,13 @@ int main(int argc, char* argv[]) {
 			sh << "_iov_" << it;
 
       std::ifstream file;
+      // -- Note: 779 should be the same as the normal one
       if (string::npos != iiov.first.find("intrun")) {
-        if (0 == cnt%2) file.open("../ascii/sensors-intrun.bin");
-        if (1 == cnt%2) file.open("../ascii/sensors-intrun-1.bin");
+        if (1 == cnt%2) file.open("../ascii/sensors-intrun.bin");
+        if (0 == cnt%2) file.open("../ascii/sensors-intrun-1.bin");
       } else {
-        if (0 == cnt%2) file.open("../ascii/sensors-full.bin");
-        if (1 == cnt%2) file.open("../ascii/sensors-full-1.bin");
+        if (1 == cnt%2) file.open("../ascii/sensors-full.bin");
+        if (0 == cnt%2) file.open("../ascii/sensors-full-1.bin");
       }
       vector<char> buffer(std::istreambuf_iterator<char>(file), {});
       string sblob("");
@@ -283,13 +284,9 @@ int main(int argc, char* argv[]) {
 			sh << "_iov_" << it;
 
       std::ifstream file;
-      if (string::npos != iiov.first.find("intrun")) {
-        if (0 == cnt%2) file.open("../ascii/sensors-intrun.bin");
-        if (1 == cnt%2) file.open("../ascii/sensors-intrun-1.bin");
-      } else {
-        if (0 == cnt%2) file.open("../ascii/sensors-full.bin");
-        if (1 == cnt%2) file.open("../ascii/sensors-full-1.bin");
-      }
+      // -- Note: 779 should be the same as the normal one
+      if (0 == cnt%2) file.open("../ascii/fibres-full-1.bin");
+      if (1 == cnt%2) file.open("../ascii/fibres-full.bin");
       vector<char> buffer(std::istreambuf_iterator<char>(file), {});
       string sblob("");
       for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
