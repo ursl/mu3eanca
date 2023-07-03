@@ -30,8 +30,6 @@ public:
   bool square(uint32_t id) {return fMapConstants[id].square;}
   double diameter(uint32_t id) {return fMapConstants[id].diameter;}
 
-  void setVxAddr(double *ptr) {fpvx = ptr;}
-  
   std::string getName() override {return fFibresAlignmentTag;}
   void        calculate(std::string hash) override;
 
