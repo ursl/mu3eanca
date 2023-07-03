@@ -1,5 +1,5 @@
-#ifndef CALFIBRESLALIGNMENT_h
-#define CALFIBRESALIGNMENT_h
+#ifndef CALFIBRELALIGNMENT_h
+#define CALFIBREALIGNMENT_h
 
 #include "calAbs.hh"
 
@@ -9,13 +9,13 @@
 // ----------------------------------------------------------------------
 // fibres alignment class 
 // ----------------------------------------------------------------------
-class calFibresAlignment : public calAbs {
+class calFibreAlignment : public calAbs {
 public:
   
-  calFibresAlignment() = default;
-  calFibresAlignment(cdbAbs *db);
-  calFibresAlignment(cdbAbs *db, std::string tag);
-  ~calFibresAlignment();
+  calFibreAlignment() = default;
+  calFibreAlignment(cdbAbs *db);
+  calFibreAlignment(cdbAbs *db, std::string tag);
+  ~calFibreAlignment();
 
   // -- direct accessors
   uint32_t id(uint32_t id) {return fMapConstants[id].id;}
@@ -38,7 +38,7 @@ public:
   bool        getNextID(uint32_t &ID);
   
 private:
-  std::string fFibresAlignmentTag{"fibresalignment_"};
+  std::string fFibresAlignmentTag{"fibrealignment_"};
 
   // -- local and private
   struct constants {
