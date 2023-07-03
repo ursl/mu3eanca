@@ -95,10 +95,10 @@ int main(int argc, char* argv[]) {
   }
 
 	map<string, vector<string>> iniGlobalTags = {
-		{"dt23intrun", {"pixel_dt23intrun", "pixelalignment_dt23intrun", "fibresalignment_dt23intrun", "tiles_Nada"}}, 
-		{"dt23prompt", {"pixel_v0",         "pixelalignment_v0",         "fibresalignment_v0",         "tiles_A"}}, 
-		{"mcideal",    {"pixel_mcideal",    "pixelalignment_mcideal",    "fibresalignment_mcideal",    "tiles_mcideal"}}, 
-		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibresalignment_mc23intrun", "tiles_Nada"}}
+		{"dt23intrun", {"pixel_dt23intrun", "pixelalignment_dt23intrun", "fibrealignment_dt23intrun", "tiles_Nada"}}, 
+		{"dt23prompt", {"pixel_v0",         "pixelalignment_v0",         "fibrealignment_v0",         "tiles_A"}}, 
+		{"mcideal",    {"pixel_mcideal",    "pixelalignment_mcideal",    "fibrealignment_mcideal",    "tiles_mcideal"}}, 
+		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibrealignment_mc23intrun", "tiles_Nada"}}
 	};
 	
 	string jdir  = "json/globaltags";
@@ -145,15 +145,15 @@ int main(int argc, char* argv[]) {
 		{"pixel_mcideal", {1}},
 		{"pixel_mc23intrun", {200}}, 
     //
-		{"tiles_Nada", {1}}, 
-		{"tiles_A", {202,300,700}},
-		{"tiles_mcideal", {1}},
-		{"tiles_mc23ideal", {1}},
+		{"tile_Nada", {1}}, 
+		{"tile_A", {202,300,700}},
+		{"tile_mcideal", {1}},
+		{"tile_mc23ideal", {1}},
     //
-		{"fibresalignment_dt23intrun", {1,200}},
-		{"fibresalignment_v11", {202,400,800}},
-		{"fibresalignment_mcideal", {1,300}},
-		{"fibresalignment_mc23intrun", {150}}
+		{"fibrealignment_dt23intrun", {1,200}},
+		{"fibrealignment_v11", {202,400,800}},
+		{"fibrealignment_mcideal", {1,300}},
+		{"fibrealignment_mc23intrun", {150}}
 	};
 
 	jdir  = "json/iovs";
@@ -276,7 +276,7 @@ int main(int argc, char* argv[]) {
 
   // -- fibres
 	for (auto iiov: iniIovs) {
-    if (string::npos == iiov.first.find("pixelalignment")) continue;
+    if (string::npos == iiov.first.find("fibrealignment")) continue;
     int cnt(0); 
 		for (auto it : iiov.second) {
 			stringstream sh; 

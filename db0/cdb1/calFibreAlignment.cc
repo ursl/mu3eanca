@@ -1,4 +1,4 @@
-#include "calFibresAlignment.hh"
+#include "calFibreAlignment.hh"
 
 #include "cdbUtil.hh"
 
@@ -9,12 +9,12 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-calFibresAlignment::calFibresAlignment(cdbAbs *db) : calAbs(db) {
+calFibreAlignment::calFibreAlignment(cdbAbs *db) : calAbs(db) {
 }
 
 
 // ----------------------------------------------------------------------
-bool calFibresAlignment::getNextID(uint32_t &ID) {
+bool calFibreAlignment::getNextID(uint32_t &ID) {
   if (fMapConstantsIt == fMapConstants.end()) {
     // -- reset
     ID = 999999;
@@ -29,21 +29,21 @@ bool calFibresAlignment::getNextID(uint32_t &ID) {
 
 
 // ----------------------------------------------------------------------
-calFibresAlignment::calFibresAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calFibresAlignment created and registered with tag ->" << fTag << "<-" 
+calFibreAlignment::calFibreAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
+	cout << "calFibreAlignment created and registered with tag ->" << fTag << "<-" 
 			 << endl;
 }
 
 
 // ----------------------------------------------------------------------
-calFibresAlignment::~calFibresAlignment() {
-  cout << "this is the end of calFibresAlignment with tag ->" << fTag << "<-" << endl;
+calFibreAlignment::~calFibreAlignment() {
+  cout << "this is the end of calFibreAlignment with tag ->" << fTag << "<-" << endl;
 }
 
 
 // ----------------------------------------------------------------------
-void calFibresAlignment::calculate(string hash) {
-  cout << "calFibresAlignment::calculate() with "
+void calFibreAlignment::calculate(string hash) {
+  cout << "calFibreAlignment::calculate() with "
        << "fHash ->" << hash << "<-"
        << endl;
   fMapConstants.clear();
@@ -53,7 +53,7 @@ void calFibresAlignment::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-  cout << "calFibresAlignment header: " << hex << header << dec << endl;
+  cout << "calFibreAlignment header: " << hex << header << dec << endl;
 
   while (ibuffer != buffer.end()) {
     constants a; 
