@@ -10,6 +10,7 @@
 
 #include "calPixelAlignment.hh"
 #include "calFibreAlignment.hh"
+#include "calMppcAlignment.hh"
 
 using namespace std;
 
@@ -61,63 +62,48 @@ calAbs* Mu3eConditions::createClass(string name) {
     return 0;
   }
 
-  return createClass(name, tag); 
+  return createClassWithDB(name, tag, fDB); 
 }
 
 
 // ----------------------------------------------------------------------
 calAbs* Mu3eConditions::createClass(string name, string tag) {
-  if (!name.compare("pixelalignment_")) {
-    if (fVerbose > 0) cout << "Mu3eConditions::createClass("
-                           << name << ", " << tag << "), fDB = "
-                           << fDB->getName() 
-                           << endl;
-    calAbs* a = new calPixelAlignment(fDB, tag);
-    registerCalibration(tag, a);
-    return a;
-  } else if (!name.compare("fibrealignment_")) {
-    if (fVerbose > 0) cout << "Mu3eConditions::createClass("
-                           << name << ", " << tag << "), fDB = "
-                           << fDB->getName() 
-                           << endl;
-    calAbs* a = new calFibreAlignment(fDB, tag);
-    registerCalibration(tag, a);
-    return a;
-  } else {
-    cout << "ERROR: " << name << " is an unknown class. Nothing registered in Mu3Conditions" << endl;
-  }
-
-  return 0;
+  return createClassWithDB(name, tag, fDB); 
 }
 
 
 // ----------------------------------------------------------------------
 calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
+  calAbs* a(0);
   if (!name.compare("pixelalignment_")) {
+    a = new calPixelAlignment(db, tag);
     if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
                            << name << ", " << db->getName()
                            << ", " << tag << ")"
                            << ", " << db->getName() << ")"
                            << endl;
-    calAbs* a = new calPixelAlignment(db, tag);
-    a->setIOVs(getIOVs(tag));
-    registerCalibration(tag, a);
-    return a;
   } else if (!name.compare("fibrealignment_")) {
+    a = new calFibreAlignment(db, tag);
     if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
                            << name << ", " << db->getName()
                            << ", " << tag << ")"
                            << ", " << db->getName() << ")"
                            << endl;
-    calAbs* a = new calFibreAlignment(db, tag);
-    a->setIOVs(getIOVs(tag));
-    registerCalibration(tag, a);
-    return a;
+  } else if (!name.compare("mppcalignment_")) {
+    a = new calMppcAlignment(db, tag);
+    if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
+                           << name << ", " << db->getName()
+                           << ", " << tag << ")"
+                           << ", " << db->getName() << ")"
+                           << endl;
   } else {
     cout << "ERROR: " << name << " is an unknown class. Nothing registered in Mu3Conditions" << endl;
+    return 0;
   }
 
-  return 0;
+  a->setIOVs(getIOVs(tag));
+  registerCalibration(tag, a);
+  return a;
 }
 
 
