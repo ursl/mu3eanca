@@ -64,8 +64,8 @@ void calFibresAlignment::calculate(string hash) {
     a.fx = blob2Double(getData(ibuffer));
     a.fy = blob2Double(getData(ibuffer));
     a.fz = blob2Double(getData(ibuffer));
-    a.round = static_cast<bool>(blob2UInt(getData(ibuffer)));
-    a.square = static_cast<bool>(blob2UInt(getData(ibuffer)));
+    a.round = static_cast<bool>(blob2UnsignedInt(getData(ibuffer)));
+    a.square = static_cast<bool>(blob2UnsignedInt(getData(ibuffer)));
     a.diameter = blob2Double(getData(ibuffer));
 
     fMapConstants.insert(make_pair(a.id, a));
