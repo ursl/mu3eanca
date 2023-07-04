@@ -481,6 +481,13 @@ int main(int argc, const char* argv[]) {
             auto outputFile = new mu3e::RootFile(output, inputFile);
 
             trirec.root.init(outputFile);
+
+            // -- dump conditions
+            TDirectory *pDir = outputFile->mkdir("Mu3eConditions");
+            std::map<std::string, calAbs*> cals = pDC->getCalibrations();
+            for (auto it: cals) {
+              it.second->dump2Root(pDir);
+            }
         }
 
         std::cout << "HALLO" << std::endl;
