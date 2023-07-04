@@ -95,10 +95,10 @@ int main(int argc, char* argv[]) {
   }
 
 	map<string, vector<string>> iniGlobalTags = {
-		{"dt23intrun", {"pixel_dt23intrun", "pixelalignment_dt23intrun", "fibrealignment_dt23intrun", "tiles_Nada"}}, 
-		{"dt23prompt", {"pixel_v0",         "pixelalignment_v0",         "fibrealignment_v0",         "tiles_A"}}, 
-		{"mcideal",    {"pixel_mcideal",    "pixelalignment_mcideal",    "fibrealignment_mcideal",    "mppcalignment_mcideal", "tiles_mcideal"}}, 
-		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibrealignment_mc23intrun", "tiles_Nada"}}
+		{"dt23intrun", {"pixel_dt23intrun", "pixelalignment_dt23intrun", "fibrealignment_dt23intrun", "tilealignment_Nada"}}, 
+		{"dt23prompt", {"pixel_v0",         "pixelalignment_v0",         "fibrealignment_v0",         "tilealignment_A"}}, 
+		{"mcideal",    {"pixel_mcideal",    "pixelalignment_mcideal",    "fibrealignment_mcideal",    "mppcalignment_mcideal", "tilealignment_mcideal"}}, 
+		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibrealignment_mc23intrun", "tilealignment_Nada"}}
 	};
 	
 	string jdir  = "json/globaltags";
@@ -145,10 +145,10 @@ int main(int argc, char* argv[]) {
 		{"pixel_mcideal", {1}},
 		{"pixel_mc23intrun", {200}}, 
     //
-		{"tile_Nada", {1}}, 
-		{"tile_A", {202,300,700}},
-		{"tile_mcideal", {1}},
-		{"tile_mc23ideal", {1}},
+		{"tilealignment_Nada", {1}}, 
+		{"tilealignment_A", {202,300,700}},
+		{"tilealignment_mcideal", {1,400}},
+		{"tilealignment_mc23ideal", {1}},
     //
 		{"fibrealignment_dt23intrun", {1,200}},
 		{"fibrealignment_v11", {202,400,800}},
@@ -332,6 +332,49 @@ int main(int argc, char* argv[]) {
       // -- Note: 779 should be the same as the normal one
       if (0 == cnt%2) file.open("../ascii/mppcs-full-1.bin");
       if (1 == cnt%2) file.open("../ascii/mppcs-full.bin");
+      vector<char> buffer(std::istreambuf_iterator<char>(file), {});
+      string sblob("");
+      for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
+      std::vector<char>::iterator ibuffer = buffer.begin();
+      long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+      cout << "header: " << hex
+           << header << endl;
+      
+			bsoncxx::document::value doc_value = builder
+				<< "hash" << sh.str()
+				<< "comment" << "testing"
+				<< "BLOB" << base64_encode(sblob)
+				<< finalize; 
+			
+      if (!json) {
+        bsoncxx::stdx::optional<mongocxx::result::insert_one> result = payloads.insert_one(doc_value.view());
+        if (!result)  cout << "Failed to insert into iovs" << endl;
+      }
+      
+      // -- JSON
+      JS.open(jdir + "/" + sh.str());
+      if (JS.fail()) {
+        cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
+      }
+      JS << bsoncxx::to_json(doc_value.view()) << endl;
+      JS.close();
+      ++cnt;
+    }
+	}
+
+  // -- tiles
+	for (auto iiov: iniIovs) {
+    if (string::npos == iiov.first.find("tilealignment")) continue;
+    int cnt(0); 
+		for (auto it : iiov.second) {
+			stringstream sh; 
+			sh << "tag_" << iiov.first;
+			sh << "_iov_" << it;
+
+      std::ifstream file;
+      // -- Note: 779 should be the same as the normal one
+      if (0 == cnt%2) file.open("../ascii/tiles-full-1.bin");
+      if (1 == cnt%2) file.open("../ascii/tiles-full.bin");
       vector<char> buffer(std::istreambuf_iterator<char>(file), {});
       string sblob("");
       for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
