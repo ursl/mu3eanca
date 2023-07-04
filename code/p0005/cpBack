@@ -4,9 +4,12 @@
 # switch between rest and json with command line arg
 # provide run number with command line arg
 # allow unset dbconn for validation 
+# added fibres, mppcs, tiles 
 cd /psi/home/langenegger/data/mu3e
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/CMakeLists.txt mu3eTrirec/CMakeLists.txt
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/FbDet.cpp mu3eTrirec/src/FbDet.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/SiDet.cpp mu3eTrirec/src/SiDet.cpp
+cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/TlDet.cpp mu3eTrirec/src/TlDet.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/trirec.cpp mu3eTrirec/trirec.cpp
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/run1.mac run/run1.mac
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/api-key.private run/api-key.private
