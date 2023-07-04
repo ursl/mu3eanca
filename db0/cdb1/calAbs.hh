@@ -4,6 +4,8 @@
 #include "cdbAbs.hh"
 #include "payload.hh"
 
+#include "TDirectory.h"
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -27,6 +29,7 @@ public:
   virtual void        calculate(std::string hash) {std::cout << "calAbs::calculate() ?" << std::endl;}
 
   void                update(std::string hash);
+  void                dump2Root(TDirectory *);
   
 protected: 
 	cdbAbs                            *fDB;

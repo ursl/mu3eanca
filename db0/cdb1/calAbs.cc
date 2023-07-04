@@ -1,5 +1,7 @@
 #include "calAbs.hh"
 
+#include "TFile.h"
+
 #include <iostream>
 #include <sstream>
 
@@ -51,3 +53,13 @@ void calAbs::update(string hash) {
   }
 }
 
+// ----------------------------------------------------------------------
+void calAbs::dump2Root(TDirectory *d) {
+  TDirectory *pOld = gFile->CurrentDirectory();
+  d->cd();
+  for (auto it: fTagIOVPayloadMap) {
+    TNamed o(it.first.c_str(), it.second.json().c_str());
+    o.Write();
+  }
+}
+  

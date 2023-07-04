@@ -1,4 +1,5 @@
 #include "payload.hh"
+#include "base64.hh"
 
 #include <iostream>
 #include <sstream>
@@ -27,5 +28,15 @@ string payload::printString() {
        << "<- /**/comment ->" << fComment
        << "<- /**/BLOB ->" << fBLOB
        << "<-";
+  return sstr.str();
+}
+
+
+// ----------------------------------------------------------------------
+string payload::json() {
+  std::stringstream sstr;
+  sstr << "{\"hash\" : \"" << fHash << "\", "
+       << "\"comment\" : \"" << fComment << "\","
+       << "\"BLOB\" : \"" << base64_encode(fBLOB) << "\"}";
   return sstr.str();
 }

@@ -9,6 +9,7 @@ public:
   payload();
   void print();
   std::string printString();
+  std::string json();
 
   int fLength;
   std::string fComment;
