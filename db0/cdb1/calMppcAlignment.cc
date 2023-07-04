@@ -1,4 +1,4 @@
-#include "calFibresAlignment.hh"
+#include "calMppcAlignment.hh"
 
 #include "cdbUtil.hh"
 
@@ -9,12 +9,12 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-calFibresAlignment::calFibresAlignment(cdbAbs *db) : calAbs(db) {
+calMppcAlignment::calMppcAlignment(cdbAbs *db) : calAbs(db) {
 }
 
 
 // ----------------------------------------------------------------------
-bool calFibresAlignment::getNextID(uint32_t &ID) {
+bool calMppcAlignment::getNextID(uint32_t &ID) {
   if (fMapConstantsIt == fMapConstants.end()) {
     // -- reset
     ID = 999999;
@@ -29,21 +29,21 @@ bool calFibresAlignment::getNextID(uint32_t &ID) {
 
 
 // ----------------------------------------------------------------------
-calFibresAlignment::calFibresAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calFibresAlignment created and registered with tag ->" << fTag << "<-" 
+calMppcAlignment::calMppcAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
+	cout << "calMppcAlignment created and registered with tag ->" << fTag << "<-" 
 			 << endl;
 }
 
 
 // ----------------------------------------------------------------------
-calFibresAlignment::~calFibresAlignment() {
-  cout << "this is the end of calFibresAlignment with tag ->" << fTag << "<-" << endl;
+calMppcAlignment::~calMppcAlignment() {
+  cout << "this is the end of calMppcAlignment with tag ->" << fTag << "<-" << endl;
 }
 
 
 // ----------------------------------------------------------------------
-void calFibresAlignment::calculate(string hash) {
-  cout << "calFibresAlignment::calculate() with "
+void calMppcAlignment::calculate(string hash) {
+  cout << "calMppcAlignment::calculate() with "
        << "fHash ->" << hash << "<-"
        << endl;
   fMapConstants.clear();
@@ -53,22 +53,25 @@ void calFibresAlignment::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-  cout << "calFibresAlignment header: " << hex << header << dec << endl;
+  cout << "calMppcAlignment header: " << hex << header << dec << endl;
 
   while (ibuffer != buffer.end()) {
     constants a; 
-    a.id = blob2UnsignedInt(getData(ibuffer));
-    a.cx = blob2Double(getData(ibuffer));
-    a.cy = blob2Double(getData(ibuffer));
-    a.cz = blob2Double(getData(ibuffer));
-    a.fx = blob2Double(getData(ibuffer));
-    a.fy = blob2Double(getData(ibuffer));
-    a.fz = blob2Double(getData(ibuffer));
-    a.round = static_cast<bool>(blob2UInt(getData(ibuffer)));
-    a.square = static_cast<bool>(blob2UInt(getData(ibuffer)));
-    a.diameter = blob2Double(getData(ibuffer));
+    a.mppc = blob2UnsignedInt(getData(ibuffer));
+    a.vx = blob2Double(getData(ibuffer));
+    a.vy = blob2Double(getData(ibuffer));
+    a.vz = blob2Double(getData(ibuffer));
+    a.colx = blob2Double(getData(ibuffer));
+    a.coly = blob2Double(getData(ibuffer));
+    a.colz = blob2Double(getData(ibuffer));
+    a.ncol = blob2Int(getData(ibuffer));
 
-    fMapConstants.insert(make_pair(a.id, a));
+    cout << "mppc = " << a.mppc
+         << " v = " << a.vx << "/" << a.vy << "/" << a.vz
+         << " col = " << a.colx << "/" << a.coly << "/" << a.colz
+         << endl;
+    
+    fMapConstants.insert(make_pair(a.mppc, a));
   }
 
   // -- set iterator over all constants to the start of the map

@@ -9,6 +9,8 @@
 #include "cdbAbs.hh"
 
 #include "calPixelAlignment.hh"
+#include "calFibreAlignment.hh"
+#include "calMppcAlignment.hh"
 
 using namespace std;
 
@@ -47,7 +49,7 @@ Mu3eConditions::~Mu3eConditions() {
 calAbs* Mu3eConditions::createClass(string name) {
   string tag("nada");
   for (auto it : fTags) {
-    cout << "searching " << name << ", looking at " << it << endl; 
+    cout << "Mu3eConditions::createClass> searching " << name << ", looking at " << it << endl; 
     if (string::npos != it.find(name)) {
       tag = it;
       cout << "Mu3eConditions::createClass> found " << tag << endl;
@@ -60,45 +62,54 @@ calAbs* Mu3eConditions::createClass(string name) {
     return 0;
   }
 
-  return createClass(name, tag); 
+  return createClassWithDB(name, tag, fDB); 
 }
 
 
 // ----------------------------------------------------------------------
 calAbs* Mu3eConditions::createClass(string name, string tag) {
-  if (!name.compare("pixelalignment_")) {
-    if (fVerbose > 0) cout << "Mu3eConditions::createClass("
-                           << name << ", " << tag << "), fDB = "
-                           << fDB->getName() 
-                           << endl;
-    calAbs* a = new calPixelAlignment(fDB, tag);
-    registerCalibration(tag, a);
-    return a;
-  }
-  return 0;
+  return createClassWithDB(name, tag, fDB); 
 }
 
 
 // ----------------------------------------------------------------------
 calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
+  calAbs* a(0);
   if (!name.compare("pixelalignment_")) {
+    a = new calPixelAlignment(db, tag);
     if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
                            << name << ", " << db->getName()
                            << ", " << tag << ")"
                            << ", " << db->getName() << ")"
                            << endl;
-    calAbs* a = new calPixelAlignment(db, tag);
-    a->setIOVs(getIOVs(tag));
-    registerCalibration(tag, a);
-    return a;
+  } else if (!name.compare("fibrealignment_")) {
+    a = new calFibreAlignment(db, tag);
+    if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
+                           << name << ", " << db->getName()
+                           << ", " << tag << ")"
+                           << ", " << db->getName() << ")"
+                           << endl;
+  } else if (!name.compare("mppcalignment_")) {
+    a = new calMppcAlignment(db, tag);
+    if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
+                           << name << ", " << db->getName()
+                           << ", " << tag << ")"
+                           << ", " << db->getName() << ")"
+                           << endl;
+  } else {
+    cout << "ERROR: " << name << " is an unknown class. Nothing registered in Mu3Conditions" << endl;
+    return 0;
   }
-  return 0;
+
+  a->setIOVs(getIOVs(tag));
+  registerCalibration(tag, a);
+  return a;
 }
 
 
 // ----------------------------------------------------------------------
 void Mu3eConditions::registerCalibration(string tag, calAbs *c) {
-  cout << "Mu3eConditions::registerCalibration name ->" << c->getName()
+  cout << "Mu3eConditions::registerCalibration> name ->" << c->getName()
        << "<- with tag ->" << tag << "<-"
        << endl;
   fCalibrations.insert(make_pair(tag, c));
@@ -118,7 +129,7 @@ void Mu3eConditions::setRunNumber(int runnumber) {
     // -- call update for all registered calibrations
     //    each calibration will check with its tag/IOV whether an update is required
     for (auto it: fCalibrations) {
-      cout << "call update runnumber = " << runnumber << " tag = " << it.first << endl;
+      cout << "Mu3eConditions::setRunNumber> call update runnumber = " << runnumber << " tag = " << it.first << endl;
       it.second->update(getHash(runnumber, it.first));
     }
 	}
@@ -128,7 +139,7 @@ void Mu3eConditions::setRunNumber(int runnumber) {
 // ----------------------------------------------------------------------
 calAbs* Mu3eConditions::getCalibration(std::string name) {
   for (auto it: fCalibrations) {
-    cout << "  looking at " << it.first << endl;
+    cout << "  Mu3eConditions::getCalibration> looking at " << it.first << endl;
     if (string::npos != it.first.find(name)) return it.second;
   }  
   return 0;
