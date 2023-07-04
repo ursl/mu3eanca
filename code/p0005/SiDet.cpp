@@ -101,13 +101,6 @@ void SiDet::makeClusters() {
     for(auto itj = std::next(iti); itj != end; ++itj) {
         const auto& hj = *itj;
 
-        if (hi->sensor.id.value() == 1) {
-          std::cout << "sensor.id.value() = " << hi->sensor.id.value()
-                    << " sensor.v.x = " << hi->sensor.v.x
-                    << std::endl;
-        }
-
-        
         if(hi->sensor.id.value() != hj->sensor.id.value()) break;
 
         int drow = std::abs(hi->row - hj->row);
@@ -346,7 +339,7 @@ void SiDet::readSensors(Sensor::map_t& sensors, TTree* tree) {
                 << std::endl;
       pDC->printCalibrations();          
       calAbs *cal = pDC->getCalibration("pixelalignment_");
-      std::cout << "cal = " << cal << std::endl;
+      std::cout << "pixelalignment_ cal = " << cal << std::endl;
       
       calPixelAlignment *cpa = dynamic_cast<calPixelAlignment*>(cal);
       uint32_t i(99999);
@@ -354,7 +347,7 @@ void SiDet::readSensors(Sensor::map_t& sensors, TTree* tree) {
       mu3e::root::alignment_sensors_t entry;
       int cnt(0); 
       while (cpa->getNextID(i)) {
-        std::cout << "ID = " << i << " (cnt = " << cnt++ << ")" << std::endl;
+        // std::cout << "SiDet ID = " << i << " (cnt = " << cnt++ << ")" << std::endl;
         
         entry.id = cpa->id(i); 
         entry.vx = cpa->vx(i); 
@@ -373,8 +366,6 @@ void SiDet::readSensors(Sensor::map_t& sensors, TTree* tree) {
         entry.thickness = cpa->thickness(i); 
         entry.pixelSize = cpa->pixelSize(i); 
         
-        std::cout << " entry.id = " << entry.id << std::endl;
-
         auto& sensor = sensors.emplace(std::piecewise_construct,
                                        std::forward_as_tuple(entry.id),
                                        std::forward_as_tuple(entry.id,
@@ -402,7 +393,7 @@ void SiDet::readSensors(Sensor::map_t& sensors, TTree* tree) {
       for(Long64_t i = 0, n = tree->GetEntries(); i < n; i++) {
         tree->GetEntry(i);
 
-        std::cout << " entry.id = " << entry.id << std::endl;
+        // std::cout << " entry.id = " << entry.id << std::endl;
         auto& sensor = sensors.emplace(std::piecewise_construct,
                                        std::forward_as_tuple(entry.id),
                                        std::forward_as_tuple(entry.id,

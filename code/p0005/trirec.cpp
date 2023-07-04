@@ -15,7 +15,7 @@
 #include "cdbAbs.hh"
 #include "cdbJSON.hh"
 #include "cdbRest.hh"
-#include "calPixelAlignment.hh"
+#include "calAbs.hh"
 
 #if defined(MU3E_TRIREC_DISPLAY)
 #include "display/EventDisplay.h"
@@ -374,20 +374,22 @@ int main(int argc, const char* argv[]) {
  
     int dbverbose(10); 
     cdbAbs *pDB(0);
-    std::string gt = "dt23prompt";
+    std::string gt = "mcideal";
     if (dbconn == "rest") {
       pDB = new cdbRest(gt, "https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/",
                         dbverbose);
     } else if (dbconn == "json") {
       pDB = new cdbJSON(gt, "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1/json", dbverbose);
     } else {
-      std::cout << "NO DB connection defined. Use root:alignment/*" << std::endl;
-      //      exit(1);
+      std::cout << "NO DB connection defined. Using legacy root:alignment/*" << std::endl;
     }
     
     Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
 
     calAbs *cal = pDC->createClass("pixelalignment_");
+    cal = pDC->createClass("fibrealignment_");
+    cal = pDC->createClass("mppcalignment_");
+    cal = pDC->createClass("tilealignment_");
     std::cout << "setting run number " << run << std::endl;
     pDC->setRunNumber(run);
 
