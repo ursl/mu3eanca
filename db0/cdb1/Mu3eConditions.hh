@@ -36,7 +36,8 @@ public:
   void    registerCalibration(std::string tag, calAbs *c);
 	void    printCalibrations();
   calAbs* getCalibration(std::string name);
-
+  std::map<std::string, calAbs*> getCalibrations() {return fCalibrations;}
+  
   std::string  getHash(int irun, std::string tag);
   int          whichIOV(int run, std::string tag);
   
