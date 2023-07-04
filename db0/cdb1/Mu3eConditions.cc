@@ -11,6 +11,7 @@
 #include "calPixelAlignment.hh"
 #include "calFibreAlignment.hh"
 #include "calMppcAlignment.hh"
+#include "calTileAlignment.hh"
 
 using namespace std;
 
@@ -91,6 +92,13 @@ calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
                            << endl;
   } else if (!name.compare("mppcalignment_")) {
     a = new calMppcAlignment(db, tag);
+    if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
+                           << name << ", " << db->getName()
+                           << ", " << tag << ")"
+                           << ", " << db->getName() << ")"
+                           << endl;
+  } else if (!name.compare("tilealignment_")) {
+    a = new calTileAlignment(db, tag);
     if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
                            << name << ", " << db->getName()
                            << ", " << tag << ")"
