@@ -95,10 +95,10 @@ int main(int argc, char* argv[]) {
   }
 
 	map<string, vector<string>> iniGlobalTags = {
-		{"dt23intrun", {"pixel_dt23intrun", "pixelalignment_dt23intrun", "fibres_start",      "tiles_Nada"}}, 
-		{"dt23prompt", {"pixel_v0",         "pixelalignment_v0",         "fibres_v11",        "tiles_A"}}, 
-		{"mcideal",    {"pixel_mcideal",    "pixelalignment_mcideal",    "fibres_mcideal",    "tiles_mcideal"}}, 
-		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibres_mc23intrun", "tiles_Nada"}}
+		{"dt23intrun", {"pixel_dt23intrun", "pixelalignment_dt23intrun", "fibrealignment_dt23intrun", "tiles_Nada"}}, 
+		{"dt23prompt", {"pixel_v0",         "pixelalignment_v0",         "fibrealignment_v0",         "tiles_A"}}, 
+		{"mcideal",    {"pixel_mcideal",    "pixelalignment_mcideal",    "fibrealignment_mcideal",    "mppcalignment_mcideal", "tiles_mcideal"}}, 
+		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibrealignment_mc23intrun", "tiles_Nada"}}
 	};
 	
 	string jdir  = "json/globaltags";
@@ -138,22 +138,24 @@ int main(int argc, char* argv[]) {
 		{"pixelalignment_dt23intrun", {1,200}},
 		{"pixelalignment_v0", {1,200}},
 		{"pixelalignment_mc23intrun", {200}}, 
-		{"pixelalignment_mcideal", {1}},
+		{"pixelalignment_mcideal", {1,300}},
     // 
 		{"pixel_dt23intrun", {1,10,20,30,100,200}},
 		{"pixel_v0", {202,210,900}}, 
 		{"pixel_mcideal", {1}},
 		{"pixel_mc23intrun", {200}}, 
     //
-		{"tiles_Nada", {1}}, 
-		{"tiles_A", {202,300,700}},
-		{"tiles_mcideal", {1}},
-		{"tiles_mc23ideal", {1}},
+		{"tile_Nada", {1}}, 
+		{"tile_A", {202,300,700}},
+		{"tile_mcideal", {1}},
+		{"tile_mc23ideal", {1}},
     //
-		{"fibres_start", {1,50}},
-		{"fibres_v11", {202,400,800}},
-		{"fibres_mcideal", {1}},
-		{"fibres_mc23intrun", {150}}
+		{"fibrealignment_dt23intrun", {1,200}},
+		{"fibrealignment_v11", {202,400,800}},
+		{"fibrealignment_mcideal", {1,300}},
+		{"fibrealignment_mc23intrun", {150}},
+    //
+    {"mppcalignment_mcideal", {1,300}},
 	};
 
 	jdir  = "json/iovs";
@@ -235,12 +237,13 @@ int main(int argc, char* argv[]) {
 			sh << "_iov_" << it;
 
       std::ifstream file;
+      // -- Note: 779 should be the same as the normal one
       if (string::npos != iiov.first.find("intrun")) {
-        if (0 == cnt%2) file.open("../ascii/sensors-intrun.bin");
-        if (1 == cnt%2) file.open("../ascii/sensors-intrun-1.bin");
+        if (1 == cnt%2) file.open("../ascii/sensors-intrun.bin");
+        if (0 == cnt%2) file.open("../ascii/sensors-intrun-1.bin");
       } else {
-        if (0 == cnt%2) file.open("../ascii/sensors-full.bin");
-        if (1 == cnt%2) file.open("../ascii/sensors-full-1.bin");
+        if (1 == cnt%2) file.open("../ascii/sensors-full.bin");
+        if (0 == cnt%2) file.open("../ascii/sensors-full-1.bin");
       }
       vector<char> buffer(std::istreambuf_iterator<char>(file), {});
       string sblob("");
@@ -271,6 +274,94 @@ int main(int argc, char* argv[]) {
       ++cnt;
     }
 	}
+
+
+  // -- fibres
+	for (auto iiov: iniIovs) {
+    if (string::npos == iiov.first.find("fibrealignment")) continue;
+    int cnt(0); 
+		for (auto it : iiov.second) {
+			stringstream sh; 
+			sh << "tag_" << iiov.first;
+			sh << "_iov_" << it;
+
+      std::ifstream file;
+      // -- Note: 779 should be the same as the normal one
+      if (0 == cnt%2) file.open("../ascii/fibres-full-1.bin");
+      if (1 == cnt%2) file.open("../ascii/fibres-full.bin");
+      vector<char> buffer(std::istreambuf_iterator<char>(file), {});
+      string sblob("");
+      for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
+      std::vector<char>::iterator ibuffer = buffer.begin();
+      long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+      cout << "header: " << hex
+           << header << endl;
+      
+			bsoncxx::document::value doc_value = builder
+				<< "hash" << sh.str()
+				<< "comment" << "testing"
+				<< "BLOB" << base64_encode(sblob)
+				<< finalize; 
+			
+      if (!json) {
+        bsoncxx::stdx::optional<mongocxx::result::insert_one> result = payloads.insert_one(doc_value.view());
+        if (!result)  cout << "Failed to insert into iovs" << endl;
+      }
+      
+      // -- JSON
+      JS.open(jdir + "/" + sh.str());
+      if (JS.fail()) {
+        cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
+      }
+      JS << bsoncxx::to_json(doc_value.view()) << endl;
+      JS.close();
+      ++cnt;
+    }
+	}
+
+  // -- mppcs
+	for (auto iiov: iniIovs) {
+    if (string::npos == iiov.first.find("mppcalignment")) continue;
+    int cnt(0); 
+		for (auto it : iiov.second) {
+			stringstream sh; 
+			sh << "tag_" << iiov.first;
+			sh << "_iov_" << it;
+
+      std::ifstream file;
+      // -- Note: 779 should be the same as the normal one
+      if (0 == cnt%2) file.open("../ascii/mppcs-full-1.bin");
+      if (1 == cnt%2) file.open("../ascii/mppcs-full.bin");
+      vector<char> buffer(std::istreambuf_iterator<char>(file), {});
+      string sblob("");
+      for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
+      std::vector<char>::iterator ibuffer = buffer.begin();
+      long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+      cout << "header: " << hex
+           << header << endl;
+      
+			bsoncxx::document::value doc_value = builder
+				<< "hash" << sh.str()
+				<< "comment" << "testing"
+				<< "BLOB" << base64_encode(sblob)
+				<< finalize; 
+			
+      if (!json) {
+        bsoncxx::stdx::optional<mongocxx::result::insert_one> result = payloads.insert_one(doc_value.view());
+        if (!result)  cout << "Failed to insert into iovs" << endl;
+      }
+      
+      // -- JSON
+      JS.open(jdir + "/" + sh.str());
+      if (JS.fail()) {
+        cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
+      }
+      JS << bsoncxx::to_json(doc_value.view()) << endl;
+      JS.close();
+      ++cnt;
+    }
+	}
+
   
 	return 0;
 }
