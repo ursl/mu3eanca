@@ -77,12 +77,14 @@ void printArray(ofstream &OS, std::array<char,8> v) {
 // ----------------------------------------------------------------------
 void writeBlob(string filename = "tiles.bin", bool modify = false) {
   TTree *t = (TTree*)gFile->Get("alignment/tiles");
-  unsigned int sensor;
+  int sensor;
+  unsigned int id;
   double posx, posy, posz;
   double dirx, diry, dirz;
   long unsigned int header(0xdeadface);
   
   t->SetBranchAddress("sensor", &sensor);
+  t->SetBranchAddress("id", &id);
 
   t->SetBranchAddress("posx", &posx);
   t->SetBranchAddress("posy", &posy);
@@ -104,7 +106,7 @@ void writeBlob(string filename = "tiles.bin", bool modify = false) {
   char data[8], data1[8], data2[8]; 
   for (unsigned int i = 0; i < t->GetEntries(); ++i) {
     t->GetEntry(i);
-    if (1) cout << "sensor = " << sensor
+    if (1) cout << "sensor = " << sensor << " id = " << id 
                 << " pos x/y/z = " << posx << "/" << posy << "/" << posz
                 << " dir x/y/z = " << dirx << "/" << diry << "/" << dirz
                 << endl;
@@ -126,7 +128,8 @@ void writeBlob(string filename = "tiles.bin", bool modify = false) {
     }
 
     if (0) {
-      printArray(ONS, uint2Blob(sensor));
+      printArray(ONS, int2Blob(sensor));
+      printArray(ONS, uint2Blob(id));
       printArray(ONS, double2Blob(posx));
       printArray(ONS, double2Blob(posy));
       printArray(ONS, double2Blob(posz));
@@ -136,7 +139,8 @@ void writeBlob(string filename = "tiles.bin", bool modify = false) {
     }
     
     if (1) {
-      ONS << dumpArray(uint2Blob(sensor)) 
+      ONS << dumpArray(int2Blob(sensor)) 
+          << dumpArray(uint2Blob(id)) 
           << dumpArray(double2Blob(posx)) 
           << dumpArray(double2Blob(posy)) 
           << dumpArray(double2Blob(posz)) 
