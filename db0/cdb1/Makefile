@@ -11,12 +11,21 @@ ifneq (,$(findstring merlin,$(LHOST)))
   LIBMONGODB    = -L /psi/home/langenegger/data/mongo/install/lib64 -lmongocxx -lbsoncxx
   LIBCURL       = -L/usr/lib64 -lcurl
   LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
+  SOFLAGS       =
+else ifneq (,$(findstring moor,$(LHOST)))
+  INCMONGODB    = -I/opt/homebrew/include/mongocxx/v_noabi
+  INCMONGODB   += -I/opt/homebrew/include/bsoncxx/v_noabi
+  LIBMONGODB    = -L/opt/homebrew/lib -lmongocxx -lbsoncxx
+  LIBCURL       = -L/opt/homebrew/lib -lcurl
+  LIBBOOST      = -L/usr/lib64 -lboost_serialization
+  SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
 else
   INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
   INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
   LIBMONGODB    = -lmongocxx -lbsoncxx
   LIBCURL       = -L/usr/lib64 -lcurl
   LIBBOOST      = -L/usr/lib64 -lboost_serialization
+  SOFLAGS       =
 endif
 
 EXTHEADERS    = -I../..
@@ -27,8 +36,9 @@ CXXFLAGS     := -std=c++1z -g -O0 -Wall -fPIC -pipe  #CXXFLAGS     += $(ROOTCFLA
 CXXFLAGS     += $(ROOTCFLAGS)
 
 LD           := $(CXX)
-LDFLAGS       = -g -O0  #?? -Wl -rpath$(ROOTSYS)
-SOFLAGS       = -g -shared  #?? -Wl -rpath
+LDFLAGS      := -g -O0  #?? -Wl -rpath$(ROOTSYS)
+SOFLAGS      += -g -shared  #?? -Wl -rpath
+
 
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 
