@@ -4,7 +4,6 @@
 
 // ----------------------------------------------------------------------
 void plotTiming(string filepart = "json",
-                double tmax = 100.,
                 string dirName = "cdb-timing0") {
   // -- definition of timing measurements
   vector<string> vTiming = {
@@ -69,10 +68,11 @@ void plotTiming(string filepart = "json",
   for (auto it: vTiming) {
     for (auto ic: vCal) {
       string name = ic + "_" + it;
+      string title = ic + "_" + it + " (" + filepart + ")";
       double dmax = 2.*vCalMaxTime[ic];
       if (string::npos != it.find("ctor")) dmax = 0.01*dmax;
       if (string::npos != it.find("registerCalibration")) dmax = 0.01*dmax;
-      mHists.insert(make_pair(name, new TH1D(name.c_str(), name.c_str(),
+      mHists.insert(make_pair(name, new TH1D(name.c_str(), title.c_str(),
                                              100, 0., dmax)));
     }
   }
@@ -104,6 +104,7 @@ void plotTiming(string filepart = "json",
                       << endl;
           string name = scal + "_" + itt;
           mHists[name]->Fill(dtime);
+          setTitles(mHists[name], "time [usec]", "entries", 0.05, 1.0, 1.0, 0.035);
         }
       }
     }
@@ -112,7 +113,7 @@ void plotTiming(string filepart = "json",
 
   for (auto it: mHists) {
     it.second->Draw();
-    c0.SaveAs(("plotTiming-" + it.first + ".pdf").c_str());
+    c0.SaveAs(("plotTiming-" + filepart + "-" + it.first + ".pdf").c_str());
   }
   
 }
