@@ -46,7 +46,7 @@ void TlDet::readTiles(Tile::map_t& tiles, TTree* tree) {
     unsigned int id;
     double3 pos = {}, dir = {}; 
     while (cpa->getNextID(i)) {
-      std::cout << "TlDet ID = " << i << " (cnt = " << cnt++ << ")" << std::endl;
+      //      std::cout << "TlDet ID = " << i << " (cnt = " << cnt++ << ")" << std::endl;
       id = cpa->id(i); 
       pos.x = cpa->posx(i); 
       pos.y = cpa->posy(i); 
