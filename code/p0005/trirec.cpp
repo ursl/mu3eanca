@@ -385,7 +385,8 @@ int main(int argc, const char* argv[]) {
     }
     
     Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
-
+    pDC->setPrintTiming(1);
+    
     calAbs *cal = pDC->createClass("pixelalignment_");
     cal = pDC->createClass("fibrealignment_");
     cal = pDC->createClass("mppcalignment_");
