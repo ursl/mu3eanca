@@ -3,6 +3,15 @@
 #include <algorithm> /// for sorting
 
 // ----------------------------------------------------------------------
+// moor>rr
+// Loading libs 1
+// root [0] .L plotTiming.C
+// root [1] plotTiming("json")
+// root [2] plotTiming("rest")
+// ----------------------------------------------------------------------
+
+
+// ----------------------------------------------------------------------
 void plotTiming(string filepart = "json",
                 string dirName = "cdb-timing0") {
   // -- definition of timing measurements
