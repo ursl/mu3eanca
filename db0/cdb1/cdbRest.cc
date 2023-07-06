@@ -15,6 +15,7 @@
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/array.hpp>
 
+#include "base64.hh"
 #include "cdbUtil.hh"
 
 using bsoncxx::builder::basic::kvp;
@@ -189,7 +190,7 @@ payload cdbRest::getPayload(string hash) {
   for (auto idoc : doc0) {
     pl.fComment = string(idoc["comment"].get_string().value).c_str();
     pl.fHash    = string(idoc["hash"].get_string().value).c_str();
-    pl.fBLOB    = string(idoc["BLOB"].get_string().value).c_str();
+    pl.fBLOB    = base64_decode(string(idoc["BLOB"].get_string().value));
   }
 
   return pl;
