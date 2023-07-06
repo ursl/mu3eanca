@@ -66,11 +66,6 @@ void calTileAlignment::calculate(string hash) {
     a.diry = blob2Double(getData(ibuffer));
     a.dirz = blob2Double(getData(ibuffer));
 
-    cout << "sensor = " << a.sensor << " id = " << a.id
-         << " pos = " << a.posx << "/" << a.posy << "/" << a.posz
-         << " dir = " << a.dirx << "/" << a.diry << "/" << a.dirz
-         << endl;
-    
     fMapConstants.insert(make_pair(a.id, a));
   }
 
