@@ -26,9 +26,10 @@ public:
   calAbs* createClass(std::string name, std::string tag);
   calAbs* createClassWithDB(std::string name, std::string tag, cdbAbs *db);
 
-  cdbAbs* getDB()             {return fDB;}
-  void    setDB(cdbAbs *db)   {fDB = db;}
-  void    setVerbosity(int v) {fVerbose = v;}
+  cdbAbs* getDB()               {return fDB;}
+  void    setDB(cdbAbs *db)     {fDB = db;}
+  void    setVerbosity(int v)   {fVerbose = v;}
+  void    setPrintTiming(int v) {fPrintTiming = v;}
 
 	void setRunNumber(int);
 	int  getRunNumber() {return fRunNumber;}
@@ -49,7 +50,7 @@ private:
   static Mu3eConditions* fInstance; 
   cdbAbs *fDB;
   std::string fGT{"GT unset"};
-  int fVerbose{0};
+  int fVerbose{0}, fPrintTiming{0};
 
   // -- should be replaced by IOV class
   int         fRunNumber{-1};
