@@ -36,7 +36,7 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 # -- CDB (Conditions DB) files
 FILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o cdbROOT.o \
         calAbs.o calPixelAlignment.o calFibreAlignment.o  calMppcAlignment.o calTileAlignment.o \
-        calPixelQuality.o \
+        calPixelQuality.o calPixelQualityV.o \
         Mu3eConditions.o  \
         base64.o \
         payload.o cdbUtil.o
