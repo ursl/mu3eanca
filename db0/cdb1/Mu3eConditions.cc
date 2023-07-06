@@ -117,6 +117,7 @@ calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
                          << "us ::timing::" << tag << " ctor"
                          << endl;
 
+  if (fPrintTiming) a->setPrintTiming(fPrintTiming);
   tbegin = chrono::high_resolution_clock::now();
   a->setIOVs(getIOVs(tag));
   registerCalibration(tag, a);
