@@ -30,11 +30,12 @@ public:
 
   void                update(std::string hash);
   void                dump2Root(TDirectory *);
+  void                setPrintTiming(int v) {fPrintTiming = v;}
   
 protected: 
 	cdbAbs                            *fDB;
   std::string                        fTag{"unset"}, fHash{"unset"};
-  int                                fVerbose{0};
+  int                                fVerbose{0}, fPrintTiming{0};
   std::vector<int>                   fIOVs;  // set it up initially
   std::map<std::string, payload>     fTagIOVPayloadMap;  // cache
 };

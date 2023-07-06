@@ -2,6 +2,7 @@
 
 #include "TFile.h"
 
+#include <chrono>
 #include <iostream>
 #include <sstream>
 
@@ -39,7 +40,13 @@ void calAbs::update(string hash) {
     if (fVerbose > 0) cout << "calAbs::getPayload(" << hash
                            << ") not cached, retrieve from DB"
                            << endl;
+    auto tbegin = std::chrono::high_resolution_clock::now();
     payload pl = fDB->getPayload(hash);
+    auto tend = std::chrono::high_resolution_clock::now();
+    if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
+                           << "us ::timing::" << hash << " getpayload"
+                           << endl;
+    
     fTagIOVPayloadMap.insert(make_pair(hash, pl));
     calculate(hash);
     fHash = hash;
