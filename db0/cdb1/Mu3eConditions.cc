@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include <string>
 #include <vector>
 #include <map>
@@ -76,36 +77,60 @@ calAbs* Mu3eConditions::createClass(string name, string tag) {
 // ----------------------------------------------------------------------
 calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
   calAbs* a(0);
+  auto tend   = std::chrono::high_resolution_clock::now();
+  auto tbegin = std::chrono::high_resolution_clock::now();
   if (!name.compare("pixelalignment_")) {
+    tbegin = chrono::high_resolution_clock::now();
     a = new calPixelAlignment(db, tag);
+    tend = chrono::high_resolution_clock::now();
     if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
                            << name << ", " << db->getName()
                            << ", " << tag << ")"
                            << ", " << db->getName() << ")"
+                           << endl;
+    if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
+                           << "us ::timing calPixelAlignment::ctor"
                            << endl;
   } else if (!name.compare("fibrealignment_")) {
+    tbegin = chrono::high_resolution_clock::now();
     a = new calFibreAlignment(db, tag);
+    tend = chrono::high_resolution_clock::now();
     if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
                            << name << ", " << db->getName()
                            << ", " << tag << ")"
                            << ", " << db->getName() << ")"
+                           << endl;
+    if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
+                           << "us ::timing calFibreAlignment::ctor"
                            << endl;
   } else if (!name.compare("mppcalignment_")) {
+    tbegin = chrono::high_resolution_clock::now();
     a = new calMppcAlignment(db, tag);
+    tend = chrono::high_resolution_clock::now();
     if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
                            << name << ", " << db->getName()
                            << ", " << tag << ")"
                            << ", " << db->getName() << ")"
+                           << endl;
+    if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
+                           << "us ::timing calMppcAlignment::ctor"
                            << endl;
   } else if (!name.compare("tilealignment_")) {
+    tbegin = chrono::high_resolution_clock::now();
     a = new calTileAlignment(db, tag);
+    tend = chrono::high_resolution_clock::now();
     if (fVerbose > 0) cout << "Mu3eConditions::createClassWithDB("
                            << name << ", " << db->getName()
                            << ", " << tag << ")"
                            << ", " << db->getName() << ")"
                            << endl;
+    if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
+                           << "us ::timing calTileAlignment::ctor"
+                           << endl;
   } else {
-    cout << "ERROR: " << name << " is an unknown class. Nothing registered in Mu3Conditions" << endl;
+    cout << "ERROR: " << name
+         << " is an unknown class. Nothing registered in Mu3Conditions"
+         << endl;
     return 0;
   }
 
@@ -131,14 +156,22 @@ void Mu3eConditions::setRunNumber(int runnumber) {
                            << fRunNumber
                            << " fCalibrations.size() = " << fCalibrations.size()
                            << endl;
-  
+
+  auto tbegin = chrono::high_resolution_clock::now();
+  auto tend = chrono::high_resolution_clock::now();
+
 	if (runnumber != fRunNumber) {
 		fRunNumber = runnumber;
     // -- call update for all registered calibrations
     //    each calibration will check with its tag/IOV whether an update is required
     for (auto it: fCalibrations) {
       cout << "Mu3eConditions::setRunNumber> call update runnumber = " << runnumber << " tag = " << it.first << endl;
+      tbegin = chrono::high_resolution_clock::now();
       it.second->update(getHash(runnumber, it.first));
+      tend = chrono::high_resolution_clock::now();
+      if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
+                             << "us ::timing::" << it.first << "::update"
+                             << endl;
     }
 	}
 }
