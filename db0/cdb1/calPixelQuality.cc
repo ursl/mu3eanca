@@ -55,10 +55,18 @@ void calPixelQuality::calculate(string hash) {
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
   cout << "calPixelQuality header: " << hex << header << dec << endl;
 
+  int npix(0);
   while (ibuffer != buffer.end()) {
     constants a; 
     a.id = blob2UnsignedInt(getData(ibuffer));
-    
+    // -- get number of pixel entries
+    npix = blob2Int(getData(ibuffer));
+    for (unsigned int i = 0; i < npix; ++i) {
+      int icol           = blob2Int(getData(ibuffer));
+      int irow           = blob2Int(getData(ibuffer));
+      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
+      a.matrix[icol][irow] = iqual;
+    }
     fMapConstants.insert(make_pair(a.id, a));
   }
 
@@ -69,5 +77,5 @@ void calPixelQuality::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 char calPixelQuality::getStatus(unsigned int chipid, int icol, int irow) {
-  return fMapConstants[chipid][icol][irow];
+  return fMapConstants[chipid].matrix[icol][irow];
 }
