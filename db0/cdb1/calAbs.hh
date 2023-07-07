@@ -28,6 +28,8 @@ public:
   virtual std::string getHash() {return fHash;}
   virtual void        calculate(std::string hash) {std::cout << "calAbs::calculate() ?" << std::endl;}
 
+  void                readPayloadFromFile(std::string dir, std::string hash);
+
   void                update(std::string hash);
   void                dump2Root(TDirectory *);
   void                setPrintTiming(int v) {fPrintTiming = v;}
