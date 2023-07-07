@@ -7,6 +7,7 @@
 # added fibres, mppcs, tiles 
 # add dump2Root 
 # add timing and nada 
+# add timing to trirec 
 cd /psi/home/langenegger/data/mu3e
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/CMakeLists.txt mu3eTrirec/CMakeLists.txt
 cp /psi/home/langenegger/mu3e/mu3eanca/code/p0005/FbDet.cpp mu3eTrirec/src/FbDet.cpp
