@@ -95,10 +95,27 @@ int main(int argc, char* argv[]) {
   }
 
 	map<string, vector<string>> iniGlobalTags = {
-		{"dt23intrun", {"pixel_dt23intrun", "pixelalignment_dt23intrun", "fibrealignment_dt23intrun", "tilealignment_Nada"}}, 
-		{"dt23prompt", {"pixel_v0",         "pixelalignment_v0",         "fibrealignment_v0",         "tilealignment_A"}}, 
-		{"mcideal",    {"pixel_mcideal",    "pixelalignment_mcideal",    "fibrealignment_mcideal",    "mppcalignment_mcideal", "tilealignment_mcideal"}}, 
-		{"mc23intrun", {"pixel_mc23intrun", "pixelalignment_mc23intrun", "fibrealignment_mc23intrun", "tilealignment_Nada"}}
+		{"dt23intrun",
+     {"pixel_dt23intrun",
+      "pixelalignment_dt23intrun",
+      "fibrealignment_dt23intrun",
+      "tilealignment_Nada"}}, 
+		{"dt23prompt",
+     {"pixel_v0",
+      "pixelalignment_v0",
+      "fibrealignment_v0",
+      "tilealignment_A"}}, 
+		{"mcideal",
+     {"pixel_mcideal",
+      "pixelalignment_mcideal",
+      "fibrealignment_mcideal",
+      "mppcalignment_mcideal",
+      "tilealignment_mcideal"}}, 
+		{"mc23intrun",
+     {"pixel_mc23intrun",
+      "pixelalignment_mc23intrun",
+      "fibrealignment_mc23intrun",
+      "tilealignment_Nada"}}
 	};
 	
 	string jdir  = "json/globaltags";
