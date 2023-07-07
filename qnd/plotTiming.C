@@ -13,7 +13,9 @@
 
 // ----------------------------------------------------------------------
 void plotTiming(string filepart = "json",
-                string dirName = "cdb-timing0") {
+                double trirecTime = 30000, 
+                string dirName = "cdb-timing1") {
+  
   // -- definition of timing measurements
   vector<string> vTiming = {
     "ctor", 
@@ -85,6 +87,8 @@ void plotTiming(string filepart = "json",
                                              100, 0., dmax)));
     }
   }
+  mHists.insert(make_pair("trirec", new TH1D("trirec", "trirec running time", 100, 0., trirecTime)));
+  setTitles(mHists["trirec"], "time [ms]", "entries", 0.05, 1.0, 1.0, 0.035);
 
   // -- do analysis of all defined vTiming and fill histograms
   for (auto itf: vFiles) {
@@ -116,6 +120,19 @@ void plotTiming(string filepart = "json",
           setTitles(mHists[name], "time [usec]", "entries", 0.05, 1.0, 1.0, 0.035);
         }
       }
+
+      if ((string::npos != sline.find("::timing")) && (string::npos != sline.find("trirec::main"))
+          ) {
+        size_t itime = sline.find("ms");
+        string stime = sline.substr(0, itime);
+        double dtime = ::stod(stime);
+        if (1) cout << itf
+                    << " trirec::main> stime = " << stime
+                    << " / dtime = " << dtime
+                    << endl;
+        mHists["trirec"]->Fill(dtime);
+      }
+
     }
     INS.close();
   }
