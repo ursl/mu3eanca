@@ -33,7 +33,7 @@ private:
   // -- local and private
   struct constants {
     uint32_t id; 
-    std::array<std::array<char,256>,250> matrix{0};
+    std::array<std::array<char,256>,250> matrix{{{0}}};
   };
 
   std::map<uint32_t, constants> fMapConstants;
