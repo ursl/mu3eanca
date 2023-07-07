@@ -1,5 +1,7 @@
 //
 
+#include <chrono>
+
 #include "Root.h"
 
 #include "cosmic/Frame.h"
@@ -280,7 +282,9 @@ struct trirec_t {
 #include <mu3e/util/verbose.hpp>
 
 int main(int argc, const char* argv[]) {
-    namespace po = boost::program_options;
+  auto tbegin = std::chrono::high_resolution_clock::now();
+
+  namespace po = boost::program_options;
 
     /**
      * Handle ^C.
@@ -498,6 +502,10 @@ int main(int argc, const char* argv[]) {
         mu3e::log::fatal("[main] unknown input file format\n");
         exit(EXIT_FAILURE);
     }
-
+    auto tend = std::chrono::high_resolution_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(tend-tbegin).count()
+              << "ms ::timing::" << " trirec::main"
+              << std::endl;
+    
     return EXIT_SUCCESS;
 }
