@@ -87,7 +87,8 @@ void plotTiming(string filepart = "json",
                                              100, 0., dmax)));
     }
   }
-  mHists.insert(make_pair("trirec", new TH1D("trirec", "trirec running time", 100, 0., trirecTime)));
+  string title = "trirec running time (" + filepart + ")";
+  mHists.insert(make_pair("trirec", new TH1D("trirec", title.c_str(), 100, 0., trirecTime)));
   setTitles(mHists["trirec"], "time [ms]", "entries", 0.05, 1.0, 1.0, 0.035);
 
   // -- do analysis of all defined vTiming and fill histograms
