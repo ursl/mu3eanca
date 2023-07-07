@@ -66,3 +66,8 @@ void calPixelQuality::calculate(string hash) {
   fMapConstantsIt = fMapConstants.begin();
 }
 
+
+// ----------------------------------------------------------------------
+char calPixelQuality::getStatus(unsigned int chipid, int icol, int irow) {
+  return fMapConstants[chipid][icol][irow];
+}
