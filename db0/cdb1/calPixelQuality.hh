@@ -26,7 +26,8 @@ public:
   char        getStatus(unsigned int chipid, int icol, int irow);
   
   bool        getNextID(uint32_t &ID);
-
+  void        printPixelQuality(int chipid, int minimumStatus);
+  
 private:
   std::string fPixelQualityTag{"pixelquality_"};
 
