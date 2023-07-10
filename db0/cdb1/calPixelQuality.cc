@@ -80,3 +80,10 @@ char calPixelQuality::getStatus(unsigned int chipid, int icol, int irow) {
   return fMapConstants[chipid].matrix[icol][irow];
 }
 
+
+// ----------------------------------------------------------------------
+void calPixelQuality::printPixelQuality(int chipid, int minimumStatus) {
+    if (auto && [ix, iy]: fMapConstants[chipid]) {
+    }
+  }
+}
