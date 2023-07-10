@@ -64,8 +64,8 @@ int main(int argc, char* argv[]) {
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
   
+  // -- create payload
   string spl = createPayload("bla");
-  //  calPixelQuality *cal0 = dynamic_cast<calPixelQuality*>(pDC->createClass("pixelquality_"));
 
   calPixelQuality a;
   string hash("tag_pixelquality_mcideal_iov_1");
@@ -84,9 +84,6 @@ void writeBlob(string filename) {
   long unsigned int header(0xdeadface);
   ofstream ONS;
   ONS.open(filename);
-  if (0) {
-    printArray(ONS, uint2Blob(header));
-  }
   if (1) {
     ONS << dumpArray(uint2Blob(header));
   }
@@ -113,7 +110,7 @@ void writeBlob(string filename) {
 
 // ----------------------------------------------------------------------  
 string createPayload(string filename) {
-  writeBlob(filename);
+  //useless  writeBlob(filename);
   
 	auto builder = document{};
   std::ifstream file;
