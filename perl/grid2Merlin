@@ -1,0 +1,69 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# grid2Merlin
+# ============
+#
+# Usage:   ~/mu3e/mu3eanca/perl/relinkBinFiles [-u URI] [-f fileWithURIs -g gridLocation] [-o merlindir]
+#
+# Example: ../perl/grid2Merlin \
+#          -f signal \
+#          -g http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build4.4.3/signal/ \
+#          -o merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal
+#
+#
+# History 2023/07/11 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+my $dir = getcwd;
+
+use Getopt::Std;
+getopts('f:g:u:');
+
+
+my $merlindir = "langenegger\@merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal";
+#              http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal/run000001-ana_vertexfit.root
+#              http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal/run000500-ana_vertexfit.root
+my $gridLoc = "http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal"; 
+
+my $uri = ""; 
+my $urifile = ""; 
+if ($opt_u) {
+    $uri = $opt_u;
+    ($urifile = $uri) =~ s{http.*/}{};
+}
+
+my @vFiles;
+if ($opt_f) {
+    open(IN, "$opt_f") || die "cannot open $opt_f for input\n";
+    while (<IN>) {
+        $_ =~ s/\n//;
+        push(@vFiles, $_)
+    }
+    close(IN);
+    if ($opt_g) {
+        $gridLoc = $opt_g;
+    }
+}  
+
+if ($opt_o) {
+    $merlindir = $opt_o;
+}  
+
+if ($opt_f) {
+    foreach $file (@vFiles) {
+        system("ssh t3ui01.psi.ch 'rm -f $file' ");
+        system("ssh t3ui01.psi.ch 'wget $gridLoc/$file' ");
+        system("scp t3ui01.psi.ch:$file $merlindir");
+        system("ssh t3ui01.psi.ch 'rm -f $file' ");
+    }
+} else {
+    print("uri: $uri\n");
+    print("urifile: $urifile\n");
+    system("ssh t3ui01.psi.ch wget $uri");
+    system("scp t3ui01.psi.ch:$urifile $merlindir");
+}
