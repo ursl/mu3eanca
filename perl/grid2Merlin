@@ -10,7 +10,7 @@
 #          -i 
 #          -f signal \
 #          -n 100
-#          -g http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build4.4.3/signal/ \
+#          -g http://hepgrid11.ph.liv.ac.uk/noredirect/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build4.4.3/signal/ \
 #          -o merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal
 #
 #
@@ -102,7 +102,11 @@ if ($opt_f) {
                 system("ssh t3ui01.psi.ch 'rm -f $file' ");
             } else {
                 system("wget $gridLoc/$file");
-                system("mv   $file $merlindir");
+                if ($cwd ne $merlindir) {
+                    system("mv   $file $merlindir");
+                } else {
+                    print("already in $merlindir\n");
+                }
             }
         }
         $cnt++;
