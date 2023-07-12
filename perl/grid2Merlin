@@ -22,12 +22,14 @@ use Cwd;
 my $dir = getcwd;
 
 use Getopt::Std;
-getopts('f:g:u:w:');
+getopts('df:g:s:u:w:');
 
 # -- default values
 my $merlindir = "langenegger\@merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal";
 my $gridLoc   = "http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal"; 
 my $waitSecs  = 1;
+my $startPat  = "nada";
+my $dbx       = 0;
 
 my $uri = ""; 
 my $urifile = ""; 
@@ -49,6 +51,10 @@ if ($opt_f) {
     }
 }  
 
+if ($opt_d) {
+    $dbx = 1;
+}  
+
 if ($opt_o) {
     $merlindir = $opt_o;
 }  
@@ -57,12 +63,31 @@ if ($opt_w) {
     $waitSecs = $opt_w;
 }  
 
+if ($opt_s) {
+    $startPat = $opt_s;
+}  
+
 if ($opt_f) {
+    my $skip = 1; 
+    if ($startPat eq "nada") {
+        $skip = 0;
+    }
     foreach $file (@vFiles) {
-        system("ssh t3ui01.psi.ch 'rm -f $file' ");
-        system("ssh t3ui01.psi.ch 'wget $gridLoc/$file' ");
-        system("scp t3ui01.psi.ch:$file $merlindir");
-        system("ssh t3ui01.psi.ch 'rm -f $file' ");
+        if ($skip == 1) {
+            if ($file =~ $startPat) {
+                $skip = 0;
+            } else {
+                next;
+            }
+        }
+        if ($dbx > 0) {
+            print("$file\n");
+        } else {
+            system("ssh t3ui01.psi.ch 'rm -f $file' ");
+            system("ssh t3ui01.psi.ch 'wget $gridLoc/$file' ");
+            system("scp t3ui01.psi.ch:$file $merlindir");
+            system("ssh t3ui01.psi.ch 'rm -f $file' ");
+        }
         sleep($waitSecs);
     }
 } else {
