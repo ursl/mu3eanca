@@ -22,13 +22,12 @@ use Cwd;
 my $dir = getcwd;
 
 use Getopt::Std;
-getopts('f:g:u:');
+getopts('f:g:u:w:');
 
-
+# -- default values
 my $merlindir = "langenegger\@merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal";
-#              http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal/run000001-ana_vertexfit.root
-#              http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal/run000500-ana_vertexfit.root
-my $gridLoc = "http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal"; 
+my $gridLoc   = "http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal"; 
+my $waitSecs  = 1;
 
 my $uri = ""; 
 my $urifile = ""; 
@@ -54,12 +53,17 @@ if ($opt_o) {
     $merlindir = $opt_o;
 }  
 
+if ($opt_w) {
+    $waitSecs = $opt_w;
+}  
+
 if ($opt_f) {
     foreach $file (@vFiles) {
         system("ssh t3ui01.psi.ch 'rm -f $file' ");
         system("ssh t3ui01.psi.ch 'wget $gridLoc/$file' ");
         system("scp t3ui01.psi.ch:$file $merlindir");
         system("ssh t3ui01.psi.ch 'rm -f $file' ");
+        sleep($waitSecs);
     }
 } else {
     print("uri: $uri\n");
