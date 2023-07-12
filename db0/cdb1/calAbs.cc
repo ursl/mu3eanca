@@ -96,7 +96,7 @@ void calAbs::dump2Root(TDirectory *d) {
   
 
 // ----------------------------------------------------------------------
-void calAbs::readPayloadFromFile(string dir, string hash) {
+void calAbs::readPayloadFromFile(string hash, string dir) {
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(calAbs>  hash = " << hash 
@@ -124,4 +124,27 @@ void calAbs::readPayloadFromFile(string dir, string hash) {
   pl.fBLOB    = base64_decode(string(doc["BLOB"].get_string().value));
 
   fTagIOVPayloadMap.insert(make_pair(hash, pl));
+}
+
+
+// ----------------------------------------------------------------------
+void calAbs::writePayloadToFile(string hash, string dir, const payload &pl) {
+
+	auto builder = document{};
+
+  bsoncxx::document::value doc_value = builder
+    << "hash" << pl.fHash
+    << "comment" << pl.fComment
+    << "BLOB" << base64_encode(pl.fBLOB)
+    << finalize; 
+
+  // -- JSON
+  ofstream JS;
+  JS.open(dir + "/" + hash);
+  if (JS.fail()) {
+    cout << "Error failed to open " << "json/XXXXX" <<  endl;
+  }
+  JS << bsoncxx::to_json(doc_value.view()) << endl;
+  JS.close();
+  
 }
