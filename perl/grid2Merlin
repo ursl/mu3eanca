@@ -102,7 +102,9 @@ if ($opt_f) {
                 system("ssh t3ui01.psi.ch 'rm -f $file' ");
             } else {
                 system("wget $gridLoc/$file");
-                if ($cwd ne $merlindir) {
+                print("merlindir = $merlindir\n");
+                print("$dir = $dir\n");
+                if ($dir ne $merlindir) {
                     system("mv   $file $merlindir");
                 } else {
                     print("already in $merlindir\n");
