@@ -26,7 +26,7 @@ public:
   char        getStatus(unsigned int chipid, int icol, int irow);
   
   bool        getNextID(uint32_t &ID);
-  void        printPixelQuality(int chipid, int minimumStatus);
+  void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);
   
 private:
   std::string fPixelQualityTag{"pixelquality_"};
@@ -34,7 +34,8 @@ private:
   // -- local and private
   struct constants {
     uint32_t id; 
-    std::array<std::array<char,256>,250> matrix{{{0}}};
+    //    std::array<std::array<char,256>,250> matrix;
+    char matrix[256][250];
   };
 
   std::map<uint32_t, constants> fMapConstants;
