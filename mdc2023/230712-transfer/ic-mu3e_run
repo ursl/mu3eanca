@@ -1,5 +1,12 @@
 # cd mu3eanca/mdc2023/230712-transfer
-# ../../perl/grid2Merlin -f ic-mu3e_run -o langenegger@merlin-l-002:/data/experiment/mu3e/mc/build_4.6/ic -g http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/ic -w 10
+# example using t3ui01.psi.ch
+# ---------------------------
+# ../../perl/grid2Merlin -i -f ic-mu3e_run -o langenegger@merlin-l-002:/data/experiment/mu3e/mc/build_4.6/ic -g http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/ic -w 10
+#
+# example using merlin-l-002 directly
+# -----------------------------------
+# cd /data/experiment/mu3e/mc/build_4.6/ic
+# ~/mu3e/mu3eanca/perl/grid2Merlin -f ~/mu3e/mu3eanca/mdc2023/230712-transfer/ic-mu3e_run -o /data/experiment/mu3e/mc/build_4.6/ic -g http://hepgrid11.ph.liv.ac.uk/noredirect/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/ic -w 10 -s mu3e_run_000024.root -n 76
 mu3e_run_000001.root
 mu3e_run_000002.root
 mu3e_run_000003.root
