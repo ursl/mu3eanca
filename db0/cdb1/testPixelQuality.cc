@@ -37,9 +37,9 @@ using bsoncxx::builder::basic::sub_document;
 using bsoncxx::builder::basic::make_document;
 
 void writeBlob(string);
-string createPayload(string );
+void createPayload(string , calAbs *);
 
-#define NCHIPS 20
+#define NCHIPS 4
 
 // ----------------------------------------------------------------------
 // testPixelQuality
@@ -64,17 +64,19 @@ int main(int argc, char* argv[]) {
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
   
-  // -- create payload
-  string spl = createPayload("bla");
-
   calPixelQuality a;
+  // -- create payload
   string hash("tag_pixelquality_mcideal_iov_1");
-  a.readPayloadFromFile(".", hash);
+  createPayload(hash, &a);
+
+  a.readPayloadFromFile(hash, ".");
   a.calculate(hash);
 
   uint32_t i(99999);
   while (a.getNextID(i)) {
-    cout << i << ": " << static_cast<int>(a.getStatus(i, 108, 134)) << endl;
+    //    cout << i << ": " << static_cast<int>(a.getStatus(i, 108, 134)) << endl;
+    a.printPixelQuality(i);
+    cout << endl;
   }
 }
 
@@ -90,7 +92,7 @@ void writeBlob(string filename) {
   
   char data[8], data1[8], data2[8]; 
   for (unsigned int i = 0; i < NCHIPS; ++i) {
-    int ndeadpix(20*gRandom->Rndm());
+    int ndeadpix(12*gRandom->Rndm());
     cout << "ichip = " << i << " ndeadpix = " << ndeadpix << endl;
     ONS << dumpArray(uint2Blob(i)) 
         << dumpArray(int2Blob(ndeadpix));
@@ -98,45 +100,33 @@ void writeBlob(string filename) {
       int icol = 100 + 50*gRandom->Rndm();
       int irow = 120 + 50*gRandom->Rndm();
       char iqual = 1; 
-      cout << "icol/irow = " << icol << "/" << irow << endl;
       ONS << dumpArray(int2Blob(icol))
           << dumpArray(int2Blob(irow))
           << dumpArray(uint2Blob(static_cast<unsigned int>(iqual)));
+      cout << "icol/irow = " << icol << "/" << irow
+           << " qual = " << static_cast<unsigned int>(iqual) 
+           << endl;
     }
   }
 
   ONS.close();
 }
 
+
 // ----------------------------------------------------------------------  
-string createPayload(string filename) {
-  //useless  writeBlob(filename);
-  
-	auto builder = document{};
+void createPayload(string hash, calAbs *a) {
+  string tmpfilename("bla");
+  writeBlob(tmpfilename);
+
   std::ifstream file;
-  file.open(filename);
+  file.open(tmpfilename);
   vector<char> buffer(std::istreambuf_iterator<char>(file), {});
   string sblob("");
   for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
 
-  stringstream sh; 
-  sh << "tag_" << "pixelquality_mcideal";
-  sh << "_iov_" << "1";
-
-  bsoncxx::document::value doc_value = builder
-    << "hash" << sh.str()
-    << "comment" << "testing"
-    << "BLOB" << base64_encode(sblob)
-    << finalize; 
-  
-  // -- JSON
-  ofstream JS;
-  JS.open("json/payloads/" + sh.str());
-  if (JS.fail()) {
-    cout << "Error failed to open " << "json/XXXXX" <<  endl;
-  }
-  JS << bsoncxx::to_json(doc_value.view()) << endl;
-  JS.close();
-
-  return bsoncxx::to_json(doc_value.view());
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = "testing";
+  pl.fBLOB = sblob;
+  a->writePayloadToFile(hash, ".", pl); 
 }
