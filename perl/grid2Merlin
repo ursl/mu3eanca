@@ -4,10 +4,11 @@
 # grid2Merlin
 # ============
 #
-# Usage:   ~/mu3e/mu3eanca/perl/relinkBinFiles [-u URI] [-f fileWithURIs -g gridLocation] [-o merlindir] [-w 1] [-d] [-s startPattern]
+# Usage:   ~/mu3e/mu3eanca/perl/relinkBinFiles [-u URI] [-f fileWithURIs -g gridLocation] [-o merlindir] [-w 1] [-d] [-n nfiles] [-s startPattern]
 #
 # Example: ../perl/grid2Merlin \
 #          -f signal \
+#          -n 100
 #          -g http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build4.4.3/signal/ \
 #          -o merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal
 #
@@ -24,14 +25,15 @@ use Cwd;
 my $dir = getcwd;
 
 use Getopt::Std;
-getopts('df:g:o:s:u:w:');
+getopts('df:g:n:o:s:u:w:');
 
 # -- default values
 my $merlindir = "langenegger\@merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal";
 my $gridLoc   = "http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal"; 
-my $waitSecs  = 1;
+my $waitSecs  = 0;
 my $startPat  = "nada";
 my $dbx       = 0;
+my $nfiles    = -1;
 
 my $uri = ""; 
 my $urifile = ""; 
@@ -58,6 +60,10 @@ if ($opt_d) {
     $dbx = 1;
 }  
 
+if ($opt_n) {
+    $nfiles = $opt_n;
+}  
+
 if ($opt_o) {
     $merlindir = $opt_o;
 }  
@@ -71,6 +77,7 @@ if ($opt_s) {
 }  
 
 if ($opt_f) {
+    my $cnt = 0; 
     my $skip = 1; 
     if ($startPat eq "nada") {
         $skip = 0;
@@ -91,7 +98,15 @@ if ($opt_f) {
             system("scp t3ui01.psi.ch:$file $merlindir");
             system("ssh t3ui01.psi.ch 'rm -f $file' ");
         }
-        sleep($waitSecs);
+        $cnt++;
+        if (($nfiles > 0) && ($cnt >= $nfiles)) {
+            print("Transferrred $nfiles files, stopping\n");
+            last;
+        }
+        if ($opt_w) {
+            print("waiting $waitSecs seconds\n");
+            sleep($waitSecs);
+        }
     }
 } else {
     print("uri: $uri\n");
