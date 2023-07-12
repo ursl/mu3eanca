@@ -28,7 +28,9 @@ public:
   virtual std::string getHash() {return fHash;}
   virtual void        calculate(std::string hash) {std::cout << "calAbs::calculate() ?" << std::endl;}
 
-  void                readPayloadFromFile(std::string dir, std::string hash);
+  // -- direct interactions
+  void                readPayloadFromFile(std::string hash, std::string dir);
+  void                writePayloadToFile(std::string hash, std::string dir, const payload &pl);
 
   void                update(std::string hash);
   void                dump2Root(TDirectory *);
