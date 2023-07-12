@@ -4,9 +4,10 @@
 # grid2Merlin
 # ============
 #
-# Usage:   ~/mu3e/mu3eanca/perl/relinkBinFiles [-u URI] [-f fileWithURIs -g gridLocation] [-o merlindir] [-w 1] [-d] [-n nfiles] [-s startPattern]
+# Usage:   ~/mu3e/mu3eanca/perl/relinkBinFiles [-i] [-u URI] [-f fileWithURIs -g gridLocation] [-o merlindir] [-w 1] [-d] [-n nfiles] [-s startPattern]
 #
 # Example: ../perl/grid2Merlin \
+#          -i 
 #          -f signal \
 #          -n 100
 #          -g http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build4.4.3/signal/ \
@@ -14,6 +15,7 @@
 #
 #
 # History
+#         2023/07/12 add -i 
 #         2023/07/12 add -w, -d, -s, and skipping '#' lines in fileWithURIs
 #         2023/07/11 first shot
 # ----------------------------------------------------------------------
@@ -93,10 +95,15 @@ if ($opt_f) {
         if ($dbx > 0) {
             print("$file\n");
         } else {
-            system("ssh t3ui01.psi.ch 'rm -f $file' ");
-            system("ssh t3ui01.psi.ch 'wget $gridLoc/$file' ");
-            system("scp t3ui01.psi.ch:$file $merlindir");
-            system("ssh t3ui01.psi.ch 'rm -f $file' ");
+            if ($opt_i) {
+                system("ssh t3ui01.psi.ch 'rm -f $file' ");
+                system("ssh t3ui01.psi.ch 'wget $gridLoc/$file' ");
+                system("scp t3ui01.psi.ch:$file $merlindir");
+                system("ssh t3ui01.psi.ch 'rm -f $file' ");
+            } else {
+                system("wget $gridLoc/$file");
+                system("mv   $file $merlindir");
+            }
         }
         $cnt++;
         if (($nfiles > 0) && ($cnt >= $nfiles)) {
