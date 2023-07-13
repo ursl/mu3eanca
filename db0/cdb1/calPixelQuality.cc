@@ -83,8 +83,8 @@ void calPixelQuality::calculate(string hash) {
 
 
 // ----------------------------------------------------------------------
-char calPixelQuality::getStatus(unsigned int chipid, int icol, int irow) {
-  return fMapConstants[chipid].matrix[icol][irow];
+int calPixelQuality::getStatus(unsigned int chipid, int icol, int irow) {
+  return static_cast<int>(fMapConstants[chipid].matrix[icol][irow]);
 }
 
 
