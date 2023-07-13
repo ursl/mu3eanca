@@ -46,7 +46,10 @@ using bsoncxx::builder::basic::make_document;
 // testPixelQuality
 // ----------------
 //
-// 
+// Examples:
+// bin/testPixelQuality -n 10 -noisy1 100 -noisy2 1100 -nrec1 1000
+// bin/testPixelQuality -n 10 -noisy1 100 -noisy2 1100 -nrec1 500
+// bin/testPixelQuality -n 10 -noisy1 100 -noisy2 1100 -nrec1 50
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
@@ -94,7 +97,7 @@ int main(int argc, char* argv[]) {
   TCanvas c1;
   long long totalTime(0);
   TH1D *hTime  = new TH1D("hTime", "hTime", 1000, 0., 1000.);
-  TH1D *hSetup = new TH1D("hSetup", "hSetup", 1000, 0., 10000.);
+  TH1D *hSetup = new TH1D("hSetup", "hSetup", 1000, 0., 20000.);
 
   auto grNoise = new TGraph();
   grNoise->SetTitle(Form("Processing time for N(rechit) = %d/chip", nrec1));
