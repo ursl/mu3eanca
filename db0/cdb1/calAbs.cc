@@ -97,6 +97,15 @@ void calAbs::dump2Root(TDirectory *d) {
 
 // ----------------------------------------------------------------------
 void calAbs::readPayloadFromFile(string hash, string dir) {
+  // -- check whether this payload is stored already and delete if found
+  if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
+    // -- not found, do nothing
+  } else {
+    // -- found, delete it
+    fTagIOVPayloadMap.erase(hash);
+  }
+  
+  
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(calAbs>  hash = " << hash 
