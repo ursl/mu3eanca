@@ -13,6 +13,8 @@
 #include "cdbJSON.hh"
 #include "base64.hh"
 
+#include "TCanvas.h"
+#include "TH1D.h"
 #include "TRandom3.h"
 #include "TMath.h"
 
@@ -123,6 +125,7 @@ int main(int argc, char* argv[]) {
 
   long long totalTime(0);
   int NCHIPS(4), NNOISY(150), NRECCHIPS(NCHIPS), NRECHITS(200);
+  TH1D *hTime = new TH1D("hTime", "hTime", 100, 0., 10000.);
   for (int ievt = 0; ievt < nevts; ++ievt) {
     auto tbegin = std::chrono::high_resolution_clock::now();
     cout << "####### evt " << ievt << endl;
@@ -152,16 +155,22 @@ int main(int argc, char* argv[]) {
     auto dura = chrono::duration_cast<chrono::microseconds>(tend-tbegin).count();
     totalTime += dus;
     vdura.push_back(static_cast<double>(dus));
-    vduraE.push_back(0.1);
+    vduraE.push_back(50.);
+    hTime->Fill(static_cast<double>(dus));
     cout << "##timing: " << dura << " dus = " << dus << endl;
   }
   double aveVal(0.), aveErr(0.), chi2(0.);
   average(aveVal, aveErr, vdura, vduraE, chi2);
   cout << "##timing/evt: " << totalTime/nevts
        << " average = " << aveVal << " +/- " << aveErr
+       << " TH1D = " << hTime->GetMean() << " +/- " << hTime->GetMeanError() << " (RMS = " << hTime->GetRMS() << ")"
        << " # NCHIPS/NNOISY/NRECHITS = "
        << NCHIPS << "/" << NNOISY << "/" << NRECHITS
        << endl;
+
+  TCanvas c1;
+  hTime->Draw();
+  c1.SaveAs("hTime.pdf");
 }
 
 // ----------------------------------------------------------------------
@@ -175,13 +184,11 @@ void writeBlob(string filename, int nchip, int nnoisy) {
   
   char data[8], data1[8], data2[8]; 
   for (unsigned int i = 0; i < nchip; ++i) {
-    double rndm = 5*gRandom->Rndm();
-    int nnoisypix(nnoisy*rndm);
+    int nnoisypix(nnoisy);
     if (0) cout << "ichip = " << i
                 << " nchip = " << nchip
                 << " nnoisy = " << nnoisy
                 << " nnoisypix = " << nnoisypix
-                << " rndm = " << rndm
                 << endl;
     ONS << dumpArray(uint2Blob(i)) 
         << dumpArray(int2Blob(nnoisypix));
