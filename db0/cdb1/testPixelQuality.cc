@@ -14,7 +14,9 @@
 #include "base64.hh"
 
 #include "TCanvas.h"
+#include "TStyle.h"
 #include "TH1D.h"
+#include "TGraph.h"
 #include "TRandom3.h"
 #include "TMath.h"
 
@@ -62,55 +64,23 @@ void createRandomHits(map<unsigned int, vector<pixhit> > &, int, int);
 
 
 // ----------------------------------------------------------------------
-void average(double &av, double &error, vector<double> &val, vector<double> &verr, double &chi2) {
-
-  double e(0.), w8(0.), sumW8(0.), sumAve(0.);
-  for (unsigned int i = 0; i < val.size(); ++i) {
-    cout << i << " " << val[i] << " +/- " << verr[i];
-
-    // -- calculate mean and error
-    e = verr[i];
-    if (e > 0.) {
-      w8 = 1./(e*e);
-      sumW8  += w8;
-      sumAve += w8*val[i];
-      cout << " w8 = " << w8 << " sumW8 = " << sumW8 << " sumAve = " << sumAve << endl;
-    } else {
-      cout << "average: Error = 0 for " << val[i] << endl;
-      continue;
-    }
-  }
-  if (sumW8 > 0.) {
-    av = sumAve/sumW8;
-    sumW8 = TMath::Sqrt(sumW8);
-    error = 1./sumW8;
-  } else {
-    av = -99.;
-    error = -99.;
-  }
-  cout << "sqrt(sumW8) = " << sumW8 << " av = " << av << " +/- " << error << endl;
-
-  chi2 = 0;
-  for (unsigned int i = 0; i < val.size(); ++i) {
-    e = verr[i];
-    if (e > 0.) {
-      w8 = 1./(e*e);
-    } else {
-      w8 = 0.;
-    }
-    chi2 += w8*(av-val[i])*(av-val[i]);
-  }
-}
-
-
-// ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
+
+  int NCHIPS(3000), NNOISY(150), NRECCHIPS(NCHIPS), NRECHITS(200);
   
   // -- command line arguments
   int verbose(0), nevts(2);
+  int nchips(NCHIPS);
+  int noisy1(NNOISY), noisy2(NNOISY);
+  int nrec1(NRECHITS), nrec2(NRECHITS);
   for (int i = 0; i < argc; i++){
-    if (!strcmp(argv[i], "-v"))   {verbose = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-n"))   {nevts = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-n"))      {nevts = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-nchips")) {nchips = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-noisy1")) {noisy1 = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-noisy2")) {noisy2 = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-nrec1"))  {nrec1 = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-nrec2"))  {nrec2 = atoi(argv[++i]);}
   }
   
   string gt("mcideal");
@@ -118,59 +88,95 @@ int main(int argc, char* argv[]) {
   
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
+
+  int nstep = 10;
   
-  vector<double> vdura, vduraE;
-  vdura.reserve(nevts);
-  vduraE.reserve(nevts);
-
+  TCanvas c1;
   long long totalTime(0);
-  int NCHIPS(4), NNOISY(150), NRECCHIPS(NCHIPS), NRECHITS(200);
-  TH1D *hTime = new TH1D("hTime", "hTime", 100, 0., 10000.);
-  for (int ievt = 0; ievt < nevts; ++ievt) {
-    auto tbegin = std::chrono::high_resolution_clock::now();
-    cout << "####### evt " << ievt << endl;
-    calPixelQuality a;
-    // -- create payload
-    string hash("tag_pixelquality_mcideal_iov_1");
-    createPayload(hash, &a, NCHIPS, NNOISY);
-    
-    a.readPayloadFromFile(hash, ".");
-    a.calculate(hash);
-    
-    map<unsigned int, vector<pixhit>> detHits; 
-    createRandomHits(detHits, NRECCHIPS, NRECHITS);
+  TH1D *hTime  = new TH1D("hTime", "hTime", 1000, 0., 1000.);
+  TH1D *hSetup = new TH1D("hSetup", "hSetup", 1000, 0., 10000.);
 
-    // -- now loop over all rec hits
-    for (auto it: detHits) {
-      vector<pixhit> v = it.second; 
-      cout << "it.first = " << it.first << " npix = " << v.size() << endl;
-      for (auto ipix: v) {
-        if (a.getStatus(ipix.ichip, ipix.icol, ipix.irow)) {
-          if (0) cout << "skip noisy pixel " << ipix.ichip << "/" << ipix.icol << "/" << ipix.irow << endl;
+  auto grNoise = new TGraph();
+  grNoise->SetTitle(Form("Processing time for N(rechit) = %d/chip", nrec1));
+  grNoise->GetXaxis()->SetTitle("noisy pixels");
+  grNoise->GetYaxis()->SetTitle("time [ms]");
+  grNoise->SetMarkerStyle(20);
+  grNoise->SetMarkerSize(1.5);
+  auto grSetup = new TGraph();
+  grSetup->SetTitle("Setup time (payload preparation/reading)");
+  grSetup->GetXaxis()->SetTitle("noisy pixels");
+  grSetup->GetYaxis()->SetTitle("time [ms]");
+  grSetup->SetMarkerStyle(20);
+  grSetup->SetMarkerSize(1.5);
+  
+  for (int inoise = noisy1; inoise <= noisy2; inoise += (noisy2-noisy1)/nstep) {
+    hTime->Reset();
+    hSetup->Reset();
+    for (int ievt = 0; ievt < nevts; ++ievt) {
+      cout << "####### evt " << ievt << endl;
+      calPixelQuality a;
+      // -- create payload
+      auto sbegin = std::chrono::high_resolution_clock::now();
+      string hash("tag_pixelquality_mcideal_iov_1");
+      createPayload(hash, &a, NCHIPS, inoise);
+      
+      a.readPayloadFromFile(hash, ".");
+      a.calculate(hash);
+      
+      map<unsigned int, vector<pixhit>> detHits; 
+      createRandomHits(detHits, NRECCHIPS, nrec1);
+      auto send = std::chrono::high_resolution_clock::now();
+      long long duss = chrono::duration_cast<chrono::milliseconds>(send-sbegin).count();
+      hSetup->Fill(static_cast<double>(duss));
+      
+      // -- now loop over all rec hits
+      auto tbegin = std::chrono::high_resolution_clock::now();
+      for (auto it: detHits) {
+        vector<pixhit> v = it.second; 
+        //        cout << "it.first = " << it.first << " npix = " << v.size() << endl;
+        for (auto ipix: v) {
+          if (a.getStatus(ipix.ichip, ipix.icol, ipix.irow)) {
+            if (0) cout << "skip noisy pixel " << ipix.ichip << "/" << ipix.icol << "/" << ipix.irow << endl;
+          }
         }
       }
+      auto tend = std::chrono::high_resolution_clock::now();
+      long long  dus = chrono::duration_cast<chrono::milliseconds>(tend-tbegin).count();
+      auto dura = chrono::duration_cast<chrono::milliseconds>(tend-tbegin).count();
+      totalTime += dus;
+      hTime->Fill(static_cast<double>(dus));
+      cout << "##timing: " << dura << " dus = " << dus << endl;
     }
-    auto tend = std::chrono::high_resolution_clock::now();
-    long long  dus = chrono::duration_cast<chrono::microseconds>(tend-tbegin).count();
-    auto dura = chrono::duration_cast<chrono::microseconds>(tend-tbegin).count();
-    totalTime += dus;
-    vdura.push_back(static_cast<double>(dus));
-    vduraE.push_back(50.);
-    hTime->Fill(static_cast<double>(dus));
-    cout << "##timing: " << dura << " dus = " << dus << endl;
-  }
-  double aveVal(0.), aveErr(0.), chi2(0.);
-  average(aveVal, aveErr, vdura, vduraE, chi2);
-  cout << "##timing/evt: " << totalTime/nevts
-       << " average = " << aveVal << " +/- " << aveErr
-       << " TH1D = " << hTime->GetMean() << " +/- " << hTime->GetMeanError() << " (RMS = " << hTime->GetRMS() << ")"
-       << " # NCHIPS/NNOISY/NRECHITS = "
-       << NCHIPS << "/" << NNOISY << "/" << NRECHITS
-       << endl;
+    cout << "##timing/evt: " << totalTime/nevts
+         << " TH1D = " << hTime->GetMean() << " +/- " << hTime->GetMeanError() << " (RMS = " << hTime->GetRMS() << ")"
+         << " # NCHIPS/NNOISY/NRECHITS = "
+         << NCHIPS << "/" << inoise << "/" << nrec1
+         << endl;
+    
+    hTime->SetTitle(Form("nchips%d-nnoise%d-nrec%d", NCHIPS, inoise, nrec1));
+    hTime->Draw();
+    c1.SaveAs(Form("hTime-nchips%d-nnoise%d-nrec%d.pdf", NCHIPS, inoise, nrec1));
 
-  TCanvas c1;
-  hTime->Draw();
-  c1.SaveAs("hTime.pdf");
+    hSetup->SetTitle(Form("setup nchips%d-nnoise%d-nrec%d", NCHIPS, inoise, nrec1));
+    hSetup->Draw();
+    c1.SaveAs(Form("hSetup-nchips%d-nnoise%d-nrec%d.pdf", NCHIPS, inoise, nrec1));
+    
+    grSetup->AddPoint(inoise, hSetup->GetMean());
+    grNoise->AddPoint(inoise, hTime->GetMean());
+    cout << "### inoise = " << inoise
+         << " noisy1 = " << noisy1
+         << " noisy2 = " << noisy2
+         << " nstep = " << nstep
+         << endl;
+  }
+
+  c1.Clear();
+  grNoise->Draw("alp");
+  c1.SaveAs(Form("hNoise-nchips%d-nrec%d-noisemax%d.pdf", NCHIPS, nrec1, noisy2));
+
+  c1.Clear();
+  grSetup->Draw("alp");
+  c1.SaveAs(Form("hSetup-nchips%d-nrec%d-noisemax%d.pdf", NCHIPS, nrec1, noisy2));
 }
 
 // ----------------------------------------------------------------------
@@ -183,13 +189,11 @@ void writeBlob(string filename, int nchip, int nnoisy) {
   }
   
   char data[8], data1[8], data2[8]; 
+  if (1) cout << " nchip = " << nchip
+              << " nnoisy = " << nnoisy
+              << endl;
   for (unsigned int i = 0; i < nchip; ++i) {
     int nnoisypix(nnoisy);
-    if (0) cout << "ichip = " << i
-                << " nchip = " << nchip
-                << " nnoisy = " << nnoisy
-                << " nnoisypix = " << nnoisypix
-                << endl;
     ONS << dumpArray(uint2Blob(i)) 
         << dumpArray(int2Blob(nnoisypix));
     for (unsigned int ipix = 0; ipix < nnoisypix; ++ipix) {
@@ -232,6 +236,9 @@ void createPayload(string hash, calAbs *a, int nchips, int nnoisy) {
 void createRandomHits(map<unsigned int, vector<pixhit> > &dethits, int nrecchips, int nrechits) {
 
   dethits.clear();
+  if (1) cout << " nrecchips = " << nrecchips
+              << " nrechits = " << nrechits
+              << endl;
   
   pixhit a;
   for (unsigned int ic = 0; ic < nrecchips; ++ic) {
