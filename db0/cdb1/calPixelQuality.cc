@@ -73,7 +73,7 @@ void calPixelQuality::calculate(string hash) {
       unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
       a.matrix[icol][irow] = static_cast<char>(iqual);
     }
-    cout << "inserting " << a.id << " with size = " << sizeof(a) << endl;
+    // cout << "inserting " << a.id << " with size = " << sizeof(a) << endl;
     fMapConstants.insert(make_pair(a.id, a));
   }
 
