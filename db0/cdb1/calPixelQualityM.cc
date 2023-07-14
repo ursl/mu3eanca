@@ -82,5 +82,9 @@ void calPixelQualityM::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 int calPixelQualityM::getStatus(unsigned int chipid, int icol, int irow) {
-  return static_cast<int>(fMapConstants[chipid].mpixel[icol*250+256]);
+  if (fMapConstants[chipid].mpixel.find(icol*250+256) == fMapConstants[chipid].mpixel.end()) {
+    return 0;
+  } else {
+    return static_cast<int>(fMapConstants[chipid].mpixel[icol*250+256]);
+  }
 }

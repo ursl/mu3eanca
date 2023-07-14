@@ -86,5 +86,5 @@ int calPixelQualityV::getStatus(unsigned int chipid, int icol, int irow) {
   for (auto it: fMapConstants[chipid].vpixel) {
     if (it.icol == icol && it.irow == irow) return static_cast<int>(it.iqual);
   }
-  return -1;
+  return 0;
 }
