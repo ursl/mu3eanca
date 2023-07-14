@@ -9,6 +9,7 @@
 #include "Mu3eConditions.hh"
 #include "cdbUtil.hh"
 #include "calPixelQuality.hh"
+#include "calPixelQualityV.hh"
 
 #include "cdbJSON.hh"
 #include "base64.hh"
@@ -72,12 +73,14 @@ int main(int argc, char* argv[]) {
   int NCHIPS(3000), NNOISY(150), NRECCHIPS(NCHIPS), NRECHITS(200);
   
   // -- command line arguments
-  int verbose(0), nevts(2);
+  int verbose(0), mode(1), nevts(2);
+  // note: mode = 1 PixelQuality, 2 PixelQualityV
   int nchips(NCHIPS);
   int noisy1(NNOISY), noisy2(NNOISY);
   int nrec1(NRECHITS), nrec2(NRECHITS);
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-n"))      {nevts = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-nchips")) {nchips = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-noisy1")) {noisy1 = atoi(argv[++i]);}
@@ -111,21 +114,27 @@ int main(int argc, char* argv[]) {
   grSetup->GetYaxis()->SetTitle("time [ms]");
   grSetup->SetMarkerStyle(20);
   grSetup->SetMarkerSize(1.5);
-  
+
+  calAbs *cpq(0); 
   for (int inoise = noisy1; inoise <= noisy2; inoise += (noisy2-noisy1)/nstep) {
     hTime->Reset();
     hSetup->Reset();
     for (int ievt = 0; ievt < nevts; ++ievt) {
       cout << "####### evt " << ievt << endl;
-      calPixelQuality a;
+      
+      if (1 == mode) {
+        cpq = new calPixelQuality();
+      } else if (2 == mode) {
+        cpq = new calPixelQualityV();
+      }
       // -- create payload
       auto sbegin = std::chrono::high_resolution_clock::now();
       string hash("tag_pixelquality_mcideal_iov_1");
-      createPayload(hash, &a, NCHIPS, inoise);
+      createPayload(hash, cpq, NCHIPS, inoise);
       
-      a.readPayloadFromFile(hash, ".");
-      a.calculate(hash);
-      
+      cpq->readPayloadFromFile(hash, ".");
+      cpq->calculate(hash);
+
       map<unsigned int, vector<pixhit>> detHits; 
       createRandomHits(detHits, NRECCHIPS, nrec1);
       auto send = std::chrono::high_resolution_clock::now();
@@ -138,7 +147,7 @@ int main(int argc, char* argv[]) {
         vector<pixhit> v = it.second; 
         //        cout << "it.first = " << it.first << " npix = " << v.size() << endl;
         for (auto ipix: v) {
-          if (a.getStatus(ipix.ichip, ipix.icol, ipix.irow)) {
+          if (cpq->getStatus(ipix.ichip, ipix.icol, ipix.irow)) {
             if (0) cout << "skip noisy pixel " << ipix.ichip << "/" << ipix.icol << "/" << ipix.irow << endl;
           }
         }
@@ -149,6 +158,7 @@ int main(int argc, char* argv[]) {
       totalTime += dus;
       hTime->Fill(static_cast<double>(dus));
       cout << "##timing: " << dura << " dus = " << dus << endl;
+      delete cpq;
     }
     cout << "##timing/evt: " << totalTime/nevts
          << " TH1D = " << hTime->GetMean() << " +/- " << hTime->GetMeanError() << " (RMS = " << hTime->GetRMS() << ")"
@@ -156,13 +166,13 @@ int main(int argc, char* argv[]) {
          << NCHIPS << "/" << inoise << "/" << nrec1
          << endl;
     
-    hTime->SetTitle(Form("nchips%d-nnoise%d-nrec%d", NCHIPS, inoise, nrec1));
+    hTime->SetTitle(Form("timing mode%d-nchips%d-nnoise%d-nrec%d", mode, NCHIPS, inoise, nrec1));
     hTime->Draw();
-    c1.SaveAs(Form("hTime-nchips%d-nnoise%d-nrec%d.pdf", NCHIPS, inoise, nrec1));
+    c1.SaveAs(Form("hTime-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, NCHIPS, inoise, nrec1));
 
-    hSetup->SetTitle(Form("setup nchips%d-nnoise%d-nrec%d", NCHIPS, inoise, nrec1));
+    hSetup->SetTitle(Form("setup mode%d-nchips%d-nnoise%d-nrec%d", mode, NCHIPS, inoise, nrec1));
     hSetup->Draw();
-    c1.SaveAs(Form("hSetup-nchips%d-nnoise%d-nrec%d.pdf", NCHIPS, inoise, nrec1));
+    c1.SaveAs(Form("hSetup-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, NCHIPS, inoise, nrec1));
     
     grSetup->AddPoint(inoise, hSetup->GetMean());
     grNoise->AddPoint(inoise, hTime->GetMean());
@@ -175,11 +185,11 @@ int main(int argc, char* argv[]) {
 
   c1.Clear();
   grNoise->Draw("alp");
-  c1.SaveAs(Form("hNoise-nchips%d-nrec%d-noisemax%d.pdf", NCHIPS, nrec1, noisy2));
+  c1.SaveAs(Form("hNoise-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, NCHIPS, nrec1, noisy2));
 
   c1.Clear();
   grSetup->Draw("alp");
-  c1.SaveAs(Form("hSetup-nchips%d-nrec%d-noisemax%d.pdf", NCHIPS, nrec1, noisy2));
+  c1.SaveAs(Form("hSetup-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, NCHIPS, nrec1, noisy2));
 }
 
 // ----------------------------------------------------------------------
