@@ -79,9 +79,8 @@ void calPixelQualityM::calculate(string hash) {
   fMapConstantsIt = fMapConstants.begin();
 }
 
+
 // ----------------------------------------------------------------------
 int calPixelQualityM::getStatus(unsigned int chipid, int icol, int irow) {
-  constants a = fMapConstants[chipid];
-  int idx = icol*250 + irow;
-  return static_cast<int>(a.mpixel[idx]);
+  return static_cast<int>(fMapConstants[chipid].mpixel[icol*250+256]);
 }
