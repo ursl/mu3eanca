@@ -10,6 +10,7 @@
 #include "cdbUtil.hh"
 #include "calPixelQuality.hh"
 #include "calPixelQualityV.hh"
+#include "calPixelQualityM.hh"
 
 #include "cdbJSON.hh"
 #include "base64.hh"
@@ -74,7 +75,7 @@ int main(int argc, char* argv[]) {
   
   // -- command line arguments
   int verbose(0), mode(1), nevts(2);
-  // note: mode = 1 PixelQuality, 2 PixelQualityV
+  // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   int nchips(NCHIPS);
   int noisy1(NNOISY), noisy2(NNOISY);
   int nrec1(NRECHITS), nrec2(NRECHITS);
@@ -99,7 +100,14 @@ int main(int argc, char* argv[]) {
   
   TCanvas c1;
   long long totalTime(0);
-  TH1D *hTime  = new TH1D("hTime", "hTime", 1000, 0., 1000.);
+  TH1D *hTime;
+  if (1 == mode) {
+    hTime = new TH1D("hTime", "hTime", 1000, 0., 1000.);
+  } else if (2 == mode) {
+    hTime = new TH1D("hTime", "hTime", 1000, 0., 10000.);
+  } else if (3 == mode) {
+    hTime = new TH1D("hTime", "hTime", 1000, 0., 20000.);
+  }
   TH1D *hSetup = new TH1D("hSetup", "hSetup", 1000, 0., 20000.);
 
   auto grNoise = new TGraph();
@@ -126,6 +134,8 @@ int main(int argc, char* argv[]) {
         cpq = new calPixelQuality();
       } else if (2 == mode) {
         cpq = new calPixelQualityV();
+      } else if (3 == mode) {
+        cpq = new calPixelQualityM();
       }
       // -- create payload
       auto sbegin = std::chrono::high_resolution_clock::now();
