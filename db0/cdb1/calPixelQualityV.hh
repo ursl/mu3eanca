@@ -23,15 +23,24 @@ public:
   std::string getName() override {return fPixelQualityTag;}
   void        calculate(std::string hash) override;
 
+  int         getStatus(unsigned int chipid, int icol, int irow);
+
   bool        getNextID(uint32_t &ID);
+  void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);
   
 private:
-  std::string fPixelQualityTag{"pixelquality_"};
+  std::string fPixelQualityTag{"pixelqualityv_"};
 
+  
+  struct pixel {
+    int icol, irow; 
+    char iqual;
+  };
+  
   // -- local and private
   struct constants {
     uint32_t id; 
-    std::vector<char> matrix;
+    std::vector<pixel> vpixel;
   };
 
   std::map<uint32_t, constants> fMapConstants;
