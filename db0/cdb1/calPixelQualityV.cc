@@ -37,6 +37,7 @@ calPixelQualityV::calPixelQualityV(cdbAbs *db, string tag) : calAbs(db, tag) {
 
 // ----------------------------------------------------------------------
 calPixelQualityV::~calPixelQualityV() {
+  for (auto it: fMapConstants) it.second.vpixel.clear();    
   fMapConstants.clear();
   cout << "this is the end of calPixelQualityV with tag ->" << fTag << "<-" << endl;
 }
@@ -82,8 +83,7 @@ void calPixelQualityV::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 int calPixelQualityV::getStatus(unsigned int chipid, int icol, int irow) {
-  constants a = fMapConstants[chipid];
-  for (auto it: a.vpixel) {
+  for (auto it: fMapConstants[chipid].vpixel) {
     if (it.icol == icol && it.irow == irow) return static_cast<int>(it.iqual);
   }
   return -1;
