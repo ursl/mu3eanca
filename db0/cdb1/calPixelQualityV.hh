@@ -1,5 +1,5 @@
-#ifndef CALPIXELQUALITY_h
-#define CALPIXELQUALITY_h
+#ifndef CALPIXELQUALITYV_h
+#define CALPIXELQUALITYV_h
 
 #include "calAbs.hh"
 
