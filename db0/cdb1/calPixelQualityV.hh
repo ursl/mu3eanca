@@ -23,7 +23,7 @@ public:
   std::string getName() override {return fPixelQualityTag;}
   void        calculate(std::string hash) override;
 
-  int         getStatus(unsigned int chipid, int icol, int irow);
+  int         getStatus(unsigned int chipid, int icol, int irow)  override;
 
   bool        getNextID(uint32_t &ID);
   void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);

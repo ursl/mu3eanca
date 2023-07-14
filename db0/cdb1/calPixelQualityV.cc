@@ -37,6 +37,7 @@ calPixelQualityV::calPixelQualityV(cdbAbs *db, string tag) : calAbs(db, tag) {
 
 // ----------------------------------------------------------------------
 calPixelQualityV::~calPixelQualityV() {
+  fMapConstants.clear();
   cout << "this is the end of calPixelQualityV with tag ->" << fTag << "<-" << endl;
 }
 

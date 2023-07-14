@@ -20,7 +20,7 @@ public:
   calAbs() = default;
   calAbs(cdbAbs *db);
   calAbs(cdbAbs *db, std::string tag);
-  ~calAbs();
+  virtual ~calAbs();
 
   void                setIOVs(std::vector<int> v) {fIOVs = v;}
 	void                setVerbosity(int v) {fVerbose = v;}
@@ -35,6 +35,9 @@ public:
   void                update(std::string hash);
   void                dump2Root(TDirectory *);
   void                setPrintTiming(int v) {fPrintTiming = v;}
+
+  // -- accessors for  various derived classes
+  virtual int         getStatus(unsigned int id, int icol, int irow) {return -9999;}
   
 protected: 
 	cdbAbs                            *fDB;
