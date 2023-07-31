@@ -48,7 +48,7 @@ using bsoncxx::builder::basic::make_document;
 // testPixelQuality
 // ----------------
 //
-// Examples:
+// Examples: 
 // bin/testPixelQuality -n 10 -noisy1 100 -noisy2 1100 -nrec1 1000
 // bin/testPixelQuality -n 10 -noisy1 100 -noisy2 1100 -nrec1 500
 // bin/testPixelQuality -n 10 -noisy1 100 -noisy2 1100 -nrec1 50
