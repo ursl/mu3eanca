@@ -109,6 +109,9 @@ int main(int argc, char* argv[]) {
     hTime = new TH1D("hTime", "hTime", 1000, 0., 20000.);
   }
   TH1D *hSetup = new TH1D("hSetup", "hSetup", 1000, 0., 20000.);
+  TH1D *hSetup1 = new TH1D("hSetup1", "hSetup 1", 1000, 0., 20000.);
+  TH1D *hSetup2 = new TH1D("hSetup2", "hSetup 2", 1000, 0., 20000.);
+  TH1D *hSetup3 = new TH1D("hSetup3", "hSetup 3", 1000, 0., 20000.);
 
   auto grNoise = new TGraph();
   grNoise->SetTitle(Form("Processing time for N(rechit) = %d/chip", nrec1));
