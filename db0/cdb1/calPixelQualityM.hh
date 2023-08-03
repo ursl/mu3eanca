@@ -23,6 +23,7 @@ public:
 
   std::string getName() override {return fPixelQualityTag;}
   void        calculate(std::string hash) override;
+  std::string makeBLOB(std::map<int, std::vector<double> >) {std::cout << "FIXME" << std::endl; }
 
   int         getStatus(unsigned int chipid, int icol, int irow)  override;
 

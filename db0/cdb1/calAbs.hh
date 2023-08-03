@@ -27,6 +27,9 @@ public:
   virtual std::string getName() {return std::string("blurp");}
   virtual std::string getHash() {return fHash;}
   virtual void        calculate(std::string hash) {std::cout << "calAbs::calculate() ?" << std::endl;}
+  virtual std::string makeBLOB(std::map<int, std::vector<double> >) {
+    std::cout << "calAbs::makeBLOB(map<int, vector<double>>) ?" << std::endl;
+  }
 
   // -- direct interactions
   void                readPayloadFromFile(std::string hash, std::string dir);
