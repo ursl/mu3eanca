@@ -37,6 +37,8 @@ calPixelQualityV::calPixelQualityV(cdbAbs *db, string tag) : calAbs(db, tag) {
 
 // ----------------------------------------------------------------------
 calPixelQualityV::~calPixelQualityV() {
+  for (auto it: fMapConstants) it.second.vpixel.clear();    
+  fMapConstants.clear();
   cout << "this is the end of calPixelQualityV with tag ->" << fTag << "<-" << endl;
 }
 
@@ -54,11 +56,24 @@ void calPixelQualityV::calculate(string hash) {
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
   cout << "calPixelQualityV header: " << hex << header << dec << endl;
-
+  
+  int npix(0);
   while (ibuffer != buffer.end()) {
     constants a; 
     a.id = blob2UnsignedInt(getData(ibuffer));
+    // -- get number of pixel entries
+    npix = blob2Int(getData(ibuffer));
+    a.vpixel.reserve(npix);
     
+    for (unsigned int i = 0; i < npix; ++i) {
+      pixel px;
+      px.icol            = blob2Int(getData(ibuffer));
+      px.irow            = blob2Int(getData(ibuffer));
+      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
+      px.iqual           = static_cast<char>(iqual);
+      a.vpixel.push_back(px);
+    }
+    // cout << "inserting " << a.id << " with size = " << sizeof(a) << endl;
     fMapConstants.insert(make_pair(a.id, a));
   }
 
@@ -66,3 +81,10 @@ void calPixelQualityV::calculate(string hash) {
   fMapConstantsIt = fMapConstants.begin();
 }
 
+// ----------------------------------------------------------------------
+int calPixelQualityV::getStatus(unsigned int chipid, int icol, int irow) {
+  for (auto it: fMapConstants[chipid].vpixel) {
+    if (it.icol == icol && it.irow == irow) return static_cast<int>(it.iqual);
+  }
+  return 0;
+}

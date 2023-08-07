@@ -32,6 +32,7 @@ public:
 
   std::string getName() override {return fFibresAlignmentTag;}
   void        calculate(std::string hash) override;
+  std::string makeBLOB(std::map<int, std::vector<double> >) {std::cout << "FIXME" << std::endl; }
 
   bool        getNextID(uint32_t &ID);
   

@@ -1,21 +1,22 @@
-#ifndef CALPIXELQUALITYV_h
-#define CALPIXELQUALITYV_h
+#ifndef CALPIXELQUALITYM_h
+#define CALPIXELQUALITYM_h
 
 #include "calAbs.hh"
 
 #include <string>
 #include <map>
 
+
 // ----------------------------------------------------------------------
 // pixel quality class 
 // ----------------------------------------------------------------------
-class calPixelQualityV : public calAbs {
+class calPixelQualityM : public calAbs {
 public:
   
-  calPixelQualityV() = default;
-  calPixelQualityV(cdbAbs *db);
-  calPixelQualityV(cdbAbs *db, std::string tag);
-  ~calPixelQualityV();
+  calPixelQualityM() = default;
+  calPixelQualityM(cdbAbs *db);
+  calPixelQualityM(cdbAbs *db, std::string tag);
+  ~calPixelQualityM();
 
   // -- direct accessors
   uint32_t id(uint32_t id) {return fMapConstants[id].id;}
@@ -30,18 +31,13 @@ public:
   void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);
   
 private:
-  std::string fPixelQualityTag{"pixelqualityv_"};
+  std::string fPixelQualityTag{"pixelqualitym_"};
 
-  
-  struct pixel {
-    int icol, irow; 
-    char iqual;
-  };
-  
+ 
   // -- local and private
   struct constants {
     uint32_t id; 
-    std::vector<pixel> vpixel;
+    std::map<int, char> mpixel;
   };
 
   std::map<uint32_t, constants> fMapConstants;

@@ -1,4 +1,4 @@
-#include "calPixelQuality.hh"
+#include "calPixelQualityM.hh"
 
 #include "cdbUtil.hh"
 
@@ -9,12 +9,12 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-calPixelQuality::calPixelQuality(cdbAbs *db) : calAbs(db) {
+calPixelQualityM::calPixelQualityM(cdbAbs *db) : calAbs(db) {
 }
 
 
 // ----------------------------------------------------------------------
-bool calPixelQuality::getNextID(uint32_t &ID) {
+bool calPixelQualityM::getNextID(uint32_t &ID) {
   if (fMapConstantsIt == fMapConstants.end()) {
     // -- reset
     ID = 999999;
@@ -29,22 +29,23 @@ bool calPixelQuality::getNextID(uint32_t &ID) {
 
 
 // ----------------------------------------------------------------------
-calPixelQuality::calPixelQuality(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calPixelQuality created and registered with tag ->" << fTag << "<-" 
+calPixelQualityM::calPixelQualityM(cdbAbs *db, string tag) : calAbs(db, tag) {
+	cout << "calPixelQualityM created and registered with tag ->" << fTag << "<-" 
 			 << endl;
 }
 
 
 // ----------------------------------------------------------------------
-calPixelQuality::~calPixelQuality() {
+calPixelQualityM::~calPixelQualityM() {
+  for (auto it: fMapConstants) it.second.mpixel.clear();    
   fMapConstants.clear();
-  cout << "this is the end of calPixelQuality with tag ->" << fTag << "<-" << endl;
+  cout << "this is the end of calPixelQualityM with tag ->" << fTag << "<-" << endl;
 }
 
 
 // ----------------------------------------------------------------------
-void calPixelQuality::calculate(string hash) {
-  cout << "calPixelQuality::calculate() with "
+void calPixelQualityM::calculate(string hash) {
+  cout << "calPixelQualityM::calculate() with "
        << "fHash ->" << hash << "<-"
        << endl;
   fMapConstants.clear();
@@ -54,25 +55,21 @@ void calPixelQuality::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-  cout << "calPixelQuality header: " << hex << header << dec << endl;
-
+  cout << "calPixelQualityM header: " << hex << header << dec << endl;
+  
   int npix(0);
   while (ibuffer != buffer.end()) {
     constants a; 
     a.id = blob2UnsignedInt(getData(ibuffer));
     // -- get number of pixel entries
     npix = blob2Int(getData(ibuffer));
-    // -- fill matrix with zero
-    for (unsigned int ix = 0; ix < 256; ++ix) {
-      for (unsigned int iy = 0; iy < 250; ++iy) {
-        a.matrix[ix][iy] = static_cast<char>(0);
-      }
-    }
+    
     for (unsigned int i = 0; i < npix; ++i) {
-      int icol           = blob2Int(getData(ibuffer));
-      int irow           = blob2Int(getData(ibuffer));
+      int icol            = blob2Int(getData(ibuffer));
+      int irow            = blob2Int(getData(ibuffer));
       unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      a.matrix[icol][irow] = static_cast<char>(iqual);
+      int idx = icol*250 + irow;
+      a.mpixel.insert(make_pair(idx, static_cast<char>(iqual)));
     }
     // cout << "inserting " << a.id << " with size = " << sizeof(a) << endl;
     fMapConstants.insert(make_pair(a.id, a));
@@ -84,21 +81,10 @@ void calPixelQuality::calculate(string hash) {
 
 
 // ----------------------------------------------------------------------
-int calPixelQuality::getStatus(unsigned int chipid, int icol, int irow) {
-  return static_cast<int>(fMapConstants[chipid].matrix[icol][irow]);
-}
-
-
-// ----------------------------------------------------------------------
-void calPixelQuality::printPixelQuality(unsigned int chipid, int minimumStatus) {
-  for (unsigned int ix = 0; ix < 256; ++ix) {
-    for (unsigned int iy = 0; iy < 250; ++iy) {
-      if (fMapConstants[chipid].matrix[ix][iy] > minimumStatus) {
-        cout << "chipID = " << chipid
-             << " x/y = " << ix << "/" << iy
-             << " status = " << static_cast<unsigned int>(fMapConstants[chipid].matrix[ix][iy])
-             << endl;
-      }
-    }
+int calPixelQualityM::getStatus(unsigned int chipid, int icol, int irow) {
+  if (fMapConstants[chipid].mpixel.find(icol*250+256) == fMapConstants[chipid].mpixel.end()) {
+    return 0;
+  } else {
+    return static_cast<int>(fMapConstants[chipid].mpixel[icol*250+256]);
   }
 }
