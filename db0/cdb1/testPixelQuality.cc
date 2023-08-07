@@ -4,15 +4,23 @@
 #include <cstdlib>
 #include <vector>
 #include <string.h>
+#include <chrono>
 
 #include "Mu3eConditions.hh"
 #include "cdbUtil.hh"
 #include "calPixelQuality.hh"
+#include "calPixelQualityV.hh"
+#include "calPixelQualityM.hh"
 
 #include "cdbJSON.hh"
 #include "base64.hh"
 
+#include "TCanvas.h"
+#include "TStyle.h"
+#include "TH1D.h"
+#include "TGraph.h"
 #include "TRandom3.h"
+#include "TMath.h"
 
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
@@ -36,26 +44,50 @@ using bsoncxx::builder::basic::sub_array;
 using bsoncxx::builder::basic::sub_document;
 using bsoncxx::builder::basic::make_document;
 
-void writeBlob(string);
-string createPayload(string );
-
-#define NCHIPS 20
-
 // ----------------------------------------------------------------------
 // testPixelQuality
 // ----------------
 //
-// 
+// Examples: 
+// bin/testPixelQuality -n 10 -noisy1 100 -noisy2 1100 -nrec1 1000
+// bin/testPixelQuality -n 10 -noisy1 100 -noisy2 1100 -nrec1 500
+// bin/testPixelQuality -n 10 -noisy1 100 -noisy2 1100 -nrec1 50
 // ----------------------------------------------------------------------
+
+// ----------------------------------------------------------------------
+struct pixhit {
+  unsigned int ichip;
+  int icol, irow;
+  int tot;
+  int status;
+};
+
+// ----------------------------------------------------------------------
+void writeBlob(string);
+void createPayload(string , calAbs *, int, int);
+void createRandomHits(map<unsigned int, vector<pixhit> > &, int, int);
 
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
+
+  int NCHIPS(3000), NNOISY(150), NRECCHIPS(NCHIPS), NRECHITS(200);
   
   // -- command line arguments
-  int verbose(0);
+  int verbose(0), mode(1), nevts(2);
+  // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
+  int nchips(NCHIPS);
+  int noisy1(NNOISY), noisy2(NNOISY);
+  int nrec1(NRECHITS), nrec2(NRECHITS);
   for (int i = 0; i < argc; i++){
-    if (!strcmp(argv[i], "-v"))   {verbose = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-n"))      {nevts = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-nchips")) {nchips = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-noisy1")) {noisy1 = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-noisy2")) {noisy2 = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-nrec1"))  {nrec1 = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-nrec2"))  {nrec2 = atoi(argv[++i]);}
   }
   
   string gt("mcideal");
@@ -63,24 +95,118 @@ int main(int argc, char* argv[]) {
   
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
+
+  int nstep = 10;
   
-  // -- create payload
-  string spl = createPayload("bla");
-
-  calPixelQuality a;
-  string hash("tag_pixelquality_mcideal_iov_1");
-  a.readPayloadFromFile(".", hash);
-  a.calculate(hash);
-
-  uint32_t i(99999);
-  while (a.getNextID(i)) {
-    cout << i << ": " << static_cast<int>(a.getStatus(i, 108, 134)) << endl;
+  TCanvas c1;
+  long long totalTime(0);
+  TH1D *hTime;
+  if (1 == mode) {
+    hTime = new TH1D("hTime", "hTime", 1000, 0., 1000.);
+  } else if (2 == mode) {
+    hTime = new TH1D("hTime", "hTime", 1000, 0., 10000.);
+  } else if (3 == mode) {
+    hTime = new TH1D("hTime", "hTime", 1000, 0., 20000.);
   }
+  TH1D *hSetup = new TH1D("hSetup", "hSetup", 1000, 0., 20000.);
+  TH1D *hSetup1 = new TH1D("hSetup1", "hSetup 1", 1000, 0., 20000.);
+  TH1D *hSetup2 = new TH1D("hSetup2", "hSetup 2", 1000, 0., 20000.);
+  TH1D *hSetup3 = new TH1D("hSetup3", "hSetup 3", 1000, 0., 20000.);
+
+  auto grNoise = new TGraph();
+  grNoise->SetTitle(Form("Processing time for N(rechit) = %d/chip", nrec1));
+  grNoise->GetXaxis()->SetTitle("noisy pixels");
+  grNoise->GetYaxis()->SetTitle("time [ms]");
+  grNoise->SetMarkerStyle(20);
+  grNoise->SetMarkerSize(1.5);
+  auto grSetup = new TGraph();
+  grSetup->SetTitle("Setup time (payload preparation/reading)");
+  grSetup->GetXaxis()->SetTitle("noisy pixels");
+  grSetup->GetYaxis()->SetTitle("time [ms]");
+  grSetup->SetMarkerStyle(20);
+  grSetup->SetMarkerSize(1.5);
+
+  calAbs *cpq(0); 
+  for (int inoise = noisy1; inoise <= noisy2; inoise += (noisy2-noisy1)/nstep) {
+    hTime->Reset();
+    hSetup->Reset();
+    for (int ievt = 0; ievt < nevts; ++ievt) {
+      cout << "####### evt " << ievt << endl;
+      
+      if (1 == mode) {
+        cpq = new calPixelQuality();
+      } else if (2 == mode) {
+        cpq = new calPixelQualityV();
+      } else if (3 == mode) {
+        cpq = new calPixelQualityM();
+      }
+      // -- create payload
+      auto sbegin = std::chrono::high_resolution_clock::now();
+      string hash("tag_pixelquality_mcideal_iov_1");
+      createPayload(hash, cpq, NCHIPS, inoise);
+      
+      cpq->readPayloadFromFile(hash, ".");
+      cpq->calculate(hash);
+
+      map<unsigned int, vector<pixhit>> detHits; 
+      createRandomHits(detHits, NRECCHIPS, nrec1);
+      auto send = std::chrono::high_resolution_clock::now();
+      long long duss = chrono::duration_cast<chrono::milliseconds>(send-sbegin).count();
+      hSetup->Fill(static_cast<double>(duss));
+      
+      // -- now loop over all rec hits
+      auto tbegin = std::chrono::high_resolution_clock::now();
+      for (auto it: detHits) {
+        vector<pixhit> v = it.second; 
+        //        cout << "it.first = " << it.first << " npix = " << v.size() << endl;
+        for (auto ipix: v) {
+          if (cpq->getStatus(ipix.ichip, ipix.icol, ipix.irow)) {
+            if (0) cout << "skip noisy pixel " << ipix.ichip << "/" << ipix.icol << "/" << ipix.irow << endl;
+          }
+        }
+      }
+      auto tend = std::chrono::high_resolution_clock::now();
+      long long  dus = chrono::duration_cast<chrono::milliseconds>(tend-tbegin).count();
+      auto dura = chrono::duration_cast<chrono::milliseconds>(tend-tbegin).count();
+      totalTime += dus;
+      hTime->Fill(static_cast<double>(dus));
+      cout << "##timing: " << dura << " dus = " << dus << endl;
+      delete cpq;
+    }
+    cout << "##timing/evt: " << totalTime/nevts
+         << " TH1D = " << hTime->GetMean() << " +/- " << hTime->GetMeanError() << " (RMS = " << hTime->GetRMS() << ")"
+         << " # NCHIPS/NNOISY/NRECHITS = "
+         << NCHIPS << "/" << inoise << "/" << nrec1
+         << endl;
+    
+    hTime->SetTitle(Form("timing mode%d-nchips%d-nnoise%d-nrec%d", mode, NCHIPS, inoise, nrec1));
+    hTime->Draw();
+    c1.SaveAs(Form("hTime-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, NCHIPS, inoise, nrec1));
+
+    hSetup->SetTitle(Form("setup mode%d-nchips%d-nnoise%d-nrec%d", mode, NCHIPS, inoise, nrec1));
+    hSetup->Draw();
+    c1.SaveAs(Form("hSetup-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, NCHIPS, inoise, nrec1));
+    
+    grSetup->AddPoint(inoise, hSetup->GetMean());
+    grNoise->AddPoint(inoise, hTime->GetMean());
+    cout << "### inoise = " << inoise
+         << " noisy1 = " << noisy1
+         << " noisy2 = " << noisy2
+         << " nstep = " << nstep
+         << endl;
+  }
+
+  c1.Clear();
+  grNoise->Draw("alp");
+  c1.SaveAs(Form("hNoise-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, NCHIPS, nrec1, noisy2));
+
+  c1.Clear();
+  grSetup->Draw("alp");
+  c1.SaveAs(Form("hSetup-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, NCHIPS, nrec1, noisy2));
 }
 
-
 // ----------------------------------------------------------------------
-void writeBlob(string filename) {
+void writeBlob(string filename, int nchip, int nnoisy) {
   long unsigned int header(0xdeadface);
   ofstream ONS;
   ONS.open(filename);
@@ -89,54 +215,68 @@ void writeBlob(string filename) {
   }
   
   char data[8], data1[8], data2[8]; 
-  for (unsigned int i = 0; i < NCHIPS; ++i) {
-    int ndeadpix(20*gRandom->Rndm());
-    cout << "ichip = " << i << " ndeadpix = " << ndeadpix << endl;
+  if (1) cout << " nchip = " << nchip
+              << " nnoisy = " << nnoisy
+              << endl;
+  for (unsigned int i = 0; i < nchip; ++i) {
+    int nnoisypix(nnoisy);
     ONS << dumpArray(uint2Blob(i)) 
-        << dumpArray(int2Blob(ndeadpix));
-    for (unsigned int ipix = 0; ipix < ndeadpix; ++ipix) {
+        << dumpArray(int2Blob(nnoisypix));
+    for (unsigned int ipix = 0; ipix < nnoisypix; ++ipix) {
       int icol = 100 + 50*gRandom->Rndm();
       int irow = 120 + 50*gRandom->Rndm();
       char iqual = 1; 
-      cout << "icol/irow = " << icol << "/" << irow << endl;
       ONS << dumpArray(int2Blob(icol))
           << dumpArray(int2Blob(irow))
           << dumpArray(uint2Blob(static_cast<unsigned int>(iqual)));
+      if (0) cout << "icol/irow = " << icol << "/" << irow
+                  << " qual = " << static_cast<unsigned int>(iqual) 
+                  << endl;
     }
   }
 
   ONS.close();
 }
 
+
 // ----------------------------------------------------------------------  
-string createPayload(string filename) {
-  //useless  writeBlob(filename);
-  
-	auto builder = document{};
+void createPayload(string hash, calAbs *a, int nchips, int nnoisy) {
+  string tmpfilename("bla");
+  writeBlob(tmpfilename, nchips, nnoisy);
+
   std::ifstream file;
-  file.open(filename);
+  file.open(tmpfilename);
   vector<char> buffer(std::istreambuf_iterator<char>(file), {});
   string sblob("");
   for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
 
-  stringstream sh; 
-  sh << "tag_" << "pixelquality_mcideal";
-  sh << "_iov_" << "1";
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = "testing";
+  pl.fBLOB = sblob;
+  a->writePayloadToFile(hash, ".", pl); 
+}
 
-  bsoncxx::document::value doc_value = builder
-    << "hash" << sh.str()
-    << "comment" << "testing"
-    << "BLOB" << base64_encode(sblob)
-    << finalize; 
+
+// ----------------------------------------------------------------------
+void createRandomHits(map<unsigned int, vector<pixhit> > &dethits, int nrecchips, int nrechits) {
+
+  dethits.clear();
+  if (1) cout << " nrecchips = " << nrecchips
+              << " nrechits = " << nrechits
+              << endl;
   
-  // -- JSON
-  ofstream JS;
-  JS.open("json/payloads/" + sh.str());
-  if (JS.fail()) {
-    cout << "Error failed to open " << "json/XXXXX" <<  endl;
+  pixhit a;
+  for (unsigned int ic = 0; ic < nrecchips; ++ic) {
+    vector<pixhit> v; 
+    for (unsigned int ih = 0; ih < nrechits; ++ih) {
+      a.ichip = ic;
+      a.icol = 100 + 60*gRandom->Rndm();
+      a.irow = 120 + 50*gRandom->Rndm();
+      a.tot  = 50  + 6*gRandom->Rndm();
+      a.status = 0;
+      v.push_back(a);
+    }
+    dethits.insert(make_pair(ic, v));
   }
-  JS << bsoncxx::to_json(doc_value.view()) << endl;
-  JS.close();
-
-  return bsoncxx::to_json(doc_value.view());
 }

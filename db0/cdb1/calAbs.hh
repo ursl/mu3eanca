@@ -20,19 +20,27 @@ public:
   calAbs() = default;
   calAbs(cdbAbs *db);
   calAbs(cdbAbs *db, std::string tag);
-  ~calAbs();
+  virtual ~calAbs();
 
   void                setIOVs(std::vector<int> v) {fIOVs = v;}
 	void                setVerbosity(int v) {fVerbose = v;}
   virtual std::string getName() {return std::string("blurp");}
   virtual std::string getHash() {return fHash;}
   virtual void        calculate(std::string hash) {std::cout << "calAbs::calculate() ?" << std::endl;}
+  virtual std::string makeBLOB(std::map<int, std::vector<double> >) {
+    std::cout << "calAbs::makeBLOB(map<int, vector<double>>) ?" << std::endl;
+  }
 
-  void                readPayloadFromFile(std::string dir, std::string hash);
+  // -- direct interactions
+  void                readPayloadFromFile(std::string hash, std::string dir);
+  void                writePayloadToFile(std::string hash, std::string dir, const payload &pl);
 
   void                update(std::string hash);
   void                dump2Root(TDirectory *);
   void                setPrintTiming(int v) {fPrintTiming = v;}
+
+  // -- accessors for  various derived classes
+  virtual int         getStatus(unsigned int id, int icol, int irow) {return -9999;}
   
 protected: 
 	cdbAbs                            *fDB;
