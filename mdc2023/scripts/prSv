@@ -1,15 +1,13 @@
 #! /usr/bin/perl
 
 # ----------------------------------------------------------------------
-# sv
-# ==
+# prSv
+# ====
 #
-# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/sv
+# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/prSv
 #
 #
 # History
-#         2023/07/12 add -i 
-#         2023/07/12 add -w, -d, -s, and skipping '#' lines in fileWithURIs
 #         2023/08/11 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -20,101 +18,11 @@ use Cwd;
 my $dir = getcwd;
 
 use Getopt::Std;
-getopts('df:g:n:o:s:u:w:');
+getopts('');
 
 # -- default values
-my $merlindir = "langenegger\@merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal";
-my $gridLoc   = "http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal"; 
-my $waitSecs  = 0;
-my $startPat  = "nada";
-my $dbx       = 0;
-my $nfiles    = -1;
+my $prBaseDir  = "/psi/home/langenegger/data/mdc2023";
+my $prExe      = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer_mu3e";
+my $prConfig   = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
+my $prMidasDir = "/data/experiment/mu3e/data/2022/raw/";
 
-my $uri = ""; 
-my $urifile = ""; 
-if ($opt_u) {
-    $uri = $opt_u;
-    ($urifile = $uri) =~ s{http.*/}{};
-}
-
-my @vFiles;
-if ($opt_f) {
-    open(IN, "$opt_f") || die "cannot open $opt_f for input\n";
-    while (<IN>) {
-        if (/#/) {next;}
-        $_ =~ s/\n//;
-        push(@vFiles, $_)
-    }
-    close(IN);
-    if ($opt_g) {
-        $gridLoc = $opt_g;
-    }
-}  
-
-if ($opt_d) {
-    $dbx = 1;
-}  
-
-if ($opt_n) {
-    $nfiles = $opt_n;
-}  
-
-if ($opt_o) {
-    $merlindir = $opt_o;
-}  
-
-if ($opt_w) {
-    $waitSecs = $opt_w;
-}  
-
-if ($opt_s) {
-    $startPat = $opt_s;
-}  
-
-if ($opt_f) {
-    my $cnt = 0; 
-    my $skip = 1; 
-    if ($startPat eq "nada") {
-        $skip = 0;
-    }
-    foreach $file (@vFiles) {
-        if ($skip == 1) {
-            if ($file =~ $startPat) {
-                $skip = 0;
-            } else {
-                next;
-            }
-        }
-        if ($dbx > 0) {
-            print("$file\n");
-        } else {
-            if ($opt_i) {
-                system("ssh t3ui01.psi.ch 'rm -f $file' ");
-                system("ssh t3ui01.psi.ch 'wget $gridLoc/$file' ");
-                system("scp t3ui01.psi.ch:$file $merlindir");
-                system("ssh t3ui01.psi.ch 'rm -f $file' ");
-            } else {
-                system("wget $gridLoc/$file");
-                if ($dir ne $merlindir) {
-                    system("mv   $file $merlindir");
-                } else {
-                    print("already in $merlindir, not moving\n");
-                }
-            }
-        }
-        $cnt++;
-        if (($nfiles > 0) && ($cnt >= $nfiles)) {
-            print("Transferrred $nfiles files, stopping\n");
-            last;
-        }
-        if ($opt_w) {
-            print("waiting $waitSecs seconds\n");
-            sleep($waitSecs);
-        }
-    }
-} else {
-    print("uri: $uri\n");
-    print("urifile: $urifile\n");
-    system("ssh t3ui01.psi.ch wget $uri");
-    system("scp t3ui01.psi.ch:$urifile $merlindir");
-}
