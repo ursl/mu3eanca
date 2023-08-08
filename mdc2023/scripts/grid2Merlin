@@ -4,8 +4,6 @@
 # grid2Merlin
 # ============
 #
-# Usage:   ~/mu3e/mu3eanca/perl/relinkBinFiles [-i] [-u URI] [-f fileWithURIs -g gridLocation] [-o merlindir] [-w 1] [-d] [-n nfiles] [-s startPattern]
-#
 # Example: ../perl/grid2Merlin \
 #          -i 
 #          -f signal \
