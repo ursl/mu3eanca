@@ -21,19 +21,22 @@ use Getopt::Std;
 getopts('');
 
 # -- default values
-my $prBaseDir  = "/psi/home/langenegger/data/mdc2023";
-my $prExe      = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer_mu3e";
-my $prConfig   = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
-my $prMidasDir = "/data/experiment/mu3e/data/2022/raw/";
+my $pcrBaseDir   = "/psi/home/langenegger/data/mdc2023";
+my $pcrMu3eBEDir = ".ursl/data";
+my $pcrDataDir   = "/psi/home/langenegger/data/mdc2023/data";
+my $pcrExe       = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer_mu3e";
+my $pcrConfig    = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
+my $pcrMidasDir  = "/data/experiment/mu3e/data/2022/raw/";
 
 while (1) {
-    &callTransfer();
+    &pcrTransfer();
     sleep(4);
 }
 
 
 # ----------------------------------------------------------------------
-sub callTransfer() {
+sub pcrTransfer() {
     print "callTransfer\n";
-    system("rsync -av -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:.ursl/data/ ~/data/mdc2023/data/");
+    # -- Note the trailing '/' 
+    system("rsync -av -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir/");
 }
