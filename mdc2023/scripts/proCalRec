@@ -28,11 +28,12 @@ my $prMidasDir = "/data/experiment/mu3e/data/2022/raw/";
 
 while (1) {
     &callTransfer();
-    sleep(10);
+    sleep(4);
 }
 
 
 # ----------------------------------------------------------------------
 sub callTransfer() {
     print "callTransfer\n";
+    system("rsync -av -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:.ursl/data/ ~/data/mdc2023/data/");
 }
