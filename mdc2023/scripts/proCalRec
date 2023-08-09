@@ -8,13 +8,14 @@
 #
 #
 # History
-#         2023/08/11 first shot
+#         2023/08/08 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
 # Author    Urs Langenegger <urslangenegger@gmail.com>
 # ----------------------------------------------------------------------
 use Cwd;
+use File::Basename;
 
 my $dir = getcwd;
 
@@ -40,17 +41,27 @@ my $pcrConfig    = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
 my $pcrTarFile   = "230809-analyzer.tar.gz";
 
 
+# -- initialize what has been processed so far
 my @processedRuns;
+&readProcessedRuns(@processedRuns);
+
 my $nevts = 0; 
+
+my $run = &checkForNewRun();
+if ($run > 0) {
+    print ("now processing $run\n");
+} else {
+    print ("nothing new\n");
+}
 # ----------------------------------------------------------------------
 # -- the loop
 # ----------------------------------------------------------------------
-while (1) {
+while (0) {
     &pcrTransfer();
-#    my $run = checkNewRun();
-#    if ($file eq "nada") {
-#        next;
-#    }
+    my $run = &checkForNewRun();
+    #    if ($file eq "nada") {
+    #        next;
+    #    }
     
     $nevts = &pcrCountEvents(265);
     # $nevts = 41440245;
@@ -109,4 +120,46 @@ sub pcrSubmitJobs() {
     print("    $cmdString\n");
     
     $line = `$cmdString`;
+}
+
+# ----------------------------------------------------------------------
+sub readProcessedRuns() {
+    (@processedRuns) = @_;
+    open(IN, "$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
+    while (<IN>) {
+        chop;
+        push(@processedRuns, $_); 
+    }
+    close(IN);
+    
+    print("proCalRec processed runs: ");
+    foreach $irun (@processedRuns) {
+        print(" $irun"); 
+    }
+    print("\n");
+}
+
+
+# ----------------------------------------------------------------------
+sub checkForNewRun() {
+    my @midFiles  = glob("$pcrDataDir/*.mid");
+    my @newruns = ();
+    foreach $file (@midFiles) {
+        my($barefile, $directories) = fileparse($file);
+        $barefile =~ /run([0-9]*).mid/;
+        $run = $1;
+
+        if (grep( /^$run$/, @processedRuns ) ) {
+            print "found $run in processedRuns\n";
+        } else {
+            push(@newruns, $run);
+        }
+    }
+    print("proCalRec new runs:       ");
+    foreach $irun (@newruns) {
+        print(" $irun"); 
+    }
+    print("\n");
+    
+    return shift(@newruns);
 }
