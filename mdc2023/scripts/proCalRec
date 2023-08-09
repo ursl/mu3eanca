@@ -1,10 +1,10 @@
 #! /usr/bin/perl
 
 # ----------------------------------------------------------------------
-# prSv
-# ====
+# proCalRec
+# =========
 #
-# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/prSv
+# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/proCalRec
 #
 #
 # History
@@ -26,3 +26,13 @@ my $prExe      = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer_m
 my $prConfig   = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
 my $prMidasDir = "/data/experiment/mu3e/data/2022/raw/";
 
+while (1) {
+    &callTransfer();
+    sleep(10);
+}
+
+
+# ----------------------------------------------------------------------
+sub callTransfer() {
+    print "callTransfer\n";
+}
