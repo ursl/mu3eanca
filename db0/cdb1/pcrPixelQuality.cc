@@ -92,7 +92,19 @@ int main(int argc, char* argv[]) {
   
   map<unsigned int, vector<double> > mdet{};
   
-  string hash("tag_pixelquality_mdc2023_iov_1");
+  int run(-1);
+  string sbla(filename); 
+  replaceAll(sbla, ".root", "");
+  replaceAll(sbla, "pcr", "");
+  replaceAll(sbla, "run", "");
+  replaceAll(sbla, "-0000", "");
+  replaceAll(sbla, "-000", "");
+  replaceAll(sbla, "-00", "");
+  replaceAll(sbla, "-0", "");
+  run = ::stoi(sbla);
+  cout << "run = " << run << endl;
+
+  string hash = string("tag_pixelquality_") + gt + string("_iov_") + to_string(run);
 
   TFile *f = TFile::Open(filename.c_str()); 
 
