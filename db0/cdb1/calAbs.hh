@@ -27,8 +27,11 @@ public:
   virtual std::string getName() {return std::string("blurp");}
   virtual std::string getHash() {return fHash;}
   virtual void        calculate(std::string hash) {std::cout << "calAbs::calculate() ?" << std::endl;}
-  virtual std::string makeBLOB(std::map<int, std::vector<double> >) {
-    std::cout << "calAbs::makeBLOB(map<int, vector<double>>) ?" << std::endl;
+  virtual std::string makeBLOB(std::map<unsigned int, std::vector<double> >) {
+    return "calAbs::makeBLOB(map<int, vector<double>>) ?";
+  }
+  virtual std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) {
+    return std::map<unsigned int, std::vector<double> >{};
   }
 
   // -- direct interactions
