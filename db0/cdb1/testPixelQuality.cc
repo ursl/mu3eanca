@@ -72,7 +72,7 @@ void createRandomHits(map<unsigned int, vector<pixhit> > &, int, int);
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
 
-  int NCHIPS(3000), NNOISY(150), NRECCHIPS(NCHIPS), NRECHITS(200);
+  int NCHIPS(1), NNOISY(2), NRECCHIPS(NCHIPS), NRECHITS(200);
   
   // -- command line arguments
   int verbose(0), mode(1), nevts(2);
@@ -219,6 +219,8 @@ int main(int argc, char* argv[]) {
 
 // ----------------------------------------------------------------------
 string writeBlob(string filename, int nchip, int nnoisy) {
+  map<unsigned int, vector<double> > mdet;
+  
   long unsigned int header(0xdeadface);
   stringstream ONS;
   if (1) {
@@ -229,9 +231,12 @@ string writeBlob(string filename, int nchip, int nnoisy) {
               << " nnoisy = " << nnoisy
               << endl;
   for (unsigned int i = 0; i < nchip; ++i) {
+    vector<double> vchip{};
     int nnoisypix(nnoisy);
     ONS << dumpArray(uint2Blob(i)) 
         << dumpArray(int2Blob(nnoisypix));
+    vchip.push_back(static_cast<double>(nnoisypix));
+    
     for (unsigned int ipix = 0; ipix < nnoisypix; ++ipix) {
       int icol = 100 + 50*gRandom->Rndm();
       int irow = 120 + 50*gRandom->Rndm();
@@ -239,10 +244,15 @@ string writeBlob(string filename, int nchip, int nnoisy) {
       ONS << dumpArray(int2Blob(icol))
           << dumpArray(int2Blob(irow))
           << dumpArray(uint2Blob(static_cast<unsigned int>(iqual)));
+      vchip.push_back(static_cast<double>(icol));
+      vchip.push_back(static_cast<double>(irow));
+      vchip.push_back(static_cast<double>(iqual));
+
       if (0) cout << "icol/irow = " << icol << "/" << irow
                   << " qual = " << static_cast<unsigned int>(iqual) 
                   << endl;
     }
+    mdet.insert(make_pair(i, vchip));
   }
 
   return ONS.str();
@@ -286,7 +296,7 @@ void dumpBlob(string filename, int nchip, int nnoisy) {
 void createPayload(string hash, calAbs *a, int nchips, int nnoisy) {
   string tmpfilename("bla");
 
-  if (1) {
+  if (0) {
     dumpBlob(tmpfilename, nchips, nnoisy);
   } else {
     string blobs = writeBlob(tmpfilename, nchips, nnoisy);
@@ -294,6 +304,10 @@ void createPayload(string hash, calAbs *a, int nchips, int nnoisy) {
     ONS.open(tmpfilename);
     ONS << blobs;
     ONS.close();
+    
+    map<unsigned int, vector<double> > mdet = a->decodeBLOB(blobs);
+    string sdet = a->makeBLOB(mdet);
+    cout << " a->makeBLOB(mdet): " << endl;
   }
   
   std::ifstream file;
