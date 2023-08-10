@@ -63,7 +63,8 @@ struct pixhit {
 };
 
 // ----------------------------------------------------------------------
-void writeBlob(string);
+void dumpBlob(string);
+string writeBlob(string filename, int nchip, int nnoisy);
 void createPayload(string , calAbs *, int, int);
 void createRandomHits(map<unsigned int, vector<pixhit> > &, int, int);
 
@@ -77,7 +78,7 @@ int main(int argc, char* argv[]) {
   int verbose(0), mode(1), nevts(2);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   int nchips(NCHIPS);
-  int noisy1(NNOISY), noisy2(NNOISY);
+  int noisy1(0), noisy2(NNOISY);
   int nrec1(NRECHITS), nrec2(NRECHITS);
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
@@ -96,7 +97,7 @@ int main(int argc, char* argv[]) {
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
 
-  int nstep = 10;
+  int nstep (10);
   
   TCanvas c1;
   long long totalTime(0);
@@ -127,7 +128,16 @@ int main(int argc, char* argv[]) {
   grSetup->SetMarkerSize(1.5);
 
   calAbs *cpq(0); 
-  for (int inoise = noisy1; inoise <= noisy2; inoise += (noisy2-noisy1)/nstep) {
+  int inc = (noisy2-noisy1)/nstep;
+  for (int inoise = noisy1; inoise <= noisy2; inoise += inc) {
+    cout << "######################################################################" << endl;
+    cout << "### inoise = " << inoise
+         << " noisy1 = " << noisy1
+         << " noisy2 = " << noisy2
+         << " inc = " << inc
+         << " nstep = " << nstep
+         << endl;
+
     hTime->Reset();
     hSetup->Reset();
     for (int ievt = 0; ievt < nevts; ++ievt) {
@@ -143,7 +153,7 @@ int main(int argc, char* argv[]) {
       // -- create payload
       auto sbegin = std::chrono::high_resolution_clock::now();
       string hash("tag_pixelquality_mcideal_iov_1");
-      createPayload(hash, cpq, NCHIPS, inoise);
+      createPayload(hash, cpq, nchips, inoise);
       
       cpq->readPayloadFromFile(hash, ".");
       cpq->calculate(hash);
@@ -176,37 +186,65 @@ int main(int argc, char* argv[]) {
     cout << "##timing/evt: " << totalTime/nevts
          << " TH1D = " << hTime->GetMean() << " +/- " << hTime->GetMeanError() << " (RMS = " << hTime->GetRMS() << ")"
          << " # NCHIPS/NNOISY/NRECHITS = "
-         << NCHIPS << "/" << inoise << "/" << nrec1
+         << nchips << "/" << inoise << "/" << nrec1 << " (nrec2 = " << nrec2 << ")"
          << endl;
     
-    hTime->SetTitle(Form("timing mode%d-nchips%d-nnoise%d-nrec%d", mode, NCHIPS, inoise, nrec1));
+    hTime->SetTitle(Form("timing mode%d-nchips%d-nnoise%d-nrec%d", mode, nchips, inoise, nrec1));
     hTime->Draw();
-    c1.SaveAs(Form("hTime-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, NCHIPS, inoise, nrec1));
+    c1.SaveAs(Form("hTime-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, nchips, inoise, nrec1));
 
-    hSetup->SetTitle(Form("setup mode%d-nchips%d-nnoise%d-nrec%d", mode, NCHIPS, inoise, nrec1));
+    hSetup->SetTitle(Form("setup mode%d-nchips%d-nnoise%d-nrec%d", mode, nchips, inoise, nrec1));
     hSetup->Draw();
-    c1.SaveAs(Form("hSetup-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, NCHIPS, inoise, nrec1));
+    c1.SaveAs(Form("hSetup-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, nchips, inoise, nrec1));
     
     grSetup->AddPoint(inoise, hSetup->GetMean());
     grNoise->AddPoint(inoise, hTime->GetMean());
-    cout << "### inoise = " << inoise
-         << " noisy1 = " << noisy1
-         << " noisy2 = " << noisy2
-         << " nstep = " << nstep
-         << endl;
   }
 
   c1.Clear();
   grNoise->Draw("alp");
-  c1.SaveAs(Form("hNoise-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, NCHIPS, nrec1, noisy2));
+  c1.SaveAs(Form("hNoise-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, nchips, nrec1, noisy2));
 
   c1.Clear();
   grSetup->Draw("alp");
-  c1.SaveAs(Form("hSetup-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, NCHIPS, nrec1, noisy2));
+  c1.SaveAs(Form("hSetup-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, nchips, nrec1, noisy2));
 }
 
+
 // ----------------------------------------------------------------------
-void writeBlob(string filename, int nchip, int nnoisy) {
+string writeBlob(string filename, int nchip, int nnoisy) {
+  long unsigned int header(0xdeadface);
+  stringstream ONS;
+  if (1) {
+    ONS << dumpArray(uint2Blob(header));
+  }
+  
+  if (1) cout << " nchip = " << nchip
+              << " nnoisy = " << nnoisy
+              << endl;
+  for (unsigned int i = 0; i < nchip; ++i) {
+    int nnoisypix(nnoisy);
+    ONS << dumpArray(uint2Blob(i)) 
+        << dumpArray(int2Blob(nnoisypix));
+    for (unsigned int ipix = 0; ipix < nnoisypix; ++ipix) {
+      int icol = 100 + 50*gRandom->Rndm();
+      int irow = 120 + 50*gRandom->Rndm();
+      char iqual = 1; 
+      ONS << dumpArray(int2Blob(icol))
+          << dumpArray(int2Blob(irow))
+          << dumpArray(uint2Blob(static_cast<unsigned int>(iqual)));
+      if (0) cout << "icol/irow = " << icol << "/" << irow
+                  << " qual = " << static_cast<unsigned int>(iqual) 
+                  << endl;
+    }
+  }
+
+  return ONS.str();
+}
+
+
+// ----------------------------------------------------------------------
+void dumpBlob(string filename, int nchip, int nnoisy) {
   long unsigned int header(0xdeadface);
   ofstream ONS;
   ONS.open(filename);
@@ -214,7 +252,6 @@ void writeBlob(string filename, int nchip, int nnoisy) {
     ONS << dumpArray(uint2Blob(header));
   }
   
-  char data[8], data1[8], data2[8]; 
   if (1) cout << " nchip = " << nchip
               << " nnoisy = " << nnoisy
               << endl;
@@ -242,7 +279,7 @@ void writeBlob(string filename, int nchip, int nnoisy) {
 // ----------------------------------------------------------------------  
 void createPayload(string hash, calAbs *a, int nchips, int nnoisy) {
   string tmpfilename("bla");
-  writeBlob(tmpfilename, nchips, nnoisy);
+  dumpBlob(tmpfilename, nchips, nnoisy);
 
   std::ifstream file;
   file.open(tmpfilename);
