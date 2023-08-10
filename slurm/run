@@ -246,6 +246,8 @@ foreach $jobfile (@ARGV) {
         if ($opt_d) {
             print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
         } else {
+            # does not work: -p mu3e
+            # does not work: -A mu3e
             print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
             $result = `$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh`;
             chop($result);
@@ -291,6 +293,7 @@ sub makeCshFile {
             print OUT "# BATCH START\n";
             print OUT "mkdir -p /scratch/$user\n";
             print OUT "cd /scratch/$user\n";
+            print OUT "ls -l /scratch/$user\n";
             print OUT "/bin/rm -rf \$JOB\n";
             print OUT "mkdir \$JOB\n";
             print OUT "cd \$JOB\n";

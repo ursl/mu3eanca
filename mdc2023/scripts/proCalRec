@@ -1,0 +1,165 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# proCalRec
+# =========
+#
+# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/proCalRec
+#
+#
+# History
+#         2023/08/08 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+use File::Basename;
+
+my $dir = getcwd;
+
+use Getopt::Std;
+getopts('');
+
+# ----------------------------------------------------------------------
+# -- default values
+# ----------------------------------------------------------------------
+# -- code directory (git backed up)
+my $pcrCodeDir   = "/psi/home/langenegger/mu3e/mu3eanca/mdc2023";
+# -- base directory where jobs are submitted and all output will appear
+my $pcrBaseDir   = "/psi/home/langenegger/data/mdc2023";
+# -- source data directory on mu3ebe
+my $pcrMu3eBEDir = ".ursl/data";
+# -- target data directory on merlin
+my $pcrDataDir   = "/psi/home/langenegger/data/mdc2023/data";
+# -- analyzer executable
+my $pcrExe       = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer_mu3e";
+# -- analyzer config directory with cnt.json and config.json
+my $pcrConfig    = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
+# -- tarfile
+my $pcrTarFile   = "230809-analyzer.tar.gz";
+
+
+# -- initialize what has been processed so far
+my @processedRuns;
+&readProcessedRuns(@processedRuns);
+
+my $nevts = 0; 
+
+my $run = &checkForNewRun();
+if ($run > 0) {
+    print ("now processing $run\n");
+} else {
+    print ("nothing new\n");
+}
+# ----------------------------------------------------------------------
+# -- the loop
+# ----------------------------------------------------------------------
+while (0) {
+    &pcrTransfer();
+    my $run = &checkForNewRun();
+    #    if ($file eq "nada") {
+    #        next;
+    #    }
+    
+    $nevts = &pcrCountEvents(265);
+    # $nevts = 41440245;
+    &pcrSubmitJobs("00265", $nevts);
+    last;
+    sleep(4);
+}
+
+
+# ----------------------------------------------------------------------
+sub pcrTransfer() {
+    print "==> pcrTransfer\n";
+    # -- Note
+    #    o the trailing '/'
+    #    o -L transform symlink into referent file/dir
+    system("rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir/");
+}
+
+
+# ----------------------------------------------------------------------
+sub pcrCountEvents() {
+    ($run) = @_;
+    my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
+    print "==> pcrCountEvents run = $run -> file = $file\n";
+    my $cmdString = "cd $pcrBaseDir/cnt && $pcrExe --no-profiler --config $pcrConfig/cnt.json $file";
+    print("    $cmdString\n");
+    $line = `$cmdString`;
+    my @lines = grep /\S/, split /\n/, $line;
+    $result = pop(@lines);
+    $result =~ s/cntEvents::EndRun, cnt = //;
+    print("result = $result\n");
+    return $result;
+}
+
+# ----------------------------------------------------------------------
+sub pcrSubmitJobs() {
+    ($run, $nevts) = @_;
+    my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
+    print "==> pcrSubmitJobs run = $run -> file = $file\n";
+    my $cmdString = "";
+    my $envString = "";
+
+    $cmdString .= "cd $pcrBaseDir/slurm/jobs && ";
+    $cmdString .= "$pcrCodeDir/../slurm/run -t ../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
+
+    # -- encode the configuration of the SLURM job
+    $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1";
+    $envString .= "%PCRDATADIR $pcrDataDir";
+    $envString .= "%MIDASFILE run$run.mid";
+    $envString .= "%ROOTFILE pcr-run$run.root";
+    $envString .= "%ANLZR \"-e1000000\"%";
+    $envString .= "RUN $run'";
+    
+    $cmdString .= "-r $envString ";
+    $cmdString .= "$run" . "_0";
+    print("    $cmdString\n");
+    
+    $line = `$cmdString`;
+}
+
+# ----------------------------------------------------------------------
+sub readProcessedRuns() {
+    (@processedRuns) = @_;
+    open(IN, "$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
+    while (<IN>) {
+        chop;
+        push(@processedRuns, $_); 
+    }
+    close(IN);
+    
+    print("proCalRec processed runs: ");
+    foreach $irun (@processedRuns) {
+        print(" $irun"); 
+    }
+    print("\n");
+}
+
+
+# ----------------------------------------------------------------------
+sub checkForNewRun() {
+    my @midFiles  = glob("$pcrDataDir/*.mid");
+    my @newruns = ();
+    foreach $file (@midFiles) {
+        my($barefile, $directories) = fileparse($file);
+        $barefile =~ /run([0-9]*).mid/;
+        $run = $1;
+
+        if (grep( /^$run$/, @processedRuns ) ) {
+            print "found $run in processedRuns\n";
+        } else {
+            push(@newruns, $run);
+        }
+    }
+    print("proCalRec new runs:       ");
+    foreach $irun (@newruns) {
+        print(" $irun"); 
+    }
+    print("\n");
+    
+    return shift(@newruns);
+}
