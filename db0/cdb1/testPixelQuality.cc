@@ -76,6 +76,7 @@ int main(int argc, char* argv[]) {
   
   // -- command line arguments
   int verbose(0), mode(1), nevts(2);
+  unsigned long int rseed(123456);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   int nchips(NCHIPS);
   int noisy1(0), noisy2(NNOISY);
@@ -84,12 +85,15 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-n"))      {nevts = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-r"))      {rseed = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-nchips")) {nchips = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-noisy1")) {noisy1 = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-noisy2")) {noisy2 = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-nrec1"))  {nrec1 = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-nrec2"))  {nrec2 = atoi(argv[++i]);}
   }
+
+  gRandom->SetSeed(rseed);
   
   string gt("mcideal");
   cdbAbs *pDB = new cdbJSON(gt, "json", verbose);
@@ -208,6 +212,8 @@ int main(int argc, char* argv[]) {
   c1.Clear();
   grSetup->Draw("alp");
   c1.SaveAs(Form("hSetup-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, nchips, nrec1, noisy2));
+
+  cout << "gRandom->Rndm() = " << gRandom->Rndm() << endl;
 }
 
 
@@ -279,8 +285,17 @@ void dumpBlob(string filename, int nchip, int nnoisy) {
 // ----------------------------------------------------------------------  
 void createPayload(string hash, calAbs *a, int nchips, int nnoisy) {
   string tmpfilename("bla");
-  dumpBlob(tmpfilename, nchips, nnoisy);
 
+  if (1) {
+    dumpBlob(tmpfilename, nchips, nnoisy);
+  } else {
+    string blobs = writeBlob(tmpfilename, nchips, nnoisy);
+    ofstream ONS;
+    ONS.open(tmpfilename);
+    ONS << blobs;
+    ONS.close();
+  }
+  
   std::ifstream file;
   file.open(tmpfilename);
   vector<char> buffer(std::istreambuf_iterator<char>(file), {});
