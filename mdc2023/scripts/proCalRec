@@ -20,7 +20,7 @@ use File::Basename;
 my $dir = getcwd;
 
 use Getopt::Std;
-getopts('t:');
+getopts('n:t:');
 
 # ----------------------------------------------------------------------
 # -- default values
@@ -43,14 +43,18 @@ if ($opt_t) {
     my($barefile, $directories) = fileparse($opt_t);
     $pcrTarFile = $barefile;
 }
-
 print(&prefix("proCalRec"), "Tar file: $pcrTarFile\n");
 
 # -- initialize what has been processed so far
 my @processedRuns;
 &readProcessedRuns(@processedRuns);
 
-my $nevts = 0; 
+my $nevts = 1000000; 
+if ($opt_n) {
+    $nevts = $opt_n;
+}
+print(&prefix("proCalRec"), "nevts: $nevts\n");
+
 
 my $run = &checkForNewRun();
 if ($run > 0) {
@@ -68,8 +72,9 @@ while (1) {
     #        next;
     #    }
     
-    $nevts = &pcrCountEvents(265);
-    # $nevts = 41440245;
+    #$cntEvts = &pcrCountEvents(265);
+    #$cntEvts = 41440245;
+    # -- should apply some job splitting, but does not seem to work currently
     &pcrSubmitJobs("00265", $nevts);
     last;
     sleep(4);
@@ -93,18 +98,19 @@ sub pcrCountEvents() {
     print(&prefix("prcCountEvent"), "run = $run -> file = $file\n");
     
     my $cmdString = "cd $pcrBaseDir/cnt && $pcrExe --no-profiler --config $pcrConfig/cnt.json $file";
-    print(&prefix("prcCountEvent"), "$cmdString\n");
+    print(&prefix("prcCountEvent"),       "$pcrExe --no-profiler --config $pcrConfig/cnt.json $file\n");
     $line = `$cmdString`;
     my @lines = grep /\S/, split /\n/, $line;
     $result = pop(@lines);
     $result =~ s/cntEvents::EndRun, cnt = //;
-    print(&prefix("prcCountEvent"), "result = $result\n");
+    print(&prefix("prcCountEvent"), "pcrCountEvents = $result\n");
     return $result;
 }
 
+
 # ----------------------------------------------------------------------
 sub pcrSubmitJobs() {
-    ($run, $nevts) = @_;
+    ($run, $lnevts) = @_;
     my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
     print(&prefix("prcSubmitJobs"), "pcrSubmitJobs run = $run -> file = $file\n");
     my $cmdString = "";
@@ -113,19 +119,59 @@ sub pcrSubmitJobs() {
     $cmdString .= "cd $pcrBaseDir/slurm/jobs && ";
     $cmdString .= "$pcrCodeDir/../slurm/run -t ../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
 
+    # -- should do some job splitting, eventually
+    my $job =  "$run" . "_0";
+    
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1";
     $envString .= "%PCRDATADIR $pcrDataDir";
     $envString .= "%MIDASFILE run$run.mid";
     $envString .= "%ROOTFILE pcr-run$run.root";
-    $envString .= "%ANLZR \"-e1000000\"%";
+    $envString .= "%ANLZR \"-e$lnevts\"%";
     $envString .= "RUN $run'";
     
     $cmdString .= "-r $envString ";
-    $cmdString .= "$run" . "_0";
     
-    print(&prefix("prcSubmitJobs"), "$cmdString\n");
+    $cmdString .= "$job";
+    
+    print(&prefix("prcSubmitJobs"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1 MIDASFILE run$run.mid ROOTFILE pcr-run$run.root ANLZR \"-e$lnevts\"\n");
+
     $line = `$cmdString`;
+    # $line contains for example
+    # Replacement list: 
+    # STORAGE1 /psi/home/langenegger/data/mdc2023/slurm/storage1
+    # PCRDATADIR /psi/home/langenegger/data/mdc2023/data
+    # MIDASFILE run00265.mid
+    # ROOTFILE pcr-run00265.root
+    # ANLZR "-e100000"
+    # RUN 00265
+    # batch submission: 00265_0
+    # /usr/bin/sbatch  -J Wild -o .../00265_0.slurm.log -e .../00265_0.slurm.err ./00265_0.csh
+    # Submitted ->10854496<- with name ->Wild<-
+    my @lines = grep /\S/, split /\n/, $line;
+
+    my $slurmid = 0;
+    foreach $ln (@lines) {
+        if ($ln =~ /Submitted ->([0-9]*)<- with name \.*/) {
+            $slurmid = $1;
+        }
+    }
+    print(&prefix("prcSubmitJobs"), "slurmid = $slurmid, waiting for job to finish\n");
+    if ($slurmid > 0) {
+        my $stillRunning = 1;
+        while ($stillRunning) {
+            sleep(10);
+            $result = `/bin/squeue -j $slurmid`;
+            my @lines = grep /\S/, split /\n/, $result;
+            my $le = @lines;
+            my $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/tmp-$job/*.slurm.log`;
+            print("    $tail");
+            if ($le == 1) {
+                $stillRunning = 0;
+            }
+        }
+    }
+    print(&prefix("prcSubmitJobs"), "slurmid job finished\n");
 }
 
 # ----------------------------------------------------------------------
