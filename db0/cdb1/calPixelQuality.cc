@@ -118,10 +118,9 @@ void calPixelQuality::printBLOB(std::string sblob) {
   while (ibuffer != buffer.end()) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-    cout << "   chipID: " << chipID << endl;
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
-    cout << "   npix: " << npix << endl;
+    cout << "   chipID: " << chipID << " npix: " << npix << endl;
     for (unsigned int i = 0; i < npix; ++i) {
       int icol           = blob2Int(getData(ibuffer));
       int irow           = blob2Int(getData(ibuffer));
