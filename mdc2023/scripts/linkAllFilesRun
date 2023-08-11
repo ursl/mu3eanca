@@ -4,7 +4,7 @@
 # linkAllFilesRun
 # ===============
 #
-# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/linkAllFilesRun -d dir -r 265
+# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/linkAllFilesRun -d dir -r 00265
 #
 #
 # History
@@ -24,4 +24,7 @@ my @files  = glob("$opt_d/run*$opt_r*");
 
 foreach $file (@files) {
     print("$file\n");
+    my($barefile, $directories) = fileparse($file);
+    #    symlink("$file", "$barefile");
+    print("ln -s $file $barefile\n");
 }
