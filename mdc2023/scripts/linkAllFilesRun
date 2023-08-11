@@ -1,0 +1,27 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# linkAllFilesRun
+# ===============
+#
+# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/linkAllFilesRun -d dir -r 265
+#
+#
+# History
+#         2023/08/11 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+use File::Basename;
+
+use Getopt::Std;
+getopts('d:r:');
+
+my @files  = glob("$opt_d/run*$opt_r*");
+
+foreach $file (@files) {
+    print("$file\n");
+}
