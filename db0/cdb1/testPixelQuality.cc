@@ -230,14 +230,14 @@ string writeBlob(string filename, int nchip, int nnoisy) {
   if (1) cout << " nchip = " << nchip
               << " nnoisy = " << nnoisy
               << endl;
-  for (unsigned int i = 0; i < nchip; ++i) {
+  for (int i = 0; i < nchip; ++i) {
     vector<double> vchip{};
     int nnoisypix(nnoisy);
     ONS << dumpArray(uint2Blob(i)) 
         << dumpArray(int2Blob(nnoisypix));
     vchip.push_back(static_cast<double>(nnoisypix));
     
-    for (unsigned int ipix = 0; ipix < nnoisypix; ++ipix) {
+    for (int ipix = 0; ipix < nnoisypix; ++ipix) {
       int icol = 100 + 50*gRandom->Rndm();
       int irow = 120 + 50*gRandom->Rndm();
       char iqual = 1; 
@@ -271,11 +271,11 @@ void dumpBlob(string filename, int nchip, int nnoisy) {
   if (1) cout << " nchip = " << nchip
               << " nnoisy = " << nnoisy
               << endl;
-  for (unsigned int i = 0; i < nchip; ++i) {
+  for (int i = 0; i < nchip; ++i) {
     int nnoisypix(nnoisy);
     ONS << dumpArray(uint2Blob(i)) 
         << dumpArray(int2Blob(nnoisypix));
-    for (unsigned int ipix = 0; ipix < nnoisypix; ++ipix) {
+    for (int ipix = 0; ipix < nnoisypix; ++ipix) {
       int icol = 100 + 50*gRandom->Rndm();
       int irow = 120 + 50*gRandom->Rndm();
       char iqual = 1; 
@@ -333,9 +333,9 @@ void createRandomHits(map<unsigned int, vector<pixhit> > &dethits, int nrecchips
               << endl;
   
   pixhit a;
-  for (unsigned int ic = 0; ic < nrecchips; ++ic) {
+  for (int ic = 0; ic < nrecchips; ++ic) {
     vector<pixhit> v; 
-    for (unsigned int ih = 0; ih < nrechits; ++ih) {
+    for (int ih = 0; ih < nrechits; ++ih) {
       a.ichip = ic;
       a.icol = 100 + 60*gRandom->Rndm();
       a.irow = 120 + 50*gRandom->Rndm();
