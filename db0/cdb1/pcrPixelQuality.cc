@@ -139,30 +139,43 @@ int main(int argc, char* argv[]) {
     }
     cout << "chipID = " << chipID << " nhits =  " << chipCnt << " for npix = " << npix << endl;
 
-    double NSIGMA(10.0); 
-    double meanHits  = (npix > 0? static_cast<double>(chipCnt)/npix : 0.);
-    // -- this is WRONG!
-    double meanHitsE = TMath::Sqrt(meanHits);
-    double noiseThr  = meanHits + NSIGMA*meanHitsE; 
-    if (meanHits > 0.) cout << "meanHits = " << meanHits << " +/- " << meanHitsE << " noise threshold = " << noiseThr << endl;
-    vector<double> vchip; 
-    
-    for (int ix = 1; ix <= h2->GetNbinsX(); ++ix) {
-      for (int iy = 1; iy <= h2->GetNbinsY(); ++iy) {
-        float nhits = h2->GetBinContent(ix,iy);
-        if (nhits > noiseThr) {
-          vchip.push_back(static_cast<double>(ix-1)); 
-          vchip.push_back(static_cast<double>(iy-1)); 
-          vchip.push_back(static_cast<double>(1)); 
-          cout << "  noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << endl;
+    vector<double> vchip{}; 
+    if (npix > 0) {
+      double NSIGMA(10.0); 
+      double meanHits  = static_cast<double>(chipCnt)/npix;
+      // -- this is WRONG!
+      double meanHitsE = TMath::Sqrt(meanHits);
+      double noiseThr  = meanHits + NSIGMA*meanHitsE; 
+      if (meanHits > 0.) cout << "meanHits = " << meanHits << " +/- " << meanHitsE << " noise threshold = " << noiseThr << endl;
+      int nNoisyPix(0);
+      for (int ix = 1; ix <= h2->GetNbinsX(); ++ix) {
+        for (int iy = 1; iy <= h2->GetNbinsY(); ++iy) {
+          float nhits = h2->GetBinContent(ix,iy);
+          if (nhits > noiseThr) {
+            ++nNoisyPix;
+            vchip.push_back(static_cast<double>(ix-1)); 
+            vchip.push_back(static_cast<double>(iy-1)); 
+            vchip.push_back(static_cast<double>(1)); 
+            cout << "  noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << endl;
+          }
         }
       }
+      cout << "  -> nNoisyPixel = " << nNoisyPix << endl;
     }
     mdet.insert(make_pair(chipID, vchip));
   }
   
   
   createPayload(hash, cpq, mdet);
+
+  // -- validate written payload
+  cpq->readPayloadFromFile(hash, ".");
+  cout << "######################################################################" << endl;
+  cout << "### validate payload" << endl;
+  string sblob = pDB->getPayload(hash).fBLOB;
+  cpq->printBLOB(sblob);
+  
+  
 }
 
 // ----------------------------------------------------------------------  
@@ -174,7 +187,11 @@ void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > md
   pl.fHash = hash;
   pl.fComment = "testing";
   pl.fBLOB = sblob;
-  a->writePayloadToFile(hash, ".", pl); 
+  cout << "######################################################################" << endl;
+  cout << "### createPayload" << endl;
+  a->printBLOB(sblob);
+  
+  a->writePayloadToFile(hash, "json/payloads", pl); 
 }
 
 

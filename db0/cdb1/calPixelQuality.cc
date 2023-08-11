@@ -106,21 +106,19 @@ void calPixelQuality::printPixelQuality(unsigned int chipid, int minimumStatus) 
 
 
 // ----------------------------------------------------------------------
-map<unsigned int, vector<double> > calPixelQuality::decodeBLOB(string spl) {
-  map<unsigned int, vector<double> > vmap;
-  
-  std::vector<char> buffer(spl.begin(), spl.end());
+void calPixelQuality::printBLOB(std::string sblob) {
+
+  std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-  cout << "calPixelQuality::decodeBLOB(string)" << endl;
+  cout << "calPixelQuality::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-
+  
   while (ibuffer != buffer.end()) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
     cout << "   chipID: " << chipID << endl;
-    vector<double> vdet; 
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
     cout << "   npix: " << npix << endl;
@@ -128,10 +126,33 @@ map<unsigned int, vector<double> > calPixelQuality::decodeBLOB(string spl) {
       int icol           = blob2Int(getData(ibuffer));
       int irow           = blob2Int(getData(ibuffer));
       unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
+      cout << "      icol/irow = " << icol << "/" << irow << " iqual = " << iqual << endl;
+    }
+  }
+}
+
+
+// ----------------------------------------------------------------------
+map<unsigned int, vector<double> > calPixelQuality::decodeBLOB(string spl) {
+  map<unsigned int, vector<double> > vmap;
+  
+  std::vector<char> buffer(spl.begin(), spl.end());
+  std::vector<char>::iterator ibuffer = buffer.begin();
+  
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+  while (ibuffer != buffer.end()) {
+    // -- chipID
+    unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
+    vector<double> vdet; 
+    // -- get number of pixel entries
+    int npix = blob2Int(getData(ibuffer));
+    for (unsigned int i = 0; i < npix; ++i) {
+      int icol           = blob2Int(getData(ibuffer));
+      int irow           = blob2Int(getData(ibuffer));
+      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
       vdet.push_back(static_cast<double>(icol)); 
       vdet.push_back(static_cast<double>(irow)); 
       vdet.push_back(static_cast<double>(iqual)); 
-      cout << "      " << icol << " " << irow << " " << iqual << endl;
     }
     vmap.insert(make_pair(chipID, vdet));
   }
@@ -148,12 +169,9 @@ string calPixelQuality::makeBLOB(map<unsigned int, vector<double> > m) {
 
   // -- format of m
   // chipID => [npix, n*(col, row, iqual)]
-  cout << "calPixelQuality::makeBLOB(map<...>)" << endl;
   for (auto it: m) {
-    cout << "   chipID = " << it.first << endl;
     s << dumpArray(uint2Blob(it.first));
     int npix = it.second.size()/3;
-    cout << "   npix = " << npix << endl;
     s << dumpArray(int2Blob(npix));
     for (unsigned ipix = 0; ipix < npix; ++ipix) {
       int idx   = ipix*3;
@@ -166,9 +184,6 @@ string calPixelQuality::makeBLOB(map<unsigned int, vector<double> > m) {
       s << dumpArray(int2Blob(icol));
       s << dumpArray(int2Blob(irow));
       s << dumpArray(int2Blob(iqual));
-
-      cout << "      " << icol << " " << irow << " " << iqual << endl;
-
     }
   }
   return s.str();
