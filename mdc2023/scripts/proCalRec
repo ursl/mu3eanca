@@ -20,7 +20,7 @@ use File::Basename;
 my $dir = getcwd;
 
 use Getopt::Std;
-getopts('');
+getopts('t:');
 
 # ----------------------------------------------------------------------
 # -- default values
@@ -39,7 +39,12 @@ my $pcrExe       = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer
 my $pcrConfig    = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
 # -- tarfile
 my $pcrTarFile   = "230809-analyzer.tar.gz";
+if ($opt_t) {
+    my($barefile, $directories) = fileparse($opt_t);
+    $pcrTarFile = $barefile;
+}
 
+print(&prefix("proCalRec"), "Tar file: $pcrTarFile\n");
 
 # -- initialize what has been processed so far
 my @processedRuns;
@@ -49,14 +54,14 @@ my $nevts = 0;
 
 my $run = &checkForNewRun();
 if ($run > 0) {
-    print ("now processing $run\n");
+    print(&prefix("proCalRec"), "Now processing $run\n");
 } else {
-    print ("nothing new\n");
+    print(&prefix("proCalRec"), "Nothing new\n");
 }
 # ----------------------------------------------------------------------
 # -- the loop
 # ----------------------------------------------------------------------
-while (0) {
+while (1) {
     &pcrTransfer();
     my $run = &checkForNewRun();
     #    if ($file eq "nada") {
@@ -73,7 +78,7 @@ while (0) {
 
 # ----------------------------------------------------------------------
 sub pcrTransfer() {
-    print "==> pcrTransfer\n";
+    print(&prefix("pcrTransfer"),  "rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir\n");
     # -- Note
     #    o the trailing '/'
     #    o -L transform symlink into referent file/dir
@@ -85,14 +90,15 @@ sub pcrTransfer() {
 sub pcrCountEvents() {
     ($run) = @_;
     my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
-    print "==> pcrCountEvents run = $run -> file = $file\n";
+    print(&prefix("prcCountEvent"), "run = $run -> file = $file\n");
+    
     my $cmdString = "cd $pcrBaseDir/cnt && $pcrExe --no-profiler --config $pcrConfig/cnt.json $file";
-    print("    $cmdString\n");
+    print(&prefix("prcCountEvent"), "$cmdString\n");
     $line = `$cmdString`;
     my @lines = grep /\S/, split /\n/, $line;
     $result = pop(@lines);
     $result =~ s/cntEvents::EndRun, cnt = //;
-    print("result = $result\n");
+    print(&prefix("prcCountEvent"), "result = $result\n");
     return $result;
 }
 
@@ -100,7 +106,7 @@ sub pcrCountEvents() {
 sub pcrSubmitJobs() {
     ($run, $nevts) = @_;
     my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
-    print "==> pcrSubmitJobs run = $run -> file = $file\n";
+    print(&prefix("prcSubmitJobs"), "pcrSubmitJobs run = $run -> file = $file\n");
     my $cmdString = "";
     my $envString = "";
 
@@ -117,8 +123,8 @@ sub pcrSubmitJobs() {
     
     $cmdString .= "-r $envString ";
     $cmdString .= "$run" . "_0";
-    print("    $cmdString\n");
     
+    print(&prefix("prcSubmitJobs"), "$cmdString\n");
     $line = `$cmdString`;
 }
 
@@ -132,7 +138,7 @@ sub readProcessedRuns() {
     }
     close(IN);
     
-    print("proCalRec processed runs: ");
+    print(&prefix("readProcessedRuns"), "processed runs: ");
     foreach $irun (@processedRuns) {
         print(" $irun"); 
     }
@@ -150,16 +156,27 @@ sub checkForNewRun() {
         $run = $1;
 
         if (grep( /^$run$/, @processedRuns ) ) {
-            print "found $run in processedRuns\n";
+            print "Found $run in processedRuns\n";
         } else {
             push(@newruns, $run);
         }
     }
-    print("proCalRec new runs:       ");
+    print(&prefix("checkForNewRun"), "New runs: ");
+
     foreach $irun (@newruns) {
         print(" $irun"); 
     }
     print("\n");
     
     return shift(@newruns);
+}
+
+# ----------------------------------------------------------------------
+sub prefix() {
+    ($long) = @_;
+    my $now = localtime;
+    # -- fill up in case too short
+    $long .= "                         ";
+    $shorter = substr($long, 0, 15);
+    return ($now . "/" . $shorter . "/ ");
 }
