@@ -64,12 +64,12 @@ void calPixelQuality::calculate(string hash) {
     // -- get number of pixel entries
     npix = blob2Int(getData(ibuffer));
     // -- initialize matrix with zero before filling specified pixels
-    for (unsigned int ix = 0; ix < 256; ++ix) {
-      for (unsigned int iy = 0; iy < 250; ++iy) {
+    for (int ix = 0; ix < 256; ++ix) {
+      for (int iy = 0; iy < 250; ++iy) {
         a.matrix[ix][iy] = static_cast<char>(0);
       }
     }
-    for (unsigned int i = 0; i < npix; ++i) {
+    for (int i = 0; i < npix; ++i) {
       int icol           = blob2Int(getData(ibuffer));
       int irow           = blob2Int(getData(ibuffer));
       unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
@@ -92,8 +92,8 @@ int calPixelQuality::getStatus(unsigned int chipid, int icol, int irow) {
 
 // ----------------------------------------------------------------------
 void calPixelQuality::printPixelQuality(unsigned int chipid, int minimumStatus) {
-  for (unsigned int ix = 0; ix < 256; ++ix) {
-    for (unsigned int iy = 0; iy < 250; ++iy) {
+  for (int ix = 0; ix < 256; ++ix) {
+    for (int iy = 0; iy < 250; ++iy) {
       if (fMapConstants[chipid].matrix[ix][iy] > minimumStatus) {
         cout << "chipID = " << chipid
              << " x/y = " << ix << "/" << iy
@@ -121,7 +121,7 @@ void calPixelQuality::printBLOB(std::string sblob) {
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
     cout << "   chipID: " << chipID << " npix: " << npix << endl;
-    for (unsigned int i = 0; i < npix; ++i) {
+    for (int i = 0; i < npix; ++i) {
       int icol           = blob2Int(getData(ibuffer));
       int irow           = blob2Int(getData(ibuffer));
       unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
@@ -148,7 +148,7 @@ map<unsigned int, vector<double> > calPixelQuality::decodeBLOB(string spl) {
     vector<double> vdet; 
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
-    for (unsigned int i = 0; i < npix; ++i) {
+    for (int i = 0; i < npix; ++i) {
       int icol           = blob2Int(getData(ibuffer));
       int irow           = blob2Int(getData(ibuffer));
       unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
@@ -175,7 +175,7 @@ string calPixelQuality::makeBLOB(map<unsigned int, vector<double> > m) {
     s << dumpArray(uint2Blob(it.first));
     int npix = it.second.size()/3;
     s << dumpArray(int2Blob(npix));
-    for (unsigned ipix = 0; ipix < npix; ++ipix) {
+    for (int ipix = 0; ipix < npix; ++ipix) {
       int idx   = ipix*3;
       int icol  = static_cast<int>(it.second[idx]);
       idx       = ipix*3 + 1;
