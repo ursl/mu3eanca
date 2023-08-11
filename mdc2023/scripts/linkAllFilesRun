@@ -23,8 +23,7 @@ getopts('d:r:');
 my @files  = glob("$opt_d/run*$opt_r*");
 
 foreach $file (@files) {
-    print("$file\n");
     my($barefile, $directories) = fileparse($file);
-    #    symlink("$file", "$barefile");
     print("ln -s $file $barefile\n");
+    symlink("$file", "$barefile");
 }
