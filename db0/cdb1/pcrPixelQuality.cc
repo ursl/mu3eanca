@@ -53,6 +53,8 @@ using bsoncxx::builder::basic::make_document;
 // bin/pcrPixelQuality pcr-run00265.root
 // ----------------------------------------------------------------------
 
+#define MDCJSONDIR "/psi/home/langenegger/data/mdc2023/json"
+
 // ----------------------------------------------------------------------
 struct pixhit {
   unsigned int ichip;
@@ -62,7 +64,7 @@ struct pixhit {
 };
 
 // ----------------------------------------------------------------------
-void createPayload(string , calAbs *, map<unsigned int, vector<double> >);
+void createPayload(string , calAbs *, map<unsigned int, vector<double> >, string);
 
 
 // ----------------------------------------------------------------------
@@ -71,15 +73,16 @@ int main(int argc, char* argv[]) {
   // -- command line arguments
   int verbose(0), mode(1);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
-  string filename("nada.root");
+  string jsondir(MDCJSONDIR), filename("nada.root");
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
+    if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
   string gt("mdc2023");
-  cdbAbs *pDB = new cdbJSON(gt, "json", verbose);
+  cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
 
   calAbs *cpq(0);
   if (1 == mode) {
@@ -169,8 +172,7 @@ int main(int argc, char* argv[]) {
     mdet.insert(make_pair(chipID, vchip));
   }
   
-  
-  createPayload(hash, cpq, mdet);
+  createPayload(hash, cpq, mdet, jsondir + string("/payloads"));
 
   // -- validate written payload
   cpq->readPayloadFromFile(hash, ".");
@@ -183,7 +185,7 @@ int main(int argc, char* argv[]) {
 }
 
 // ----------------------------------------------------------------------  
-void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > mdet) {
+void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > mdet, string jsondir) {
  
   string sblob = a->makeBLOB(mdet);
   
@@ -195,7 +197,7 @@ void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > md
   cout << "### createPayload" << endl;
   a->printBLOB(sblob);
   
-  a->writePayloadToFile(hash, "json/payloads", pl); 
+  a->writePayloadToFile(hash, jsondir, pl); 
 }
 
 
