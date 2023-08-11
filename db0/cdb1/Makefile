@@ -66,7 +66,8 @@ lib: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS) 
 
 
-bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/testPixelQuality.o obj/pcrPixelQuality.o
+bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/testPixelQuality.o obj/pcrPixelQuality.o obj/mdc2023FillDB.o
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/mdc2023FillDB.o -o bin/mdc2023FillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/pcrPixelQuality.o -o bin/pcrPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testPixelQuality.o -o bin/testPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
