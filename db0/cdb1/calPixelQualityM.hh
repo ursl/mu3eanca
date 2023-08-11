@@ -8,7 +8,7 @@
 
 
 // ----------------------------------------------------------------------
-// pixel quality class 
+// pixel quality class using a map (keyed with icol*250 + irow)
 // ----------------------------------------------------------------------
 class calPixelQualityM : public calAbs {
 public:
@@ -23,10 +23,12 @@ public:
 
   std::string getName() override {return fPixelQualityTag;}
   void        calculate(std::string hash) override;
-  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override {return "FIXME"; }
-  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override {
-    return std::map<unsigned int, std::vector<double> >{};
-  }
+
+  // -- these are identical to the code in calPixelQuality (but this does not derive from that)
+  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override;
+  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
+  void printBLOB(std::string) override;
+
 
   int         getStatus(unsigned int chipid, int icol, int irow)  override;
 

@@ -34,7 +34,7 @@ void aFewRuns(cdbAbs *, string globalTag, calAbs *);
 int main(int argc, char* argv[]) {
   
   // -- command line arguments
-  int mode(0), run(0), verbose(0);
+  int mode(0), run(3), verbose(0);
   string db("json"), gt("dt23intrun");
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-db"))  {db = string(argv[++i]);}
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
   // calAbs *cal0 = cdbcf->createClass("pixelalignment_");
   // if (verbose > 0) cal0->setVerbosity(verbose);
     
-  pDC->setRunNumber(3);
+  pDC->setRunNumber(run);
   cout << "set run number to " << pDC->getRunNumber() << endl;
 
   
@@ -120,16 +120,17 @@ void aFewRuns(cdbAbs *db, string gt, calAbs *cal) {
   calAbs *cl = pDC->getCalibration("pixelalignment_");
   std::cout << "cl = " << cl << std::endl;
 
-  calPixelAlignment *al = dynamic_cast<calPixelAlignment*>(cal);
+  //  calPixelAlignment *al = dynamic_cast<calPixelAlignment*>(cal);
   for (auto it: vruns) {
     pDC->setRunNumber(it);
     cout << "now for run = " << it << " payload hash ->" << cal->getHash() << "<-" << endl;
-    double vx;
-    al->setVxAddr(&vx);
-    al->fillVars(1);
-    cout << "vx[1]  = " << vx << endl;
-    al->fillVars(33);
-    cout << "vx[33] = " << vx << endl;
+    // -- not any more. calAbs* classes are filled from BLOBs, not directly (except though makeBLOB)
+    // double vx;
+    // al->setVxAddr(&vx);
+    // al->fillVars(1);
+    // cout << "vx[1]  = " << vx << endl;
+    // al->fillVars(33);
+    // cout << "vx[33] = " << vx << endl;
   }   
 }
     

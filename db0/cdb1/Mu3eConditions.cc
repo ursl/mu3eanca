@@ -29,7 +29,7 @@ Mu3eConditions* Mu3eConditions::instance(std::string gt, cdbAbs *db) {
 
 
 // ----------------------------------------------------------------------
-Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fGT(gt), fDB(db) {
+Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
   cout << "Mu3eConditions::Mu3eConditions(" << gt
        << ", " << (fDB? fDB->getName(): "no DB")
        << ")" << endl;
