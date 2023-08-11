@@ -112,20 +112,24 @@ int main(int argc, char* argv[]) {
   TIter next(gDirectory->GetListOfKeys());
   TKey *key(0);
   vector<unsigned int> vchipid;
+  cout << "pcrPixelQuality look at chipIDs: "; 
   while ((key = (TKey*)next())) {
     if (gROOT->GetClass(key->GetClassName())->InheritsFrom("TDirectory")) continue;
     TH1 *sig = (TH1*)key->ReadObj();
     TString hname(sig->GetName());
     if (hname.Contains("chip")) {
       string  sChip = hname.Data();
-      cout << sChip << endl;
       replaceAll(sChip, "chip", ""); 
       int ichip(-1);
       ichip = ::stoi(sChip);
-      if (ichip > -1) vchipid.push_back(ichip); 
+      if (ichip > -1) {
+        cout << ichip << " ";
+        vchipid.push_back(ichip);
+      }
     }
   }
-
+  cout << endl;
+  
   // -- loop over all chipids and determine noisy pixels VERY naively
   for (unsigned int i = 0; i < vchipid.size(); ++i) {
     unsigned int chipID = vchipid[i];
