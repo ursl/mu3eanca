@@ -55,8 +55,6 @@ private:
   // -- should be replaced by IOV class
   int         fRunNumber{-1};
 
-	// -- flag to indicate that all GTs have been read
-  bool fValidGlobalTags{false}; 
 	// -- all global tags in the DB
   std::vector<std::string> fGlobalTags;                    
 	// -- for the set global tag

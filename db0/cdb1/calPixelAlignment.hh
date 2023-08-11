@@ -35,14 +35,14 @@ public:
   double thickness(uint32_t id) {return fMapConstants[id].thickness;}
   double pixelSize(uint32_t id) {return fMapConstants[id].pixelSize;}
 
-  void setVxAddr(double *ptr) {fpvx = ptr;}
+  // void setVxAddr(double *ptr) {fpvx = ptr;}
 
-  void setVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
-  void fillVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
+  // void setVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
+  // void fillVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
   
   std::string getName() override {return fPixelAlignmentTag;}
   void        calculate(std::string hash) override;
-  std::string makeBLOB(std::map<int, std::vector<double> >) {std::cout << "FIXME" << std::endl; }
+  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override {return "FIXME";}
 
   bool        getNextID(uint32_t &ID);
   
@@ -62,7 +62,6 @@ private:
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};
   
-  double *fpvx;
 };
 
 #endif

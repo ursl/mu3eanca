@@ -1,4 +1,4 @@
-#ifndef CALTILELALIGNMENT_h
+#ifndef CALTILEALIGNMENT_h
 #define CALTILEALIGNMENT_h
 
 #include "calAbs.hh"
@@ -29,7 +29,7 @@ public:
 
   std::string getName() override {return fTileAlignmentTag;}
   void        calculate(std::string hash) override;
-  std::string makeBLOB(std::map<int, std::vector<double> >) {std::cout << "FIXME" << std::endl; }
+  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override {return "FIXME"; }
 
   bool        getNextID(uint32_t &ID);
   
@@ -47,7 +47,6 @@ private:
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};
   
-  double *fpvx;
 };
 
 #endif

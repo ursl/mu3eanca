@@ -92,6 +92,7 @@ void calAbs::dump2Root(TDirectory *d) {
     TNamed o(it.first.c_str(), it.second.json().c_str());
     o.Write();
   }
+  pOld->cd();
 }
   
 
