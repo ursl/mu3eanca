@@ -122,12 +122,15 @@ sub pcrSubmitJobs() {
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1";
     $envString .= "%PCRDATADIR $pcrDataDir";
     $envString .= "%MIDASFILE run$run.mid";
-    $envString .= "%ROOTFILE pcr-run$run.root";
     $envString .= "%RUN $run";
 
-    my @vSlurmIds;
+    # map ($slurmID => logfile)
+    my %mSlurmIds;
+    my @mergeFiles;
     for ($ijob = 0; $ijob < 2; $ijob++) {
         $job =  "$run" . "_$ijob";
+
+        $rootString = "%ROOTFILE pcr-run$job.root";
 
         if ($ijob == 0) {
             $anlString  = "%ANLZR \"-e$nevts\"'";
@@ -136,7 +139,7 @@ sub pcrSubmitJobs() {
             $anlString  = "%ANLZR \"-s$skipevts\"'";
         }
         
-        $cmdString = $cmdIniString . "-r $envString$anlString " . "$job";
+        $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
     
         print(&prefix("prcSubmitJobs"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1 ROOTFILE pcr-run$run.root $anlString\n");
         $line = `$cmdString`;
@@ -151,47 +154,76 @@ sub pcrSubmitJobs() {
         # batch submission: 00265_0
         # /usr/bin/sbatch  -J Wild -o .../00265_0.slurm.log -e .../00265_0.slurm.err ./00265_0.csh
         # Submitted ->10854496<- with name ->Wild<-
+        print($line);
+        
         my @lines = grep /\S/, split /\n/, $line;
         
-        my $slurmid = 0;
+        my $slurmid = 0, $slurmout = "nada", $rootout = "nada";
         foreach $ln (@lines) {
             if ($ln =~ /Submitted ->([0-9]*)<- with name \.*/) {
                 $slurmid = $1;
             }
+            if ($ln =~ /batch submission: (\w*)/) {
+                $slurmout = $1;
+            }
+            if ($ln =~ /ROOTFILE/) {
+                ($rootout = $ln) =~ s/ROOTFILE //g;
+            }
         }
         if ($slurmid > 0) {
-            # -- FIXME make this a map ($slurmid => job)
-            push(@vSlurmIds, $slurmid);
+            print(&prefix("prcSubmitJobs"), "SLURM job $slurmid -> $slurmout\n");
+            $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
+            push(@mergeFiles, $rootout);
         }
     }
 
-    my $njobs = @vSlurmIds;
+    my $njobs = keys %mSlurmIds;
     if ($njobs < 1) {
         print(&prefix("prcSubmitJobs"), "ERROR no slurm job finished, something went wrong?!\n");
         return;
     }
 
     my $slurmids = "(";
-    foreach $ele (@vSlurmIds) {
-        $slurmids .= $ele . ", ";
+    my $cnt = 0; 
+    foreach $ele (keys %mSlurmIds) {
+        $slurmids .= $ele;
+        $cnt++;
+        if ($cnt < $njobs) {$slurmids .= ", ";}
     }
     $slurmids .= ")";
     print(&prefix("prcSubmitJobs"), "slurmids = $slurmids, waiting for jobs to finish\n");
     while ($njobs > 0) {
         sleep(10);
-        foreach $sjob (@vSlurmIds) {
+        foreach $sjob (keys %mSlurmIds) {
             $result = `/bin/squeue -j $sjob`;
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
-            my $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/tmp-$job/*.slurm.log`;
+            my $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/$mSlurmIds{$sjob}`;
             print("    [$sjob] $tail");
             if ($tail =~ /This is the end, my friend/) {
-                # -- FIXME remove slurm ID
+                delete($mSlurmIds{$sjob});
+                # print("removed $mSlurmIds{$sjob} from mSlurmIds\n");
+
+                my $bla = $mSlurmIds{$sjob};
             }
-            $njobs = @vSlurmIds;
+            $njobs = keys %mSlurmIds;
         }
     }
+
     print(&prefix("prcSubmitJobs"), "slurmid job finished\n");
+
+    $prefix = "$pcrBaseDir/slurm/storage1/";
+    my $mergeString = "hadd $prefix/pcr-run$run.root ";
+    system("/bin/rm -f $prefix/pcr-run$run.root");
+
+    $mergeString = "hadd $prefix/pcr-run$run.root ";
+    foreach $rf (@mergeFiles)  {
+        $mergeString .= " $prefix/$rf ";
+    }
+    
+    print(&prefix("prcSubmitJobs"), "$mergeString\n");
+    my $result = `$mergeString`;
+    print("$result\n\n");
 }
 
 # ----------------------------------------------------------------------
