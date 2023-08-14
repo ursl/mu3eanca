@@ -60,10 +60,6 @@ int main(int argc, char* argv[]) {
   // -- check whether directories for JSONs already exist
   DIR *folder = opendir(string(jsondir + "/payloads").c_str());
   if (folder == NULL) {
-    system("mkdir -p json/payloads");
-    system("mkdir -p json/globaltags");
-    system("mkdir -p json/iovs");
-
     system(string("mkdir -p " + jsondir + "/payloads").c_str());
     system(string("mkdir -p " + jsondir + "/globaltags").c_str());
     system(string("mkdir -p " + jsondir + "/iovs").c_str());
@@ -73,7 +69,7 @@ int main(int argc, char* argv[]) {
   ofstream JS;
 
 	auto builder = document{};
-    
+  
  
   mongocxx::database db;
 	mongocxx::collection globaltags;
@@ -105,6 +101,7 @@ int main(int argc, char* argv[]) {
       cout << "Error failed to open " << jdir << "/" << igt.first << endl;
     }
     JS << bsoncxx::to_json(doc_value.view()) << endl;
+    cout << bsoncxx::to_json(doc_value.view()) << endl;
     JS.close();
   }
 
