@@ -20,7 +20,7 @@ use File::Basename;
 my $dir = getcwd;
 
 use Getopt::Std;
-getopts('');
+getopts('n:t:');
 
 # ----------------------------------------------------------------------
 # -- default values
@@ -39,33 +39,42 @@ my $pcrExe       = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer
 my $pcrConfig    = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
 # -- tarfile
 my $pcrTarFile   = "230809-analyzer.tar.gz";
-
+if ($opt_t) {
+    my($barefile, $directories) = fileparse($opt_t);
+    $pcrTarFile = $barefile;
+}
+print(&prefix("proCalRec"), "Tar file: $pcrTarFile\n");
 
 # -- initialize what has been processed so far
 my @processedRuns;
 &readProcessedRuns(@processedRuns);
 
-my $nevts = 0; 
+my $nevts = 1000000; 
+if ($opt_n) {
+    $nevts = $opt_n;
+}
+print(&prefix("proCalRec"), "nevts: $nevts\n");
 
 my $run = &checkForNewRun();
 if ($run > 0) {
-    print ("now processing $run\n");
+    print(&prefix("proCalRec"), "Now processing $run\n");
 } else {
-    print ("nothing new\n");
+    print(&prefix("proCalRec"), "Nothing new\n");
 }
 # ----------------------------------------------------------------------
 # -- the loop
 # ----------------------------------------------------------------------
-while (0) {
+while (1) {
     &pcrTransfer();
     my $run = &checkForNewRun();
     #    if ($file eq "nada") {
     #        next;
     #    }
     
-    $nevts = &pcrCountEvents(265);
-    # $nevts = 41440245;
-    &pcrSubmitJobs("00265", $nevts);
+    #$cntEvts = &pcrCountEvents(265);
+    $cntEvts = 41440245;
+    # -- should apply some job splitting, but does not seem to work currently
+    &pcrSubmitJobs("00265", $cntEvts);
     last;
     sleep(4);
 }
@@ -73,7 +82,7 @@ while (0) {
 
 # ----------------------------------------------------------------------
 sub pcrTransfer() {
-    print "==> pcrTransfer\n";
+    print(&prefix("pcrTransfer"),  "rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir\n");
     # -- Note
     #    o the trailing '/'
     #    o -L transform symlink into referent file/dir
@@ -85,41 +94,104 @@ sub pcrTransfer() {
 sub pcrCountEvents() {
     ($run) = @_;
     my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
-    print "==> pcrCountEvents run = $run -> file = $file\n";
+    print(&prefix("prcCountEvent"), "run = $run -> file = $file\n");
+    
     my $cmdString = "cd $pcrBaseDir/cnt && $pcrExe --no-profiler --config $pcrConfig/cnt.json $file";
-    print("    $cmdString\n");
+    print(&prefix("prcCountEvent"),       "$pcrExe --no-profiler --config $pcrConfig/cnt.json $file\n");
     $line = `$cmdString`;
     my @lines = grep /\S/, split /\n/, $line;
     $result = pop(@lines);
     $result =~ s/cntEvents::EndRun, cnt = //;
-    print("result = $result\n");
+    print(&prefix("prcCountEvent"), "pcrCountEvents = $result\n");
     return $result;
 }
 
+
 # ----------------------------------------------------------------------
 sub pcrSubmitJobs() {
-    ($run, $nevts) = @_;
+    ($run, $lcevts) = @_;
     my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
-    print "==> pcrSubmitJobs run = $run -> file = $file\n";
+    print(&prefix("prcSubmitJobs"), "pcrSubmitJobs run = $run -> file = $file\n");
     my $cmdString = "";
     my $envString = "";
 
-    $cmdString .= "cd $pcrBaseDir/slurm/jobs && ";
-    $cmdString .= "$pcrCodeDir/../slurm/run -t ../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
-
+    $cmdIniString .= "cd $pcrBaseDir/slurm/jobs && ";
+    $cmdIniString .= "$pcrCodeDir/../slurm/run -t ../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
+    
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1";
     $envString .= "%PCRDATADIR $pcrDataDir";
     $envString .= "%MIDASFILE run$run.mid";
     $envString .= "%ROOTFILE pcr-run$run.root";
-    $envString .= "%ANLZR \"-e1000000\"%";
-    $envString .= "RUN $run'";
+    $envString .= "%RUN $run";
+
+    my @vSlurmIds;
+    for ($ijob = 0; $ijob < 2; $ijob++) {
+        $job =  "$run" . "_$ijob";
+
+        if ($ijob == 0) {
+            $anlString  = "%ANLZR \"-e$nevts\"'";
+        } else {
+            $skipevts = $lcevts - $nevts;
+            $anlString  = "%ANLZR \"-s$skipevts\"'";
+        }
+        
+        $cmdString = $cmdIniString . "-r $envString$anlString " . "$job";
     
-    $cmdString .= "-r $envString ";
-    $cmdString .= "$run" . "_0";
-    print("    $cmdString\n");
-    
-    $line = `$cmdString`;
+        print(&prefix("prcSubmitJobs"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1 ROOTFILE pcr-run$run.root $anlString\n");
+        $line = `$cmdString`;
+        # -- $line contains for example
+        # Replacement list: 
+        # STORAGE1 /psi/home/langenegger/data/mdc2023/slurm/storage1
+        # PCRDATADIR /psi/home/langenegger/data/mdc2023/data
+        # MIDASFILE run00265.mid
+        # ROOTFILE pcr-run00265.root
+        # ANLZR "-e100000"
+        # RUN 00265
+        # batch submission: 00265_0
+        # /usr/bin/sbatch  -J Wild -o .../00265_0.slurm.log -e .../00265_0.slurm.err ./00265_0.csh
+        # Submitted ->10854496<- with name ->Wild<-
+        my @lines = grep /\S/, split /\n/, $line;
+        
+        my $slurmid = 0;
+        foreach $ln (@lines) {
+            if ($ln =~ /Submitted ->([0-9]*)<- with name \.*/) {
+                $slurmid = $1;
+            }
+        }
+        if ($slurmid > 0) {
+            # -- FIXME make this a map ($slurmid => job)
+            push(@vSlurmIds, $slurmid);
+        }
+    }
+
+    my $njobs = @vSlurmIds;
+    if ($njobs < 1) {
+        print(&prefix("prcSubmitJobs"), "ERROR no slurm job finished, something went wrong?!\n");
+        return;
+    }
+
+    my $slurmids = "(";
+    foreach $ele (@vSlurmIds) {
+        $slurmids .= $ele . ", ";
+    }
+    $slurmids .= ")";
+    print(&prefix("prcSubmitJobs"), "slurmids = $slurmids, waiting for jobs to finish\n");
+    while ($njobs > 0) {
+        sleep(10);
+        foreach $sjob (@vSlurmIds) {
+            $result = `/bin/squeue -j $sjob`;
+            my @lines = grep /\S/, split /\n/, $result;
+            my $le = @lines;
+            my $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/tmp-$job/*.slurm.log`;
+            print("    [$sjob] $tail");
+            if ($tail =~ /This is the end, my friend/) {
+                # -- FIXME remove slurm ID
+            }
+            $njobs = @vSlurmIds;
+        }
+    }
+    print(&prefix("prcSubmitJobs"), "slurmid job finished\n");
 }
 
 # ----------------------------------------------------------------------
@@ -132,7 +204,7 @@ sub readProcessedRuns() {
     }
     close(IN);
     
-    print("proCalRec processed runs: ");
+    print(&prefix("readProcessedRuns"), "processed runs: ");
     foreach $irun (@processedRuns) {
         print(" $irun"); 
     }
@@ -150,16 +222,27 @@ sub checkForNewRun() {
         $run = $1;
 
         if (grep( /^$run$/, @processedRuns ) ) {
-            print "found $run in processedRuns\n";
+            print "Found $run in processedRuns\n";
         } else {
             push(@newruns, $run);
         }
     }
-    print("proCalRec new runs:       ");
+    print(&prefix("checkForNewRun"), "New runs: ");
+
     foreach $irun (@newruns) {
         print(" $irun"); 
     }
     print("\n");
     
     return shift(@newruns);
+}
+
+# ----------------------------------------------------------------------
+sub prefix() {
+    ($long) = @_;
+    my $now = localtime;
+    # -- fill up in case too short
+    $long .= "                         ";
+    $shorter = substr($long, 0, 15);
+    return ($now . "/" . $shorter . "/ ");
 }
