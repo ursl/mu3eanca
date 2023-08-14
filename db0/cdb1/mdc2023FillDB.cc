@@ -74,16 +74,7 @@ int main(int argc, char* argv[]) {
 
 	auto builder = document{};
     
-  //  mongocxx::instance instance{};
-  mongocxx::uri URI;
-  if (string::npos != password.find("fixme")) {
-    URI = mongocxx::uri("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
-  } else {
-    URI = mongocxx::uri("mongodb+srv://urslangenegger:" + password + "@cdb0.fmlmtd8.mongodb.net/?retryWrites=true&w=majority");
-  }
-  mongocxx::client client(URI);
-
-  
+ 
   mongocxx::database db;
 	mongocxx::collection globaltags;
 	mongocxx::collection iovs;
@@ -120,10 +111,6 @@ int main(int argc, char* argv[]) {
 	// ----------------------------------------------------------------------
 	// -- iovs
 	// ----------------------------------------------------------------------
-  if (!json) {
-    iovs = db["iovs"];
-    iovs.drop();
-  }
   
 	map<string, vector<int>> iniIovs = {
 		{"pixelalignment_mdc2023", {1}}, {"pixelquality_mdc2023", {1}}, {"pixelcablingmap_mdc2023", {1}}
