@@ -39,7 +39,7 @@ public:
   }
 
   // -- print the payload. This is base-class dependent and hence needs to be overridden.
-  virtual void printBLOB(std::string) {std::cout << "calAbs::printBLOB() ?" << std::endl;}
+  virtual void printBLOB(std::string, int verbosity = 1) {std::cout << "calAbs::printBLOB() ?" << std::endl;}
 
   // -- direct interactions
   void                readPayloadFromFile(std::string hash, std::string dir);
