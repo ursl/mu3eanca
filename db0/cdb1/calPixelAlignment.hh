@@ -45,7 +45,7 @@ public:
 
 
   std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
-  void printBLOB(std::string) override;
+  void printBLOB(std::string, int verbosity = 1) override;
   std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override;
 
   bool        getNextID(uint32_t &ID);

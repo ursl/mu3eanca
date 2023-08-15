@@ -83,7 +83,7 @@ void calPixelAlignment::calculate(string hash) {
 
 
 // ----------------------------------------------------------------------
-void calPixelAlignment::printBLOB(std::string sblob) {
+void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
