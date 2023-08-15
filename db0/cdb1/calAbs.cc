@@ -152,7 +152,7 @@ void calAbs::writePayloadToFile(string hash, string dir, const payload &pl) {
   ofstream JS;
   JS.open(dir + "/" + hash);
   if (JS.fail()) {
-    cout << "calAbs::writePayloadToFile> Error failed to open " << "json/XXXXX" <<  endl;
+    cout << "calAbs::writePayloadToFile> Error failed to open " << dir << "/" << hash <<  endl;
   }
   JS << bsoncxx::to_json(doc_value.view()) << endl;
   JS.close();
