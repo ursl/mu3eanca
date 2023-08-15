@@ -27,16 +27,20 @@ getopts('n:t:');
 # ----------------------------------------------------------------------
 # -- code directory (git backed up)
 my $pcrCodeDir   = "/psi/home/langenegger/mu3e/mu3eanca/mdc2023";
+# -- code directory (git backed up)
+my $pcrCalCode   = "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1";
 # -- base directory where jobs are submitted and all output will appear
 my $pcrBaseDir   = "/psi/home/langenegger/data/mdc2023";
 # -- source data directory on mu3ebe
 my $pcrMu3eBEDir = ".ursl/data";
 # -- target data directory on merlin
-my $pcrDataDir   = "/psi/home/langenegger/data/mdc2023/data";
+my $pcrDataDir   = "$pcrBaseDir/data";
 # -- analyzer executable
 my $pcrExe       = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer_mu3e";
 # -- analyzer config directory with cnt.json and config.json
 my $pcrConfig    = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
+# -- JSON CDB 
+my $pcrJsonDir   = "$pcrBaseDir/json";
 # -- tarfile
 my $pcrTarFile   = "230809-analyzer.tar.gz";
 if ($opt_t) {
@@ -55,28 +59,35 @@ if ($opt_n) {
 }
 print(&prefix("proCalRec"), "nevts: $nevts\n");
 
-my $run = &checkForNewRun();
-if ($run > 0) {
-    print(&prefix("proCalRec"), "Now processing $run\n");
-} else {
-    print(&prefix("proCalRec"), "Nothing new\n");
-}
 # ----------------------------------------------------------------------
 # -- the loop
 # ----------------------------------------------------------------------
 while (1) {
+    # -- should be migrated out
     &pcrTransfer();
+    # -- check whether something needs to be done
     my $run = &checkForNewRun();
-    #    if ($file eq "nada") {
-    #        next;
-    #    }
+    if ($run > 0) {
+        print(&prefix("proCalRec"), "Nothing new\n");
+        sleep(10);
+        next;
+    }
+    print(&prefix("proCalRec"), "Now processing $run\n");
     
-    #$cntEvts = &pcrCountEvents(265);
-    $cntEvts = 41440245;
-    # -- should apply some job splitting, but does not seem to work currently
-    &pcrSubmitJobs("00265", $cntEvts);
-    last;
-    sleep(4);
+    # -- count events in new file
+    $cntEvts = &pcrCountEvents(265);
+    #    $cntEvts = 41440245;
+
+    # -- submit analyzer jobs to slurm and merge output
+    my $pcrrootfile =  &pcrSubmitJobs("00265", $cntEvts);
+    
+    # -- run local calibration 
+    if ($pcrrootfile eq "nada") {
+        print(&prefix("proCalRec"), "pcrSubmitJobs did not complete successfully\n");
+    } else {
+        &pcrRunCalibration($pcrrootfile);
+    }
+    
 }
 
 
@@ -94,15 +105,15 @@ sub pcrTransfer() {
 sub pcrCountEvents() {
     ($run) = @_;
     my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
-    print(&prefix("prcCountEvent"), "run = $run -> file = $file\n");
+    print(&prefix("pcrCountEvent"), "run = $run -> file = $file\n");
     
     my $cmdString = "cd $pcrBaseDir/cnt && $pcrExe --no-profiler --config $pcrConfig/cnt.json $file";
-    print(&prefix("prcCountEvent"),       "$pcrExe --no-profiler --config $pcrConfig/cnt.json $file\n");
+    print(&prefix("pcrCountEvent"),       "$pcrExe --no-profiler --config $pcrConfig/cnt.json $file\n");
     $line = `$cmdString`;
     my @lines = grep /\S/, split /\n/, $line;
     $result = pop(@lines);
     $result =~ s/cntEvents::EndRun, cnt = //;
-    print(&prefix("prcCountEvent"), "pcrCountEvents = $result\n");
+    print(&prefix("pcrCountEvent"), "pcrCountEvents = $result\n");
     return $result;
 }
 
@@ -110,8 +121,10 @@ sub pcrCountEvents() {
 # ----------------------------------------------------------------------
 sub pcrSubmitJobs() {
     ($run, $lcevts) = @_;
+    my $pcrFile = "nada";
+    
     my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
-    print(&prefix("prcSubmitJobs"), "pcrSubmitJobs run = $run -> file = $file\n");
+    print(&prefix("pcrSubmitJobs"), "pcrSubmitJobs run = $run -> file = $file\n");
     my $cmdString = "";
     my $envString = "";
 
@@ -141,20 +154,10 @@ sub pcrSubmitJobs() {
         
         $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
     
-        print(&prefix("prcSubmitJobs"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1 ROOTFILE pcr-run$run.root $anlString\n");
+        print(&prefix("pcrSubmitJobs"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1 ROOTFILE pcr-run$run.root $anlString\n");
         $line = `$cmdString`;
-        # -- $line contains for example
-        # Replacement list: 
-        # STORAGE1 /psi/home/langenegger/data/mdc2023/slurm/storage1
-        # PCRDATADIR /psi/home/langenegger/data/mdc2023/data
-        # MIDASFILE run00265.mid
-        # ROOTFILE pcr-run00265.root
-        # ANLZR "-e100000"
-        # RUN 00265
-        # batch submission: 00265_0
-        # /usr/bin/sbatch  -J Wild -o .../00265_0.slurm.log -e .../00265_0.slurm.err ./00265_0.csh
-        # Submitted ->10854496<- with name ->Wild<-
-        print($line);
+        # -- to see $line, uncomment the next line: 
+        # print($line);
         
         my @lines = grep /\S/, split /\n/, $line;
         
@@ -171,7 +174,7 @@ sub pcrSubmitJobs() {
             }
         }
         if ($slurmid > 0) {
-            print(&prefix("prcSubmitJobs"), "SLURM job $slurmid -> $slurmout\n");
+            print(&prefix("pcrSubmitJobs"), "SLURM job $slurmid -> $slurmout\n");
             $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
             push(@mergeFiles, $rootout);
         }
@@ -179,8 +182,8 @@ sub pcrSubmitJobs() {
 
     my $njobs = keys %mSlurmIds;
     if ($njobs < 1) {
-        print(&prefix("prcSubmitJobs"), "ERROR no slurm job finished, something went wrong?!\n");
-        return;
+        print(&prefix("pcrSubmitJobs"), "ERROR no slurm job finished, something went wrong?!\n");
+        return $pcrFile;
     }
 
     my $slurmids = "(";
@@ -191,7 +194,7 @@ sub pcrSubmitJobs() {
         if ($cnt < $njobs) {$slurmids .= ", ";}
     }
     $slurmids .= ")";
-    print(&prefix("prcSubmitJobs"), "slurmids = $slurmids, waiting for jobs to finish\n");
+    print(&prefix("pcrSubmitJobs"), "slurmids = $slurmids, waiting for jobs to finish\n");
     while ($njobs > 0) {
         sleep(10);
         foreach $sjob (keys %mSlurmIds) {
@@ -210,20 +213,30 @@ sub pcrSubmitJobs() {
         }
     }
 
-    print(&prefix("prcSubmitJobs"), "slurmid job finished\n");
+    print(&prefix("pcrSubmitJobs"), "all slurm jobs finished\n");
 
-    $prefix = "$pcrBaseDir/slurm/storage1/";
-    my $mergeString = "hadd $prefix/pcr-run$run.root ";
-    system("/bin/rm -f $prefix/pcr-run$run.root");
+    $output = "$pcrBaseDir/slurm/storage1";
+    my $mergeString = "hadd $output/pcr-run$run.root ";
+    system("/bin/rm -f $output/pcr-run$run.root");
 
-    $mergeString = "hadd $prefix/pcr-run$run.root ";
+    $pcrFile = "$output/pcr-run$run.root";
+    $mergeString = "hadd $pcrFile";
     foreach $rf (@mergeFiles)  {
-        $mergeString .= " $prefix/$rf ";
+        $mergeString .= " $output/$rf ";
     }
     
-    print(&prefix("prcSubmitJobs"), "$mergeString\n");
     my $result = `$mergeString`;
-    print("$result\n\n");
+    print("$result\n");
+    print(&prefix("pcrSubmitJobs"), "merged root file: $pcrFile\n");
+    return $pcrFile;
+}
+
+
+# ----------------------------------------------------------------------
+sub pcrRunCalibration() {
+    ($cfile) = @_;
+    print(&prefix("pcrRunCalibration"), "cd $pcrCalCode && bin/pcrPixelQuality -f $cfile -j $pcrJsonDir; cd - ");
+    system("cd $pcrCalCode && bin/pcrPixelQuality -f $cfile -j $pcrJsonDir; cd - ");
 }
 
 # ----------------------------------------------------------------------
@@ -265,6 +278,9 @@ sub checkForNewRun() {
         print(" $irun"); 
     }
     print("\n");
+    
+    $result = shift(@newruns);
+    print("checkForNewRun() return $result\n");
     
     return shift(@newruns);
 }
