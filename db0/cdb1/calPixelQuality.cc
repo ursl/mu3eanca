@@ -112,7 +112,7 @@ void calPixelQuality::printBLOB(std::string sblob, int verbosity) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-  cout << "calPixelQuality::printBLOB(string)" << endl;
+  cout << "calPixelQuality::printBLOB(string," << verbosity << ")" << endl;
   cout << "   header: " << hex << header << dec << endl;
 
   string summary("calPixelQuality chips "); 
