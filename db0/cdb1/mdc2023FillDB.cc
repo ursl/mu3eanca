@@ -17,6 +17,8 @@
 #include "cdbUtil.hh"
 #include "base64.hh"
 
+#include "calPixelAlignment.hh"
+
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
 using bsoncxx::builder::stream::document;
@@ -60,10 +62,6 @@ int main(int argc, char* argv[]) {
   // -- check whether directories for JSONs already exist
   DIR *folder = opendir(string(jsondir + "/payloads").c_str());
   if (folder == NULL) {
-    system("mkdir -p json/payloads");
-    system("mkdir -p json/globaltags");
-    system("mkdir -p json/iovs");
-
     system(string("mkdir -p " + jsondir + "/payloads").c_str());
     system(string("mkdir -p " + jsondir + "/globaltags").c_str());
     system(string("mkdir -p " + jsondir + "/iovs").c_str());
@@ -73,17 +71,8 @@ int main(int argc, char* argv[]) {
   ofstream JS;
 
 	auto builder = document{};
-    
-  //  mongocxx::instance instance{};
-  mongocxx::uri URI;
-  if (string::npos != password.find("fixme")) {
-    URI = mongocxx::uri("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
-  } else {
-    URI = mongocxx::uri("mongodb+srv://urslangenegger:" + password + "@cdb0.fmlmtd8.mongodb.net/?retryWrites=true&w=majority");
-  }
-  mongocxx::client client(URI);
-
   
+ 
   mongocxx::database db;
 	mongocxx::collection globaltags;
 	mongocxx::collection iovs;
@@ -114,16 +103,13 @@ int main(int argc, char* argv[]) {
       cout << "Error failed to open " << jdir << "/" << igt.first << endl;
     }
     JS << bsoncxx::to_json(doc_value.view()) << endl;
+    cout << bsoncxx::to_json(doc_value.view()) << endl;
     JS.close();
   }
 
 	// ----------------------------------------------------------------------
 	// -- iovs
 	// ----------------------------------------------------------------------
-  if (!json) {
-    iovs = db["iovs"];
-    iovs.drop();
-  }
   
 	map<string, vector<int>> iniIovs = {
 		{"pixelalignment_mdc2023", {1}}, {"pixelquality_mdc2023", {1}}, {"pixelcablingmap_mdc2023", {1}}
@@ -153,6 +139,8 @@ int main(int argc, char* argv[]) {
 	// -- payloads
 	// ----------------------------------------------------------------------
 	jdir = jsondir + "/payloads";
+
+  vector<unsigned int> vchipids;
 
   // -- pixelalignment
 	for (auto iiov: iniIovs) {
@@ -185,6 +173,9 @@ int main(int argc, char* argv[]) {
       }
       JS << bsoncxx::to_json(doc_value.view()) << endl;
       JS.close();
+
+      // -- fill vchipids with chip IDs
+      
     }
 	}
 
