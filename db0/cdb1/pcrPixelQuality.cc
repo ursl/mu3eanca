@@ -184,7 +184,8 @@ int main(int argc, char* argv[]) {
   cout << "######################################################################" << endl;
   cout << "### validate payload" << endl;
   string sblob = pDB->getPayload(hash).fBLOB;
-  cpq->printBLOB(sblob);
+  //  cpq->printBLOB(sblob);
+  cpq->printBLOB(sblob, 0);
   
   
 }

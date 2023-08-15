@@ -106,7 +106,7 @@ void calPixelQuality::printPixelQuality(unsigned int chipid, int minimumStatus) 
 
 
 // ----------------------------------------------------------------------
-void calPixelQuality::printBLOB(std::string sblob) {
+void calPixelQuality::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
@@ -114,19 +114,29 @@ void calPixelQuality::printBLOB(std::string sblob) {
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
   cout << "calPixelQuality::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-  
+
+  string summary("calPixelQuality chips "); 
+  int nnp(0);
   while (ibuffer != buffer.end()) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
-    cout << "   chipID: " << chipID << " npix: " << npix << endl;
-    for (int i = 0; i < npix; ++i) {
-      int icol           = blob2Int(getData(ibuffer));
-      int irow           = blob2Int(getData(ibuffer));
-      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      cout << "      icol/irow = " << icol << "/" << irow << " iqual = " << iqual << endl;
+    if (0 == verbosity) {
+      summary += chipID + " ";
+      nnp += npix;
+    } else {
+      cout << "   chipID: " << chipID << " npix: " << npix << endl;
+      for (int i = 0; i < npix; ++i) {
+        int icol           = blob2Int(getData(ibuffer));
+        int irow           = blob2Int(getData(ibuffer));
+        unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
+        cout << "      icol/irow = " << icol << "/" << irow << " iqual = " << iqual << endl;
+      }
     }
+  }
+  if (0 == verbosity) {
+    cout << summary << " with " << nnp << " noisy pixels" << endl;
   }
 }
 
