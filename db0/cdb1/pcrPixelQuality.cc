@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
   createPayload(hash, cpq, mdet, jsondir + string("/payloads"));
 
   // -- validate written payload
-  cpq->readPayloadFromFile(hash, ".");
+  cpq->readPayloadFromFile(hash, jsondir + string("/payloads"));
   cout << "######################################################################" << endl;
   cout << "### validate payload" << endl;
   string sblob = pDB->getPayload(hash).fBLOB;

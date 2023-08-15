@@ -119,7 +119,7 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   string filename = dir + "/" + hash;
   INS.open(filename);
   if (INS.fail()) {
-    cout << "Error failed to open ->" << filename << "<-" << endl;
+    cout << "calAbs::readPayloadFromFile> Error failed to open ->" << filename << "<-" << endl;
     return;
   }
 
