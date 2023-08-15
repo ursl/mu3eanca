@@ -97,6 +97,11 @@ int main(int argc, char* argv[]) {
   
   int run(-1);
   string sbla(filename); 
+  if (string::npos != filename.find_last_of("/")) {
+    string dir = filename.substr(0, filename.find_last_of("/")+1);
+    cout << "dir ->" << dir << "<-" << endl;
+    replaceAll(sbla, dir, "");
+  }
   replaceAll(sbla, ".root", "");
   replaceAll(sbla, "pcr", "");
   replaceAll(sbla, "run", "");

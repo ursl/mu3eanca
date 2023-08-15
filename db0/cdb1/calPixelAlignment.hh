@@ -42,7 +42,11 @@ public:
   
   std::string getName() override {return fPixelAlignmentTag;}
   void        calculate(std::string hash) override;
-  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override {return "FIXME";}
+
+
+  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
+  void printBLOB(std::string) override;
+  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override;
 
   bool        getNextID(uint32_t &ID);
   
