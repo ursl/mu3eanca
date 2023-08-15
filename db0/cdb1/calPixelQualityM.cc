@@ -97,7 +97,7 @@ void calPixelQualityM::printPixelQuality(unsigned int chipid, int minimumStatus)
 
 
 // ----------------------------------------------------------------------
-void calPixelQualityM::printBLOB(std::string sblob) {
+void calPixelQualityM::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
