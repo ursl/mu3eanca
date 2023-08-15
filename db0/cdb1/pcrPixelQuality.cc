@@ -185,8 +185,8 @@ int main(int argc, char* argv[]) {
 
   // -- validate written payload
   cpq->readPayloadFromFile(hash, jsondir + string("/payloads"));
-  cout << "######################################################################" << endl;
-  cout << "### validate payload" << endl;
+  //  cout << "######################################################################" << endl;
+  //  cout << "### validate payload" << endl;
   string sblob = pDB->getPayload(hash).fBLOB;
   //  cpq->printBLOB(sblob);
   cpq->printBLOB(sblob, 0);
@@ -203,8 +203,8 @@ void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > md
   pl.fHash = hash;
   pl.fComment = "testing";
   pl.fBLOB = sblob;
-  cout << "######################################################################" << endl;
-  cout << "### createPayload" << endl;
+  //  cout << "######################################################################" << endl;
+  //  cout << "### createPayload" << endl;
   //  a->printBLOB(sblob);
   
   a->writePayloadToFile(hash, jsondir, pl); 
