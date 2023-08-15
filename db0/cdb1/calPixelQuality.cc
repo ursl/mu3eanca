@@ -123,16 +123,16 @@ void calPixelQuality::printBLOB(std::string sblob, int verbosity) {
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
     if (0 == verbosity) {
-      summary += chipID + " ";
+      summary += (to_string(chipID) + " ");
       nnp += npix;
     } else {
       cout << "   chipID: " << chipID << " npix: " << npix << endl;
-      for (int i = 0; i < npix; ++i) {
-        int icol           = blob2Int(getData(ibuffer));
-        int irow           = blob2Int(getData(ibuffer));
-        unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-        cout << "      icol/irow = " << icol << "/" << irow << " iqual = " << iqual << endl;
-      }
+    }
+    for (int i = 0; i < npix; ++i) {
+      int icol           = blob2Int(getData(ibuffer));
+      int irow           = blob2Int(getData(ibuffer));
+      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
+      if (verbosity > 0) cout << "      icol/irow = " << icol << "/" << irow << " iqual = " << iqual << endl;
     }
   }
   if (0 == verbosity) {
