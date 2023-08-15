@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
         if (h2->GetBinContent(ix,iy) > 0) ++npix;
       }
     }
-    cout << "chipID = " << chipID << " nhits =  " << chipCnt << " for npix = " << npix << endl;
+    if (verbose > 0) cout << "chipID = " << chipID << " nhits =  " << chipCnt << " for npix = " << npix << endl;
 
     vector<double> vchip{}; 
     if (npix > 0) {
@@ -158,7 +158,9 @@ int main(int argc, char* argv[]) {
       // -- this is WRONG!
       double meanHitsE = TMath::Sqrt(meanHits);
       double noiseThr  = meanHits + NSIGMA*meanHitsE; 
-      if (meanHits > 0.) cout << "meanHits = " << meanHits << " +/- " << meanHitsE << " noise threshold = " << noiseThr << endl;
+      if (meanHits > 0.) {
+        if (verbose > 0) cout << "meanHits = " << meanHits << " +/- " << meanHitsE << " noise threshold = " << noiseThr << endl;
+      }
       int nNoisyPix(0);
       for (int ix = 1; ix <= h2->GetNbinsX(); ++ix) {
         for (int iy = 1; iy <= h2->GetNbinsY(); ++iy) {
@@ -168,11 +170,13 @@ int main(int argc, char* argv[]) {
             vchip.push_back(static_cast<double>(ix-1)); 
             vchip.push_back(static_cast<double>(iy-1)); 
             vchip.push_back(static_cast<double>(1)); 
-            cout << "  noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << endl;
+            if (verbose > 0) {
+              cout << "  noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << endl;
+            }
           }
         }
       }
-      cout << "  -> nNoisyPixel = " << nNoisyPix << endl;
+      if (verbose > 0) cout << "  -> nNoisyPixel = " << nNoisyPix << endl;
     }
     mdet.insert(make_pair(chipID, vchip));
   }
@@ -201,7 +205,7 @@ void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > md
   pl.fBLOB = sblob;
   cout << "######################################################################" << endl;
   cout << "### createPayload" << endl;
-  a->printBLOB(sblob);
+  //  a->printBLOB(sblob);
   
   a->writePayloadToFile(hash, jsondir, pl); 
 }
