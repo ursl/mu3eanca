@@ -17,6 +17,8 @@
 #include "cdbUtil.hh"
 #include "base64.hh"
 
+#include "calPixelAlignment.hh"
+
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
 using bsoncxx::builder::stream::document;
@@ -138,6 +140,8 @@ int main(int argc, char* argv[]) {
 	// ----------------------------------------------------------------------
 	jdir = jsondir + "/payloads";
 
+  vector<unsigned int> vchipids;
+
   // -- pixelalignment
 	for (auto iiov: iniIovs) {
     if (string::npos == iiov.first.find("pixelalignment")) continue;
@@ -169,6 +173,9 @@ int main(int argc, char* argv[]) {
       }
       JS << bsoncxx::to_json(doc_value.view()) << endl;
       JS.close();
+
+      // -- fill vchipids with chip IDs
+      
     }
 	}
 
