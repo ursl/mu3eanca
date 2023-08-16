@@ -75,7 +75,7 @@ while (1) {
     print(&prefix("proCalRec"), "Now processing $run\n");
     
     # -- count events in new file
-    $cntEvts = &pcrCountEvents(265);
+    $cntEvts = &pcrCountEvents($run);
     #    $cntEvts = 41440245;
 
     # -- submit analyzer jobs to slurm and merge output
