@@ -36,9 +36,9 @@ my $pcrMu3eBEDir = ".ursl/data";
 # -- target data directory on merlin
 my $pcrDataDir   = "$pcrBaseDir/data";
 # -- analyzer executable
-my $pcrExe       = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer_mu3e";
+my $pcrExe       = "/psi/home/langenegger/data/230816-mdc2023/analyzer/_build/analyzer/analyzer_mu3e";
 # -- analyzer config directory with cnt.json and config.json
-my $pcrConfig    = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
+my $pcrConfig    = "/psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/config/";
 # -- JSON CDB 
 my $pcrJsonDir   = "$pcrBaseDir/json";
 # -- tarfile
@@ -67,8 +67,8 @@ while (1) {
     &pcrTransfer();
     # -- check whether something needs to be done
     my $run = &checkForNewRun();
-    if ($run > 0) {
-        print(&prefix("proCalRec"), "Nothing new\n");
+    if ($run eq "nada") {
+        print(&prefix("proCalRec"), "Nothing new ->$run<-\n");
         sleep(10);
         next;
     }
@@ -87,7 +87,15 @@ while (1) {
     } else {
         &pcrRunCalibration($pcrrootfile);
     }
+
+    # -- update IOVs
+
+    # -- update $pcrBaseDir/proCalRec.runs
+    open(OUT, ">>$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
+    print OUT "$run\n";
+    close(OUT);
     
+
 }
 
 
@@ -140,16 +148,17 @@ sub pcrSubmitJobs() {
     # map ($slurmID => logfile)
     my %mSlurmIds;
     my @mergeFiles;
-    for ($ijob = 0; $ijob < 2; $ijob++) {
+    my $NJOBS = int($lcevts/$nevts) + 1;
+    for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
         $job =  "$run" . "_$ijob";
 
         $rootString = "%ROOTFILE pcr-run$job.root";
 
-        if ($ijob == 0) {
-            $anlString  = "%ANLZR \"-e$nevts\"'";
+        $skipevts = $ijob * $nevts;
+        if ($ijob < $NJOBS - 1) {
+            $anlString  = "%ANLZR \"-s$skipevts\" -e$nevts'";
         } else {
-            $skipevts = $lcevts - $nevts;
-            $anlString  = "%ANLZR \"-s$skipevts\"'";
+            $anlString  = "%ANLZR \"-s$skipevts\" -e$nevts'";
         }
         
         $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
@@ -279,10 +288,13 @@ sub checkForNewRun() {
     }
     print("\n");
     
-    $result = shift(@newruns);
+    $result = "nada";
+    if ($#newruns > 0) {
+        $result = shift(@newruns);
+    }
     print("checkForNewRun() return $result\n");
     
-    return shift(@newruns);
+    return $result;
 }
 
 # ----------------------------------------------------------------------
