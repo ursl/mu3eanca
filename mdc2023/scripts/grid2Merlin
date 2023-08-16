@@ -4,10 +4,11 @@
 # grid2Merlin
 # ============
 #
-# Example: ../perl/grid2Merlin \
+# Example: ../script/grid2Merlin \
 #          -i 
 #          -f signal \
 #          -n 100
+#          -s mu3e_run_000201
 #          -g http://hepgrid11.ph.liv.ac.uk/noredirect/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build4.4.3/signal/ \
 #          -o merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal
 #
@@ -30,7 +31,7 @@ getopts('df:g:n:o:s:u:w:');
 # -- default values
 my $merlindir = "langenegger\@merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal";
 my $gridLoc   = "http://hepgrid11.ph.liv.ac.uk/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build_4.6/signal"; 
-my $waitSecs  = 0;
+my $waitSecs  = 10;
 my $startPat  = "nada";
 my $dbx       = 0;
 my $nfiles    = -1;
@@ -113,7 +114,8 @@ if ($opt_f) {
             last;
         }
         if ($opt_w) {
-            print("waiting $waitSecs seconds\n");
+            my $now = localtime;
+            print("$now, waiting $waitSecs seconds\n");
             sleep($waitSecs);
         }
     }
