@@ -51,7 +51,7 @@ print(&prefix("proCalRec"), "Tar file: $pcrTarFile\n");
 
 # -- initialize what has been processed so far
 my @processedRuns;
-&readProcessedRuns(@processedRuns);
+&readProcessedRuns();
 
 my $nevts = 1000000; 
 if ($opt_n) {
@@ -72,14 +72,14 @@ while (1) {
         sleep(10);
         next;
     }
-    print(&prefix("proCalRec"), "Now processing $run\n");
+    print(&prefix("proCalRec"), "Now processing run $run\n");
     
     # -- count events in new file
     $cntEvts = &pcrCountEvents($run);
-    #    $cntEvts = 41440245;
+    #$cntEvts = 41440245;
 
     # -- submit analyzer jobs to slurm and merge output
-    my $pcrrootfile =  &pcrSubmitJobs("00265", $cntEvts);
+    my $pcrrootfile =  &pcrSubmitJobs($run, $cntEvts);
     
     # -- run local calibration 
     if ($pcrrootfile eq "nada") {
@@ -94,7 +94,8 @@ while (1) {
     open(OUT, ">>$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
     print OUT "$run\n";
     close(OUT);
-    
+    # -- update @processedRuns
+    push(@processedRuns, $runs); 
 
 }
 
@@ -156,9 +157,9 @@ sub pcrSubmitJobs() {
 
         $skipevts = $ijob * $nevts;
         if ($ijob < $NJOBS - 1) {
-            $anlString  = "%ANLZR \"-s$skipevts\" -e$nevts'";
+            $anlString  = "%ANLZR \"-s$skipevts -e$nevts\" '";
         } else {
-            $anlString  = "%ANLZR \"-s$skipevts\" -e$nevts'";
+            $anlString  = "%ANLZR \"-s$skipevts\" '";
         }
         
         $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
@@ -203,7 +204,9 @@ sub pcrSubmitJobs() {
         if ($cnt < $njobs) {$slurmids .= ", ";}
     }
     $slurmids .= ")";
-    print(&prefix("pcrSubmitJobs"), "slurmids = $slurmids, waiting for jobs to finish\n");
+    print(&prefix("pcrSubmitJobs"), "slurmids = $slurmids, sleep 30 second before looking at logfiles\n");
+    sleep(30);
+
     while ($njobs > 0) {
         sleep(10);
         foreach $sjob (keys %mSlurmIds) {
@@ -250,7 +253,6 @@ sub pcrRunCalibration() {
 
 # ----------------------------------------------------------------------
 sub readProcessedRuns() {
-    (@processedRuns) = @_;
     open(IN, "$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
     while (<IN>) {
         chop;
