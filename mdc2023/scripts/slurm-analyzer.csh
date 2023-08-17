@@ -35,6 +35,11 @@ printenv
 pwd
 echo "--> check visibility of /psi/home/langenegger/data/mdc2023"
 ls -l /psi/home/langenegger/data/mdc2023
+echo "ls -l /psi/home/langenegger/data/230816-mdc2023"
+ls -l /psi/home/langenegger/data/230816-mdc2023
+echo "ls -l /psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/config/"
+ls -l /psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/config/
+
 echo "--> End of env testing"
 
 # BATCH START
