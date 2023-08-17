@@ -214,7 +214,7 @@ sub pcrSubmitJobs() {
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
             my $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/$mSlurmIds{$sjob}`;
-            print("    [$sjob] $tail");
+            print("    [$sjob/$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
                 delete($mSlurmIds{$sjob});
                 # print("removed $mSlurmIds{$sjob} from mSlurmIds\n");
