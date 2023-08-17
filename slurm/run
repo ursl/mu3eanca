@@ -56,7 +56,7 @@ my $home  = $ENV{'HOME'};
 (my $uhome = $home) =~ s|[^/]+$||;
 $uhome .= "langenegger";
 if (!$opt_p) {
-    $opt_p = "daily";
+    $opt_p = "general";
 }
 my $sbatch = "/usr/bin/sbatch ";
 
@@ -248,8 +248,8 @@ foreach $jobfile (@ARGV) {
         } else {
             # does not work: -p mu3e
             # does not work: -A mu3e
-            print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
-            $result = `$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh`;
+            print "$sbatch -J $jobName -p $opt_p -A mu3e -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
+            $result = `$sbatch -J $jobName -p $opt_p -A mu3e -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh`;
             chop($result);
             $result =~ s/Submitted batch job //g;
             print "Submitted ->$result<- with name ->$jobName<-\n";
