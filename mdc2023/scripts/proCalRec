@@ -8,6 +8,7 @@
 #
 #
 # History
+#         2203/08/17 validated proper job splitting/validation/updates
 #         2023/08/08 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -95,7 +96,7 @@ while (1) {
     print OUT "$run\n";
     close(OUT);
     # -- update @processedRuns
-    push(@processedRuns, $runs); 
+    push(@processedRuns, $run); 
 
 }
 
@@ -137,8 +138,10 @@ sub pcrSubmitJobs() {
     my $cmdString = "";
     my $envString = "";
 
-    $cmdIniString .= "cd $pcrBaseDir/slurm/jobs && ";
-    $cmdIniString .= "$pcrCodeDir/../slurm/run -t ../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
+    my $queue = "-p mu3e"; 
+    
+    my $cmdIniString = "cd $pcrBaseDir/slurm/jobs && ";
+    $cmdIniString .= "$pcrCodeDir/../slurm/run $queue -t ../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
     
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1";
@@ -163,7 +166,10 @@ sub pcrSubmitJobs() {
         }
         
         $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
-    
+
+        # -- remove possibly pre-existing job directory
+        system("/bin/rm -rf $pcrBaseDir/slurm/jobs/tmp-$job");
+        
         print(&prefix("pcrSubmitJobs"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1 ROOTFILE pcr-run$run.root $anlString\n");
         $line = `$cmdString`;
         # -- to see $line, uncomment the next line: 
@@ -208,17 +214,24 @@ sub pcrSubmitJobs() {
     sleep(30);
 
     while ($njobs > 0) {
-        sleep(10);
+        if ($njobs > 20) {
+            sleep(60);
+        } elsif ($njobs > 10) {
+            sleep(30);
+        } else {
+            sleep(10);
+        }
         foreach $sjob (keys %mSlurmIds) {
             $result = `/bin/squeue -j $sjob`;
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
-            my $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/$mSlurmIds{$sjob}`;
-            print("    [$sjob/$mSlurmIds{$sjob}] $tail");
+            my $tail = "no file yet\n";
+            if (-e"$pcrBaseDir/slurm/jobs/$mSlurmIds{$sjob}") {
+                $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/$mSlurmIds{$sjob}`;
+            }
+            print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
                 delete($mSlurmIds{$sjob});
-                # print("removed $mSlurmIds{$sjob} from mSlurmIds\n");
-
                 my $bla = $mSlurmIds{$sjob};
             }
             $njobs = keys %mSlurmIds;
@@ -272,6 +285,13 @@ sub readProcessedRuns() {
 sub checkForNewRun() {
     my @midFiles  = glob("$pcrDataDir/*.mid");
     my @newruns = ();
+
+    print(&prefix("checkForNewRun"), "contents of processedRuns: ");
+    foreach $irun (@processedRuns) {
+        print(" $irun"); 
+    }
+    print("\n");
+
     foreach $file (@midFiles) {
         my($barefile, $directories) = fileparse($file);
         $barefile =~ /run([0-9]*).mid/;
@@ -291,7 +311,7 @@ sub checkForNewRun() {
     print("\n");
     
     $result = "nada";
-    if ($#newruns > 0) {
+    if ($#newruns > -1) {
         $result = shift(@newruns);
     }
     print("checkForNewRun() return $result\n");
