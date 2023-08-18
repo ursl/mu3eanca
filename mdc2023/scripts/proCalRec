@@ -43,7 +43,7 @@ my $pcrConfig    = "/psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/
 # -- JSON CDB 
 my $pcrJsonDir   = "$pcrBaseDir/json";
 # -- tarfile
-my $pcrTarFile   = "230809-analyzer.tar.gz";
+my $pcrTarFile   = "unset.tar.gz";
 if ($opt_t) {
     my($barefile, $directories) = fileparse($opt_t);
     $pcrTarFile = $barefile;
@@ -134,14 +134,29 @@ sub pcrSubmitJobs() {
     my $pcrFile = "nada";
     
     my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
-    print(&prefix("pcrSubmitJobs"), "pcrSubmitJobs run = $run -> file = $file\n");
     my $cmdString = "";
     my $envString = "";
 
     my $queue = "-p mu3e"; 
     
-    my $cmdIniString = "cd $pcrBaseDir/slurm/jobs && ";
-    $cmdIniString .= "$pcrCodeDir/../slurm/run $queue -t ../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
+    # -- rundir
+    my $rundir = "$pcrBaseDir/slurm/jobs/$run";
+    if (-d $rundir) {
+        # -- remove possibly pre-existing job directory
+        system("/bin/mv $rundir $pcrBaseDir/slurm/jobs/old");
+    }
+    mkdir($rundir);
+    # -- rootdir
+    my $rootdir = "$pcrBaseDir/slurm/storage1/$run";
+    if (-d $rootdir) {
+        # -- remove possibly pre-existing job directory
+        system("/bin/mv $rootdir $pcrBaseDir/slurm/storage1/old");
+    }
+    mkdir($rootdir);
+    print(&prefix("pcrSubmitJobs"), "pcrSubmitJobs rundir = $rundir, rootdir = $rootdir, file = $file\n");
+        
+    my $cmdIniString = "cd $rundir && ";
+    $cmdIniString .= "$pcrCodeDir/../slurm/run $queue -t ../../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
     
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1";
@@ -153,6 +168,7 @@ sub pcrSubmitJobs() {
     my %mSlurmIds;
     my @mergeFiles;
     my $NJOBS = int($lcevts/$nevts) + 1;
+    # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
         $job =  "$run" . "_$ijob";
 
@@ -167,9 +183,6 @@ sub pcrSubmitJobs() {
         
         $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
 
-        # -- remove possibly pre-existing job directory
-        system("/bin/rm -rf $pcrBaseDir/slurm/jobs/tmp-$job");
-        
         print(&prefix("pcrSubmitJobs"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1 ROOTFILE pcr-run$run.root $anlString\n");
         $line = `$cmdString`;
         # -- to see $line, uncomment the next line: 
@@ -213,6 +226,7 @@ sub pcrSubmitJobs() {
     print(&prefix("pcrSubmitJobs"), "slurmids = $slurmids, sleep 30 second before looking at logfiles\n");
     sleep(30);
 
+    # -- monitor jobs
     while ($njobs > 0) {
         if ($njobs > 20) {
             sleep(60);
@@ -226,8 +240,8 @@ sub pcrSubmitJobs() {
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
             my $tail = "no file yet\n";
-            if (-e"$pcrBaseDir/slurm/jobs/$mSlurmIds{$sjob}") {
-                $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/$mSlurmIds{$sjob}`;
+            if (-e "$pcrBaseDir/slurm/jobs/$run/$mSlurmIds{$sjob}") {
+                $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/$run/$mSlurmIds{$sjob}`;
             }
             print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
@@ -241,13 +255,11 @@ sub pcrSubmitJobs() {
     print(&prefix("pcrSubmitJobs"), "all slurm jobs finished\n");
 
     $output = "$pcrBaseDir/slurm/storage1";
-    my $mergeString = "hadd $output/pcr-run$run.root ";
+    my $pcrFile = "$output/pcr-run$run.root";
     system("/bin/rm -f $output/pcr-run$run.root");
-
-    $pcrFile = "$output/pcr-run$run.root";
-    $mergeString = "hadd $pcrFile";
+    my $mergeString = "hadd $pcrFile";
     foreach $rf (@mergeFiles)  {
-        $mergeString .= " $output/$rf ";
+        $mergeString .= " $output/$run/$rf ";
     }
     
     my $result = `$mergeString`;
