@@ -310,7 +310,7 @@ sub checkForNewRun() {
         $run = $1;
 
         if (grep( /^$run$/, @processedRuns ) ) {
-            print "Found $run in processedRuns\n";
+            # print "Found $run in processedRuns\n";
         } else {
             push(@newruns, $run);
         }
@@ -326,7 +326,7 @@ sub checkForNewRun() {
     if ($#newruns > -1) {
         $result = shift(@newruns);
     }
-    print("checkForNewRun() return $result\n");
+    # print("checkForNewRun() return $result\n");
     
     return $result;
 }
