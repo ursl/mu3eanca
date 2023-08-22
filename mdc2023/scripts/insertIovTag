@@ -8,6 +8,7 @@
 #
 #
 # History
+#         2023/08/22 fix bug removing previous entries
 #         2023/08/21 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -33,6 +34,7 @@ $lines =~ s/\ //g;
 $lines =~ /{("tag"):"($opt_t)","iovs":\[([0-9,\,]*)\]/;
 $iovs = $3;
 @oldRuns = split(/,/, $iovs);
+print("insertIovTag: oldRuns = @oldRuns\n");
 my @runs = ();
 
 my $inserted = 0; 
@@ -51,14 +53,15 @@ if ($inserted == 0) {
     push(@runs, $opt_i);
 }
 
-print("insertIovTag: $opt_t:  @runs\n");
+print("insertIovTag: $opt_t:  @runs, last index = $#runs\n");
 
 copy $file, "$file.bac" || die("move $file, $file.bac failed: $!");
 
 open(OUT, ">$file") || die "insertIovTag: Cannot open $file for output\n";
 print OUT "{\"tag\" : \"$opt_t\", \"iovs\" : [";
-for ($i; $i <= $#runs; $i++) {
-    if ($i <= $#runs -1) {
+my $nruns = $#runs;
+for ($i = 0; $i <= $nruns; $i++) {
+    if ($i <= $nruns-1) {
         print OUT "$runs[$i], ";
     } else {
         print OUT "$runs[$i]";
