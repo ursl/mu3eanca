@@ -35,6 +35,11 @@ printenv
 pwd
 echo "--> check visibility of /psi/home/langenegger/data/mdc2023"
 ls -l /psi/home/langenegger/data/mdc2023
+echo "ls -l /psi/home/langenegger/data/230816-mdc2023"
+ls -l /psi/home/langenegger/data/230816-mdc2023
+echo "ls -l /psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/config/"
+ls -l /psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/config/
+
 echo "--> End of env testing"
 
 # BATCH START
@@ -67,11 +72,11 @@ pwd
 echo "ls -l `pwd`/root_output_files"
 ls -l `pwd`/root_output_files
 
-echo "cp ./output*$RUN.root $STORAGE1/$ROOTFILE"
-cp root_output_files/output$RUN.root $STORAGE1/$ROOTFILE
-setenv BLA  `ls -l $STORAGE1/$ROOTFILE`
+echo "cp ./output*$RUN.root $STORAGE1/$RUN/$ROOTFILE"
+cp root_output_files/output$RUN.root $STORAGE1/$RUN/$ROOTFILE
+setenv BLA  `ls -l $STORAGE1/$RUN/$ROOTFILE`
 echo "slurm check that rootfile was copied ->$BLA<-"
-ls -l $STORAGE1/$ROOTFILE
+ls -l $STORAGE1/$RUN/ROOTFILE
 
 date
 

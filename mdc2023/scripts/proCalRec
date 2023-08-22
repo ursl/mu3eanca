@@ -8,6 +8,7 @@
 #
 #
 # History
+#         2203/08/17 validated proper job splitting/validation/updates
 #         2023/08/08 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -36,13 +37,13 @@ my $pcrMu3eBEDir = ".ursl/data";
 # -- target data directory on merlin
 my $pcrDataDir   = "$pcrBaseDir/data";
 # -- analyzer executable
-my $pcrExe       = "/psi/home/langenegger/mu3e/analyzer/_build/analyzer/analyzer_mu3e";
+my $pcrExe       = "/psi/home/langenegger/data/230816-mdc2023/analyzer/_build/analyzer/analyzer_mu3e";
 # -- analyzer config directory with cnt.json and config.json
-my $pcrConfig    = "/psi/home/langenegger/mu3e/analyzer/analyzer/config/";
+my $pcrConfig    = "/psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/config/";
 # -- JSON CDB 
 my $pcrJsonDir   = "$pcrBaseDir/json";
 # -- tarfile
-my $pcrTarFile   = "230809-analyzer.tar.gz";
+my $pcrTarFile   = "unset.tar.gz";
 if ($opt_t) {
     my($barefile, $directories) = fileparse($opt_t);
     $pcrTarFile = $barefile;
@@ -51,7 +52,7 @@ print(&prefix("proCalRec"), "Tar file: $pcrTarFile\n");
 
 # -- initialize what has been processed so far
 my @processedRuns;
-&readProcessedRuns(@processedRuns);
+&readProcessedRuns();
 
 my $nevts = 1000000; 
 if ($opt_n) {
@@ -67,19 +68,19 @@ while (1) {
     &pcrTransfer();
     # -- check whether something needs to be done
     my $run = &checkForNewRun();
-    if ($run > 0) {
-        print(&prefix("proCalRec"), "Nothing new\n");
+    if ($run eq "nada") {
+        print(&prefix("proCalRec"), "Nothing new ->$run<-\n");
         sleep(10);
         next;
     }
-    print(&prefix("proCalRec"), "Now processing $run\n");
+    print(&prefix("proCalRec"), "Now processing run $run\n");
     
     # -- count events in new file
-    $cntEvts = &pcrCountEvents(265);
-    #    $cntEvts = 41440245;
+    $cntEvts = &pcrCountEvents($run);
+    #$cntEvts = 41440245;
 
     # -- submit analyzer jobs to slurm and merge output
-    my $pcrrootfile =  &pcrSubmitJobs("00265", $cntEvts);
+    my $pcrrootfile =  &pcrSubmitJobs($run, $cntEvts);
     
     # -- run local calibration 
     if ($pcrrootfile eq "nada") {
@@ -87,7 +88,16 @@ while (1) {
     } else {
         &pcrRunCalibration($pcrrootfile);
     }
-    
+
+    # -- update IOVs
+
+    # -- update $pcrBaseDir/proCalRec.runs
+    open(OUT, ">>$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
+    print OUT "$run\n";
+    close(OUT);
+    # -- update @processedRuns
+    push(@processedRuns, $run); 
+
 }
 
 
@@ -124,12 +134,29 @@ sub pcrSubmitJobs() {
     my $pcrFile = "nada";
     
     my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
-    print(&prefix("pcrSubmitJobs"), "pcrSubmitJobs run = $run -> file = $file\n");
     my $cmdString = "";
     my $envString = "";
 
-    $cmdIniString .= "cd $pcrBaseDir/slurm/jobs && ";
-    $cmdIniString .= "$pcrCodeDir/../slurm/run -t ../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
+    my $queue = "-p mu3e"; 
+    
+    # -- rundir
+    my $rundir = "$pcrBaseDir/slurm/jobs/$run";
+    if (-d $rundir) {
+        # -- remove possibly pre-existing job directory
+        system("/bin/mv $rundir $pcrBaseDir/slurm/jobs/old");
+    }
+    mkdir($rundir);
+    # -- rootdir
+    my $rootdir = "$pcrBaseDir/slurm/storage1/$run";
+    if (-d $rootdir) {
+        # -- remove possibly pre-existing job directory
+        system("/bin/mv $rootdir $pcrBaseDir/slurm/storage1/old");
+    }
+    mkdir($rootdir);
+    print(&prefix("pcrSubmitJobs"), "pcrSubmitJobs rundir = $rundir, rootdir = $rootdir, file = $file\n");
+        
+    my $cmdIniString = "cd $rundir && ";
+    $cmdIniString .= "$pcrCodeDir/../slurm/run $queue -t ../../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
     
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1";
@@ -140,20 +167,22 @@ sub pcrSubmitJobs() {
     # map ($slurmID => logfile)
     my %mSlurmIds;
     my @mergeFiles;
-    for ($ijob = 0; $ijob < 2; $ijob++) {
+    my $NJOBS = int($lcevts/$nevts) + 1;
+    # -- submit jobs
+    for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
         $job =  "$run" . "_$ijob";
 
         $rootString = "%ROOTFILE pcr-run$job.root";
 
-        if ($ijob == 0) {
-            $anlString  = "%ANLZR \"-e$nevts\"'";
+        $skipevts = $ijob * $nevts;
+        if ($ijob < $NJOBS - 1) {
+            $anlString  = "%ANLZR \"-s$skipevts -e$nevts\" '";
         } else {
-            $skipevts = $lcevts - $nevts;
-            $anlString  = "%ANLZR \"-s$skipevts\"'";
+            $anlString  = "%ANLZR \"-s$skipevts\" '";
         }
         
         $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
-    
+
         print(&prefix("pcrSubmitJobs"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1 ROOTFILE pcr-run$run.root $anlString\n");
         $line = `$cmdString`;
         # -- to see $line, uncomment the next line: 
@@ -194,19 +223,29 @@ sub pcrSubmitJobs() {
         if ($cnt < $njobs) {$slurmids .= ", ";}
     }
     $slurmids .= ")";
-    print(&prefix("pcrSubmitJobs"), "slurmids = $slurmids, waiting for jobs to finish\n");
+    print(&prefix("pcrSubmitJobs"), "slurmids = $slurmids, sleep 30 second before looking at logfiles\n");
+    sleep(30);
+
+    # -- monitor jobs
     while ($njobs > 0) {
-        sleep(10);
+        if ($njobs > 20) {
+            sleep(60);
+        } elsif ($njobs > 10) {
+            sleep(30);
+        } else {
+            sleep(10);
+        }
         foreach $sjob (keys %mSlurmIds) {
             $result = `/bin/squeue -j $sjob`;
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
-            my $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/$mSlurmIds{$sjob}`;
-            print("    [$sjob] $tail");
+            my $tail = "no file yet\n";
+            if (-e "$pcrBaseDir/slurm/jobs/$run/$mSlurmIds{$sjob}") {
+                $tail = `/bin/tail -1 $pcrBaseDir/slurm/jobs/$run/$mSlurmIds{$sjob}`;
+            }
+            print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
                 delete($mSlurmIds{$sjob});
-                # print("removed $mSlurmIds{$sjob} from mSlurmIds\n");
-
                 my $bla = $mSlurmIds{$sjob};
             }
             $njobs = keys %mSlurmIds;
@@ -216,13 +255,11 @@ sub pcrSubmitJobs() {
     print(&prefix("pcrSubmitJobs"), "all slurm jobs finished\n");
 
     $output = "$pcrBaseDir/slurm/storage1";
-    my $mergeString = "hadd $output/pcr-run$run.root ";
+    my $pcrFile = "$output/pcr-run$run.root";
     system("/bin/rm -f $output/pcr-run$run.root");
-
-    $pcrFile = "$output/pcr-run$run.root";
-    $mergeString = "hadd $pcrFile";
+    my $mergeString = "hadd $pcrFile";
     foreach $rf (@mergeFiles)  {
-        $mergeString .= " $output/$rf ";
+        $mergeString .= " $output/$run/$rf ";
     }
     
     my $result = `$mergeString`;
@@ -241,7 +278,6 @@ sub pcrRunCalibration() {
 
 # ----------------------------------------------------------------------
 sub readProcessedRuns() {
-    (@processedRuns) = @_;
     open(IN, "$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
     while (<IN>) {
         chop;
@@ -261,13 +297,20 @@ sub readProcessedRuns() {
 sub checkForNewRun() {
     my @midFiles  = glob("$pcrDataDir/*.mid");
     my @newruns = ();
+
+    print(&prefix("checkForNewRun"), "contents of processedRuns: ");
+    foreach $irun (@processedRuns) {
+        print(" $irun"); 
+    }
+    print("\n");
+
     foreach $file (@midFiles) {
         my($barefile, $directories) = fileparse($file);
         $barefile =~ /run([0-9]*).mid/;
         $run = $1;
 
         if (grep( /^$run$/, @processedRuns ) ) {
-            print "Found $run in processedRuns\n";
+            # print "Found $run in processedRuns\n";
         } else {
             push(@newruns, $run);
         }
@@ -279,10 +322,13 @@ sub checkForNewRun() {
     }
     print("\n");
     
-    $result = shift(@newruns);
-    print("checkForNewRun() return $result\n");
+    $result = "nada";
+    if ($#newruns > -1) {
+        $result = shift(@newruns);
+    }
+    # print("checkForNewRun() return $result\n");
     
-    return shift(@newruns);
+    return $result;
 }
 
 # ----------------------------------------------------------------------
