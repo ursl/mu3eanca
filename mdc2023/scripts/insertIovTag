@@ -1,0 +1,69 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# insertIovTag
+# ============
+#
+# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/insertIovTag -j jsondir -t tag -i 265
+#
+#
+# History
+#         2023/08/21 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+use File::Basename;
+use File::Copy 'copy';
+
+use Getopt::Std;
+getopts('i:j:t:');
+
+my $file = $opt_j . "/iovs/" . $opt_t;
+open(IN, "$file") || die "insertIovTag: Cannot open $file\n";
+$lines = <IN>;
+close(IN);
+
+# -- remove all newlines and spaces
+$lines =~ s/\n/\ /g;
+$lines =~ s/\ //g;
+# -- parse into run list
+$lines =~ /{("tag"):"($opt_t)","iovs":\[([0-9,\,]*)\]/;
+$iovs = $3;
+@oldRuns = split(/,/, $iovs);
+my @runs = ();
+
+my $inserted = 0; 
+for ($i; $i <= $#oldRuns; $i++) {
+    if ($opt_i > $oldRuns[$i]) {
+        push(@runs, $oldRuns[$i]);
+    } elsif ($opt_i < $oldRuns[$i]) {
+        push(@runs, $opt_i);
+        push(@runs, $oldRuns[$i]);
+        $inserted = 1; 
+    } else {
+        print "same, not updating\n";
+    }
+}
+if ($inserted == 0) {
+    push(@runs, $opt_i);
+}
+
+print("insertIovTag: $opt_t:  @runs\n");
+
+copy $file, "$file.bac" || die("move $file, $file.bac failed: $!");
+
+open(OUT, ">$file") || die "insertIovTag: Cannot open $file for output\n";
+print OUT "{\"tag\" : \"$opt_t\", \"iovs\" : [";
+for ($i; $i <= $#runs; $i++) {
+    if ($i <= $#runs -1) {
+        print OUT "$runs[$i], ";
+    } else {
+        print OUT "$runs[$i]";
+    }
+}
+
+print OUT "]}\n";
+close(OUT); 
