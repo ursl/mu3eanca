@@ -8,6 +8,7 @@
 #
 #
 # History
+#         2203/08/22 add IOV updating
 #         2203/08/17 validated proper job splitting/validation/updates
 #         2023/08/08 first shot
 # ----------------------------------------------------------------------
@@ -81,15 +82,12 @@ while (1) {
 
     # -- submit analyzer jobs to slurm and merge output
     my $pcrrootfile =  &pcrSubmitJobs($run, $cntEvts);
-    
     # -- run local calibration 
     if ($pcrrootfile eq "nada") {
         print(&prefix("proCalRec"), "pcrSubmitJobs did not complete successfully\n");
     } else {
         &pcrRunCalibration($pcrrootfile);
     }
-
-    # -- update IOVs
 
     # -- update $pcrBaseDir/proCalRec.runs
     open(OUT, ">>$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
@@ -272,9 +270,22 @@ sub pcrSubmitJobs() {
 # ----------------------------------------------------------------------
 sub pcrRunCalibration() {
     ($cfile) = @_;
-    print(&prefix("pcrRunCalibration"), "cd $pcrCalCode && bin/pcrPixelQuality -f $cfile -j $pcrJsonDir; cd - ");
+
+    # -- pixelquality
+    print(&prefix("pcrRunCalibration"), "cd $pcrCalCode && bin/pcrPixelQuality -f $cfile -j $pcrJsonDir; cd - \n");
     system("cd $pcrCalCode && bin/pcrPixelQuality -f $cfile -j $pcrJsonDir; cd - ");
+
+    # -- update IOVs
+    $cfile =~ /pcr-run([0-9]*).root/;
+    my $irun = int($1); 
+    my $plfile = `ls $pcrJsonDir/payloads/tag_pixelquality_*_iov_$irun`; 
+    chop($plfile);
+    my($bplfile, $directories) = fileparse($plfile);
+    $bplfile =~ /tag_([\w]*)_iov_[0-9]*/;
+    my $ltag = $1;
+    system("$pcrCodeDir/scripts/insertIovTag -j $pcrJsonDir -t $ltag -i $irun");
 }
+
 
 # ----------------------------------------------------------------------
 sub readProcessedRuns() {
