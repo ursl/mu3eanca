@@ -49,7 +49,7 @@ public:
   void                dump2Root(TDirectory *);
   void                setPrintTiming(int v) {fPrintTiming = v;}
 
-  // -- accessors for  various derived classes
+  // -- accessors for various derived classes
   virtual int         getStatus(unsigned int id, int icol, int irow) {return -9999;}
   
 protected: 
@@ -59,6 +59,5 @@ protected:
   std::vector<int>                   fIOVs;  // set it up initially
   std::map<std::string, payload>     fTagIOVPayloadMap;  // cache
 };
-
 
 #endif

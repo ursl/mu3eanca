@@ -18,6 +18,7 @@
 #include "base64.hh"
 
 #include "calPixelAlignment.hh"
+#include "calPixelCablingMap.hh"
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -67,6 +68,10 @@ int main(int argc, char* argv[]) {
     system(string("mkdir -p " + jsondir + "/iovs").c_str());
   }
   closedir(folder);
+
+  calPixelCablingMap *ccm = new calPixelCablingMap();
+  ccm->readJson("../ascii/pixelcablingmap-intrun.json");
+  return 0;
   
   ofstream JS;
 
