@@ -27,8 +27,10 @@ public:
   unsigned int getOnline(unsigned int sensor);
   unsigned int getSensor(unsigned int online);
   
-  bool        getNextID(uint32_t &ID);
-  
+  bool         getNextID(uint32_t &ID);
+
+  std::string  readJson(std::string filename);
+
 private:
   std::string fPixelCablingMapTag{"pixelcablingmap_"};
 

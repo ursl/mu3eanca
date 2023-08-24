@@ -131,3 +131,25 @@ string calPixelCablingMap::makeBLOB(map<unsigned int, vector<double> > m) {
   }
   return s.str();
 }
+
+
+// ----------------------------------------------------------------------
+string calPixelCablingMap::readJson(string filename) {
+  string spl("");
+  ifstream INS(filename); 
+  if (!INS.is_open()) {
+    return string("calPixelCablingMap::readJson> Error, file " + filename + " not found");  
+  }
+
+  string bigLine(""), sline;
+  while (getline(INS, sline)) {
+    bigLine += sline; 
+  }
+  INS.close();
+  replaceAll(bigLine, "\n", "");
+  cleanupString(bigLine);
+
+  cout << "bigLine: " << bigLine << endl;
+  
+  return spl;
+}
