@@ -233,12 +233,19 @@ void readBlob(string filename = "sensors.bin") {
     thickness = blob2Double(getData(ibuffer));
     pixelSize = blob2Double(getData(ibuffer));
     
-    if (1) cout << "sensor = " << sensor
+    if (0) cout << "sensor = " << sensor
                 << " v x/y/z = " << vx << "/" << vy << "/" << vz
                 << " row x/y/z = " << rowx << "/" << rowy << "/" << rowz
                 << " col x/y/z = " << colx << "/" << coly << "/" << colz
                 << " rest: " << nrow << "/" << ncol << "/" << width
                 << "/" << length << "/" << thickness << "/" << pixelSize
+                << endl;
+    if (1) cout << sensor
+                << "," << vx << "," << vy << "," << vz
+                << "," << rowx << "," << rowy << "," << rowz
+                << "," << colx << "," << coly << "," << colz
+                << "," << nrow << "," << ncol << "," << width
+                << "," << length << "," << thickness << "," << pixelSize
                 << endl;
   }
 }
