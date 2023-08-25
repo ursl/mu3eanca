@@ -36,7 +36,6 @@ public:
   double pixelSize(uint32_t id) {return fMapConstants[id].pixelSize;}
 
   // void setVxAddr(double *ptr) {fpvx = ptr;}
-
   // void setVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
   // void fillVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
   
@@ -44,12 +43,15 @@ public:
   void        calculate(std::string hash) override;
 
 
+  std::string makeBLOB() override;
+  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override;
   std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
   void printBLOB(std::string, int verbosity = 1) override;
-  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override;
 
   bool        getNextID(uint32_t &ID);
-  
+
+  std::string readCsv(std::string filename);
+
 private:
   std::string fPixelAlignmentTag{"pixelalignment_"};
 

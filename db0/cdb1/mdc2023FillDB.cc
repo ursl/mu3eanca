@@ -69,15 +69,11 @@ int main(int argc, char* argv[]) {
   }
   closedir(folder);
 
-  calPixelCablingMap *ccm = new calPixelCablingMap();
-  ccm->readJson("../ascii/pixelcablingmap-intrun.json");
-  return 0;
-  
+ 
   ofstream JS;
 
 	auto builder = document{};
-  
- 
+
   mongocxx::database db;
 	mongocxx::collection globaltags;
 	mongocxx::collection iovs;
@@ -145,44 +141,31 @@ int main(int argc, char* argv[]) {
 	// ----------------------------------------------------------------------
 	jdir = jsondir + "/payloads";
 
-  vector<unsigned int> vchipids;
-
+  // -- pixelcablingmap
+  calPixelCablingMap *ccm = new calPixelCablingMap();
+  ccm->readJson("../ascii/pixelcablingmap-intrun.json");
+  string spl = ccm->makeBLOB();
+  string hash("tag_pixelcablingmap_mdc2023_iov_1");
+  
+  payload pl;
+  pl.fHash = hash; 
+  pl.fComment = "mdc2023 initialization";
+  pl.fBLOB = spl;
+  ccm->printBLOB(spl); 
+  ccm->writePayloadToFile(hash, jdir, pl); 
+  
   // -- pixelalignment
-	for (auto iiov: iniIovs) {
-    if (string::npos == iiov.first.find("pixelalignment")) continue;
-		for (auto it : iiov.second) {
-			stringstream sh; 
-			sh << "tag_" << iiov.first;
-			sh << "_iov_" << it;
-      
-      std::ifstream file;
-      file.open("../ascii/sensors-mdc2023.bin");
-      vector<char> buffer(std::istreambuf_iterator<char>(file), {});
-      string sblob("");
-      for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
-      std::vector<char>::iterator ibuffer = buffer.begin();
-      long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-      cout << "header: " << hex
-           << header << endl;
-      
-			bsoncxx::document::value doc_value = builder
-				<< "hash" << sh.str()
-				<< "comment" << "testing"
-				<< "BLOB" << base64_encode(sblob)
-				<< finalize; 
-			
-      // -- JSON
-      JS.open(jdir + "/" + sh.str());
-      if (JS.fail()) {
-        cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
-      }
-      JS << bsoncxx::to_json(doc_value.view()) << endl;
-      JS.close();
+  calPixelAlignment *cpa = new calPixelAlignment();
+  cpa->readCsv("../ascii/sensors-mdc2023.csv");
+  spl = cpa->makeBLOB();
+  hash = string("tag_pixelalignment_mdc2023_iov_1");
+  pl.fHash = hash; 
+  pl.fComment = "mdc2023 initialization";
+  pl.fBLOB = spl;
+  cpa->printBLOB(spl); 
+  cpa->writePayloadToFile(hash, jdir, pl); 
 
-      // -- fill vchipids with chip IDs
-      
-    }
-	}
+  return 0; 
 
   // -- pixelquality
 	for (auto iiov: iniIovs) {
@@ -218,5 +201,6 @@ int main(int argc, char* argv[]) {
     }
 	}
 
+ 
 	return 0;
 }
