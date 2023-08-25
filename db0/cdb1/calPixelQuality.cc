@@ -174,6 +174,42 @@ map<unsigned int, vector<double> > calPixelQuality::decodeBLOB(string spl) {
 
 
 // ----------------------------------------------------------------------
+string calPixelQuality::makeBLOB() {
+  stringstream s;
+  long unsigned int header(0xdeadface);
+  s << dumpArray(uint2Blob(header));
+  
+  // -- format of m
+  // chipID => [npix, n*(col, row, iqual)]
+  for (auto it: fMapConstants) {
+    s << dumpArray(uint2Blob(it.first));
+    constants a = it.second;
+
+    int npix(0); 
+    for (int ic = 0; ic < 256; ++ic) {
+      for (int ir = 0; ir < 250; ++ir) {
+        if (a.matrix[ic][ir] > 0) ++npix;
+      }
+    }
+    
+    s << dumpArray(int2Blob(npix));
+
+    for (int ic = 0; ic < 256; ++ic) {
+      for (int ir = 0; ir < 250; ++ir) {
+        if (a.matrix[ic][ir] > 0) {
+          s << dumpArray(int2Blob(ic));
+          s << dumpArray(int2Blob(ir));
+          s << dumpArray(int2Blob(a.matrix[ic][ir]));
+        }
+      }
+    }
+
+  }
+  return s.str();
+}
+
+
+// ----------------------------------------------------------------------
 string calPixelQuality::makeBLOB(map<unsigned int, vector<double> > m) {
   stringstream s;
   long unsigned int header(0xdeadface);

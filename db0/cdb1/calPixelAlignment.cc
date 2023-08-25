@@ -256,11 +256,9 @@ string calPixelAlignment::readCsv(string filename) {
   vector<string> tokens = split(spl, ',');
 
   for (unsigned int it = 0; it < tokens.size(); it += 16) {
-    cout << "tokens[" << it << "] = " << tokens[it] << endl;
     constants a;
     int idx = it; 
     a.id = ::stoi(tokens[idx++]);
-    cout << " a.id = " << a.id << endl;
     a.vx = ::stod(tokens[idx++]);
     a.vy = ::stod(tokens[idx++]);
     a.vz = ::stod(tokens[idx++]);
@@ -284,6 +282,9 @@ string calPixelAlignment::readCsv(string filename) {
     fMapConstants.insert(make_pair(a.id, a));
 
   }
+
+  // -- set iterator over all constants to the start of the map
+  fMapConstantsIt = fMapConstants.begin();
 
   return spl;
 }
