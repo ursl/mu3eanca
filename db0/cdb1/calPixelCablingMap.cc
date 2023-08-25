@@ -192,13 +192,12 @@ string calPixelCablingMap::readJson(string filename) {
   for (element ele : doc.view()) {
     std::string_view index{ele.key().to_string()};
     unsigned int online, sensor;
-    cout << "index = " << index
-         << " online = " << ele["online"].get_string().value.to_string() //.value
-         << " sensor = " << ele["sensor"].get_string().value.to_string() //.value 
-         << endl;
+    // cout << "index = " << index
+    //      << " online = " << ele["online"].get_string().value.to_string() //.value
+    //      << " sensor = " << ele["sensor"].get_string().value.to_string() //.value 
+    //      << endl;
     online = ::stoi(ele["online"].get_string().value.to_string());
     sensor = ::stoi(ele["sensor"].get_string().value.to_string());
-    cout << " unsigned int version: " << online << " -> " << sensor << endl;
     fMapConstants.insert(make_pair(sensor, online));
   }
   return spl;

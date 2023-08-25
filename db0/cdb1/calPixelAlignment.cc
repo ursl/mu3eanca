@@ -96,7 +96,8 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
 
-    cout << "v = "
+    cout << "sensor = " << chipID
+         << " v = "
          << blob2Double(getData(ibuffer)) << "/" 
          << blob2Double(getData(ibuffer)) << "/" 
          << blob2Double(getData(ibuffer)) << " "
@@ -108,11 +109,12 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
-         << endl
+        // << endl
          << "n = "
          << blob2Int(getData(ibuffer)) << "/" 
          << blob2Int(getData(ibuffer)) << " " 
          << "rest = "
+         << blob2Double(getData(ibuffer)) << "/" 
          << blob2Double(getData(ibuffer)) << "/" 
          << blob2Double(getData(ibuffer)) << "/" 
          << blob2Double(getData(ibuffer))
@@ -166,6 +168,40 @@ map<unsigned int, vector<double> > calPixelAlignment::decodeBLOB(string spl) {
 
 
 // ----------------------------------------------------------------------
+string calPixelAlignment::makeBLOB() {
+  stringstream s;
+  long unsigned int header(0xdeadface);
+  s << dumpArray(uint2Blob(header));
+
+  for (auto it: fMapConstants) {
+    s << dumpArray(uint2Blob(it.first));
+    constants a = it.second;
+    // -- vx,vy,vz
+    s << dumpArray(double2Blob(a.vx));
+    s << dumpArray(double2Blob(a.vy));
+    s << dumpArray(double2Blob(a.vz));
+    // -- rowx,rowy,rowz
+    s << dumpArray(double2Blob(a.rowx));
+    s << dumpArray(double2Blob(a.rowy));
+    s << dumpArray(double2Blob(a.rowz));
+    // -- colx,coly,colz
+    s << dumpArray(double2Blob(a.colx));
+    s << dumpArray(double2Blob(a.coly));
+    s << dumpArray(double2Blob(a.colz));
+    // -- nrow,ncol
+    s << dumpArray(int2Blob(static_cast<int>(a.nrow)));
+    s << dumpArray(int2Blob(static_cast<int>(a.ncol)));
+    // -- width,length,thickness,pixelSize
+    s << dumpArray(double2Blob(a.width));
+    s << dumpArray(double2Blob(a.length));
+    s << dumpArray(double2Blob(a.thickness));
+    s << dumpArray(double2Blob(a.pixelSize));
+  }
+  return s.str();
+}
+
+
+// ----------------------------------------------------------------------
 string calPixelAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
   stringstream s;
   long unsigned int header(0xdeadface);
@@ -198,4 +234,56 @@ string calPixelAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
     s << dumpArray(double2Blob(it.second[14]));
   }
   return s.str();
+}
+
+
+// ----------------------------------------------------------------------
+string calPixelAlignment::readCsv(string filename) {
+  string spl("");
+  ifstream INS(filename); 
+  if (!INS.is_open()) {
+    return string("calPixelCablingMap::readCsv> Error, file " + filename + " not found");  
+  }
+
+  string sline;
+  while (getline(INS, sline)) {
+    spl += sline; 
+    spl += ",";
+  }
+  INS.close();
+
+  spl.pop_back();
+  vector<string> tokens = split(spl, ',');
+
+  for (unsigned int it = 0; it < tokens.size(); it += 16) {
+    cout << "tokens[" << it << "] = " << tokens[it] << endl;
+    constants a;
+    int idx = it; 
+    a.id = ::stoi(tokens[idx++]);
+    cout << " a.id = " << a.id << endl;
+    a.vx = ::stod(tokens[idx++]);
+    a.vy = ::stod(tokens[idx++]);
+    a.vz = ::stod(tokens[idx++]);
+
+    a.rowx = ::stod(tokens[idx++]);
+    a.rowy = ::stod(tokens[idx++]);
+    a.rowz = ::stod(tokens[idx++]);
+
+    a.colx = ::stod(tokens[idx++]);
+    a.coly = ::stod(tokens[idx++]);
+    a.colz = ::stod(tokens[idx++]);
+
+    a.nrow = ::stoi(tokens[idx++]);
+    a.ncol = ::stoi(tokens[idx++]);
+
+    a.width     = ::stod(tokens[idx++]);
+    a.length    = ::stod(tokens[idx++]);
+    a.thickness = ::stod(tokens[idx++]);
+    a.pixelSize = ::stod(tokens[idx++]);
+
+    fMapConstants.insert(make_pair(a.id, a));
+
+  }
+
+  return spl;
 }
