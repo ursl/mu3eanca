@@ -28,6 +28,10 @@ public:
   virtual std::string getHash() {return fHash;}
   virtual void        calculate(std::string hash) {std::cout << "calAbs::calculate() ?" << std::endl;}
 
+  // -- BLOB creation from fMapConstants. This is base-class dependent and hence needs to be overridden.
+  virtual std::string makeBLOB() {
+    return "calAbs::makeBLOB() ?";
+  }
   // -- BLOB creation from a vector<double>. This is base-class dependent and hence needs to be overridden.
   virtual std::string makeBLOB(std::map<unsigned int, std::vector<double> >) {
     return "calAbs::makeBLOB(map<int, vector<double>>) ?";
