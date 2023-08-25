@@ -25,16 +25,21 @@ public:
   double fx(uint32_t id) {return fMapConstants[id].fx;}
   double fy(uint32_t id) {return fMapConstants[id].fy;}
   double fz(uint32_t id) {return fMapConstants[id].fz;}
-
-  bool round(uint32_t id) {return fMapConstants[id].round;}
-  bool square(uint32_t id) {return fMapConstants[id].square;}
+  bool   round(uint32_t id) {return fMapConstants[id].round;}
+  bool   square(uint32_t id) {return fMapConstants[id].square;}
   double diameter(uint32_t id) {return fMapConstants[id].diameter;}
 
   std::string getName() override {return fFibresAlignmentTag;}
   void        calculate(std::string hash) override;
-  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override {return "FIXME"; }
+
+  std::string makeBLOB() override;
+  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override;
+  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
+  void printBLOB(std::string, int verbosity = 1) override;
 
   bool        getNextID(uint32_t &ID);
+
+  std::string readCsv(std::string filename);
   
 private:
   std::string fFibresAlignmentTag{"fibrealignment_"};
