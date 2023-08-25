@@ -109,7 +109,7 @@ void calPixelCablingMap::printBLOB(std::string sblob, int verbosity) {
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
     // -- online 
     unsigned int online = blob2UnsignedInt(getData(ibuffer));
-    if (verbosity > 0) cout << "      chipID offline/online = "
+    if (verbosity > 0) cout << "   chipID offline/online = "
                             << chipID << "/" <<  online
                             << endl;
   }
