@@ -200,5 +200,8 @@ string calPixelCablingMap::readJson(string filename) {
     sensor = ::stoi(ele["sensor"].get_string().value.to_string());
     fMapConstants.insert(make_pair(sensor, online));
   }
+  // -- set iterator over all constants to the start of the map
+  fMapConstantsIt = fMapConstants.begin();
+
   return spl;
 }

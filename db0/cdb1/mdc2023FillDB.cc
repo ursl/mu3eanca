@@ -19,6 +19,7 @@
 
 #include "calPixelAlignment.hh"
 #include "calPixelCablingMap.hh"
+#include "calPixelQuality.hh"
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -139,6 +140,7 @@ int main(int argc, char* argv[]) {
 	// ----------------------------------------------------------------------
 	// -- payloads
 	// ----------------------------------------------------------------------
+  payload pl;
 	jdir = jsondir + "/payloads";
 
   // -- pixelcablingmap
@@ -147,7 +149,6 @@ int main(int argc, char* argv[]) {
   string spl = ccm->makeBLOB();
   string hash("tag_pixelcablingmap_mdc2023_iov_1");
   
-  payload pl;
   pl.fHash = hash; 
   pl.fComment = "mdc2023 initialization";
   pl.fBLOB = spl;
@@ -159,47 +160,30 @@ int main(int argc, char* argv[]) {
   cpa->readCsv("../ascii/sensors-mdc2023.csv");
   spl = cpa->makeBLOB();
   hash = string("tag_pixelalignment_mdc2023_iov_1");
+
   pl.fHash = hash; 
   pl.fComment = "mdc2023 initialization";
   pl.fBLOB = spl;
   cpa->printBLOB(spl); 
   cpa->writePayloadToFile(hash, jdir, pl); 
 
-  return 0; 
+  // -- pixelquality: zero problematic pixels for all sensors present in cpa
+  calPixelQuality *cpq = new calPixelQuality();
+  unsigned int uid(999999);
+  map<unsigned int, vector<double> > m;
+  while (cpa->getNextID(uid)) {
+    vector<double> v;
+    m.insert(make_pair(uid, v));
+    cout << "sensor = " << uid << " vector size = " << v.size() << endl;
+  }
+  spl = cpq->makeBLOB(m);
+  hash = string("tag_pixelquality_mdc2023_iov_1");
 
-  // -- pixelquality
-	for (auto iiov: iniIovs) {
-    if (string::npos == iiov.first.find("pixelquality")) continue;
-		for (auto it : iiov.second) {
-			stringstream sh; 
-			sh << "tag_" << iiov.first;
-			sh << "_iov_" << it;
-
-      std::ifstream file;
-      file.open("../ascii/sensors-intrun-1.bin");
-      vector<char> buffer(std::istreambuf_iterator<char>(file), {});
-      string sblob("");
-      for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
-      std::vector<char>::iterator ibuffer = buffer.begin();
-      long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-      cout << "header: " << hex
-           << header << endl;
-      
-			bsoncxx::document::value doc_value = builder
-				<< "hash" << sh.str()
-				<< "comment" << "testing"
-				<< "BLOB" << base64_encode(sblob)
-				<< finalize; 
-			
-      // -- JSON
-      JS.open(jdir + "/" + sh.str());
-      if (JS.fail()) {
-        cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
-      }
-      JS << bsoncxx::to_json(doc_value.view()) << endl;
-      JS.close();
-    }
-	}
+  pl.fHash = hash; 
+  pl.fComment = "mdc2023 initialization";
+  pl.fBLOB = spl;
+  cpq->printBLOB(spl); 
+  cpq->writePayloadToFile(hash, jdir, pl); 
 
  
 	return 0;
