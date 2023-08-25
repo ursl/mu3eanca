@@ -165,6 +165,56 @@ void writeBlob(string filename = "fibres.bin", bool modify = false) {
 
 
 // ----------------------------------------------------------------------
+void writeCsv(string filename = "fibres.csv") {
+  TTree *t = (TTree*)gFile->Get("alignment/fibres");
+  unsigned int fibre;
+  double cx, cy, cz;
+  double fx, fy, fz;
+  bool round, square;
+  double diameter;
+  long unsigned int header(0xdeadface);
+  
+  t->SetBranchAddress("fibre", &fibre);
+
+  t->SetBranchAddress("cx", &cx);
+  t->SetBranchAddress("cy", &cy);
+  t->SetBranchAddress("cz", &cz);
+
+  t->SetBranchAddress("fx", &fx);
+  t->SetBranchAddress("fy", &fy);
+  t->SetBranchAddress("fz", &fz);
+
+  t->SetBranchAddress("round", &round);
+  t->SetBranchAddress("square", &square);
+  t->SetBranchAddress("diameter", &diameter);
+
+  ofstream ONS;
+  ONS.open(filename);
+  
+  char data[8], data1[8], data2[8]; 
+  for (unsigned int i = 0; i < t->GetEntries(); ++i) {
+    t->GetEntry(i);
+    if (1) cout << "fibre = " << fibre
+                << " c x/y/z = " << cx << "/" << cy << "/" << cz
+                << " f x/y/z = " << fx << "/" << fy << "/" << fz
+                << " round = " << round << " square = " << square
+                << " diameter = " << diameter
+                << endl;
+    
+    if (1) {
+      ONS << fibre << ","
+          << cx << "," << cy << "," << cz << ","
+          << fx << "," << fy << "," << fz << ","
+          << round << "," << square << ","
+          << diameter
+          << endl;
+    }
+  }
+  ONS.close();
+}
+
+
+// ----------------------------------------------------------------------
 std::array<char,8> getData(vector<char>::iterator &it) {
   array<char,8> v;
   for (unsigned int i = 0; i < 8; ++i) {
