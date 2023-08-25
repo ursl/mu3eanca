@@ -96,7 +96,7 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
 
-    cout << "sensor = " << chipID
+    cout << "   sensor = " << chipID
          << " v = "
          << blob2Double(getData(ibuffer)) << "/" 
          << blob2Double(getData(ibuffer)) << "/" 
@@ -132,13 +132,14 @@ map<unsigned int, vector<double> > calPixelAlignment::decodeBLOB(string spl) {
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
   if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calPixelQuality::decodeBLOB> header is wrong. Something is really messed up!" << endl;
+    cout << "XXXXX ERRROR in calPixelAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
   }
   while (ibuffer != buffer.end()) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
     vector<double> vdet;
     constants a;
+    a.id = chipID;
     a.vx = blob2Double(getData(ibuffer));
     a.vy = blob2Double(getData(ibuffer));
     a.vz = blob2Double(getData(ibuffer));
