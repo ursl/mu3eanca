@@ -21,6 +21,9 @@
 #include "calPixelCablingMap.hh"
 #include "calPixelQuality.hh"
 
+#include "calFibreAlignment.hh"
+
+
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
 using bsoncxx::builder::stream::document;
@@ -174,7 +177,7 @@ int main(int argc, char* argv[]) {
   while (cpa->getNextID(uid)) {
     vector<double> v;
     m.insert(make_pair(uid, v));
-    cout << "sensor = " << uid << " vector size = " << v.size() << endl;
+    // cout << "sensor = " << uid << " vector size = " << v.size() << endl;
   }
   spl = cpq->makeBLOB(m);
   hash = string("tag_pixelquality_mdc2023_iov_1");
@@ -185,6 +188,19 @@ int main(int argc, char* argv[]) {
   cpq->printBLOB(spl); 
   cpq->writePayloadToFile(hash, jdir, pl); 
 
- 
+
+  // -- fibrealignment
+  calFibreAlignment *cfa = new calFibreAlignment();
+  cfa->readCsv("../ascii/fibres-full.csv");
+  spl = cfa->makeBLOB();
+  hash = string("tag_fibrealignment_mdc2023_iov_1");
+
+  pl.fHash = hash; 
+  pl.fComment = "full fibre detector initialization";
+  pl.fBLOB = spl;
+  cfa->printBLOB(spl); 
+  cfa->writePayloadToFile(hash, jdir, pl); 
+
+  
 	return 0;
 }
