@@ -29,17 +29,23 @@ public:
 
   std::string getName() override {return fTileAlignmentTag;}
   void        calculate(std::string hash) override;
-  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override {return "FIXME"; }
+
+  std::string makeBLOB() override;
+  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override;
+  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
+  void printBLOB(std::string, int verbosity = 1) override;
 
   bool        getNextID(uint32_t &ID);
-  
+
+  std::string readCsv(std::string filename);
+
 private:
   std::string fTileAlignmentTag{"tilealignment_"};
 
-  // -- local and private
+  // -- local and private. Note order of id and sensor (different from alignment/tiles tree)!
   struct constants {
-    int sensor;
     uint32_t id; 
+    int sensor;
     double posx, posy, posz;
     double dirx, diry, dirz;
   };
