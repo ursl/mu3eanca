@@ -1,3 +1,5 @@
+// -- DEPRECATED: Use mu3eanca/db0/cdb1/dumpAlignmentTreesToCsv.C
+
 // ----------------------------------------------------------------------
 void csv(string filename = "sensors.csv") {
   TTree *t = (TTree*)gFile->Get("alignment/sensors");
