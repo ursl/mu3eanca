@@ -72,6 +72,8 @@ void calTileAlignment::calculate(string hash) {
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
+
+
 // ----------------------------------------------------------------------
 void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
 
@@ -83,10 +85,8 @@ void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
   cout << "   header: " << hex << header << dec << endl;
   
   while (ibuffer != buffer.end()) {
-    unsigned int id = blob2UnsignedInt(getData(ibuffer));
-    int sensor      =  blob2Int(getData(ibuffer));
-
-    cout << "   sensor = " << id
+    cout << "   id = " << blob2UnsignedInt(getData(ibuffer))
+         << " sensor = " << blob2Int(getData(ibuffer))
          << " pos = "
          << blob2Double(getData(ibuffer)) << "/" 
          << blob2Double(getData(ibuffer)) << "/" 
@@ -141,7 +141,7 @@ string calTileAlignment::makeBLOB() {
   s << dumpArray(uint2Blob(header));
 
   for (auto it: fMapConstants) {
-    // key => id,sensor,posx,posy,posz,dirx,diry,dirz
+    // id => sensor,posx,posy,posz,dirx,diry,dirz
     s << dumpArray(uint2Blob(it.first));
     constants a = it.second;
     s << dumpArray(int2Blob(a.sensor));
@@ -165,18 +165,19 @@ string calTileAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
   s << dumpArray(uint2Blob(header));
 
   // -- format of m
-  // chipID => id,sensor,posx,posy,posz,dirx,diry,dirz
+  // id => sensor,posx,posy,posz,dirx,diry,dirz
   for (auto it: m) {
+    // -- id and sensor
     s << dumpArray(uint2Blob(it.first));    
-    s << dumpArray(int2Blob(static_cast<int>(it.second[1]))); // 1 because id is dumped from key
+    s << dumpArray(int2Blob(static_cast<int>(it.second[0]))); 
     // -- posx,posy,posz
+    s << dumpArray(double2Blob(it.second[1]));
     s << dumpArray(double2Blob(it.second[2]));
     s << dumpArray(double2Blob(it.second[3]));
-    s << dumpArray(double2Blob(it.second[4]));
     // -- dirx,diry,dirz
+    s << dumpArray(double2Blob(it.second[4]));
     s << dumpArray(double2Blob(it.second[5]));
     s << dumpArray(double2Blob(it.second[6]));
-    s << dumpArray(double2Blob(it.second[7]));
   }
   return s.str();
 }

@@ -109,7 +109,6 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
-        // << endl
          << "n = "
          << blob2Int(getData(ibuffer)) << "/" 
          << blob2Int(getData(ibuffer)) << " " 
@@ -212,7 +211,6 @@ string calPixelAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
   // chipID => vx,vy,vz,rowx,rowy,rowz,colx,coly,colz,nrow,ncol,width,length,thickness,pixelSize
   for (auto it: m) {
     s << dumpArray(uint2Blob(it.first));
-    int npix = it.second.size()/3;
     // -- vx,vy,vz
     s << dumpArray(double2Blob(it.second[0]));
     s << dumpArray(double2Blob(it.second[1]));
