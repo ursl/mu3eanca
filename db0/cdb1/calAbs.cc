@@ -134,6 +134,9 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   pl.fBLOB    = base64_decode(string(doc["BLOB"].get_string().value));
 
   fTagIOVPayloadMap.insert(make_pair(hash, pl));
+  cout << "calAbs::readPayloadFromFile() Inserted " << " hash ->" << hash << "<-"
+       << " into fTagIOVPayloadMap" 
+       << endl;
 }
 
 

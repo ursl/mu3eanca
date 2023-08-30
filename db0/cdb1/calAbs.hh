@@ -48,7 +48,8 @@ public:
   // -- direct interactions
   void                readPayloadFromFile(std::string hash, std::string dir);
   void                writePayloadToFile(std::string hash, std::string dir, const payload &pl);
-
+  payload             getPayload(std::string hash) {return fTagIOVPayloadMap[hash];}
+  
   void                update(std::string hash);
   void                dump2Root(TDirectory *);
   void                setPrintTiming(int v) {fPrintTiming = v;}
