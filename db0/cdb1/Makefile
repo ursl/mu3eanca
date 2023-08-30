@@ -77,7 +77,7 @@ bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/testPixelQuality.o obj/p
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncCloud.o -o bin/syncCloud $(LIBMONGODB) $(LIBCURL) $(GLIBS)  
 
 clean:
-	rm -f obj/*.o lib/*.so bin/testCDB bin/fillDB
+	rm -f obj/*.o lib/*.so bin/*
 
 # -- preparatory setup
 prep:
