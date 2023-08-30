@@ -1,6 +1,8 @@
 #include <unistd.h>
 #include <array>
 
+// -- DEPRECATED: Use mu3eanca/db0/cdb1/dumpAlignmentTreesToCsv.C
+
 // ----------------------------------------------------------------------
 Int_t blob2Int(std::array<char,8> v) {
   char data[8] = {0}; 
