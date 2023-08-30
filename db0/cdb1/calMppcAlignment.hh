@@ -30,7 +30,13 @@ public:
 
   std::string getName() override {return fMppcAlignmentTag;}
   void        calculate(std::string hash) override;
-  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override {return "FIXME"; }
+
+  std::string makeBLOB() override;
+  std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override;
+  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
+  void printBLOB(std::string, int verbosity = 1) override;
+
+  std::string readCsv(std::string filename);
 
   bool        getNextID(uint32_t &ID);
   
