@@ -39,7 +39,6 @@ LD           := $(CXX)
 LDFLAGS      := -g -O0  #?? -Wl -rpath$(ROOTSYS)
 SOFLAGS      += -g -shared  #?? -Wl -rpath
 
-
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 
 
@@ -62,13 +61,14 @@ $(addprefix obj/,%.o) : %.cc
 	$(CXX) $(CXXFLAGS) $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
 
 
+# -- targets
 all: prep lib bin
 
 lib: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS) 
 
-
-bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/testPixelQuality.o obj/pcrPixelQuality.o obj/cdbInitDB.o
+bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/testPixelQuality.o obj/pcrPixelQuality.o obj/cdbInitDB.o obj/cdbPrintPayload.o
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbPrintPayload.o -o bin/cdbPrintPayload $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbInitDB.o -o bin/cdbInitDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/pcrPixelQuality.o -o bin/pcrPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testPixelQuality.o -o bin/testPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
