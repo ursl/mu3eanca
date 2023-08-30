@@ -726,9 +726,27 @@ void readBlobMppcs(string filename = "mppcs.bin") {
 
 
 // ----------------------------------------------------------------------
-void writeAll() {
-  writeSensors();
-  writeFibres();
-  writeTiles();
-  writeMppcs();
+// intrun:  ~/data/mu3e/mc/run000042-sort_100k.root
+// mcideal: ~/data/mu3e/mc/mu3e_sorted_000779.root
+void writeAll(string mode = "intrun", string filename = "nada") {
+  if (string::npos != mode.find("intrun") && (string::npos != filename.find("nada"))) {
+    filename = "~/data/mu3e/mc/run000042-sort_100k.root";
+  } else if (string::npos != mode.find("mcideal") && (string::npos != filename.find("nada"))) {
+    filename = "~/data/mu3e/mc/mu3e_sorted_000779.root";
+  } 
+
+  TFile *f = TFile::Open(filename.c_str());
+  string ofile("");
+  
+  ofile  = "sensors-" + mode + ".csv";
+  writeSensors(ofile);
+
+  ofile = "fibres-" + mode + ".csv";
+  writeFibres(ofile);
+
+  ofile = "tiles-" + mode + ".csv";
+  writeTiles(ofile);
+
+  ofile = "mppcs-" + mode + ".csv";
+  writeMppcs(ofile);
 }
