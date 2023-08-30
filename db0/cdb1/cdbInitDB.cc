@@ -18,6 +18,9 @@
 #include "base64.hh"
 
 #include "calPixelAlignment.hh"
+#include "calFibreAlignment.hh"
+#include "calMppcAlignment.hh"
+#include "calTileAlignment.hh"
 #include "calPixelCablingMap.hh"
 #include "calPixelQuality.hh"
 
@@ -34,20 +37,13 @@ using bsoncxx::builder::stream::open_document;
 using namespace std;
 
 // ----------------------------------------------------------------------
-// mdc2023FillDB [-j JSONDIR]
-// --------------
+// cdbInitDB [-j JSONDIR] [-m MODE]
+// ---------
 //
-// -j JSONDIR
+// -j JSONDIR  output directory with subdirectories globaltags, tags, payloads
+// -m MODE     "mdc2023", "mcideal"
 //
-// This creates ONLY payloads/tags/iovs/gt required for MDC2023
-//
-// requires ../ascii/sensors-*.csv
-//
-// sensors-full.csv and sensors-intrun.csv are direct CSV dumps of
-// alignment/sensors in mu3e root files.
-// 
-// sensors-full-1.csv and sensors-intrun-1.csv are manual edits of the above
-// to contain some numerical changes to see changes in the payload
+// requires ../ascii/*.csv
 //
 // Usage:
 // merlin> bin/mdc2023FillDB -d ~/data/mdc2023/json/
@@ -60,6 +56,7 @@ int main(int argc, char* argv[]) {
 
   // -- command line arguments
   string jsondir("");
+  string mode("mcideal");
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-j"))  {jsondir = argv[++i];;}
   }
@@ -117,7 +114,7 @@ int main(int argc, char* argv[]) {
 	// ----------------------------------------------------------------------
   
 	map<string, vector<int>> iniIovs = {
-		{"pixelalignment_mdc2023", {1}}, {"pixelquality_mdc2023", {1}}, {"pixelcablingmap_mdc2023", {1}}
+		{"pixelalignment_intrun", {1}}, {"pixelquality_intrun", {1}}, {"pixelcablingmap_intrun", {1}}
 	};
 
 	jdir  = jsondir + "/iovs";
