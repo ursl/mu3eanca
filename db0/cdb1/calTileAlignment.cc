@@ -201,7 +201,7 @@ string calTileAlignment::readCsv(string filename) {
   spl.pop_back();
   vector<string> tokens = split(spl, ',');
 
-  for (unsigned int it = 0; it < tokens.size(); it += 10) {
+  for (unsigned int it = 0; it < tokens.size(); it += 8) {
     constants a;
     int idx = it; 
     a.id     = static_cast<unsigned int>(::stoi(tokens[idx++]));
