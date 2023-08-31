@@ -137,7 +137,7 @@ sub pcrSubmitJobs() {
     my $envString = "";
 
     # -- adapt in case of mu3e reservations
-    # my $queue = "-p 'mu3e --reservation=mu3etmp'";
+    # my $queue = "-p 'mu3e --reservation=mu3e'";
     my $queue = "-p mu3e";
     
     # -- rundir
