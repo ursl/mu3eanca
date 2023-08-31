@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
-  string gt("mdc2023");
+  string gt("intrun");
   cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
 
   calAbs *cpq(0);
