@@ -8,8 +8,9 @@
 #
 #
 # History
-#         2203/08/22 add IOV updating
-#         2203/08/17 validated proper job splitting/validation/updates
+#         2023/08/31 test mu3e reservation (see below search for reservation)
+#         2023/08/22 add IOV updating
+#         2023/08/17 validated proper job splitting/validation/updates
 #         2023/08/08 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -135,7 +136,8 @@ sub pcrSubmitJobs() {
     my $cmdString = "";
     my $envString = "";
 
-    my $queue = "-p mu3e"; 
+    # -- adapt in case of mu3e reservations
+    my $queue = "-p 'mu3e --reservation=mu3etmp'"; 
     
     # -- rundir
     my $rundir = "$pcrBaseDir/slurm/jobs/$run";
