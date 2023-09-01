@@ -1,6 +1,6 @@
 # CDB1 - Conditions database 
 
-Next playground
+The real playground. Documented in [https://github.com/ursl/mu3eanca/blob/master/db0/cdb1/note.pdf](Mu3e-Note-0xxx-CDB).
 
 ![cdb1](https://github.com/ursl/mu3eanca/assets/5073648/2e863c91-3bfe-4020-ac7f-439425268154)
 
