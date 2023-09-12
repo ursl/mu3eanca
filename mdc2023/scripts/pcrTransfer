@@ -29,7 +29,7 @@ getopts('n:t:');
 my $pcrMu3eBEDir = ".ursl/data";
 #my $pcrMu3eBEDir = "/data1/datachallenge";
 # -- target data directory on merlin
-my $pcrDataDir   = "/data/experiment/mu3e/data/2023/datachallenge";
+my $pcrDataDir   = "/data/experiment/mu3e/data/2023/datachallenge/data";
 
 
 while (1) {
