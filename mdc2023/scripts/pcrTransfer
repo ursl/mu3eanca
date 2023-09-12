@@ -1,0 +1,52 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# pcrTransfer
+# ===========
+#
+# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/pcrTransfer
+#
+#
+# History
+#         2023/09/12 migrated out from proCalRec
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+use File::Basename;
+
+my $dir = getcwd;
+
+use Getopt::Std;
+getopts('n:t:');
+
+# ----------------------------------------------------------------------
+# -- default values
+# ----------------------------------------------------------------------
+# -- source data directory on mu3ebe
+my $pcrMu3eBEDir = ".ursl/data";
+#my $pcrMu3eBEDir = "/data1/datachallenge";
+# -- target data directory on merlin
+my $pcrDataDir   = "/data/experiment/mu3e/data/2023/datachallenge";
+
+
+while (1) {
+    print(&prefix("pcrTransfer"),  "rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir\n");
+    # -- Note
+    #    o the trailing '/'
+    #    o -L transform symlink into referent file/dir
+    system("rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir/");
+    sleep(100);
+}
+
+# ----------------------------------------------------------------------
+sub prefix() {
+    ($long) = @_;
+    my $now = localtime;
+    # -- fill up in case too short
+    $long .= "                         ";
+    $shorter = substr($long, 0, 15);
+    return ($now . "/" . $shorter . "/ ");
+}

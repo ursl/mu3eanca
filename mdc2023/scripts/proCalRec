@@ -35,8 +35,8 @@ my $pcrCalCode   = "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1";
 # -- base directory where jobs are submitted and all output will appear
 my $pcrBaseDir   = "/psi/home/langenegger/data/mdc2023";
 # -- source data directory on mu3ebe
-#my $pcrMu3eBEDir = ".ursl/data";
-my $pcrMu3eBEDir = "/data1/datachallenge";
+my $pcrMu3eBEDir = ".ursl/data";
+#my $pcrMu3eBEDir = "/data1/datachallenge";
 # -- target data directory on merlin
 my $pcrDataDir   = "/data/experiment/mu3e/data/2023/datachallenge";
 # -- analyzer executable
@@ -70,7 +70,7 @@ print(&prefix("proCalRec"), "nevts: $nevts\n");
 # ----------------------------------------------------------------------
 while (1) {
     # -- should be migrated out
-    &pcrTransfer();
+    # &pcrTransfer();
     # -- check whether something needs to be done
     my $run = &checkForNewRun();
     if ($run eq "nada") {
@@ -100,16 +100,6 @@ while (1) {
     # -- update @processedRuns
     push(@processedRuns, $run); 
 
-}
-
-
-# ----------------------------------------------------------------------
-sub pcrTransfer() {
-    print(&prefix("pcrTransfer"),  "rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir\n");
-    # -- Note
-    #    o the trailing '/'
-    #    o -L transform symlink into referent file/dir
-    system("rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir/");
 }
 
 
