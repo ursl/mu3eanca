@@ -5,16 +5,15 @@
 # ============
 #
 # Example: ../script/grid2Merlin \
-#          -i 
 #          -f signal \
-#          -n 100
-#          -s mu3e_run_000201
 #          -g http://hepgrid11.ph.liv.ac.uk/noredirect/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build4.4.3/signal/ \
 #          -o merlin-l-002:/data/experiment/mu3e/mc/build_4.6/signal
+#          -s mu3e_run_000201
+#          -n 100
 #
 #
 # History
-#         2023/07/12 add -i 
+#         2023/07/12 add -i in case you indirect through t3ui01
 #         2023/07/12 add -w, -d, -s, and skipping '#' lines in fileWithURIs
 #         2023/07/11 first shot
 # ----------------------------------------------------------------------
