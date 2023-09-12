@@ -297,7 +297,7 @@ TAFlowEvent* AnaPixelHistos::AnalyzeFlowEvent(TARunInfo*, TAFlags*, TAFlowEvent*
   if (!flow)
     return flow;
 
-  HitVectorFlowEvent * hitevent = flow-> Find<HitVectorFlowEvent>();
+  HitVectorFlowEvent * hitevent = flow->Find<HitVectorFlowEvent>();
 
   if(!hitevent)
     return flow;
