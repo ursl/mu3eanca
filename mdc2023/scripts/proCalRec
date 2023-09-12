@@ -35,9 +35,10 @@ my $pcrCalCode   = "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1";
 # -- base directory where jobs are submitted and all output will appear
 my $pcrBaseDir   = "/psi/home/langenegger/data/mdc2023";
 # -- source data directory on mu3ebe
-my $pcrMu3eBEDir = ".ursl/data";
+#my $pcrMu3eBEDir = ".ursl/data";
+my $pcrMu3eBEDir = "/data1/datachallenge";
 # -- target data directory on merlin
-my $pcrDataDir   = "$pcrBaseDir/data";
+my $pcrDataDir   = "/data/experiment/mu3e/data/2023/datachallenge";
 # -- analyzer executable
 my $pcrExe       = "/psi/home/langenegger/data/230816-mdc2023/analyzer/_build/analyzer/analyzer_mu3e";
 # -- analyzer config directory with cnt.json and config.json
@@ -51,6 +52,8 @@ if ($opt_t) {
     $pcrTarFile = $barefile;
 }
 print(&prefix("proCalRec"), "Tar file: $pcrTarFile\n");
+# -- MIDAS file extension
+my $midfext = "mid.lz4";
 
 # -- initialize what has been processed so far
 my @processedRuns;
@@ -113,7 +116,7 @@ sub pcrTransfer() {
 # ----------------------------------------------------------------------
 sub pcrCountEvents() {
     ($run) = @_;
-    my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
+    my $file = sprintf("$pcrDataDir/run%05d.$midfext", $run);
     print(&prefix("pcrCountEvent"), "run = $run -> file = $file\n");
     
     my $cmdString = "cd $pcrBaseDir/cnt && $pcrExe --no-profiler --config $pcrConfig/cnt.json $file";
@@ -132,7 +135,7 @@ sub pcrSubmitJobs() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
     
-    my $file = sprintf("$pcrDataDir/run%05d.mid", $run);
+    my $file = sprintf("$pcrDataDir/run%05d.$midfext", $run);
     my $cmdString = "";
     my $envString = "";
 
@@ -162,7 +165,7 @@ sub pcrSubmitJobs() {
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1";
     $envString .= "%PCRDATADIR $pcrDataDir";
-    $envString .= "%MIDASFILE run$run.mid";
+    $envString .= "%MIDASFILE run$run.$midfext";
     $envString .= "%RUN $run";
 
     # map ($slurmID => logfile)
@@ -309,7 +312,7 @@ sub readProcessedRuns() {
 
 # ----------------------------------------------------------------------
 sub checkForNewRun() {
-    my @midFiles  = glob("$pcrDataDir/*.mid");
+    my @midFiles  = glob("$pcrDataDir/*.$midfext");
     my @newruns = ();
 
     print(&prefix("checkForNewRun"), "contents of processedRuns: ");
@@ -320,7 +323,7 @@ sub checkForNewRun() {
 
     foreach $file (@midFiles) {
         my($barefile, $directories) = fileparse($file);
-        $barefile =~ /run([0-9]*).mid/;
+        $barefile =~ /run([0-9]*).$midfext/;
         $run = $1;
 
         if (grep( /^$run$/, @processedRuns ) ) {
