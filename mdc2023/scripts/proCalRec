@@ -38,11 +38,9 @@ my $pcrBaseDir   = "/psi/home/langenegger/data/mdc2023";
 my $pcrMu3eBEDir = ".ursl/data";
 #my $pcrMu3eBEDir = "/data1/datachallenge";
 # -- target data directory on merlin
-my $pcrDataDir   = "/data/experiment/mu3e/data/2023/datachallenge";
+my $pcrDataDir   = "/data/experiment/mu3e/data/2023/datachallenge/data";
 # -- analyzer executable
-my $pcrExe       = "/psi/home/langenegger/data/230816-mdc2023/analyzer/_build/analyzer/analyzer_mu3e";
-# -- analyzer config directory with cnt.json and config.json
-my $pcrConfig    = "/psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/config/";
+my $pcrExe       = "/psi/home/langenegger/mu3e/mu3eanca/mdc2023/analyzer/_build/analyzer/mdcanalyzer";
 # -- JSON CDB 
 my $pcrJsonDir   = "$pcrBaseDir/json";
 # -- tarfile
@@ -109,12 +107,17 @@ sub pcrCountEvents() {
     my $file = sprintf("$pcrDataDir/run%05d.$midfext", $run);
     print(&prefix("pcrCountEvent"), "run = $run -> file = $file\n");
     
-    my $cmdString = "cd $pcrBaseDir/cnt && $pcrExe --no-profiler --config $pcrConfig/cnt.json $file";
-    print(&prefix("pcrCountEvent"),       "$pcrExe --no-profiler --config $pcrConfig/cnt.json $file\n");
+    my $cmdString = "cd $pcrCodeDir/analyzer/_run && $pcrExe -c $file";
+    print(&prefix("pcrCountEvent"),       "$pcrExe -c $file\n");
     $line = `$cmdString`;
     my @lines = grep /\S/, split /\n/, $line;
-    $result = pop(@lines);
-    $result =~ s/cntEvents::EndRun, cnt = //;
+    $result = "nada";
+    foreach $line (@lines) {
+        if ($line =~ /cntEvents::EndRun, cnt =/) {
+            ($result = $line) =~ s/cntEvents::EndRun, cnt = //;
+            last;
+        }
+    }
     print(&prefix("pcrCountEvent"), "pcrCountEvents = $result\n");
     return $result;
 }
@@ -130,8 +133,8 @@ sub pcrSubmitJobs() {
     my $envString = "";
 
     # -- adapt in case of mu3e reservations
-    # my $queue = "-p 'mu3e --reservation=mu3e'";
-    my $queue = "-p mu3e";
+    my $queue = "-p 'mu3e --reservation=mu3e'";
+    #    my $queue = "-p mu3e";
     
     # -- rundir
     my $rundir = "$pcrBaseDir/slurm/jobs/$run";
