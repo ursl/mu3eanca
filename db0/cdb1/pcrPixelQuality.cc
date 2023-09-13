@@ -74,14 +74,15 @@ int main(int argc, char* argv[]) {
   int verbose(0), mode(1);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(MDCJSONDIR), filename("nada.root");
+  string gt("intrun");
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
+    if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
-  string gt("intrun");
   cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
 
   calAbs *cpq(0);
