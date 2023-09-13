@@ -1,5 +1,5 @@
 # merlin-l-002>cd /data/experiment/mu3e/mc/build_5.0/michel/
-# merlin-l-002>~/mu3e/mu3eanca/mdc2023/scripts/grid2Merlin -g http://hepgrid11.ph.liv.ac.uk/noredirect/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/user/l/andrea.loreti/ -o /data/experiment/mu3e/mc/build_5.0/michel -f ~/mu3e/mu3eanca/mdc2023/230912-michel
+# merlin-l-002>~/mu3e/mu3eanca/mdc2023/scripts/grid2Merlin -g http://hepgrid11.ph.liv.ac.uk/noredirect/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/user/l/andrea.loreti/ -o /data/experiment/mu3e/mc/build_5.0/michel -f ~/mu3e/mu3eanca/mdc2023/transfers/230912-michel
 #
 # http://hepgrid11.ph.liv.ac.uk/noredirect/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/user/l/andrea.loreti/
 # /data/experiment/mu3e/mc/build_5.0/michel
