@@ -35,10 +35,6 @@ printenv
 pwd
 echo "--> check visibility of /psi/home/langenegger/data/mdc2023"
 ls -l /psi/home/langenegger/data/mdc2023
-echo "ls -l /psi/home/langenegger/data/230816-mdc2023"
-ls -l /psi/home/langenegger/data/230816-mdc2023
-echo "ls -l /psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/config/"
-ls -l /psi/home/langenegger/data/230816-mdc2023/analyzer/analyzer/config/
 
 echo "--> End of env testing"
 
@@ -62,8 +58,8 @@ pwd
 echo "ls -l"
 ls -l
 
-echo "../_build/analyzer/analyzer_mu3e --no-profiler $ANLZR --config ../analyzer/config/config.json $PCRDATADIR/$MIDASFILE"
-../_build/analyzer/analyzer_mu3e --no-profiler $ANLZR --config ../analyzer/config/config.json $PCRDATADIR/$MIDASFILE
+echo "../_build/analyzer/mdcanalyzer $ANLZR $PCRDATADIR/$MIDASFILE"
+../_build/analyzer/mdcanalyzer $ANLZR $PCRDATADIR/$MIDASFILE
 date
 ls -rtl
 echo "slurm check size of rootfile produced"
