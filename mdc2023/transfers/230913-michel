@@ -1,0 +1,20 @@
+# merlin-l-002>cd /data/experiment/mu3e/mc/build_5.0/michel/
+# merlin-l-002>~/mu3e/mu3eanca/mdc2023/scripts/grid2Merlin -g http://hepgrid11.ph.liv.ac.uk/noredirect/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/prod/build5.0/Michel -o /data/experiment/mu3e/mc/build_5.0/michel -f ~/mu3e/mu3eanca/mdc2023/transfers/230913-michel
+#
+# http://hepgrid11.ph.liv.ac.uk/noredirect/dpm/ph.liv.ac.uk/home/mu3e.org/mu3e.org/user/l/andrea.loreti/
+# /data/experiment/mu3e/mc/build_5.0/michel
+#
+mu3e_run_000011.root
+mu3e_run_000012.root
+mu3e_run_000013.root
+mu3e_run_000014.root
+mu3e_run_000016.root
+mu3e_run_000017.root
+mu3e_run_000018.root
+mu3e_run_000019.root
+mu3e_run_000020.root
+mu3e_run_000021.root
+mu3e_run_000022.root
+mu3e_run_000026.root
+mu3e_run_000027.root
+mu3e_run_000028.root
