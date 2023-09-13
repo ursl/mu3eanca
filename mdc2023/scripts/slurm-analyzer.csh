@@ -16,12 +16,10 @@ setenv STORAGE1
 #does not work: source /psi/home/langenegger/mu3e/setup.csh
 #
 
-echo "==========================================="
-echo "====> SLURM mdc2023 proCalRec wrapper <===="
-echo "==========================================="
+echo "===================================================="
+echo "====> SLURM mdc2023 proCalRec/analyzer wrapper <===="
+echo "===================================================="
 date
-
-echo "--> Running SLURM proCalRec job wrapper"
 
 # ----------------------------------------------------------------------
 # -- The Basics
