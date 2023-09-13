@@ -104,6 +104,7 @@ int main(int argc, char* argv[]) {
   }
   replaceAll(sbla, ".root", "");
   replaceAll(sbla, "pcr", "");
+  replaceAll(sbla, "anl", "");
   replaceAll(sbla, "run", "");
   replaceAll(sbla, "-0000", "");
   replaceAll(sbla, "-000", "");
