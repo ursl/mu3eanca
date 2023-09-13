@@ -70,7 +70,7 @@ echo "cp ./output*$RUN.root $STORAGE1/$RUN/$ROOTFILE"
 cp root_output_files/output$RUN.root $STORAGE1/$RUN/$ROOTFILE
 setenv BLA  `ls -l $STORAGE1/$RUN/$ROOTFILE`
 echo "slurm check that rootfile was copied ->$BLA<-"
-ls -l $STORAGE1/$RUN/ROOTFILE
+ls -l $STORAGE1/$RUN/$ROOTFILE
 
 date
 
