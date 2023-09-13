@@ -48,17 +48,24 @@ tar zxf ./$JOB.tar.gz
 cd mu3e/run
 
 # ----------------------------------------------------------------------
-# -- Run analyzer
+# -- Run trirec
 # ----------------------------------------------------------------------
 echo "--> Run trirec"
 echo "pwd"
 pwd
 echo "ls -l"
 ls -l
+echo "ls -l $PCRDATADIR/$MIDASFILE"
+ls -l $PCRDATADIR/$MIDASFILE
+echo "ls -l ../mu3eTrirec/trirec.conf"
+ls -l ../mu3eTrirec/trirec.conf
+echo "ls -l test.sim0.root"
+ls -l test.sim0.root
+
 date
 
-echo "../_build/mu3eTrirec/mu3eTrirec --input test.sim0.root ANLZR --input-mid $PCRDATADIR/$MIDASFILE --conf ../mu3eTrirec/trirec.conf --output ./mu3e_trirec_$RUN.root"
-../_build/mu3eTrirec/mu3eTrirec --input test.sim0.root ANLZR --input-mid $PCRDATADIR/$MIDASFILE --conf ../mu3eTrirec/trirec.conf --output ./mu3e_trirec_$RUN.root
+echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR --input test.sim0.root --input-mid $PCRDATADIR/$MIDASFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
+../_build/mu3eTrirec/mu3eTrirec $ANLZR --input test.sim0.root --input-mid $PCRDATADIR/$MIDASFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
 
 date
 ls -rtl
@@ -68,11 +75,11 @@ pwd
 echo "ls -l `pwd`"
 ls -l `pwd`
 
-echo "cp ./mu3e_trirec_$RUN.root $STORAGE1/mu3e_trirec_$RUN.root"
-cp ./mu3e_trirec_$RUN.root $STORAGE1/mu3e_trirec_$RUN.root
-setenv BLA  `ls -l $STORAGE1/mu3e_trirec_$RUN.root`
+echo "cp ./$ROOTFILE $STORAGE1/$RUN/$ROOTFILE"
+cp ./$ROOTFILE $STORAGE1/$RUN/$ROOTFILE
+setenv BLA  `ls -l $STORAGE1/$RUN/$ROOTFILE`
 echo "slurm check that rootfile was copied ->$BLA<-"
-ls -l $STORAGE1/mu3e_trirec_$RUN.root
+ls -l $STORAGE1/$RUN/$ROOTFILE
 
 date
 
