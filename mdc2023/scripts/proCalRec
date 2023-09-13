@@ -359,6 +359,8 @@ sub pcrSubmitJobsB() {
             $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
             push(@mergeFiles, $rootout);
         }
+        # FIXME
+        last;
     }
 
     my $njobs = keys %mSlurmIds;
@@ -427,10 +429,10 @@ sub pcrRunCalibration() {
 
     # -- pixelquality
     print(&prefix("pcrRunCalibration"), "cd $pcrCalCode && bin/pcrPixelQuality -g mcideal -f $cfile -j $pcrJsonDir; cd - \n");
-    system("cd $pcrCalCode && bin/pcrPixelQuality -f $cfile -j $pcrJsonDir; cd - ");
+    system("cd $pcrCalCode && bin/pcrPixelQuality -g mcideal -f $cfile -j $pcrJsonDir; cd - ");
 
     # -- update IOVs
-    $cfile =~ /pcr-run([0-9]*).root/;
+    $cfile =~ /anl-run([0-9]*).root/;
     my $irun = int($1); 
     my $plfile = `ls $pcrJsonDir/payloads/tag_pixelquality_*_iov_$irun`; 
     chop($plfile);
