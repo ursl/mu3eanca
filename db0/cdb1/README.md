@@ -1,6 +1,6 @@
 # CDB1 - Conditions database 
 
-The real playground. Documented in [Mu3e-Note-0xxx-CDB](https://github.com/ursl/mu3eanca/blob/master/db0/cdb1/note.pdf).
+The real playground. Documented in [Mu3e-Note-0099-CDB](https://github.com/ursl/mu3eanca/blob/master/db0/cdb1/note.pdf).
 
 **Database classes**
 
