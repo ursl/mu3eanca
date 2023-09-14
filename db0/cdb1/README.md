@@ -1,15 +1,14 @@
 # CDB1 - Conditions database 
 
-The real playground. Documented in [Mu3e-Note-0xxx-CDB](https://github.com/ursl/mu3eanca/blob/master/db0/cdb1/note.pdf).
+The real playground. Documented in [Mu3e-Note-0099-CDB](https://github.com/ursl/mu3eanca/blob/master/db0/cdb1/note.pdf).
 
 **Database classes**
+![CDB-classes](https://github.com/ursl/mu3eanca/assets/5073648/2a6f5b16-efb4-405f-9b0b-28a1adc7d4ab)
 
-![cdb1](https://github.com/ursl/mu3eanca/assets/5073648/2e863c91-3bfe-4020-ac7f-439425268154)
 
 
 **Database storage model**
-
-![CDB-data-model](https://github.com/ursl/mu3eanca/assets/5073648/4c34bbac-6ff5-417f-8669-7e5b43bec024)
+![CDB-data-model](https://github.com/ursl/mu3eanca/assets/5073648/7fa5af4d-da58-49b9-8a48-073391a8dd09)
 
 
 Note: cdbRest still expects a file api-key.private with the appropriate key in this directory. It is excluded by virtue of being contained in .gitignore.
