@@ -142,8 +142,8 @@ sub pcrSubmitJobsA() {
     my $envString = "";
 
     # -- adapt in case of mu3e reservations
-    my $queue = "-p 'mu3e --reservation=mu3e'";
-    #    my $queue = "-p mu3e";
+    # my $queue = "-p 'mu3e --reservation=mu3e'";
+    my $queue = "-p mu3e";
     
     # -- rundir
     my $rundir = "$pcrBaseDir/slurm/jobs/anl/$run";
