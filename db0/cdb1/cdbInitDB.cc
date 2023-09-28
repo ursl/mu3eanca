@@ -77,9 +77,11 @@ int main(int argc, char* argv[]) {
   // -- command line arguments
   string jsondir("");
   string mode("mcideal");
+  int verbose(0); 
   for (int i = 0; i < argc; i++){
-    if (!strcmp(argv[i], "-j"))  {jsondir = argv[++i];;}
-    if (!strcmp(argv[i], "-m"))  {mode    = argv[++i];;}
+    if (!strcmp(argv[i], "-j"))  {jsondir = argv[++i];}
+    if (!strcmp(argv[i], "-m"))  {mode    = argv[++i];}
+    if (!strcmp(argv[i], "-v"))  {verbose = 1;}
   }
   
   // -- handle meta-mode
@@ -187,7 +189,7 @@ int main(int argc, char* argv[]) {
       pl.fHash = hash; 
       pl.fComment = it + " pixel initialization";
       pl.fBLOB = spl;
-      cpa->printBLOB(spl); 
+      if (verbose) cpa->printBLOB(spl); 
       cpa->writePayloadToFile(hash, jdir, pl); 
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
@@ -203,7 +205,7 @@ int main(int argc, char* argv[]) {
       pl.fHash = hash; 
       pl.fComment = it + " fibre detector initialization";
       pl.fBLOB = spl;
-      cfa->printBLOB(spl); 
+      if (verbose) cfa->printBLOB(spl); 
       cfa->writePayloadToFile(hash, jdir, pl); 
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
@@ -219,7 +221,7 @@ int main(int argc, char* argv[]) {
       pl.fHash = hash; 
       pl.fComment = it + " tile detector initialization";
       pl.fBLOB = spl;
-      cta->printBLOB(spl); 
+      if (verbose) cta->printBLOB(spl); 
       cta->writePayloadToFile(hash, jdir, pl); 
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
@@ -235,7 +237,7 @@ int main(int argc, char* argv[]) {
       pl.fHash = hash; 
       pl.fComment = it + " MPPC detector initialization";
       pl.fBLOB = spl;
-      cma->printBLOB(spl); 
+      if (verbose) cma->printBLOB(spl); 
       cma->writePayloadToFile(hash, jdir, pl); 
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
@@ -251,7 +253,7 @@ int main(int argc, char* argv[]) {
       pl.fHash = hash; 
       pl.fComment = it + "pixel cabling map initialization";
       pl.fBLOB = spl;
-      ccm->printBLOB(spl); 
+      if (verbose) ccm->printBLOB(spl); 
       ccm->writePayloadToFile(hash, jdir, pl); 
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
@@ -272,7 +274,7 @@ int main(int argc, char* argv[]) {
     pl.fHash = hash; 
     pl.fComment = it + " pixel quality initialization";
     pl.fBLOB = spl;
-    cpq->printBLOB(spl); 
+    if (verbose) cpq->printBLOB(spl); 
     cpq->writePayloadToFile(hash, jdir, pl); 
 
   }
