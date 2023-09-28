@@ -41,24 +41,39 @@ using namespace std;
 // ---------
 //
 // initialize the JSON filesystem-based CDB for several starting points
-// "intrun"   the integration run detector of 2022
-// "mcideal"  complete detector as contained in mu3e sim files alignment/* trees
+// "cr2022"      the cosmic run detector of 2022
+// "mcideal"     complete detector as contained in mu3e sim files alignment/* trees
+// "dc2023"      data challenge 2023 (with new pixel chip ID naming scheme)
 //
 // 
 // -j JSONDIR  output directory with subdirectories globaltags, tags, payloads
-// -m MODE     "intrun", "mcideal"
+// -m MODE     "cr2022", "mcideal", "dc2023"
 //
 // requires ../ascii/*.csv
 //
-// Usage:
-// merlin> bin/mdc2023FillDB -d ~/data/mdc2023/json/
-// moor>   bin/mdc2023FillDB -d ~/data/mu3e/mdc2023/json
+// Usage examples
+//
+// merlin> bin/cdbInitDB -j ~/data/mdc2023/json/ -m dc2023
+//
+// moor>   bin/cdbInitDB -j ~/data/mu3e/json -m cr2022
+// moor>   bin/cdbInitDB -j ~/data/mu3e/json -m mcideal
+// moor>   bin/cdbInitDB -j ~/data/mu3e/json -m dc2023
 // 
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------=
 int main(int argc, char* argv[]) {
 
+	// ----------------------------------------------------------------------
+	// -- global tags
+	// ----------------------------------------------------------------------
+	map<string, vector<string>> iniGlobalTags = {
+		{"cr2022", {"pixelalignment", "pixelquality", "pixelcablingmap"} },
+		{"mcideal", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment", "pixelquality"} },
+		{"dc2023", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment", "pixelquality"} }
+  };
+
+  
   // -- command line arguments
   string jsondir("");
   string mode("mcideal");
@@ -66,13 +81,21 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-j"))  {jsondir = argv[++i];;}
     if (!strcmp(argv[i], "-m"))  {mode    = argv[++i];;}
   }
-
+  
+  // -- handle meta-mode
+  if (string::npos != mode.find("all")) {
+    for (auto it: iniGlobalTags) {
+      system(string("bin/cdbInitDB -j " + jsondir + " -m " + it.first).c_str());
+    }
+  }
+  
   // -- check whether directories for JSONs already exist
-  DIR *folder = opendir(string(jsondir + "/payloads").c_str());
+  DIR *folder = opendir(string(jsondir).c_str());
   if (folder == NULL) {
     system(string("mkdir -p " + jsondir + "/payloads").c_str());
     system(string("mkdir -p " + jsondir + "/globaltags").c_str());
     system(string("mkdir -p " + jsondir + "/iovs").c_str());
+    folder = opendir(string(jsondir).c_str());
   }
   closedir(folder);
 
@@ -86,20 +109,15 @@ int main(int argc, char* argv[]) {
 	mongocxx::collection iovs;
 	mongocxx::collection payloads;
     
-	// ----------------------------------------------------------------------
-	// -- global tags
-	// ----------------------------------------------------------------------
-	map<string, vector<string>> iniGlobalTags = {
-		{"intrun", {"pixelalignment_intrun", "pixelquality_intrun", "pixelcablingmap_intrun"} },
-		{"mcideal", {"pixelalignment_mcideal", "fibrealignment_mcideal", "tilealignment_mcideal", "mppcalignment_mcideal", "pixelquality_mcideal"} }
-  };
-	
 	string jdir  = jsondir + "/globaltags";
   
   for (auto igt : iniGlobalTags) {
     if (string::npos == igt.first.find(mode)) continue;
 		auto array_builder = bsoncxx::builder::basic::array{};
-		for (auto it : igt.second) array_builder.append(it);
+		for (auto it : igt.second) {
+      string tag = it + "_" + igt.first; 
+      array_builder.append(tag);
+    }
 		bsoncxx::document::value doc_value = builder
 			<< "gt" << igt.first
 			<< "tags" << array_builder
@@ -115,53 +133,54 @@ int main(int argc, char* argv[]) {
     JS.close();
   }
 
+ 
 	// ----------------------------------------------------------------------
 	// -- iovs
 	// ----------------------------------------------------------------------
-	map<string, vector<int>> iniIovs = {
-    // -- intrun
-		{"pixelalignment_intrun", {1}}, {"pixelquality_intrun", {1}}, {"pixelcablingmap_intrun", {1}},
-    // -- mcideal
-		{"pixelalignment_mcideal", {1}}, {"fibrealignment_mcideal", {1}}, {"tilealignment_mcideal", {1}}, {"mppcalignment_mcideal", {1}},
-    {"pixelquality_intrun", {1}}     // ,{"pixelcablingmap_intrun", {1}}
-	};
-
 	jdir  = jsondir + "/iovs";
+  vector<int> vIni{1};
+  for (auto igt : iniGlobalTags) {
+    if (string::npos == igt.first.find(mode)) continue;
+		for (auto it : igt.second) {
+      string tag = it + "_" + igt.first; 
 
-	for (auto iiov : iniIovs) {
-    if (string::npos == iiov.first.find(mode)) continue;
-		auto array_builder = bsoncxx::builder::basic::array{};
-		for (auto it : iiov.second) array_builder.append(it);
-		bsoncxx::document::value doc_value = builder
-			<< "tag" << iiov.first
-			<< "iovs" << array_builder
-			<< finalize; 
-		
-    // -- JSON
-    JS.open(jdir + "/" + iiov.first);
-    if (JS.fail()) {
-      cout << "Error failed to open " << jdir << "/" << iiov.first << endl;
+      auto array_builder = bsoncxx::builder::basic::array{};
+      for (auto it : vIni) array_builder.append(it);
+      bsoncxx::document::value doc_value = builder
+        << "tag" << tag
+        << "iovs" << array_builder
+        << finalize; 
+      
+      // -- JSON
+      JS.open(jdir + "/" + tag);
+      if (JS.fail()) {
+        cout << "Error failed to open " << jdir << "/" << tag << endl;
+      }
+      JS << bsoncxx::to_json(doc_value.view()) << endl;
+      JS.close();
+      
     }
-    JS << bsoncxx::to_json(doc_value.view()) << endl;
-    JS.close();
-
   }
-
-	// ----------------------------------------------------------------------
+  
+  // ----------------------------------------------------------------------
 	// -- payloads
 	// ----------------------------------------------------------------------
   payload pl;
 	jdir = jsondir + "/payloads";
 
-  vector<string> tags{"intrun", "mcideal"};
+  vector<string> tags{"cr2022", "mcideal", "dc2023"};
   string spl(""), hash(""), result("");
 
-  for (auto it: tags) {
+  for (auto igt: iniGlobalTags) {
+    string it = igt.first;
     if (string::npos == it.find(mode)) continue;
-    
+
+    string filename("");
+
     // -- pixelalignment
     calPixelAlignment *cpa = new calPixelAlignment();
-    result = cpa->readCsv("../ascii/sensors-" + it + ".csv");
+    filename = "../ascii/sensors-" + it + ".csv";
+    result = cpa->readCsv(filename);
     if (string::npos == result.find("Error")) {
       spl = cpa->makeBLOB();
       hash = string("tag_pixelalignment_" + it + "_iov_1");
@@ -170,11 +189,14 @@ int main(int argc, char* argv[]) {
       pl.fBLOB = spl;
       cpa->printBLOB(spl); 
       cpa->writePayloadToFile(hash, jdir, pl); 
+    } else {
+      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
     
     // -- fibrealignment
     calFibreAlignment *cfa = new calFibreAlignment();
-    result = cfa->readCsv("../ascii/fibres-" + it + ".csv");
+    filename = "../ascii/fibres-" + it + ".csv";
+    result = cfa->readCsv(filename);
     if (string::npos == result.find("Error")) {
       spl = cfa->makeBLOB();
       hash = string("tag_fibrealignment_" + it + "_iov_1");
@@ -183,11 +205,14 @@ int main(int argc, char* argv[]) {
       pl.fBLOB = spl;
       cfa->printBLOB(spl); 
       cfa->writePayloadToFile(hash, jdir, pl); 
+    } else {
+      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
     
     // -- tilealignment
     calTileAlignment *cta = new calTileAlignment();
-    result = cta->readCsv("../ascii/tiles-" + it + ".csv");
+    filename = "../ascii/tiles-" + it + ".csv";
+    result = cta->readCsv(filename);
     if (string::npos == result.find("Error")) {
       spl = cta->makeBLOB();
       hash = string("tag_tilealignment_" + it + "_iov_1");
@@ -196,11 +221,14 @@ int main(int argc, char* argv[]) {
       pl.fBLOB = spl;
       cta->printBLOB(spl); 
       cta->writePayloadToFile(hash, jdir, pl); 
+    } else {
+      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
     
     // -- mppcalignment
     calMppcAlignment *cma = new calMppcAlignment();
-    result = cma->readCsv("../ascii/mppcs-" + it + ".csv");
+    filename = "../ascii/mppcs-" + it + ".csv";
+    result = cma->readCsv(filename);
     if (string::npos == result.find("Error")) {
       spl = cma->makeBLOB();
       hash = string("tag_mppcalignment_" + it + "_iov_1");
@@ -209,11 +237,14 @@ int main(int argc, char* argv[]) {
       pl.fBLOB = spl;
       cma->printBLOB(spl); 
       cma->writePayloadToFile(hash, jdir, pl); 
+    } else {
+      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
     
     // -- pixelcablingmap
     calPixelCablingMap *ccm = new calPixelCablingMap();
-    result = ccm->readJson("../ascii/pixelcablingmap-" + it + ".json");
+    filename = "../ascii/pixelcablingmap-" + it + ".json";
+    result = ccm->readJson(filename);
     if (string::npos == result.find("Error")) {
       spl = ccm->makeBLOB();
       hash = "tag_pixelcablingmap_" + it + "_iov_1";
@@ -222,6 +253,8 @@ int main(int argc, char* argv[]) {
       pl.fBLOB = spl;
       ccm->printBLOB(spl); 
       ccm->writePayloadToFile(hash, jdir, pl); 
+    } else {
+      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
 
     // -- pixelquality: zero problematic pixels for all sensors present in cpa
