@@ -11,9 +11,9 @@ public:
   std::string printString();
   std::string json();
 
-  int fLength;
-  std::string fComment;
   std::string fHash;
+  std::string fComment, fSchema;
+  std::string fDate;
   std::string fBLOB;
 };
 
