@@ -8,8 +8,9 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-payload::payload() : fLength(0),
-                     fComment("now what?"), fHash("tag_X_iov_Y"), 
+payload::payload() : fHash("tag_X_iov_Y"),
+                     fComment("now what?"), fSchema("define this"),
+                     fDate("insertion date"), 
                      fBLOB(std::string("empty payload")) {
 
 };
@@ -26,6 +27,8 @@ string payload::printString() {
   std::stringstream sstr;
   sstr << "/**/hash ->" << fHash
        << "<- /**/comment ->" << fComment
+       << "<- /**/schema ->" << fSchema
+       << "<- /**/date ->" << fDate
        << "<- /**/BLOB ->" << fBLOB
        << "<-";
   return sstr.str();
@@ -37,6 +40,8 @@ string payload::json() {
   std::stringstream sstr;
   sstr << "{\"hash\" : \"" << fHash << "\", "
        << "\"comment\" : \"" << fComment << "\","
+       << "\"schema\" : \"" << fSchema << "\","
+       << "\"date\" : \"" << fDate << "\","
        << "\"BLOB\" : \"" << base64_encode(fBLOB) << "\"}";
   return sstr.str();
 }
