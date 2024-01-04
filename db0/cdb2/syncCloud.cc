@@ -38,20 +38,20 @@ using namespace std;
 // cd cdb1/json 
 // [requires]
 //    globaltags/*
-//    iovs/*
+//    tags/*
 //    payloads/*
 //    ../api-key.private
 //
 // Usage:
 // ../bin/syncCloud --dir globaltags
-// ../bin/syncCloud --dir iovs
+// ../bin/syncCloud --dir tags
 // ../bin/syncCloud --dir payloads
 // 
 // ----------------------------------------------------------------------
 
 bool gDBX(false);
 
-string gApiKey, gCurlReadBuffer; 
+string gApiKey("api-key: "), gCurlReadBuffer; 
 
 string gURI("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
 
@@ -141,12 +141,12 @@ void clearCollection(string collection, string field) {
     CURLcode curlRes = curl_easy_perform(curl);
     
     bsoncxx::document::value doc0 = bsoncxx::from_json(gCurlReadBuffer);
-    //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+    cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
     
     for (auto idoc : doc0) {
       bsoncxx::array::view subarr{idoc.get_array()};
       for (auto ele : subarr) {
-        //      cout << "ele.type() = " <<  bsoncxx::to_string(ele.type()) << endl;
+        cout << "ele.type() = " <<  bsoncxx::to_string(ele.type()) << endl;
         bsoncxx::document::view doc = ele.get_document();
         cout << bsoncxx::to_json(doc) << endl;
         string tname = string(doc[field].get_string().value).c_str();
@@ -216,10 +216,11 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-dir"))  {dirName = string(argv[++i]);}
     if (!strcmp(argv[i], "--del"))  {onlyDelete = true;}
     if (!strcmp(argv[i], "-del"))  {onlyDelete = true;}
+    if (!strcmp(argv[i], "--key"))  {gApiKey += string(argv[++i]);}
   }
 
   map<string, string> tagDel = {{"globaltags", "gt"},
-                                {"iovs", "tag"},
+                                {"tags", "tags"},
                                 {"payloads", "hash"}
   };
   
@@ -243,17 +244,16 @@ int main(int argc, char* argv[]) {
   
   sort(vfiles.begin(), vfiles.end());    
 
-  ifstream INS("../api-key.private");
-  getline(INS, gApiKey);
-  INS.close();
   gApiKey = "api-key: " + gApiKey;
 
   cout << "clearCollection(" << dirName << ", " << tagDel[dirName] << ");" << endl;
+  cout << "gApiKey ->" << gApiKey << "<-" << endl;
   clearCollection(dirName, tagDel[dirName]);
 
   if (onlyDelete) return 0;
   
   string collectionContents;
+  ifstream INS;
   for (auto it: vfiles) {
     INS.open(it);
     getline(INS, collectionContents);
