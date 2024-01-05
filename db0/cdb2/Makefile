@@ -67,7 +67,7 @@ all: prep lib bin
 lib: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS) 
 
-bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/testPixelQuality.o obj/pcrPixelQuality.o obj/cdbInitDB.o obj/cdbPrintPayload.o
+bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/syncMongo.o obj/testPixelQuality.o obj/pcrPixelQuality.o obj/cdbInitDB.o obj/cdbPrintPayload.o
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbPrintPayload.o -o bin/cdbPrintPayload $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbInitDB.o -o bin/cdbInitDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/pcrPixelQuality.o -o bin/pcrPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
@@ -75,6 +75,7 @@ bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/testPixelQuality.o obj/p
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncCloud.o -o bin/syncCloud $(LIBMONGODB) $(LIBCURL) $(GLIBS)  
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncMongo.o -o bin/syncMongo $(LIBMONGODB) $(LIBCURL) $(GLIBS)  
 
 clean:
 	rm -f obj/*.o lib/*.so bin/*
