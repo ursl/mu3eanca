@@ -40,18 +40,18 @@ using namespace std;
 //    globaltags/*
 //    tags/*
 //    payloads/*
-//    ../api-key.private
 //
 // Usage:
 // ../bin/syncCloud --dir globaltags
 // ../bin/syncCloud --dir tags
 // ../bin/syncCloud --dir payloads
+// ../bin/syncCloud --dir runrecords
 // 
 // ----------------------------------------------------------------------
 
 bool gDBX(false);
 
-string gApiKey("api-key: "), gCurlReadBuffer; 
+string gApiKey(""), gCurlReadBuffer; 
 
 string gURI("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
 
