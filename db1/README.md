@@ -1,4 +1,7 @@
 # Attempt to setup ndoe.js REST api to mongodb community server
 
-https://medium.com/@thearyantyagi1/building-a-restful-api-with-node-js-express-and-mongodb-e7d57e0c0187
+https://github.com/mongodb-developer/nodejs-quickstart/blob/master/read.js
+https://www.digitalocean.com/community/tutorials/how-to-create-a-web-server-in-node-js-with-the-http-module
 
+## Notes
+- npm i mongoose@7.6.3
