@@ -117,6 +117,9 @@ int main(int argc, char* argv[]) {
   clearCollection(dirName, tagDel[dirName]);
 
   if (onlyDelete) return 0;
+
+  auto db = gClient["mu3e"];
+  auto collection = db[dirName];
   
   string collectionContents;
   ifstream INS;
@@ -124,7 +127,9 @@ int main(int argc, char* argv[]) {
     INS.open(it);
     getline(INS, collectionContents);
     INS.close();
-    //    writeCurl(dirName, collectionContents);
+
+
+    auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
   }
   
 	return 0;
