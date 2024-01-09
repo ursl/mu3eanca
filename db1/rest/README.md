@@ -15,6 +15,7 @@ sudo systemctl stop apache2.service
 Port 80 also implies that you need to run it with sudo:
 ```
 pc11740>sudo npm run start
+pc11740>sudo /usr/local/bin/pm2 start index.mjs 
 ```
 
 ```
@@ -30,3 +31,4 @@ moor>curl pc11740/posts/tag/fibrealignment_mcidealv5.0
 moor>curl pc11740/posts/payload/tag_mppcalignment_mcidealv5.1_iov_1
 {"_id":"659bc2d672ec635e5d0cad04","hash":"tag_mppcalignment_mcidealv5.1_iov_1","comment":"mcidealv5.1 MPPC detector initialization","schema":"define this","date":"2024-01-05 10:49:09","BLOB":"zvqt3gAAAAAAAAAAAAAAANMAkhp1Iz/AV8buw ...
 ```
+
