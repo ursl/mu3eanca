@@ -235,6 +235,34 @@ string jsonGetValue(string& jstring, string key) {
   return result;
 }
 
+
+// ----------------------------------------------------------------------
+vector<string> jsonGetValueVector(string& jstring, string key) {
+  vector<string> result;
+  string::size_type s0(0);
+  while (string::npos != s0) {
+    s0 = jstring.find(key, s0);
+    s0 = jstring.find(":", s0);
+    s0 = jstring.find("\"", s0);
+    string::size_type s1 = jstring.find(",", s0 + key.length() + 2);
+    string::size_type s2 = jstring.find("}", s0 + key.length() + 2);
+    string sresult;
+    if (string::npos != s1) {
+      sresult = jstring.substr(s0, s1-s0);
+      s0 = s1;
+    } else {
+      sresult = jstring.substr(s0, s2-s0);
+      s0 = s2;
+    }
+    ltrim(sresult);
+    rtrim(sresult);
+    replaceAll(sresult, "\"", "");
+    result.push_back(sresult);
+  }
+  return result;
+}
+
+
 // ----------------------------------------------------------------------
 string jsonGetVector(string& jstring, string key) {
   string::size_type s0 = jstring.find(key);
