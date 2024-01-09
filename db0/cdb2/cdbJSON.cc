@@ -1,33 +1,13 @@
 #include "cdbJSON.hh"
 
 #include "base64.hh"
+#include "cdbUtil.hh"
 
 #include <fstream>
 #include <iostream>
 #include <algorithm>
 #include <sstream>
 #include <dirent.h>  /// for directory reading
-
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/stdx.hpp>
-#include <mongocxx/uri.hpp>
-#include <bsoncxx/builder/stream/helpers.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/array.hpp>
-
-using bsoncxx::builder::stream::close_array;
-using bsoncxx::builder::stream::close_document;
-using bsoncxx::builder::stream::document;
-using bsoncxx::builder::stream::finalize;
-using bsoncxx::builder::stream::open_array;
-using bsoncxx::builder::stream::open_document;
-using bsoncxx::builder::basic::sub_array;
-using bsoncxx::builder::basic::sub_document;
-using bsoncxx::builder::basic::make_document;
-
-
 
 using namespace std;
 
@@ -51,10 +31,9 @@ void cdbJSON::init() {
 // ----------------------------------------------------------------------
 vector<string> cdbJSON::readGlobalTags(string gt) {
   vector<string> v;
-  cout << "cdbJSON::readGlobalTags()" << endl;
   // -- read global tags from fURI
   string gtdir = fURI + "/globaltags";
-  cout << "gtdir = " << gtdir << endl;
+  cout << "cdbJSON::readGlobalTags() from  gtdir = " << gtdir << endl;
   vector<string> gtFiles = allFiles(gtdir);
   
   ifstream INS;
@@ -83,18 +62,17 @@ vector<string> cdbJSON::readTags(string gt) {
     return v;
   }
 
-  cout << "Read " << gtfile << endl;
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
+
+  string lBuffer = buffer.str();
   
-  bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-  bsoncxx::array::view subarr{doc["tags"].get_array()};
-  for (bsoncxx::array::element ele : subarr) {
-    string tname = string(ele.get_string().value).c_str();
-    v.push_back(tname); 
+  vector<string> subarr = split(jsonGetVector(lBuffer, "tags"), ',');
+  for (auto it: subarr) {
+    v.push_back(it);
   }
-  
+
   if (fVerbose > 0) {
     cout << "cdbJSON::readTags> for GT = " << gt << endl;
     print(v);
@@ -109,7 +87,7 @@ map<string, vector<int>> cdbJSON::readIOVs(vector<string> tags) {
 
   // -- read iovs from fURI
   ifstream INS;
-  string dir = fURI + "/iovs/";
+  string dir = fURI + "/tags/";
   
   for (auto it: tags) {
     string file = dir + it;
@@ -119,25 +97,61 @@ map<string, vector<int>> cdbJSON::readIOVs(vector<string> tags) {
       return m;
     }
 
-    cout << " DBX it = " << it << endl;
-
-    
     std::stringstream buffer;
     buffer << INS.rdbuf();
     INS.close();
     
-    bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-    bsoncxx::array::view subarr{doc["iovs"].get_array()};
-    vector<int> viov; 
-    for (bsoncxx::array::element ele : subarr) {
-      int iov = ele.get_int32().value;
-      cout << "   DBX iov = " << iov << endl;
-      viov.push_back(iov);
+    string lBuffer = buffer.str();
+    
+    vector<int> viov;
+    string sarr = jsonGetVector(lBuffer, "iovs");
+    
+    vector<string> subarr = split(sarr, ',');
+    if (subarr.size() > 0) {
+      for (auto it: subarr) {
+        viov.push_back(stoi(it));
+      }
+    } else {
+      viov.push_back(stoi(sarr));
     }
     m.insert(make_pair(it, viov)); 
   }
   
   return m;
+}
+
+
+// ----------------------------------------------------------------------
+runRecord cdbJSON::getRunRecord(int irun) {
+  // -- initialize with default
+  std::stringstream sspl;
+  sspl << "(cdbJSON>  runRecord for run = " << to_string(irun)
+       << " not found)";
+  runRecord rr;
+  rr.fRunDescription = sspl.str();
+  
+  // -- read runRecord for run irun 
+  ifstream INS;
+  string filename = fURI + "/runrecords/" + to_string(irun);
+  INS.open(filename);
+  if (INS.fail()) {
+    cout << "Error failed to open ->" << filename << "<-" << endl;
+    return rr;
+  }
+
+  std::stringstream buffer;
+  buffer << INS.rdbuf();
+  INS.close();
+  
+  cout << "cdbJSON::getRunRecord() Read " << filename << endl;
+
+  string jstring = buffer.str();
+  rr.fRun            = stoi(jsonGetValue(jstring, "run"));
+  rr.fRunStart       = jsonGetValue(jstring, "runStart");
+  rr.fRunEnd         = jsonGetValue(jstring, "runEnd");
+  rr.fRunDescription = jsonGetValue(jstring, "runDescription");
+
+  return rr;
 }
 
 
@@ -163,11 +177,12 @@ payload cdbJSON::getPayload(string hash) {
   buffer << INS.rdbuf();
   INS.close();
   
-  cout << "cdbJSON::getPayload() Read " << filename << " hash ->" << hash << "<-" << endl;
-  bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-  pl.fComment = string(doc["comment"].get_string().value).c_str();
-  pl.fHash    = string(doc["hash"].get_string().value).c_str();
-  pl.fBLOB    = base64_decode(string(doc["BLOB"].get_string().value));
+  cout << "cdbJSON::getPayload() Read " << filename << endl;
+
+  string jstring = buffer.str();
+  pl.fHash       = jsonGetValue(jstring, "hash");
+  pl.fComment    = jsonGetValue(jstring, "comment");
+  pl.fBLOB       = base64_decode(jsonGetValue(jstring, "BLOB"));
 
   return pl;
 }

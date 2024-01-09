@@ -14,6 +14,7 @@ public:
   ~cdbJSON();
 
   void                 init();
+  runRecord            getRunRecord(int irun) override;
   payload              getPayload(std::string hash) override;
 
   std::vector<std::string>                 readGlobalTags(std::string gt) override;

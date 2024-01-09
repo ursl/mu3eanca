@@ -6,6 +6,7 @@
 #include <map>
 
 #include "payload.hh"
+#include "runRecord.hh"
 
 class calAbs;
 
@@ -19,6 +20,10 @@ public:
   cdbAbs(std::string gt, std::string uri, int verbose);
 	void init();
   ~cdbAbs();
+
+
+  // -- access to runRecords
+  virtual runRecord       getRunRecord(int irun) {return runRecord();}
 
   // -- access to payloads and IOVs
   virtual payload         getPayload(int irun, std::string t) {return payload();}
