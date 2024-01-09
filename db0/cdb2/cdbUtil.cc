@@ -1,3 +1,4 @@
+#include <sys/time.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -9,6 +10,22 @@
 #include "cdbUtil.hh"
 
 using namespace std;
+
+
+// ----------------------------------------------------------------------
+void rtrim(string &s) {
+  s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+    return !isspace(ch);
+  }).base(), s.end());
+}
+
+
+// ----------------------------------------------------------------------
+void ltrim(string &s) {
+    s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !isspace(ch);
+    }));
+}
 
 
 // ----------------------------------------------------------------------
@@ -96,6 +113,43 @@ void printArray(ofstream &OS, std::array<char,8> v) {
 
 
 // ----------------------------------------------------------------------
+string jsFormat(vector<string> v) {
+  stringstream sstr;
+  sstr << "[ ";
+  for (unsigned int i = 0; i < v.size(); ++i) {
+    if (i + 1 < v.size()) {
+      sstr << "\"" << v[i] << "\", ";
+    } else {
+      sstr << "\"" << v[i] << "\"";
+    }
+  }
+  sstr << " ]";
+  return sstr.str();
+}
+
+
+// ----------------------------------------------------------------------
+string jsFormat(vector<int> v) {
+  stringstream sstr;
+  sstr << "[ ";
+  for (unsigned int i = 0; i < v.size(); ++i) {
+    if (i + 1 < v.size()) {
+      sstr << v[i] << ", ";
+    } else {
+      sstr << v[i];
+    }
+  }
+  sstr << " ]";
+  return sstr.str();
+}
+
+// ----------------------------------------------------------------------
+//std::string jsFormat(std::vector<int>);
+//std::string jsFormat(std::vector<double>); 
+
+
+
+// ----------------------------------------------------------------------
 void replaceAll(string &str, const string &from, const string &to) {
   if (from.empty()) return;
   size_t start_pos = 0;
@@ -162,3 +216,71 @@ void /*vector<string>&*/ split(const string &s, char delim, vector<string> &elem
 }
 
 
+// ----------------------------------------------------------------------
+string jsonGetValue(string& jstring, string key) {
+  string::size_type s0 = jstring.find(key);
+  s0 = jstring.find(":", s0);
+  s0 = jstring.find("\"", s0);
+  string::size_type s1 = jstring.find(",", s0 + key.length() + 2);
+  string::size_type s2 = jstring.find("}", s0 + key.length() + 2);
+  string result("");
+  if (string::npos != s1) {
+    result = jstring.substr(s0, s1-s0);
+  } else {
+    result = jstring.substr(s0, s2-s0);
+  }
+  ltrim(result);
+  rtrim(result);
+  replaceAll(result, "\"", "");
+  return result;
+}
+
+// ----------------------------------------------------------------------
+string jsonGetVector(string& jstring, string key) {
+  string::size_type s0 = jstring.find(key);
+  s0 = jstring.find(":", s0);
+  string::size_type s1 = jstring.find("[", s0);
+  string::size_type s2 = jstring.find("]", s0);
+  string result("");
+  if (string::npos != s1 && string::npos != s2) {
+    result = jstring.substr(s1+1, s2-s1-1);
+  } else {
+    cout << "jsonGetVector> parse error" << endl;
+  }
+  ltrim(result);
+  rtrim(result);
+  replaceAll(result, "\"", "");
+  replaceAll(result, " ", "");
+  return result;
+}
+
+
+// ----------------------------------------------------------------------
+string timeStamp(int format) {
+  char buffer[11];
+  time_t t;
+  time(&t);
+  tm r;
+
+  // strftime(buffer, sizeof(buffer), "%X", localtime_r(&t, &r));
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+ 
+  tm *ltm = localtime(&t);
+  int year  = 1900 + ltm->tm_year;
+  int month = 1 + ltm->tm_mon;
+  int day   = ltm->tm_mday;
+  int hour  = ltm->tm_hour;
+  int min   = ltm->tm_min;
+  int sec   = ltm->tm_sec;
+  std::stringstream result;
+  if (0 == format) {
+    result << year << "-"
+           << std::setfill('0') << std::setw(2) << month << "-"
+           << std::setfill('0') << std::setw(2) << day << " "
+           << std::setfill('0') << std::setw(2) << hour << ":"
+           << std::setfill('0') << std::setw(2) << min << ":"
+           << std::setfill('0') << std::setw(2) << sec;
+  }
+  return result.str();
+}

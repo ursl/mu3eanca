@@ -17,7 +17,19 @@ void cleanupString(std::string &);
 bool bothAreSpaces(char lhs, char rhs);
 void rmSubString(std::string &sinput, const std::string &remove);
 void rmPath(std::string &sInput);
+void rtrim(std::string &s);
+void ltrim(std::string &s);
 
+std::string timeStamp(int format = 0);
+
+// ======================================================================
+// I/O for JSON files (to remove dependency on bsoncxx, drivers)
+// ======================================================================
+std::string jsFormat(std::vector<std::string>); 
+std::string jsFormat(std::vector<int>);
+//std::string jsFormat(std::vector<double>); 
+std::string jsonGetValue(std::string& jstring, std::string key);
+std::string jsonGetVector(std::string& jstring, std::string key);
 
 // ======================================================================
 // BLOB utilities

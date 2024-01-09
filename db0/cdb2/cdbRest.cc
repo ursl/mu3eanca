@@ -219,8 +219,8 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   curl_easy_setopt(curl, CURLOPT_URL, sapi.c_str());
 
   struct curl_slist *headers = NULL;
-  headers = curl_slist_append(headers, "Content-Type: application/json");
-  headers = curl_slist_append(headers, "Access-Control-Request-Headers: *");
+  //  headers = curl_slist_append(headers, "Content-Type: application/json");
+  //  headers = curl_slist_append(headers, "Access-Control-Request-Headers: *");
   headers = curl_slist_append(headers, fApiKey.c_str());
   
   //  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
