@@ -45,12 +45,13 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 # -- CDB (Conditions DB) files
 FILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o cdbROOT.o \
         calAbs.o \
-        calPixelAlignment.o calFibreAlignment.o  calMppcAlignment.o calTileAlignment.o \
+        calPixelAlignment.o calFibreAlignment.o  \
+        calMppcAlignment.o calTileAlignment.o \
         calPixelQuality.o calPixelQualityV.o calPixelQualityM.o \
         calPixelCablingMap.o \
         Mu3eConditions.o Mu3eCalFactory.o \
         base64.o \
-        payload.o cdbUtil.o
+        payload.o cdbUtil.o runRecord.o
 
 
 # -- Default rules
