@@ -1,22 +1,7 @@
-const { MongoClient } = require('mongodb');
 
 var http = require('http'); // 1 - Import Node.js core module
 
 console.log('Node.js web server at port 80 is running..')
-
-// ----------------------------------------------------------------------
-async function main() {
-    const uri = "mongodb://pc11740:27017";
-
-    const client = new MongoClient(uri);
-
-    try {
-        await client.connect();
-        await findOneGlobalTagByName(client, "mcidealv5.1");
-    } finally {
-        await client.close();
-    }
-}
 
 // ----------------------------------------------------------------------
 var server = http.createServer(function (req, res) {   // 2 - creating server
@@ -53,4 +38,3 @@ async function findOneGlobalTagByName(client, nameOfGlobalTag) {
 }
 
 
-main().catch(console.error);
