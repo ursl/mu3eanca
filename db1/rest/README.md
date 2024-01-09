@@ -7,6 +7,12 @@ npm install express cors express-async-errors dotenv mongodb
 ```
 
 # Run it
+By default, it is running on port 80 (no good reason). If apache is running, it needs to be stopped, e.g.
+```
+sudo systemctl stop apache2.service
+```
+
+Port 80 also implies that you need to run it with sudo:
 ```
 pc11740>sudo npm run start
 ```
