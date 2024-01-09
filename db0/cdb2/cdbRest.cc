@@ -61,7 +61,7 @@ void cdbRest::init() {
   fApiKey = "api-key: " + fApiKey;
 
   fURIfindOne = fURI + "findOne"; 
-  fURIfind    = fURI + "find"; 
+  fURIfind    = fURI + "findAll"; 
   
   cdbAbs::init();
 }
@@ -70,7 +70,7 @@ void cdbRest::init() {
 // ----------------------------------------------------------------------
 vector<string> cdbRest::readGlobalTags(string gt) {
   vector<string> v;
-  doCurl("globaltags");
+  doCurl("globaltags", "nada", "findAll");
   
   if (1) {
     bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
@@ -210,7 +210,7 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   string sapi("");
   if (string::npos != api.find("findOne")) {
     sapi = fURIfindOne;
-  } else if (string::npos != api.find("find")) {
+  } else if (string::npos != api.find("findAll")) {
     sapi = fURIfind;
   } else {
     sapi = fURIfind;
