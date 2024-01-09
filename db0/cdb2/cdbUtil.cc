@@ -284,6 +284,33 @@ string jsonGetVector(string& jstring, string key) {
 
 
 // ----------------------------------------------------------------------
+vector<string> jsonGetVectorVector(string& jstring, string key) {
+  vector<string> result;
+  string::size_type s0(0);
+  while (string::npos != s0) {
+    s0 = jstring.find(key);
+    s0 = jstring.find(":", s0);
+    string::size_type s1 = jstring.find("[", s0);
+    string::size_type s2 = jstring.find("]", s0);
+    string sresult("");
+    if (string::npos != s1 && string::npos != s2) {
+      sresult = jstring.substr(s1+1, s2-s1-1);
+      s0 = s2;
+    } else {
+      cout << "jsonGetVector> parse error" << endl;
+      s0 = string::npos;
+    }
+    ltrim(sresult);
+    rtrim(sresult);
+    replaceAll(sresult, "\"", "");
+    replaceAll(sresult, " ", "");
+    result.push_back(sresult);
+  }
+  return result;
+}
+
+
+// ----------------------------------------------------------------------
 string timeStamp(int format) {
   char buffer[11];
   time_t t;

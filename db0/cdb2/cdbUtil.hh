@@ -31,6 +31,7 @@ std::string jsFormat(std::vector<int>);
 std::string jsonGetValue(std::string& jstring, std::string key);
 std::string jsonGetVector(std::string& jstring, std::string key);
 std::vector<std::string> jsonGetValueVector(std::string& jstring, std::string key);
+std::vector<std::string> jsonGetVectorVector(std::string& jstring, std::string key);
 
 // ======================================================================
 // BLOB utilities
