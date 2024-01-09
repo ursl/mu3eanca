@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 
 # ----------------------------------------------------------------------
-# cpFilesFromGitDir
+# cpFilesFromGitDir 
 # ===================
 #
 # Make copies of files in some git directory that are not committed
