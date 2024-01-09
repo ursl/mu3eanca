@@ -46,13 +46,13 @@ int main(int argc, char* argv[]) {
 
   cdbAbs *pDB(0);
   if (string::npos != db.find("json")) {
-    pDB = new cdbJSON(gt, "json", verbose);
+    pDB = new cdbJSON(gt, db, verbose);
   } else if (string::npos != db.find("mongo")) {
-    string ms("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
+    string ms("mongodb://pc11740.psi.ch:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
     pDB = new cdbMongo(gt, ms, verbose);
   } else if (string::npos != db.find("rest")) {
-    // string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/findOne");
-    string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
+    //    string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
+    string ms("http://pc11740.psi.ch/posts");
     pDB = new cdbRest(gt, ms, verbose);
   } else {
     cout << "ERROR: " << db << " not known." << endl;
