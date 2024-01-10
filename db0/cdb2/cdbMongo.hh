@@ -16,8 +16,9 @@ public:
   cdbMongo(std::string name, std::string uri, int verbose);
   ~cdbMongo();
 
-  void     init();
-  payload  getPayload(std::string hash) override;
+  void      init();
+  runRecord getRunRecord(int irun) override;
+  payload   getPayload(std::string hash) override;
 
   std::vector<std::string>                 readGlobalTags(std::string gt) override;
 	std::vector<std::string>                 readTags(std::string gt) override;
