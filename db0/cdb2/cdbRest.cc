@@ -60,8 +60,8 @@ void cdbRest::init() {
   INS.close();
   fApiKey = "api-key: " + fApiKey;
 
-  fURIfindOne = fURI + "findOne"; 
-  fURIfind    = fURI + "findAll"; 
+  fURIfindOne = fURI + "/findOne"; 
+  fURIfind    = fURI + "/findAll"; 
   
   cdbAbs::init();
 }
@@ -73,18 +73,9 @@ vector<string> cdbRest::readGlobalTags(string gt) {
   doCurl("globaltags", "nada", "findAll");
   
   if (1) {
-    bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
-    //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
-    
-    for (auto idoc : doc0) {
-      bsoncxx::array::view subarr{idoc.get_array()};
-      for (auto ele : subarr) {
-        //cout << "ele.type() = " <<  bsoncxx::to_string(ele.type()) << endl;
-        bsoncxx::document::view doc = ele.get_document();
-        //cout << bsoncxx::to_json(doc) << endl;
-        string tname = string(doc["gt"].get_string().value).c_str();
-        v.push_back(tname); 
-      }
+    vector<string> vgt = jsonGetValueVector(fCurlReadBuffer, "gt");
+    for (auto it : vgt) {
+      v.push_back(it); 
     }
   }
   
@@ -100,33 +91,20 @@ vector<string> cdbRest::readGlobalTags(string gt) {
 // ----------------------------------------------------------------------
 vector<string> cdbRest::readTags(string gt) {
   vector<string> v;
-  doCurl("globaltags");
+  doCurl("globaltags", "nada", "findAll");
   
   if (1) {
-    bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
-    //cout << bsoncxx::to_json(doc0, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
-    
-    for (auto idoc : doc0) {
-      bsoncxx::array::view subarr{idoc.get_array()};
-      for (auto ele : subarr) {
-        //cout << "ele.type() = " <<  bsoncxx::to_string(ele.type()) << endl;
-        bsoncxx::document::view doc = ele.get_document();
-        //cout << bsoncxx::to_json(doc) << endl;
-        string tname = string(doc["gt"].get_string().value).c_str();
-        
-        if (string::npos != tname.find(gt)) {
-          bsoncxx::array::view subarr{doc["tags"].get_array()};
-          for (bsoncxx::array::element ele : subarr) {
-            string tname = string(ele.get_string().value).c_str();
-            v.push_back(tname); 
-          }
-        }
-      }
+    vector<string> vgt = jsonGetValueVector(fCurlReadBuffer, "gt");
+    for (auto it: vgt) {
+      if (it != gt) continue;
+      string stags = jsonGetVector(fCurlReadBuffer, it);
+      v = split(stags, ',');
     }
+
   }
-  
+
   if (fVerbose > 0) {
-    cout << "cdbRest::readGlobalTags()> tags = ";
+    cout << "**cdbRest::readGlobalTags()> tags = ";
     print(v);
   }
   
@@ -138,29 +116,26 @@ vector<string> cdbRest::readTags(string gt) {
 map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
   map<string, vector<int>> m;
 
-  fCurlReadBuffer.clear();
-  doCurl("iovs");
-  bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
+  for (auto it: tags) {
+    fCurlReadBuffer.clear();
+    doCurl("tags", it, "findOne");
 
-  for (auto idoc : doc0) {
-    bsoncxx::array::view subarr{idoc.get_array()};
-    for (auto ele : subarr) {
-      bsoncxx::document::view doc = ele.get_document();
-      string tname = string(doc["tag"].get_string().value).c_str();
-      // -- look only at tags in fGT
-      if (tags.end() == find(tags.begin(), tags.end(), tname)) continue;
-      bsoncxx::array::view subarr{doc["iovs"].get_array()};
-      vector<int> viov; 
-      for (bsoncxx::array::element ele : subarr) {
-        int iov = ele.get_int32().value;
-        viov.push_back(iov);
+    vector<int> viov;
+    string sarr = jsonGetVector(fCurlReadBuffer, "iovs");
+
+    vector<string> subarr = split(sarr, ',');
+    if (subarr.size() > 0) {
+      for (auto it: subarr) {
+        viov.push_back(stoi(it));
       }
-      m.insert(make_pair(tname, viov)); 
+    } else {
+      viov.push_back(stoi(sarr));
     }
+    m.insert(make_pair(it, viov)); 
   }
 
-  if (fVerbose > 1) {
-    cout << "cdbRest::readIOVs>" << endl;
+  if (fVerbose > 0) {
+    cout << "**cdbRest::readIOVs>" << endl;
     print(m);
   }
   return m;
@@ -168,17 +143,32 @@ map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
 
 
 // ----------------------------------------------------------------------
-payload cdbRest::getPayload(string hash) {
-  cout << "Hallo" << endl;
+runRecord cdbRest::getRunRecord(int irun) {
+  // -- initialize with default
+  std::stringstream sspl;
+  sspl << "(cdbJSON>  runRecord for run = " << to_string(irun)
+       << " not found)";
+  runRecord rr;
+  rr.fRunDescription = sspl.str();
   
   fCurlReadBuffer.clear();
-  stringstream sstr;
-  sstr << "\"hash\": \"" << hash << "\"";
-  string theFilter = sstr.str();
-  cout << "theFilter = " << theFilter << endl;
-  doCurl("payloads", theFilter);
+  doCurl("runrecords", to_string(irun), "findOne");
   stripOverhead();
-  bsoncxx::document::value doc0 = bsoncxx::from_json(fCurlReadBuffer);
+  rr.fRun            = stoi(jsonGetValue(fCurlReadBuffer, "run"));
+  rr.fRunStart       = jsonGetValue(fCurlReadBuffer, "runStart");
+  rr.fRunEnd         = jsonGetValue(fCurlReadBuffer, "runEnd");
+  rr.fRunDescription = jsonGetValue(fCurlReadBuffer, "runDescription");
+  
+  return rr;
+}
+
+
+// ----------------------------------------------------------------------
+payload cdbRest::getPayload(string hash) {
+ 
+  fCurlReadBuffer.clear();
+  doCurl("payloads", hash, "findOne");
+  stripOverhead();
 
   // -- initialize with default
   std::stringstream sspl;
@@ -186,13 +176,11 @@ payload cdbRest::getPayload(string hash) {
        << " not found)";
   payload pl;
   pl.fComment = sspl.str();
-  
-  for (auto idoc : doc0) {
-    pl.fComment = string(idoc["comment"].get_string().value).c_str();
-    pl.fHash    = string(idoc["hash"].get_string().value).c_str();
-    pl.fBLOB    = base64_decode(string(idoc["BLOB"].get_string().value));
-  }
 
+  pl.fComment = jsonGetValue(fCurlReadBuffer, "comment");
+  pl.fHash    = jsonGetValue(fCurlReadBuffer, "hash");
+  pl.fBLOB    = base64_decode(jsonGetValue(fCurlReadBuffer, "BLOB"));
+  
   return pl;
 }
 
@@ -209,9 +197,9 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   fCurlReadBuffer.clear();
   string sapi("");
   if (string::npos != api.find("findOne")) {
-    sapi = fURIfindOne;
+    sapi = fURIfindOne + "/" + collection + "/" + filter;
   } else if (string::npos != api.find("findAll")) {
-    sapi = fURIfind;
+    sapi = fURIfind + "/" + collection;
   } else {
     sapi = fURIfind;
   }
@@ -228,18 +216,6 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fCurlReadBuffer);
 
-  stringstream sstr;
-  sstr << "{\"collection\":\"" << collection
-       << "\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"";
-  if (string::npos  == filter.find("nada")) {
-    sstr << ", \"filter\": {" << filter << "}"; //    {\"hash\": \"tag_pixelalignment_dt23intrun_iov_200\"};
-  } 
-  sstr << "}";
-
-  string theString = sstr.str(); 
-  //  cout << "theString = " << theString << endl;
-  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, theString.c_str());
- 
   CURLcode curlRes = curl_easy_perform(curl);
 
   if (0) cout << "==:cdbRest::doCurl(\"" << collection << "\"): "
@@ -250,6 +226,6 @@ void cdbRest::doCurl(string collection, string filter, string api) {
 
 // ----------------------------------------------------------------------
 void cdbRest::stripOverhead() {
-  replaceAll(fCurlReadBuffer, "{\"documents\":", "");
-  fCurlReadBuffer.pop_back();
+  //old version  replaceAll(fCurlReadBuffer, "{\"documents\":", "");
+  //fCurlReadBuffer.pop_back();
 }
