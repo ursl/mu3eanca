@@ -146,11 +146,17 @@ runRecord cdbJSON::getRunRecord(int irun) {
   cout << "cdbJSON::getRunRecord() Read " << filename << endl;
 
   string jstring = buffer.str();
-  rr.fRun            = stoi(jsonGetValue(jstring, "run"));
-  rr.fRunStart       = jsonGetValue(jstring, "runStart");
-  rr.fRunEnd         = jsonGetValue(jstring, "runEnd");
-  rr.fRunDescription = jsonGetValue(jstring, "runDescription");
-
+  rr.fRun              = stoi(jsonGetValue(jstring, "run"));
+  rr.fRunStart         = jsonGetValue(jstring, "runStart");
+  rr.fRunEnd           = jsonGetValue(jstring, "runEnd");
+  rr.fRunDescription   = jsonGetValue(jstring, "runDescription");
+  rr.fRunOperators     = jsonGetValue(jstring, "runOperators");
+  rr.fNFrames          = stoi(jsonGetValue(jstring, "nFrames"));
+  rr.fBeamMode         = stoi(jsonGetValue(jstring, "beamMode"));
+  rr.fBeamCurrent      = stof(jsonGetValue(jstring, "beamCurrent"));
+  rr.fMagnetCurrent    = stof(jsonGetValue(jstring, "magnetCurrent"));
+  rr.fConfigurationKey = jsonGetValue(jstring, "configurationKey");
+  
   return rr;
 }
 
