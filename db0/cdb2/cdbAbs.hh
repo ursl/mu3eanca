@@ -24,9 +24,9 @@ public:
 
   // -- access to runRecords
   virtual runRecord       getRunRecord(int irun) {return runRecord();}
-
+  
   // -- access to payloads and IOVs
-  virtual payload         getPayload(int irun, std::string t) {return payload();}
+  //  virtual payload         getPayload(int irun, std::string t);
   virtual payload         getPayload(std::string hash) {return payload();}
 
 	void setVerbosity(int v) {fVerbose = v;}
