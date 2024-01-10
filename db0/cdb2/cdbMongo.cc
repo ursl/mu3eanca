@@ -148,12 +148,17 @@ runRecord cdbMongo::getRunRecord(int irun) {
   
   auto cursor_filtered =  fDB["runrecords"].find(make_document(kvp("run", to_string(irun))));
   for (auto doc : cursor_filtered) {
-    // -- print it 
-    // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
-    rr.fRun = stoi(string(doc["run"].get_string().value).c_str());
-    //    rr.     = string(doc["hash"].get_string().value).c_str();
-    //    rr.     = string(doc["BLOB"].get_string().value).c_str();
+    rr.fRun       = stoi(doc["run"].get_string().value.to_string());
+    rr.fRunStart  = doc["runStart"].get_string().value.to_string();
+    rr.fRunEnd    = doc["runEnd"].get_string().value.to_string();    
+    rr.fRunDescription = doc["runDescription"].get_string().value.to_string();
+    rr.fRunOperators   = doc["runOperators"].get_string().value.to_string();
+    rr.fNFrames   = stoi(doc["nFrames"].get_string().value.to_string());
+    rr.fBeamMode  = stoi(doc["beamMode"].get_string().value.to_string());
+    rr.fBeamCurrent = stof(doc["beamCurrent"].get_string().value.to_string());
+    rr.fMagnetCurrent = stof(doc["magnetCurrent"].get_string().value.to_string());
+    rr.fConfigurationKey = doc["configurationKey"].get_string().value.to_string();
   }
   
   return rr;

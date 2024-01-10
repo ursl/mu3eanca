@@ -154,10 +154,16 @@ runRecord cdbRest::getRunRecord(int irun) {
   fCurlReadBuffer.clear();
   doCurl("runrecords", to_string(irun), "findOne");
   stripOverhead();
-  rr.fRun            = stoi(jsonGetValue(fCurlReadBuffer, "run"));
-  rr.fRunStart       = jsonGetValue(fCurlReadBuffer, "runStart");
-  rr.fRunEnd         = jsonGetValue(fCurlReadBuffer, "runEnd");
-  rr.fRunDescription = jsonGetValue(fCurlReadBuffer, "runDescription");
+  rr.fRun              = stoi(jsonGetValue(fCurlReadBuffer, "run"));
+  rr.fRunStart         = jsonGetValue(fCurlReadBuffer, "runStart");
+  rr.fRunEnd           = jsonGetValue(fCurlReadBuffer, "runEnd");
+  rr.fRunDescription   = jsonGetValue(fCurlReadBuffer, "runDescription");
+  rr.fRunOperators     = jsonGetValue(fCurlReadBuffer, "runOperators");
+  rr.fNFrames          = stoi(jsonGetValue(fCurlReadBuffer, "nFrames"));
+  rr.fBeamMode         = stoi(jsonGetValue(fCurlReadBuffer, "beamMode"));
+  rr.fBeamCurrent      = stof(jsonGetValue(fCurlReadBuffer, "beamCurrent"));
+  rr.fMagnetCurrent    = stof(jsonGetValue(fCurlReadBuffer, "magnetCurrent"));
+  rr.fConfigurationKey = jsonGetValue(fCurlReadBuffer, "configurationKey");
   
   return rr;
 }
