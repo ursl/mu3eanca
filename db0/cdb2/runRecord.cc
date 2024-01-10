@@ -29,12 +29,17 @@ void runRecord::print() {
 // ----------------------------------------------------------------------
 string runRecord::printString() {
   std::stringstream sstr;
-  sstr << "/**/run ->" << fRun
-       << "<- /**/start ->" << fRunStart
-       << "<- /**/end ->" << fRunEnd
-       << "<- /**/desc->" << fRunDescription
-       << "<- /**/ops ->" << fRunOperators
-       << "<-";
+  sstr << "/**/run " << fRun
+       << " (" << fRunStart
+       << " .. " << fRunEnd
+       << ") desc: " << fRunDescription
+       << ", ops: " << fRunOperators
+       << ", nframes: " << fNFrames
+       << ", beam( " << fBeamMode
+       << ", " << fBeamCurrent
+       << "), B(" << fMagnetCurrent
+       << "), config: " << fConfigurationKey
+    ;
   return sstr.str();
 }
 
