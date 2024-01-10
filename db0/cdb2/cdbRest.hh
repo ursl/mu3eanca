@@ -19,7 +19,7 @@ public:
   runRecord            getRunRecord(int irun) override;
   payload              getPayload(std::string hash) override;
   
-  std::vector<std::string>                 readGlobalTags(std::string gt) override;
+  std::vector<std::string>                 readGlobalTags() override;
   std::vector<std::string>                 readTags(std::string gt) override;
 	std::map<std::string, std::vector<int> > readIOVs(std::vector<std::string> tags) override;
   

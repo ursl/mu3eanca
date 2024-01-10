@@ -68,7 +68,7 @@ void cdbRest::init() {
 
 
 // ----------------------------------------------------------------------
-vector<string> cdbRest::readGlobalTags(string gt) {
+vector<string> cdbRest::readGlobalTags() {
   vector<string> v;
   doCurl("globaltags", "nada", "findAll");
   

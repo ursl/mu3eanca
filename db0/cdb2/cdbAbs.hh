@@ -40,7 +40,7 @@ public:
 	void print(std::map<std::string, std::vector<std::string>>);
 	void print(std::map<std::string, std::vector<int>>);
 
-	virtual std::vector<std::string>                readGlobalTags(std::string gt) {return std::vector<std::string>();}
+	virtual std::vector<std::string>                readGlobalTags() {return std::vector<std::string>();}
 	virtual std::vector<std::string>                readTags(std::string gt) {return std::vector<std::string>();}
 	virtual std::map<std::string, std::vector<int>> readIOVs(std::vector<std::string> tags) {return std::map<std::string, std::vector<int>>();}
 

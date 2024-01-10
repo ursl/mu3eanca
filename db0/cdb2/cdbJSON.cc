@@ -29,7 +29,7 @@ void cdbJSON::init() {
 
 
 // ----------------------------------------------------------------------
-vector<string> cdbJSON::readGlobalTags(string gt) {
+vector<string> cdbJSON::readGlobalTags() {
   vector<string> v;
   // -- read global tags from fURI
   string gtdir = fURI + "/globaltags";
