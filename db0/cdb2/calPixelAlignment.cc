@@ -44,11 +44,11 @@ calPixelAlignment::~calPixelAlignment() {
 // ----------------------------------------------------------------------
 void calPixelAlignment::calculate(string hash) {
   cout << "calPixelAlignment::calculate() with "
-       << "fHash ->" << hash << "<-"
-       << endl;
+       << "fHash ->" << hash << "<-";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
-
+  cout << " fBLOB.size() = " << spl.size() << endl;
+  
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
   
