@@ -65,7 +65,7 @@ void cdbMongo::init() {
 }
 
 // ----------------------------------------------------------------------
-vector<string> cdbMongo::readGlobalTags(string gt) {
+vector<string> cdbMongo::readGlobalTags() {
   vector<string> v;
   mongocxx::cursor cursor = fDB["globaltags"].find({});
   for (auto doc : cursor) {
