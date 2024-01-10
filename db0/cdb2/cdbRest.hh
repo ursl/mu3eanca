@@ -16,8 +16,8 @@ public:
   ~cdbRest();
 
   void                 init();
+  runRecord            getRunRecord(int irun) override;
   payload              getPayload(std::string hash) override;
-
   
   std::vector<std::string>                 readGlobalTags(std::string gt) override;
   std::vector<std::string>                 readTags(std::string gt) override;
@@ -25,7 +25,6 @@ public:
   
 protected:
   void doCurl(std::string collection, std::string filter = "nada", std::string api = "find"); 
-  // -- remove from fCurlReadBuffer "{"_id":"649042ec330d198bb5be6e19", ... ]}
   void stripOverhead();
   
 private: 
