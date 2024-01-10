@@ -8,7 +8,7 @@ class payload {
 public:
   payload();
   void print();
-  std::string printString();
+  std::string printString(bool prtAll = true);
   std::string json();
 
   std::string fHash;

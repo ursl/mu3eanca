@@ -23,13 +23,14 @@ void payload::print() {
 
 
 // ----------------------------------------------------------------------
-string payload::printString() {
+string payload::printString(bool prtAll) {
   std::stringstream sstr;
-  sstr << "/**/hash ->" << fHash
-       << "<- /**/comment ->" << fComment
-       << "<- /**/schema ->" << fSchema
-       << "<- /**/date ->" << fDate
-       << "<- /**/BLOB ->" << fBLOB
+  sstr << "/**/hash ->" << fHash << endl
+       << "<- /**/comment ->" << fComment << endl
+       << "<- /**/schema ->" << fSchema << endl
+       << "<- /**/date ->" << fDate << endl
+       << "<- /**/base64_encoded(BLOB) ->"
+       << (prtAll? base64_encode(fBLOB) : " BLOB printing suppressed")
        << "<-";
   return sstr.str();
 }
