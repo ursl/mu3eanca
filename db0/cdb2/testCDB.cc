@@ -16,6 +16,7 @@ using namespace std;
 
 void aFewRuns(cdbAbs *, string globalTag, calAbs *);
 void printStuff(cdbAbs *, string gt);
+void printAll(cdbAbs *);
 
 // ----------------------------------------------------------------------
 // testCDB
@@ -34,8 +35,8 @@ void printStuff(cdbAbs *, string gt);
 // bin/testCDB -v 1 -gt mcidealv5.0 -db ~/data/mu3e/json10
 // 
 // 
-// The following dumps the entire contents of the CDB
-// bin/test -v 1 -m all
+// The following dumps the entire CDB contents
+// bin/test -v 1 -gt mcidealv5.0 -m 1
 // ----------------------------------------------------------------------
 
 
@@ -46,7 +47,7 @@ int main(int argc, char* argv[]) {
   
   // -- command line arguments
   int mode(0), run(3), verbose(0);
-  string db("json"), gt("dt23intrun");
+  string db("json"), gt("mcidealv5.0");
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-db"))  {db = string(argv[++i]);}
     if (!strcmp(argv[i], "-gt"))  {gt = string(argv[++i]);}
@@ -70,31 +71,29 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
+
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
   
-  calAbs *cal0 = pDC->createClass("pixelalignment_");
-  if (verbose > 0) cal0->setVerbosity(verbose);
-  
-  // // -- calibration classes instantiation and registration must happen before setting the run number in the CBD
-  // cdbClassFactory *cdbcf = cdbClassFactory::instance(pDB);
-  // if (verbose > 0) cdbcf->setVerbosity(verbose);
-
-  // calAbs *cal0 = cdbcf->createClass("pixelalignment_");
-  // if (verbose > 0) cal0->setVerbosity(verbose);
-    
-  pDC->setRunNumber(run);
-  cout << "set run number to " << pDC->getRunNumber() << endl;
-
-  
   if (0 == mode) {
     cout << "----------------------------------------------------------------------" << endl;
+    
+    calAbs *cal0 = pDC->createClass("pixelalignment_");
+    if (verbose > 0) cal0->setVerbosity(verbose);
+    
+    // // -- calibration classes instantiation and registration must happen before setting the run number in the CBD
+    // cdbClassFactory *cdbcf = cdbClassFactory::instance(pDB);
+    // if (verbose > 0) cdbcf->setVerbosity(verbose);
+    
+    // calAbs *cal0 = cdbcf->createClass("pixelalignment_");
+    // if (verbose > 0) cal0->setVerbosity(verbose);
+    
+    pDC->setRunNumber(run);
+    cout << "set run number to " << pDC->getRunNumber() << endl;
     printStuff(pDB, gt);
     cout << "----------------------------------------------------------------------" << endl;
   } else if (1 == mode) {
-    //    cout << "run = " << pDC->getRunNumber() << " payload hash -> " << pCD->getHash() << "<-" << endl;
-  } else if (2 == mode) {
-    aFewRuns(pDB, gt, cal0);  
+    printAll(pDB);
   }
   return 0;
 }
@@ -149,3 +148,23 @@ void aFewRuns(cdbAbs *db, string gt, calAbs *cal) {
 }
     
   
+
+
+// ----------------------------------------------------------------------
+void printAll(cdbAbs *db) {
+  vector<string> vgt = db->readGlobalTags();
+  for (auto igt : vgt) {
+    cout << "GT " << igt << endl;
+    vector<string> tags = db->readTags(igt);
+    map<string, vector<int>> iovs = db->readIOVs(tags);
+    for (auto itt : iovs) {
+      cout << " tag: " << itt.first << endl;
+      for (auto ittt :  itt.second) {
+        cout << "   iov " << ittt << endl;
+        payload pl = db->getPayload("tag_" + itt.first + "_iov_" + to_string(ittt));
+        pl.print();
+      }
+    }
+  }
+  
+}
