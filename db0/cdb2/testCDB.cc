@@ -22,10 +22,20 @@ void printStuff(cdbAbs *, string gt);
 // -------
 //
 // Examples:
-// bin/testCDB -gt dt23prompt -m 1 -r 1000
-// bin/testCDB -gt dt23intrun
-// bin/testCDB -gt dt23intrun -v 10
+// ---------
+// bin/testCDB -v 1 -gt mcidealv5.1 -db mongo
+//
+// The following two require
+//   pc11740>cd ~/mu3eanca/db1/rest && sudo npm run start
 // 
+// bin/testCDB -v 1 -gt mcidealv5.0 -db rest
+// bin/testCDB -v 1 -gt mcidealv5.1 -db http://pc11740.psi.ch/cdb
+//
+// bin/testCDB -v 1 -gt mcidealv5.0 -db ~/data/mu3e/json10
+// 
+// 
+// The following dumps the entire contents of the CDB
+// bin/test -v 1 -m all
 // ----------------------------------------------------------------------
 
 
