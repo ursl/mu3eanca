@@ -221,8 +221,8 @@ string jsonGetValue(string& jstring, string key) {
   string::size_type s0 = jstring.find(key);
   s0 = jstring.find(":", s0);
   s0 = jstring.find("\"", s0);
-  string::size_type s1 = jstring.find(",", s0 + key.length() + 2);
-  string::size_type s2 = jstring.find("}", s0 + key.length() + 2);
+  string::size_type s1 = jstring.find(",", s0);
+  string::size_type s2 = jstring.find("}", s0);
   string result("");
   if (string::npos != s1) {
     result = jstring.substr(s0, s1-s0);
