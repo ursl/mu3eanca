@@ -7,14 +7,15 @@
 #include "cdbMongo.hh"
 #include "cdbJSON.hh"
 #include "cdbRest.hh"
+#include "runRecord.hh"
 
 #include "calPixelAlignment.hh"
 
 
 using namespace std;
 
-void printStuff(cdbAbs *);
 void aFewRuns(cdbAbs *, string globalTag, calAbs *);
+void printStuff(cdbAbs *, string gt);
 
 // ----------------------------------------------------------------------
 // testCDB
@@ -50,9 +51,9 @@ int main(int argc, char* argv[]) {
   } else if (string::npos != db.find("mongo")) {
     string ms("mongodb://pc11740.psi.ch:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
     pDB = new cdbMongo(gt, ms, verbose);
-  } else if (string::npos != db.find("rest")) {
+  } else if (string::npos != db.find("rest") || string::npos != db.find("http://")) {
     //    string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
-    string ms("http://pc11740.psi.ch/posts");
+    string ms("http://pc11740.psi.ch/cdb");
     pDB = new cdbRest(gt, ms, verbose);
   } else {
     cout << "ERROR: " << db << " not known." << endl;
@@ -78,7 +79,7 @@ int main(int argc, char* argv[]) {
   
   if (0 == mode) {
     cout << "----------------------------------------------------------------------" << endl;
-    printStuff(pDB);
+    printStuff(pDB, gt);
     cout << "----------------------------------------------------------------------" << endl;
   } else if (1 == mode) {
     //    cout << "run = " << pDC->getRunNumber() << " payload hash -> " << pCD->getHash() << "<-" << endl;
@@ -90,10 +91,10 @@ int main(int argc, char* argv[]) {
 
 
 // ----------------------------------------------------------------------
-void printStuff(cdbAbs *db) {
+void printStuff(cdbAbs *db, string gt) {
   Mu3eConditions *pDC = Mu3eConditions::instance();
-  vector<string> gt = pDC->getGlobalTags();
-  for (auto igt : gt) {
+  vector<string> vgt = pDC->getGlobalTags();
+  for (auto igt : vgt) {
     cout << "GT " << igt << endl;
     vector<string> tags = pDC->getTags();
     for (auto itt : tags) {
@@ -105,8 +106,11 @@ void printStuff(cdbAbs *db) {
     }
   }
   
-  payload pl = db->getPayload(12, "pixelalignment_dt23intrun");
-  cout << "printStuff> pixel payload: " << pl.printString() << endl;
+  payload pl = db->getPayload("tag_pixelalignment_" + gt + "_iov_1");
+  cout << "printStuff> pixel payload: " << pl.printString(false) << endl;
+
+  runRecord rr = db->getRunRecord(12);
+  rr.print();
 }
 
 
