@@ -242,8 +242,11 @@ vector<string> jsonGetValueVector(string& jstring, string key) {
   string::size_type s0(0);
   while (string::npos != s0) {
     s0 = jstring.find(key, s0);
+    if (string::npos == s0) break;
     s0 = jstring.find(":", s0);
+    if (string::npos == s0) break;
     s0 = jstring.find("\"", s0);
+    if (string::npos == s0) break;
     string::size_type s1 = jstring.find(",", s0 + key.length() + 2);
     string::size_type s2 = jstring.find("}", s0 + key.length() + 2);
     string sresult;
