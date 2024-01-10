@@ -5,6 +5,8 @@
 #include <sstream>
 #include <cassert>
 
+#include "base64.hh"
+
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/stdx.hpp>
@@ -109,7 +111,7 @@ vector<string> cdbMongo::readTags(string gt) {
 // ----------------------------------------------------------------------
 map<string, vector<int>> cdbMongo::readIOVs(vector<string> tags) {
   map<string, vector<int>> m;
-  auto cursor =  fDB["iovs"].find({});
+  auto cursor =  fDB["tags"].find({});
   for (auto doc : cursor) {
     // -- print it 
     //    cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
@@ -136,6 +138,29 @@ map<string, vector<int>> cdbMongo::readIOVs(vector<string> tags) {
 
 
 // ----------------------------------------------------------------------
+runRecord cdbMongo::getRunRecord(int irun) {
+  // -- initialize with default
+  std::stringstream sspl;
+  sspl << "(cdbMongo>  runRecord for run = " << to_string(irun)
+       << " not found)";
+  runRecord rr;
+  rr.fRunDescription = sspl.str();
+  
+  auto cursor_filtered =  fDB["runrecords"].find(make_document(kvp("run", to_string(irun))));
+  for (auto doc : cursor_filtered) {
+    // -- print it 
+    // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+    assert(doc["_id"].type() == bsoncxx::type::k_oid);
+    rr.fRun = stoi(string(doc["run"].get_string().value).c_str());
+    //    rr.     = string(doc["hash"].get_string().value).c_str();
+    //    rr.     = string(doc["BLOB"].get_string().value).c_str();
+  }
+  
+  return rr;
+}
+
+
+// ----------------------------------------------------------------------
 payload cdbMongo::getPayload(string hash) {
   
   // -- initialize with default
@@ -150,9 +175,9 @@ payload cdbMongo::getPayload(string hash) {
     // -- print it 
     // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
-    pl.fComment = string(doc["comment"].get_string().value).c_str();
-    pl.fHash    = string(doc["hash"].get_string().value).c_str();
-    pl.fBLOB    = string(doc["BLOB"].get_string().value).c_str();
+    pl.fComment = doc["comment"].get_string().value.to_string();
+    pl.fHash    = doc["hash"].get_string().value.to_string();
+    pl.fBLOB    = base64_decode(doc["BLOB"].get_string().value.to_string());
   }
 
   return pl;
