@@ -17,8 +17,8 @@ payload::payload() : fHash("tag_X_iov_Y"),
 
 
 // ----------------------------------------------------------------------
-void payload::print() {
-  cout << printString() << endl;
+void payload::print(bool prtAll) {
+  cout << printString(prtAll) << endl;
 }
 
 

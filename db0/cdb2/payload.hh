@@ -7,7 +7,7 @@
 class payload {
 public:
   payload();
-  void print();
+  void print(bool prtAll = true);
   std::string printString(bool prtAll = true);
   std::string json();
 
