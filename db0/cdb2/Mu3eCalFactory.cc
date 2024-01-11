@@ -24,7 +24,7 @@ Mu3eCalFactory* Mu3eCalFactory::instance(std::string gt, cdbAbs *db) {
 
 // ----------------------------------------------------------------------
 Mu3eCalFactory::Mu3eCalFactory(std::string gt, cdbAbs *db) : fGT(gt), fDB(db) {
-  cout << "Mu3eCalFactory::Mu3eCalFactory(std::string gt, cdbAbs *db) " << endl;
+  if (fVerbose > 0) cout << "Mu3eCalFactory::Mu3eCalFactory(std::string gt, cdbAbs *db) " << endl;
   if (fDB) {
     fTags       = fDB->readTags(fGT);
   }
@@ -42,16 +42,16 @@ Mu3eCalFactory::~Mu3eCalFactory() {
 calAbs* Mu3eCalFactory::createClass(string name) {
   string tag("nada");
   for (auto it : fTags) {
-    cout << "Mu3eCalFactory::createClass> searching " << name << ", looking at " << it << endl; 
+    if (fVerbose > 0) cout << "Mu3eCalFactory::createClass> searching " << name << ", looking at " << it << endl; 
     if (string::npos != it.find(name)) {
       tag = it;
-      cout << "Mu3eCalFactory::createClass> found " << tag << endl;
+      if (fVerbose > 0) cout << "Mu3eCalFactory::createClass> found " << tag << endl;
       break;
     }
   }
 
   if (string::npos != tag.find("nada")) {
-    cout << "Mu3eCalFactory::createClass> ERROR did not find tag containing " << name << endl;
+    if (fVerbose > 0) cout << "Mu3eCalFactory::createClass> ERROR did not find tag containing " << name << endl;
     return 0;
   }
 
