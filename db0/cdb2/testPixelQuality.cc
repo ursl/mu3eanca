@@ -201,8 +201,11 @@ int main(int argc, char* argv[]) {
     hSetup->Draw();
     c1.SaveAs(Form("hSetup-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, nchips, inoise, nrec1));
     
-    grSetup->AddPoint(inoise, hSetup->GetMean());
-    grNoise->AddPoint(inoise, hTime->GetMean());
+    // - this works for ROOT >= 6.24 
+    //    grSetup->AddPoint(inoise, hSetup->GetMean());
+    //    grNoise->AddPoint(inoise, hTime->GetMean());
+    grSetup->SetPoint(grSetup->GetN(), inoise, hSetup->GetMean());
+    grNoise->SetPoint(grNoise->GetN(), inoise, hTime->GetMean());
   }
 
   c1.Clear();
