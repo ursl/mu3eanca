@@ -3,8 +3,6 @@
 
 #include "cdbAbs.hh"
 
-#include <curl/curl.h> 
-
 // ----------------------------------------------------------------------
 // implementation class for a RESTful access of payloads
 // ----------------------------------------------------------------------
