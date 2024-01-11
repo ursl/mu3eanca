@@ -1,33 +1,13 @@
 #include "calAbs.hh"
 
-#include "TFile.h"
-
 #include <chrono>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/stdx.hpp>
-#include <mongocxx/uri.hpp>
-#include <bsoncxx/builder/stream/helpers.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/array.hpp>
-
 #include "base64.hh"
 
-
-using bsoncxx::builder::stream::close_array;
-using bsoncxx::builder::stream::close_document;
-using bsoncxx::builder::stream::document;
-using bsoncxx::builder::stream::finalize;
-using bsoncxx::builder::stream::open_array;
-using bsoncxx::builder::stream::open_document;
-using bsoncxx::builder::basic::sub_array;
-using bsoncxx::builder::basic::sub_document;
-using bsoncxx::builder::basic::make_document;
+#include "cdbUtil.hh"
 
 using namespace std;
 
@@ -57,10 +37,10 @@ void calAbs::update(string hash) {
     return;
   }
 
-  if (fVerbose > 0) cout << "calAbs::update() hash = " << hash << endl;
+  if (fVerbose > 4) cout << "calAbs::update() hash = " << hash << endl;
   
   if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
-    if (fVerbose > 0) cout << "calAbs::getPayload(" << hash
+    if (fVerbose > 2) cout << "calAbs::getPayload(" << hash
                            << ") not cached, retrieve from DB"
                            << endl;
     auto tbegin = std::chrono::high_resolution_clock::now();
@@ -74,7 +54,7 @@ void calAbs::update(string hash) {
     calculate(hash);
     fHash = hash;
   } else {
-    if (fVerbose > 0) cout << "calAbs::getPayload(" << hash
+    if (fVerbose > 4) cout << "calAbs::getPayload(" << hash
                            << ") cached."
                            << endl;
   }
@@ -83,18 +63,6 @@ void calAbs::update(string hash) {
   }
 }
 
-
-// ----------------------------------------------------------------------
-void calAbs::dump2Root(TDirectory *d) {
-  TDirectory *pOld = gFile->CurrentDirectory();
-  d->cd();
-  for (auto it: fTagIOVPayloadMap) {
-    TNamed o(it.first.c_str(), it.second.json().c_str());
-    o.Write();
-  }
-  pOld->cd();
-}
-  
 
 // ----------------------------------------------------------------------
 void calAbs::readPayloadFromFile(string hash, string dir) {
@@ -126,30 +94,55 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
+  fPayloadString = buffer.str();
   
-  cout << "calAbs::readPayloadFromFile() Read " << filename << " hash ->" << hash << "<-" << endl;
-  bsoncxx::document::value doc = bsoncxx::from_json(buffer.str());
-  pl.fComment = string(doc["comment"].get_string().value).c_str();
-  pl.fHash    = string(doc["hash"].get_string().value).c_str();
-  pl.fBLOB    = base64_decode(string(doc["BLOB"].get_string().value));
-
+  pl.fHash    = jsonGetValue(fPayloadString, "hash");
+  pl.fComment = jsonGetValue(fPayloadString, "comment");
+  pl.fBLOB    = base64_decode(jsonGetValue(fPayloadString, "BLOB"));
+  
   fTagIOVPayloadMap.insert(make_pair(hash, pl));
-  cout << "calAbs::readPayloadFromFile() Inserted " << " hash ->" << hash << "<-"
-       << " into fTagIOVPayloadMap" 
-       << endl;
+  if (fVerbose > 0) cout << "calAbs::readPayloadFromFile() Inserted " << " hash ->" << hash << "<-"
+                         << " into fTagIOVPayloadMap" 
+                         << endl;
 }
 
 
 // ----------------------------------------------------------------------
-void calAbs::writePayloadToFile(string hash, string dir, const payload &pl) {
+void calAbs::writePayloadToFile(string hash, string dir) {
 
-	auto builder = document{};
+  payload pl = fTagIOVPayloadMap[hash];
+  pl.fDate = timeStamp();
+  stringstream sstr;
+  sstr << pl.json();
+  // sstr << "{ \"hash\" : \"" << hash << "\", ";
+  // sstr << "\"comment\" : " << pl.fComment << "\", ";
+  // sstr << "\"schema\" : " << pl.fSchema << "\", ";
+  // sstr << "\"date\" : " << pl.fDate << "\", ";
+  // sstr << "\"BLOB\" : \"" << base64_encode(pl.fBLOB) << "\" }" << endl;
 
-  bsoncxx::document::value doc_value = builder
-    << "hash" << pl.fHash
-    << "comment" << pl.fComment
-    << "BLOB" << base64_encode(pl.fBLOB)
-    << finalize; 
+  // -- JSON
+  ofstream JS;
+  JS.open(dir + "/" + hash);
+  if (JS.fail()) {
+    cout << "calAbs::writePayloadToFile> Error failed to open "
+         << dir << "/" << hash
+         << endl;
+  }
+  JS << sstr.str();
+  JS.close();
+  
+}
+
+
+// ----------------------------------------------------------------------
+void calAbs::writePayloadToFile(string hash, string dir, payload &pl) {
+
+  pl.fDate = timeStamp();
+  stringstream sstr;
+  sstr << pl.json();
+  // sstr << "{ \"hash\" : \"" << hash << "\", \"comment\" : ";
+  // sstr << "\"" << pl.fComment << "\", ";
+  // sstr << "\"BLOB\" : \"" << base64_encode(pl.fBLOB) << "\" }" << endl;
 
   // -- JSON
   ofstream JS;
@@ -157,7 +150,20 @@ void calAbs::writePayloadToFile(string hash, string dir, const payload &pl) {
   if (JS.fail()) {
     cout << "calAbs::writePayloadToFile> Error failed to open " << dir << "/" << hash <<  endl;
   }
-  JS << bsoncxx::to_json(doc_value.view()) << endl;
+  JS << sstr.str();
   JS.close();
   
+}
+
+
+// ----------------------------------------------------------------------
+void calAbs::insertPayload(string hash, payload pl) {
+  if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
+    fTagIOVPayloadMap.insert(make_pair(hash, pl));
+    calculate(hash);
+    fHash = hash;
+    cout << "hash ->" << hash << "<- inserted into fTagIOVPayloadMap" << endl;
+  } else {
+    cout << "hash ->" << hash << "<- already in fTagIOVPayloadMap" << endl;
+  }
 }

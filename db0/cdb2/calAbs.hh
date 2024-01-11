@@ -4,8 +4,7 @@
 #include "cdbAbs.hh"
 #include "payload.hh"
 
-#include "TDirectory.h"
-
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -26,7 +25,9 @@ public:
 	void                setVerbosity(int v) {fVerbose = v;}
   virtual std::string getName() {return std::string("blurp");}
   virtual std::string getHash() {return fHash;}
-  virtual void        calculate(std::string hash) {std::cout << "calAbs::calculate() ?" << std::endl;}
+  virtual void        calculate(std::string hash) {
+    std::cout << "calAbs::calculate() ?" << std::endl;
+  }
 
   // -- BLOB creation from fMapConstants. This is base-class dependent and hence needs to be overridden.
   virtual std::string makeBLOB() {
@@ -43,17 +44,23 @@ public:
   }
 
   // -- print the payload. This is base-class dependent and hence needs to be overridden.
-  virtual void printBLOB(std::string, int verbosity = 1) {std::cout << "calAbs::printBLOB() ?" << std::endl;}
+  virtual void printBLOB(std::string, int verbosity = 1) {
+    std::cout << "calAbs::printBLOB() ?" << std::endl;
+  }
 
   // -- direct interactions
   void                readPayloadFromFile(std::string hash, std::string dir);
-  void                writePayloadToFile(std::string hash, std::string dir, const payload &pl);
+  void                writePayloadToFile(std::string hash, std::string dir);
+  void                writePayloadToFile(std::string hash, std::string dir, payload &pl);
   payload             getPayload(std::string hash) {return fTagIOVPayloadMap[hash];}
+  void                insertPayload(std::string hash, payload x);
   
   void                update(std::string hash);
-  void                dump2Root(TDirectory *);
   void                setPrintTiming(int v) {fPrintTiming = v;}
 
+  // -- payload string parsing/extraction
+  std::string getValue(std::string key); 
+  
   // -- accessors for various derived classes
   virtual int         getStatus(unsigned int id, int icol, int irow) {return -9999;}
   
@@ -63,6 +70,7 @@ protected:
   int                                fVerbose{0}, fPrintTiming{0};
   std::vector<int>                   fIOVs;  // set it up initially
   std::map<std::string, payload>     fTagIOVPayloadMap;  // cache
+  std::string                        fPayloadString{""};
 };
 
 #endif

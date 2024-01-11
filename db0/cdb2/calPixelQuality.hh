@@ -27,6 +27,8 @@ public:
   std::string makeBLOB(std::map<unsigned int, std::vector<double> >) override;
   std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
   void printBLOB(std::string, int verbosity = 1) override;
+  void writeCsv(std::string filename);
+  void readCsv(std::string filename);
 
   int         getStatus(unsigned int chipid, int icol, int irow) override;
   
