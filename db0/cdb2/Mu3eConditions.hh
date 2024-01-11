@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 
+#include "runRecord.hh"
+
 class cdbAbs;
 class calAbs;
 class cdb;
@@ -14,7 +16,7 @@ class cdb;
 
 class Mu3eConditions {
 public:
-  static Mu3eConditions* instance(std::string gt = "", cdbAbs *db = 0);
+  static Mu3eConditions* instance(std::string gt = "unset", cdbAbs *db = 0);
 
 	// -- access to metadata (from DB)
   std::string                                  getGlobalTag() {return fGT;}
@@ -33,7 +35,9 @@ public:
 
 	void setRunNumber(int);
 	int  getRunNumber() {return fRunNumber;}
- 
+
+  runRecord getRunRecord(int irun); 
+  
   void    registerCalibration(std::string tag, calAbs *c);
 	void    printCalibrations();
   calAbs* getCalibration(std::string name);
@@ -52,7 +56,7 @@ private:
   std::string fGT{"GT unset"};
   int fVerbose{0}, fPrintTiming{0};
 
-  // -- should be replaced by IOV class
+  // -- could be replaced by IOV class
   int         fRunNumber{-1};
 
 	// -- all global tags in the DB
