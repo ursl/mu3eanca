@@ -132,7 +132,10 @@ void calPixelQuality::printBLOB(std::string sblob, int verbosity) {
       int icol           = blob2Int(getData(ibuffer));
       int irow           = blob2Int(getData(ibuffer));
       unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      if (verbosity > 0) cout << "      icol/irow = " << icol << "/" << irow << " iqual = " << iqual << endl;
+      if (verbosity > 0) cout << "      icol/irow = "
+                              << icol << "/" << irow
+                              << " iqual = " << iqual
+                              << endl;
     }
   }
   if (0 == verbosity) {
@@ -150,7 +153,9 @@ map<unsigned int, vector<double> > calPixelQuality::decodeBLOB(string spl) {
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
   if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calPixelQuality::decodeBLOB> header is wrong. Something is really messed up!" << endl;
+    cout << "XXXXX ERRROR in calPixelQuality::decodeBLOB> header is wrong. "
+         << " Something is really messed up!"
+         << endl;
   }
   while (ibuffer != buffer.end()) {
     // -- chipID
@@ -235,4 +240,85 @@ string calPixelQuality::makeBLOB(map<unsigned int, vector<double> > m) {
     }
   }
   return s.str();
+}
+
+
+// ----------------------------------------------------------------------
+void calPixelQuality::writeCsv(string filename) {
+  string spl("");
+  ofstream OUT(filename); 
+  if (!OUT.is_open()) {
+    cout << string("calPixelQuality::writeCsv> Error, file "
+                   + filename + " not opened for output")
+         << endl;
+  }
+
+  OUT << "# Format: chipID,icol1,irow1,iqual1,icol2,irow2,iqual2,..."
+      << endl;
+  
+  for (auto it: fMapConstants) {
+    stringstream s, spixel;
+    s << it.first;
+    int cnt(0);
+    for (int icol = 0; icol < 256; ++icol) {
+      for (int irow = 0; irow < 250; ++irow) {
+        if (static_cast<int>(it.second.matrix[icol][irow]) != 0) {
+          if (cnt > 0) spixel << ",";
+          spixel << icol << "," << irow << ","
+                 << static_cast<int>(it.second.matrix[icol][irow]);
+          ++cnt;
+        }
+      }
+    }
+    OUT << s.str();
+    if (cnt > 0) OUT << "," << spixel.str();
+    OUT << endl;
+  }
+  OUT.close();
+}
+
+
+// ----------------------------------------------------------------------
+void calPixelQuality::readCsv(string filename) {
+  cout << "calPixelQuality::readCsv> reset fMapConstants" << endl;
+  fMapConstants.clear();
+  
+  string spl("");
+  ifstream INS(filename); 
+  if (!INS.is_open()) {
+    cout << string("calPixelQuality::readCsv> Error, file "
+                   + filename + " not found")
+         << endl;
+  }
+
+  vector<string> vline;
+  while (getline(INS, spl)) {
+    if (string::npos == spl.find("#")) {
+      vline.push_back(spl);
+    }
+  }
+  INS.close();
+
+  for (unsigned int it = 0; it < vline.size(); ++it) {
+    constants a; 
+    vector<string> tokens = split(vline[it], ',');
+    // -- chipID
+    a.id = stoi(tokens[0]);
+    // -- initialize
+    for (int ix = 0; ix < 256; ++ix) {
+      for (int iy = 0; iy < 250; ++iy) {
+        a.matrix[ix][iy] = static_cast<char>(0);
+      }
+    }
+    for (unsigned ipix = 1; ipix < tokens.size(); ipix += 3) {
+      int icol           = stoi(tokens[ipix]);
+      int irow           = stoi(tokens[ipix+1]);
+      unsigned int iqual = stoi(tokens[ipix+2]);
+      a.matrix[icol][irow] = static_cast<char>(iqual);
+    }
+    fMapConstants.insert(make_pair(a.id, a));
+  }
+
+  // -- set iterator over all constants to the start of the map
+  fMapConstantsIt = fMapConstants.begin();
 }

@@ -30,8 +30,8 @@ bool calFibreAlignment::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calFibreAlignment::calFibreAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calFibreAlignment created and registered with tag ->" << fTag << "<-" 
-			 << endl;
+  if (0) 	cout << "calFibreAlignment created and registered with tag ->" << fTag << "<-" 
+               << endl;
 }
 
 
@@ -44,8 +44,7 @@ calFibreAlignment::~calFibreAlignment() {
 // ----------------------------------------------------------------------
 void calFibreAlignment::calculate(string hash) {
   cout << "calFibreAlignment::calculate() with "
-       << "fHash ->" << hash << "<-"
-       << endl;
+       << "fHash ->" << hash << "<- ";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
@@ -53,8 +52,9 @@ void calFibreAlignment::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-  cout << "calFibreAlignment header: " << hex << header << dec << endl;
+  cout << " header: " << hex << header << dec;
 
+  int cntPrint(0);
   while (ibuffer != buffer.end()) {
     constants a; 
     a.id = blob2UnsignedInt(getData(ibuffer));
@@ -69,7 +69,12 @@ void calFibreAlignment::calculate(string hash) {
     a.diameter = blob2Double(getData(ibuffer));
 
     fMapConstants.insert(make_pair(a.id, a));
+    if (cntPrint < -1) {
+      cout << "added fibre ID = " << a.id << " c = " << a.cx << "/" << a.cy << "/" << a.cz << endl;
+      ++cntPrint;
+    }
   }
+  cout << " inserted " << fMapConstants.size() << " constants" << endl;
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();

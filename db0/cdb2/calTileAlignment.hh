@@ -36,6 +36,7 @@ public:
   void printBLOB(std::string, int verbosity = 1) override;
   std::string readCsv(std::string filename);
 
+  void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
   bool        getNextID(uint32_t &ID);
 
 

@@ -30,8 +30,8 @@ bool calTileAlignment::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calTileAlignment::calTileAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calTileAlignment created and registered with tag ->" << fTag << "<-" 
-			 << endl;
+  if (0) 	cout << "calTileAlignment created and registered with tag ->" << fTag << "<-" 
+               << endl;
 }
 
 
@@ -44,8 +44,7 @@ calTileAlignment::~calTileAlignment() {
 // ----------------------------------------------------------------------
 void calTileAlignment::calculate(string hash) {
   cout << "calTileAlignment::calculate() with "
-       << "fHash ->" << hash << "<-"
-       << endl;
+       << "fHash ->" << hash << "<- ";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
@@ -53,8 +52,9 @@ void calTileAlignment::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-  cout << "calTileAlignment header: " << hex << header << dec << endl;
+  cout << "header: " << hex << header << dec;
 
+  int cntPrint(0);
   while (ibuffer != buffer.end()) {
     constants a; 
     a.id = blob2UnsignedInt(getData(ibuffer));
@@ -67,7 +67,12 @@ void calTileAlignment::calculate(string hash) {
     a.dirz = blob2Double(getData(ibuffer));
 
     fMapConstants.insert(make_pair(a.id, a));
+    if (cntPrint < -1) {
+      cout << "added tile ID = " << a.id << " pos = " << a.posx << "/" << a.posy << "/" << a.posz << endl;
+      ++cntPrint;
+    }
   }
+  cout << " inserted " << fMapConstants.size() << " constants" << endl;
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();

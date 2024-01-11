@@ -30,8 +30,8 @@ bool calMppcAlignment::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calMppcAlignment::calMppcAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calMppcAlignment created and registered with tag ->" << fTag << "<-" 
-			 << endl;
+  if (0) 	cout << "calMppcAlignment created and registered with tag ->" << fTag << "<-" 
+               << endl;
 }
 
 
@@ -44,8 +44,7 @@ calMppcAlignment::~calMppcAlignment() {
 // ----------------------------------------------------------------------
 void calMppcAlignment::calculate(string hash) {
   cout << "calMppcAlignment::calculate() with "
-       << "fHash ->" << hash << "<-"
-       << endl;
+       << "fHash ->" << hash << "<- ";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
@@ -53,8 +52,9 @@ void calMppcAlignment::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
-  cout << "calMppcAlignment header: " << hex << header << dec << endl;
+  cout << "header: " << hex << header << dec;
 
+  int cntPrint(0);
   while (ibuffer != buffer.end()) {
     constants a; 
     a.mppc = blob2UnsignedInt(getData(ibuffer));
@@ -66,13 +66,16 @@ void calMppcAlignment::calculate(string hash) {
     a.colz = blob2Double(getData(ibuffer));
     a.ncol = blob2Int(getData(ibuffer));
 
-    cout << "mppc = " << a.mppc
-         << " v = " << a.vx << "/" << a.vy << "/" << a.vz
-         << " col = " << a.colx << "/" << a.coly << "/" << a.colz
-         << endl;
-    
     fMapConstants.insert(make_pair(a.mppc, a));
+    if (cntPrint < -1) {
+      cout << "added mppc = " << a.mppc
+           << " v = " << a.vx << "/" << a.vy << "/" << a.vz
+           << " col = " << a.colx << "/" << a.coly << "/" << a.colz
+           << endl;
+      ++cntPrint;
+    }
   }
+  cout << " inserted " << fMapConstants.size() << " constants" << endl;
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
