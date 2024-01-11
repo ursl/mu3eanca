@@ -1,5 +1,8 @@
 #include "Mu3eCalFactory.hh"
 
+#include <algorithm>
+#include <chrono>
+
 #include "calPixelAlignment.hh"
 #include "calFibreAlignment.hh"
 #include "calMppcAlignment.hh"
