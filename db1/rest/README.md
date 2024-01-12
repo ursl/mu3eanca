@@ -18,6 +18,8 @@ pc11740>sudo npm run start
 pc11740>sudo /usr/local/bin/pm2 start index.mjs 
 ```
 
+The following works within PSI's network. pc11740 is not reachable from outside (sigh)!
+
 ```
 moor>curl pc11740/cdb/findOne/runrecords/12
 {"_id":"659bc705e3099e1b6409e7b1","run":"12","runStart":"2024-01-05 10:49:09","runEnd":"unset","runDescription":"unset","runOperators":"unset","nFrames":"-9999","beamMode":"-9999","beamCurrent":"-9999","magnetCurrent":"-9999","configurationKey":"unset"}
