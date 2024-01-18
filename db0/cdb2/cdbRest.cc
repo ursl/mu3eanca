@@ -126,7 +126,7 @@ map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
 runRecord cdbRest::getRunRecord(int irun) {
   // -- initialize with default
   std::stringstream sspl;
-  sspl << "(cdbJSON>  runRecord for run = " << to_string(irun)
+  sspl << "(cdbRest>  runRecord for run = " << to_string(irun)
        << " not found)";
   runRecord rr;
   rr.fRunDescription = sspl.str();
@@ -146,6 +146,21 @@ runRecord cdbRest::getRunRecord(int irun) {
   rr.fConfigurationKey = jsonGetValue(fCurlReadBuffer, "configurationKey");
   
   return rr;
+}
+
+// ----------------------------------------------------------------------
+string cdbRest::getConfig(string hash) {
+  // -- initialize with default
+  std::stringstream sspl;
+  sspl << "(cdbRest>  config for hash = " << hash
+       << " not found)";
+  string sConfig = sspl.str();
+  
+  fCurlReadBuffer.clear();
+  doCurl("configs", hash, "findOne");
+  stripOverhead();
+  sConfig = fCurlReadBuffer;
+  return sConfig;
 }
 
 

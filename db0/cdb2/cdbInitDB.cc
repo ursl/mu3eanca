@@ -1,17 +1,12 @@
 #include <iostream>
+#include <string.h>
+#include <stdio.h>
+
 #include <fstream>
 #include <vector>
 #include <sstream>
 #include <dirent.h>  /// for directory reading
 
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/stdx.hpp>
-#include <mongocxx/uri.hpp>
-#include <mongocxx/instance.hpp>
-#include <bsoncxx/builder/stream/helpers.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/array.hpp>
 #include <chrono>
 
 #include "cdbUtil.hh"
@@ -26,14 +21,6 @@
 
 #include "calFibreAlignment.hh"
 
-
-using bsoncxx::builder::stream::close_array;
-using bsoncxx::builder::stream::close_document;
-using bsoncxx::builder::stream::document;
-using bsoncxx::builder::stream::finalize;
-using bsoncxx::builder::stream::open_array;
-using bsoncxx::builder::stream::open_document;
-
 using namespace std;
 
 // ----------------------------------------------------------------------
@@ -47,7 +34,7 @@ using namespace std;
 //
 // 
 // -j JSONDIR  output directory with subdirectories globaltags, tags, payloads
-// -m MODE     "cr2022", "mcideal", "dc2023"
+// -m MODE     "mcideal", "dc2023"
 //
 // requires ../ascii/*.csv
 //
@@ -61,16 +48,15 @@ using namespace std;
 // 
 // ----------------------------------------------------------------------
 
-// ----------------------------------------------------------------------=
+// ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
 
 	// ----------------------------------------------------------------------
 	// -- global tags
 	// ----------------------------------------------------------------------
 	map<string, vector<string>> iniGlobalTags = {
-		{"cr2022", {"pixelalignment", "pixelquality", "pixelcablingmap"} },
-		{"mcideal", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment", "pixelquality"} },
-		{"dc2023", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment", "pixelquality"} }
+		{"mcidealv5.0", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment"} },
+		{"mcidealv5.1", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment"} }
   };
 
   
@@ -83,84 +69,85 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-m"))  {mode    = argv[++i];}
     if (!strcmp(argv[i], "-v"))  {verbose = 1;}
   }
-  
+
   // -- handle meta-mode
   if (string::npos != mode.find("all")) {
     for (auto it: iniGlobalTags) {
-      system(string("bin/cdbInitDB -j " + jsondir + " -m " + it.first).c_str());
+      system(string(string(argv[0]) + " -j " + jsondir + " -m " + it.first).c_str());
     }
   }
   
   // -- check whether directories for JSONs already exist
-  DIR *folder = opendir(string(jsondir).c_str());
-  if (folder == NULL) {
-    system(string("mkdir -p " + jsondir + "/payloads").c_str());
-    system(string("mkdir -p " + jsondir + "/globaltags").c_str());
-    system(string("mkdir -p " + jsondir + "/iovs").c_str());
-    folder = opendir(string(jsondir).c_str());
+  vector<string> testdirs{jsondir,
+                          jsondir + "/globaltags", 
+                          jsondir + "/tags", 
+                          jsondir + "/payloads",
+                          jsondir + "/runrecords",
+                          jsondir + "/configs",
+  };
+  for (auto it: testdirs) {
+    DIR *folder = opendir(it.c_str());
+    if (folder == NULL) {
+      cout << "creating " << it << endl;
+      system(string("mkdir -p " + it).c_str());
+    } else {
+      closedir(folder);
+    }
   }
-  closedir(folder);
-
  
   ofstream JS;
 
-	auto builder = document{};
-
-  mongocxx::database db;
-	mongocxx::collection globaltags;
-	mongocxx::collection iovs;
-	mongocxx::collection payloads;
-    
 	string jdir  = jsondir + "/globaltags";
   
   for (auto igt : iniGlobalTags) {
     if (string::npos == igt.first.find(mode)) continue;
-		auto array_builder = bsoncxx::builder::basic::array{};
+    vector<string> arrayBuilder;
 		for (auto it : igt.second) {
       string tag = it + "_" + igt.first; 
-      array_builder.append(tag);
+      arrayBuilder.push_back(tag);
     }
-		bsoncxx::document::value doc_value = builder
-			<< "gt" << igt.first
-			<< "tags" << array_builder
-			<< finalize; 
+    stringstream sstr;
+    sstr << "{ \"gt\" : \"" << igt.first << "\", \"tags\" : ";
+    sstr << jsFormat(arrayBuilder);
+    sstr << " }" << endl;
+    
     
     // -- JSON
     JS.open(jdir + "/" + igt.first);
     if (JS.fail()) {
       cout << "Error failed to open " << jdir << "/" << igt.first << endl;
     }
-    JS << bsoncxx::to_json(doc_value.view()) << endl;
-    cout << bsoncxx::to_json(doc_value.view()) << endl;
+    JS << sstr.str();
+    cout << sstr.str();
     JS.close();
   }
 
  
 	// ----------------------------------------------------------------------
-	// -- iovs
+	// -- tags/iovs
 	// ----------------------------------------------------------------------
-	jdir  = jsondir + "/iovs";
+	jdir  = jsondir + "/tags";
   vector<int> vIni{1};
   for (auto igt : iniGlobalTags) {
     if (string::npos == igt.first.find(mode)) continue;
 		for (auto it : igt.second) {
       string tag = it + "_" + igt.first; 
+      vector<int> arrayBuilder;
+      for (auto it : vIni) arrayBuilder.push_back(it);
 
-      auto array_builder = bsoncxx::builder::basic::array{};
-      for (auto it : vIni) array_builder.append(it);
-      bsoncxx::document::value doc_value = builder
-        << "tag" << tag
-        << "iovs" << array_builder
-        << finalize; 
-      
+      stringstream sstr;
+      sstr << "{ \"tag\" : \"" << tag << "\", \"iovs\" : ";
+      sstr << jsFormat(arrayBuilder);
+      sstr << " }" << endl;
+   
       // -- JSON
       JS.open(jdir + "/" + tag);
       if (JS.fail()) {
         cout << "Error failed to open " << jdir << "/" << tag << endl;
       }
-      JS << bsoncxx::to_json(doc_value.view()) << endl;
+      JS << sstr.str();
+      cout << sstr.str();
       JS.close();
-      
     }
   }
   
@@ -170,7 +157,6 @@ int main(int argc, char* argv[]) {
   payload pl;
 	jdir = jsondir + "/payloads";
 
-  vector<string> tags{"cr2022", "mcideal", "dc2023"};
   string spl(""), hash(""), result("");
 
   for (auto igt: iniGlobalTags) {
@@ -242,22 +228,7 @@ int main(int argc, char* argv[]) {
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
-    
-    // -- pixelcablingmap
-    calPixelCablingMap *ccm = new calPixelCablingMap();
-    filename = "../ascii/pixelcablingmap-" + it + ".json";
-    result = ccm->readJson(filename);
-    if (string::npos == result.find("Error")) {
-      spl = ccm->makeBLOB();
-      hash = "tag_pixelcablingmap_" + it + "_iov_1";
-      pl.fHash = hash; 
-      pl.fComment = it + "pixel cabling map initialization";
-      pl.fBLOB = spl;
-      if (verbose) ccm->printBLOB(spl); 
-      ccm->writePayloadToFile(hash, jdir, pl); 
-    } else {
-      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-    }
+
 
     // -- pixelquality: zero problematic pixels for all sensors present in cpa
     calPixelQuality *cpq = new calPixelQuality();
@@ -265,8 +236,22 @@ int main(int argc, char* argv[]) {
     map<unsigned int, vector<double> > m;
     while (cpa->getNextID(uid)) {
       vector<double> v;
+      if (0) {
+        if (uid%2 == 0) {
+          v.push_back(uid%7);
+          v.push_back(uid%5);
+          v.push_back(1.);
+        } else {
+          v.push_back(uid%7);
+          v.push_back(uid%5);
+          v.push_back(1.);
+          v.push_back(uid%17);
+          v.push_back(uid%25);
+          v.push_back(1.);
+        }
+      }
       m.insert(make_pair(uid, v));
-      // cout << "sensor = " << uid << " vector size = " << v.size() << endl;
+      //      cout << "sensor = " << uid << " vector size = " << v.size() << endl;
     }
     spl = cpq->makeBLOB(m);
     hash = string("tag_pixelquality_" + it + "_iov_1");
@@ -276,8 +261,69 @@ int main(int argc, char* argv[]) {
     pl.fBLOB = spl;
     if (verbose) cpq->printBLOB(spl); 
     cpq->writePayloadToFile(hash, jdir, pl); 
+    cpq->insertPayload(hash, pl);
+    cpq->writeCsv("pixelquality-example.csv");
+    
 
+    if (0) {
+      // -- pixelcablingmap
+      calPixelCablingMap *ccm = new calPixelCablingMap();
+      filename = "../ascii/pixelcablingmap-" + it + ".json";
+      result = ccm->readJson(filename);
+      if (string::npos == result.find("Error")) {
+        spl = ccm->makeBLOB();
+        hash = "tag_pixelcablingmap_" + it + "_iov_1";
+        pl.fHash = hash; 
+        pl.fComment = it + "pixel cabling map initialization";
+        pl.fBLOB = spl;
+        if (verbose) ccm->printBLOB(spl); 
+        ccm->writePayloadToFile(hash, jdir, pl); 
+      } else {
+        cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+      }
+    }
   }
 
+  // -- create a runRecord
+  runRecord rr;
+  rr.fRun = 12;
+  rr.fRunStart = timeStamp();
+
+  jdir = jsondir + "/runrecords";
+  JS.open(jdir + "/" + to_string(rr.fRun));
+  if (JS.fail()) {
+    cout << "cdbInitDB> Error failed to open " << jdir << "/" << to_string(rr.fRun) <<  endl;
+  }
+  JS << rr.json() << endl;
+  JS.close();
+
+
+
+  // -- create configs
+  for (auto igt: iniGlobalTags) {
+    
+    string filename = "../ascii/detcfg.json";
+    ifstream INS;
+    INS.open(filename);
+    if (INS.fail()) {
+      cout << "Error failed to open ->" << filename << "<-" << endl;
+      continue;
+    }
+    
+    std::stringstream buffer;
+    buffer << INS.rdbuf();
+    INS.close();
+
+    jdir = jsondir + "/configs";
+    hash = "detcfg_" + igt.first + ".json";
+    
+    JS.open(jdir + "/" + hash);
+    if (JS.fail()) {
+      cout << "cdbInitDB> Error failed to open " << jdir << "/" << hash <<  endl;
+    }
+    JS << buffer.str();
+    JS.close();
+  }
+  
 	return 0;
 }
