@@ -8,6 +8,7 @@
 #
 #
 # History
+#         2024/01/18 update to 2024jan MDC
 #         2023/09/13 change target directory
 #         2023/09/12 migrated out from proCalRec
 # ----------------------------------------------------------------------
@@ -27,10 +28,10 @@ getopts('n:t:');
 # -- default values
 # ----------------------------------------------------------------------
 # -- source data directory on mu3ebe (keep my directory, else all is transferred in one go)
-my $pcrMu3eBEDir = ".ursl/data";
-#my $pcrMu3eBEDir = "/data1/datachallenge";
+#my $pcrMu3eBEDir = ".ursl/data";
+my $pcrMu3eBEDir = "/data1/datachallenge/data/";
 # -- target data directory on merlin
-my $pcrDataDir   = "/data/experiment/mu3e/data/2023/datachallenge/data/raw";
+my $pcrDataDir   = "/data/experiment/mu3e/data/2024/datachallenge/data/raw";
 
 
 while (1) {
