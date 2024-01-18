@@ -162,6 +162,34 @@ runRecord cdbJSON::getRunRecord(int irun) {
 
 
 // ----------------------------------------------------------------------
+string cdbJSON::getConfig(string hash) {
+  // -- initialize with default
+  std::stringstream sspl;
+  sspl << "(cdbJSON>  config for hash = " << hash
+       << " not found)";
+  string sConfig(sspl.str());
+  
+  // -- read runRecord for run irun 
+  ifstream INS;
+  string filename = fURI + "/configs/" + hash;
+  INS.open(filename);
+  if (INS.fail()) {
+    cout << "Error failed to open ->" << filename << "<-" << endl;
+    return sConfig;
+  }
+
+  std::stringstream buffer;
+  buffer << INS.rdbuf();
+  INS.close();
+  
+  cout << "cdbJSON::getConfig() Read " << filename << endl;
+  sConfig = buffer.str();
+  
+  return sConfig;
+}
+
+
+// ----------------------------------------------------------------------
 payload cdbJSON::getPayload(string hash) {
   // -- initialize with default
   std::stringstream sspl;

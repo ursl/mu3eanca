@@ -24,7 +24,10 @@ public:
 
   // -- access to runRecords
   virtual runRecord       getRunRecord(int irun) {return runRecord();}
-  
+
+  // -- access to configs
+  virtual std::string     getConfig(std::string hash) {return std::string("");}
+
   // -- access to payloads and IOVs
   //  virtual payload         getPayload(int irun, std::string t);
   virtual payload         getPayload(std::string hash) {return payload();}

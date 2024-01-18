@@ -16,6 +16,7 @@ public:
   void                 init();
   runRecord            getRunRecord(int irun) override;
   payload              getPayload(std::string hash) override;
+  std::string          getConfig(std::string hash) override;
 
   std::vector<std::string>                 readGlobalTags() override;
   std::vector<std::string>                 readTags(std::string gt) override;
