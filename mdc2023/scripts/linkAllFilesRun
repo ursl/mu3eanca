@@ -4,10 +4,11 @@
 # linkAllFilesRun
 # ===============
 #
-# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/linkAllFilesRun -d dir -r 00265
+# Usage:   ~/.ursl/mu3eanca/mdc2023/scripts/linkAllFilesRun -d /data1/datachallenge/data -r run04
 #
 #
 # History
+#         2024/01/18 adapt to data challenge 2024
 #         2023/08/11 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -20,7 +21,7 @@ use File::Basename;
 use Getopt::Std;
 getopts('d:r:');
 
-my @files  = glob("$opt_d/run*$opt_r*");
+my @files  = glob("$opt_d/$opt_r*");
 
 foreach $file (@files) {
     my($barefile, $directories) = fileparse($file);
