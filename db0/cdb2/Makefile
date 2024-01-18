@@ -5,6 +5,7 @@ ROOTLDFLAGS   = $(shell root-config --ldflags)
 
 LHOST = $(shell hostname)
 
+# -- ARGH!? But it works ...
 ifneq (,$(findstring merlin,$(LHOST)))
   INCMONGODB    = -I/psi/home/langenegger/data/mongo/install/include/mongocxx/v_noabi
   INCMONGODB   += -I/psi/home/langenegger/data/mongo/install/include/bsoncxx/v_noabi
@@ -17,6 +18,14 @@ else ifneq (,$(findstring moor,$(LHOST)))
   INCMONGODB   += -I/opt/homebrew/include/bsoncxx/v_noabi
   LIBMONGODB    = -L/opt/homebrew/lib -lmongocxx -lbsoncxx
   LIBCURL       = -L/opt/homebrew/lib -lcurl
+  LIBBOOST      = -L/usr/lib64 -lboost_serialization
+  SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
+else ifneq (,$(findstring mu3ebe,$(LHOST)))
+  INCMONGODB    = -I/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/include/mongocxx/v_noabi
+  INCMONGODB   += -I/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/include/bsoncxx/v_noabi
+  INCMONGODB   += -I/home/mu3e/.ursl/include
+  LIBMONGODB    = -L/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/lib64 -lmongocxx -lbsoncxx
+  LIBCURL       = -L/home/mu3e/.ursl/lib64 -lcurl
   LIBBOOST      = -L/usr/lib64 -lboost_serialization
   SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
 else
