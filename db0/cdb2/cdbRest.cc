@@ -153,8 +153,11 @@ cfgPayload cdbRest::getConfig(string hash) {
 
   fCurlReadBuffer.clear();
   doCurl("configs", hash, "findOne");
+  cout << fCurlReadBuffer << endl;
   stripOverhead();
 
+  
+  
   cfgPayload cfg;
 
   // -- initialize with default
@@ -166,7 +169,7 @@ cfgPayload cdbRest::getConfig(string hash) {
   
   cfg.fHash      = jsonGetValue(fCurlReadBuffer, "cfgHash");
   cfg.fDate      = jsonGetValue(fCurlReadBuffer, "cfgDate");
-  cfg.fCfgString = jsonGetCfgString(fCurlReadBuffer, "cfgString");
+  cfg.fCfgString = base64_decode(jsonGetCfgString(fCurlReadBuffer, "cfgString"));
   return cfg;
 }
 
