@@ -37,10 +37,12 @@ using namespace std;
 // -m MODE     "mcideal", "dc2023"
 //
 // requires ../ascii/*.csv
+// requires run -> mu3e/run (i.e. a symlink pointing to the run directory
+//                           with the config template files)
 //
 // Usage examples
 //
-// merlin> bin/cdbInitDB -j ~/data/mdc2023/json/ -m dc2023
+// merlin> bin/cdbInitDB -j ~/data/mdc2023/json/ -m all
 //
 // moor>   bin/cdbInitDB -j ~/data/mu3e/json -m cr2022
 // moor>   bin/cdbInitDB -j ~/data/mu3e/json -m mcideal
