@@ -168,7 +168,7 @@ cfgPayload cdbJSON::getConfig(string hash) {
   sspl << "(cdbJSON>  config for hash = " << hash
        << " not found)";
   cfgPayload cfg;
-  
+
   // -- read runRecord for run irun 
   ifstream INS;
   string filename = fURI + "/configs/" + hash;
@@ -181,12 +181,17 @@ cfgPayload cdbJSON::getConfig(string hash) {
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
-  //  cout << "cdbJSON::getConfig() Read " << filename << endl;
+  // cout << "cdbJSON::getConfig() Read file ->" << filename << "<-"
+  //      << endl
+  //      << buffer.str()
+  //      << "----------------------------------------------------------------------"
+  //      << endl;
 
   string jstring = buffer.str();
   cfg.fHash      = jsonGetValue(jstring, "cfgHash");
   cfg.fDate      = jsonGetValue(jstring, "cfgDate");
-  cfg.fCfgString = jsonGetCfgString(jstring, "cfgString");
+  cfg.fCfgString = base64_decode(jsonGetCfgString(jstring, "cfgString"));
+
   
   return cfg;
 }
