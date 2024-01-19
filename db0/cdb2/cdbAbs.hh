@@ -7,6 +7,7 @@
 
 #include "payload.hh"
 #include "runRecord.hh"
+#include "cfgPayload.hh"
 
 class calAbs;
 
@@ -26,7 +27,7 @@ public:
   virtual runRecord       getRunRecord(int irun) {return runRecord();}
 
   // -- access to configs
-  virtual std::string     getConfig(std::string hash) {return std::string("");}
+  virtual cfgPayload      getConfig(std::string hash) {return cfgPayload();}
 
   // -- access to payloads and IOVs
   //  virtual payload         getPayload(int irun, std::string t);
