@@ -227,7 +227,8 @@ string Mu3eConditions::getConfString(string cfgName) {
   if (fVerbose > 2) cout << "Mu3eConditions::getConfString(" << cfgName
                          << ") -> hash = " << hash
                          << endl;
-  return fDB->getConfig(hash).fCfgString;
+  cfgPayload js =  fDB->getConfig(hash);
+  return js.fCfgString;
 }
 
 
