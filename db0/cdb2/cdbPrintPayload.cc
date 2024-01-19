@@ -4,14 +4,6 @@
 #include <sstream>
 #include <dirent.h>  /// for directory reading
 
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/stdx.hpp>
-#include <mongocxx/uri.hpp>
-#include <mongocxx/instance.hpp>
-#include <bsoncxx/builder/stream/helpers.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/array.hpp>
 #include <chrono>
 
 #include "cdbUtil.hh"
@@ -58,6 +50,10 @@ int main(int argc, char* argv[]) {
   if (string::npos != filename.find("pixelalignment")) {
     c = new calPixelAlignment();
     c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->printBLOB(c->getPayload(hash).fBLOB);
   } else if (string::npos != filename.find("fibrealignment")) {
     c = new calFibreAlignment();
