@@ -236,6 +236,22 @@ string jsonGetValue(string& jstring, string key) {
 }
 
 
+
+// ----------------------------------------------------------------------
+string jsonGetCfgString(std::string& jstring, std::string key) {
+  string::size_type s0 = jstring.find(key);
+  s0 = jstring.find(":", s0);
+  s0 = jstring.find("\"", s0);
+  string result = jstring.substr(s0);
+  ltrim(result);
+
+  // -- there is another } to trim
+  result.pop_back();
+  replaceAll(result, "\"", "");
+  return result;
+}
+
+
 // ----------------------------------------------------------------------
 vector<string> jsonGetValueVector(string& jstring, string key) {
   vector<string> result;
