@@ -48,6 +48,18 @@ router.get("/findOne/payloads/:id", async (req, res) => {
 });
 
 
+// Get a single configuration 
+router.get("/findOne/configs/:id", async (req, res) => {
+  console.log("serving /findOne/configs/" + req.params.id);
+  let collection = await db.collection("configs");
+  let query = {hash: req.params.id};
+  let result = await collection.findOne(query);
+
+  if (!result) res.send("Not found").status(404);
+  else res.send(result).status(200);
+});
+
+
 // Get all globaltags
 router.get("/findAll/globaltags", async (req, res) => {
   console.log("serving /findAll/globaltags/" + req.params.id);
