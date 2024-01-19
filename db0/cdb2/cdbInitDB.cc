@@ -300,29 +300,42 @@ int main(int argc, char* argv[]) {
 
 
   // -- create configs
+  vector<string> conffiles = {
+    "detector.json", 
+    "trirec.conf", "vertex.conf"
+  };
+  
   for (auto igt: iniGlobalTags) {
-    
-    string filename = "../ascii/detcfg.json";
-    ifstream INS;
-    INS.open(filename);
-    if (INS.fail()) {
-      cout << "Error failed to open ->" << filename << "<-" << endl;
-      continue;
-    }
-    
-    std::stringstream buffer;
-    buffer << INS.rdbuf();
-    INS.close();
+    for (auto ic: conffiles) {
+      string cfgname = ic.substr(0, ic.find(".")); 
+      string filename = "run/" + ic;
+      ifstream INS;
+      INS.open(filename);
+      if (INS.fail()) {
+        cout << "Error failed to open ->" << filename << "<-" << endl;
+        continue;
+      }
+      
+      std::stringstream buffer;
+      buffer << INS.rdbuf();
+      INS.close();
+      
+      jdir = jsondir + "/configs";
+      hash = "cfg_" + cfgname + "_" + igt.first;
+      
+      JS.open(jdir + "/" + hash);
+      if (JS.fail()) {
+        cout << "cdbInitDB> Error failed to open " << jdir << "/" << hash <<  endl;
+      }
 
-    jdir = jsondir + "/configs";
-    hash = "detcfg_" + igt.first + ".json";
-    
-    JS.open(jdir + "/" + hash);
-    if (JS.fail()) {
-      cout << "cdbInitDB> Error failed to open " << jdir << "/" << hash <<  endl;
+      cfgPayload cfg;
+      cfg.fHash = hash;
+      cfg.fDate = timeStamp();
+      cfg.fCfgString = buffer.str();
+      
+      JS << cfg.json();
+      JS.close();
     }
-    JS << buffer.str();
-    JS.close();
   }
   
 	return 0;

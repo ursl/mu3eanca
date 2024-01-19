@@ -149,18 +149,25 @@ runRecord cdbRest::getRunRecord(int irun) {
 }
 
 // ----------------------------------------------------------------------
-string cdbRest::getConfig(string hash) {
-  // -- initialize with default
-  std::stringstream sspl;
-  sspl << "(cdbRest>  config for hash = " << hash
-       << " not found)";
-  string sConfig = sspl.str();
-  
+cfgPayload cdbRest::getConfig(string hash) {
+
   fCurlReadBuffer.clear();
   doCurl("configs", hash, "findOne");
   stripOverhead();
-  sConfig = fCurlReadBuffer;
-  return sConfig;
+
+  cfgPayload cfg;
+
+  // -- initialize with default
+  std::stringstream sspl;
+  sspl << "(cdbRest>  hash = " << hash 
+       << " not found)";
+  payload pl;
+  cfg.fCfgString = sspl.str();
+  
+  cfg.fHash      = jsonGetValue(fCurlReadBuffer, "cfgHash");
+  cfg.fDate      = jsonGetValue(fCurlReadBuffer, "cfgDate");
+  cfg.fCfgString = jsonGetValue(fCurlReadBuffer, "cfgString");
+  return cfg;
 }
 
 
