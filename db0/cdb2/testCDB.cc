@@ -81,19 +81,20 @@ int main(int argc, char* argv[]) {
     calAbs *cal0 = pDC->createClass("pixelalignment_");
     if (verbose > 0) cal0->setVerbosity(verbose);
     
-    // // -- calibration classes instantiation and registration must happen before setting the run number in the CBD
-    // cdbClassFactory *cdbcf = cdbClassFactory::instance(pDB);
-    // if (verbose > 0) cdbcf->setVerbosity(verbose);
-    
-    // calAbs *cal0 = cdbcf->createClass("pixelalignment_");
-    // if (verbose > 0) cal0->setVerbosity(verbose);
-    
     pDC->setRunNumber(run);
     cout << "set run number to " << pDC->getRunNumber() << endl;
     printStuff(pDB, gt);
     cout << "----------------------------------------------------------------------" << endl;
   } else if (1 == mode) {
     printAll(pDB);
+  } else if (2 == mode) {
+    cout << "Test configuration" << endl;
+    Mu3eConditions *pDC = Mu3eConditions::instance();
+    string sconfVtx = pDC->getConfString("vertex");
+    cout << "vertex configuration" << endl;
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << sconfVtx << endl;
+    cout << "----------------------------------------------------------------------" << endl;
   }
   return 0;
 }
@@ -146,8 +147,6 @@ void aFewRuns(cdbAbs *db, string gt, calAbs *cal) {
     // cout << "vx[33] = " << vx << endl;
   }   
 }
-    
-  
 
 
 // ----------------------------------------------------------------------
@@ -167,18 +166,5 @@ void printAll(cdbAbs *db) {
     }
   }
 
-  cout << "Test configuration" << endl;
-  Mu3eConditions *pDC = Mu3eConditions::instance();
-  string sconfDet = pDC->getConfString("detector");
-  string sconfVtx = pDC->getConfString("vertex");
-  
-  cout << "detector configuration" << endl;
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << sconfDet << endl;
-  cout << "----------------------------------------------------------------------" << endl;
-
-  cout << "vertex configuration" << endl;
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << sconfVtx << endl;
-  cout << "----------------------------------------------------------------------" << endl;
+  return;
 }
