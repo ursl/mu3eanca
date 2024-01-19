@@ -166,5 +166,19 @@ void printAll(cdbAbs *db) {
       }
     }
   }
+
+  cout << "Test configuration" << endl;
+  Mu3eConditions *pDC = Mu3eConditions::instance();
+  string sconfDet = pDC->getConfString("detector");
+  string sconfVtx = pDC->getConfString("vertex");
   
+  cout << "detector configuration" << endl;
+  cout << "----------------------------------------------------------------------" << endl;
+  cout << sconfDet << endl;
+  cout << "----------------------------------------------------------------------" << endl;
+
+  cout << "vertex configuration" << endl;
+  cout << "----------------------------------------------------------------------" << endl;
+  cout << sconfVtx << endl;
+  cout << "----------------------------------------------------------------------" << endl;
 }
