@@ -37,6 +37,9 @@ public:
 	int  getRunNumber() {return fRunNumber;}
 
   runRecord getRunRecord(int irun); 
+
+  std::string getConfString(std::string cfgName);
+  std::string getConfStringWithHash(std::string cfgHash);
   
   void    registerCalibration(std::string tag, calAbs *c);
 	void    printCalibrations();

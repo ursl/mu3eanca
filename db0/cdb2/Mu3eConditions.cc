@@ -219,3 +219,20 @@ string Mu3eConditions::getHash(int runnumber, string tag) {
 runRecord Mu3eConditions::getRunRecord(int irun) {
   return fDB->getRunRecord(irun);
 }
+
+
+// ----------------------------------------------------------------------
+string Mu3eConditions::getConfString(string cfgName) {
+  string hash = "cfg_" + cfgName + "_" + fGT;
+  if (fVerbose > 2) cout << "Mu3eConditions::getConfString(" << cfgName
+                         << ") -> hash = " << hash
+                         << endl;
+  return fDB->getConfig(hash).fCfgString;
+}
+
+
+// ----------------------------------------------------------------------
+string Mu3eConditions::getConfStringWithHash(string hash) {
+  if (fVerbose > 2) cout << "Mu3eConditions::getConfStringWithHash(" << hash << ") " << endl;
+  return fDB->getConfig(hash).fCfgString;
+}
