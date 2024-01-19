@@ -29,6 +29,7 @@ std::string jsFormat(std::vector<std::string>);
 std::string jsFormat(std::vector<int>);
 //std::string jsFormat(std::vector<double>); 
 std::string jsonGetValue(std::string& jstring, std::string key);
+std::string jsonGetCfgString(std::string& jstring, std::string key);
 std::string jsonGetVector(std::string& jstring, std::string key);
 std::vector<std::string> jsonGetValueVector(std::string& jstring, std::string key);
 std::vector<std::string> jsonGetVectorVector(std::string& jstring, std::string key);
