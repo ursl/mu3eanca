@@ -38,12 +38,14 @@ using namespace std;
 //    globaltags/*
 //    tags/*
 //    payloads/*
+//    configs/*
 //
 // Usage:
 // ../bin/syncCloud --dir globaltags
 // ../bin/syncCloud --dir tags
 // ../bin/syncCloud --dir payloads
 // ../bin/syncCloud --dir runrecords
+// ../bin/syncCloud --dir configs
 // 
 // ----------------------------------------------------------------------
 
@@ -129,7 +131,13 @@ int main(int argc, char* argv[]) {
     INS.close();
 
 
-    auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
+    if (gDBX) {
+      cout << "insert 1" << endl
+           << collectionContents
+           << endl;       
+    } else {
+      auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
+    }
   }
   
 	return 0;
