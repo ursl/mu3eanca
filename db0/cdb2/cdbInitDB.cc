@@ -331,7 +331,7 @@ int main(int argc, char* argv[]) {
       cfgPayload cfg;
       cfg.fHash = hash;
       cfg.fDate = timeStamp();
-      cfg.fCfgString = buffer.str();
+      cfg.fCfgString = base64_encode(buffer.str());
       
       JS << cfg.json();
       JS.close();
