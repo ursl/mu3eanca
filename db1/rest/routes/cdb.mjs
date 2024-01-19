@@ -52,7 +52,7 @@ router.get("/findOne/payloads/:id", async (req, res) => {
 router.get("/findOne/configs/:id", async (req, res) => {
   console.log("serving /findOne/configs/" + req.params.id);
   let collection = await db.collection("configs");
-  let query = {hash: req.params.id};
+  let query = {cfgHash: req.params.id};
   let result = await collection.findOne(query);
 
   if (!result) res.send("Not found").status(404);
