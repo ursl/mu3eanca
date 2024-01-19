@@ -8,7 +8,7 @@ class cfgPayload {
 public:
   cfgPayload();
   void print(bool prtAll = true);
-  std::string printString(bool prtAll = true);
+  std::string getString(bool prtAll = true);
   std::string json();
 
   std::string fHash;

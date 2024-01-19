@@ -17,12 +17,12 @@ cfgPayload::cfgPayload() : fHash("cfg_X_gt"),
 
 // ----------------------------------------------------------------------
 void cfgPayload::print(bool prtAll) {
-  cout << printString(prtAll) << endl;
+  cout << getString(prtAll) << endl;
 }
 
 
 // ----------------------------------------------------------------------
-string cfgPayload::printString(bool prtAll) {
+string cfgPayload::getString(bool prtAll) {
   std::stringstream sstr;
   sstr << "/**/hash ->" << fHash << endl
        << "<- /**/date ->" << fDate << endl
