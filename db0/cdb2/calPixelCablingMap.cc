@@ -5,27 +5,6 @@
 #include <iostream>
 #include <sstream>
 
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/stdx.hpp>
-#include <bsoncxx/stdx/string_view.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/array.hpp>
-#include <mongocxx/stdx.hpp>
-
-
-using bsoncxx::builder::stream::close_array;
-using bsoncxx::builder::stream::close_document;
-using bsoncxx::builder::stream::document;
-using bsoncxx::builder::stream::finalize;
-using bsoncxx::builder::stream::open_array;
-using bsoncxx::builder::stream::open_document;
-using bsoncxx::builder::basic::sub_array;
-using bsoncxx::builder::basic::sub_document;
-using bsoncxx::builder::basic::make_document;
-using bsoncxx::document::element;
-
 using namespace std;
 
 // ----------------------------------------------------------------------
@@ -187,19 +166,20 @@ string calPixelCablingMap::readJson(string filename) {
   }
   INS.close();
 
-  // -- iterate over the elements in a bson document
-  bsoncxx::document::value doc = bsoncxx::from_json(spl.c_str());
-  for (element ele : doc.view()) {
-    std::string_view index{ele.key().to_string()};
-    unsigned int online, sensor;
-    // cout << "index = " << index
-    //      << " online = " << ele["online"].get_string().value.to_string() //.value
-    //      << " sensor = " << ele["sensor"].get_string().value.to_string() //.value 
-    //      << endl;
-    online = ::stoi(ele["online"].get_string().value.to_string());
-    sensor = ::stoi(ele["sensor"].get_string().value.to_string());
-    fMapConstants.insert(make_pair(sensor, online));
-  }
+  // FIXME migrate to NON-BSONCXX code
+  // -- iterate over the elements in a bson document 
+  // bsoncxx::document::value doc = bsoncxx::from_json(spl.c_str());
+  // for (element ele : doc.view()) {
+  //   std::string_view index{ele.key().to_string()};
+  //   unsigned int online, sensor;
+  //   // cout << "index = " << index
+  //   //      << " online = " << ele["online"].get_string().value.to_string() //.value
+  //   //      << " sensor = " << ele["sensor"].get_string().value.to_string() //.value 
+  //   //      << endl;
+  //   online = ::stoi(ele["online"].get_string().value.to_string());
+  //   sensor = ::stoi(ele["sensor"].get_string().value.to_string());
+  //   fMapConstants.insert(make_pair(sensor, online));
+  // }
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 
