@@ -90,10 +90,10 @@ int main(int argc, char* argv[]) {
   } else if (2 == mode) {
     cout << "Test configuration" << endl;
     Mu3eConditions *pDC = Mu3eConditions::instance();
-    string sconfVtx = pDC->getConfString("vertex");
-    cout << "vertex configuration" << endl;
+    string sconfDet = pDC->getConfString("detector");
+    cout << "detector configuration" << endl;
     cout << "----------------------------------------------------------------------" << endl;
-    cout << sconfVtx << endl;
+    cout << sconfDet << endl;
     cout << "----------------------------------------------------------------------" << endl;
   }
   return 0;
