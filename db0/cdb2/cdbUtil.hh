@@ -27,9 +27,11 @@ std::string timeStamp(int format = 0);
 // ======================================================================
 std::string jsFormat(std::vector<std::string>); 
 std::string jsFormat(std::vector<int>);
-//std::string jsFormat(std::vector<double>); 
 std::string jsonGetValue(std::string& jstring, std::string key);
+// -- normal base64 encoded (from rest/mongodb API)
 std::string jsonGetCfgString(std::string& jstring, std::string key);
+// -- escaped " (\") embedded in string (from JSON API)
+std::string jsonGetCfgStringEsc(std::string& jstring, std::string key);
 std::string jsonGetVector(std::string& jstring, std::string key);
 std::vector<std::string> jsonGetValueVector(std::string& jstring, std::string key);
 std::vector<std::string> jsonGetVectorVector(std::string& jstring, std::string key);
