@@ -321,6 +321,8 @@ int main(int argc, char* argv[]) {
       std::stringstream buffer;
       buffer << INS.rdbuf();
       INS.close();
+
+      string sbuffer = buffer.str();
       
       jdir = jsondir + "/configs";
       hash = "cfg_" + cfgname + "_" + igt.first;
@@ -333,10 +335,13 @@ int main(int argc, char* argv[]) {
       cfgPayload cfg;
       cfg.fHash = hash;
       cfg.fDate = timeStamp();
-      cfg.fCfgString = base64_encode(buffer.str());
+      //      cfg.fCfgString = base64_encode(buffer.str());
+      replaceAll(sbuffer, "\"", "\\\"");
+      cfg.fCfgString = sbuffer;
       
-      JS << cfg.json();
+      JS << cfg.getJson();
       JS.close();
+
     }
   }
   
