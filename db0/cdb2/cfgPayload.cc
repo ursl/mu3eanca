@@ -1,5 +1,6 @@
 #include "cfgPayload.hh"
 #include "base64.hh"
+#include "cdbUtil.hh"
 
 #include <iostream>
 #include <sstream>
@@ -13,6 +14,15 @@ cfgPayload::cfgPayload() : fHash("cfg_X_gt"),
                            fCfgString(std::string("empty configuration string")) {
   
 };
+
+
+// ----------------------------------------------------------------------
+cfgPayload::cfgPayload(string cfgPayloadFile) {
+  fHash      = jsonGetValue(cfgPayloadFile, "cfgHash");
+  fDate      = jsonGetValue(cfgPayloadFile, "cfgDate");
+  // fCfgString = base64_decode(jsonGetCfgString(jstring, "cfgString"));
+  fCfgString = jsonGetCfgStringEsc(cfgPayloadFile, "cfgString");
+}
 
 
 // ----------------------------------------------------------------------
@@ -34,10 +44,11 @@ string cfgPayload::getString(bool prtAll) {
 
 
 // ----------------------------------------------------------------------
-string cfgPayload::json() {
+string cfgPayload::getJson() {
   std::stringstream sstr;
   sstr << "{\"cfgHash\" : \"" << fHash << "\", "
        << "\"cfgDate\" : \"" << fDate << "\", "
        << "\"cfgString\" : \"" << fCfgString << "\"}";
   return sstr.str();
 }
+
