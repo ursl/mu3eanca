@@ -181,16 +181,11 @@ cfgPayload cdbJSON::getConfig(string hash) {
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
-  // cout << "cdbJSON::getConfig() Read file ->" << filename << "<-"
-  //      << endl
-  //      << buffer.str()
-  //      << "----------------------------------------------------------------------"
-  //      << endl;
 
   string jstring = buffer.str();
   cfg.fHash      = jsonGetValue(jstring, "cfgHash");
   cfg.fDate      = jsonGetValue(jstring, "cfgDate");
-  cfg.fCfgString = base64_decode(jsonGetCfgString(jstring, "cfgString"));
+  cfg.fCfgString = jsonGetCfgStringEsc(jstring, "cfgString");
 
   
   return cfg;
