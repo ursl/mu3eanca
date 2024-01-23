@@ -236,7 +236,6 @@ string jsonGetValue(string& jstring, string key) {
 }
 
 
-
 // ----------------------------------------------------------------------
 string jsonGetCfgString(std::string& jstring, std::string key) {
   string::size_type s0 = jstring.find(key);
@@ -244,10 +243,28 @@ string jsonGetCfgString(std::string& jstring, std::string key) {
   s0 = jstring.find("\"", s0);
   string result = jstring.substr(s0);
   ltrim(result);
-
+ 
   // -- there is another } to trim
   result.pop_back();
   replaceAll(result, "\"", "");
+  return result;
+}
+
+
+// ----------------------------------------------------------------------
+string jsonGetCfgStringEsc(std::string& jstring, std::string key) {
+  string::size_type s0 = jstring.find(key);
+  s0 = jstring.find(":", s0);
+  s0 = jstring.find("\"", s0);
+  string result = jstring.substr(s0);
+  ltrim(result);
+
+  // -- magic to form the resulting string
+  result.pop_back(); // remove an end 
+  result.erase(0, 1); // remove front char
+  replaceAll(result, "\\", ""); // remove all escapes
+  result.pop_back();
+  result.pop_back();
   return result;
 }
 
@@ -331,10 +348,8 @@ vector<string> jsonGetVectorVector(string& jstring, string key) {
 
 // ----------------------------------------------------------------------
 string timeStamp(int format) {
-  char buffer[11];
   time_t t;
   time(&t);
-  tm r;
 
   // strftime(buffer, sizeof(buffer), "%X", localtime_r(&t, &r));
   struct timeval tv;
