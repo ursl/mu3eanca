@@ -36,7 +36,10 @@ void printAll(cdbAbs *);
 // 
 // 
 // The following dumps the entire CDB contents
-// bin/test -v 1 -gt mcidealv5.0 -m 1
+// bin/testCDB -v 1 -gt mcidealv5.0 -m 1
+//
+// The following dumps a config file
+// bin/testCDB -v 1 -gt mcidealv5.0 -m 2
 // ----------------------------------------------------------------------
 
 
