@@ -33,7 +33,6 @@ using namespace std;
 // ---------
 //
 //
-// cd cdb1/json 
 // [requires]
 //    globaltags/*
 //    tags/*
@@ -41,9 +40,9 @@ using namespace std;
 //    configs/*
 //
 // Usage:
-// ../bin/syncCloud --dir globaltags
-// ../bin/syncCloud --dir tags
-// ../bin/syncCloud --dir payloads
+// ../bin/syncCloud --dir ~/data/mu3e/json12/globaltags
+// ../bin/syncCloud --dir /Users/ursl/data/mu3e/json12/tags
+// ../bin/syncCloud --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
 // ../bin/syncCloud --dir runrecords
 // ../bin/syncCloud --dir configs
 // 
@@ -56,7 +55,7 @@ mongocxx::uri gUri("mongodb://pc11740:27017");
 mongocxx::client gClient{gUri};
 
 // ----------------------------------------------------------------------
-void clearCollection(string scollection, string field) {
+void clearCollection(string scollection) {
   vector<string> idCollections;
 
   auto db = gClient["mu3e"];
@@ -65,9 +64,6 @@ void clearCollection(string scollection, string field) {
   auto cursor_all = collection.find({});
   cout << "collection " << collection.name()
        << " contains these documents:" << endl;
-  // for (auto doc : cursor_all) {
-  //   cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
-  // }
   for (auto doc : cursor_all) {
     cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
     auto delete_one_result = collection.delete_one(doc);
@@ -81,42 +77,40 @@ void clearCollection(string scollection, string field) {
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
-  string dirName("fixme");
+  string dirName("fixme"), dirPath("fixme");
   bool onlyDelete(false); // ONLY delete, do not write new records
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-d"))  {gDBX = true;}
-    if (!strcmp(argv[i], "--dir"))  {dirName = string(argv[++i]);}
-    if (!strcmp(argv[i], "-dir"))  {dirName = string(argv[++i]);}
+    if (!strcmp(argv[i], "--dir"))  {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "-dir"))  {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "--del"))  {onlyDelete = true;}
     if (!strcmp(argv[i], "-del"))  {onlyDelete = true;}
   }
-
-  map<string, string> tagDel = {{"globaltags", "gt"},
-                                {"tags", "tags"},
-                                {"payloads", "hash"}
-  };
 
   vector<string> vfiles;
   DIR *folder;
   struct dirent *entry;
   
-  folder = opendir(dirName.c_str());
+  folder = opendir(dirPath.c_str());
   if (folder == NULL) {
-    cout << "Unable to read directory ->" << dirName << "<-" << endl;
+    cout << "Unable to read directory ->" << dirPath << "<-" << endl;
     if (!onlyDelete) return 0;
   } else {
     
     while ((entry=readdir(folder))) {
       if (8 == entry->d_type) {
-        vfiles.push_back(dirName + "/" + entry->d_name);
+        vfiles.push_back(dirPath + "/" + entry->d_name);
       }
     }
     closedir(folder);
     sort(vfiles.begin(), vfiles.end());    
   }
 
-  cout << "clearCollection(" << dirName << ", " << tagDel[dirName] << ");" << endl;
-  clearCollection(dirName, tagDel[dirName]);
+  dirName = dirPath.substr(dirPath.rfind("/")+1);
+  cout << "dirPath ->" << dirPath << "<-" << endl;
+  cout << "dirName ->" << dirName << "<-" << endl;
+  cout << "clearCollection(" << dirName << ");" << endl;
+  clearCollection(dirName);
 
   if (onlyDelete) return 0;
 
