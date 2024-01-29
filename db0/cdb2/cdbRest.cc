@@ -154,7 +154,6 @@ cfgPayload cdbRest::getConfig(string hash) {
 
   fCurlReadBuffer.clear();
   doCurl("configs", hash, "findOne");
-  cout << fCurlReadBuffer << endl;
   stripOverhead();
 
   
