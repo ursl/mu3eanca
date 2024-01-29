@@ -177,8 +177,6 @@ payload cdbMongo::getPayload(string hash) {
 
   auto cursor_filtered =  fDB["payloads"].find(make_document(kvp("hash", hash)));
   for (auto doc : cursor_filtered) {
-    // -- print it 
-    // cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
     pl.fComment = doc["comment"].get_string().value.to_string();
     pl.fHash    = doc["hash"].get_string().value.to_string();
@@ -186,4 +184,26 @@ payload cdbMongo::getPayload(string hash) {
   }
 
   return pl;
+}
+
+
+// ----------------------------------------------------------------------
+cfgPayload cdbMongo::getConfig(string hash) {
+
+  cfgPayload cfg;
+
+  // -- initialize with default
+  std::stringstream sspl;
+  sspl << "(cdbMongo>  hash = " << hash 
+       << " not found)";
+  cfg.fCfgString = sspl.str();
+
+  auto cursor_filtered =  fDB["configs"].find(make_document(kvp("cfgHash", hash)));
+  for (auto doc : cursor_filtered) {
+    assert(doc["_id"].type() == bsoncxx::type::k_oid);
+    cfg.fDate      = doc["cfgDate"].get_string().value.to_string();
+    cfg.fHash      = doc["cfgHash"].get_string().value.to_string();
+    cfg.fCfgString = base64_decode(doc["cfgString"].get_string().value.to_string());
+  }
+  return cfg;
 }
