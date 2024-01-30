@@ -129,22 +129,25 @@ runRecord cdbRest::getRunRecord(int irun) {
   sspl << "(cdbRest>  runRecord for run = " << to_string(irun)
        << " not found)";
   runRecord rr;
-  rr.fRunDescription = sspl.str();
+  rr.fEORComments = sspl.str();
   
   fCurlReadBuffer.clear();
   doCurl("runrecords", to_string(irun), "findOne");
   stripOverhead();
-  rr.fRun              = stoi(jsonGetValue(fCurlReadBuffer, "run"));
-  rr.fRunStart         = jsonGetValue(fCurlReadBuffer, "runStart");
-  rr.fRunEnd           = jsonGetValue(fCurlReadBuffer, "runEnd");
-  rr.fRunDescription   = jsonGetValue(fCurlReadBuffer, "runDescription");
-  rr.fRunOperators     = jsonGetValue(fCurlReadBuffer, "runOperators");
-  rr.fNFrames          = stoi(jsonGetValue(fCurlReadBuffer, "nFrames"));
-  rr.fBeamMode         = stoi(jsonGetValue(fCurlReadBuffer, "beamMode"));
-  rr.fBeamCurrent      = stof(jsonGetValue(fCurlReadBuffer, "beamCurrent"));
-  rr.fMagnetCurrent    = stof(jsonGetValue(fCurlReadBuffer, "magnetCurrent"));
-  rr.fConfigurationKey = jsonGetValue(fCurlReadBuffer, "configurationKey");
+  rr.fBORRunNumber     = stoi(jsonGetValue(fCurlReadBuffer, "Run number"));
+  rr.fBORStartTime     = jsonGetValue(fCurlReadBuffer, "Start time");
+  rr.fBORSubsystems    = stoi(jsonGetValue(fCurlReadBuffer, "Subsystems"));
+  rr.fBORBeam          = stof(jsonGetValue(fCurlReadBuffer, "Beam"));
+  rr.fBORShiftCrew     = jsonGetValue(fCurlReadBuffer, "Shift crew");
   
+  rr.fEORStopTime      = jsonGetValue(fCurlReadBuffer, "Stop time");
+  rr.fEOREvents        = stoi(jsonGetValue(fCurlReadBuffer, "Events"));
+  rr.fEORFileSize      = stoi(jsonGetValue(fCurlReadBuffer, "File size"));
+  rr.fEORDataSize      = stoi(jsonGetValue(fCurlReadBuffer, "Data size"));
+  rr.fEORComments      = jsonGetValue(fCurlReadBuffer, "Comments");
+  
+  rr.fConfigurationKey = jsonGetValue(fCurlReadBuffer, "Configuration key");
+
   return rr;
 }
 

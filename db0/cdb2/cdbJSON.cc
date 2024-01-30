@@ -128,7 +128,7 @@ runRecord cdbJSON::getRunRecord(int irun) {
   sspl << "(cdbJSON>  runRecord for run = " << to_string(irun)
        << " not found)";
   runRecord rr;
-  rr.fRunDescription = sspl.str();
+  rr.fEORComments = sspl.str();
   
   // -- read runRecord for run irun 
   ifstream INS;
@@ -146,16 +146,21 @@ runRecord cdbJSON::getRunRecord(int irun) {
   cout << "cdbJSON::getRunRecord() Read " << filename << endl;
 
   string jstring = buffer.str();
-  rr.fRun              = stoi(jsonGetValue(jstring, "run"));
-  rr.fRunStart         = jsonGetValue(jstring, "runStart");
-  rr.fRunEnd           = jsonGetValue(jstring, "runEnd");
-  rr.fRunDescription   = jsonGetValue(jstring, "runDescription");
-  rr.fRunOperators     = jsonGetValue(jstring, "runOperators");
-  rr.fNFrames          = stoi(jsonGetValue(jstring, "nFrames"));
-  rr.fBeamMode         = stoi(jsonGetValue(jstring, "beamMode"));
-  rr.fBeamCurrent      = stof(jsonGetValue(jstring, "beamCurrent"));
-  rr.fMagnetCurrent    = stof(jsonGetValue(jstring, "magnetCurrent"));
-  rr.fConfigurationKey = jsonGetValue(jstring, "configurationKey");
+  cout << "start ->" << jsonGetValue(jstring, "Run number") << "<-" << endl;
+  rr.fBORRunNumber     = stoi(jsonGetValue(jstring, "Run number"));
+  cout << "rr.fBORRunNumber = " << rr.fBORRunNumber << endl;
+  rr.fBORStartTime     = jsonGetString(jstring, "Start time");
+  rr.fBORSubsystems    = stoi(jsonGetValue(jstring, "Subsystems"));
+  rr.fBORBeam          = stof(jsonGetValue(jstring, "Beam"));
+  rr.fBORShiftCrew     = jsonGetString(jstring, "Shift crew");
+  
+  rr.fEORStopTime      = jsonGetString(jstring, "Stop time");
+  rr.fEOREvents        = stoi(jsonGetValue(jstring, "Events"));
+  rr.fEORFileSize      = stoi(jsonGetValue(jstring, "File size"));
+  rr.fEORDataSize      = stoi(jsonGetValue(jstring, "Data size"));
+  rr.fEORComments      = jsonGetString(jstring, "Comments");
+  
+  rr.fConfigurationKey = jsonGetString(jstring, "Configuration key");
   
   return rr;
 }
