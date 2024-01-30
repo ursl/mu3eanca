@@ -71,19 +71,19 @@ string runRecord::json() const {
   */
 
   sstr << "{ \"BOR\" : {"
-       << "\"Run number:\" : " << fBORRunNumber << ", "
-       << "\"Start time:\" : \"" << fBORStartTime << "\", " 
-       << "\"Subsystems:\" : " << fBORSubsystems << ", " 
-       << "\"Beam:\" : " << fBORBeam << ", " 
-       << "\"Shift crew:\" : \"" << fBORShiftCrew << "\""
+       << "\"Run number\" : " << fBORRunNumber << ", "
+       << "\"Start time\" : \"" << fBORStartTime << "\", " 
+       << "\"Subsystems\" : " << fBORSubsystems << ", " 
+       << "\"Beam\" : " << fBORBeam << ", " 
+       << "\"Shift crew\" : \"" << fBORShiftCrew << "\""
        << "}, "
 
        << "\"EOR\" : {"
-       << "\"Stop time:\" : \"" << fEORStopTime << "\", " 
-       << "\"Events:\" : " << fEOREvents << ", " 
-       << "\"File size:\" : " << fEORFileSize << ", " 
-       << "\"Data size:\" : " << fEORDataSize << ", " 
-       << "\"Comments:\" : \"" << fEORComments << "\" " 
+       << "\"Stop time\" : \"" << fEORStopTime << "\", " 
+       << "\"Events\" : " << fEOREvents << ", " 
+       << "\"File size\" : " << fEORFileSize << ", " 
+       << "\"Data size\" : " << fEORDataSize << ", " 
+       << "\"Comments\" : \"" << fEORComments << "\" " 
        << "} }";
   return sstr.str();
 }
