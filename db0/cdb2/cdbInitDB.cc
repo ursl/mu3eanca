@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 	// ----------------------------------------------------------------------
 	map<string, vector<string>> iniGlobalTags = {
 		{"mcidealv5.0", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment"} },
-		{"mcidealv5.1", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment"} }
+      {"mcidealv5.1", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment"} }
   };
 
   
@@ -288,13 +288,13 @@ int main(int argc, char* argv[]) {
 
   // -- create a runRecord
   runRecord rr;
-  rr.fRun = 12;
-  rr.fRunStart = timeStamp();
+  rr.fBORRunNumber = 12;
+  rr.fBORStartTime = timeStamp();
 
   jdir = jsondir + "/runrecords";
-  JS.open(jdir + "/" + to_string(rr.fRun));
+  JS.open(jdir + "/" + to_string(rr.fBORRunNumber));
   if (JS.fail()) {
-    cout << "cdbInitDB> Error failed to open " << jdir << "/" << to_string(rr.fRun) <<  endl;
+    cout << "cdbInitDB> Error failed to open " << jdir << "/" << to_string(rr.fBORRunNumber) <<  endl;
   }
   JS << rr.json() << endl;
   JS.close();
