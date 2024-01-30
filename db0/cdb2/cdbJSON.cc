@@ -144,11 +144,8 @@ runRecord cdbJSON::getRunRecord(int irun) {
   INS.close();
   
   cout << "cdbJSON::getRunRecord() Read " << filename << endl;
-
   string jstring = buffer.str();
-  cout << "start ->" << jsonGetValue(jstring, "Run number") << "<-" << endl;
   rr.fBORRunNumber     = stoi(jsonGetValue(jstring, "Run number"));
-  cout << "rr.fBORRunNumber = " << rr.fBORRunNumber << endl;
   rr.fBORStartTime     = jsonGetString(jstring, "Start time");
   rr.fBORSubsystems    = stoi(jsonGetValue(jstring, "Subsystems"));
   rr.fBORBeam          = stof(jsonGetValue(jstring, "Beam"));
