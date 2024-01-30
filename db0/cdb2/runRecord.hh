@@ -10,14 +10,20 @@ public:
   std::string printString();
   std::string json() const;
 
-  int         fRun;
-  std::string fRunStart, fRunEnd;
-  std::string fRunDescription, fRunOperators;
-  int         fNFrames;
-  int         fBeamMode;
-  float       fBeamCurrent;
-  float       fMagnetCurrent;
-  std::string fConfigurationKey;
+  int          fBORRunNumber;
+  std::string  fBORStartTime;
+  int          fBORSubsystems;
+  float        fBORBeam;
+  std::string  fBORShiftCrew;
+
+  std::string  fEORStopTime;
+  unsigned int fEOREvents;
+  int          fEORFileSize;
+  int          fEORDataSize;
+  std::string  fEORComments;
+
+  std::string  fConfigurationKey;
+  
   
 };
 

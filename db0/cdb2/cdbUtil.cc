@@ -22,9 +22,9 @@ void rtrim(string &s) {
 
 // ----------------------------------------------------------------------
 void ltrim(string &s) {
-    s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch) {
-        return !isspace(ch);
-    }));
+  s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch) {
+    return !isspace(ch);
+  }));
 }
 
 
@@ -218,6 +218,25 @@ void /*vector<string>&*/ split(const string &s, char delim, vector<string> &elem
 
 // ----------------------------------------------------------------------
 string jsonGetValue(string& jstring, string key) {
+  string::size_type s0 = jstring.find(key);
+  s0 = jstring.find(":", s0+1);
+  string::size_type s1 = jstring.find(",", s0);
+  string::size_type s2 = jstring.find("}", s0);
+  string result("");
+  if (string::npos != s1) {
+    result = jstring.substr(s0, s1-s0);
+  } else {
+    result = jstring.substr(s0, s2-s0);
+  }
+  ltrim(result);
+  rtrim(result);
+  replaceAll(result, "\"", "");
+  return result;
+}
+
+
+// ----------------------------------------------------------------------
+string jsonGetString(string& jstring, string key) {
   string::size_type s0 = jstring.find(key);
   s0 = jstring.find(":", s0);
   s0 = jstring.find("\"", s0);

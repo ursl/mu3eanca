@@ -27,6 +27,7 @@ std::string timeStamp(int format = 0);
 // ======================================================================
 std::string jsFormat(std::vector<std::string>); 
 std::string jsFormat(std::vector<int>);
+std::string jsonGetString(std::string& jstring, std::string key);
 std::string jsonGetValue(std::string& jstring, std::string key);
 // -- normal base64 encoded (from rest/mongodb API)
 std::string jsonGetCfgString(std::string& jstring, std::string key);

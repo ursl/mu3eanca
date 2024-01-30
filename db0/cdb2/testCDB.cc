@@ -40,6 +40,9 @@ void printAll(cdbAbs *);
 //
 // The following dumps a config file
 // bin/testCDB -v 1 -gt mcidealv5.0 -m 2
+//
+// The following dumps a runRecord
+// bin/testCDB -v 1 -gt mcidealv5.0 -m 3
 // ----------------------------------------------------------------------
 
 
@@ -97,6 +100,14 @@ int main(int argc, char* argv[]) {
     cout << "detector configuration" << endl;
     cout << "----------------------------------------------------------------------" << endl;
     cout << sconfDet << endl;
+    cout << "----------------------------------------------------------------------" << endl;
+  } else if (3 == mode) {
+    cout << "Test configuration" << endl;
+    Mu3eConditions *pDC = Mu3eConditions::instance();
+    runRecord rr = pDC->getRunRecord(12);
+    cout << "runRecord:" << endl;
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << rr.json() << endl;
     cout << "----------------------------------------------------------------------" << endl;
   }
   return 0;
