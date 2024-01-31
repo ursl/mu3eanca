@@ -173,7 +173,7 @@ void printAll(cdbAbs *db) {
     for (auto itt : iovs) {
       cout << " tag: " << itt.first << endl;
       for (auto ittt :  itt.second) {
-        cout << "   iov " << ittt << endl;
+        cout << "   iov " << ittt << " get payload " << ("tag_" + itt.first + "_iov_" + to_string(ittt)) << endl;
         payload pl = db->getPayload("tag_" + itt.first + "_iov_" + to_string(ittt));
         pl.print();
       }

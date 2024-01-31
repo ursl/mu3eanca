@@ -25,7 +25,7 @@ void payload::print(bool prtAll) {
 // ----------------------------------------------------------------------
 string payload::printString(bool prtAll) {
   std::stringstream sstr;
-  sstr << "/**/hash ->" << fHash << endl
+  sstr << "/**/payload hash ->" << fHash << endl
        << "<- /**/comment ->" << fComment << endl
        << "<- /**/schema ->" << fSchema << endl
        << "<- /**/date ->" << fDate << endl
@@ -40,9 +40,9 @@ string payload::printString(bool prtAll) {
 string payload::json() {
   std::stringstream sstr;
   sstr << "{\"hash\" : \"" << fHash << "\", "
-       << "\"comment\" : \"" << fComment << "\","
-       << "\"schema\" : \"" << fSchema << "\","
-       << "\"date\" : \"" << fDate << "\","
+       << "\"comment\" : \"" << fComment << "\", "
+       << "\"schema\" : \"" << fSchema << "\", "
+       << "\"date\" : \"" << fDate << "\", "
        << "\"BLOB\" : \"" << base64_encode(fBLOB) << "\"}";
   return sstr.str();
 }
