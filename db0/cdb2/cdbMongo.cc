@@ -144,21 +144,45 @@ runRecord cdbMongo::getRunRecord(int irun) {
   sspl << "(cdbMongo>  runRecord for run = " << to_string(irun)
        << " not found)";
   runRecord rr;
-  rr.fRunDescription = sspl.str();
+  rr.fEORComments = sspl.str();
+
+  // string QuerryHelper;
+  // QuerryHelper.append("BOR");
+  // QuerryHelper.append(".");
+  // QuerryHelper.append("Run Number");
   
-  auto cursor_filtered =  fDB["runrecords"].find(make_document(kvp("run", to_string(irun))));
+  auto cursor_filtered =  fDB["runrecords"].find(make_document(kvp("BOR.Run number", irun)));
+
+  cout << "Hallo 0" << endl;
   for (auto doc : cursor_filtered) {
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
-    rr.fRun       = stoi(doc["run"].get_string().value.to_string());
-    rr.fRunStart  = doc["runStart"].get_string().value.to_string();
-    rr.fRunEnd    = doc["runEnd"].get_string().value.to_string();    
-    rr.fRunDescription = doc["runDescription"].get_string().value.to_string();
-    rr.fRunOperators   = doc["runOperators"].get_string().value.to_string();
-    rr.fNFrames   = stoi(doc["nFrames"].get_string().value.to_string());
-    rr.fBeamMode  = stoi(doc["beamMode"].get_string().value.to_string());
-    rr.fBeamCurrent = stof(doc["beamCurrent"].get_string().value.to_string());
-    rr.fMagnetCurrent = stof(doc["magnetCurrent"].get_string().value.to_string());
-    rr.fConfigurationKey = doc["configurationKey"].get_string().value.to_string();
+    cout << "Hallo 1 ->" << endl;
+    cout << bsoncxx::to_json(doc) << endl;
+
+    auto bor = doc["BOR"];
+    std::cout << "Examining bor at " << bsoncxx::to_json(bor.get_document()) << std::endl;
+   
+    rr.fBORRunNumber     = bor["Run number"].get_int32().value;
+    rr.fBORStartTime     = bor["Start time"].get_string().value.to_string();
+    rr.fBORSubsystems    = bor["Subsystems"].get_int32().value;
+    if (bor["Beam"].type() == bsoncxx::type::k_double) {
+      rr.fBORBeam          = bor["Beam"].get_double().value;
+    } else if (bor["Beam"].type() == bsoncxx::type::k_int32) {
+      rr.fBORBeam          = static_cast<double>(bor["Beam"].get_int32().value);
+    } 
+    rr.fBORShiftCrew     = bor["Shift crew"].get_string().value.to_string();
+    
+    auto eor = doc["EOR"];
+    std::cout << "Examining eor at " << bsoncxx::to_json(eor.get_document()) << std::endl;
+    rr.fEORStopTime      = eor["Stop time"].get_string().value.to_string();
+    if (eor["Events"].type() == bsoncxx::type::k_double) {
+      rr.fEOREvents        = eor["Events"].get_int64().value;
+    } else if (eor["Events"].type() == bsoncxx::type::k_int64) {
+      rr.fEOREvents        = eor["Events"].get_int64().value;
+    } 
+    rr.fEORFileSize      = eor["File size"].get_double().value;
+    rr.fEORDataSize      = eor["Uncompressed data size"].get_double().value;
+    rr.fEORComments      = eor["Comments"].get_string().value.to_string();
   }
   
   return rr;
