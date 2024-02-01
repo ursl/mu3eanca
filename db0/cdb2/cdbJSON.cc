@@ -132,7 +132,12 @@ runRecord cdbJSON::getRunRecord(int irun) {
   
   // -- read runRecord for run irun 
   ifstream INS;
-  string filename = fURI + "/runrecords/" + to_string(irun);
+  //  string filename = fURI + "/runrecords/" + to_string(irun);
+  std::ostringstream oss;
+  oss << "runlog_" << std::setfill('0') << std::setw(6) << irun;
+  string filename = fURI + "/runrecords/" + oss.str();
+
+
   INS.open(filename);
   if (INS.fail()) {
     cout << "Error failed to open ->" << filename << "<-" << endl;
@@ -153,8 +158,8 @@ runRecord cdbJSON::getRunRecord(int irun) {
   
   rr.fEORStopTime      = jsonGetString(jstring, "Stop time");
   rr.fEOREvents        = stoi(jsonGetValue(jstring, "Events"));
-  rr.fEORFileSize      = stoi(jsonGetValue(jstring, "File size"));
-  rr.fEORDataSize      = stoi(jsonGetValue(jstring, "Data size"));
+  rr.fEORFileSize      = stod(jsonGetValue(jstring, "File size"));
+  rr.fEORDataSize      = stod(jsonGetValue(jstring, "Uncompressed data size"));
   rr.fEORComments      = jsonGetString(jstring, "Comments");
   
   rr.fConfigurationKey = jsonGetString(jstring, "Configuration key");
