@@ -172,7 +172,7 @@ cfgPayload cdbRest::getConfig(string hash) {
   
   cfg.fHash      = jsonGetValue(fCurlReadBuffer, "cfgHash");
   cfg.fDate      = jsonGetValue(fCurlReadBuffer, "cfgDate");
-  cfg.fCfgString = base64_decode(jsonGetCfgString(fCurlReadBuffer, "cfgString"));
+  cfg.fCfgString = base64_decode(jsonGetString(fCurlReadBuffer, "cfgString"));
   return cfg;
 }
 
@@ -191,9 +191,9 @@ payload cdbRest::getPayload(string hash) {
   payload pl;
   pl.fComment = sspl.str();
 
-  pl.fComment = jsonGetValue(fCurlReadBuffer, "comment");
-  pl.fHash    = jsonGetValue(fCurlReadBuffer, "hash");
-  pl.fBLOB    = base64_decode(jsonGetValue(fCurlReadBuffer, "BLOB"));
+  pl.fComment = jsonGetString(fCurlReadBuffer, "comment");
+  pl.fHash    = jsonGetString(fCurlReadBuffer, "hash");
+  pl.fBLOB    = base64_decode(jsonGetString(fCurlReadBuffer, "BLOB"));
   
   return pl;
 }
