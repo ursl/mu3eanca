@@ -290,11 +290,25 @@ int main(int argc, char* argv[]) {
   runRecord rr;
   rr.fBORRunNumber = 12;
   rr.fBORStartTime = timeStamp();
+  rr.fBORSubsystems = 0;
+  rr.fBORBeam = 0;
+  rr.fBORShiftCrew = "The data challenge crew";
+
+  rr.fEORStopTime = timeStamp();
+  rr.fEOREvents   = 2587814;
+  rr.fEORFileSize = 4.0360677850000000e+09;
+  rr.fEORDataSize = 5.1365311020000000e+09;
+  rr.fEORComments = "Test data from the data challenge";
 
   jdir = jsondir + "/runrecords";
-  JS.open(jdir + "/" + to_string(rr.fBORRunNumber));
+  //runlog_005012.json
+  std::ostringstream oss;
+  oss << "runlog_" << std::setfill('0') << std::setw(6) << rr.fBORRunNumber;
+  string orr = jdir + "/" + oss.str();
+  
+  JS.open(orr);
   if (JS.fail()) {
-    cout << "cdbInitDB> Error failed to open " << jdir << "/" << to_string(rr.fBORRunNumber) <<  endl;
+    cout << "cdbInitDB> Error failed to open " << orr <<  endl;
   }
   JS << rr.json() << endl;
   JS.close();
@@ -344,6 +358,8 @@ int main(int argc, char* argv[]) {
 
     }
   }
+
+  cout << "sizeof(double) = " << sizeof(double) << endl;
   
 	return 0;
 }
