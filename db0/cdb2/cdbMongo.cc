@@ -145,23 +145,12 @@ runRecord cdbMongo::getRunRecord(int irun) {
        << " not found)";
   runRecord rr;
   rr.fEORComments = sspl.str();
-
-  // string QuerryHelper;
-  // QuerryHelper.append("BOR");
-  // QuerryHelper.append(".");
-  // QuerryHelper.append("Run Number");
   
   auto cursor_filtered =  fDB["runrecords"].find(make_document(kvp("BOR.Run number", irun)));
-
-  cout << "Hallo 0" << endl;
   for (auto doc : cursor_filtered) {
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
-    cout << "Hallo 1 ->" << endl;
-    cout << bsoncxx::to_json(doc) << endl;
 
     auto bor = doc["BOR"];
-    std::cout << "Examining bor at " << bsoncxx::to_json(bor.get_document()) << std::endl;
-   
     rr.fBORRunNumber     = bor["Run number"].get_int32().value;
     rr.fBORStartTime     = bor["Start time"].get_string().value.to_string();
     rr.fBORSubsystems    = bor["Subsystems"].get_int32().value;
@@ -173,7 +162,6 @@ runRecord cdbMongo::getRunRecord(int irun) {
     rr.fBORShiftCrew     = bor["Shift crew"].get_string().value.to_string();
     
     auto eor = doc["EOR"];
-    std::cout << "Examining eor at " << bsoncxx::to_json(eor.get_document()) << std::endl;
     rr.fEORStopTime      = eor["Stop time"].get_string().value.to_string();
     if (eor["Events"].type() == bsoncxx::type::k_double) {
       rr.fEOREvents        = eor["Events"].get_int64().value;
