@@ -291,7 +291,7 @@ int main(int argc, char* argv[]) {
   rr.fBORRunNumber = 12;
   rr.fBORStartTime = timeStamp();
   rr.fBORSubsystems = 0;
-  rr.fBORBeam = 0;
+  rr.fBORBeam = 0.0;
   rr.fBORShiftCrew = "The data challenge crew";
 
   rr.fEORStopTime = timeStamp();
