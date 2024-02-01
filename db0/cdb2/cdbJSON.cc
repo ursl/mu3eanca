@@ -185,10 +185,9 @@ cfgPayload cdbJSON::getConfig(string hash) {
   INS.close();
 
   string jstring = buffer.str();
-  cfg.fHash      = jsonGetValue(jstring, "cfgHash");
-  cfg.fDate      = jsonGetValue(jstring, "cfgDate");
-  cfg.fCfgString = jsonGetCfgStringEsc(jstring, "cfgString");
-
+  cfg.fHash      = jsonGetString(jstring, "cfgHash");
+  cfg.fDate      = jsonGetString(jstring, "cfgDate");
+  cfg.fCfgString = jsonGetString(jstring, "cfgString");
   
   return cfg;
 }
@@ -219,9 +218,9 @@ payload cdbJSON::getPayload(string hash) {
   cout << "cdbJSON::getPayload() Read " << filename << endl;
 
   string jstring = buffer.str();
-  pl.fHash       = jsonGetValue(jstring, "hash");
-  pl.fComment    = jsonGetValue(jstring, "comment");
-  pl.fBLOB       = base64_decode(jsonGetValue(jstring, "BLOB"));
+  pl.fHash       = jsonGetString(jstring, "hash");
+  pl.fComment    = jsonGetString(jstring, "comment");
+  pl.fBLOB       = base64_decode(jsonGetString(jstring, "BLOB"));
 
   return pl;
 }

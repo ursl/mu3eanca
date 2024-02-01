@@ -95,10 +95,9 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   buffer << INS.rdbuf();
   INS.close();
   fPayloadString = buffer.str();
-  
-  pl.fHash    = jsonGetValue(fPayloadString, "hash");
-  pl.fComment = jsonGetValue(fPayloadString, "comment");
-  pl.fBLOB    = base64_decode(jsonGetValue(fPayloadString, "BLOB"));
+  pl.fHash    = jsonGetString(fPayloadString, "hash");
+  pl.fComment = jsonGetString(fPayloadString, "comment");
+  pl.fBLOB    = base64_decode(jsonGetString(fPayloadString, "BLOB"));
   
   fTagIOVPayloadMap.insert(make_pair(hash, pl));
   if (fVerbose > 0) cout << "calAbs::readPayloadFromFile() Inserted " << " hash ->" << hash << "<-"

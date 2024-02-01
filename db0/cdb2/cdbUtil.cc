@@ -237,20 +237,25 @@ string jsonGetValue(string& jstring, string key) {
 
 // ----------------------------------------------------------------------
 string jsonGetString(string& jstring, string key) {
+  const bool DBX(false);
+  if (DBX) cout << "jsonGetString key = " << key << endl;
   string::size_type s0 = jstring.find(key);
   s0 = jstring.find(":", s0+key.length());
-  s0 = jstring.find("\"", s0);
+  s0 = jstring.find("\"", s0+1);
   string::size_type s1 = jstring.find(",", s0);
   string::size_type s2 = jstring.find("}", s0);
+  if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << " s2: " << s2 << endl;
   string result("");
   if ((string::npos != s1) && (s1 < s2)) {
     result = jstring.substr(s0, s1-s0);
   } else {
     result = jstring.substr(s0, s2-s0);
   }
+  if (DBX) cout << "result ->" << result << "<-" << endl;
   ltrim(result);
   rtrim(result);
   replaceAll(result, "\"", "");
+  if (DBX) cout << "result ->" << result << "<-" << endl;
   return result;
 }
 
