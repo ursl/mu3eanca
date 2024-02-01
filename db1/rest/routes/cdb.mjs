@@ -6,9 +6,18 @@ const router = express.Router();
 
 // Get a single runrecord
 router.get("/findOne/runrecords/:id", async (req, res) => {
-  console.log("serving /findOne/runrecords/" + req.params.id);
+  let runno = parseInt(req.params.id);
+  console.log("serving 14 /findOne/runrecords/" + req.params.id);
+  // console.log("req.params.id ->" + req.params.id + "<-" );
+  // console.log(typeof req.params.id); // string
+  // console.log("runno = " + runno);
+
   let collection = await db.collection("runrecords");
-  let query = {run: req.params.id};
+//OK   let query = {"BOR.RunNumber": 12};
+//NOK  let query = {"BOR.RunNumber": req.params.id};
+//OK   let query = {"BOR.RunNumber": runno};
+
+  let query = {"BOR.Run Number": runno};
   let result = await collection.findOne(query);
 
   if (!result) res.send("Not found").status(404);
