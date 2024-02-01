@@ -135,7 +135,7 @@ runRecord cdbJSON::getRunRecord(int irun) {
   ifstream INS;
   //  string filename = fURI + "/runrecords/" + to_string(irun);
   std::ostringstream oss;
-  oss << "runlog_" << std::setfill('0') << std::setw(6) << irun;
+  oss << "runlog_" << std::setfill('0') << std::setw(6) << irun << ".json";
   string filename = fURI + "/runrecords/" + oss.str();
 
 
