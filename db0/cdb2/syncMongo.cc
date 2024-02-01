@@ -40,11 +40,11 @@ using namespace std;
 //    configs/*
 //
 // Usage:
-// ../bin/syncCloud --dir ~/data/mu3e/json12/globaltags
-// ../bin/syncCloud --dir /Users/ursl/data/mu3e/json12/tags
-// ../bin/syncCloud --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
-// ../bin/syncCloud --dir runrecords
-// ../bin/syncCloud --dir configs
+// ../bin/syncMongo --dir ~/data/mu3e/json12/globaltags
+// ../bin/syncMongo --dir /Users/ursl/data/mu3e/json12/tags
+// ../bin/syncMongo --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
+// ../bin/syncMongo --dir runrecords
+// ../bin/syncMongo --dir configs
 // 
 // ----------------------------------------------------------------------
 
