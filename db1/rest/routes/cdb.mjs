@@ -17,7 +17,7 @@ router.get("/findOne/runrecords/:id", async (req, res) => {
 //NOK  let query = {"BOR.RunNumber": req.params.id};
 //OK   let query = {"BOR.RunNumber": runno};
 
-  let query = {"BOR.Run Number": runno};
+  let query = {"BOR.Run number": runno};
   let result = await collection.findOne(query);
 
   if (!result) res.send("Not found").status(404);
