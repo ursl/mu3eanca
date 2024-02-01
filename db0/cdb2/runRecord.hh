@@ -10,16 +10,16 @@ public:
   std::string printString();
   std::string json() const;
 
-  int          fBORRunNumber;
+  long unsigned int fBORRunNumber;
   std::string  fBORStartTime;
   int          fBORSubsystems;
-  float        fBORBeam;
+  double       fBORBeam;
   std::string  fBORShiftCrew;
 
   std::string  fEORStopTime;
-  unsigned int fEOREvents;
-  int          fEORFileSize;
-  int          fEORDataSize;
+  long unsigned int fEOREvents;
+  double       fEORFileSize;
+  double       fEORDataSize;
   std::string  fEORComments;
 
   std::string  fConfigurationKey;
