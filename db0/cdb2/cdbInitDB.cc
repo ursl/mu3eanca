@@ -304,7 +304,7 @@ int main(int argc, char* argv[]) {
   jdir = jsondir + "/runrecords";
   //runlog_005012.json
   std::ostringstream oss;
-  oss << "runlog_" << std::setfill('0') << std::setw(6) << rr.fBORRunNumber;
+  oss << "runlog_" << std::setfill('0') << std::setw(6) << rr.fBORRunNumber << ".json";
   string orr = jdir + "/" + oss.str();
   
   JS.open(orr);
