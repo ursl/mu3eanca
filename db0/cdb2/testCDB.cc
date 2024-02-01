@@ -180,5 +180,13 @@ void printAll(cdbAbs *db) {
     }
   }
 
+  cout << "Test run record" << endl;
+  Mu3eConditions *pDC = Mu3eConditions::instance();
+  runRecord rr = pDC->getRunRecord(12);
+  cout << "runRecord:" << endl;
+  cout << "----------------------------------------------------------------------" << endl;
+  cout << rr.json() << endl;
+  cout << "----------------------------------------------------------------------" << endl;
+  
   return;
 }
