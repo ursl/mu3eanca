@@ -71,7 +71,7 @@ string runRecord::json() const {
   */
 
   sstr << "{ \"BOR\" : {"
-       << "\"Run number\" : " << fBORRunNumber << ", "
+       << "\"Run Number\" : " << fBORRunNumber << ", "
        << "\"Start time\" : \"" << fBORStartTime << "\", " 
        << "\"Subsystems\" : " << fBORSubsystems << ", " 
        << "\"Beam\" : " << fBORBeam << ", " 
