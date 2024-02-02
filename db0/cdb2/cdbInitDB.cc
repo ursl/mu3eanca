@@ -162,11 +162,10 @@ int main(int argc, char* argv[]) {
 
   string spl(""), hash(""), result("");
 
+  string filename("");
   for (auto igt: iniGlobalTags) {
     string it = igt.first;
     if (string::npos == it.find(mode)) continue;
-
-    string filename("");
 
     // -- pixelalignment
     calPixelAlignment *cpa = new calPixelAlignment();
@@ -288,32 +287,23 @@ int main(int argc, char* argv[]) {
   }
 
   // -- create a runRecord
-  runRecord rr;
-  rr.fBORRunNumber = 12;
-  rr.fBORStartTime = timeStamp();
-  rr.fBORSubsystems = 0;
-  rr.fBORBeam = 0.0;
-  rr.fBORShiftCrew = "The data challenge crew";
-
-  rr.fEORStopTime = timeStamp();
-  rr.fEOREvents   = 2587814;
-  rr.fEORFileSize = 4.0360677850000000e+09;
-  rr.fEORDataSize = 5.1365311020000000e+09;
-  rr.fEORComments = "Test data from the data challenge";
+  filename = "runlog_004001.json";
+  ifstream INS;
+  INS.open("../ascii/" + filename);
+  std::stringstream buffer;
+  buffer << INS.rdbuf();
+  INS.close();
 
   jdir = jsondir + "/runrecords";
-  //runlog_005012.json
-  std::ostringstream oss;
-  oss << "runlog_" << std::setfill('0') << std::setw(6) << rr.fBORRunNumber << ".json";
-  string orr = jdir + "/" + oss.str();
+  string orr = jdir + "/" + filename;
+
   
   JS.open(orr);
   if (JS.fail()) {
     cout << "cdbInitDB> Error failed to open " << orr <<  endl;
   }
-  JS << rr.json() << endl;
+  JS << buffer.str();
   JS.close();
-
 
 
   // -- create configs
@@ -325,7 +315,7 @@ int main(int argc, char* argv[]) {
   for (auto igt: iniGlobalTags) {
     for (auto ic: conffiles) {
       string cfgname = ic.substr(0, ic.find(".")); 
-      string filename = "run/" + ic;
+      filename = "run/" + ic;
       ifstream INS;
       INS.open(filename);
       if (INS.fail()) {
@@ -360,7 +350,5 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  cout << "sizeof(double) = " << sizeof(double) << endl;
-  
 	return 0;
 }
