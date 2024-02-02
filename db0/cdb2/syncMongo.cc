@@ -121,15 +121,21 @@ int main(int argc, char* argv[]) {
   ifstream INS;
   for (auto it: vfiles) {
     INS.open(it);
-    getline(INS, collectionContents);
+
+    std::stringstream buffer;
+    buffer << INS.rdbuf();
     INS.close();
 
-
+    collectionContents = buffer.str();
+    
     if (gDBX) {
-      cout << "insert 1" << endl
+      cout << "insert: " << it << endl
            << collectionContents
            << endl;       
     } else {
+      cout << "insert: " << it << endl
+           << collectionContents
+           << endl;       
       auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
     }
   }
