@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <string.h>
 #include <dirent.h>  /// for directory reading
 
 #include <bsoncxx/json.hpp>
@@ -13,6 +14,9 @@
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/array.hpp>
+
+#include "cdbUtil.hh"
+
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::stream::close_array;
@@ -50,7 +54,7 @@ using namespace std;
 
 bool gDBX(false);
 
-mongocxx::instance gInstance{}; // This should be done only once.
+//mongocxx::instance gInstance{}; // This should be done only once.
 mongocxx::uri gUri("mongodb://pc11740:27017");
 mongocxx::client gClient{gUri};
 
@@ -133,9 +137,14 @@ int main(int argc, char* argv[]) {
            << collectionContents
            << endl;       
     } else {
+      if (dirName == "configs") {
+        size_t offset = string("cfgString").size() + 5; 
+        replaceAll(collectionContents, "\n", "\\n", collectionContents.find("cfgString") + offset);
+        //        replaceAll(collectionContents, "\"", "\\"", collectionContents.find("cfgString") + offset);
+      }
       cout << "insert: " << it << endl
            << collectionContents
-           << endl;       
+           << endl;
       auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
     }
   }
