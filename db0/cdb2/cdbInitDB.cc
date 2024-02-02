@@ -342,6 +342,7 @@ int main(int argc, char* argv[]) {
       cfg.fDate = timeStamp();
       //      cfg.fCfgString = base64_encode(buffer.str());
       replaceAll(sbuffer, "\"", "\\\"");
+      // replaceAll(sbuffer, "\n", " ");
       cfg.fCfgString = sbuffer;
       
       JS << cfg.getJson();
