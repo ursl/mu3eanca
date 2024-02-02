@@ -150,9 +150,8 @@ string jsFormat(vector<int> v) {
 
 
 // ----------------------------------------------------------------------
-void replaceAll(string &str, const string &from, const string &to) {
+void replaceAll(string &str, const string &from, const string &to, size_t start_pos) {
   if (from.empty()) return;
-  size_t start_pos = 0;
   while((start_pos = str.find(from, start_pos)) != string::npos) {
     str.replace(start_pos, from.length(), to);
     start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
@@ -286,7 +285,8 @@ string jsonGetCfgStringEsc(std::string& jstring, std::string key) {
   // -- magic to form the resulting string
   result.pop_back(); // remove an end 
   result.erase(0, 1); // remove front char
-  replaceAll(result, "\\", ""); // remove all escapes
+  replaceAll(result, "\\n", "\n"); // remove all escaped newlines
+  replaceAll(result, "\\", ""); // remove all escaped double quotes
   result.pop_back();
   result.pop_back();
   return result;

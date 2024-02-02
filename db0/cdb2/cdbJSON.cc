@@ -193,7 +193,7 @@ cfgPayload cdbJSON::getConfig(string hash) {
   string jstring = buffer.str();
   cfg.fHash      = jsonGetString(jstring, "cfgHash");
   cfg.fDate      = jsonGetString(jstring, "cfgDate");
-  cfg.fCfgString = jsonGetString(jstring, "cfgString");
+  cfg.fCfgString = jsonGetCfgStringEsc(jstring, "cfgString");
   
   return cfg;
 }

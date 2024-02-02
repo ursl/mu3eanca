@@ -176,7 +176,8 @@ cfgPayload cdbRest::getConfig(string hash) {
   
   cfg.fHash      = jsonGetValue(fCurlReadBuffer, "cfgHash");
   cfg.fDate      = jsonGetValue(fCurlReadBuffer, "cfgDate");
-  cfg.fCfgString = base64_decode(jsonGetString(fCurlReadBuffer, "cfgString"));
+  cfg.fCfgString = jsonGetCfgStringEsc(fCurlReadBuffer, "cfgString");
+  replaceAll(cfg.fCfgString, "\\\n", "\n");
   return cfg;
 }
 
