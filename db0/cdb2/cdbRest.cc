@@ -237,7 +237,7 @@ void cdbRest::doCurl(string collection, string filter, string api) {
 
   CURLcode curlRes = curl_easy_perform(curl);
   
-  if (1) cout << "==:cdbRest::doCurl(\"" << collection << "\"): "
+  if (0) cout << "==:cdbRest::doCurl(\"" << collection << "\"): "
               << " sapi ->" << sapi << "<- result: "
               << fCurlReadBuffer
               << endl;
