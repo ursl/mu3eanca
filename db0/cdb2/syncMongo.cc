@@ -81,14 +81,16 @@ void clearCollection(string scollection) {
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
-  string dirName("fixme"), dirPath("fixme");
+  string dirName("fixme"), dirPath("fixme"), pattern("unset");
   bool onlyDelete(false); // ONLY delete, do not write new records
   for (int i = 0; i < argc; i++){
-    if (!strcmp(argv[i], "-d"))  {gDBX = true;}
-    if (!strcmp(argv[i], "--dir"))  {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "-d"))    {gDBX = true;}
+    if (!strcmp(argv[i], "--dir")) {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "-dir"))  {dirPath = string(argv[++i]);}
-    if (!strcmp(argv[i], "--del"))  {onlyDelete = true;}
+    if (!strcmp(argv[i], "--del")) {onlyDelete = true;}
     if (!strcmp(argv[i], "-del"))  {onlyDelete = true;}
+    if (!strcmp(argv[i], "--pat")) {pattern = string(argv[++i]);}
+    if (!strcmp(argv[i], "-p"))    {pattern = string(argv[++i]);}
   }
 
   vector<string> vfiles;
@@ -124,8 +126,13 @@ int main(int argc, char* argv[]) {
   string collectionContents;
   ifstream INS;
   for (auto it: vfiles) {
-    INS.open(it);
+    if ((pattern != "unset") && (string::npos == it.find(pattern))) {
+      cout << "pattern ->" << pattern << "<- not matched to ->" << it << "<- ... skipping" << endl;
+      continue;
+    }
 
+    INS.open(it);
+    
     std::stringstream buffer;
     buffer << INS.rdbuf();
     INS.close();
@@ -140,7 +147,6 @@ int main(int argc, char* argv[]) {
       if (dirName == "configs") {
         size_t offset = string("cfgString").size() + 5; 
         replaceAll(collectionContents, "\n", "\\n", collectionContents.find("cfgString") + offset);
-        //        replaceAll(collectionContents, "\"", "\\"", collectionContents.find("cfgString") + offset);
       }
       cout << "insert: " << it << endl
            << collectionContents
