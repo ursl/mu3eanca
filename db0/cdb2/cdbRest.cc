@@ -135,9 +135,10 @@ runRecord cdbRest::getRunRecord(int irun) {
   doCurl("runrecords", to_string(irun), "findOne");
   stripOverhead();
   cout << "fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
-  cout << "hallo" << endl;
+  if (fCurlReadBuffer == "Not found") {
+    return rr;
+  }
   rr.fBORRunNumber     = stoi(jsonGetValue(fCurlReadBuffer, "Run number"));
-  cout << "hallo 2" << endl;
   rr.fBORStartTime     = jsonGetString(fCurlReadBuffer, "Start time");
   rr.fBORSubsystems    = stoi(jsonGetValue(fCurlReadBuffer, "Subsystems"));
   rr.fBORBeam          = stof(jsonGetValue(fCurlReadBuffer, "Beam"));
@@ -145,8 +146,8 @@ runRecord cdbRest::getRunRecord(int irun) {
   
   rr.fEORStopTime      = jsonGetString(fCurlReadBuffer, "Stop time");
   rr.fEOREvents        = stoi(jsonGetValue(fCurlReadBuffer, "Events"));
-  rr.fEORFileSize      = stoi(jsonGetValue(fCurlReadBuffer, "File size"));
-  rr.fEORDataSize      = stoi(jsonGetValue(fCurlReadBuffer, "Data size"));
+  rr.fEORFileSize      = stod(jsonGetValue(fCurlReadBuffer, "File size"));
+  rr.fEORDataSize      = stod(jsonGetValue(fCurlReadBuffer, "Uncompressed data size"));
   rr.fEORComments      = jsonGetString(fCurlReadBuffer, "Comments");
   
   rr.fConfigurationKey = jsonGetString(fCurlReadBuffer, "Configuration key");
@@ -175,7 +176,8 @@ cfgPayload cdbRest::getConfig(string hash) {
   
   cfg.fHash      = jsonGetValue(fCurlReadBuffer, "cfgHash");
   cfg.fDate      = jsonGetValue(fCurlReadBuffer, "cfgDate");
-  cfg.fCfgString = base64_decode(jsonGetString(fCurlReadBuffer, "cfgString"));
+  cfg.fCfgString = jsonGetCfgStringEsc(fCurlReadBuffer, "cfgString");
+  replaceAll(cfg.fCfgString, "\\\n", "\n");
   return cfg;
 }
 
@@ -234,8 +236,9 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fCurlReadBuffer);
 
   CURLcode curlRes = curl_easy_perform(curl);
-
+  
   if (0) cout << "==:cdbRest::doCurl(\"" << collection << "\"): "
+              << " sapi ->" << sapi << "<- result: "
               << fCurlReadBuffer
               << endl;
 }

@@ -86,7 +86,7 @@ bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/syncMongo.o obj/testPixe
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so 
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncCloud.o -o bin/syncCloud $(LIBMONGODB) $(LIBCURL) $(GLIBS)  
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncMongo.o -o bin/syncMongo $(LIBMONGODB) $(LIBCURL) $(GLIBS)  
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncMongo.o -o bin/syncMongo $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so 
 
 clean:
 	rm -f obj/*.o lib/*.so bin/*

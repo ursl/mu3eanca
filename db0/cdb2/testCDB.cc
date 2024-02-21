@@ -101,8 +101,13 @@ int main(int argc, char* argv[]) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << sconfDet << endl;
     cout << "----------------------------------------------------------------------" << endl;
+    string sconfTrirec = pDC->getConfString("trirec");
+    cout << "trirec configuration" << endl;
+    cout << "----------------------------------------------------------------------" << endl;
+    cout << sconfTrirec << endl;
+    cout << "----------------------------------------------------------------------" << endl;
   } else if (3 == mode) {
-    cout << "Test configuration" << endl;
+    cout << "Test run record" << endl;
     Mu3eConditions *pDC = Mu3eConditions::instance();
     runRecord rr = pDC->getRunRecord(12);
     cout << "runRecord:" << endl;

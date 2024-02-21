@@ -46,9 +46,11 @@ string cfgPayload::getString(bool prtAll) {
 // ----------------------------------------------------------------------
 string cfgPayload::getJson() {
   std::stringstream sstr;
-  sstr << "{\"cfgHash\" : \"" << fHash << "\", "
-       << "\"cfgDate\" : \"" << fDate << "\", "
-       << "\"cfgString\" : \"" << fCfgString << "\"}";
+  sstr << "{\"cfgHash\" : \"" << fHash << "\", " << endl
+       << "\"cfgDate\" : \"" << fDate << "\", " << endl
+       << "\"cfgString\" : \"" << endl
+       << fCfgString << endl
+       << "\"}";
   return sstr.str();
 }
 

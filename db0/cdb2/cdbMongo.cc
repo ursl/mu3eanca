@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "base64.hh"
+#include "cdbUtil.hh"
 
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
@@ -215,7 +216,7 @@ cfgPayload cdbMongo::getConfig(string hash) {
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
     cfg.fDate      = doc["cfgDate"].get_string().value.to_string();
     cfg.fHash      = doc["cfgHash"].get_string().value.to_string();
-    cfg.fCfgString = base64_decode(doc["cfgString"].get_string().value.to_string());
+    cfg.fCfgString = doc["cfgString"].get_string().value.to_string();
   }
   return cfg;
 }
