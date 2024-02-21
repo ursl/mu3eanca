@@ -7,7 +7,7 @@ const router = express.Router();
 // Get a single runrecord
 router.get("/findOne/runrecords/:id", async (req, res) => {
   let runno = parseInt(req.params.id);
-  console.log("serving 14 /findOne/runrecords/" + req.params.id);
+  console.log("serving /findOne/runrecords/" + req.params.id + " from " + req.ip);
   // console.log("req.params.id ->" + req.params.id + "<-" );
   // console.log(typeof req.params.id); // string
   // console.log("runno = " + runno);
@@ -78,6 +78,28 @@ router.get("/findAll/globaltags", async (req, res) => {
     .toArray();
 
   res.send(results).status(200);
+});
+
+
+// Post a runrecord
+router.put("/tests", async (req, res) => {
+  console.log("PUT  /tests/ insert document from " + req.ip);
+  const data    = req.body;
+  let borData   = data.BOR;
+  let runnumber = borData["Run number"];
+
+  let collection = await db.collection("tests");
+  
+  let query = {"BOR.Run number": runnumber};
+  let rDel = await collection.deleteMany(query);
+  console.log("rDel ->" + rDel + "<-");
+
+  console.log("runnumber ->" + runnumber + "<-");
+
+  let newDocument = req.body;
+  let result = await collection.insertOne(newDocument);
+  res.send(result).status(204);
+
 });
 
 
