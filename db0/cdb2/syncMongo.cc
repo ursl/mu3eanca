@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <string.h>
 #include <dirent.h>  /// for directory reading
 
 #include <bsoncxx/json.hpp>
@@ -13,6 +14,9 @@
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/array.hpp>
+
+#include "cdbUtil.hh"
+
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::stream::close_array;
@@ -40,51 +44,99 @@ using namespace std;
 //    configs/*
 //
 // Usage:
-// ../bin/syncCloud --dir ~/data/mu3e/json12/globaltags
-// ../bin/syncCloud --dir /Users/ursl/data/mu3e/json12/tags
-// ../bin/syncCloud --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
-// ../bin/syncCloud --dir runrecords
-// ../bin/syncCloud --dir configs
+// ../bin/syncMongo --dir ~/data/mu3e/json12/globaltags
+// ../bin/syncMongo --dir /Users/ursl/data/mu3e/json12/tags
+// ../bin/syncMongo --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
+// ../bin/syncMongo --dir runrecords
+// ../bin/syncMongo --dir configs
 // 
 // ----------------------------------------------------------------------
 
 bool gDBX(false);
 
-mongocxx::instance gInstance{}; // This should be done only once.
+//mongocxx::instance gInstance{}; // This should be done only once.
 mongocxx::uri gUri("mongodb://pc11740:27017");
 mongocxx::client gClient{gUri};
 
 // ----------------------------------------------------------------------
-void clearCollection(string scollection) {
+void clearCollection(string scollection, string pattern) {
   vector<string> idCollections;
 
   auto db = gClient["mu3e"];
   auto collection = db[scollection];
-  
-  auto cursor_all = collection.find({});
-  cout << "collection " << collection.name()
-       << " contains these documents:" << endl;
-  for (auto doc : cursor_all) {
-    cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
-    auto delete_one_result = collection.delete_one(doc);
-    cout << "delete_one_result = " << delete_one_result->deleted_count() << endl;
-  }
 
+  if (pattern != "unset") {
+    auto tagCursor     = collection.find(document{} << "tag" << pattern << finalize);
+    for (auto doc : tagCursor) {
+      cout << "*********** Tags *** " << endl;
+      cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      auto delete_one_result = collection.delete_one(doc);
+      cout << "*** deleted" << endl;
+    }
+    
+    auto hashCursor    = collection.find(document{} << "hash" << pattern << finalize);
+    for (auto doc : hashCursor) {
+      cout << "*********** Hash *** " << endl;
+      cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      auto delete_one_result = collection.delete_one(doc);
+      cout << "*** deleted" << endl;
+    }
+    
+    auto cfgHashCursor = collection.find(document{} << "cfgHash" << pattern << finalize);
+    for (auto doc : cfgHashCursor) {
+      cout << "*********** cfgHash *** " << endl;
+      cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      auto delete_one_result = collection.delete_one(doc);
+      cout << "*** deleted" << endl;
+    }
+  } else {
+  
+    auto cursor_all = collection.find({});
+    cout << "collection " << collection.name()
+         << " contains these documents:" << endl;
+    for (auto doc : cursor_all) {
+      cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      // string h = doc["cfgHash"].get_string().value.to_string();
+      // cout << "** h = " << h << endl;
+      auto delete_one_result = collection.delete_one(doc);
+      cout << "delete_one_result = " << delete_one_result->deleted_count() << endl;
+    }
+  }
+  
 }
+
+
+// // ----------------------------------------------------------------------
+// void updateDoc(string hashName, string hashValue, string scollection, const string& docContents) {
+//   vector<string> idCollections;
+
+//   auto db = gClient["mu3e"];
+//   auto collection = db[scollection];
+  
+//   //  bsoncxx::from_json(docContents)
+//   cout << "before update" << endl;
+//   auto update_one_result =
+//     collection.update_one(make_document(kvp(hashName, hashValue)), bsoncxx::from_json(docContents));
+//   cout << "after update" << endl;
+//   assert(update_one_result);  // Acknowledged writes return results.
+//   assert(update_one_result->modified_count() == 1);
+// }
 
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
-  string dirName("fixme"), dirPath("fixme");
+  string dirName("fixme"), dirPath("fixme"), pattern("unset");
   bool onlyDelete(false); // ONLY delete, do not write new records
   for (int i = 0; i < argc; i++){
-    if (!strcmp(argv[i], "-d"))  {gDBX = true;}
-    if (!strcmp(argv[i], "--dir"))  {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "-d"))    {gDBX = true;}
+    if (!strcmp(argv[i], "--dir")) {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "-dir"))  {dirPath = string(argv[++i]);}
-    if (!strcmp(argv[i], "--del"))  {onlyDelete = true;}
+    if (!strcmp(argv[i], "--del")) {onlyDelete = true;}
     if (!strcmp(argv[i], "-del"))  {onlyDelete = true;}
+    if (!strcmp(argv[i], "--pat")) {pattern = string(argv[++i]);}
+    if (!strcmp(argv[i], "-p"))    {pattern = string(argv[++i]);}
   }
 
   vector<string> vfiles;
@@ -110,8 +162,9 @@ int main(int argc, char* argv[]) {
   cout << "dirPath ->" << dirPath << "<-" << endl;
   cout << "dirName ->" << dirName << "<-" << endl;
   cout << "clearCollection(" << dirName << ");" << endl;
-  clearCollection(dirName);
+  clearCollection(dirName, pattern);
 
+    
   if (onlyDelete) return 0;
 
   auto db = gClient["mu3e"];
@@ -119,17 +172,36 @@ int main(int argc, char* argv[]) {
   
   string collectionContents;
   ifstream INS;
-  for (auto it: vfiles) {
+  for (auto it: vfiles) {  
     INS.open(it);
-    getline(INS, collectionContents);
+    
+    std::stringstream buffer;
+    buffer << INS.rdbuf();
     INS.close();
 
-
+    collectionContents = buffer.str();
+    
     if (gDBX) {
-      cout << "insert 1" << endl
+      cout << "insert: " << it << endl
            << collectionContents
            << endl;       
     } else {
+
+      if (pattern != "unset") {
+        if (string::npos == it.find(pattern)) {
+          cout << "pattern ->" << pattern << "<- not matched to ->" << it << "<- ... skipping" << endl;
+          continue;        
+        }
+      }
+      
+      
+      if (dirName == "configs") {
+        size_t offset = string("cfgString").size() + 5; 
+        replaceAll(collectionContents, "\n", "\\n", collectionContents.find("cfgString") + offset);
+      }
+      cout << "insert: " << it << endl
+           << collectionContents
+           << endl;
       auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
     }
   }

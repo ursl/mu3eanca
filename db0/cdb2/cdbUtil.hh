@@ -12,7 +12,7 @@
 // ======================================================================
 // string utilities
 // ======================================================================
-void replaceAll(std::string &s, const std::string &from, const std::string &to);
+void replaceAll(std::string &s, const std::string &from, const std::string &to, size_t start_pos = 0);
 void cleanupString(std::string &);
 bool bothAreSpaces(char lhs, char rhs);
 void rmSubString(std::string &sinput, const std::string &remove);

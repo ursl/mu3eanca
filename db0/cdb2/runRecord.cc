@@ -71,24 +71,26 @@ string runRecord::json() const {
     }
   */
 
-  stringstream ss0;
-  ss0 << scientific << setprecision(10) << fEORFileSize; 
-  stringstream ss1;
-  ss1 << scientific << setprecision(10) << fEORDataSize; 
+  stringstream ssB;
+  ssB << scientific << setprecision(6) << fBORBeam; 
+  stringstream ssF;
+  ssF << scientific << setprecision(10) << fEORFileSize; 
+  stringstream ssD;
+  ssD << scientific << setprecision(10) << fEORDataSize; 
   
   sstr << "{ \"BOR\" : {"
        << "\"Run number\" : " << fBORRunNumber << ", "
        << "\"Start time\" : \"" << fBORStartTime << "\", " 
        << "\"Subsystems\" : " << fBORSubsystems << ", " 
-       << "\"Beam\" : " << fBORBeam << ", " 
+       << "\"Beam\" : " << ssB.str() << ", " 
        << "\"Shift crew\" : \"" << fBORShiftCrew << "\""
        << "}, "
 
        << "\"EOR\" : {"
        << "\"Stop time\" : \"" << fEORStopTime << "\", " 
        << "\"Events\" : " << fEOREvents << ", " 
-       << "\"File size\" : " << ss0.str() << ", " 
-       << "\"Uncompressed data size\" : " << ss1.str() << ", " 
+       << "\"File size\" : " << ssF.str() << ", " 
+       << "\"Uncompressed data size\" : " << ssD.str() << ", " 
        << "\"Comments\" : \"" << fEORComments << "\" " 
        << "} }";
   return sstr.str();
