@@ -82,13 +82,13 @@ router.get("/findAll/globaltags", async (req, res) => {
 
 
 // Post a runrecord
-router.put("/tests", async (req, res) => {
-  console.log("PUT  /tests/ insert document from " + req.ip);
+router.put("/runrecords", async (req, res) => {
+  console.log("PUT  /runrecords/ insert document from " + req.ip);
   const data    = req.body;
   let borData   = data.BOR;
   let runnumber = borData["Run number"];
 
-  let collection = await db.collection("tests");
+  let collection = await db.collection("runrecords");
   
   let query = {"BOR.Run number": runnumber};
   let rDel = await collection.deleteMany(query);
@@ -98,7 +98,9 @@ router.put("/tests", async (req, res) => {
 
   let newDocument = req.body;
   let result = await collection.insertOne(newDocument);
-  res.send(result).status(204);
+  let retRes = 'CDB inserted:' + '\n' + JSON.stringify(req.body, null, 3) + '\n'
+      + 'CDB result:' + '\n' + JSON.stringify(result, null, 3) + '\n';
+  res.send(retRes).status(204);
 
 });
 
