@@ -162,8 +162,6 @@ cfgPayload cdbRest::getConfig(string hash) {
   fCurlReadBuffer.clear();
   doCurl("configs", hash, "findOne");
   stripOverhead();
-
-  
   
   cfgPayload cfg;
 

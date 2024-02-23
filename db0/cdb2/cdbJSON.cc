@@ -177,7 +177,7 @@ cfgPayload cdbJSON::getConfig(string hash) {
        << " not found)";
   cfgPayload cfg;
 
-  // -- read runRecord for run irun 
+  // -- read config
   ifstream INS;
   string filename = fURI + "/configs/" + hash;
   INS.open(filename);
