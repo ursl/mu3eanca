@@ -46,15 +46,15 @@ void printAll(cdbAbs *);
 // ----------------------------------------------------------------------
 
 
-
-
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
   
   // -- command line arguments
   int mode(0), run(3), verbose(0);
   string db("json"), gt("mcidealv5.0");
+  vector<string> configs;
   for (int i = 0; i < argc; i++){
+    if (!strcmp(argv[i], "-c"))   {configs.push_back(string(argv[++i]));}
     if (!strcmp(argv[i], "-db"))  {db = string(argv[++i]);}
     if (!strcmp(argv[i], "-gt"))  {gt = string(argv[++i]);}
     if (!strcmp(argv[i], "-m"))   {mode = atoi(argv[++i]);}
@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
 
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
+  pDC->setRunNumber(run);
   
   if (0 == mode) {
     cout << "----------------------------------------------------------------------" << endl;
@@ -87,7 +88,6 @@ int main(int argc, char* argv[]) {
     calAbs *cal0 = pDC->createClass("pixelalignment_");
     if (verbose > 0) cal0->setVerbosity(verbose);
     
-    pDC->setRunNumber(run);
     cout << "set run number to " << pDC->getRunNumber() << endl;
     printStuff(pDB, gt);
     cout << "----------------------------------------------------------------------" << endl;
@@ -114,6 +114,51 @@ int main(int argc, char* argv[]) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << rr.json() << endl;
     cout << "----------------------------------------------------------------------" << endl;
+  } else if (4 == mode) {
+    cout << "Test payloads from different origins" << endl;
+    Mu3eConditions *pDC = Mu3eConditions::instance();
+    calAbs *cal = pDC->getCalibration("pixelalignment_");
+    calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(cal);
+    cout << "==> default calPixelAlignment: " << endl;
+    cpa->printBLOB(cal->makeBLOB(), 4);
+
+    // -- create special pixelalignment
+    cout << "==> now setup new calPixelAlignment: " << endl;
+    calPixelAlignment *cpa2 = new calPixelAlignment();
+    cpa2->setVerbosity(10);
+    string filename = "../ascii/sensors-mcidealnew.csv";
+    string result = cpa2->readCsv(filename);
+    if (string::npos == result.find("Error")) {
+      string spl = cpa2->makeBLOB();
+      string hash = string("tag_pixelalignment_") + string("new") + string("_iov_1");
+      payload pl; 
+      pl.fHash = hash; 
+      pl.fComment = " pixel new";
+      pl.fBLOB = spl;
+      if (verbose) cpa2->printBLOB(spl); 
+      cpa2->writePayloadToFile(hash, ".", pl); 
+    } else {
+      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+    }
+    // -- read from file and register it as a new one  with pDC
+    calPixelAlignment *cpa3 = new calPixelAlignment();
+    cpa3->setVerbosity(10);
+    cpa3->readPayloadFromFile("tag_pixelalignment_new_iov_1", ".");
+    cpa3->calculate("tag_pixelalignment_new_iov_1");
+    pDC->registerCalibration("pixelalignment_new", cpa3);
+    // -- read this special one from Mu3Conditions
+    calAbs *calNew = pDC->getCalibration("pixelalignment_new");
+    calPixelAlignment* cpaNew = dynamic_cast<calPixelAlignment*>(calNew);
+    cout << " new calPixelAlignment: " << endl;
+    cpaNew->printBLOB(calNew->makeBLOB(), 4);
+
+    // -- register it as the OLD one with pDC
+    pDC->registerCalibration("pixelalignment_mcidealv5.0", cpa3);
+    calAbs *calNewAsOld = pDC->getCalibration("pixelalignment_");
+    calPixelAlignment* cpaNewAsOld = dynamic_cast<calPixelAlignment*>(calNewAsOld);
+    cout << " newAsOld calPixelAlignment: " << endl;
+    cpaNewAsOld->printBLOB(cpaNewAsOld->makeBLOB(), 4);
+
   }
   return 0;
 }
