@@ -100,7 +100,9 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   pl.fBLOB    = base64_decode(jsonGetString(fPayloadString, "BLOB"));
   
   fTagIOVPayloadMap.insert(make_pair(hash, pl));
-  if (fVerbose > 0) cout << "calAbs::readPayloadFromFile() Inserted " << " hash ->" << hash << "<-"
+  if (fVerbose > 0) cout << "calAbs::readPayloadFromFile() Inserted "
+                         << " hash ->" << hash << "<-"
+                         << " blob.size() = " << pl.fBLOB.size() 
                          << " into fTagIOVPayloadMap" 
                          << endl;
 }
