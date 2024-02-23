@@ -133,6 +133,13 @@ calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
 void Mu3eConditions::registerCalibration(string tag, calAbs *c) {
   cout << "Mu3eConditions::registerCalibration> name ->" << c->getName()
        << "<- with tag ->" << tag << "<-";
+  if (fCalibrations.find(tag) == fCalibrations.end()) {
+    // -- not found, do nothing
+  } else {
+    // -- found, delete it
+    fCalibrations.erase(tag);
+    cout << " already exists; replacing this calibration!!";
+  }
   fCalibrations.insert(make_pair(tag, c));
   cout << " ...  done" << endl;
 }
