@@ -20,7 +20,6 @@ cfgPayload::cfgPayload() : fHash("cfg_X_gt"),
 cfgPayload::cfgPayload(string cfgPayloadFile) {
   fHash      = jsonGetValue(cfgPayloadFile, "cfgHash");
   fDate      = jsonGetValue(cfgPayloadFile, "cfgDate");
-  // fCfgString = base64_decode(jsonGetCfgString(jstring, "cfgString"));
   fCfgString = jsonGetCfgStringEsc(cfgPayloadFile, "cfgString");
 }
 
@@ -54,3 +53,31 @@ string cfgPayload::getJson() {
   return sstr.str();
 }
 
+
+// ----------------------------------------------------------------------
+void cfgPayload::readFromFile(string hash, string dir) {
+  // -- initialize with default
+  std::stringstream sspl;
+  sspl << "(cdbJSON>  config for hash = " << hash
+       << " not found)";
+
+  fCfgString = sspl.str();
+
+  // -- read config
+  ifstream INS;
+  string filename = dir + "/" + hash;
+  INS.open(filename);
+  if (INS.fail()) {
+    cout << "Error failed to open ->" << filename << "<-" << endl;
+  }
+
+  std::stringstream buffer;
+  buffer << INS.rdbuf();
+  INS.close();
+
+  string jstring = buffer.str();
+  fHash      = jsonGetString(jstring, "cfgHash");
+  fDate      = jsonGetString(jstring, "cfgDate");
+  fCfgString = jsonGetCfgStringEsc(jstring, "cfgString");
+  
+}
