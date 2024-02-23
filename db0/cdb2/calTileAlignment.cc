@@ -89,7 +89,10 @@ void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
   cout << "calTileAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
   
+  int cnt(0);
   while (ibuffer != buffer.end()) {
+    if (verbosity > 0) ++cnt;
+    if (cnt > verbosity) break;
     cout << "   id = " << blob2UnsignedInt(getData(ibuffer))
          << " sensor = " << blob2Int(getData(ibuffer))
          << " pos = "
