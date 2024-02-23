@@ -8,6 +8,7 @@ class cfgPayload {
 public:
   cfgPayload();
   cfgPayload(std::string cfgPayloadFile);
+  void readFromFile(std::string hash, std::string dir);
   void print(bool prtAll = true);
   std::string getString(bool prtAll = true);
   std::string getJson();
