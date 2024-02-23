@@ -178,6 +178,23 @@ void Mu3eConditions::setRunNumber(int runnumber) {
 
 
 // ----------------------------------------------------------------------
+vector<string> Mu3eConditions::getTags(string filter) {
+  vector<string> result;
+  for (auto it: fTags) {
+    if (fVerbose > 2) {
+      cout << "  Mu3eConditions::getTags(" << filter << ")> looking at " << it << endl;
+    }  
+    if (filter != "unset") {
+      if (string::npos != it.find(filter)) result.push_back(it);
+    } else {
+      result.push_back(it); 
+    }
+  }
+  return result;
+}
+
+
+// ----------------------------------------------------------------------
 calAbs* Mu3eConditions::getCalibration(std::string name) {
   for (auto it: fCalibrations) {
     if (fVerbose > 2) cout << "  Mu3eConditions::getCalibration> looking at " << it.first << endl;
