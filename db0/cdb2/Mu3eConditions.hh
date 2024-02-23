@@ -21,7 +21,7 @@ public:
 	// -- access to metadata (from DB)
   std::string                                  getGlobalTag() {return fGT;}
   virtual std::vector<std::string>             getGlobalTags() {return fGlobalTags;}
-  virtual std::vector<std::string>             getTags() {return fTags;}
+  virtual std::vector<std::string>             getTags(std::string filter = "unset");
   virtual std::vector<int>                     getIOVs(std::string t) {return fIOVs[t];}
 
   calAbs* createClass(std::string name);
