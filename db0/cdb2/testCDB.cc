@@ -10,6 +10,7 @@
 #include "runRecord.hh"
 
 #include "calPixelAlignment.hh"
+#include "calMppcAlignment.hh"
 
 
 using namespace std;
@@ -52,9 +53,10 @@ int main(int argc, char* argv[]) {
   // -- command line arguments
   int mode(0), run(3), verbose(0);
   string db("json"), gt("mcidealv5.0");
-  vector<string> configs;
+  vector<string> cals, configs;
   for (int i = 0; i < argc; i++){
-    if (!strcmp(argv[i], "-c"))   {configs.push_back(string(argv[++i]));}
+    if (!strcmp(argv[i], "-cal")) {cals.push_back(string(argv[++i]));}
+    if (!strcmp(argv[i], "-cfg")) {configs.push_back(string(argv[++i]));}
     if (!strcmp(argv[i], "-db"))  {db = string(argv[++i]);}
     if (!strcmp(argv[i], "-gt"))  {gt = string(argv[++i]);}
     if (!strcmp(argv[i], "-m"))   {mode = atoi(argv[++i]);}
@@ -122,7 +124,7 @@ int main(int argc, char* argv[]) {
     cout << "==> default calPixelAlignment: " << endl;
     cpa->printBLOB(cal->makeBLOB(), 4);
 
-    // -- create special pixelalignment
+    // -- create special pixelalignment for test purposes
     cout << "==> now setup new calPixelAlignment: " << endl;
     calPixelAlignment *cpa2 = new calPixelAlignment();
     cpa2->setVerbosity(10);
@@ -139,6 +141,26 @@ int main(int argc, char* argv[]) {
       cpa2->writePayloadToFile(hash, ".", pl); 
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+      return 0;
+    }
+    // -- create special mppcalignment for test purposes
+    cout << "==> now setup new calMppcAlignment: " << endl;
+    calMppcAlignment *cma2 = new calMppcAlignment();
+    cma2->setVerbosity(10);
+    string filename2 = "../ascii/mppcs-mcidealnew.csv";
+    string result2 = cma2->readCsv(filename2);
+    if (string::npos == result2.find("Error")) {
+      string spl = cma2->makeBLOB();
+      string hash = string("tag_mppcalignment_") + string("new") + string("_iov_1");
+      payload pl; 
+      pl.fHash = hash; 
+      pl.fComment = " MPPC new";
+      pl.fBLOB = spl;
+      if (verbose) cma2->printBLOB(spl); 
+      cma2->writePayloadToFile(hash, ".", pl); 
+    } else {
+      cout << "cdbInitDB> Error, file " << filename2 << " not found" << endl;
+      return 0;
     }
     // -- read from file and register it as a new one  with pDC
     calPixelAlignment *cpa3 = new calPixelAlignment();
@@ -158,7 +180,95 @@ int main(int argc, char* argv[]) {
     calPixelAlignment* cpaNewAsOld = dynamic_cast<calPixelAlignment*>(calNewAsOld);
     cout << " newAsOld calPixelAlignment: " << endl;
     cpaNewAsOld->printBLOB(cpaNewAsOld->makeBLOB(), 4);
+  } else if (5 == mode) {
+    cout << "Test calibration payloads from different origins with command line options passed into vector" << endl;
+    Mu3eConditions *pDC = Mu3eConditions::instance();
 
+    // -- command line parsing
+    for (auto it: cals) {
+      if (string::npos == it.find(":")) {
+        cout << "error: " << it
+             << " does not correspond to format dir:hash (pd hash = filename!)"
+             << endl;
+        continue;
+      }
+      string dir  = it.substr(0, it.find(":"));
+      string hash = it.substr(it.rfind(":")+1);
+      cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
+      
+      if (string::npos != hash.find("pixelalignment")) {
+        calPixelAlignment *cpa = new calPixelAlignment();
+        cpa->setVerbosity(10);
+        cpa->readPayloadFromFile(hash, dir);
+        cpa->calculate(hash);
+        vector<string> tags = pDC->getTags("pixelalignment");
+        pDC->registerCalibration(tags[0], cpa);
+        cpa->printBLOB(cpa->makeBLOB(), 4);
+      } else if (string::npos != hash.find("mppcalignment")) {
+        calMppcAlignment *cpa = new calMppcAlignment();
+        cpa->setVerbosity(10);
+        cpa->readPayloadFromFile(hash, dir);
+        cpa->calculate(hash);
+        vector<string> tags = pDC->getTags("mppcalignment");
+        pDC->registerCalibration(tags[0], cpa);
+        cpa->printBLOB(cpa->makeBLOB(), 4);
+      }
+    }    
+    // -- printout
+    calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(pDC->getCalibration("pixelalignment_"));
+    cpa->printBLOB(cpa->makeBLOB(), 4);
+    calMppcAlignment* cma = dynamic_cast<calMppcAlignment*>(pDC->getCalibration("mppcalignment_"));
+    cma->printBLOB(cma->makeBLOB(), 4);
+    
+  } else if (6 == mode) {
+    cout << "Test config payloads from different origins with command line options passed into vector" << endl;
+    Mu3eConditions *pDC = Mu3eConditions::instance();
+
+    for (auto it: configs) {
+      if (string::npos == it.find(":")) {
+        cout << "error: " << it
+             << " does not correspond to format dir:hash (pd hash = filename!)"
+             << endl;
+        continue;
+      }
+      string dir  = it.substr(0, it.find(":"));
+      string hash = it.substr(it.rfind(":")+1);
+      cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
+      
+      if (string::npos != hash.find("detector")) {
+        calPixelAlignment *cpa = new calPixelAlignment();
+        cpa->setVerbosity(10);
+        cpa->readPayloadFromFile(hash, dir);
+        cpa->calculate(hash);
+        vector<string> tags = pDC->getTags();
+        for (auto ita: tags) {
+          if (string::npos != ita.find("pixelalignment")) {
+            cout << "found in tags ->" << ita << "<-" << endl;
+            pDC->registerCalibration(ita, cpa);
+            break;
+          }
+        }
+        cpa->printBLOB(cpa->makeBLOB(), 4);
+      } else if (string::npos != hash.find("mppcalignment")) {
+        calMppcAlignment *cpa = new calMppcAlignment();
+        cpa->setVerbosity(10);
+        cpa->readPayloadFromFile(hash, dir);
+        cpa->calculate(hash);
+        vector<string> tags = pDC->getTags();
+        for (auto ita: tags) {
+          if (string::npos != ita.find("mppcalignment")) {
+            cout << "found in tags ->" << ita << "<-" << endl;
+            pDC->registerCalibration(ita, cpa);
+            break;
+          }
+        }
+      }
+    }    
+    calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(pDC->getCalibration("pixelalignment_"));
+    cpa->printBLOB(cpa->makeBLOB(), 4);
+    calMppcAlignment* cma = dynamic_cast<calMppcAlignment*>(pDC->getCalibration("mppcalignment_"));
+    cma->printBLOB(cma->makeBLOB(), 4);
+    
   }
   return 0;
 }
