@@ -90,11 +90,13 @@ void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
   long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
   cout << "calFibreAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-  
+
+  int cnt(0);
   while (ibuffer != buffer.end()) {
+    if (verbosity > 0) ++cnt;
+    if (cnt > verbosity) break;
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-
     cout << "   sensor = " << chipID
          << " c = "
          << blob2Double(getData(ibuffer)) << "/" 

@@ -92,7 +92,10 @@ void calMppcAlignment::printBLOB(std::string sblob, int verbosity) {
   cout << "calMppcAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
   
+  int cnt(0); 
   while (ibuffer != buffer.end()) {
+    if (verbosity > 0) ++cnt;
+    if (cnt > verbosity) break;
     cout << "   mppc = "
          << blob2UnsignedInt(getData(ibuffer))
          << " v = "
