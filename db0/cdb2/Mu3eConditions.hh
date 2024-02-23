@@ -5,6 +5,7 @@
 #include <map>
 
 #include "runRecord.hh"
+#include "cfgPayload.hh"
 
 class cdbAbs;
 class calAbs;
@@ -38,6 +39,7 @@ public:
 
   runRecord getRunRecord(int irun); 
 
+  void        registerConf(std::string tag, cfgPayload c);
   std::string getConfString(std::string cfgName);
   std::string getConfStringWithHash(std::string cfgHash);
   
@@ -71,6 +73,9 @@ private:
 
   // -- map of tag, calibration classes to be notified of update requirements
   std::map<std::string, calAbs*> fCalibrations;
+
+  // -- map of tag, configs
+  std::map<std::string, cfgPayload> fConfigs;
 };
 
 #endif

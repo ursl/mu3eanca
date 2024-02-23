@@ -246,18 +246,49 @@ runRecord Mu3eConditions::getRunRecord(int irun) {
 
 
 // ----------------------------------------------------------------------
+void Mu3eConditions::registerConf(std::string cfgName, cfgPayload c) {
+  string hash = "cfg_" + cfgName + "_" + fGT;
+  hash = c.fHash;
+  cout << "Mu3eConditions::registerConf> cfgName ->" << cfgName
+       << "<- with hash ->" << hash << "<-";
+  if (fConfigs.find(hash) == fConfigs.end()) {
+    // -- not found, do nothing
+  } else {
+    // -- found, delete it
+    fConfigs.erase(hash);
+    cout << " already exists; replacing this config!!";
+  }
+  fConfigs.insert(make_pair(hash, c));
+  cout << " ...  done" << endl;
+}
+
+
+// ----------------------------------------------------------------------
 string Mu3eConditions::getConfString(string cfgName) {
   string hash = "cfg_" + cfgName + "_" + fGT;
   if (fVerbose > 2) cout << "Mu3eConditions::getConfString(" << cfgName
                          << ") -> hash = " << hash
                          << endl;
-  cfgPayload js =  fDB->getConfig(hash);
-  return js.fCfgString;
+  return getConfStringWithHash(hash);
 }
 
 
 // ----------------------------------------------------------------------
 string Mu3eConditions::getConfStringWithHash(string hash) {
   if (fVerbose > 2) cout << "Mu3eConditions::getConfStringWithHash(" << hash << ") " << endl;
-  return fDB->getConfig(hash).fCfgString;
+
+  if (fConfigs.find(hash) == fConfigs.end()) {
+    if (fVerbose > 2) cout << "Mu3eConditions::getConfString(" << hash
+                           << ") not cached, retrieve from DB"
+                           << endl;
+    cfgPayload cfg = fDB->getConfig(hash);
+    fConfigs.insert(make_pair(hash, cfg));
+  } else {
+    if (fVerbose > 4) cout << "calAbs::getPayload(" << hash
+                           << ") cached."
+                           << endl;
+  }
+  
+  map<string, cfgPayload>::iterator it = fConfigs.find(hash);
+  return it->second.fCfgString;
 }
