@@ -235,39 +235,13 @@ int main(int argc, char* argv[]) {
       string hash = it.substr(it.rfind(":")+1);
       cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
       
-      if (string::npos != hash.find("detector")) {
-        calPixelAlignment *cpa = new calPixelAlignment();
-        cpa->setVerbosity(10);
-        cpa->readPayloadFromFile(hash, dir);
-        cpa->calculate(hash);
-        vector<string> tags = pDC->getTags();
-        for (auto ita: tags) {
-          if (string::npos != ita.find("pixelalignment")) {
-            cout << "found in tags ->" << ita << "<-" << endl;
-            pDC->registerCalibration(ita, cpa);
-            break;
-          }
-        }
-        cpa->printBLOB(cpa->makeBLOB(), 4);
-      } else if (string::npos != hash.find("mppcalignment")) {
-        calMppcAlignment *cpa = new calMppcAlignment();
-        cpa->setVerbosity(10);
-        cpa->readPayloadFromFile(hash, dir);
-        cpa->calculate(hash);
-        vector<string> tags = pDC->getTags();
-        for (auto ita: tags) {
-          if (string::npos != ita.find("mppcalignment")) {
-            cout << "found in tags ->" << ita << "<-" << endl;
-            pDC->registerCalibration(ita, cpa);
-            break;
-          }
-        }
-      }
+      cfgPayload cfg;
+      cfg.readFromFile(hash, dir);
+      pDC->registerConf(gt, cfg);
     }    
-    calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(pDC->getCalibration("pixelalignment_"));
-    cpa->printBLOB(cpa->makeBLOB(), 4);
-    calMppcAlignment* cma = dynamic_cast<calMppcAlignment*>(pDC->getCalibration("mppcalignment_"));
-    cma->printBLOB(cma->makeBLOB(), 4);
+    cout << "conf trirec: " << endl;
+    cout << pDC->getConfString("trirec") << endl;
+    cout << pDC->getConfString("vertex") << endl;
     
   }
   return 0;
