@@ -29,6 +29,9 @@ public:
   calAbs* createClass(std::string name, std::string tag);
   calAbs* createClassWithDB(std::string name, std::string tag, cdbAbs *db);
 
+  void    localCalPayloads(std::string scals);
+  void    localCfgPayloads(std::string scfgs);
+
   cdbAbs* getDB()               {return fDB;}
   void    setDB(cdbAbs *db)     {fDB = db;}
   void    setVerbosity(int v)   {fVerbose = v;}
