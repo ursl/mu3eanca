@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "cdbAbs.hh"
+#include "cdbUtil.hh"
 
 #include "Mu3eConditions.hh"
 #include "Mu3eCalFactory.hh"
@@ -110,6 +111,8 @@ calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
   //dbx  auto tbegin = std::chrono::high_resolution_clock::now();
 
   Mu3eCalFactory *mcf = Mu3eCalFactory::instance(fGT, db);
+  mcf->setVerbosity(fVerbose);
+
   a = mcf->createClassWithDB(name, tag, db);
 
   //dbx  auto tend = std::chrono::high_resolution_clock::now();
@@ -291,4 +294,44 @@ string Mu3eConditions::getConfStringWithHash(string hash) {
 
   map<string, cfgPayload>::iterator it = fConfigs.find(hash);
   return it->second.fCfgString;
+}
+
+
+// ----------------------------------------------------------------------
+void Mu3eConditions::localCalPayloads(string scals) {
+  Mu3eCalFactory *mcf = Mu3eCalFactory::instance(fGT, 0);
+
+  vector<string> cals;
+  split(scals, ':', cals);
+  for (auto it: cals) {
+    string dir  = it.substr(0, it.rfind("/"));
+    string hash = it.substr(it.rfind("/")+1);
+    cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
+
+    calAbs *a = mcf->createClassFromFile(hash, dir);
+    string tagName = hash.substr(0, hash.find("_"));
+    registerCalibration(tagName, a);
+  }
+
+}
+
+
+// ----------------------------------------------------------------------
+void Mu3eConditions::localCfgPayloads(string scfgs) {
+  vector<string> configs;
+  split(scfgs, ':', configs);
+  for (auto it: configs) {
+    string dir  = it.substr(0, it.rfind("/"));
+    string hash = it.substr(it.rfind("/")+1);
+    cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
+
+    cfgPayload cfg;
+    cfg.readFromFile(hash, dir);
+    if (cfg.fError == "Error: file not found") {
+      cout << "file ->" << dir << "/" << hash << "<- not found" << endl;
+      return;
+    }
+    registerConf(fGT, cfg);
+  }
+
 }
