@@ -24,6 +24,7 @@ Mu3eCalFactory* Mu3eCalFactory::instance(std::string gt, cdbAbs *db) {
 
 // ----------------------------------------------------------------------
 Mu3eCalFactory::Mu3eCalFactory(std::string gt, cdbAbs *db) : fGT(gt), fDB(db) {
+  fVerbose = 10;
   if (fVerbose > 0) cout << "Mu3eCalFactory::Mu3eCalFactory(std::string gt, cdbAbs *db) " << endl;
   if (fDB) {
     fTags       = fDB->readTags(fGT);
@@ -71,38 +72,58 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
   auto tbegin = std::chrono::high_resolution_clock::now();
   if (!name.compare("pixelalignment_")) {
     a = new calPixelAlignment(db, tag);
-    if (fVerbose > 0) cout << "Mu3eCalFactory::createClassWithDB("
-                           << name << ", " << db->getName()
-                           << ", " << tag << ")"
-                           << ", " << db->getName() << ")"
-                           << endl;
   } else if (!name.compare("fibrealignment_")) {
     a = new calFibreAlignment(db, tag);
-    if (fVerbose > 0) cout << "Mu3eCalFactory::createClassWithDB("
-                           << name << ", " << db->getName()
-                           << ", " << tag << ")"
-                           << ", " << db->getName() << ")"
-                           << endl;
-  } else if (!name.compare("mppcalignment_")) {
+  } else if (!name.compare("mppcalignment_"))  {
     a = new calMppcAlignment(db, tag);
-    if (fVerbose > 0) cout << "Mu3eCalFactory::createClassWithDB("
-                           << name << ", " << db->getName()
-                           << ", " << tag << ")"
-                           << ", " << db->getName() << ")"
-                           << endl;
-  } else if (!name.compare("tilealignment_")) {
+  } else if (!name.compare("tilealignment_"))  {
     a = new calTileAlignment(db, tag);
-    if (fVerbose > 0) cout << "Mu3eCalFactory::createClassWithDB("
-                           << name << ", " << db->getName()
-                           << ", " << tag << ")"
-                           << ", " << db->getName() << ")"
-                           << endl;
   } else {
     cout << "ERROR: " << name
          << " is an unknown class. Nothing registered in Mu3Conditions"
          << endl;
     return 0;
   }
+
+  if (fVerbose > 0) cout << "Mu3eCalFactory::createClassWithDB("
+                         << name << ", " << db->getName()
+                         << ", " << tag << ")"
+                         << ", " << db->getName() << ") " << (a? " success" : "failure")
+                         << endl;
+
+  return a;
+}
+
+
+// ----------------------------------------------------------------------
+calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
+  calAbs* a(0);
+  if (!hash.compare("pixelalignment_")) {
+    a = new calPixelAlignment();
+  } else if (!hash.compare("fibrealignment_")) {
+    a = new calFibreAlignment();
+  } else if (!hash.compare("mppcalignment_"))  {
+    a = new calMppcAlignment();
+  } else if (!hash.compare("tilealignment_"))  {
+    a = new calTileAlignment();
+  } else {
+    cout << "ERROR: " << hash
+         << " indicates an unknown class. Nothing known in Mu3CalFactory"
+         << endl;
+    return 0;
+  }
+
+  a->readPayloadFromFile(hash, dir);
+  if (a->getError() == "Error: file not found") {
+    cout << "file ->" << dir << "/" << hash << "<- not found" << endl;
+    return 0;
+  }
+  a->calculate(hash);
+
+  if (fVerbose > 0) cout << "Mu3eCalFactory::createClassFromFile("
+                         << hash  << ", " << dir << ")"
+                         << ") " << (a? " success" : "failure")
+                         << endl;
 
   return a;
 }
