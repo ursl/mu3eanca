@@ -184,41 +184,7 @@ int main(int argc, char* argv[]) {
   } else if (5 == mode) {
     cout << "Test calibration payloads from different origins with command line options passed into vector" << endl;
     Mu3eConditions *pDC = Mu3eConditions::instance();
-
-    // -- command line parsing
-    vector<string> cals;
-    split(scals, ':', cals);
-    for (auto it: cals) {
-      string dir  = it.substr(0, it.rfind("/"));
-      string hash = it.substr(it.rfind("/")+1);
-      cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
-
-      if (string::npos != hash.find("pixelalignment")) {
-        calPixelAlignment *cpa = new calPixelAlignment();
-        cpa->setVerbosity(10);
-        cpa->readPayloadFromFile(hash, dir);
-        if (cpa->getError() == "Error: file not found") {
-          cout << "file ->" << dir << "/" << hash << "<- not found" << endl;
-          return 1;
-        }
-        cpa->calculate(hash);
-        vector<string> tags = pDC->getTags("pixelalignment");
-        pDC->registerCalibration(tags[0], cpa);
-        cpa->printBLOB(cpa->makeBLOB(), 4);
-      } else if (string::npos != hash.find("mppcalignment")) {
-        calMppcAlignment *cpa = new calMppcAlignment();
-        cpa->setVerbosity(10);
-        cpa->readPayloadFromFile(hash, dir);
-        if (cpa->getError() == "Error: file not found") {
-          cout << "file ->" << dir << "/" << hash << "<- not found" << endl;
-          return 1;
-        }
-        cpa->calculate(hash);
-        vector<string> tags = pDC->getTags("mppcalignment");
-        pDC->registerCalibration(tags[0], cpa);
-        cpa->printBLOB(cpa->makeBLOB(), 4);
-      }
-    }
+    pDC->localCalPayloads(scals);
     // -- printout
     calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(pDC->getCalibration("pixelalignment_"));
     cpa->printBLOB(cpa->makeBLOB(), 4);
@@ -228,22 +194,7 @@ int main(int argc, char* argv[]) {
   } else if (6 == mode) {
     cout << "Test config payloads from different origins with command line options passed into vector" << endl;
     Mu3eConditions *pDC = Mu3eConditions::instance();
-
-    vector<string> configs;
-    split(sconfigs, ':', configs);
-    for (auto it: configs) {
-      string dir  = it.substr(0, it.rfind("/"));
-      string hash = it.substr(it.rfind("/")+1);
-      cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
-
-      cfgPayload cfg;
-      cfg.readFromFile(hash, dir);
-      if (cfg.fError == "Error: file not found") {
-        cout << "file ->" << dir << "/" << hash << "<- not found" << endl;
-        return 1;
-      }
-      pDC->registerConf(gt, cfg);
-    }
+    pDC->localCfgPayloads(sconfigs);
     cout << "conf trirec: " << endl;
     cout << pDC->getConfString("trirec") << endl;
     cout << pDC->getConfString("vertex") << endl;
