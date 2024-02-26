@@ -12,7 +12,7 @@ class calAbs;
 class cdb;
 
 // ----------------------------------------------------------------------
-// Entry point to access/insert/manage all Mu3e conditions data 
+// Entry point to access/insert/manage all Mu3e conditions data
 // ----------------------------------------------------------------------
 
 class Mu3eConditions {
@@ -37,26 +37,26 @@ public:
 	void setRunNumber(int);
 	int  getRunNumber() {return fRunNumber;}
 
-  runRecord getRunRecord(int irun); 
+  runRecord getRunRecord(int irun);
 
   void        registerConf(std::string tag, cfgPayload c);
   std::string getConfString(std::string cfgName);
   std::string getConfStringWithHash(std::string cfgHash);
-  
+
   void    registerCalibration(std::string tag, calAbs *c);
 	void    printCalibrations();
   calAbs* getCalibration(std::string name);
   std::map<std::string, calAbs*> getCalibrations() {return fCalibrations;}
-  
+
   std::string  getHash(int irun, std::string tag);
   int          whichIOV(int run, std::string tag);
-  
+
 protected:
   Mu3eConditions(std::string gt, cdbAbs *);
   ~Mu3eConditions();
-  
+
 private:
-  static Mu3eConditions* fInstance; 
+  static Mu3eConditions* fInstance;
   cdbAbs *fDB;
   std::string fGT{"GT unset"};
   int fVerbose{0}, fPrintTiming{0};
@@ -65,11 +65,11 @@ private:
   int         fRunNumber{-1};
 
 	// -- all global tags in the DB
-  std::vector<std::string> fGlobalTags;                    
+  std::vector<std::string> fGlobalTags;
 	// -- for the set global tag
   std::vector<std::string> fTags;
   // -- list of IOVs for each tag for the set GT
-  std::map<std::string, std::vector<int>> fIOVs;           
+  std::map<std::string, std::vector<int>> fIOVs;
 
   // -- map of tag, calibration classes to be notified of update requirements
   std::map<std::string, calAbs*> fCalibrations;
@@ -79,4 +79,3 @@ private:
 };
 
 #endif
-

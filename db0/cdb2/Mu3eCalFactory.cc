@@ -42,7 +42,7 @@ Mu3eCalFactory::~Mu3eCalFactory() {
 calAbs* Mu3eCalFactory::createClass(string name) {
   string tag("nada");
   for (auto it : fTags) {
-    if (fVerbose > 0) cout << "Mu3eCalFactory::createClass> searching " << name << ", looking at " << it << endl; 
+    if (fVerbose > 0) cout << "Mu3eCalFactory::createClass> searching " << name << ", looking at " << it << endl;
     if (string::npos != it.find(name)) {
       tag = it;
       if (fVerbose > 0) cout << "Mu3eCalFactory::createClass> found " << tag << endl;
@@ -55,13 +55,13 @@ calAbs* Mu3eCalFactory::createClass(string name) {
     return 0;
   }
 
-  return createClassWithDB(name, tag, fDB); 
+  return createClassWithDB(name, tag, fDB);
 }
 
 
 // ----------------------------------------------------------------------
 calAbs* Mu3eCalFactory::createClass(string name, string tag) {
-  return createClassWithDB(name, tag, fDB); 
+  return createClassWithDB(name, tag, fDB);
 }
 
 
@@ -106,4 +106,3 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
 
   return a;
 }
-

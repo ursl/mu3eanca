@@ -21,13 +21,13 @@ Mu3eConditions* Mu3eConditions::fInstance = 0;
 Mu3eConditions* Mu3eConditions::instance(std::string gt, cdbAbs *db) {
   if (0 == fInstance) {
     fInstance = new Mu3eConditions(gt, db);
-  } 
+  }
 
   if (gt != "unset" && gt != fInstance->fGT) {
     cout << "Mu3eConditions::instance(" << gt<< ", " << (db? db->getName(): "no DB")
          << ") called with global tag different from the initial one."
          << endl;
-    cout << "This is a mistake. You will get the one and only Mu3eConditions::instance(" 
+    cout << "This is a mistake. You will get the one and only Mu3eConditions::instance("
          << fInstance->fGT << ", " << fInstance->fDB->getName() << ")"
          << endl;
   }
@@ -35,7 +35,7 @@ Mu3eConditions* Mu3eConditions::instance(std::string gt, cdbAbs *db) {
     cout << "Mu3eConditions::instance(" << gt<< ", " << (db? db->getName(): "no DB")
          << ") called with different database."
          << endl;
-    cout << "This is a mistake. You will get the one and only Mu3eConditions::instance(" 
+    cout << "This is a mistake. You will get the one and only Mu3eConditions::instance("
          << fInstance->fGT << ", " << fInstance->fDB->getName() << ")"
          << endl;
   }
@@ -53,13 +53,13 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
     fGlobalTags = fDB->readGlobalTags();
     fTags       = fDB->readTags(fGT);
     fIOVs       = fDB->readIOVs(fTags);
-  } else { 
+  } else {
     // -- safe guard to keep Mu3eConditions::setRunNumber free of DB checks in mu3e code
     return;
   }
 
   // -- setup basic classes
-  int verbose(0); 
+  int verbose(0);
   calAbs *cal = createClass("pixelalignment_");
   cal->setVerbosity(verbose);
   cal = createClass("fibrealignment_");
@@ -81,7 +81,7 @@ Mu3eConditions::~Mu3eConditions() {
 calAbs* Mu3eConditions::createClass(string name) {
   string tag("nada");
   for (auto it : fTags) {
-    // cout << "Mu3eConditions::createClass> searching " << name << ", looking at " << it << endl; 
+    // cout << "Mu3eConditions::createClass> searching " << name << ", looking at " << it << endl;
     if (string::npos != it.find(name)) {
       tag = it;
       // cout << "Mu3eConditions::createClass> found " << tag << endl;
@@ -94,13 +94,13 @@ calAbs* Mu3eConditions::createClass(string name) {
     return 0;
   }
 
-  return createClassWithDB(name, tag, fDB); 
+  return createClassWithDB(name, tag, fDB);
 }
 
 
 // ----------------------------------------------------------------------
 calAbs* Mu3eConditions::createClass(string name, string tag) {
-  return createClassWithDB(name, tag, fDB); 
+  return createClassWithDB(name, tag, fDB);
 }
 
 
@@ -108,10 +108,10 @@ calAbs* Mu3eConditions::createClass(string name, string tag) {
 calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
   calAbs* a(0);
   //dbx  auto tbegin = std::chrono::high_resolution_clock::now();
-  
+
   Mu3eCalFactory *mcf = Mu3eCalFactory::instance(fGT, db);
   a = mcf->createClassWithDB(name, tag, db);
-  
+
   //dbx  auto tend = std::chrono::high_resolution_clock::now();
   //dbx  if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
   //dbx                         << "us ::timing::" << tag << " ctor"
@@ -147,14 +147,14 @@ void Mu3eConditions::registerCalibration(string tag, calAbs *c) {
 
 // ----------------------------------------------------------------------
 void Mu3eConditions::setRunNumber(int runnumber) {
-  if (fVerbose > 2)   cout << "Mu3eConditions::setRunNumber(" << runnumber << "), old runnumber = " 
+  if (fVerbose > 2)   cout << "Mu3eConditions::setRunNumber(" << runnumber << "), old runnumber = "
                            << fRunNumber
                            << " fCalibrations.size() = " << fCalibrations.size()
                            << endl;
 
   // -- safe guard to keep Mu3eConditions::setRunNumber free of DB checks in mu3e code
   if (!fDB) return;
-  
+
   //dbx  auto tbegin = chrono::high_resolution_clock::now();
   //dbx auto tend = chrono::high_resolution_clock::now();
 
@@ -183,11 +183,11 @@ vector<string> Mu3eConditions::getTags(string filter) {
   for (auto it: fTags) {
     if (fVerbose > 2) {
       cout << "  Mu3eConditions::getTags(" << filter << ")> looking at " << it << endl;
-    }  
+    }
     if (filter != "unset") {
       if (string::npos != it.find(filter)) result.push_back(it);
     } else {
-      result.push_back(it); 
+      result.push_back(it);
     }
   }
   return result;
@@ -199,7 +199,7 @@ calAbs* Mu3eConditions::getCalibration(std::string name) {
   for (auto it: fCalibrations) {
     if (fVerbose > 2) cout << "  Mu3eConditions::getCalibration> looking at " << it.first << endl;
     if (string::npos != it.first.find(name)) return it.second;
-  }  
+  }
   return 0;
 }
 
@@ -223,7 +223,7 @@ int Mu3eConditions::whichIOV(int runnumber, string tag) {
 			iov = it;
 		}
   }
-	return iov; 
+	return iov;
 }
 
 
@@ -288,7 +288,7 @@ string Mu3eConditions::getConfStringWithHash(string hash) {
                            << ") cached."
                            << endl;
   }
-  
+
   map<string, cfgPayload>::iterator it = fConfigs.find(hash);
   return it->second.fCfgString;
 }

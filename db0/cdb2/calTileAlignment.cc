@@ -30,7 +30,7 @@ bool calTileAlignment::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calTileAlignment::calTileAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-  if (0) 	cout << "calTileAlignment created and registered with tag ->" << fTag << "<-" 
+  if (0) 	cout << "calTileAlignment created and registered with tag ->" << fTag << "<-"
                << endl;
 }
 
@@ -50,13 +50,13 @@ void calTileAlignment::calculate(string hash) {
 
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "header: " << hex << header << dec;
 
   int cntPrint(0);
   while (ibuffer != buffer.end()) {
-    constants a; 
+    constants a;
     a.id = blob2UnsignedInt(getData(ibuffer));
     a.sensor = blob2Int(getData(ibuffer));
     a.posx = blob2Double(getData(ibuffer));
@@ -84,11 +84,11 @@ void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calTileAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-  
+
   int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
@@ -96,10 +96,10 @@ void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
     cout << "   id = " << blob2UnsignedInt(getData(ibuffer))
          << " sensor = " << blob2Int(getData(ibuffer))
          << " pos = "
-         << blob2Double(getData(ibuffer)) << "/" 
-         << blob2Double(getData(ibuffer)) << "/" 
+         << blob2Double(getData(ibuffer)) << "/"
+         << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << " "
-         << "dir = " 
+         << "dir = "
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << " "
@@ -111,11 +111,11 @@ void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calTileAlignment::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calTileAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
   }
@@ -176,8 +176,8 @@ string calTileAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
   // id => sensor,posx,posy,posz,dirx,diry,dirz
   for (auto it: m) {
     // -- id and sensor
-    s << dumpArray(uint2Blob(it.first));    
-    s << dumpArray(int2Blob(static_cast<int>(it.second[0]))); 
+    s << dumpArray(uint2Blob(it.first));
+    s << dumpArray(int2Blob(static_cast<int>(it.second[0])));
     // -- posx,posy,posz
     s << dumpArray(double2Blob(it.second[1]));
     s << dumpArray(double2Blob(it.second[2]));
@@ -194,14 +194,14 @@ string calTileAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
 // ----------------------------------------------------------------------
 string calTileAlignment::readCsv(string filename) {
   string spl("");
-  ifstream INS(filename); 
+  ifstream INS(filename);
   if (!INS.is_open()) {
-    return string("calTileAlignment::readCsv> Error, file " + filename + " not found");  
+    return string("calTileAlignment::readCsv> Error, file " + filename + " not found");
   }
 
   string sline;
   while (getline(INS, sline)) {
-    spl += sline; 
+    spl += sline;
     spl += ",";
   }
   INS.close();
@@ -211,7 +211,7 @@ string calTileAlignment::readCsv(string filename) {
 
   for (unsigned int it = 0; it < tokens.size(); it += 8) {
     constants a;
-    int idx = it; 
+    int idx = it;
     a.id     = static_cast<unsigned int>(::stoi(tokens[idx++]));
     a.sensor = ::stoi(tokens[idx++]);
     a.posx   = ::stod(tokens[idx++]);
@@ -230,4 +230,3 @@ string calTileAlignment::readCsv(string filename) {
 
   return spl;
 }
-

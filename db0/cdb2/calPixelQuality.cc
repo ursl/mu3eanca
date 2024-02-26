@@ -30,7 +30,7 @@ bool calPixelQuality::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calPixelQuality::calPixelQuality(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calPixelQuality created and registered with tag ->" << fTag << "<-" 
+	cout << "calPixelQuality created and registered with tag ->" << fTag << "<-"
 			 << endl;
 }
 
@@ -52,13 +52,13 @@ void calPixelQuality::calculate(string hash) {
 
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelQuality header: " << hex << header << dec << endl;
 
   int npix(0);
   while (ibuffer != buffer.end()) {
-    constants a; 
+    constants a;
     // -- chipID
     a.id = blob2UnsignedInt(getData(ibuffer));
     // -- get number of pixel entries
@@ -110,12 +110,12 @@ void calPixelQuality::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelQuality::printBLOB(string," << verbosity << ")" << endl;
   cout << "   header: " << hex << header << dec << endl;
 
-  string summary("calPixelQuality chips "); 
+  string summary("calPixelQuality chips ");
   int nnp(0);
   while (ibuffer != buffer.end()) {
     // -- chipID
@@ -147,11 +147,11 @@ void calPixelQuality::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calPixelQuality::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calPixelQuality::decodeBLOB> header is wrong. "
          << " Something is really messed up!"
@@ -160,16 +160,16 @@ map<unsigned int, vector<double> > calPixelQuality::decodeBLOB(string spl) {
   while (ibuffer != buffer.end()) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-    vector<double> vdet; 
+    vector<double> vdet;
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
     for (int i = 0; i < npix; ++i) {
       int icol           = blob2Int(getData(ibuffer));
       int irow           = blob2Int(getData(ibuffer));
       unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      vdet.push_back(static_cast<double>(icol)); 
-      vdet.push_back(static_cast<double>(irow)); 
-      vdet.push_back(static_cast<double>(iqual)); 
+      vdet.push_back(static_cast<double>(icol));
+      vdet.push_back(static_cast<double>(irow));
+      vdet.push_back(static_cast<double>(iqual));
     }
     vmap.insert(make_pair(chipID, vdet));
   }
@@ -183,20 +183,20 @@ string calPixelQuality::makeBLOB() {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-  
+
   // -- format of m
   // chipID => [npix, n*(col, row, iqual)]
   for (auto it: fMapConstants) {
     s << dumpArray(uint2Blob(it.first));
     constants a = it.second;
 
-    int npix(0); 
+    int npix(0);
     for (int ic = 0; ic < 256; ++ic) {
       for (int ir = 0; ir < 250; ++ir) {
         if (a.matrix[ic][ir] > 0) ++npix;
       }
     }
-    
+
     s << dumpArray(int2Blob(npix));
 
     for (int ic = 0; ic < 256; ++ic) {
@@ -246,7 +246,7 @@ string calPixelQuality::makeBLOB(map<unsigned int, vector<double> > m) {
 // ----------------------------------------------------------------------
 void calPixelQuality::writeCsv(string filename) {
   string spl("");
-  ofstream OUT(filename); 
+  ofstream OUT(filename);
   if (!OUT.is_open()) {
     cout << string("calPixelQuality::writeCsv> Error, file "
                    + filename + " not opened for output")
@@ -255,7 +255,7 @@ void calPixelQuality::writeCsv(string filename) {
 
   OUT << "# Format: chipID,icol1,irow1,iqual1,icol2,irow2,iqual2,..."
       << endl;
-  
+
   for (auto it: fMapConstants) {
     stringstream s, spixel;
     s << it.first;
@@ -282,9 +282,9 @@ void calPixelQuality::writeCsv(string filename) {
 void calPixelQuality::readCsv(string filename) {
   cout << "calPixelQuality::readCsv> reset fMapConstants" << endl;
   fMapConstants.clear();
-  
+
   string spl("");
-  ifstream INS(filename); 
+  ifstream INS(filename);
   if (!INS.is_open()) {
     cout << string("calPixelQuality::readCsv> Error, file "
                    + filename + " not found")
@@ -300,7 +300,7 @@ void calPixelQuality::readCsv(string filename) {
   INS.close();
 
   for (unsigned int it = 0; it < vline.size(); ++it) {
-    constants a; 
+    constants a;
     vector<string> tokens = split(vline[it], ',');
     // -- chipID
     a.id = stoi(tokens[0]);

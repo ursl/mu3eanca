@@ -30,7 +30,7 @@ bool calMppcAlignment::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calMppcAlignment::calMppcAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-  if (0) 	cout << "calMppcAlignment created and registered with tag ->" << fTag << "<-" 
+  if (0) 	cout << "calMppcAlignment created and registered with tag ->" << fTag << "<-"
                << endl;
 }
 
@@ -50,13 +50,13 @@ void calMppcAlignment::calculate(string hash) {
 
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "header: " << hex << header << dec;
 
   int cntPrint(0);
   while (ibuffer != buffer.end()) {
-    constants a; 
+    constants a;
     a.mppc = blob2UnsignedInt(getData(ibuffer));
     a.vx = blob2Double(getData(ibuffer));
     a.vy = blob2Double(getData(ibuffer));
@@ -87,26 +87,26 @@ void calMppcAlignment::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calMppcAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-  
-  int cnt(0); 
+
+  int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
     if (cnt > verbosity) break;
     cout << "   mppc = "
          << blob2UnsignedInt(getData(ibuffer))
          << " v = "
-         << blob2Double(getData(ibuffer)) << "/" 
-         << blob2Double(getData(ibuffer)) << "/" 
-         << blob2Double(getData(ibuffer)) << " "
-         << "col = " 
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << " "
-         << "ncol = " << blob2Int(getData(ibuffer)) 
+         << "col = "
+         << blob2Double(getData(ibuffer)) << "/"
+         << blob2Double(getData(ibuffer)) << "/"
+         << blob2Double(getData(ibuffer)) << " "
+         << "ncol = " << blob2Int(getData(ibuffer))
          << endl;
   }
 }
@@ -115,11 +115,11 @@ void calMppcAlignment::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calMppcAlignment::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calMppcAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
   }
@@ -197,14 +197,14 @@ string calMppcAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
 // ----------------------------------------------------------------------
 string calMppcAlignment::readCsv(string filename) {
   string spl("");
-  ifstream INS(filename); 
+  ifstream INS(filename);
   if (!INS.is_open()) {
-    return string("calMppcAlignment::readCsv> Error, file " + filename + " not found");  
+    return string("calMppcAlignment::readCsv> Error, file " + filename + " not found");
   }
 
   string sline;
   while (getline(INS, sline)) {
-    spl += sline; 
+    spl += sline;
     spl += ",";
   }
   INS.close();
@@ -214,7 +214,7 @@ string calMppcAlignment::readCsv(string filename) {
 
   for (unsigned int it = 0; it < tokens.size(); it += 8) {
     constants a;
-    int idx = it; 
+    int idx = it;
     a.mppc = static_cast<unsigned int>(::stoi(tokens[idx++]));
     a.vx = ::stod(tokens[idx++]);
     a.vy = ::stod(tokens[idx++]);

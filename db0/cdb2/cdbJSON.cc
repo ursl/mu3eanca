@@ -24,7 +24,7 @@ cdbJSON::~cdbJSON() { }
 
 // ----------------------------------------------------------------------
 void cdbJSON::init() {
-  fName = "JSON"; 
+  fName = "JSON";
   cdbAbs::init();
 }
 
@@ -36,7 +36,7 @@ vector<string> cdbJSON::readGlobalTags() {
   string gtdir = fURI + "/globaltags";
   cout << "cdbJSON::readGlobalTags() from  gtdir = " << gtdir << endl;
   vector<string> gtFiles = allFiles(gtdir);
-  
+
   ifstream INS;
   for (auto it: gtFiles) {
     // -- remove everything up to and including the last /
@@ -68,7 +68,7 @@ vector<string> cdbJSON::readTags(string gt) {
   INS.close();
 
   string lBuffer = buffer.str();
-  
+
   vector<string> subarr = split(jsonGetVector(lBuffer, "tags"), ',');
   for (auto it: subarr) {
     v.push_back(it);
@@ -89,7 +89,7 @@ map<string, vector<int>> cdbJSON::readIOVs(vector<string> tags) {
   // -- read iovs from fURI
   ifstream INS;
   string dir = fURI + "/tags/";
-  
+
   for (auto it: tags) {
     string file = dir + it;
     INS.open(file);
@@ -101,12 +101,12 @@ map<string, vector<int>> cdbJSON::readIOVs(vector<string> tags) {
     std::stringstream buffer;
     buffer << INS.rdbuf();
     INS.close();
-    
+
     string lBuffer = buffer.str();
-    
+
     vector<int> viov;
     string sarr = jsonGetVector(lBuffer, "iovs");
-    
+
     vector<string> subarr = split(sarr, ',');
     if (subarr.size() > 0) {
       for (auto it: subarr) {
@@ -115,9 +115,9 @@ map<string, vector<int>> cdbJSON::readIOVs(vector<string> tags) {
     } else {
       viov.push_back(stoi(sarr));
     }
-    m.insert(make_pair(it, viov)); 
+    m.insert(make_pair(it, viov));
   }
-  
+
   return m;
 }
 
@@ -130,8 +130,8 @@ runRecord cdbJSON::getRunRecord(int irun) {
        << " not found)";
   runRecord rr;
   rr.fEORComments = sspl.str();
-  
-  // -- read runRecord for run irun 
+
+  // -- read runRecord for run irun
   ifstream INS;
   //  string filename = fURI + "/runrecords/" + to_string(irun);
   std::ostringstream oss;
@@ -148,7 +148,7 @@ runRecord cdbJSON::getRunRecord(int irun) {
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
-  
+
   cout << "cdbJSON::getRunRecord() Read " << filename << endl;
   string jstring = buffer.str();
   rr.fBORRunNumber     = stoi(jsonGetValue(jstring, "Run number"));
@@ -156,15 +156,15 @@ runRecord cdbJSON::getRunRecord(int irun) {
   rr.fBORSubsystems    = stoi(jsonGetValue(jstring, "Subsystems"));
   rr.fBORBeam          = stof(jsonGetValue(jstring, "Beam"));
   rr.fBORShiftCrew     = jsonGetString(jstring, "Shift crew");
-  
+
   rr.fEORStopTime      = jsonGetString(jstring, "Stop time");
   rr.fEOREvents        = stoi(jsonGetValue(jstring, "Events"));
   rr.fEORFileSize      = stod(jsonGetValue(jstring, "File size"));
   rr.fEORDataSize      = stod(jsonGetValue(jstring, "Uncompressed data size"));
   rr.fEORComments      = jsonGetString(jstring, "Comments");
-  
+
   rr.fConfigurationKey = jsonGetString(jstring, "Configuration key");
-  
+
   return rr;
 }
 
@@ -194,7 +194,7 @@ cfgPayload cdbJSON::getConfig(string hash) {
   cfg.fHash      = jsonGetString(jstring, "cfgHash");
   cfg.fDate      = jsonGetString(jstring, "cfgDate");
   cfg.fCfgString = jsonGetCfgStringEsc(jstring, "cfgString");
-  
+
   return cfg;
 }
 
@@ -203,12 +203,12 @@ cfgPayload cdbJSON::getConfig(string hash) {
 payload cdbJSON::getPayload(string hash) {
   // -- initialize with default
   std::stringstream sspl;
-  sspl << "(cdbJSON>  hash = " << hash 
+  sspl << "(cdbJSON>  hash = " << hash
        << " not found)";
   payload pl;
   pl.fComment = sspl.str();
-  
-  // -- read payload for hash 
+
+  // -- read payload for hash
   ifstream INS;
   string filename = fURI + "/payloads/" + hash;
   INS.open(filename);
@@ -220,7 +220,7 @@ payload cdbJSON::getPayload(string hash) {
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
-  
+
   cout << "cdbJSON::getPayload() Read " << filename << endl;
 
   string jstring = buffer.str();
@@ -237,20 +237,20 @@ vector<string> cdbJSON::allFiles(string dirName) {
   vector<string> vfiles;
   DIR *folder;
   struct dirent *entry;
-  
+
   folder = opendir(dirName.c_str());
   if (folder == NULL) {
     puts("Unable to read directory");
     return vfiles;
-  } 
-  
+  }
+
   while ((entry=readdir(folder))) {
     if (8 == entry->d_type) {
       vfiles.push_back(dirName + "/" + entry->d_name);
     }
   }
   closedir(folder);
-  
-  sort(vfiles.begin(), vfiles.end());    
+
+  sort(vfiles.begin(), vfiles.end());
   return vfiles;
 }

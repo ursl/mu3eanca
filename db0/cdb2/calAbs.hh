@@ -54,17 +54,17 @@ public:
   void                writePayloadToFile(std::string hash, std::string dir, payload &pl);
   payload             getPayload(std::string hash) {return fTagIOVPayloadMap[hash];}
   void                insertPayload(std::string hash, payload x);
-  
+
   void                update(std::string hash);
   void                setPrintTiming(int v) {fPrintTiming = v;}
 
   // -- payload string parsing/extraction
-  std::string getValue(std::string key); 
-  
+  std::string getValue(std::string key);
+
   // -- accessors for various derived classes
   virtual int         getStatus(unsigned int id, int icol, int irow) {return -9999;}
-  
-protected: 
+
+protected:
 	cdbAbs                            *fDB;
   std::string                        fTag{"unset"}, fHash{"unset"};
   int                                fVerbose{0}, fPrintTiming{0};

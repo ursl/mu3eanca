@@ -12,7 +12,7 @@
 // ----------------------------------------------------------------------
 class calPixelQualityM : public calAbs {
 public:
-  
+
   calPixelQualityM() = default;
   calPixelQualityM(cdbAbs *db);
   calPixelQualityM(cdbAbs *db, std::string tag);
@@ -34,14 +34,14 @@ public:
 
   bool        getNextID(uint32_t &ID);
   void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);
-  
+
 private:
   std::string fPixelQualityTag{"pixelqualitym_"};
 
- 
+
   // -- local and private
   struct constants {
-    uint32_t id; 
+    uint32_t id;
     std::map<int, char> mpixel;
   };
 

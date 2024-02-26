@@ -10,7 +10,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 payload::payload() : fHash("tag_X_iov_Y"),
                      fComment("now what?"), fSchema("define this"),
-                     fDate("insertion date"), 
+                     fDate("insertion date"),
                      fBLOB(std::string("empty payload")) {
 
 };

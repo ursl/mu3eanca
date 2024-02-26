@@ -34,10 +34,10 @@ public:
   virtual payload         getPayload(std::string hash) {return payload();}
 
 	void setVerbosity(int v) {fVerbose = v;}
-  
+
   void        setName(std::string n) {fName = n;}
   std::string getName() {return fName;}
-  
+
 	// -- utility functions
 	void print(std::vector<int>, int istart = 0);
 	void print(std::vector<std::string>, int istart = 0);
@@ -48,8 +48,8 @@ public:
 	virtual std::vector<std::string>                readTags(std::string gt) {return std::vector<std::string>();}
 	virtual std::map<std::string, std::vector<int>> readIOVs(std::vector<std::string> tags) {return std::map<std::string, std::vector<int>>();}
 
-protected: 
-	
+protected:
+
   std::string fURI{"URI unset"};
   int fVerbose{0};
 
