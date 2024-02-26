@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "Mu3eConditions.hh"
+#include "cdbUtil.hh"
 #include "cdbMongo.hh"
 #include "cdbJSON.hh"
 #include "cdbRest.hh"
@@ -53,10 +54,10 @@ int main(int argc, char* argv[]) {
   // -- command line arguments
   int mode(0), run(3), verbose(0);
   string db("json"), gt("mcidealv5.0");
-  vector<string> cals, configs;
+  string scals, sconfigs;
   for (int i = 0; i < argc; i++){
-    if (!strcmp(argv[i], "-cal")) {cals.push_back(string(argv[++i]));}
-    if (!strcmp(argv[i], "-cfg")) {configs.push_back(string(argv[++i]));}
+    if (!strcmp(argv[i], "-cal")) {scals = string(argv[++i]);}
+    if (!strcmp(argv[i], "-cfg")) {sconfigs = string(argv[++i]);}
     if (!strcmp(argv[i], "-db"))  {db = string(argv[++i]);}
     if (!strcmp(argv[i], "-gt"))  {gt = string(argv[++i]);}
     if (!strcmp(argv[i], "-m"))   {mode = atoi(argv[++i]);}
@@ -185,15 +186,11 @@ int main(int argc, char* argv[]) {
     Mu3eConditions *pDC = Mu3eConditions::instance();
 
     // -- command line parsing
+    vector<string> cals;
+    split(scals, ':', cals);
     for (auto it: cals) {
-      if (string::npos == it.find(":")) {
-        cout << "error: " << it
-             << " does not correspond to format dir:hash (pd hash = filename!)"
-             << endl;
-        continue;
-      }
-      string dir  = it.substr(0, it.find(":"));
-      string hash = it.substr(it.rfind(":")+1);
+      string dir  = it.substr(0, it.rfind("/"));
+      string hash = it.substr(it.rfind("/")+1);
       cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
       
       if (string::npos != hash.find("pixelalignment")) {
@@ -223,16 +220,12 @@ int main(int argc, char* argv[]) {
   } else if (6 == mode) {
     cout << "Test config payloads from different origins with command line options passed into vector" << endl;
     Mu3eConditions *pDC = Mu3eConditions::instance();
-
+    
+    vector<string> configs;
+    split(sconfigs, ':', configs);
     for (auto it: configs) {
-      if (string::npos == it.find(":")) {
-        cout << "error: " << it
-             << " does not correspond to format dir:hash (pd hash = filename!)"
-             << endl;
-        continue;
-      }
-      string dir  = it.substr(0, it.find(":"));
-      string hash = it.substr(it.rfind(":")+1);
+      string dir  = it.substr(0, it.rfind("/"));
+      string hash = it.substr(it.rfind("/")+1);
       cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
       
       cfgPayload cfg;
