@@ -18,6 +18,7 @@ public:
   calAbs* createClass(std::string name);
   calAbs* createClass(std::string name, std::string tag);
   calAbs* createClassWithDB(std::string name, std::string tag, cdbAbs *db);
+  calAbs* createClassFromFile(std::string hash, std::string dir);
 
   void    setVerbosity(int v)   {fVerbose = v;}
 
@@ -29,7 +30,7 @@ private:
 
   std::string fGT{"GT unset"};
   cdbAbs *fDB{0};
-  int fVerbose{0}, fPrintTiming{0};
+  int fVerbose{10}, fPrintTiming{0};
 
 	// -- for the set global tag
   std::vector<std::string> fTags;
