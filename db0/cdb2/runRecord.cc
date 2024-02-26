@@ -9,19 +9,19 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 runRecord::runRecord() :
-  fBORRunNumber(-9999), 
-  fBORStartTime("unset"), 
-  fBORSubsystems(-9999), 
-  fBORBeam(-9999.9), 
-  fBORShiftCrew("unset"), 
-  fEORStopTime("unset"), 
-  fEOREvents(0), 
+  fBORRunNumber(-9999),
+  fBORStartTime("unset"),
+  fBORSubsystems(-9999),
+  fBORBeam(-9999.9),
+  fBORShiftCrew("unset"),
+  fEORStopTime("unset"),
+  fEOREvents(0),
   fEORFileSize(0),
   fEORDataSize(0),
   fEORComments("unset"),
   fConfigurationKey("unset")
 {
-  
+
 };
 
 
@@ -67,31 +67,31 @@ string runRecord::json() const {
     "File size" : 4.0360677850000000e+09,
     "Uncompressed data size" : 5.1365311020000000e+09,
     "Comments" : "Test data from the data challenge"
-    }  
+    }
     }
   */
 
   stringstream ssB;
-  ssB << scientific << setprecision(6) << fBORBeam; 
+  ssB << scientific << setprecision(6) << fBORBeam;
   stringstream ssF;
-  ssF << scientific << setprecision(10) << fEORFileSize; 
+  ssF << scientific << setprecision(10) << fEORFileSize;
   stringstream ssD;
-  ssD << scientific << setprecision(10) << fEORDataSize; 
-  
+  ssD << scientific << setprecision(10) << fEORDataSize;
+
   sstr << "{ \"BOR\" : {"
        << "\"Run number\" : " << fBORRunNumber << ", "
-       << "\"Start time\" : \"" << fBORStartTime << "\", " 
-       << "\"Subsystems\" : " << fBORSubsystems << ", " 
-       << "\"Beam\" : " << ssB.str() << ", " 
+       << "\"Start time\" : \"" << fBORStartTime << "\", "
+       << "\"Subsystems\" : " << fBORSubsystems << ", "
+       << "\"Beam\" : " << ssB.str() << ", "
        << "\"Shift crew\" : \"" << fBORShiftCrew << "\""
        << "}, "
 
        << "\"EOR\" : {"
-       << "\"Stop time\" : \"" << fEORStopTime << "\", " 
-       << "\"Events\" : " << fEOREvents << ", " 
-       << "\"File size\" : " << ssF.str() << ", " 
-       << "\"Uncompressed data size\" : " << ssD.str() << ", " 
-       << "\"Comments\" : \"" << fEORComments << "\" " 
+       << "\"Stop time\" : \"" << fEORStopTime << "\", "
+       << "\"Events\" : " << fEOREvents << ", "
+       << "\"File size\" : " << ssF.str() << ", "
+       << "\"Uncompressed data size\" : " << ssD.str() << ", "
+       << "\"Comments\" : \"" << fEORComments << "\" "
        << "} }";
   return sstr.str();
 }

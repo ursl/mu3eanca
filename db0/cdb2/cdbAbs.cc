@@ -9,7 +9,7 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 cdbAbs::cdbAbs(string globaltag, string uri, int verbose) : fURI(uri), fVerbose(verbose) {
-  
+
 }
 
 
@@ -64,5 +64,3 @@ void cdbAbs::print(std::map<std::string, std::vector<int>> m) {
 	}
 	cout << endl;
 }
-
-

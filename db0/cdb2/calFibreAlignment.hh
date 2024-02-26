@@ -7,11 +7,11 @@
 #include <map>
 
 // ----------------------------------------------------------------------
-// fibres alignment class 
+// fibres alignment class
 // ----------------------------------------------------------------------
 class calFibreAlignment : public calAbs {
 public:
-  
+
   calFibreAlignment() = default;
   calFibreAlignment(cdbAbs *db);
   calFibreAlignment(cdbAbs *db, std::string tag);
@@ -42,13 +42,13 @@ public:
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
   bool        getNextID(uint32_t &ID);
 
-  
+
 private:
   std::string fFibresAlignmentTag{"fibrealignment_"};
 
   // -- local and private
   struct constants {
-    uint32_t id; 
+    uint32_t id;
     double cx, cy, cz;
     double fx, fy, fz;
     bool round, square;
@@ -57,7 +57,7 @@ private:
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};
-  
+
 };
 
 #endif

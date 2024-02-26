@@ -6,7 +6,7 @@
 #include <sstream>
 #include <dirent.h>    /// for directory reading
 
-#include <curl/curl.h> 
+#include <curl/curl.h>
 
 #include "base64.hh"
 #include "cdbUtil.hh"
@@ -33,16 +33,16 @@ cdbRest::~cdbRest() { }
 
 // ----------------------------------------------------------------------
 void cdbRest::init() {
-  fName = "REST"; 
-  
+  fName = "REST";
+
   ifstream INS("api-key.private");
   getline(INS, fApiKey);
   INS.close();
   fApiKey = "api-key: " + fApiKey;
 
-  fURIfindOne = fURI + "/findOne"; 
-  fURIfind    = fURI + "/findAll"; 
-  
+  fURIfindOne = fURI + "/findOne";
+  fURIfind    = fURI + "/findAll";
+
   cdbAbs::init();
 }
 
@@ -51,19 +51,19 @@ void cdbRest::init() {
 vector<string> cdbRest::readGlobalTags() {
   vector<string> v;
   doCurl("globaltags", "nada", "findAll");
-  
+
   if (1) {
     vector<string> vgt = jsonGetValueVector(fCurlReadBuffer, "gt");
     for (auto it : vgt) {
-      v.push_back(it); 
+      v.push_back(it);
     }
   }
-  
+
   if (fVerbose > 0) {
     cout << "cdbRest::readGlobalTags()> ";
     print(v);
   }
-  
+
   return v;
 }
 
@@ -72,7 +72,7 @@ vector<string> cdbRest::readGlobalTags() {
 vector<string> cdbRest::readTags(string gt) {
   vector<string> v;
   doCurl("globaltags", "nada", "findAll");
-  
+
   if (1) {
     vector<string> vgt = jsonGetValueVector(fCurlReadBuffer, "gt");
     for (auto it: vgt) {
@@ -87,7 +87,7 @@ vector<string> cdbRest::readTags(string gt) {
     cout << "**cdbRest::readGlobalTags()> tags = ";
     print(v);
   }
-  
+
   return v;
 }
 
@@ -111,7 +111,7 @@ map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
     } else {
       viov.push_back(stoi(sarr));
     }
-    m.insert(make_pair(it, viov)); 
+    m.insert(make_pair(it, viov));
   }
 
   if (fVerbose > 0) {
@@ -119,7 +119,7 @@ map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
     print(m);
   }
   return m;
-}  
+}
 
 
 // ----------------------------------------------------------------------
@@ -130,7 +130,7 @@ runRecord cdbRest::getRunRecord(int irun) {
        << " not found)";
   runRecord rr;
   rr.fEORComments = sspl.str();
-  
+
   fCurlReadBuffer.clear();
   doCurl("runrecords", to_string(irun), "findOne");
   stripOverhead();
@@ -143,13 +143,13 @@ runRecord cdbRest::getRunRecord(int irun) {
   rr.fBORSubsystems    = stoi(jsonGetValue(fCurlReadBuffer, "Subsystems"));
   rr.fBORBeam          = stof(jsonGetValue(fCurlReadBuffer, "Beam"));
   rr.fBORShiftCrew     = jsonGetString(fCurlReadBuffer, "Shift crew");
-  
+
   rr.fEORStopTime      = jsonGetString(fCurlReadBuffer, "Stop time");
   rr.fEOREvents        = stoi(jsonGetValue(fCurlReadBuffer, "Events"));
   rr.fEORFileSize      = stod(jsonGetValue(fCurlReadBuffer, "File size"));
   rr.fEORDataSize      = stod(jsonGetValue(fCurlReadBuffer, "Uncompressed data size"));
   rr.fEORComments      = jsonGetString(fCurlReadBuffer, "Comments");
-  
+
   rr.fConfigurationKey = jsonGetString(fCurlReadBuffer, "Configuration key");
 
   return rr;
@@ -162,16 +162,16 @@ cfgPayload cdbRest::getConfig(string hash) {
   fCurlReadBuffer.clear();
   doCurl("configs", hash, "findOne");
   stripOverhead();
-  
+
   cfgPayload cfg;
 
   // -- initialize with default
   std::stringstream sspl;
-  sspl << "(cdbRest>  hash = " << hash 
+  sspl << "(cdbRest>  hash = " << hash
        << " not found)";
   payload pl;
   cfg.fCfgString = sspl.str();
-  
+
   cfg.fHash      = jsonGetValue(fCurlReadBuffer, "cfgHash");
   cfg.fDate      = jsonGetValue(fCurlReadBuffer, "cfgDate");
   cfg.fCfgString = jsonGetCfgStringEsc(fCurlReadBuffer, "cfgString");
@@ -182,14 +182,14 @@ cfgPayload cdbRest::getConfig(string hash) {
 
 // ----------------------------------------------------------------------
 payload cdbRest::getPayload(string hash) {
- 
+
   fCurlReadBuffer.clear();
   doCurl("payloads", hash, "findOne");
   stripOverhead();
 
   // -- initialize with default
   std::stringstream sspl;
-  sspl << "(cdbRest>  hash = " << hash 
+  sspl << "(cdbRest>  hash = " << hash
        << " not found)";
   payload pl;
   pl.fComment = sspl.str();
@@ -197,7 +197,7 @@ payload cdbRest::getPayload(string hash) {
   pl.fComment = jsonGetString(fCurlReadBuffer, "comment");
   pl.fHash    = jsonGetString(fCurlReadBuffer, "hash");
   pl.fBLOB    = base64_decode(jsonGetString(fCurlReadBuffer, "BLOB"));
-  
+
   return pl;
 }
 
@@ -227,14 +227,14 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   //  headers = curl_slist_append(headers, "Content-Type: application/json");
   //  headers = curl_slist_append(headers, "Access-Control-Request-Headers: *");
   headers = curl_slist_append(headers, fApiKey.c_str());
-  
+
   //  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fCurlReadBuffer);
 
   CURLcode curlRes = curl_easy_perform(curl);
-  
+
   if (0) cout << "==:cdbRest::doCurl(\"" << collection << "\"): "
               << " sapi ->" << sapi << "<- result: "
               << fCurlReadBuffer

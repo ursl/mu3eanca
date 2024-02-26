@@ -7,11 +7,11 @@
 #include <map>
 
 // ----------------------------------------------------------------------
-// pixel alignment class 
+// pixel alignment class
 // ----------------------------------------------------------------------
 class calPixelAlignment : public calAbs {
 public:
-  
+
   calPixelAlignment() = default;
   calPixelAlignment(cdbAbs *db);
   calPixelAlignment(cdbAbs *db, std::string tag);
@@ -38,7 +38,7 @@ public:
   // void setVxAddr(double *ptr) {fpvx = ptr;}
   // void setVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
   // void fillVars(uint32_t id) {*fpvx = fMapConstants[id].vx;}
-  
+
   std::string getName() override {return fPixelAlignmentTag;}
   void        calculate(std::string hash) override;
 
@@ -59,17 +59,17 @@ private:
 
   // -- local and private
   struct constants {
-    uint32_t id; 
+    uint32_t id;
     double vx, vy, vz;
     double rowx, rowy, rowz;
-    double colx, coly, colz; 
+    double colx, coly, colz;
     int nrow, ncol;
     double width, length, thickness, pixelSize;
   };
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};
-  
+
 };
 
 #endif

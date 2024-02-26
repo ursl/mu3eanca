@@ -25,7 +25,7 @@ std::string timeStamp(int format = 0);
 // ======================================================================
 // I/O for JSON files (to remove dependency on bsoncxx, drivers)
 // ======================================================================
-std::string jsFormat(std::vector<std::string>); 
+std::string jsFormat(std::vector<std::string>);
 std::string jsFormat(std::vector<int>);
 std::string jsonGetString(std::string& jstring, std::string key);
 std::string jsonGetValue(std::string& jstring, std::string key);
@@ -53,7 +53,7 @@ std::array<char,8> getData(std::vector<char>::iterator &it);
 std::string dumpArray(std::array<char,8> v);
 void printArray(std::ofstream &OS, std::array<char,8> v);
 
-  
+
 std::vector<std::string>  split(const std::string &s, char delim);
 void split(const std::string &s, char delim, std::vector<std::string> &elems); // helper function for above
 

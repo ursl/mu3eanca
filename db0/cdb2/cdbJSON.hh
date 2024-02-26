@@ -25,9 +25,9 @@ public:
 protected:
   std::vector<std::string> allFiles(std::string dirName);
 
-  
-private: 
-  
+
+private:
+
 };
 
 

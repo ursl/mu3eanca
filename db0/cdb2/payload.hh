@@ -1,7 +1,6 @@
 #ifndef PAYLOAD_h
 #define PAYLOAD_h
 
-#include <vector>
 #include <string>
 
 class payload {
@@ -18,4 +17,3 @@ public:
 };
 
 #endif
-

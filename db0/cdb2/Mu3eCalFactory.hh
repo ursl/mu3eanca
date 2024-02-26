@@ -20,12 +20,12 @@ public:
   calAbs* createClassWithDB(std::string name, std::string tag, cdbAbs *db);
 
   void    setVerbosity(int v)   {fVerbose = v;}
-  
+
 private:
   Mu3eCalFactory(std::string gt = "", cdbAbs *db = 0);
   ~Mu3eCalFactory();
 
-  static Mu3eCalFactory* fInstance; 
+  static Mu3eCalFactory* fInstance;
 
   std::string fGT{"GT unset"};
   cdbAbs *fDB{0};
@@ -34,7 +34,7 @@ private:
 	// -- for the set global tag
   std::vector<std::string> fTags;
 
-  
+
 };
 
 #endif

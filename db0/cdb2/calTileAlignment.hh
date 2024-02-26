@@ -7,11 +7,11 @@
 #include <map>
 
 // ----------------------------------------------------------------------
-// tile alignment class 
+// tile alignment class
 // ----------------------------------------------------------------------
 class calTileAlignment : public calAbs {
 public:
-  
+
   calTileAlignment() = default;
   calTileAlignment(cdbAbs *db);
   calTileAlignment(cdbAbs *db, std::string tag);
@@ -46,7 +46,7 @@ private:
 
   // -- local and private. Note order of id and sensor (different from alignment/tiles tree)!
   struct constants {
-    uint32_t id; 
+    uint32_t id;
     int sensor;
     double posx, posy, posz;
     double dirx, diry, dirz;
@@ -54,7 +54,7 @@ private:
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};
-  
+
 };
 
 #endif

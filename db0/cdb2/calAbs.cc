@@ -38,7 +38,7 @@ void calAbs::update(string hash) {
   }
 
   if (fVerbose > 4) cout << "calAbs::update() hash = " << hash << endl;
-  
+
   if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
     if (fVerbose > 2) cout << "calAbs::getPayload(" << hash
                            << ") not cached, retrieve from DB"
@@ -49,7 +49,7 @@ void calAbs::update(string hash) {
     if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
                            << "us ::timing::" << hash << " getpayload"
                            << endl;
-    
+
     fTagIOVPayloadMap.insert(make_pair(hash, pl));
     calculate(hash);
     fHash = hash;
@@ -73,16 +73,16 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
     // -- found, delete it
     fTagIOVPayloadMap.erase(hash);
   }
-  
-  
+
+
   // -- initialize with default
   std::stringstream sspl;
-  sspl << "(calAbs>  hash = " << hash 
+  sspl << "(calAbs>  hash = " << hash
        << " not found)";
   payload pl;
   pl.fComment = sspl.str();
-  
-  // -- read payload for hash 
+
+  // -- read payload for hash
   ifstream INS;
   string filename = dir + "/" + hash;
   INS.open(filename);
@@ -98,12 +98,12 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   pl.fHash    = jsonGetString(fPayloadString, "hash");
   pl.fComment = jsonGetString(fPayloadString, "comment");
   pl.fBLOB    = base64_decode(jsonGetString(fPayloadString, "BLOB"));
-  
+
   fTagIOVPayloadMap.insert(make_pair(hash, pl));
   if (fVerbose > 0) cout << "calAbs::readPayloadFromFile() Inserted "
                          << " hash ->" << hash << "<-"
-                         << " blob.size() = " << pl.fBLOB.size() 
-                         << " into fTagIOVPayloadMap" 
+                         << " blob.size() = " << pl.fBLOB.size()
+                         << " into fTagIOVPayloadMap"
                          << endl;
 }
 
@@ -131,7 +131,7 @@ void calAbs::writePayloadToFile(string hash, string dir) {
   }
   JS << sstr.str();
   JS.close();
-  
+
 }
 
 
@@ -153,7 +153,7 @@ void calAbs::writePayloadToFile(string hash, string dir, payload &pl) {
   }
   JS << sstr.str();
   JS.close();
-  
+
 }
 
 

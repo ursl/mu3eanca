@@ -30,7 +30,7 @@ void ltrim(string &s) {
 
 // ----------------------------------------------------------------------
 int blob2Int(std::array<char,8> v) {
-  char data[8] = {0}; 
+  char data[8] = {0};
   for (int i = 0; i < 8; ++i) data[i] = v[i];
   int a(0);
   memcpy(&a, data, sizeof a);
@@ -40,7 +40,7 @@ int blob2Int(std::array<char,8> v) {
 
 // ----------------------------------------------------------------------
 unsigned int blob2UnsignedInt(std::array<char,8> v) {
-  char data[8] = {0}; 
+  char data[8] = {0};
   for (int i = 0; i < 8; ++i) data[i] = v[i];
   unsigned int a(0);
   memcpy(&a, data, sizeof a);
@@ -50,7 +50,7 @@ unsigned int blob2UnsignedInt(std::array<char,8> v) {
 
 // ----------------------------------------------------------------------
 double blob2Double(std::array<char,8> v) {
-  char data[8] = {0}; 
+  char data[8] = {0};
   for (int i = 0; i < 8; ++i) data[i] = v[i];
   double a(0.0);
   memcpy(&a, data, sizeof a);
@@ -60,29 +60,29 @@ double blob2Double(std::array<char,8> v) {
 
 // ----------------------------------------------------------------------
 std::array<char,8> int2Blob(int a) {
-  char data[8] = {0}; 
+  char data[8] = {0};
   memcpy(data, &a, sizeof a);
-  array<char,8> v; 
-  for (int i = 0; i < 8; ++i) v[i] = data[i]; 
+  array<char,8> v;
+  for (int i = 0; i < 8; ++i) v[i] = data[i];
   return v;
 }
 
 // ----------------------------------------------------------------------
 std::array<char,8> uint2Blob(unsigned int a) {
-  char data[8] = {0}; 
+  char data[8] = {0};
   memcpy(data, &a, sizeof a);
-  array<char,8> v; 
-  for (int i = 0; i < 8; ++i) v[i] = data[i]; 
+  array<char,8> v;
+  for (int i = 0; i < 8; ++i) v[i] = data[i];
   return v;
 }
 
 
 // ----------------------------------------------------------------------
 std::array<char,8> double2Blob(double a) {
-  char data[8] = {0}; 
+  char data[8] = {0};
   memcpy(data, &a, sizeof a);
-  array<char,8> v; 
-  for (int i = 0; i < 8; ++i) v[i] = data[i]; 
+  array<char,8> v;
+  for (int i = 0; i < 8; ++i) v[i] = data[i];
   return v;
 }
 
@@ -101,14 +101,14 @@ std::array<char,8> getData(vector<char>::iterator &it) {
 // ----------------------------------------------------------------------
 string dumpArray(std::array<char,8> v) {
   stringstream sstr;
-  for (auto it: v) sstr << it; 
+  for (auto it: v) sstr << it;
   return sstr.str();
 }
 
 
 // ----------------------------------------------------------------------
 void printArray(ofstream &OS, std::array<char,8> v) {
-  for (auto it: v) OS << it; 
+  for (auto it: v) OS << it;
 }
 
 
@@ -145,7 +145,7 @@ string jsFormat(vector<int> v) {
 
 // ----------------------------------------------------------------------
 //std::string jsFormat(std::vector<int>);
-//std::string jsFormat(std::vector<double>); 
+//std::string jsFormat(std::vector<double>);
 
 
 
@@ -266,7 +266,7 @@ string jsonGetCfgString(std::string& jstring, std::string key) {
   s0 = jstring.find("\"", s0);
   string result = jstring.substr(s0);
   ltrim(result);
- 
+
   // -- there is another } to trim
   result.pop_back();
   replaceAll(result, "\"", "");
@@ -283,7 +283,7 @@ string jsonGetCfgStringEsc(std::string& jstring, std::string key) {
   ltrim(result);
 
   // -- magic to form the resulting string
-  result.pop_back(); // remove an end 
+  result.pop_back(); // remove an end
   result.erase(0, 1); // remove front char
   replaceAll(result, "\\n", "\n"); // remove all escaped newlines
   replaceAll(result, "\\", ""); // remove all escaped double quotes
@@ -378,7 +378,7 @@ string timeStamp(int format) {
   // strftime(buffer, sizeof(buffer), "%X", localtime_r(&t, &r));
   struct timeval tv;
   gettimeofday(&tv, 0);
- 
+
   tm *ltm = localtime(&t);
   int year  = 1900 + ltm->tm_year;
   int month = 1 + ltm->tm_mon;

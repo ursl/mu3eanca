@@ -7,11 +7,11 @@
 #include <map>
 
 // ----------------------------------------------------------------------
-// mppc alignment class 
+// mppc alignment class
 // ----------------------------------------------------------------------
 class calMppcAlignment : public calAbs {
 public:
-  
+
   calMppcAlignment() = default;
   calMppcAlignment(cdbAbs *db);
   calMppcAlignment(cdbAbs *db, std::string tag);
@@ -40,13 +40,13 @@ public:
 
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
   bool        getNextID(uint32_t &ID);
-  
+
 private:
   std::string fMppcAlignmentTag{"mppcalignment_"};
 
   // -- local and private
   struct constants {
-    uint32_t mppc; 
+    uint32_t mppc;
     double vx, vy, vz;
     double colx, coly, colz;
     int ncol;
@@ -54,7 +54,7 @@ private:
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};
-  
+
 };
 
 #endif

@@ -30,7 +30,7 @@ bool calPixelAlignment::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calPixelAlignment::calPixelAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calPixelAlignment created and registered with tag ->" << fTag << "<-" 
+	cout << "calPixelAlignment created and registered with tag ->" << fTag << "<-"
 			 << endl;
 }
 
@@ -48,15 +48,15 @@ void calPixelAlignment::calculate(string hash) {
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
   cout << " fBLOB.size() = " << spl.size() << endl;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "header: " << hex << header << dec << endl;
 
   while (ibuffer != buffer.end()) {
-    constants a; 
+    constants a;
     a.id = blob2UnsignedInt(getData(ibuffer));
     a.vx = blob2Double(getData(ibuffer));
     a.vy = blob2Double(getData(ibuffer));
@@ -87,14 +87,14 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
 
   if (0 == verbosity) return;
-  
-  int cnt(0); 
+
+  int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
     if (cnt > verbosity) break;
@@ -102,24 +102,24 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
     cout << "   sensor = " << chipID
          << " v = "
-         << blob2Double(getData(ibuffer)) << "/" 
-         << blob2Double(getData(ibuffer)) << "/" 
-         << blob2Double(getData(ibuffer)) << " "
-         << "row = " 
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << " "
-         << "col = " 
+         << "row = "
+         << blob2Double(getData(ibuffer)) << "/"
+         << blob2Double(getData(ibuffer)) << "/"
+         << blob2Double(getData(ibuffer)) << " "
+         << "col = "
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
          << "n = "
-         << blob2Int(getData(ibuffer)) << "/" 
-         << blob2Int(getData(ibuffer)) << " " 
+         << blob2Int(getData(ibuffer)) << "/"
+         << blob2Int(getData(ibuffer)) << " "
          << "rest = "
-         << blob2Double(getData(ibuffer)) << "/" 
-         << blob2Double(getData(ibuffer)) << "/" 
-         << blob2Double(getData(ibuffer)) << "/" 
+         << blob2Double(getData(ibuffer)) << "/"
+         << blob2Double(getData(ibuffer)) << "/"
+         << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer))
          << endl;
   }
@@ -129,11 +129,11 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calPixelAlignment::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calPixelAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
   }
@@ -243,14 +243,14 @@ string calPixelAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
 // ----------------------------------------------------------------------
 string calPixelAlignment::readCsv(string filename) {
   string spl("");
-  ifstream INS(filename); 
+  ifstream INS(filename);
   if (!INS.is_open()) {
-    return string("calPixelCablingMap::readCsv> Error, file " + filename + " not found");  
+    return string("calPixelCablingMap::readCsv> Error, file " + filename + " not found");
   }
 
   string sline;
   while (getline(INS, sline)) {
-    spl += sline; 
+    spl += sline;
     spl += ",";
   }
   INS.close();
@@ -260,7 +260,7 @@ string calPixelAlignment::readCsv(string filename) {
 
   for (unsigned int it = 0; it < tokens.size(); it += 16) {
     constants a;
-    int idx = it; 
+    int idx = it;
     a.id = ::stoi(tokens[idx++]);
     a.vx = ::stod(tokens[idx++]);
     a.vy = ::stod(tokens[idx++]);

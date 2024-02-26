@@ -7,11 +7,11 @@
 #include <map>
 
 // ----------------------------------------------------------------------
-// pixel quality class 
+// pixel quality class
 // ----------------------------------------------------------------------
 class calPixelQuality : public calAbs {
 public:
-  
+
   calPixelQuality() = default;
   calPixelQuality(cdbAbs *db);
   calPixelQuality(cdbAbs *db, std::string tag);
@@ -31,16 +31,16 @@ public:
   void readCsv(std::string filename);
 
   int         getStatus(unsigned int chipid, int icol, int irow) override;
-  
+
   bool        getNextID(uint32_t &ID);
   void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);
-  
+
 private:
   std::string fPixelQualityTag{"pixelquality_"};
 
   // -- local and private
   struct constants {
-    uint32_t id; 
+    uint32_t id;
     //    std::array<std::array<char,256>,250> matrix;
     char matrix[256][250];
   };

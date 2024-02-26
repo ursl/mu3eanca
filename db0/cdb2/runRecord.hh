@@ -23,9 +23,8 @@ public:
   std::string  fEORComments;
 
   std::string  fConfigurationKey;
-  
-  
+
+
 };
 
 #endif
-

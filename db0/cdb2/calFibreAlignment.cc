@@ -30,7 +30,7 @@ bool calFibreAlignment::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calFibreAlignment::calFibreAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-  if (0) 	cout << "calFibreAlignment created and registered with tag ->" << fTag << "<-" 
+  if (0) 	cout << "calFibreAlignment created and registered with tag ->" << fTag << "<-"
                << endl;
 }
 
@@ -50,13 +50,13 @@ void calFibreAlignment::calculate(string hash) {
 
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << " header: " << hex << header << dec;
 
   int cntPrint(0);
   while (ibuffer != buffer.end()) {
-    constants a; 
+    constants a;
     a.id = blob2UnsignedInt(getData(ibuffer));
     a.cx = blob2Double(getData(ibuffer));
     a.cy = blob2Double(getData(ibuffer));
@@ -86,8 +86,8 @@ void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calFibreAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
 
@@ -99,16 +99,16 @@ void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
     cout << "   sensor = " << chipID
          << " c = "
-         << blob2Double(getData(ibuffer)) << "/" 
-         << blob2Double(getData(ibuffer)) << "/" 
+         << blob2Double(getData(ibuffer)) << "/"
+         << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << " "
-         << "f = " 
+         << "f = "
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << "/"
          << blob2Double(getData(ibuffer)) << " "
          << "round = " << blob2UnsignedInt(getData(ibuffer)) << "/"
          << "square = " << blob2UnsignedInt(getData(ibuffer)) << "/"
-         << "diameter = " << blob2Double(getData(ibuffer))  
+         << "diameter = " << blob2Double(getData(ibuffer))
          << endl;
   }
 }
@@ -117,11 +117,11 @@ void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calFibreAlignment::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer)); 
+
+  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calFibreAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
   }
@@ -208,14 +208,14 @@ string calFibreAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
 // ----------------------------------------------------------------------
 string calFibreAlignment::readCsv(string filename) {
   string spl("");
-  ifstream INS(filename); 
+  ifstream INS(filename);
   if (!INS.is_open()) {
-    return string("calFibreAlignment::readCsv> Error, file " + filename + " not found");  
+    return string("calFibreAlignment::readCsv> Error, file " + filename + " not found");
   }
 
   string sline;
   while (getline(INS, sline)) {
-    spl += sline; 
+    spl += sline;
     spl += ",";
   }
   INS.close();
@@ -225,7 +225,7 @@ string calFibreAlignment::readCsv(string filename) {
 
   for (unsigned int it = 0; it < tokens.size(); it += 10) {
     constants a;
-    int idx = it; 
+    int idx = it;
     a.id = ::stoi(tokens[idx++]);
     a.cx = ::stod(tokens[idx++]);
     a.cy = ::stod(tokens[idx++]);

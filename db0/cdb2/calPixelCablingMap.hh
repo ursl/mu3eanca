@@ -7,11 +7,11 @@
 #include <map>
 
 // ----------------------------------------------------------------------
-// pixel cabling map class 
+// pixel cabling map class
 // ----------------------------------------------------------------------
 class calPixelCablingMap : public calAbs {
 public:
-  
+
   calPixelCablingMap() = default;
   calPixelCablingMap(cdbAbs *db);
   calPixelCablingMap(cdbAbs *db, std::string tag);
@@ -27,7 +27,7 @@ public:
 
   unsigned int getOnline(unsigned int sensor);
   unsigned int getSensor(unsigned int online);
-  
+
   bool         getNextID(unsigned int &ID);
 
   std::string  readJson(std::string filename);
