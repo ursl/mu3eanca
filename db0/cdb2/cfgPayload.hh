@@ -16,7 +16,7 @@ public:
   std::string fHash;
   std::string fDate;
   std::string fCfgString;
+  std::string fError;
 };
 
 #endif
-

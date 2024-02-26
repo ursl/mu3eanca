@@ -12,7 +12,7 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-calAbs::calAbs(cdbAbs *db) : fDB(db), fTag("unset") {
+calAbs::calAbs(cdbAbs *db) : fDB(db), fTag("unset"), fError("unset") {
 }
 
 
@@ -74,7 +74,6 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
     fTagIOVPayloadMap.erase(hash);
   }
 
-
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(calAbs>  hash = " << hash
@@ -88,6 +87,7 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   INS.open(filename);
   if (INS.fail()) {
     cout << "calAbs::readPayloadFromFile> Error failed to open ->" << filename << "<-" << endl;
+    fError = "Error: file not found";
     return;
   }
 
