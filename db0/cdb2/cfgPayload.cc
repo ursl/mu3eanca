@@ -10,9 +10,9 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 cfgPayload::cfgPayload() : fHash("cfg_X_gt"),
-                           fDate("insertion date"), 
-                           fCfgString(std::string("empty configuration string")) {
-  
+                           fDate("insertion date"),
+                           fCfgString(std::string("empty configuration string")),
+                           fError("unset") {
 };
 
 
@@ -69,6 +69,8 @@ void cfgPayload::readFromFile(string hash, string dir) {
   INS.open(filename);
   if (INS.fail()) {
     cout << "Error failed to open ->" << filename << "<-" << endl;
+    fError = "Error: file not found";
+    return;
   }
 
   std::stringstream buffer;
@@ -79,5 +81,5 @@ void cfgPayload::readFromFile(string hash, string dir) {
   fHash      = jsonGetString(jstring, "cfgHash");
   fDate      = jsonGetString(jstring, "cfgDate");
   fCfgString = jsonGetCfgStringEsc(jstring, "cfgString");
-  
+
 }

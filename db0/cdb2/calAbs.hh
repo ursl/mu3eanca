@@ -57,6 +57,7 @@ public:
 
   void                update(std::string hash);
   void                setPrintTiming(int v) {fPrintTiming = v;}
+  std::string         getError() {return fError;}
 
   // -- payload string parsing/extraction
   std::string getValue(std::string key);
@@ -66,7 +67,7 @@ public:
 
 protected:
 	cdbAbs                            *fDB;
-  std::string                        fTag{"unset"}, fHash{"unset"};
+  std::string                        fTag{"unset"}, fHash{"unset"}, fError{"unset"};
   int                                fVerbose{0}, fPrintTiming{0};
   std::vector<int>                   fIOVs;  // set it up initially
   std::map<std::string, payload>     fTagIOVPayloadMap;  // cache
