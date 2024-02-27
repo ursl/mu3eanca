@@ -25,7 +25,6 @@ Mu3eCalFactory* Mu3eCalFactory::instance(std::string gt, cdbAbs *db) {
 // ----------------------------------------------------------------------
 Mu3eCalFactory::Mu3eCalFactory(std::string gt, cdbAbs *db) : fGT(gt), fDB(db) {
   fVerbose = 10;
-  if (fVerbose > 0) cout << "Mu3eCalFactory::Mu3eCalFactory(std::string gt, cdbAbs *db) " << endl;
   if (fDB) {
     fTags       = fDB->readTags(fGT);
   }

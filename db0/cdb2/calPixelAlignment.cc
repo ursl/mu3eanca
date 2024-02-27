@@ -30,8 +30,9 @@ bool calPixelAlignment::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calPixelAlignment::calPixelAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calPixelAlignment created and registered with tag ->" << fTag << "<-"
-			 << endl;
+	if (fVerbose) cout << "calPixelAlignment created and registered with tag ->"
+                     << fTag << "<-"
+                     << endl;
 }
 
 
