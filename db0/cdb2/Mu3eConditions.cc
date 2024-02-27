@@ -46,7 +46,7 @@ Mu3eConditions* Mu3eConditions::instance(std::string gt, cdbAbs *db) {
 
 // ----------------------------------------------------------------------
 Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
-  cout << "Mu3eConditions::Mu3eConditions(" << gt
+  cout << "Mu3eConditions::Mu3eConditions(" << fGT
        << ", " << (fDB? fDB->getName(): "no DB")
        << ")" << endl;
 
@@ -251,7 +251,6 @@ runRecord Mu3eConditions::getRunRecord(int irun) {
 // ----------------------------------------------------------------------
 void Mu3eConditions::registerConf(std::string cfgName, cfgPayload c) {
   string hash = "cfg_" + cfgName + "_" + fGT;
-  hash = c.fHash;
   cout << "Mu3eConditions::registerConf> cfgName ->" << cfgName
        << "<- with hash ->" << hash << "<-";
   if (fConfigs.find(hash) == fConfigs.end()) {
@@ -323,7 +322,7 @@ void Mu3eConditions::localCfgPayloads(string scfgs) {
   for (auto it: configs) {
     string dir  = it.substr(0, it.rfind("/"));
     string hash = it.substr(it.rfind("/")+1);
-    cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
+    cout << "Mu3eConditions::localCfgPayloads> dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
 
     cfgPayload cfg;
     cfg.readFromFile(hash, dir);
@@ -331,7 +330,10 @@ void Mu3eConditions::localCfgPayloads(string scfgs) {
       cout << "file ->" << dir << "/" << hash << "<- not found" << endl;
       return;
     }
-    registerConf(fGT, cfg);
+    string cname = hash;
+    replaceAll(cname, "cfg_", "");
+    cname = cname.substr(0, cname.find("_"));
+    registerConf(cname, cfg);
   }
 
 }
