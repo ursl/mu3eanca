@@ -1,0 +1,17 @@
+{
+  "name": "runDB1",
+  "version": "1.0.0",
+  "description": "nodejs runDB1",
+  "author": "Urs Langenegger <urslangenegger@gmail.com>",
+  "main": "app.js",
+  "keywords": [
+    "nodejs",
+    "bootstrap",
+    "express"
+  ],
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.16.4",
+    "mongoose": "^7.4.1"
+  }
+}
