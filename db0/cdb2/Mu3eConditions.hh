@@ -19,6 +19,9 @@ class Mu3eConditions {
 public:
   static Mu3eConditions* instance(std::string gt = "unset", cdbAbs *db = 0);
 
+  // -- Answer whether to use the CDB and Mu3eConditions
+  bool   useCDB() {return (fDB!=0);}
+
 	// -- access to metadata (from DB)
   std::string                                  getGlobalTag() {return fGT;}
   virtual std::vector<std::string>             getGlobalTags() {return fGlobalTags;}
@@ -53,6 +56,7 @@ public:
 
   std::string  getHash(int irun, std::string tag);
   int          whichIOV(int run, std::string tag);
+
 
 protected:
   Mu3eConditions(std::string gt, cdbAbs *);

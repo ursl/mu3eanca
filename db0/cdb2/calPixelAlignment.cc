@@ -15,6 +15,10 @@ calPixelAlignment::calPixelAlignment(cdbAbs *db) : calAbs(db) {
 
 // ----------------------------------------------------------------------
 bool calPixelAlignment::getNextID(uint32_t &ID) {
+  if (fMapConstants.size() < 1) {
+    cout << "calPixelAlignment::getNextID> ERROR: no constants loaded. Did you set a runnumber in Mu3eConditions?"
+         << endl;
+  }
   if (fMapConstantsIt == fMapConstants.end()) {
     // -- reset
     ID = 999999;
