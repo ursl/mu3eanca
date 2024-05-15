@@ -15,7 +15,8 @@ ifneq (,$(findstring merlin,$(LHOST)))
   SOFLAGS       =
 else ifneq (,$(findstring moor,$(LHOST)))
   INCMONGODB    = -I/opt/homebrew/include/mongocxx/v_noabi
-  INCMONGODB   += -I/opt/homebrew/include/bsoncxx/v_noabi
+  INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
+  INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi/bsoncxx/third_party/mnmlstc
   LIBMONGODB    = -L/opt/homebrew/lib -lmongocxx -lbsoncxx
   LIBCURL       = -L/opt/homebrew/lib -lcurl
   LIBBOOST      = -L/usr/lib64 -lboost_serialization
@@ -75,18 +76,18 @@ $(addprefix obj/,%.o) : %.cc
 all: prep lib bin
 
 lib: $(addprefix obj/,$(FILES) )
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS) 
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS)
 
 bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/syncMongo.o obj/testPixelQuality.o obj/pcrPixelQuality.o obj/cdbInitDB.o obj/cdbPrintPayload.o  obj/cdbPrintConfig.o
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbPrintPayload.o -o bin/cdbPrintPayload $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbPrintPayload.o -o bin/cdbPrintPayload $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbPrintConfig.o -o bin/cdbPrintConfig $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbInitDB.o -o bin/cdbInitDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/pcrPixelQuality.o -o bin/pcrPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testPixelQuality.o -o bin/testPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so 
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncCloud.o -o bin/syncCloud $(LIBMONGODB) $(LIBCURL) $(GLIBS)  
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncMongo.o -o bin/syncMongo $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so 
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbInitDB.o -o bin/cdbInitDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/pcrPixelQuality.o -o bin/pcrPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testPixelQuality.o -o bin/testPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncCloud.o -o bin/syncCloud $(LIBMONGODB) $(LIBCURL) $(GLIBS)
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncMongo.o -o bin/syncMongo $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so
 
 clean:
 	rm -f obj/*.o lib/*.so bin/*
@@ -94,4 +95,3 @@ clean:
 # -- preparatory setup
 prep:
 	mkdir -p obj bin lib
-
