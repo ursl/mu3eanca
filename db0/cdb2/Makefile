@@ -14,10 +14,10 @@ ifneq (,$(findstring merlin,$(LHOST)))
   LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
   SOFLAGS       =
 else ifneq (,$(findstring moor,$(LHOST)))
-  INCMONGODB    = -I/opt/homebrew/include/mongocxx/v_noabi
+  INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
   INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
   INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi/bsoncxx/third_party/mnmlstc
-  LIBMONGODB    = -L/opt/homebrew/lib -lmongocxx -lbsoncxx
+  LIBMONGODB    = -L/usr/local/lib -lmongocxx -lbsoncxx
   LIBCURL       = -L/opt/homebrew/lib -lcurl
   LIBBOOST      = -L/usr/lib64 -lboost_serialization
   SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
