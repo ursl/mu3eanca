@@ -6,21 +6,24 @@ const router = express.Router();
 
 // -- Get a single runrecord
 router.get("/:id", async (req, res) => {
-  let runno = parseInt(req.params.id);
-  console.log("serving ... /findOne/runrecords/" + req.params.id + " from " + req.ip);
-  // console.log("req.params.id ->" + req.params.id + "<-" );
-  // console.log(typeof req.params.id); // string
-  // console.log("runno = " + runno);
+    let runno = parseInt(req.params.id);
+    console.log("serving ... /rdb/" + req.params.id + " from " + req.ip);
 
-  let collection = await db.collection("runrecords");
+    let collection = await db.collection("runrecords");
 
-  let query = {"BOR.Run number": runno};
-  let result = await collection.findOne(query);
+    let query = {"BOR.Run number": runno};
+    let result = await collection.findOne(query);
 
-  if (!result) res.send("Not found").status(404);
-  else res.send(result).status(200);
+    if (!result) res.send("Not found").status(404);
+    else {
+        const data = {
+            name: "jaimin",
+            email: "jaimin@gmail.com"
+        };
+
+        console.log("calling render");
+        res.render('index', data);
+    }
 });
-
-
 
 export default router;

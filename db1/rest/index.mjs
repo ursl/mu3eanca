@@ -1,8 +1,15 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import "./loadEnvironment.mjs";
 import "express-async-errors";
 import cdb from "./routes/cdb.mjs";
+import rdb from "./routes/rdb.mjs";
+
+
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const PORT = process.env.PORT || 5050;
 const app = express();
@@ -12,6 +19,10 @@ app.use(express.json());
 
 // Load the /posts routes
 app.use("/cdb", cdb);
+app.use("/rdb", rdb);
+
+app.set('view engine', 'ejs');
+app.set("views", path.join(__dirname, "views"));
 
 // Global error handling
 app.use((err, _req, res, next) => {
