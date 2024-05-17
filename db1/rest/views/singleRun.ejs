@@ -55,6 +55,33 @@
 </style>
 </head>
 
+<script>
+let sruns = '<%-runs%>'
+let aruns = sruns.split(",");
+const sthisRun = <%= data.BOR["Run number"]%>;
+const thisRun = String(sthisRun);
+const idxThisRun = aruns.indexOf(thisRun);
+let idxPrevRun = (idxThisRun > 0? idxThisRun - 1: -1);
+let idxNextRun = (idxThisRun < aruns.length? idxThisRun + 1: -1);
+
+function setNext() {
+    if (idxNextRun > -1) {
+        window.location.href = '/rdb/' + aruns[idxNextRun] + '/?runs=' + sruns;
+    } else {
+        window.location.href = '/rdb/';
+    }
+}
+
+function setPrev() {
+    if (idxPrevRun > -1) {
+        window.location.href = '/rdb/' + aruns[idxPrevRun] + '/?runs=' + sruns;
+    } else {
+        window.location.href = '/rdb/';
+    }
+}
+
+</script>
+
 <body>
     <h1>Run
      <%= data.BOR["Run number"]%>
@@ -121,10 +148,9 @@
 
     <div>
     <input id="btnBack" type="button" class="button" value="Back" onclick="window.location.href = '/rdb'" />
-    <input id="btnPrev" type="button" class="button" value="Previous" onclick="window.location.href = '/rdb'" />
-    <input id="btnNext" type="button" class="button" value="Next" onclick="window.location.href = '/rdb'" />
+    <input id="btnPrev" type="button" class="button" value="Previous" onclick=setPrev() />
+    <input id="btnNext" type="button" class="button" value="Next" onclick=setNext() />
     </div>
-
 </body>
 
 </html>
