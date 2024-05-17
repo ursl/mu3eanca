@@ -49,9 +49,9 @@
 function runsFilter() {
     isFiltered = true;
     const minRun = document.getElementById("filterRunMin").value;
-    console.log("minRun2: " + minRun);
+    console.log("minRun: " + minRun);
     const maxRun =  document.getElementById("filterRunMax").value;
-    console.log("maxRun3: " + maxRun);
+    console.log("maxRun: " + maxRun);
     window.location.href = '/rdb/?minRun=' + minRun + '&maxRun=' + maxRun;
 }
 
@@ -59,6 +59,15 @@ function runsLimit() {
     isFiltered = true;
     const nRun = document.getElementById("filterRunLimit").value;
     window.location.href = '/rdb/?nRun=' + nRun;
+}
+
+function timeFilter() {
+    isFiltered = true;
+    const startTime = document.getElementById("filterStartTime").value;
+    console.log("startTime: " + startTime);
+    const stopTime  = document.getElementById("filterStopTime").value;
+    console.log("stopTime: " + stopTime);
+    window.location.href = '/rdb/?startTime=' + startTime + '&stopTime=' + stopTime;
 }
 
 </script>
@@ -83,8 +92,8 @@ function runsLimit() {
 
     <br>
     <br>
-    <input id="filterStartTime" type="text" placeholder="Start time"  />
-    <input id="filterStopTime" type="text" placeholder="Stop time"  />
+    <input id="filterStartTime" type="text" placeholder="Start time (FIXME!)"  />
+    <input id="filterStopTime" type="text" placeholder="Stop time (FIXME!)"  />
     <input id="applyTimeFilter" type="button" class="button" value="filter" onclick=timeFilter() />
 
     <h3>
