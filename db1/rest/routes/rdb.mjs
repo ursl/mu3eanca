@@ -8,10 +8,12 @@ const router = express.Router();
 router.get("/", async (req, res) => {
     let collection = await db.collection("runrecords");
 
+    // -- number of runs to show
     let nruns = -1;
     nruns = Number(req.query.nRun);
     console.log("nruns = " + nruns);
 
+    // -- run range to show
     let minrun = -1;
     minrun = Number(req.query.minRun);
     console.log("minrun = " + minrun);
@@ -19,6 +21,13 @@ router.get("/", async (req, res) => {
     maxrun = Number(req.query.maxRun);
     console.log("maxrun = " + maxrun);
 
+    // -- time filtering attempts
+    let starttime = "unset";
+    starttime = req.query.startTime;
+    console.log("starttime = " + starttime);
+    let stoptime = "unset";
+    stoptime = req.query.stopTime;
+    console.log("stoptime = " + stoptime);
 
     const options = {
         // Sort returned documents in ascending order by title (A->Z)
@@ -52,7 +61,28 @@ router.get("/", async (req, res) => {
         console.log("result: " + JSON.stringify(result));
         res.render('index', {'data': result});
         return;
-    }
+    } else if (starttime !== undefined) {
+        query = {"BOR.Start time": {$regex: starttime}};
+        console.log("query: " + JSON.stringify(query));
+        const result = await collection.find(query).toArray();
+        console.log("result: " + JSON.stringify(result));
+        res.render('index', {'data': result});
+        return;
+    } else if (stoptime !== undefined) {
+        query = {"BOR.Stop time": {$regex: stoptime}};
+        console.log("query: " + JSON.stringify(query));
+        const result = await collection.find(query).toArray();
+        console.log("result: " + JSON.stringify(result));
+        res.render('index', {'data': result});
+        return;
+    } else if ((starttime !== undefined) && (stoptime !== undefined)) {
+        query = [{"BOR.Start time": {$regex: starttime}}, {"BOR.Stop time": {$regex: stoptime}}];
+        console.log("query: " + JSON.stringify(query));
+        const result = await collection.find(query).toArray();
+        console.log("result: " + JSON.stringify(result));
+        res.render('index', {'data': result});
+        return;
+   }
 
     const result = await collection.find(query, options).limit(15).toArray();
     console.log("default result: " + JSON.stringify(result));
