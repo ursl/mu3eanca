@@ -1,0 +1,130 @@
+<!-- views/index.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJS Example</title>
+    <style>
+        h1 {
+            color: green;
+        }
+
+    div {
+        padding-top: 20px;
+        padding-right: 10px;
+        padding-bottom: 10px;
+        padding-left: 10px;
+    }
+
+    .button {
+        background-color: #04AA6D; /* Green */
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+    }
+
+    #runs {
+        font-family: Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    #runs td, #runs th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    #runs tr:nth-child(even){background-color: #f2f2f2;}
+
+    #runs tr:hover {background-color: #ddd;}
+
+    #runs th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color: #04AA6D;
+        color: white;
+    }
+
+</style>
+</head>
+
+<body>
+    <h1>Run
+     <%= data.BOR["Run number"]%>
+    </h1>
+
+    <table id="runs">
+    <thead>
+    <tr>
+    <th>Field </th>
+    <th>Value </th>
+    </tr>
+    </thead>
+
+    <tr>
+    <td> Run number </td>
+    <td>  <%= data.BOR["Run number"]%>  </td>
+    </tr>
+
+    <tr>
+    <td> Start time </td>
+    <td> <%= data.BOR["Start time"]%> </td>
+    </tr>
+
+    <tr>
+    <td> Stop time </td>
+    <td> <%= data.EOR["Stop time"]%> </td>
+    </tr>
+
+    <tr>
+    <td> Events </td>
+    <td> <%= data.EOR["Events"]%> </td>
+    </tr>
+
+    <tr>
+    <td> Shift crew </td>
+    <td> <%= data.BOR["Shift crew"]%> </td>
+    </tr>
+
+    <tr>
+    <td> Comments </td>
+    <td> <%= data.EOR["Comments"]%> </td>
+    </tr>
+
+    <tr>
+    <td> Subsystems </td>
+    <td> <%= data.BOR["Subsystems"]%> </td>
+    </tr>
+
+    <tr>
+    <td> Beam </td>
+    <td> <%= data.BOR["Beam"]%> </td>
+    </tr>
+
+    <tr>
+    <td> File size </td>
+    <td> <%= data.EOR["File size"]%> </td>
+    </tr>
+
+    <tr>
+    <td> Uncompressed data size </td>
+    <td> <%= data.EOR["Uncompressed data size"]%> </td>
+    </tr>
+    </table>
+
+    <div>
+    <input id="btnBack" type="button" class="button" value="Back" onclick="window.location.href = '/rdb'" />
+    <input id="btnPrev" type="button" class="button" value="Previous" onclick="window.location.href = '/rdb'" />
+    <input id="btnNext" type="button" class="button" value="Next" onclick="window.location.href = '/rdb'" />
+    </div>
+
+</body>
+
+</html>

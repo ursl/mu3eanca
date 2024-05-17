@@ -7,18 +7,67 @@
     <meta charset="UTF-8">
     <title>EJS Example</title>
     <style>
-        h1 {
-            color: green;
-        }
-    </style>
+    h1 {
+        color: green;
+    }
+
+    #runs {
+        font-family: Arial, Helvetica, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    #runs td, #runs th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    #runs tr:nth-child(even){background-color: #f2f2f2;}
+
+    #runs tr:hover {background-color: #ddd;}
+
+    #runs th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color: #04AA6D;
+        color: white;
+    }
+</style>
 </head>
 
 <body>
     <h1>Mu3e Run Database </h1>
-    <h2>Welcome, <%= name %>
-            </h1>
-            <p>Your email is: <%= email%>
-            </p>
-</body>
+    <h2>The last 20 runs</h2>
+
+    <table id="runs">
+    <thead>
+    <tr>
+    <th>Run </th>
+    <th>Start time</th>
+    <th>End time</th>
+    <th>Events</th>
+    <th>Shift crew</th>
+    <th>Comments</th>
+    </tr>
+    </thead>
+
+    <% data.map((result)=>{ %>
+                            <tr>
+                            <td> <a href="/rdb/<%= result.BOR["Run number"]%>"><%= result.BOR["Run number"]%> </a>
+                            <td>
+                            <%= result.BOR["Start time"]%>
+                            <td>
+                            <%= result.EOR["Stop time"]%>
+                            <td>
+                            <%= result.EOR["Events"]%>
+                            <td>
+                            <%= result.BOR["Shift crew"]%>
+                            <td>
+                            <%= result.EOR["Comments"]%>
+                            <% }) %>
+
+</table>
+    </body>
 
 </html>
