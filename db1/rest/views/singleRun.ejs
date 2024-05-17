@@ -63,9 +63,10 @@ const thisRun = String(sthisRun);
 const idxThisRun = aruns.indexOf(thisRun);
 let idxPrevRun = (idxThisRun > 0? idxThisRun - 1: -1);
 let idxNextRun = (idxThisRun < aruns.length? idxThisRun + 1: -1);
+console.log("idxThisRun / idxPrevRun / idxnextRun :" + idxThisRun + " / " + idxPrevRun + " / " + idxNextRun);
 
 function setNext() {
-    if (idxNextRun > -1) {
+    if (idxNextRun < aruns.length) {
         window.location.href = '/rdb/' + aruns[idxNextRun] + '/?runs=' + sruns;
     } else {
         window.location.href = '/rdb/';
@@ -78,6 +79,10 @@ function setPrev() {
     } else {
         window.location.href = '/rdb/';
     }
+}
+
+function setBack() {
+    window.location.href = '/rdb/';
 }
 
 </script>
@@ -147,7 +152,7 @@ function setPrev() {
     </table>
 
     <div>
-    <input id="btnBack" type="button" class="button" value="Back" onclick="window.location.href = '/rdb'" />
+    <input id="btnBack" type="button" class="button" value="Back" onclick=setBack() />
     <input id="btnPrev" type="button" class="button" value="Previous" onclick=setPrev() />
     <input id="btnNext" type="button" class="button" value="Next" onclick=setNext() />
     </div>

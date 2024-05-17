@@ -49,15 +49,15 @@
 function runsFilter() {
     isFiltered = true;
     const minRun = document.getElementById("filterRunMin").value;
-    console.log("minRun: " + minRun);
+    console.log("minRun2: " + minRun);
     const maxRun =  document.getElementById("filterRunMax").value;
-    window.location.href = '/rdb/?minRun=' + minRun + 'maxRun=' + maxRun;
+    console.log("maxRun3: " + maxRun);
+    window.location.href = '/rdb/?minRun=' + minRun + '&maxRun=' + maxRun;
 }
 
 function runsLimit() {
     isFiltered = true;
     const nRun = document.getElementById("filterRunLimit").value;
-    console.log("nRun: " + nRun);
     window.location.href = '/rdb/?nRun=' + nRun;
 }
 
@@ -71,20 +71,27 @@ function runsLimit() {
 
 
 <body>
-    <h1><a href="/rdb/?nRun=20">Mu3e Run Database</a> </h1>
-    <input id="filterRunLimit" type="number"  value="20" />
+    <h1><a href="/rdb/">Mu3e Run Database</a> </h1>
+    <input id="filterRunLimit" type="numeric"  placeholder="number of runs" />
     <input id="applyRunsLimit" type="button" class="button" value="filter" onclick=runsLimit() />
 
     <br>
-    <input id="filterRunMin" type="number"  value="0" />
-    <input id="filterRunMax" type="number"  value="999999" />
+    <br>
+    <input id="filterRunMin" type="numeric" placeholder="minimum runnumber"  />
+    <input id="filterRunMax" type="numeric" placeholder="maximum runnumber"  />
     <input id="applyRunsFilter" type="button" class="button" value="filter" onclick=runsFilter() />
+
+    <br>
+    <br>
+    <input id="filterStartTime" type="text" placeholder="Start time"  />
+    <input id="filterStopTime" type="text" placeholder="Stop time"  />
+    <input id="applyTimeFilter" type="button" class="button" value="filter" onclick=timeFilter() />
 
     <h3>
     <% if (isFiltered) { %>
       Showing filtered results
     <% } else { %>
-      Showing the last 20 runs
+      Showing the last <%=data.length %> runs
     <% } %>
     </h3>
 
