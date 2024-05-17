@@ -1,8 +1,6 @@
 <!-- views/index.ejs -->
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>EJS Example</title>
@@ -36,6 +34,12 @@
 </style>
 </head>
 
+<% var runList = [] %>
+<% for(const testData of data){ %>
+<% runList.push(testData.BOR["Run number"]) %>
+<% } %>
+
+
 <body>
     <h1>Mu3e Run Database </h1>
     <h2>The last 20 runs</h2>
@@ -52,9 +56,11 @@
     </tr>
     </thead>
 
+
+
     <% data.map((result)=>{ %>
                             <tr>
-                            <td> <a href="/rdb/<%= result.BOR["Run number"]%>"><%= result.BOR["Run number"]%> </a>
+                            <td> <a href="/rdb/<%= result.BOR["Run number"]%>?runs=<%=runList%>"><%= result.BOR["Run number"]%> </a>
                             <td>
                             <%= result.BOR["Start time"]%>
                             <td>
