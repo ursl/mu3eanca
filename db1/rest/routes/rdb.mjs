@@ -6,17 +6,19 @@ const router = express.Router();
 
 // -- Get a single runrecord
 router.get("/", async (req, res) => {
-    console.log("render index4");
     let collection = await db.collection("runrecords");
+
+    let nruns = -1;
+    nruns = Number(req.query.nRun);
+    console.log("nruns = " + nruns);
 
     const options = {
         // Sort returned documents in ascending order by title (A->Z)
-        sort: { "BOR.Run number": -1 },
-        limit: {$eq: 5}
+        sort: { "BOR.Run number": -1 }
     };
     let query = { };
-    const result = await collection.find(query, options).limit(20).toArray();
-    console.log(JSON.stringify(result));
+    //    const result = await collection.find(query, options).limit(nruns).toArray();
+    const result = await collection.find(query, options).limit(nruns).toArray();
     res.render('index', {'data': result});
 });
 

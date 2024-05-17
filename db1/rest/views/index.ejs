@@ -3,10 +3,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>EJS Example</title>
+    <title>Mu3e Run Database</title>
     <style>
     h1 {
         color: green;
+    }
+
+    .button {
+        background-color: #04AA6D; /* Green */
+        border: none;
+        color: white;
+        padding: 2px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
     }
 
     #runs {
@@ -32,6 +43,25 @@
         color: white;
     }
 </style>
+
+<script>
+
+function runsFilter() {
+    isFiltered = true;
+    const minRun = document.getElementById("filterRunMin").value;
+    console.log("minRun: " + minRun);
+    const maxRun =  document.getElementById("filterRunMax").value;
+    window.location.href = '/rdb/?minRun=' + minRun + 'maxRun=' + maxRun;
+}
+
+function runsLimit() {
+    isFiltered = true;
+    const nRun = document.getElementById("filterRunLimit").value;
+    console.log("nRun: " + nRun);
+    window.location.href = '/rdb/?nRun=' + nRun;
+}
+
+</script>
 </head>
 
 <% var runList = [] %>
@@ -41,8 +71,22 @@
 
 
 <body>
-    <h1>Mu3e Run Database </h1>
-    <h2>The last 20 runs</h2>
+    <h1><a href="/rdb/?nRun=20">Mu3e Run Database</a> </h1>
+    <input id="filterRunLimit" type="number"  value="20" />
+    <input id="applyRunsLimit" type="button" class="button" value="filter" onclick=runsLimit() />
+
+    <br>
+    <input id="filterRunMin" type="number"  value="0" />
+    <input id="filterRunMax" type="number"  value="999999" />
+    <input id="applyRunsFilter" type="button" class="button" value="filter" onclick=runsFilter() />
+
+    <h3>
+    <% if (isFiltered) { %>
+      Showing filtered results
+    <% } else { %>
+      Showing the last 20 runs
+    <% } %>
+    </h3>
 
     <table id="runs">
     <thead>
