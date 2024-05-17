@@ -30,7 +30,7 @@ router.get("/", async (req, res) => {
         res.render('index', {'data': result});
         return;
     } else if (minrun > -1) {
-        if (maxrun > -1) {
+        if (maxrun > 0) {
             query = {"BOR.Run number": {$gte: minrun, $lte: maxrun}};
             console.log("query: " + JSON.stringify(query));
             const result = await collection.find(query).toArray();
@@ -45,7 +45,15 @@ router.get("/", async (req, res) => {
             res.render('index', {'data': result});
             return;
         }
+    } else if (maxrun > -1) {
+        query = {"BOR.Run number": {$lte: maxrun}};
+        console.log("query: " + JSON.stringify(query));
+        const result = await collection.find(query).toArray();
+        console.log("result: " + JSON.stringify(result));
+        res.render('index', {'data': result});
+        return;
     }
+
     const result = await collection.find(query, options).limit(15).toArray();
     console.log("default result: " + JSON.stringify(result));
     res.render('index', {'data': result});
