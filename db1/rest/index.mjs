@@ -17,6 +17,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.locals.isFiltered = false;
+
 // Load the /posts routes
 app.use("/cdb", cdb);
 app.use("/rdb", rdb);
