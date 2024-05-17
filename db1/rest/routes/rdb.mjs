@@ -33,7 +33,7 @@ router.get("/:id", async (req, res) => {
     if (!result) res.send("Not found").status(404);
     else {
         console.log("calling singleRun with result: " + JSON.stringify(result));
-        res.render('singleRun', {'data': result});
+        res.render('singleRun', {'data': result, 'runs': req.query.runs});
     }
 });
 
