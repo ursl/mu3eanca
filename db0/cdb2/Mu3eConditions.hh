@@ -1,11 +1,11 @@
 #ifndef MU3ECONDITIONS_h
 #define MU3ECONDITIONS_h
 
-#include <string>
-#include <map>
-
 #include "runRecord.hh"
 #include "cfgPayload.hh"
+
+#include <string>
+#include <map>
 
 class cdbAbs;
 class calAbs;

@@ -1,15 +1,15 @@
 #include "cdbRest.hh"
 
+#include "base64.hh"
+#include "cdbUtil.hh"
+
+#include <curl/curl.h>
+
 #include <fstream>
 #include <iostream>
 #include <algorithm>
 #include <sstream>
 #include <dirent.h>    /// for directory reading
-
-#include <curl/curl.h>
-
-#include "base64.hh"
-#include "cdbUtil.hh"
 
 using namespace std;
 

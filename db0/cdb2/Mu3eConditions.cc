@@ -1,3 +1,11 @@
+#include "cdbAbs.hh"
+#include "cdbUtil.hh"
+
+#include "Mu3eConditions.hh"
+#include "Mu3eCalFactory.hh"
+
+#include "calAbs.hh"
+
 #include <iostream>
 #include <algorithm>    // std::find
 #include <chrono>
@@ -6,13 +14,6 @@
 #include <map>
 #include <sstream>
 
-#include "cdbAbs.hh"
-#include "cdbUtil.hh"
-
-#include "Mu3eConditions.hh"
-#include "Mu3eCalFactory.hh"
-
-#include "calAbs.hh"
 
 using namespace std;
 

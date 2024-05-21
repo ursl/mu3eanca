@@ -1,3 +1,5 @@
+#include "cdbUtil.hh"
+
 #include <sys/time.h>
 #include <iostream>
 #include <fstream>
@@ -7,7 +9,6 @@
 #include <unistd.h>
 #include <cstring>
 
-#include "cdbUtil.hh"
 
 using namespace std;
 
