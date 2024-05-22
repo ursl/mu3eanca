@@ -65,7 +65,8 @@ LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
 LBINARIES = obj/testCDB.o obj/fillDB.o \
             obj/syncCloud.o obj/syncMongo.o \
             obj/testPixelQuality.o obj/pcrPixelQuality.o \
-            obj/cdbInitDB.o obj/cdbPrintPayload.o  obj/cdbPrintConfig.o
+            obj/cdbInitDB.o obj/cdbPrintPayload.o  \
+            obj/cdbPrintConfig.o
 
 
 ifneq (,$(findstring merlin,$(LHOST)))
