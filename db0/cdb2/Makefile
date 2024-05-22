@@ -90,6 +90,9 @@ $(addprefix obj/,%.o) : %.cc %.hh
 $(addprefix obj/,%.o) : %.cc
 	$(CXX) $(CXXFLAGS) $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
 
+$(addprefix bin/,%) : $(addprefix obj/,%.o)
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
+
 
 # -- targets
 all: prep lib bin
@@ -101,8 +104,6 @@ bin: $(addprefix bin/,$(BINARIES) )
 lib/libCDB.so: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS)
 
-$(addprefix bin/, $(BINARIES) ): $(addprefix obj/, $(addsuffix $(OSUFFIX), $(BINARIES) ) )
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
 
 clean:
 	rm -f obj/*.o lib/*.so bin/*
