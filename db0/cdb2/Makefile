@@ -62,12 +62,21 @@ LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
          base64.o \
          payload.o cfgPayload.o cdbUtil.o runRecord.o
 
+LBINARIES = obj/testCDB.o obj/fillDB.o \
+            obj/syncCloud.o obj/syncMongo.o \
+            obj/testPixelQuality.o obj/pcrPixelQuality.o \
+            obj/cdbInitDB.o obj/cdbPrintPayload.o  obj/cdbPrintConfig.o
+
+
 ifneq (,$(findstring merlin,$(LHOST)))
        $(info ************  MERLIN VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
+       BINARIES = $(filter-out testCDB.o fillDB.o syncCloud.o syncMongo.o, $(LFILES))
 else
        FILES = LFILES
 endif
+
+
 
 # -- Default rules
 $(addprefix obj/,%.o) : %.cc %.hh
@@ -83,7 +92,7 @@ all: prep lib bin
 lib: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS)
 
-bin: lib obj/testCDB.o obj/fillDB.o obj/syncCloud.o obj/syncMongo.o obj/testPixelQuality.o obj/pcrPixelQuality.o obj/cdbInitDB.o obj/cdbPrintPayload.o  obj/cdbPrintConfig.o
+bin: lib
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbPrintPayload.o -o bin/cdbPrintPayload $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbPrintConfig.o -o bin/cdbPrintConfig $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbInitDB.o -o bin/cdbInitDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
