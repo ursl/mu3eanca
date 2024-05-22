@@ -71,7 +71,7 @@ LBINARIES = obj/testCDB.o obj/fillDB.o \
 ifneq (,$(findstring merlin,$(LHOST)))
        $(info ************  MERLIN VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
-       BINARIES = $(filter-out testCDB.o fillDB.o syncCloud.o syncMongo.o, $(LFILES))
+       BINARIES = $(filter-out testCDB.o fillDB.o syncCloud.o syncMongo.o, $(LBINARIES))
 else
        FILES = LFILES
 endif
