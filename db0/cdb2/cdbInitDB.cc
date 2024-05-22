@@ -33,11 +33,11 @@ using namespace std;
 // "mcideal"     complete detector as contained in mu3e sim files alignment/* trees
 // "dc2023"      data challenge 2023 (with new pixel chip ID naming scheme)
 //
-// 
+//
 // -j JSONDIR  output directory with subdirectories globaltags, tags, payloads
 // -m MODE     "mcideal", "dc2023"
 //
-// requires ../ascii/*.csv
+// requires ./ascii/*.csv
 // requires run -> mu3e/run (i.e. a symlink pointing to the run directory
 //                           with the config template files)
 //
@@ -48,7 +48,7 @@ using namespace std;
 // moor>   bin/cdbInitDB -j ~/data/mu3e/json -m cr2022
 // moor>   bin/cdbInitDB -j ~/data/mu3e/json -m mcideal
 // moor>   bin/cdbInitDB -j ~/data/mu3e/json -m dc2023
-// 
+//
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
@@ -62,11 +62,11 @@ int main(int argc, char* argv[]) {
       {"mcidealv5.1", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment"} }
   };
 
-  
+
   // -- command line arguments
   string jsondir("");
   string mode("mcideal");
-  int verbose(0); 
+  int verbose(0);
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-j"))  {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))  {mode    = argv[++i];}
@@ -79,11 +79,11 @@ int main(int argc, char* argv[]) {
       system(string(string(argv[0]) + " -j " + jsondir + " -m " + it.first).c_str());
     }
   }
-  
+
   // -- check whether directories for JSONs already exist
   vector<string> testdirs{jsondir,
-                          jsondir + "/globaltags", 
-                          jsondir + "/tags", 
+                          jsondir + "/globaltags",
+                          jsondir + "/tags",
                           jsondir + "/payloads",
                           jsondir + "/runrecords",
                           jsondir + "/configs",
@@ -97,24 +97,24 @@ int main(int argc, char* argv[]) {
       closedir(folder);
     }
   }
- 
+
   ofstream JS;
 
 	string jdir  = jsondir + "/globaltags";
-  
+
   for (auto igt : iniGlobalTags) {
     if (string::npos == igt.first.find(mode)) continue;
     vector<string> arrayBuilder;
 		for (auto it : igt.second) {
-      string tag = it + "_" + igt.first; 
+      string tag = it + "_" + igt.first;
       arrayBuilder.push_back(tag);
     }
     stringstream sstr;
     sstr << "{ \"gt\" : \"" << igt.first << "\", \"tags\" : ";
     sstr << jsFormat(arrayBuilder);
     sstr << " }" << endl;
-    
-    
+
+
     // -- JSON
     JS.open(jdir + "/" + igt.first);
     if (JS.fail()) {
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
     JS.close();
   }
 
- 
+
 	// ----------------------------------------------------------------------
 	// -- tags/iovs
 	// ----------------------------------------------------------------------
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
   for (auto igt : iniGlobalTags) {
     if (string::npos == igt.first.find(mode)) continue;
 		for (auto it : igt.second) {
-      string tag = it + "_" + igt.first; 
+      string tag = it + "_" + igt.first;
       vector<int> arrayBuilder;
       for (auto it : vIni) arrayBuilder.push_back(it);
 
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
       sstr << "{ \"tag\" : \"" << tag << "\", \"iovs\" : ";
       sstr << jsFormat(arrayBuilder);
       sstr << " }" << endl;
-   
+
       // -- JSON
       JS.open(jdir + "/" + tag);
       if (JS.fail()) {
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
       JS.close();
     }
   }
-  
+
   // ----------------------------------------------------------------------
 	// -- payloads
 	// ----------------------------------------------------------------------
@@ -169,64 +169,64 @@ int main(int argc, char* argv[]) {
 
     // -- pixelalignment
     calPixelAlignment *cpa = new calPixelAlignment();
-    filename = "../ascii/sensors-" + it + ".csv";
+    filename = "./ascii/sensors-" + it + ".csv";
     result = cpa->readCsv(filename);
     if (string::npos == result.find("Error")) {
       spl = cpa->makeBLOB();
       hash = string("tag_pixelalignment_" + it + "_iov_1");
-      pl.fHash = hash; 
+      pl.fHash = hash;
       pl.fComment = it + " pixel initialization";
       pl.fBLOB = spl;
-      if (verbose) cpa->printBLOB(spl); 
-      cpa->writePayloadToFile(hash, jdir, pl); 
+      if (verbose) cpa->printBLOB(spl);
+      cpa->writePayloadToFile(hash, jdir, pl);
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
-    
+
     // -- fibrealignment
     calFibreAlignment *cfa = new calFibreAlignment();
-    filename = "../ascii/fibres-" + it + ".csv";
+    filename = "./ascii/fibres-" + it + ".csv";
     result = cfa->readCsv(filename);
     if (string::npos == result.find("Error")) {
       spl = cfa->makeBLOB();
       hash = string("tag_fibrealignment_" + it + "_iov_1");
-      pl.fHash = hash; 
+      pl.fHash = hash;
       pl.fComment = it + " fibre detector initialization";
       pl.fBLOB = spl;
-      if (verbose) cfa->printBLOB(spl); 
-      cfa->writePayloadToFile(hash, jdir, pl); 
+      if (verbose) cfa->printBLOB(spl);
+      cfa->writePayloadToFile(hash, jdir, pl);
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
-    
+
     // -- tilealignment
     calTileAlignment *cta = new calTileAlignment();
-    filename = "../ascii/tiles-" + it + ".csv";
+    filename = "./ascii/tiles-" + it + ".csv";
     result = cta->readCsv(filename);
     if (string::npos == result.find("Error")) {
       spl = cta->makeBLOB();
       hash = string("tag_tilealignment_" + it + "_iov_1");
-      pl.fHash = hash; 
+      pl.fHash = hash;
       pl.fComment = it + " tile detector initialization";
       pl.fBLOB = spl;
-      if (verbose) cta->printBLOB(spl); 
-      cta->writePayloadToFile(hash, jdir, pl); 
+      if (verbose) cta->printBLOB(spl);
+      cta->writePayloadToFile(hash, jdir, pl);
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
-    
+
     // -- mppcalignment
     calMppcAlignment *cma = new calMppcAlignment();
-    filename = "../ascii/mppcs-" + it + ".csv";
+    filename = "./ascii/mppcs-" + it + ".csv";
     result = cma->readCsv(filename);
     if (string::npos == result.find("Error")) {
       spl = cma->makeBLOB();
       hash = string("tag_mppcalignment_" + it + "_iov_1");
-      pl.fHash = hash; 
+      pl.fHash = hash;
       pl.fComment = it + " MPPC detector initialization";
       pl.fBLOB = spl;
-      if (verbose) cma->printBLOB(spl); 
-      cma->writePayloadToFile(hash, jdir, pl); 
+      if (verbose) cma->printBLOB(spl);
+      cma->writePayloadToFile(hash, jdir, pl);
     } else {
       cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
     }
@@ -257,29 +257,29 @@ int main(int argc, char* argv[]) {
     }
     spl = cpq->makeBLOB(m);
     hash = string("tag_pixelquality_" + it + "_iov_1");
-    
-    pl.fHash = hash; 
+
+    pl.fHash = hash;
     pl.fComment = it + " pixel quality initialization";
     pl.fBLOB = spl;
-    if (verbose) cpq->printBLOB(spl); 
-    cpq->writePayloadToFile(hash, jdir, pl); 
+    if (verbose) cpq->printBLOB(spl);
+    cpq->writePayloadToFile(hash, jdir, pl);
     cpq->insertPayload(hash, pl);
     cpq->writeCsv("pixelquality-example.csv");
-    
+
 
     if (0) {
       // -- pixelcablingmap
       calPixelCablingMap *ccm = new calPixelCablingMap();
-      filename = "../ascii/pixelcablingmap-" + it + ".json";
+      filename = "./ascii/pixelcablingmap-" + it + ".json";
       result = ccm->readJson(filename);
       if (string::npos == result.find("Error")) {
         spl = ccm->makeBLOB();
         hash = "tag_pixelcablingmap_" + it + "_iov_1";
-        pl.fHash = hash; 
+        pl.fHash = hash;
         pl.fComment = it + "pixel cabling map initialization";
         pl.fBLOB = spl;
-        if (verbose) ccm->printBLOB(spl); 
-        ccm->writePayloadToFile(hash, jdir, pl); 
+        if (verbose) ccm->printBLOB(spl);
+        ccm->writePayloadToFile(hash, jdir, pl);
       } else {
         cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
       }
@@ -289,7 +289,7 @@ int main(int argc, char* argv[]) {
   // -- create a runRecord
   filename = "runlog_004001.json";
   ifstream INS;
-  INS.open("../ascii/" + filename);
+  INS.open("./ascii/" + filename);
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
@@ -297,7 +297,7 @@ int main(int argc, char* argv[]) {
   jdir = jsondir + "/runrecords";
   string orr = jdir + "/" + filename;
 
-  
+
   JS.open(orr);
   if (JS.fail()) {
     cout << "cdbInitDB> Error failed to open " << orr <<  endl;
@@ -308,13 +308,13 @@ int main(int argc, char* argv[]) {
 
   // -- create configs
   vector<string> conffiles = {
-    "detector.json", 
+    "detector.json",
     "trirec.conf", "vertex.conf"
   };
-  
+
   for (auto igt: iniGlobalTags) {
     for (auto ic: conffiles) {
-      string cfgname = ic.substr(0, ic.find(".")); 
+      string cfgname = ic.substr(0, ic.find("."));
       filename = "run/" + ic;
       ifstream INS;
       INS.open(filename);
@@ -322,16 +322,16 @@ int main(int argc, char* argv[]) {
         cout << "Error failed to open ->" << filename << "<-" << endl;
         continue;
       }
-      
+
       std::stringstream buffer;
       buffer << INS.rdbuf();
       INS.close();
 
       string sbuffer = buffer.str();
-      
+
       jdir = jsondir + "/configs";
       hash = "cfg_" + cfgname + "_" + igt.first;
-      
+
       JS.open(jdir + "/" + hash);
       if (JS.fail()) {
         cout << "cdbInitDB> Error failed to open " << jdir << "/" << hash <<  endl;
@@ -344,7 +344,7 @@ int main(int argc, char* argv[]) {
       replaceAll(sbuffer, "\"", "\\\"");
       // replaceAll(sbuffer, "\n", " ");
       cfg.fCfgString = sbuffer;
-      
+
       JS << cfg.getJson();
       JS.close();
 
