@@ -51,6 +51,8 @@ SOFLAGS      += -g -shared  #?? -Wl -rpath
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 
 
+OSUFFIX := .o
+
 # -- CDB (Conditions DB) files
 LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
          calAbs.o \
@@ -62,11 +64,11 @@ LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
          base64.o \
          payload.o cfgPayload.o cdbUtil.o runRecord.o
 
-LBINARIES = obj/testCDB.o obj/fillDB.o \
-            obj/syncCloud.o obj/syncMongo.o \
-            obj/testPixelQuality.o obj/pcrPixelQuality.o \
-            obj/cdbInitDB.o obj/cdbPrintPayload.o  \
-            obj/cdbPrintConfig.o
+LBINARIES = testCDB fillDB \
+            syncCloud syncMongo \
+            testPixelQuality pcrPixelQuality \
+            cdbInitDB cdbPrintPayload  \
+            cdbPrintConfig
 
 
 ifneq (,$(findstring merlin,$(LHOST)))
@@ -74,7 +76,9 @@ ifneq (,$(findstring merlin,$(LHOST)))
        FILES = $(filter-out cdbMongo.o, $(LFILES))
        BINARIES = $(filter-out testCDB.o fillDB.o syncCloud.o syncMongo.o, $(LBINARIES))
 else
-       FILES = LFILES
+       $(info ************  non-MERLIN VERSION ************)
+       FILES = $(LFILES)
+       BINARIES = $(LBINARIES)
 endif
 
 
@@ -90,19 +94,15 @@ $(addprefix obj/,%.o) : %.cc
 # -- targets
 all: prep lib bin
 
-lib: $(addprefix obj/,$(FILES) )
+lib: lib/libCDB.so
+
+bin: $(addprefix bin/,$(BINARIES) )
+
+lib/libCDB.so: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS)
 
-bin: lib
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbPrintPayload.o -o bin/cdbPrintPayload $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbPrintConfig.o -o bin/cdbPrintConfig $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/cdbInitDB.o -o bin/cdbInitDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/pcrPixelQuality.o -o bin/pcrPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testPixelQuality.o -o bin/testPixelQuality $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/testCDB.o -o bin/testCDB $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/fillDB.o -o bin/fillDB $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncCloud.o -o bin/syncCloud $(LIBMONGODB) $(LIBCURL) $(GLIBS)
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic obj/syncMongo.o -o bin/syncMongo $(LIBMONGODB) $(LIBCURL) $(GLIBS)  lib/libCDB.so
+$(addprefix bin/, $(BINARIES) ): $(addprefix obj/, $(addsuffix $(OSUFFIX), $(BINARIES) ) )
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
 
 clean:
 	rm -f obj/*.o lib/*.so bin/*
