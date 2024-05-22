@@ -23,33 +23,14 @@
 #include "TKey.h"
 #include "TROOT.h"
 
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/stdx.hpp>
-#include <mongocxx/uri.hpp>
-#include <bsoncxx/builder/stream/helpers.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/array.hpp>
-
 using namespace std;
 
-using bsoncxx::builder::stream::close_array;
-using bsoncxx::builder::stream::close_document;
-using bsoncxx::builder::stream::document;
-using bsoncxx::builder::stream::finalize;
-using bsoncxx::builder::stream::open_array;
-using bsoncxx::builder::stream::open_document;
-using bsoncxx::builder::basic::kvp;
-using bsoncxx::builder::basic::sub_array;
-using bsoncxx::builder::basic::sub_document;
-using bsoncxx::builder::basic::make_document;
 
 // ----------------------------------------------------------------------
 // pcrPixelQuality
 // ---------------
 //
-// Examples: 
+// Examples:
 // bin/pcrPixelQuality pcr-run00265.root
 // ----------------------------------------------------------------------
 
@@ -82,7 +63,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
-  
+
   cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
 
   calAbs *cpq(0);
@@ -93,11 +74,11 @@ int main(int argc, char* argv[]) {
   } else if (3 == mode) {
     cpq = new calPixelQualityM();
   }
-  
+
   map<unsigned int, vector<double> > mdet{};
-  
+
   int run(-1);
-  string sbla(filename); 
+  string sbla(filename);
   if (string::npos != filename.find_last_of("/")) {
     string dir = filename.substr(0, filename.find_last_of("/")+1);
     cout << "dir ->" << dir << "<-" << endl;
@@ -116,20 +97,20 @@ int main(int argc, char* argv[]) {
 
   string hash = string("tag_pixelquality_") + gt + string("_iov_") + to_string(run);
 
-  TFile *f = TFile::Open(filename.c_str()); 
+  TFile *f = TFile::Open(filename.c_str());
 
   // -- read in all chipids
   TIter next(gDirectory->GetListOfKeys());
   TKey *key(0);
   vector<unsigned int> vchipid;
-  cout << "pcrPixelQuality look at chipIDs: "; 
+  cout << "pcrPixelQuality look at chipIDs: ";
   while ((key = (TKey*)next())) {
     if (gROOT->GetClass(key->GetClassName())->InheritsFrom("TDirectory")) continue;
     TH1 *sig = (TH1*)key->ReadObj();
     TString hname(sig->GetName());
     if (hname.Contains("chip")) {
       string  sChip = hname.Data();
-      replaceAll(sChip, "chip", ""); 
+      replaceAll(sChip, "chip", "");
       int ichip(-1);
       ichip = ::stoi(sChip);
       if (ichip > -1) {
@@ -139,7 +120,7 @@ int main(int argc, char* argv[]) {
     }
   }
   cout << endl;
-  
+
   // -- loop over all chipids and determine noisy pixels VERY naively
   for (unsigned int i = 0; i < vchipid.size(); ++i) {
     unsigned int chipID = vchipid[i];
@@ -153,13 +134,13 @@ int main(int argc, char* argv[]) {
     }
     if (verbose > 0) cout << "chipID = " << chipID << " nhits =  " << chipCnt << " for npix = " << npix << endl;
 
-    vector<double> vchip{}; 
+    vector<double> vchip{};
     if (npix > 0) {
-      double NSIGMA(10.0); 
+      double NSIGMA(10.0);
       double meanHits  = static_cast<double>(chipCnt)/npix;
       // -- this is WRONG!
       double meanHitsE = TMath::Sqrt(meanHits);
-      double noiseThr  = meanHits + NSIGMA*meanHitsE; 
+      double noiseThr  = meanHits + NSIGMA*meanHitsE;
       if (meanHits > 0.) {
         if (verbose > 0) cout << "meanHits = " << meanHits << " +/- " << meanHitsE << " noise threshold = " << noiseThr << endl;
       }
@@ -169,9 +150,9 @@ int main(int argc, char* argv[]) {
           float nhits = h2->GetBinContent(ix,iy);
           if (nhits > noiseThr) {
             ++nNoisyPix;
-            vchip.push_back(static_cast<double>(ix-1)); 
-            vchip.push_back(static_cast<double>(iy-1)); 
-            vchip.push_back(static_cast<double>(1)); 
+            vchip.push_back(static_cast<double>(ix-1));
+            vchip.push_back(static_cast<double>(iy-1));
+            vchip.push_back(static_cast<double>(1));
             if (verbose > 0) {
               cout << "  noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << endl;
             }
@@ -182,7 +163,7 @@ int main(int argc, char* argv[]) {
     }
     mdet.insert(make_pair(chipID, vchip));
   }
-  
+
   createPayload(hash, cpq, mdet, jsondir + string("/payloads"));
 
   // -- validate written payload
@@ -192,15 +173,15 @@ int main(int argc, char* argv[]) {
   string sblob = pDB->getPayload(hash).fBLOB;
   //  cpq->printBLOB(sblob);
   cpq->printBLOB(sblob, 0);
-  
-  
+
+
 }
 
-// ----------------------------------------------------------------------  
+// ----------------------------------------------------------------------
 void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > mdet, string jsondir) {
- 
+
   string sblob = a->makeBLOB(mdet);
-  
+
   payload pl;
   pl.fHash = hash;
   pl.fComment = "testing";
@@ -208,8 +189,6 @@ void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > md
   //  cout << "######################################################################" << endl;
   //  cout << "### createPayload" << endl;
   //  a->printBLOB(sblob);
-  
-  a->writePayloadToFile(hash, jsondir, pl); 
+
+  a->writePayloadToFile(hash, jsondir, pl);
 }
-
-
