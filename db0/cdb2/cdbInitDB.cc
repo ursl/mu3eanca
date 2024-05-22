@@ -307,47 +307,49 @@ int main(int argc, char* argv[]) {
 
 
   // -- create configs
-  vector<string> conffiles = {
-    "detector.json",
-    "trirec.conf", "vertex.conf"
-  };
+  if (0) {
+    vector<string> conffiles = {
+      "detector.json",
+      "trirec.conf", "vertex.conf"
+    };
 
-  for (auto igt: iniGlobalTags) {
-    for (auto ic: conffiles) {
-      string cfgname = ic.substr(0, ic.find("."));
-      filename = "run/" + ic;
-      ifstream INS;
-      INS.open(filename);
-      if (INS.fail()) {
-        cout << "Error failed to open ->" << filename << "<-" << endl;
-        continue;
+    for (auto igt: iniGlobalTags) {
+      for (auto ic: conffiles) {
+        string cfgname = ic.substr(0, ic.find("."));
+        filename = "run/" + ic;
+        ifstream INS;
+        INS.open(filename);
+        if (INS.fail()) {
+          cout << "Error failed to open ->" << filename << "<-" << endl;
+          continue;
+        }
+
+        std::stringstream buffer;
+        buffer << INS.rdbuf();
+        INS.close();
+
+        string sbuffer = buffer.str();
+
+        jdir = jsondir + "/configs";
+        hash = "cfg_" + cfgname + "_" + igt.first;
+
+        JS.open(jdir + "/" + hash);
+        if (JS.fail()) {
+          cout << "cdbInitDB> Error failed to open " << jdir << "/" << hash <<  endl;
+        }
+
+        cfgPayload cfg;
+        cfg.fHash = hash;
+        cfg.fDate = timeStamp();
+        //      cfg.fCfgString = base64_encode(buffer.str());
+        replaceAll(sbuffer, "\"", "\\\"");
+        // replaceAll(sbuffer, "\n", " ");
+        cfg.fCfgString = sbuffer;
+
+        JS << cfg.getJson();
+        JS.close();
+
       }
-
-      std::stringstream buffer;
-      buffer << INS.rdbuf();
-      INS.close();
-
-      string sbuffer = buffer.str();
-
-      jdir = jsondir + "/configs";
-      hash = "cfg_" + cfgname + "_" + igt.first;
-
-      JS.open(jdir + "/" + hash);
-      if (JS.fail()) {
-        cout << "cdbInitDB> Error failed to open " << jdir << "/" << hash <<  endl;
-      }
-
-      cfgPayload cfg;
-      cfg.fHash = hash;
-      cfg.fDate = timeStamp();
-      //      cfg.fCfgString = base64_encode(buffer.str());
-      replaceAll(sbuffer, "\"", "\\\"");
-      // replaceAll(sbuffer, "\n", " ");
-      cfg.fCfgString = sbuffer;
-
-      JS << cfg.getJson();
-      JS.close();
-
     }
   }
 
