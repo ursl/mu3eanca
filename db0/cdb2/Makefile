@@ -7,9 +7,8 @@ LHOST = $(shell hostname)
 
 # -- ARGH!? But it works ...
 ifneq (,$(findstring merlin,$(LHOST)))
-  INCMONGODB    = -I/psi/home/langenegger/data/mongo/install/include/mongocxx/v_noabi
-  INCMONGODB   += -I/psi/home/langenegger/data/mongo/install/include/bsoncxx/v_noabi
-  LIBMONGODB    = -L /psi/home/langenegger/data/mongo/install/lib64 -lmongocxx -lbsoncxx
+  INCMONGODB    =
+  LIBMONGODB    =
   LIBCURL       = -L/usr/lib64 -lcurl
   LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
   SOFLAGS       =
@@ -53,16 +52,22 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 
 
 # -- CDB (Conditions DB) files
-FILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
-        calAbs.o \
-        calPixelAlignment.o calFibreAlignment.o  \
-        calMppcAlignment.o calTileAlignment.o \
-        calPixelQuality.o calPixelQualityV.o calPixelQualityM.o \
-        calPixelCablingMap.o \
-        Mu3eConditions.o Mu3eCalFactory.o \
-        base64.o \
-        payload.o cfgPayload.o cdbUtil.o runRecord.o
+LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
+         calAbs.o \
+         calPixelAlignment.o calFibreAlignment.o  \
+         calMppcAlignment.o calTileAlignment.o \
+         calPixelQuality.o calPixelQualityV.o calPixelQualityM.o \
+         calPixelCablingMap.o \
+         Mu3eConditions.o Mu3eCalFactory.o \
+         base64.o \
+         payload.o cfgPayload.o cdbUtil.o runRecord.o
 
+ifneq (,$(findstring merlin,$(LHOST)))
+       $(info ************  MERLIN VERSION ************)
+       FILES = $(filter-out cdbMongo.o, $(LFILES))
+else
+       FILES = LFILES
+endif
 
 # -- Default rules
 $(addprefix obj/,%.o) : %.cc %.hh
