@@ -14,24 +14,36 @@
 #
 # Author    Urs Langenegger <urslangenegger@gmail.com>
 # ----------------------------------------------------------------------
-use Cwd;
+
 use File::Basename;
+my $dirname = dirname(__FILE__);
+if ($dirname eq ".") {
+    $dirname = cwd();
+}
+
+use lib '/Users/ursl/mu3e/mu3eanca/mdc/scripts/local/lib/perl5/darwin-thread-multi-2level/';
+use Compress::LZ4;
 
 use Getopt::Std;
 getopts('df:');
+
+use Cwd;
+
+
+print("$dirname/modules/Compress-LZ4-0.25/lib/Compress\n");
 
 open(IN, "$opt_f") || die "midasCount: Cannot open $opt_f\n";
 binmode IN;
 
 
-my $cont = '';
+my $compressed = '';
 my $cnt = 0;
 while (1) {
-    my $success = read IN, $cont, 1, $cnt;
-    $hex = sprintf("%X", $cont);
-    print($hex);
+    my $success = read IN, $compressed, 1;
+    my $deco    = decompress($compressed);
     $cnt++;
-    $cont = '';
+    $hex = sprintf("%X", $deco);
+    print($hex);
     die $! if not defined $success;
     last if not $success;
     last if ($cnt > 200);
