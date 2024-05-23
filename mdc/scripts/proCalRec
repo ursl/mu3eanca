@@ -8,12 +8,13 @@
 #
 #
 # History
+#         2024/05/22 changes for MDC3-May2024: minalyzer, different locations
 #         2023/08/31 test mu3e reservation (see below search for reservation)
 #         2023/08/22 add IOV updating
 #         2023/08/17 validated proper job splitting/validation/updates
 #         2023/08/08 first shot
 # ----------------------------------------------------------------------
-# Send all questions, wishes and complaints to the 
+# Send all questions, wishes and complaints to the
 #
 # Author    Urs Langenegger <urslangenegger@gmail.com>
 # ----------------------------------------------------------------------
@@ -23,26 +24,27 @@ use File::Basename;
 my $dir = getcwd;
 
 use Getopt::Std;
-getopts('n:t:');
+getopts('dn:t:');
 
 # ----------------------------------------------------------------------
 # -- default values
 # ----------------------------------------------------------------------
-# -- code directory (git backed up)
-my $pcrCodeDir   = "/psi/home/langenegger/mu3e/mu3eanca/mdc2023";
-# -- code directory (git backed up)
-my $pcrCalCode   = "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1";
+# -- PCR base directory for all scripts (git backed up)
+my $pcrDir   = "/psi/home/langenegger/mu3e/mu3eanca/mdc2023";
+# -- directory for minalyzer/trirec/vertex code (NOT git backed up)
+my $pcrCodeDir   = "/data/user/langenegger/mdc3-May2024/";
+# -- directory for calibration/CDB jobs (git backed up)
+my $pcrCalCode   = "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb2";
 # -- base directory where jobs are submitted and all output will appear
-my $pcrBaseDir   = "/psi/home/langenegger/data/mdc2023";
+my $pcrBaseDir   = "/data/user/langenegger/mdc3-May2024";
 # -- source data directory on mu3ebe
 my $pcrMu3eBEDir = ".ursl/data";
-#my $pcrMu3eBEDir = "/data1/datachallenge";
 # -- target data directories on merlin
-my $pcrDataDir   = "/data/experiment/mu3e/data/2023/datachallenge/data/raw";
-my $pcrDataRecDir= "/data/experiment/mu3e/data/2023/datachallenge/data/rec";
+my $pcrDataDir   = "/data/experiment/mu3e/data/2024/datachallenge/data/raw";
+my $pcrDataRecDir= "/data/experiment/mu3e/data/2024/datachallenge/data/rec";
 # -- analyzer executable
-my $pcrExe       = "/psi/home/langenegger/mu3e/mu3eanca/mdc2023/analyzer/_build/analyzer/mdcanalyzer";
-# -- JSON CDB 
+my $pcrExe       = "$pcrCodeDir/minalyzer/_build/analyzer/minalyzer";
+# -- JSON CDB
 my $pcrJsonDir   = "$pcrBaseDir/json";
 # -- tarfile
 #    create it with
@@ -63,7 +65,7 @@ my $midfext = "mid.lz4";
 my @processedRuns;
 &readProcessedRuns();
 
-my $nevts = 1000000; 
+my $nevts = 1000000;
 if ($opt_n) {
     $nevts = $opt_n;
 }
@@ -83,14 +85,14 @@ while (1) {
         next;
     }
     print(&prefix("proCalRec"), "Now processing run $run\n");
-    
+
     # -- count events in new file
     $cntEvts = &pcrCountEvents($run);
     #$cntEvts = 41440245;
 
     # -- submit analyzer jobs to slurm and merge output
     my $pcrrootfile =  &pcrSubmitJobsA($run, $cntEvts);
-    # -- run local calibration 
+    # -- run local calibration
     if ($pcrrootfile eq "nada") {
         print(&prefix("proCalRec"), "pcrSubmitJobsA did not complete successfully\n");
     } else {
@@ -105,8 +107,51 @@ while (1) {
     print OUT "$run\n";
     close(OUT);
     # -- update @processedRuns
-    push(@processedRuns, $run); 
+    push(@processedRuns, $run);
 
+}
+
+
+# ----------------------------------------------------------------------
+sub checkForNewRun() {
+    my @midFiles  = glob("$pcrDataDir/*.$midfext");
+    my @newruns = ();
+
+    print(&prefix("checkForNewRun"), "contents of processedRuns: ");
+    if ($opt_d) {
+        foreach $irun (@processedRuns) {
+            print(" $irun");
+        }
+    } else {
+        print(" $#processedRuns runs (use -d to see full list)");
+    }
+    print("\n");
+
+    foreach $file (@midFiles) {
+        my($barefile, $directories) = fileparse($file);
+        $barefile =~ /run([0-9]*).$midfext/;
+        $run = $1;
+
+        if (grep( /^$run$/, @processedRuns ) ) {
+            # print "Found $run in processedRuns\n";
+        } else {
+            push(@newruns, $run);
+        }
+    }
+    print(&prefix("checkForNewRun"), "New runs: ");
+
+    foreach $irun (@newruns) {
+        print(" $irun");
+    }
+    print("\n");
+
+    $result = "nada";
+    if ($#newruns > -1) {
+        $result = shift(@newruns);
+    }
+    # print("checkForNewRun() return $result\n");
+
+    return $result;
 }
 
 
@@ -115,7 +160,7 @@ sub pcrCountEvents() {
     ($run) = @_;
     my $file = sprintf("$pcrDataDir/run%05d.$midfext", $run);
     print(&prefix("pcrCountEvent"), "run = $run -> file = $file\n");
-    
+
     my $cmdString = "cd $pcrCodeDir/analyzer/_run && $pcrExe -c $file";
     print(&prefix("pcrCountEvent"),       "$pcrExe -c $file\n");
     $line = `$cmdString`;
@@ -136,7 +181,7 @@ sub pcrCountEvents() {
 sub pcrSubmitJobsA() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
-    
+
     my $file = sprintf("$pcrDataDir/run%05d.$midfext", $run);
     my $cmdString = "";
     my $envString = "";
@@ -144,7 +189,7 @@ sub pcrSubmitJobsA() {
     # -- adapt in case of mu3e reservations
     # my $queue = "-p 'mu3e --reservation=mu3e'";
     my $queue = "-p mu3e";
-    
+
     # -- rundir
     my $rundir = "$pcrBaseDir/slurm/jobs/anl/$run";
     if (-d $rundir) {
@@ -160,10 +205,10 @@ sub pcrSubmitJobsA() {
     }
     mkdir($rootdir);
     print(&prefix("pcrSubmitJobsA"), "pcrSubmitJobsA rundir = $rundir, rootdir = $rootdir, file = $file\n");
-        
+
     my $cmdIniString = "cd $rundir && ";
     $cmdIniString .= "$pcrCodeDir/../slurm/run $queue -t ../../../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
-    
+
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1/anl";
     $envString .= "%PCRDATADIR $pcrDataDir";
@@ -186,32 +231,36 @@ sub pcrSubmitJobsA() {
         } else {
             $anlString  = "%ANLZR \"-s$skipevts\" '";
         }
-        
+
         $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
 
         print(&prefix("pcrSubmitJobsA"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1/anl ROOTFILE anl-run$job.root $anlString\n");
-        $line = `$cmdString`;
-        # -- to see $line, uncomment the next line: 
-        # print($line);
-        
-        my @lines = grep /\S/, split /\n/, $line;
-        
-        my $slurmid = 0, $slurmout = "nada", $rootout = "nada";
-        foreach $ln (@lines) {
-            if ($ln =~ /Submitted ->([0-9]*)<- with name \.*/) {
-                $slurmid = $1;
+        if ($opt_d) {
+            print(&prefix("pcrSubmitJobsA DBX"), $cmdString);
+        } else {
+            $line = `$cmdString`;
+            # -- to see $line, uncomment the next line:
+            # print($line);
+
+            my @lines = grep /\S/, split /\n/, $line;
+
+            my $slurmid = 0, $slurmout = "nada", $rootout = "nada";
+            foreach $ln (@lines) {
+                if ($ln =~ /Submitted ->([0-9]*)<- with name \.*/) {
+                    $slurmid = $1;
+                }
+                if ($ln =~ /batch submission: (\w*)/) {
+                    $slurmout = $1;
+                }
+                if ($ln =~ /ROOTFILE/) {
+                    ($rootout = $ln) =~ s/ROOTFILE //g;
+                }
             }
-            if ($ln =~ /batch submission: (\w*)/) {
-                $slurmout = $1;
+            if ($slurmid > 0) {
+                print(&prefix("pcrSubmitJobsA"), "SLURM job $slurmid -> $slurmout\n");
+                $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
+                push(@mergeFiles, $rootout);
             }
-            if ($ln =~ /ROOTFILE/) {
-                ($rootout = $ln) =~ s/ROOTFILE //g;
-            }
-        }
-        if ($slurmid > 0) {
-            print(&prefix("pcrSubmitJobsA"), "SLURM job $slurmid -> $slurmout\n");
-            $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
-            push(@mergeFiles, $rootout);
         }
     }
 
@@ -222,7 +271,7 @@ sub pcrSubmitJobsA() {
     }
 
     my $slurmids = "(";
-    my $cnt = 0; 
+    my $cnt = 0;
     foreach $ele (keys %mSlurmIds) {
         $slurmids .= $ele;
         $cnt++;
@@ -267,10 +316,14 @@ sub pcrSubmitJobsA() {
     foreach $rf (@mergeFiles)  {
         $mergeString .= " $output/$run/$rf ";
     }
-    
-    my $result = `$mergeString`;
-    print("$result\n");
-    print(&prefix("pcrSubmitJobsA"), "merged root file: $pcrFile\n");
+
+    if ($opt_d) {
+        print(&prefix("pcrSubmitJobsA DBX"), $mergeString);
+    } else {
+        my $result = `$mergeString`;
+        print("$result\n");
+        print(&prefix("pcrSubmitJobsA"), "merged root file: $pcrFile\n");
+    }
     return $pcrFile;
 }
 
@@ -278,7 +331,7 @@ sub pcrSubmitJobsA() {
 sub pcrSubmitJobsB() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
-    
+
     my $file = sprintf("$pcrDataDir/run%05d.$midfext", $run);
     my $cmdString = "";
     my $envString = "";
@@ -286,8 +339,8 @@ sub pcrSubmitJobsB() {
     # -- adapt in case of mu3e reservations
     # my $queue = "-p 'mu3e --reservation=mu3e'";
     my $queue = "-p mu3e";
-    
-    # -- rundir 
+
+    # -- rundir
     my $rundir = "$pcrBaseDir/slurm/jobs/rec/$run";
     if (-d $rundir) {
         # -- remove possibly pre-existing job directory
@@ -304,10 +357,10 @@ sub pcrSubmitJobsB() {
     mkdir($rootdir);
 
     print(&prefix("pcrSubmitJobsB"), "pcrSubmitJobsB rundir = $rundir, rootdir = $rootdir, file = $file\n");
-        
+
     my $cmdIniString = "cd $rundir && ";
     $cmdIniString .= "$pcrCodeDir/../slurm/run $queue -t ../../../$pcrTarFile -c $pcrCodeDir/scripts/slurm-trirec.csh ";
-    
+
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1/rec";
     $envString .= "%PCRDATADIR $pcrDataDir";
@@ -317,7 +370,7 @@ sub pcrSubmitJobsB() {
     # map ($slurmID => logfile)
     my %mSlurmIds;
     my @mergeFiles;
-    # FIXME 
+    # FIXME
     my $lnevts = $nevts/10;
     my $NJOBS = int($lcevts/$lnevts) + 1;
     # -- submit jobs
@@ -332,16 +385,16 @@ sub pcrSubmitJobsB() {
         } else {
             $anlString  = "%ANLZR \"-s $skipevts\" '";
         }
-        
+
         $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
 
         print(&prefix("pcrSubmitJobsB"), "SLURM: STORAGE1 $pcrBaseDir/slurm/storage1 ROOTFILE trirec-run$job.root $anlString\n");
         $line = `$cmdString`;
-        # -- to see $line, uncomment the next line: 
+        # -- to see $line, uncomment the next line:
         # print($line);
-        
+
         my @lines = grep /\S/, split /\n/, $line;
-        
+
         my $slurmid = 0, $slurmout = "nada", $rootout = "nada";
         foreach $ln (@lines) {
             if ($ln =~ /Submitted ->([0-9]*)<- with name \.*/) {
@@ -370,7 +423,7 @@ sub pcrSubmitJobsB() {
     }
 
     my $slurmids = "(";
-    my $cnt = 0; 
+    my $cnt = 0;
     foreach $ele (keys %mSlurmIds) {
         $slurmids .= $ele;
         $cnt++;
@@ -415,7 +468,7 @@ sub pcrSubmitJobsB() {
     foreach $rf (@mergeFiles)  {
         $mergeString .= " $output/$run/$rf ";
     }
-    
+
     my $result = `$mergeString`;
     print("$result\n");
     print(&prefix("pcrSubmitJobsB"), "merged root file: $pcrFile\n");
@@ -433,8 +486,8 @@ sub pcrRunCalibration() {
 
     # -- update IOVs
     $cfile =~ /anl-run([0-9]*).root/;
-    my $irun = int($1); 
-    my $plfile = `ls $pcrJsonDir/payloads/tag_pixelquality_*_iov_$irun`; 
+    my $irun = int($1);
+    my $plfile = `ls $pcrJsonDir/payloads/tag_pixelquality_*_iov_$irun`;
     chop($plfile);
     my($bplfile, $directories) = fileparse($plfile);
     $bplfile =~ /tag_([\w]*)_iov_[0-9]*/;
@@ -448,55 +501,22 @@ sub readProcessedRuns() {
     open(IN, "$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
     while (<IN>) {
         chop;
-        push(@processedRuns, $_); 
+        push(@processedRuns, $_);
     }
     close(IN);
-    
+
     print(&prefix("readProcessedRuns"), "processed runs: ");
-    foreach $irun (@processedRuns) {
-        print(" $irun"); 
-    }
-    print("\n");
-}
-
-
-# ----------------------------------------------------------------------
-sub checkForNewRun() {
-    my @midFiles  = glob("$pcrDataDir/*.$midfext");
-    my @newruns = ();
-
-    print(&prefix("checkForNewRun"), "contents of processedRuns: ");
-    foreach $irun (@processedRuns) {
-        print(" $irun"); 
-    }
-    print("\n");
-
-    foreach $file (@midFiles) {
-        my($barefile, $directories) = fileparse($file);
-        $barefile =~ /run([0-9]*).$midfext/;
-        $run = $1;
-
-        if (grep( /^$run$/, @processedRuns ) ) {
-            # print "Found $run in processedRuns\n";
-        } else {
-            push(@newruns, $run);
+    if ($opt_d) {
+        foreach $irun (@processedRuns) {
+            print(" $irun");
         }
-    }
-    print(&prefix("checkForNewRun"), "New runs: ");
-
-    foreach $irun (@newruns) {
-        print(" $irun"); 
+    } else {
+        print(" $#processedRuns runs  (use -d to see full list)");
     }
     print("\n");
-    
-    $result = "nada";
-    if ($#newruns > -1) {
-        $result = shift(@newruns);
-    }
-    # print("checkForNewRun() return $result\n");
-    
-    return $result;
 }
+
+
 
 # ----------------------------------------------------------------------
 sub prefix() {
