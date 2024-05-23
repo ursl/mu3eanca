@@ -1,0 +1,40 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# midasCount
+# ==========
+#
+# Usage:   midasCount -f /data/experiment/mu3e/data/2024/datachallenge/data/raw/run05378.mid.lz4
+# -----
+#
+# History
+#         2024/05/22 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+use File::Basename;
+
+use Getopt::Std;
+getopts('df:');
+
+open(IN, "$opt_f") || die "midasCount: Cannot open $opt_f\n";
+binmode IN;
+
+
+my $cont = '';
+my $cnt = 0;
+while (1) {
+    my $success = read IN, $cont, 1, $cnt;
+    $hex = sprintf("%X", $cont);
+    print($hex);
+    $cnt++;
+    $cont = '';
+    die $! if not defined $success;
+    last if not $success;
+    last if ($cnt > 200);
+}
+
+print("\n");
