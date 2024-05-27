@@ -84,14 +84,11 @@ int main(int argc, char* argv[]) {
     cout << "dir ->" << dir << "<-" << endl;
     replaceAll(sbla, dir, "");
   }
+  // -- extract the runnumber. It follows directly after "run".
   replaceAll(sbla, ".root", "");
-  replaceAll(sbla, "pcr", "");
-  replaceAll(sbla, "anl", "");
-  replaceAll(sbla, "run", "");
-  replaceAll(sbla, "-0000", "");
-  replaceAll(sbla, "-000", "");
-  replaceAll(sbla, "-00", "");
-  replaceAll(sbla, "-0", "");
+  size_t rIdx = sbla.find("run")+3;
+  sbla = sbla.substr(rIdx);
+  cout << "sbla ->" << sbla << "<-" << endl;
   run = ::stoi(sbla);
   cout << "run = " << run << endl;
 
