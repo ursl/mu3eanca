@@ -16,9 +16,9 @@ setenv STORAGE1
 #does not work: source /psi/home/langenegger/mu3e/setup.csh
 #
 
-echo "===================================================="
-echo "====> SLURM mdc2023 proCalRec/analyzer wrapper <===="
-echo "===================================================="
+echo "====================================================="
+echo "====> SLURM mdc2023 proCalRec/minalyzer wrapper <===="
+echo "====================================================="
 date
 
 # ----------------------------------------------------------------------
@@ -32,7 +32,7 @@ printenv
 
 pwd
 echo "--> check visibility of /psi/home/langenegger/data/mdc2023"
-ls -l /psi/home/langenegger/data/mdc2023
+ls -l /psi/home/langenegger/data/mdc3-May2024
 
 echo "--> End of env testing"
 
@@ -45,7 +45,7 @@ echo "--> End of env testing"
 echo "--> Extract tar file"
 date
 tar zxf ./$JOB.tar.gz
-cd analyzer/_run
+cd minalyzer
 
 # ----------------------------------------------------------------------
 # -- Run analyzer
@@ -56,8 +56,8 @@ pwd
 echo "ls -l"
 ls -l
 
-echo "../_build/analyzer/mdcanalyzer $ANLZR $PCRDATADIR/$MIDASFILE"
-../_build/analyzer/mdcanalyzer $ANLZR $PCRDATADIR/$MIDASFILE
+echo "_build/analyzer/minalyzer $ANLZR $PCRDATADIR/$MIDASFILE -- offline cdb.dbconn=rest cdb.gt=mcidealv5.1"
+_build/analyzer/minalyzer $ANLZR $PCRDATADIR/$MIDASFILE  -- offline cdb.dbconn=rest cdb.gt=mcidealv5.1
 date
 ls -rtl
 echo "slurm check size of rootfile produced"
@@ -66,11 +66,11 @@ pwd
 echo "ls -l `pwd`/root_output_files"
 ls -l `pwd`/root_output_files
 
-echo "cp ./output*$RUN.root $STORAGE1/$RUN/$ROOTFILE"
-cp root_output_files/output$RUN.root $STORAGE1/$RUN/$ROOTFILE
-setenv BLA  `ls -l $STORAGE1/$RUN/$ROOTFILE`
-echo "slurm check that rootfile was copied ->$BLA<-"
-ls -l $STORAGE1/$RUN/$ROOTFILE
+echo "cp -r ./root_output_files $STORAGE1/$RUN/root_output_files"
+cp -r root_output_files $STORAGE1/$RUN/root_output_files_$JOB
+
+echo "slurm check that rootfile was copied to $STORAGE1/$RUN"
+ls -l $STORAGE1/$RUN
 
 date
 
