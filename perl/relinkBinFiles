@@ -10,7 +10,7 @@
 #
 # History 2023/03/06 first shot
 # ----------------------------------------------------------------------
-# Send all questions, wishes and complaints to the 
+# Send all questions, wishes and complaints to the
 #
 # Author    Urs Langenegger <urslangenegger@gmail.com>
 # ----------------------------------------------------------------------
@@ -25,9 +25,8 @@ if (!($dir =~ /run$/)) {
 }
 
 system("rm cryogenics.bin* field.bin* hauge1.bin* sig2.bin* sig.bin*");
-system("ln -s ~/data/maps/cryogenics.bin");
-system("ln -s ~/data/maps/field.bin");
-system("ln -s ~/data/maps/hauge1.bin");
-system("ln -s ~/data/maps/sig2.bin");
-system("ln -s ~/data/maps/sig.bin");
-
+system("ln -s /data/user/langenegger/maps/cryogenics.bin");
+system("ln -s /data/user/langenegger/maps/field.bin");
+system("ln -s /data/user/langenegger/maps/hauge1.bin");
+system("ln -s /data/user/langenegger/maps/sig2.bin");
+system("ln -s /data/user/langenegger/maps/sig.bin");
