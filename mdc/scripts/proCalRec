@@ -4,7 +4,12 @@
 # proCalRec
 # =========
 #
-# Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/proCalRec
+# Usage:       cd /psi/home/langenegger/data/mdc3-May2024
+#              ~/mu3e/mu3eanca/mdc/scripts/proCalRec -t 240524-pcr.tar.gz
+#
+#
+# Preparation: cd /psi/home/langenegger/data/mdc3-May2024
+#              tar zcvf 240523-pcr.tar.gz --exclude .git --exclude mu3e/_build mu3e minalyzer
 #
 #
 # History
@@ -30,7 +35,7 @@ getopts('dn:t:');
 # -- default values
 # ----------------------------------------------------------------------
 # -- PCR base directory for all scripts (git backed up)
-my $pcrDir   = "/psi/home/langenegger/mu3e/mu3eanca/mdc2023";
+my $pcrDir   = "/psi/home/langenegger/mu3e/mu3eanca/mdc";
 # -- directory for minalyzer/trirec/vertex code (NOT git backed up)
 my $pcrCodeDir   = "/data/user/langenegger/mdc3-May2024/";
 # -- directory for calibration/CDB jobs (git backed up)
@@ -42,8 +47,8 @@ my $pcrMu3eBEDir = ".ursl/data";
 # -- target data directories on merlin
 my $pcrDataDir   = "/data/experiment/mu3e/data/2024/datachallenge/data/raw";
 my $pcrDataRecDir= "/data/experiment/mu3e/data/2024/datachallenge/data/rec";
-# -- analyzer executable
-my $pcrExe       = "$pcrCodeDir/minalyzer/_build/analyzer/minalyzer";
+# -- counting executable (used to be [min]alyzer)
+my $pcrCounterExe= "mdump -j -x ";
 # -- JSON CDB
 my $pcrJsonDir   = "$pcrBaseDir/json";
 # -- tarfile
@@ -57,6 +62,11 @@ if ($opt_t) {
     my($barefile, $directories) = fileparse($opt_t);
     $pcrTarFile = $barefile;
 }
+
+if ($pcrTarFile eq "unset.tar.gz") {
+    die("A tar file MUST be specified!\n");
+}
+
 print(&prefix("proCalRec"), "Tar file: $pcrTarFile\n");
 # -- MIDAS file extension
 my $midfext = "mid.lz4";
@@ -65,7 +75,7 @@ my $midfext = "mid.lz4";
 my @processedRuns;
 &readProcessedRuns();
 
-my $nevts = 1000000;
+my $nevts = 5000; #FIXME
 if ($opt_n) {
     $nevts = $opt_n;
 }
@@ -161,17 +171,10 @@ sub pcrCountEvents() {
     my $file = sprintf("$pcrDataDir/run%05d.$midfext", $run);
     print(&prefix("pcrCountEvent"), "run = $run -> file = $file\n");
 
-    my $cmdString = "cd $pcrCodeDir/analyzer/_run && $pcrExe -c $file";
-    print(&prefix("pcrCountEvent"),       "$pcrExe -c $file\n");
-    $line = `$cmdString`;
-    my @lines = grep /\S/, split /\n/, $line;
-    $result = "nada";
-    foreach $line (@lines) {
-        if ($line =~ /cntEvents::EndRun, cnt =/) {
-            ($result = $line) =~ s/cntEvents::EndRun, cnt = //;
-            last;
-        }
-    }
+#   my $cmdString = "cd $pcrCodeDir/analyzer/_run && $pcrExe -c $file";
+    my $cmdString = "$pcrCounterExe $file | /bin/grep Evid:0001 | wc -m ";
+    print(&prefix("pcrCountEvent"), "$cmdString\n");
+    $result = `$cmdString`;
     print(&prefix("pcrCountEvent"), "pcrCountEvents = $result\n");
     return $result;
 }
@@ -194,6 +197,7 @@ sub pcrSubmitJobsA() {
     my $rundir = "$pcrBaseDir/slurm/jobs/anl/$run";
     if (-d $rundir) {
         # -- remove possibly pre-existing job directory
+        system("/bin/rm -rf $pcrBaseDir/slurm/jobs/anl/old/$rundir");
         system("/bin/mv $rundir $pcrBaseDir/slurm/jobs/anl/old");
     }
     mkdir($rundir);
@@ -207,7 +211,7 @@ sub pcrSubmitJobsA() {
     print(&prefix("pcrSubmitJobsA"), "pcrSubmitJobsA rundir = $rundir, rootdir = $rootdir, file = $file\n");
 
     my $cmdIniString = "cd $rundir && ";
-    $cmdIniString .= "$pcrCodeDir/../slurm/run $queue -t ../../../$pcrTarFile -c $pcrCodeDir/scripts/slurm-analyzer.csh ";
+    $cmdIniString .= "$pcrDir/../slurm/run $queue -t ../../../../$pcrTarFile -c $pcrDir/scripts/slurm-analyzer.csh ";
 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $pcrBaseDir/slurm/storage1/anl";
@@ -221,6 +225,7 @@ sub pcrSubmitJobsA() {
     my $NJOBS = int($lcevts/$nevts) + 1;
     # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
+        last if ($ijob == 2);
         $job =  "$run" . "_$ijob";
 
         $rootString = "%ROOTFILE anl-run$job.root";
@@ -257,9 +262,9 @@ sub pcrSubmitJobsA() {
                 }
             }
             if ($slurmid > 0) {
-                print(&prefix("pcrSubmitJobsA"), "SLURM job $slurmid -> $slurmout\n");
+                print(&prefix("pcrSubmitJobsA"), "SLURM job $slurmid -> $slurmout, rootout = $rootout\n");
                 $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
-                push(@mergeFiles, $rootout);
+                push(@mergeFiles, $job);
             }
         }
     }
@@ -310,19 +315,23 @@ sub pcrSubmitJobsA() {
     print(&prefix("pcrSubmitJobsA"), "all slurm jobs finished\n");
 
     $output = "$pcrBaseDir/slurm/storage1/anl";
-    my $pcrFile = "$output/anl-run$run.root";
-    system("/bin/rm -f $output/anl-run$run.root");
-    my $mergeString = "hadd $pcrFile";
-    foreach $rf (@mergeFiles)  {
-        $mergeString .= " $output/$run/$rf ";
-    }
+    my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
+    foreach $file (@resultFiles) {
+        $pcrFile = "$output/$run/$file-run$run.root";
+        system("/bin/rm -f $pcrFile");
+        my $mergeString = "hadd $pcrFile";
+        foreach $rf (@mergeFiles)  {
+            $mergeString .= " $output/$run/root_output_files_$rf/$file$run.root ";
+        }
 
-    if ($opt_d) {
-        print(&prefix("pcrSubmitJobsA DBX"), $mergeString);
-    } else {
-        my $result = `$mergeString`;
-        print("$result\n");
-        print(&prefix("pcrSubmitJobsA"), "merged root file: $pcrFile\n");
+        if ($opt_d) {
+            print(&prefix("pcrSubmitJobsA DBX"), $mergeString);
+        } else {
+            print(&prefix("pcrSubmitJobsA"), $mergeString);
+            my $result = `$mergeString`;
+            print("$result\n");
+            print(&prefix("pcrSubmitJobsA"), "merged root file: $pcrFile\n");
+        }
     }
     return $pcrFile;
 }
@@ -481,8 +490,8 @@ sub pcrRunCalibration() {
     ($cfile) = @_;
 
     # -- pixelquality
-    print(&prefix("pcrRunCalibration"), "cd $pcrCalCode && bin/pcrPixelQuality -g mcideal -f $cfile -j $pcrJsonDir; cd - \n");
-    system("cd $pcrCalCode && bin/pcrPixelQuality -g mcideal -f $cfile -j $pcrJsonDir; cd - ");
+    print(&prefix("pcrRunCalibration"), "cd $pcrCalCode && bin/pcrPixelQuality -g mcidealv5.1 -f $cfile -j $pcrJsonDir; cd - \n");
+    system("cd $pcrCalCode && bin/pcrPixelQuality -g mcidealv5.1 -f $cfile -j $pcrJsonDir; cd - ");
 
     # -- update IOVs
     $cfile =~ /anl-run([0-9]*).root/;
