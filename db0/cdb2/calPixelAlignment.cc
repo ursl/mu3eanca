@@ -52,7 +52,6 @@ void calPixelAlignment::calculate(string hash) {
        << "fHash ->" << hash << "<-";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
-  cout << " fBLOB.size() = " << spl.size() << endl;
 
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
@@ -102,6 +101,7 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
   int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
+    // -- NOTE: prints out only "verbosity" number of lines!
     if (cnt > verbosity) break;
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
@@ -250,7 +250,7 @@ string calPixelAlignment::readCsv(string filename) {
   string spl("");
   ifstream INS(filename);
   if (!INS.is_open()) {
-    return string("calPixelCablingMap::readCsv> Error, file " + filename + " not found");
+    return string("calPixelAlignment::readCsv> Error, file " + filename + " not found");
   }
 
   string sline;
