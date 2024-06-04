@@ -31,13 +31,14 @@ using namespace std;
 int main(int argc, char* argv[]) {
 
   string filename(""), pdir(""), hash("");
-  
+  int verbose(10000);
+
   // -- command line arguments
   if (argc < 2) {
     cout << "provide a payload file" << endl;
-    return 0; 
+    return 0;
   } else {
-    filename = argv[1]; 
+    filename = argv[1];
   }
 
   pdir = filename.substr(0, filename.find_last_of("/")+1);
@@ -46,38 +47,38 @@ int main(int argc, char* argv[]) {
        << "dir ->" << pdir << "<-" << endl
        << "hash ->" << hash << "<-" << endl;
 
-  calAbs *c(0); 
-  if (string::npos != filename.find("pixelalignment")) {
+  calAbs *c(0);
+  if (string::npos != filename.find("pixelalignment_")) {
     c = new calPixelAlignment();
     c->readPayloadFromFile(hash, pdir);
     cout << "hash:    " << c->getPayload(hash).fHash << endl;
     cout << "comment: " << c->getPayload(hash).fComment << endl;
     cout << "schema:  " << c->getPayload(hash).fSchema << endl;
     cout << "date:    " << c->getPayload(hash).fDate << endl;
-    c->printBLOB(c->getPayload(hash).fBLOB);
-  } else if (string::npos != filename.find("fibrealignment")) {
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("fibrealignment_")) {
     c = new calFibreAlignment();
     c->readPayloadFromFile(hash, pdir);
-    c->printBLOB(c->getPayload(hash).fBLOB);
-  } else if (string::npos != filename.find("mppcalignment")) {
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("mppcalignment_")) {
     c = new calMppcAlignment();
     c->readPayloadFromFile(hash, pdir);
-    c->printBLOB(c->getPayload(hash).fBLOB);
-  } else if (string::npos != filename.find("tilealignment")) {
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("tilealignment_")) {
     c = new calTileAlignment();
     c->readPayloadFromFile(hash, pdir);
-    c->printBLOB(c->getPayload(hash).fBLOB);
-  } else if (string::npos != filename.find("pixelquality")) {
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("pixelquality_")) {
     c = new calPixelQuality();
     c->readPayloadFromFile(hash, pdir);
-    c->printBLOB(c->getPayload(hash).fBLOB);
-  } else if (string::npos != filename.find("pixelcabling")) {
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("pixelcabling_")) {
     c = new calPixelCablingMap();
     c->readPayloadFromFile(hash, pdir);
-    c->printBLOB(c->getPayload(hash).fBLOB);
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
 
-  } 
+  }
 
-  
-  return 0; 
+
+  return 0;
 }
