@@ -29,13 +29,12 @@ using namespace std;
 // ---------
 //
 // initialize the JSON filesystem-based CDB for several starting points
-// "cr2022"      the cosmic run detector of 2022
-// "mcideal"     complete detector as contained in mu3e sim files alignment/* trees
-// "dc2023"      data challenge 2023 (with new pixel chip ID naming scheme)
-//
+// "mcidealv5.0" old MC
+// "mcidealv5.1" MC after tag v5.1
+// "qc2024v1.0"  pixel sensor chipIds for first vertex module (aka half-shell)
 //
 // -j JSONDIR  output directory with subdirectories globaltags, tags, payloads
-// -m MODE     "mcideal", "dc2023"
+// -m MODE     "mcidealv5.1", ...
 //
 // requires ./ascii/*.csv
 // requires run -> mu3e/run (i.e. a symlink pointing to the run directory
@@ -58,8 +57,9 @@ int main(int argc, char* argv[]) {
 	// -- global tags
 	// ----------------------------------------------------------------------
 	map<string, vector<string>> iniGlobalTags = {
-		{"mcidealv5.0", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment"} },
-      {"mcidealv5.1", {"pixelalignment", "fibrealignment", "tilealignment", "mppcalignment"} }
+		{"mcidealv5.0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_"} },
+    {"mcidealv5.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_"} },
+    {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1"} }
   };
 
 
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
     if (string::npos == igt.first.find(mode)) continue;
     vector<string> arrayBuilder;
 		for (auto it : igt.second) {
-      string tag = it + "_" + igt.first;
+      string tag = ('_' == it.back()? it + igt.first: it);
       arrayBuilder.push_back(tag);
     }
     stringstream sstr;
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
   for (auto igt : iniGlobalTags) {
     if (string::npos == igt.first.find(mode)) continue;
 		for (auto it : igt.second) {
-      string tag = it + "_" + igt.first;
+      string tag = ('_' == it.back()? it + igt.first: it);
       vector<int> arrayBuilder;
       for (auto it : vIni) arrayBuilder.push_back(it);
 
@@ -164,124 +164,137 @@ int main(int argc, char* argv[]) {
 
   string filename("");
   for (auto igt: iniGlobalTags) {
-    string it = igt.first;
-    if (string::npos == it.find(mode)) continue;
+    // string it = igt.first;
+    // if (string::npos == it.find(mode)) continue;
+    if (string::npos == igt.first.find(mode)) continue;
+		for (auto it : igt.second) {
+      string tag = ('_' == it.back()? it + igt.first: it);
+      string tagLess = tag.substr(tag.rfind('_') + 1);
 
-    // -- pixelalignment
-    calPixelAlignment *cpa = new calPixelAlignment();
-    filename = "./ascii/sensors-" + it + ".csv";
-    result = cpa->readCsv(filename);
-    if (string::npos == result.find("Error")) {
-      spl = cpa->makeBLOB();
-      hash = string("tag_pixelalignment_" + it + "_iov_1");
-      pl.fHash = hash;
-      pl.fComment = it + " pixel initialization";
-      pl.fBLOB = spl;
-      if (verbose) cpa->printBLOB(spl);
-      cpa->writePayloadToFile(hash, jdir, pl);
-    } else {
-      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-    }
-
-    // -- fibrealignment
-    calFibreAlignment *cfa = new calFibreAlignment();
-    filename = "./ascii/fibres-" + it + ".csv";
-    result = cfa->readCsv(filename);
-    if (string::npos == result.find("Error")) {
-      spl = cfa->makeBLOB();
-      hash = string("tag_fibrealignment_" + it + "_iov_1");
-      pl.fHash = hash;
-      pl.fComment = it + " fibre detector initialization";
-      pl.fBLOB = spl;
-      if (verbose) cfa->printBLOB(spl);
-      cfa->writePayloadToFile(hash, jdir, pl);
-    } else {
-      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-    }
-
-    // -- tilealignment
-    calTileAlignment *cta = new calTileAlignment();
-    filename = "./ascii/tiles-" + it + ".csv";
-    result = cta->readCsv(filename);
-    if (string::npos == result.find("Error")) {
-      spl = cta->makeBLOB();
-      hash = string("tag_tilealignment_" + it + "_iov_1");
-      pl.fHash = hash;
-      pl.fComment = it + " tile detector initialization";
-      pl.fBLOB = spl;
-      if (verbose) cta->printBLOB(spl);
-      cta->writePayloadToFile(hash, jdir, pl);
-    } else {
-      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-    }
-
-    // -- mppcalignment
-    calMppcAlignment *cma = new calMppcAlignment();
-    filename = "./ascii/mppcs-" + it + ".csv";
-    result = cma->readCsv(filename);
-    if (string::npos == result.find("Error")) {
-      spl = cma->makeBLOB();
-      hash = string("tag_mppcalignment_" + it + "_iov_1");
-      pl.fHash = hash;
-      pl.fComment = it + " MPPC detector initialization";
-      pl.fBLOB = spl;
-      if (verbose) cma->printBLOB(spl);
-      cma->writePayloadToFile(hash, jdir, pl);
-    } else {
-      cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-    }
-
-
-    // -- pixelquality: zero problematic pixels for all sensors present in cpa
-    calPixelQuality *cpq = new calPixelQuality();
-    unsigned int uid(999999);
-    map<unsigned int, vector<double> > m;
-    while (cpa->getNextID(uid)) {
-      vector<double> v;
-      if (0) {
-        if (uid%2 == 0) {
-          v.push_back(uid%7);
-          v.push_back(uid%5);
-          v.push_back(1.);
+      // -- pixelalignment
+      if (string::npos != tag.find("pixelalignment_")) {
+        calPixelAlignment *cpa = new calPixelAlignment();
+        filename = "./ascii/sensors-" + tagLess + ".csv";
+        result = cpa->readCsv(filename);
+        if (string::npos == result.find("Error")) {
+          spl = cpa->makeBLOB();
+          hash = string("tag_pixelalignment_" + tagLess + "_iov_1");
+          pl.fHash = hash;
+          pl.fComment = tagLess + " pixel initialization";
+          pl.fBLOB = spl;
+          if (verbose) cpa->printBLOB(spl, 10000);
+          cpa->writePayloadToFile(hash, jdir, pl);
         } else {
-          v.push_back(uid%7);
-          v.push_back(uid%5);
-          v.push_back(1.);
-          v.push_back(uid%17);
-          v.push_back(uid%25);
-          v.push_back(1.);
+          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
         }
       }
-      m.insert(make_pair(uid, v));
-      //      cout << "sensor = " << uid << " vector size = " << v.size() << endl;
-    }
-    spl = cpq->makeBLOB(m);
-    hash = string("tag_pixelquality_" + it + "_iov_1");
 
-    pl.fHash = hash;
-    pl.fComment = it + " pixel quality initialization";
-    pl.fBLOB = spl;
-    if (verbose) cpq->printBLOB(spl);
-    cpq->writePayloadToFile(hash, jdir, pl);
-    cpq->insertPayload(hash, pl);
-    cpq->writeCsv("pixelquality-example.csv");
+      // -- fibrealignment
+      if (string::npos != tag.find("fibrealignment_")) {
+        calFibreAlignment *cfa = new calFibreAlignment();
+        filename = "./ascii/fibres-" + tagLess + ".csv";
+        result = cfa->readCsv(filename);
+        if (string::npos == result.find("Error")) {
+          spl = cfa->makeBLOB();
+          hash = string("tag_fibrealignment_" + tagLess + "_iov_1");
+          pl.fHash = hash;
+          pl.fComment = tagLess + " fibre detector initialization";
+          pl.fBLOB = spl;
+          if (verbose) cfa->printBLOB(spl);
+          cfa->writePayloadToFile(hash, jdir, pl);
+        } else {
+          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+        }
+      }
 
+      // -- tilealignment
+      if (string::npos != tag.find("tilealignment_")) {
+        calTileAlignment *cta = new calTileAlignment();
+        filename = "./ascii/tiles-" + tagLess + ".csv";
+        result = cta->readCsv(filename);
+        if (string::npos == result.find("Error")) {
+          spl = cta->makeBLOB();
+          hash = string("tag_tilealignment_" + tagLess + "_iov_1");
+          pl.fHash = hash;
+          pl.fComment = tagLess + " tile detector initialization";
+          pl.fBLOB = spl;
+          if (verbose) cta->printBLOB(spl);
+          cta->writePayloadToFile(hash, jdir, pl);
+        } else {
+          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+        }
+      }
 
-    if (0) {
-      // -- pixelcablingmap
-      calPixelCablingMap *ccm = new calPixelCablingMap();
-      filename = "./ascii/pixelcablingmap-" + it + ".json";
-      result = ccm->readJson(filename);
-      if (string::npos == result.find("Error")) {
-        spl = ccm->makeBLOB();
-        hash = "tag_pixelcablingmap_" + it + "_iov_1";
+      // -- mppcalignment
+      if (string::npos != tag.find("mppcalignment_")) {
+        calMppcAlignment *cma = new calMppcAlignment();
+        filename = "./ascii/mppcs-" + tagLess + ".csv";
+        result = cma->readCsv(filename);
+        if (string::npos == result.find("Error")) {
+          spl = cma->makeBLOB();
+          hash = string("tag_mppcalignment_" + tagLess + "_iov_1");
+          pl.fHash = hash;
+          pl.fComment = tagLess + " MPPC detector initialization";
+          pl.fBLOB = spl;
+          if (verbose) cma->printBLOB(spl);
+          cma->writePayloadToFile(hash, jdir, pl);
+        } else {
+          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+        }
+      }
+
+      // -- pixelquality: zero problematic pixels for all sensors present in cpa
+      if (string::npos != tag.find("pixelquality_")) {
+        calPixelQuality *cpq = new calPixelQuality();
+        unsigned int uid(999999);
+        map<unsigned int, vector<double> > m;
+        while (cpq->getNextID(uid)) {
+          vector<double> v;
+          if (0) {
+            if (uid%2 == 0) {
+              v.push_back(uid%7);
+              v.push_back(uid%5);
+              v.push_back(1.);
+            } else {
+              v.push_back(uid%7);
+              v.push_back(uid%5);
+              v.push_back(1.);
+              v.push_back(uid%17);
+              v.push_back(uid%25);
+              v.push_back(1.);
+            }
+          }
+          m.insert(make_pair(uid, v));
+          //      cout << "sensor = " << uid << " vector size = " << v.size() << endl;
+        }
+        spl = cpq->makeBLOB(m);
+        hash = string("tag_pixelquality_" + tagLess + "_iov_1");
+
         pl.fHash = hash;
-        pl.fComment = it + "pixel cabling map initialization";
+        pl.fComment = tagLess + " pixel quality initialization";
         pl.fBLOB = spl;
-        if (verbose) ccm->printBLOB(spl);
-        ccm->writePayloadToFile(hash, jdir, pl);
-      } else {
-        cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+        if (verbose) cpq->printBLOB(spl);
+        cpq->writePayloadToFile(hash, jdir, pl);
+        cpq->insertPayload(hash, pl);
+        cpq->writeCsv("pixelquality-example.csv");
+      }
+
+      // -- pixelcablingmap
+      if (string::npos != tag.find("pixelcablingmap_")) {
+        calPixelCablingMap *ccm = new calPixelCablingMap();
+        filename = "./ascii/pixelcablingmap-" + tagLess + ".json";
+        result = ccm->readJson(filename);
+        if (string::npos == result.find("Error")) {
+          spl = ccm->makeBLOB();
+          hash = "tag_pixelcablingmap_" + tagLess + "_iov_1";
+          pl.fHash = hash;
+          pl.fComment = tagLess + "pixel cabling map initialization";
+          pl.fBLOB = spl;
+          if (verbose) ccm->printBLOB(spl);
+          ccm->writePayloadToFile(hash, jdir, pl);
+        } else {
+          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+        }
       }
     }
   }
