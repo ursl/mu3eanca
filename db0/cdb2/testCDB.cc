@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
   } else if (3 == mode) {
     cout << "Test run record" << endl;
     Mu3eConditions *pDC = Mu3eConditions::instance();
-    runRecord rr = pDC->getRunRecord(12);
+    runRecord rr = pDC->getRunRecord(4001);
     cout << "runRecord:" << endl;
     cout << "----------------------------------------------------------------------" << endl;
     cout << rr.json() << endl;
@@ -223,7 +223,7 @@ void printStuff(cdbAbs *db, string gt) {
   payload pl = db->getPayload("tag_pixelalignment_" + gt + "_iov_1");
   cout << "printStuff> pixel payload: " << pl.printString(false) << endl;
 
-  runRecord rr = db->getRunRecord(12);
+  runRecord rr = db->getRunRecord(4001);
   rr.print();
 }
 
