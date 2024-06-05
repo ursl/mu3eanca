@@ -4,6 +4,7 @@ ROOTGLIBS     = $(shell root-config --glibs)
 ROOTLDFLAGS   = $(shell root-config --ldflags)
 
 LHOST = $(shell hostname)
+LDIRECTORY = $(shell pwd)
 
 # -- ARGH!? But it works ...
 ifneq (,$(findstring merlin,$(LHOST)))
@@ -85,10 +86,10 @@ endif
 
 # -- Default rules
 $(addprefix obj/,%.o) : %.cc %.hh
-	$(CXX) $(CXXFLAGS) $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
 
 $(addprefix obj/,%.o) : %.cc
-	$(CXX) $(CXXFLAGS) $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
 
 $(addprefix bin/,%) : $(addprefix obj/,%.o)
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
