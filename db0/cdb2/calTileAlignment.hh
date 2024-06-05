@@ -40,6 +40,7 @@ public:
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
   bool        getNextID(uint32_t &ID);
 
+  std::string getSchema() override {return fSchema;}
 
 private:
   std::string fTileAlignmentTag{"tilealignment_"};
@@ -51,6 +52,7 @@ private:
     double posx, posy, posz;
     double dirx, diry, dirz;
   };
+  std::string fSchema{"ui_id,i_sensor,posx,posy,posz,dirx,diry,dirz"};
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};

@@ -33,9 +33,12 @@ public:
   bool        getNextID(uint32_t &ID);
   void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);
 
+  std::string getSchema() override {return fSchema;}
+
 private:
   std::string fPixelQualityTag{"pixelqualityv_"};
 
+  std::string fSchema{"ui_id,i_npix,[i_col,i_row,ui_qual]"};
 
   struct pixel {
     int icol, irow;

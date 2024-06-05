@@ -38,6 +38,7 @@ public:
   // -- verbosity = -1 (all), 0 (no elements), n (n elements)
   void printBLOB(std::string, int verbosity = -1) override;
   std::string readJSON(std::string filename);
+  std::string getSchema() override {return fSchema;}
 
 private:
   std::string fDetConfTag{"detconfv1_"};
@@ -58,6 +59,8 @@ private:
       double fieldStrength;
     } magnet;
   };
+
+  std::string fSchema{"target.{shape,thickness1,thickness2,length,radius,offsetX,offsetY,offsetZ},magnet.field.strength"};
 
   constants fConstants;
 };

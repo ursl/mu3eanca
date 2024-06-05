@@ -53,6 +53,7 @@ public:
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
   bool        getNextID(uint32_t &ID);
 
+  std::string getSchema() override {return fSchema;}
 
 private:
   std::string fPixelAlignmentTag{"pixelalignment_"};
@@ -66,6 +67,8 @@ private:
     int nrow, ncol;
     double width, length, thickness, pixelSize;
   };
+
+  std::string fSchema{"ui_id,vx,vy,vz,rowx,rowy,rowz,colx,coly,colz,i_nrow,i_ncol,width,length,thickness,pixelsize"};
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};

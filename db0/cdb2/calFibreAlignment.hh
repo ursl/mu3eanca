@@ -41,6 +41,7 @@ public:
 
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
   bool        getNextID(uint32_t &ID);
+  std::string getSchema() override {return fSchema;}
 
 
 private:
@@ -54,6 +55,7 @@ private:
     bool round, square;
     double diameter;
   };
+  std::string fSchema{"ui_id,cx,cy,cz,fx,fy,fz,b_round,b_square,diameter"};
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};

@@ -40,6 +40,7 @@ public:
 
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
   bool        getNextID(uint32_t &ID);
+  std::string getSchema() override {return fSchema;}
 
 private:
   std::string fMppcAlignmentTag{"mppcalignment_"};
@@ -51,6 +52,7 @@ private:
     double colx, coly, colz;
     int ncol;
   };
+  std::string fSchema{"ui_mppc,vx,vy,vz,colx,coly,colz,i_ncol"};
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};

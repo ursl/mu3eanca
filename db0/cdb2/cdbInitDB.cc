@@ -181,6 +181,7 @@ int main(int argc, char* argv[]) {
           hash = string("tag_pixelalignment_" + tagLess + "_iov_1");
           pl.fHash = hash;
           pl.fComment = tagLess + " pixel initialization";
+          pl.fSchema  = cpa->getSchema();
           pl.fBLOB = spl;
           if (verbose) cpa->printBLOB(spl, 10000);
           cpa->writePayloadToFile(hash, jdir, pl);
@@ -199,6 +200,7 @@ int main(int argc, char* argv[]) {
           hash = string("tag_fibrealignment_" + tagLess + "_iov_1");
           pl.fHash = hash;
           pl.fComment = tagLess + " fibre detector initialization";
+          pl.fSchema  = cfa->getSchema();
           pl.fBLOB = spl;
           if (verbose) cfa->printBLOB(spl);
           cfa->writePayloadToFile(hash, jdir, pl);
@@ -217,6 +219,7 @@ int main(int argc, char* argv[]) {
           hash = string("tag_tilealignment_" + tagLess + "_iov_1");
           pl.fHash = hash;
           pl.fComment = tagLess + " tile detector initialization";
+          pl.fSchema  = cta->getSchema();
           pl.fBLOB = spl;
           if (verbose) cta->printBLOB(spl);
           cta->writePayloadToFile(hash, jdir, pl);
@@ -235,6 +238,7 @@ int main(int argc, char* argv[]) {
           hash = string("tag_mppcalignment_" + tagLess + "_iov_1");
           pl.fHash = hash;
           pl.fComment = tagLess + " MPPC detector initialization";
+          pl.fSchema  = cma->getSchema();
           pl.fBLOB = spl;
           if (verbose) cma->printBLOB(spl);
           cma->writePayloadToFile(hash, jdir, pl);
@@ -293,6 +297,7 @@ int main(int argc, char* argv[]) {
         pl.fHash = hash;
         pl.fComment = tagLess + " pixel quality initialization";
         pl.fBLOB = spl;
+        pl.fSchema  = cpq->getSchema();
         if (verbose) cpq->printBLOB(spl);
         cpq->writePayloadToFile(hash, jdir, pl);
         cpq->insertPayload(hash, pl);
@@ -309,6 +314,7 @@ int main(int argc, char* argv[]) {
           hash = "tag_pixelcablingmap_" + tagLess + "_iov_1";
           pl.fHash = hash;
           pl.fComment = tagLess + "pixel cabling map initialization";
+          pl.fSchema  = ccm->getSchema();
           pl.fBLOB = spl;
           if (verbose) ccm->printBLOB(spl);
           ccm->writePayloadToFile(hash, jdir, pl);

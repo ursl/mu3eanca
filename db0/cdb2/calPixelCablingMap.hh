@@ -32,8 +32,11 @@ public:
 
   std::string  readJson(std::string filename);
 
+  std::string getSchema() override {return fSchema;}
+
 private:
   std::string fPixelCablingMapTag{"pixelcablingmap_"};
+  std::string fSchema{"ui_sensor,ui_online"};
 
   // -- map<sensor, online>
   std::map<unsigned int, unsigned int> fMapConstants;
