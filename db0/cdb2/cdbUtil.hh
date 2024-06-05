@@ -27,7 +27,11 @@ std::string timeStamp(int format = 0);
 // ======================================================================
 std::string jsFormat(std::vector<std::string>);
 std::string jsFormat(std::vector<int>);
+// -- get value index by a single key
 std::string jsonGetString(std::string& jstring, std::string key);
+// -- get value index by a vector of keys (e.g. "magnet,field,strength")
+std::string jsonGetString(std::string& jstring, std::vector<std::string> keys);
+// -- this is for the runlog where the values are not string, but directly numbers
 std::string jsonGetValue(std::string& jstring, std::string key);
 // -- normal base64 encoded (from rest/mongodb API)
 std::string jsonGetCfgString(std::string& jstring, std::string key);
