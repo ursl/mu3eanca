@@ -20,7 +20,7 @@
 #include "calPixelCablingMap.hh"
 #include "calPixelQuality.hh"
 
-#include "calFibreAlignment.hh"
+#include "calDetConfV1.hh"
 
 using namespace std;
 
@@ -57,9 +57,9 @@ int main(int argc, char* argv[]) {
 	// -- global tags
 	// ----------------------------------------------------------------------
 	map<string, vector<string>> iniGlobalTags = {
-		{"mcidealv5.0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_"} },
-    {"mcidealv5.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_"} },
-    {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1"} }
+		{"mcidealv5.0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
+    {"mcidealv5.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_"} },
+    {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} }
   };
 
 
@@ -242,6 +242,26 @@ int main(int argc, char* argv[]) {
           cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
         }
       }
+
+      // -- detconfv1
+      if (string::npos != tag.find("detconfv1_")) {
+        calDetConfV1 *cdc = new calDetConfV1();
+        filename = "./ascii/detector-" + tagLess + ".json";
+        result = cdc->readJSON(filename);
+        if (string::npos == result.find("Error")) {
+          spl = cdc->makeBLOB();
+          hash = string("tag_detconfv1_" + tagLess + "_iov_1");
+          pl.fHash = hash;
+          pl.fComment = tagLess + " detector configuration";
+          pl.fSchema  = cdc->getSchema();
+          pl.fBLOB = spl;
+          if (verbose) cdc->printBLOB(spl);
+          cdc->writePayloadToFile(hash, jdir, pl);
+        } else {
+          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+        }
+      }
+
 
       // -- pixelquality: zero problematic pixels for all sensors present in cpa
       if (string::npos != tag.find("pixelquality_")) {
