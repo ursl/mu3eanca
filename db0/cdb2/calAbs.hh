@@ -48,6 +48,10 @@ public:
     std::cout << "calAbs::printBLOB() ?" << std::endl;
   }
 
+  virtual std::string  getSchema() {
+    return "calAbs::getSchema()?";
+  }
+
   // -- direct interactions
   void                readPayloadFromFile(std::string hash, std::string dir);
   void                writePayloadToFile(std::string hash, std::string dir);
