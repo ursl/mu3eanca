@@ -201,10 +201,11 @@ int main(int argc, char* argv[]) {
     cout << pDC->getConfString("vertex") << endl;
 
   } else if (7 == mode) {
-    cout << "Test reading detcfg.json" << endl;
+    string jsonFileName = string(LOCALDIR) + string("/ascii/detector.json");
+    cout << "Test reading from " << jsonFileName << endl;
     calDetConfV1 *cdc = new calDetConfV1();
     cdc->setVerbosity(10);
-    cdc->readJSON("/Users/ursl/mu3e/software/minalyzer/detcfg.json");
+    cdc->readJSON(jsonFileName);
     string sbla = cdc->makeBLOB();
     cdc->printBLOB(sbla, 1000);
   }
