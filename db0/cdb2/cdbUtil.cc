@@ -271,7 +271,7 @@ string jsonGetString(string& jstring, vector<string> keys) {
   bool found(false);
   string::size_type s0(0);
   for (unsigned int i = 0; i < keys.size(); ++i) {
-    string key = keys[i];
+    string key = string("\"") + keys[i] + string("\"");
     s0 = jstring.find(key, s0);
     if (string::npos == s0) break;
     s0 = jstring.find(":", s0+key.length());
