@@ -33,6 +33,8 @@ std::string jsonGetString(std::string& jstring, std::string key);
 std::string jsonGetString(std::string& jstring, std::vector<std::string> keys);
 // -- this is for the runlog where the values are not string, but directly numbers
 std::string jsonGetValue(std::string& jstring, std::string key);
+// -- this is for the run/detector.json, where the values are not strings, but directly numbers
+std::string jsonGetValue(std::string& jstring, std::vector<std::string> keys);
 // -- normal base64 encoded (from rest/mongodb API)
 std::string jsonGetCfgString(std::string& jstring, std::string key);
 // -- escaped " (\") embedded in string (from JSON API)

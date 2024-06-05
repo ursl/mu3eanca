@@ -262,7 +262,7 @@ string jsonGetString(string& jstring, string key) {
 
 // ----------------------------------------------------------------------
 string jsonGetString(string& jstring, vector<string> keys) {
-  const bool DBX(true);
+  const bool DBX(false);
   if (DBX) {
     cout << "jsonGetString keys = ";
     for (auto it: keys) cout << it << ",";
@@ -277,6 +277,41 @@ string jsonGetString(string& jstring, vector<string> keys) {
     s0 = jstring.find(":", s0+key.length());
   }
   s0 = jstring.find("\"", s0+1);
+  string::size_type s1 = jstring.find(",", s0);
+  string::size_type s2 = jstring.find("}", s0);
+  if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << " s2: " << s2 << endl;
+  string result("");
+  if ((string::npos != s1) && (s1 < s2)) {
+    result = jstring.substr(s0, s1-s0);
+  } else {
+    result = jstring.substr(s0, s2-s0);
+  }
+  if (DBX) cout << "result ->" << result << "<-" << endl;
+  ltrim(result);
+  rtrim(result);
+  replaceAll(result, "\"", "");
+  if (DBX) cout << "result ->" << result << "<-" << endl;
+  return result;
+}
+
+
+// ----------------------------------------------------------------------
+string jsonGetValue(string& jstring, vector<string> keys) {
+  const bool DBX(false);
+  if (DBX) {
+    cout << "jsonGetString keys = ";
+    for (auto it: keys) cout << it << ",";
+    cout << endl;
+  }
+  bool found(false);
+  string::size_type s0(0);
+  for (unsigned int i = 0; i < keys.size(); ++i) {
+    string key = string("\"") + keys[i] + string("\"");
+    s0 = jstring.find(key, s0);
+    if (string::npos == s0) break;
+  }
+  s0 = jstring.find(":", s0+1);
+  ++s0;
   string::size_type s1 = jstring.find(",", s0);
   string::size_type s2 = jstring.find("}", s0);
   if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << " s2: " << s2 << endl;
