@@ -12,6 +12,7 @@
 
 #include "calPixelAlignment.hh"
 #include "calMppcAlignment.hh"
+#include "calDetConfV1.hh"
 
 
 using namespace std;
@@ -199,6 +200,13 @@ int main(int argc, char* argv[]) {
     cout << pDC->getConfString("trirec") << endl;
     cout << pDC->getConfString("vertex") << endl;
 
+  } else if (7 == mode) {
+    cout << "Test reading detcfg.json" << endl;
+    calDetConfV1 *cdc = new calDetConfV1();
+    cdc->setVerbosity(10);
+    cdc->readJSON("/Users/ursl/mu3e/software/minalyzer/detcfg.json");
+    string sbla = cdc->makeBLOB();
+    cdc->printBLOB(sbla, 1000);
   }
   return 0;
 }
