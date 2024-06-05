@@ -64,22 +64,17 @@ void calDetConfV1::printBLOB(std::string sblob, int verbosity) {
 
   if (0 == verbosity) return;
 
-  cout << "target: "
-       << endl
-       << " shape = " << blob2UnsignedInt(getData(ibuffer))
-       << " thickness1 = " << blob2Double(getData(ibuffer))
-       << " thickness2 = " << blob2Double(getData(ibuffer))
-       << " length = " << blob2Double(getData(ibuffer))
-       << " radius = " << blob2Double(getData(ibuffer))
-       << endl
-       << " Offset x/y/z = " << blob2Double(getData(ibuffer))
+  cout << "target"  << endl
+       << "  .shape = " << blob2UnsignedInt(getData(ibuffer)) << endl
+       << "  .thickness1 = " << blob2Double(getData(ibuffer)) << endl
+       << "  .thickness2 = " << blob2Double(getData(ibuffer)) << endl
+       << "  .length = " << blob2Double(getData(ibuffer)) << endl
+       << "  .radius = " << blob2Double(getData(ibuffer)) << endl
+       << "  .Offset x/y/z = " << blob2Double(getData(ibuffer))
        << "/" << blob2Double(getData(ibuffer))
-       << "/" << blob2Double(getData(ibuffer))
-       << endl
-       << "magnetField: "
-       << endl
-       << " strength = " << blob2Double(getData(ibuffer))
-       << endl;
+       << "/" << blob2Double(getData(ibuffer)) << endl
+       << "magnet.field" << endl
+       << "  .strength = " << blob2Double(getData(ibuffer)) << endl;
 }
 
 
@@ -172,14 +167,15 @@ string calDetConfV1::readJSON(string filename) {
   }
   INS.close();
 
-  fConstants.target.shape         = ::stoi(jsonGetString(spl, vector<string>{"detector", "target", "shape"}));
-  fConstants.target.thickness1    = ::stod(jsonGetString(spl, vector<string>{"detector", "target", "thickness1"}));
-  fConstants.target.thickness2    = ::stod(jsonGetString(spl, vector<string>{"detector", "target", "thickness2"}));
-  fConstants.target.length        = ::stod(jsonGetString(spl, vector<string>{"detector", "target", "length"}));
-  fConstants.target.radius        = ::stod(jsonGetString(spl, vector<string>{"detector", "target", "radius"}));
-  fConstants.target.offsetX       = ::stod(jsonGetString(spl, vector<string>{"detector", "target", "offset", "x"}));
-  fConstants.target.offsetY       = ::stod(jsonGetString(spl, vector<string>{"detector", "target", "offset", "y"}));
-  fConstants.target.offsetZ       = ::stod(jsonGetString(spl, vector<string>{"detector", "target", "offset", "z"}));
-  fConstants.magnet.fieldStrength = ::stod(jsonGetString(spl, vector<string>{"detector", "magnet", "field", "strength"}));
+  fConstants.target.shape         = ::stoi(jsonGetValue(spl, vector<string>{"detector", "target", "shape"}));
+  fConstants.target.thickness1    = ::stod(jsonGetValue(spl, vector<string>{"detector", "target", "thickness1"}));
+  fConstants.target.thickness2    = ::stod(jsonGetValue(spl, vector<string>{"detector", "target", "thickness2"}));
+  fConstants.target.length        = ::stod(jsonGetValue(spl, vector<string>{"detector", "target", "length"}));
+  fConstants.target.radius        = ::stod(jsonGetValue(spl, vector<string>{"detector", "target", "radius"}));
+  fConstants.target.offsetX       = ::stod(jsonGetValue(spl, vector<string>{"detector", "target", "offset", "x"}));
+  fConstants.target.offsetY       = ::stod(jsonGetValue(spl, vector<string>{"detector", "target", "offset", "y"}));
+  fConstants.target.offsetZ       = ::stod(jsonGetValue(spl, vector<string>{"detector", "target", "offset", "z"}));
+  fConstants.magnet.fieldStrength = ::stod(jsonGetValue(spl, vector<string>{"detector", "magnet", "field", "strength"}));
+
   return spl;
 }
