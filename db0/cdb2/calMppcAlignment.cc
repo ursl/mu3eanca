@@ -35,7 +35,7 @@ bool calMppcAlignment::getNextID(uint32_t &ID) {
 // ----------------------------------------------------------------------
 calMppcAlignment::calMppcAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
   if (0) 	cout << "calMppcAlignment created and registered with tag ->" << fTag << "<-"
-               << endl;
+                 << endl;
 }
 
 
@@ -51,13 +51,13 @@ void calMppcAlignment::calculate(string hash) {
        << "fHash ->" << hash << "<- ";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
-
+  
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "header: " << hex << header << dec;
-
+  
   int cntPrint(0);
   while (ibuffer != buffer.end()) {
     constants a;
@@ -69,7 +69,7 @@ void calMppcAlignment::calculate(string hash) {
     a.coly = blob2Double(getData(ibuffer));
     a.colz = blob2Double(getData(ibuffer));
     a.ncol = blob2Int(getData(ibuffer));
-
+    
     fMapConstants.insert(make_pair(a.mppc, a));
     if (cntPrint < -1) {
       cout << "added mppc = " << a.mppc
@@ -80,7 +80,7 @@ void calMppcAlignment::calculate(string hash) {
     }
   }
   cout << " inserted " << fMapConstants.size() << " constants" << endl;
-
+  
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
@@ -91,11 +91,11 @@ void calMppcAlignment::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calMppcAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-
+  
   int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
@@ -119,10 +119,10 @@ void calMppcAlignment::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calMppcAlignment::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-
+  
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calMppcAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
@@ -139,12 +139,16 @@ map<unsigned int, vector<double> > calMppcAlignment::decodeBLOB(string spl) {
     a.coly = blob2Double(getData(ibuffer));
     a.colz = blob2Double(getData(ibuffer));
     a.ncol = blob2Int(getData(ibuffer));
-    vdet.push_back(a.vx);        vdet.push_back(a.vy);     vdet.push_back(a.vz);
-    vdet.push_back(a.colx);      vdet.push_back(a.coly);   vdet.push_back(a.colz);
+    vdet.push_back(a.vx);
+    vdet.push_back(a.vy);
+    vdet.push_back(a.vz);
+    vdet.push_back(a.colx);
+    vdet.push_back(a.coly);
+    vdet.push_back(a.colz);
     vdet.push_back(static_cast<double>(a.ncol));
     vmap.insert(make_pair(mppc, vdet));
   }
-
+  
   return vmap;
 }
 
@@ -154,7 +158,7 @@ string calMppcAlignment::makeBLOB() {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-
+  
   for (auto it: fMapConstants) {
     s << dumpArray(uint2Blob(it.first));
     constants a = it.second;
@@ -178,7 +182,7 @@ string calMppcAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-
+  
   // -- format of m
   // mppc => vx,vy,vz,colx,coly,colz,ncol
   for (auto it: m) {
@@ -205,17 +209,17 @@ string calMppcAlignment::readCsv(string filename) {
   if (!INS.is_open()) {
     return string("calMppcAlignment::readCsv> Error, file " + filename + " not found");
   }
-
+  
   string sline;
   while (getline(INS, sline)) {
     spl += sline;
     spl += ",";
   }
   INS.close();
-
+  
   spl.pop_back();
   vector<string> tokens = split(spl, ',');
-
+  
   for (unsigned int it = 0; it < tokens.size(); it += 8) {
     constants a;
     int idx = it;
@@ -223,19 +227,19 @@ string calMppcAlignment::readCsv(string filename) {
     a.vx = ::stod(tokens[idx++]);
     a.vy = ::stod(tokens[idx++]);
     a.vz = ::stod(tokens[idx++]);
-
+    
     a.colx = ::stod(tokens[idx++]);
     a.coly = ::stod(tokens[idx++]);
     a.colz = ::stod(tokens[idx++]);
-
+    
     a.ncol    = ::stoi(tokens[idx++]);
-
+    
     fMapConstants.insert(make_pair(a.mppc, a));
-
+    
   }
-
+  
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
-
+  
   return spl;
 }

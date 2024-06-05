@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 
   string filename(""), pdir(""), hash("");
   int verbose(10000);
-
+  
   // -- command line arguments
   if (argc < 2) {
     cout << "provide a payload file" << endl;
@@ -41,13 +41,13 @@ int main(int argc, char* argv[]) {
   } else {
     filename = argv[1];
   }
-
+  
   pdir = filename.substr(0, filename.find_last_of("/")+1);
   hash = filename.substr(filename.find_last_of("/")+1);
   cout << "payload ->" << filename  << "<-" << endl
        << "dir ->" << pdir << "<-" << endl
        << "hash ->" << hash << "<-" << endl;
-
+       
   calAbs *c(0);
   if (string::npos != filename.find("pixelalignment_")) {
     c = new calPixelAlignment();
@@ -81,9 +81,9 @@ int main(int argc, char* argv[]) {
     c = new calPixelCablingMap();
     c->readPayloadFromFile(hash, pdir);
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
-
+    
   }
-
-
+  
+  
   return 0;
 }

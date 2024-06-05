@@ -32,31 +32,31 @@ calAbs::~calAbs() {
 
 // ----------------------------------------------------------------------
 void calAbs::update(string hash) {
-	if (!fDB) {
+  if (!fDB) {
     cout << "ERROR: no database handle provided" << endl;
     return;
   }
-
+  
   if (fVerbose > 4) cout << "calAbs::update() hash = " << hash << endl;
-
+  
   if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
     if (fVerbose > 2) cout << "calAbs::getPayload(" << hash
-                           << ") not cached, retrieve from DB"
-                           << endl;
+                             << ") not cached, retrieve from DB"
+                             << endl;
     auto tbegin = std::chrono::high_resolution_clock::now();
     payload pl = fDB->getPayload(hash);
     auto tend = std::chrono::high_resolution_clock::now();
     if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
-                           << "us ::timing::" << hash << " getpayload"
-                           << endl;
-
+                             << "us ::timing::" << hash << " getpayload"
+                             << endl;
+                             
     fTagIOVPayloadMap.insert(make_pair(hash, pl));
     calculate(hash);
     fHash = hash;
   } else {
     if (fVerbose > 4) cout << "calAbs::getPayload(" << hash
-                           << ") cached."
-                           << endl;
+                             << ") cached."
+                             << endl;
   }
   if (hash != fHash) {
     calculate(hash);
@@ -73,14 +73,14 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
     // -- found, delete it
     fTagIOVPayloadMap.erase(hash);
   }
-
+  
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(calAbs>  hash = " << hash
        << " not found)";
   payload pl;
   pl.fComment = sspl.str();
-
+  
   // -- read payload for hash
   ifstream INS;
   string filename = dir + "/" + hash;
@@ -90,7 +90,7 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
     fError = "Error: file not found";
     return;
   }
-
+  
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
@@ -98,13 +98,13 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   pl.fHash    = jsonGetString(fPayloadString, "hash");
   pl.fComment = jsonGetString(fPayloadString, "comment");
   pl.fBLOB    = base64_decode(jsonGetString(fPayloadString, "BLOB"));
-
+  
   fTagIOVPayloadMap.insert(make_pair(hash, pl));
   if (fVerbose > 0) cout << "calAbs::readPayloadFromFile() Inserted "
-                         << " hash ->" << hash << "<-"
-                         << " blob.size() = " << pl.fBLOB.size()
-                         << " into fTagIOVPayloadMap"
-                         << endl;
+                           << " hash ->" << hash << "<-"
+                           << " blob.size() = " << pl.fBLOB.size()
+                           << " into fTagIOVPayloadMap"
+                           << endl;
 }
 
 
@@ -120,7 +120,7 @@ void calAbs::writePayloadToFile(string hash, string dir) {
   // sstr << "\"schema\" : " << pl.fSchema << "\", ";
   // sstr << "\"date\" : " << pl.fDate << "\", ";
   // sstr << "\"BLOB\" : \"" << base64_encode(pl.fBLOB) << "\" }" << endl;
-
+  
   // -- JSON
   ofstream JS;
   JS.open(dir + "/" + hash);
@@ -131,7 +131,7 @@ void calAbs::writePayloadToFile(string hash, string dir) {
   }
   JS << sstr.str();
   JS.close();
-
+  
 }
 
 
@@ -144,7 +144,7 @@ void calAbs::writePayloadToFile(string hash, string dir, payload &pl) {
   // sstr << "{ \"hash\" : \"" << hash << "\", \"comment\" : ";
   // sstr << "\"" << pl.fComment << "\", ";
   // sstr << "\"BLOB\" : \"" << base64_encode(pl.fBLOB) << "\" }" << endl;
-
+  
   // -- JSON
   ofstream JS;
   JS.open(dir + "/" + hash);
@@ -153,7 +153,7 @@ void calAbs::writePayloadToFile(string hash, string dir, payload &pl) {
   }
   JS << sstr.str();
   JS.close();
-
+  
 }
 
 

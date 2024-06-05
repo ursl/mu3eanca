@@ -24,44 +24,44 @@ cdbAbs::~cdbAbs() {
 void cdbAbs::init() {
   if (fVerbose > 0)  cout << "cdbAbs::init() " << endl;
   // readGlobalTags();
-	// readTags();
-	// readIOVs();
+  // readTags();
+  // readIOVs();
 }
 
 
 // ----------------------------------------------------------------------
 void cdbAbs::print(std::vector<int> v, int istart) {
-	for (unsigned int i = istart; i < v.size(); ++i) {
-		cout << v[i] << " ";
-	}
-	cout << endl;
+  for (unsigned int i = istart; i < v.size(); ++i) {
+    cout << v[i] << " ";
+  }
+  cout << endl;
 }
 
 
 // ----------------------------------------------------------------------
 void cdbAbs::print(std::vector<std::string> v, int istart) {
-	for (unsigned int i = istart; i < v.size(); ++i) {
-		cout << v[i] << " ";
-	}
-	cout << endl;
+  for (unsigned int i = istart; i < v.size(); ++i) {
+    cout << v[i] << " ";
+  }
+  cout << endl;
 }
 
 
 // ----------------------------------------------------------------------
 void cdbAbs::print(std::map<std::string, std::vector<std::string>> m) {
-	for (auto it: m) {
-		cout << it.first << ": ";
-		print(it.second);
-	}
-	cout << endl;
+  for (auto it: m) {
+    cout << it.first << ": ";
+    print(it.second);
+  }
+  cout << endl;
 }
 
 
 // ----------------------------------------------------------------------
 void cdbAbs::print(std::map<std::string, std::vector<int>> m) {
-	for (auto it: m) {
-		cout << it.first << ": ";
-		print(it.second);
-	}
-	cout << endl;
+  for (auto it: m) {
+    cout << it.first << ": ";
+    print(it.second);
+  }
+  cout << endl;
 }

@@ -53,33 +53,33 @@ using namespace std;
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
 
-	// ----------------------------------------------------------------------
-	// -- global tags
-	// ----------------------------------------------------------------------
-	map<string, vector<string>> iniGlobalTags = {
-		{"mcidealv5.0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
+  // ----------------------------------------------------------------------
+  // -- global tags
+  // ----------------------------------------------------------------------
+  map<string, vector<string>> iniGlobalTags = {
+    {"mcidealv5.0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
     {"mcidealv5.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_"} },
     {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} }
   };
-
-
+  
+  
   // -- command line arguments
   string jsondir("");
   string mode("mcideal");
   int verbose(0);
-  for (int i = 0; i < argc; i++){
+  for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-j"))  {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))  {mode    = argv[++i];}
     if (!strcmp(argv[i], "-v"))  {verbose = 1;}
   }
-
+  
   // -- handle meta-mode
   if (string::npos != mode.find("all")) {
     for (auto it: iniGlobalTags) {
       system(string(string(argv[0]) + " -j " + jsondir + " -m " + it.first).c_str());
     }
   }
-
+  
   // -- check whether directories for JSONs already exist
   vector<string> testdirs{jsondir,
                           jsondir + "/globaltags",
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
                           jsondir + "/payloads",
                           jsondir + "/runrecords",
                           jsondir + "/configs",
-  };
+                         };
   for (auto it: testdirs) {
     DIR *folder = opendir(it.c_str());
     if (folder == NULL) {
@@ -97,15 +97,15 @@ int main(int argc, char* argv[]) {
       closedir(folder);
     }
   }
-
+  
   ofstream JS;
-
-	string jdir  = jsondir + "/globaltags";
-
+  
+  string jdir  = jsondir + "/globaltags";
+  
   for (auto igt : iniGlobalTags) {
     if (string::npos == igt.first.find(mode)) continue;
     vector<string> arrayBuilder;
-		for (auto it : igt.second) {
+    for (auto it : igt.second) {
       string tag = ('_' == it.back()? it + igt.first: it);
       arrayBuilder.push_back(tag);
     }
@@ -113,8 +113,8 @@ int main(int argc, char* argv[]) {
     sstr << "{ \"gt\" : \"" << igt.first << "\", \"tags\" : ";
     sstr << jsFormat(arrayBuilder);
     sstr << " }" << endl;
-
-
+    
+    
     // -- JSON
     JS.open(jdir + "/" + igt.first);
     if (JS.fail()) {
@@ -124,25 +124,25 @@ int main(int argc, char* argv[]) {
     cout << sstr.str();
     JS.close();
   }
-
-
-	// ----------------------------------------------------------------------
-	// -- tags/iovs
-	// ----------------------------------------------------------------------
-	jdir  = jsondir + "/tags";
+  
+  
+  // ----------------------------------------------------------------------
+  // -- tags/iovs
+  // ----------------------------------------------------------------------
+  jdir  = jsondir + "/tags";
   vector<int> vIni{1};
   for (auto igt : iniGlobalTags) {
     if (string::npos == igt.first.find(mode)) continue;
-		for (auto it : igt.second) {
+    for (auto it : igt.second) {
       string tag = ('_' == it.back()? it + igt.first: it);
       vector<int> arrayBuilder;
       for (auto it : vIni) arrayBuilder.push_back(it);
-
+      
       stringstream sstr;
       sstr << "{ \"tag\" : \"" << tag << "\", \"iovs\" : ";
       sstr << jsFormat(arrayBuilder);
       sstr << " }" << endl;
-
+      
       // -- JSON
       JS.open(jdir + "/" + tag);
       if (JS.fail()) {
@@ -153,24 +153,24 @@ int main(int argc, char* argv[]) {
       JS.close();
     }
   }
-
+  
   // ----------------------------------------------------------------------
-	// -- payloads
-	// ----------------------------------------------------------------------
+  // -- payloads
+  // ----------------------------------------------------------------------
   payload pl;
-	jdir = jsondir + "/payloads";
-
+  jdir = jsondir + "/payloads";
+  
   string spl(""), hash(""), result("");
-
+  
   string filename("");
   for (auto igt: iniGlobalTags) {
     // string it = igt.first;
     // if (string::npos == it.find(mode)) continue;
     if (string::npos == igt.first.find(mode)) continue;
-		for (auto it : igt.second) {
+    for (auto it : igt.second) {
       string tag = ('_' == it.back()? it + igt.first: it);
       string tagLess = tag.substr(tag.rfind('_') + 1);
-
+      
       // -- pixelalignment
       if (string::npos != tag.find("pixelalignment_")) {
         calPixelAlignment *cpa = new calPixelAlignment();
@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
           cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
         }
       }
-
+      
       // -- fibrealignment
       if (string::npos != tag.find("fibrealignment_")) {
         calFibreAlignment *cfa = new calFibreAlignment();
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
           cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
         }
       }
-
+      
       // -- tilealignment
       if (string::npos != tag.find("tilealignment_")) {
         calTileAlignment *cta = new calTileAlignment();
@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
           cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
         }
       }
-
+      
       // -- mppcalignment
       if (string::npos != tag.find("mppcalignment_")) {
         calMppcAlignment *cma = new calMppcAlignment();
@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) {
           cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
         }
       }
-
+      
       // -- detconfv1
       if (string::npos != tag.find("detconfv1_")) {
         calDetConfV1 *cdc = new calDetConfV1();
@@ -265,8 +265,8 @@ int main(int argc, char* argv[]) {
           cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
         }
       }
-
-
+      
+      
       // -- pixelquality: zero problematic pixels for all sensors present in cpa
       if (string::npos != tag.find("pixelquality_")) {
         calPixelQuality *cpq = new calPixelQuality();
@@ -293,7 +293,7 @@ int main(int argc, char* argv[]) {
         }
         spl = cpq->makeBLOB(m);
         hash = string("tag_pixelquality_" + tagLess + "_iov_1");
-
+        
         pl.fHash = hash;
         pl.fComment = tagLess + " pixel quality initialization";
         pl.fBLOB = spl;
@@ -303,7 +303,7 @@ int main(int argc, char* argv[]) {
         cpq->insertPayload(hash, pl);
         cpq->writeCsv("pixelquality-example.csv");
       }
-
+      
       // -- pixelcablingmap
       if (string::npos != tag.find("pixelcablingmap_")) {
         calPixelCablingMap *ccm = new calPixelCablingMap();
@@ -324,7 +324,7 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-
+  
   // -- create a runRecord
   filename = "runlog_004001.json";
   ifstream INS;
@@ -332,26 +332,26 @@ int main(int argc, char* argv[]) {
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
-
+  
   jdir = jsondir + "/runrecords";
   string orr = jdir + "/" + filename;
-
-
+  
+  
   JS.open(orr);
   if (JS.fail()) {
     cout << "cdbInitDB> Error failed to open " << orr <<  endl;
   }
   JS << buffer.str();
   JS.close();
-
-
+  
+  
   // -- create configs
   if (0) {
     vector<string> conffiles = {
       "detector.json",
       "trirec.conf", "vertex.conf"
     };
-
+    
     for (auto igt: iniGlobalTags) {
       for (auto ic: conffiles) {
         string cfgname = ic.substr(0, ic.find("."));
@@ -362,21 +362,21 @@ int main(int argc, char* argv[]) {
           cout << "Error failed to open ->" << filename << "<-" << endl;
           continue;
         }
-
+        
         std::stringstream buffer;
         buffer << INS.rdbuf();
         INS.close();
-
+        
         string sbuffer = buffer.str();
-
+        
         jdir = jsondir + "/configs";
         hash = "cfg_" + cfgname + "_" + igt.first;
-
+        
         JS.open(jdir + "/" + hash);
         if (JS.fail()) {
           cout << "cdbInitDB> Error failed to open " << jdir << "/" << hash <<  endl;
         }
-
+        
         cfgPayload cfg;
         cfg.fHash = hash;
         cfg.fDate = timeStamp();
@@ -384,13 +384,13 @@ int main(int argc, char* argv[]) {
         replaceAll(sbuffer, "\"", "\\\"");
         // replaceAll(sbuffer, "\n", " ");
         cfg.fCfgString = sbuffer;
-
+        
         JS << cfg.getJson();
         JS.close();
-
+        
       }
     }
   }
-
-	return 0;
+  
+  return 0;
 }

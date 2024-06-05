@@ -337,7 +337,7 @@ string jsonGetCfgString(std::string& jstring, std::string key) {
   s0 = jstring.find("\"", s0);
   string result = jstring.substr(s0);
   ltrim(result);
-
+  
   // -- there is another } to trim
   result.pop_back();
   replaceAll(result, "\"", "");
@@ -352,7 +352,7 @@ string jsonGetCfgStringEsc(std::string& jstring, std::string key) {
   s0 = jstring.find("\"", s0);
   string result = jstring.substr(s0);
   ltrim(result);
-
+  
   // -- magic to form the resulting string
   result.pop_back(); // remove an end
   result.erase(0, 1); // remove front char
@@ -445,11 +445,11 @@ vector<string> jsonGetVectorVector(string& jstring, string key) {
 string timeStamp(int format) {
   time_t t;
   time(&t);
-
+  
   // strftime(buffer, sizeof(buffer), "%X", localtime_r(&t, &r));
   struct timeval tv;
   gettimeofday(&tv, 0);
-
+  
   tm *ltm = localtime(&t);
   int year  = 1900 + ltm->tm_year;
   int month = 1 + ltm->tm_mon;

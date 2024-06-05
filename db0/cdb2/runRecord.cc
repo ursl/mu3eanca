@@ -44,7 +44,7 @@ string runRecord::printString() {
        << "), comments: " << fEORComments
        << "), cfgkey(" << fConfigurationKey
        << ")"
-    ;
+       ;
   return sstr.str();
 }
 
@@ -70,14 +70,14 @@ string runRecord::json() const {
     }
     }
   */
-
+  
   stringstream ssB;
   ssB << scientific << setprecision(6) << fBORBeam;
   stringstream ssF;
   ssF << scientific << setprecision(10) << fEORFileSize;
   stringstream ssD;
   ssD << scientific << setprecision(10) << fEORDataSize;
-
+  
   sstr << "{ \"BOR\" : {"
        << "\"Run number\" : " << fBORRunNumber << ", "
        << "\"Start time\" : \"" << fBORStartTime << "\", "
@@ -85,7 +85,7 @@ string runRecord::json() const {
        << "\"Beam\" : " << ssB.str() << ", "
        << "\"Shift crew\" : \"" << fBORShiftCrew << "\""
        << "}, "
-
+       
        << "\"EOR\" : {"
        << "\"Stop time\" : \"" << fEORStopTime << "\", "
        << "\"Events\" : " << fEOREvents << ", "

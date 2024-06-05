@@ -45,7 +45,7 @@ struct pixhit {
 };
 
 // ----------------------------------------------------------------------
-void createPayload(string , calAbs *, map<unsigned int, vector<double> >, string);
+void createPayload(string, calAbs *, map<unsigned int, vector<double> >, string);
 
 
 // ----------------------------------------------------------------------
@@ -56,16 +56,16 @@ int main(int argc, char* argv[]) {
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(MDCJSONDIR), filename("nada.root");
   string gt("intrun");
-  for (int i = 0; i < argc; i++){
+  for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
-
+  
   cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
-
+  
   calAbs *cpq(0);
   if (1 == mode) {
     cpq = new calPixelQuality();
@@ -74,9 +74,9 @@ int main(int argc, char* argv[]) {
   } else if (3 == mode) {
     cpq = new calPixelQualityM();
   }
-
+  
   map<unsigned int, vector<double> > mdet{};
-
+  
   int run(-1);
   string sbla(filename);
   if (string::npos != filename.find_last_of("/")) {
@@ -91,11 +91,11 @@ int main(int argc, char* argv[]) {
   cout << "sbla ->" << sbla << "<-" << endl;
   run = ::stoi(sbla);
   cout << "run = " << run << endl;
-
+  
   string hash = string("tag_pixelquality_") + gt + string("_iov_") + to_string(run);
-
+  
   TFile *f = TFile::Open(filename.c_str());
-
+  
   // -- read in all chipids
   TIter next(gDirectory->GetListOfKeys());
   TKey *key(0);
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
     }
   }
   cout << endl;
-
+  
   // -- loop over all chipids and determine noisy pixels VERY naively
   for (unsigned int i = 0; i < vchipid.size(); ++i) {
     unsigned int chipID = vchipid[i];
@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
       }
     }
     if (verbose > 0) cout << "chipID = " << chipID << " nhits =  " << chipCnt << " for npix = " << npix << endl;
-
+    
     vector<double> vchip{};
     if (npix > 0) {
       double NSIGMA(10.0);
@@ -160,9 +160,9 @@ int main(int argc, char* argv[]) {
     }
     mdet.insert(make_pair(chipID, vchip));
   }
-
+  
   createPayload(hash, cpq, mdet, jsondir + string("/payloads"));
-
+  
   // -- validate written payload
   cpq->readPayloadFromFile(hash, jsondir + string("/payloads"));
   //  cout << "######################################################################" << endl;
@@ -170,15 +170,15 @@ int main(int argc, char* argv[]) {
   string sblob = pDB->getPayload(hash).fBLOB;
   //  cpq->printBLOB(sblob);
   cpq->printBLOB(sblob, 0);
-
-
+  
+  
 }
 
 // ----------------------------------------------------------------------
 void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > mdet, string jsondir) {
 
   string sblob = a->makeBLOB(mdet);
-
+  
   payload pl;
   pl.fHash = hash;
   pl.fComment = "testing";
@@ -186,6 +186,6 @@ void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > md
   //  cout << "######################################################################" << endl;
   //  cout << "### createPayload" << endl;
   //  a->printBLOB(sblob);
-
+  
   a->writePayloadToFile(hash, jsondir, pl);
 }

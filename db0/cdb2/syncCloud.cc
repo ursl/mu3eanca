@@ -4,7 +4,7 @@
 #include <sstream>
 #include <dirent.h>  /// for directory reading
 
-#include <curl/curl.h> 
+#include <curl/curl.h>
 
 
 #include <bsoncxx/json.hpp>
@@ -35,7 +35,7 @@ using namespace std;
 // ---------
 //
 //
-// cd cdb1/json 
+// cd cdb1/json
 // [requires]
 //    globaltags/*
 //    tags/*
@@ -46,12 +46,12 @@ using namespace std;
 // ../bin/syncCloud --dir tags
 // ../bin/syncCloud --dir payloads
 // ../bin/syncCloud --dir runrecords
-// 
+//
 // ----------------------------------------------------------------------
 
 bool gDBX(false);
 
-string gApiKey(""), gCurlReadBuffer; 
+string gApiKey(""), gCurlReadBuffer;
 
 string gURI("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
 
@@ -64,17 +64,17 @@ static size_t cdbRestWriteCallback(void *contents, size_t size, size_t nmemb, vo
 // ----------------------------------------------------------------------
 void writeCurl(string collection, string payload) {
   CURL *curl = curl_easy_init();
- 
+  
   if (!curl) {
     cout << "cdbRest::init()> ERROR failed to setup curl?!" << endl;
     exit(0);
   }
-
+  
   gCurlReadBuffer.clear();
   string sapi = gURI + ("insertOne");
-
+  
   curl_easy_setopt(curl, CURLOPT_URL, sapi.c_str());
-
+  
   struct curl_slist *headers = NULL;
   headers = curl_slist_append(headers, "Content-Type: application/json");
   headers = curl_slist_append(headers, "Access-Control-Request-Headers: *");
@@ -84,22 +84,22 @@ void writeCurl(string collection, string payload) {
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &gCurlReadBuffer);
-
+  
   stringstream sstr;
   sstr << "{\"collection\":\"" << collection
        << "\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\",";
   sstr << " \"document\": " << payload;
   sstr << "}";
-
-  string theString = sstr.str(); 
+  
+  string theString = sstr.str();
   cout << "theString = " << theString << endl;
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, theString.c_str());
- 
+  
   if (!gDBX) CURLcode curlRes = curl_easy_perform(curl);
-
+  
   if (0) cout << "==:cdbRest::doCurl(\"" << collection << "\"): "
-              << gCurlReadBuffer
-              << endl;
+                << gCurlReadBuffer
+                << endl;
 }
 
 
@@ -133,8 +133,8 @@ void clearCollection(string collection, string field) {
     stringstream sstr;
     sstr << "{\"collection\":\"" << collection
          << "\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\"}";
-    
-    string theString = sstr.str(); 
+         
+    string theString = sstr.str();
     cout << "theString = " << theString << endl;
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, theString.c_str());
     
@@ -150,7 +150,7 @@ void clearCollection(string collection, string field) {
         bsoncxx::document::view doc = ele.get_document();
         cout << bsoncxx::to_json(doc) << endl;
         string tname = string(doc[field].get_string().value).c_str();
-        idCollections.push_back(tname); 
+        idCollections.push_back(tname);
       }
     }
     
@@ -160,7 +160,7 @@ void clearCollection(string collection, string field) {
     
     curl_easy_cleanup(curl);
   }
-
+  
   // -- execute deletions
   if (1) {
     CURL *curl = curl_easy_init();
@@ -190,18 +190,18 @@ void clearCollection(string collection, string field) {
       sstr << "{\"collection\":\"" << collection
            << "\", \"database\":\"mu3e\", \"dataSource\":\"cdb0\",";
       sstr << "\"filter\": { \"" << field << "\": \"" << it << "\" } }";
-      string theString = sstr.str(); 
-
+      string theString = sstr.str();
+      
       cout << "deleting theString = " << theString << endl;
       curl_easy_setopt(curl, CURLOPT_POSTFIELDS, theString.c_str());
-    
+      
       if (!gDBX) CURLcode curlRes = curl_easy_perform(curl);
     }
     
     curl_easy_cleanup(curl);
   }
-
-
+  
+  
 }
 
 // ----------------------------------------------------------------------
@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
   // -- command line arguments
   string dirName("fixme");
   bool onlyDelete(false); // ONLY delete, do not write new records
-  for (int i = 0; i < argc; i++){
+  for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-d"))  {gDBX = true;}
     if (!strcmp(argv[i], "--dir"))  {dirName = string(argv[++i]);}
     if (!strcmp(argv[i], "-dir"))  {dirName = string(argv[++i]);}
@@ -218,10 +218,10 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-del"))  {onlyDelete = true;}
     if (!strcmp(argv[i], "--key"))  {gApiKey += string(argv[++i]);}
   }
-
+  
   map<string, string> tagDel = {{"globaltags", "gt"},
-                                {"tags", "tags"},
-                                {"payloads", "hash"}
+    {"tags", "tags"},
+    {"payloads", "hash"}
   };
   
   
@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
   if (folder == NULL) {
     cout << "Unable to read directory ->" << dirName << "<-" << endl;
     return 0;
-  } 
+  }
   
   while ((entry=readdir(folder))) {
     if (8 == entry->d_type) {
@@ -242,14 +242,14 @@ int main(int argc, char* argv[]) {
   }
   closedir(folder);
   
-  sort(vfiles.begin(), vfiles.end());    
-
+  sort(vfiles.begin(), vfiles.end());
+  
   gApiKey = "api-key: " + gApiKey;
-
+  
   cout << "clearCollection(" << dirName << ", " << tagDel[dirName] << ");" << endl;
   cout << "gApiKey ->" << gApiKey << "<-" << endl;
   clearCollection(dirName, tagDel[dirName]);
-
+  
   if (onlyDelete) return 0;
   
   string collectionContents;
@@ -262,5 +262,5 @@ int main(int argc, char* argv[]) {
     writeCurl(dirName, collectionContents);
   }
   
-	return 0;
+  return 0;
 }

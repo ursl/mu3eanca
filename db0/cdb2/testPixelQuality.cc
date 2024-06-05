@@ -45,7 +45,7 @@ struct pixhit {
 // ----------------------------------------------------------------------
 void dumpBlob(string);
 string writeBlob(string filename, int nchip, int nnoisy);
-void createPayload(string , calAbs *, int, int);
+void createPayload(string, calAbs *, int, int);
 void createRandomHits(map<unsigned int, vector<pixhit> > &, int, int);
 
 
@@ -53,7 +53,7 @@ void createRandomHits(map<unsigned int, vector<pixhit> > &, int, int);
 int main(int argc, char* argv[]) {
 
   int NCHIPS(1), NNOISY(2), NRECCHIPS(NCHIPS), NRECHITS(200);
-
+  
   // -- command line arguments
   int verbose(0), mode(1), nevts(2);
   unsigned long int rseed(123456);
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
   int nchips(NCHIPS);
   int noisy1(0), noisy2(NNOISY);
   int nrec1(NRECHITS), nrec2(NRECHITS);
-  for (int i = 0; i < argc; i++){
+  for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-n"))      {nevts = atoi(argv[++i]);}
@@ -72,17 +72,17 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-nrec1"))  {nrec1 = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-nrec2"))  {nrec2 = atoi(argv[++i]);}
   }
-
+  
   gRandom->SetSeed(rseed);
-
+  
   string gt("mcideal");
   cdbAbs *pDB = new cdbJSON(gt, "json", verbose);
-
+  
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
-
+  
   int nstep (10);
-
+  
   TCanvas c1;
   long long totalTime(0);
   TH1D *hTime;
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
   TH1D *hSetup1 = new TH1D("hSetup1", "hSetup 1", 1000, 0., 20000.);
   TH1D *hSetup2 = new TH1D("hSetup2", "hSetup 2", 1000, 0., 20000.);
   TH1D *hSetup3 = new TH1D("hSetup3", "hSetup 3", 1000, 0., 20000.);
-
+  
   auto grNoise = new TGraph();
   grNoise->SetTitle(Form("Processing time for N(rechit) = %d/chip", nrec1));
   grNoise->GetXaxis()->SetTitle("noisy pixels");
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   grSetup->GetYaxis()->SetTitle("time [ms]");
   grSetup->SetMarkerStyle(20);
   grSetup->SetMarkerSize(1.5);
-
+  
   calAbs *cpq(0);
   int inc = (noisy2-noisy1)/nstep;
   for (int inoise = noisy1; inoise <= noisy2; inoise += inc) {
@@ -121,12 +121,12 @@ int main(int argc, char* argv[]) {
          << " inc = " << inc
          << " nstep = " << nstep
          << endl;
-
+         
     hTime->Reset();
     hSetup->Reset();
     for (int ievt = 0; ievt < nevts; ++ievt) {
       cout << "####### evt " << ievt << endl;
-
+      
       if (1 == mode) {
         cpq = new calPixelQuality();
       } else if (2 == mode) {
@@ -138,16 +138,16 @@ int main(int argc, char* argv[]) {
       auto sbegin = std::chrono::high_resolution_clock::now();
       string hash("tag_pixelquality_mcideal_iov_1");
       createPayload(hash, cpq, nchips, inoise);
-
+      
       cpq->readPayloadFromFile(hash, ".");
       cpq->calculate(hash);
-
+      
       map<unsigned int, vector<pixhit>> detHits;
       createRandomHits(detHits, NRECCHIPS, nrec1);
       auto send = std::chrono::high_resolution_clock::now();
       long long duss = chrono::duration_cast<chrono::milliseconds>(send-sbegin).count();
       hSetup->Fill(static_cast<double>(duss));
-
+      
       // -- now loop over all rec hits
       auto tbegin = std::chrono::high_resolution_clock::now();
       for (auto it: detHits) {
@@ -172,30 +172,30 @@ int main(int argc, char* argv[]) {
          << " # NCHIPS/NNOISY/NRECHITS = "
          << nchips << "/" << inoise << "/" << nrec1 << " (nrec2 = " << nrec2 << ")"
          << endl;
-
+         
     hTime->SetTitle(Form("timing mode%d-nchips%d-nnoise%d-nrec%d", mode, nchips, inoise, nrec1));
     hTime->Draw();
     c1.SaveAs(Form("hTime-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, nchips, inoise, nrec1));
-
+    
     hSetup->SetTitle(Form("setup mode%d-nchips%d-nnoise%d-nrec%d", mode, nchips, inoise, nrec1));
     hSetup->Draw();
     c1.SaveAs(Form("hSetup-mode%d-nchips%d-nnoise%d-nrec%d.pdf", mode, nchips, inoise, nrec1));
-
+    
     // - this works for ROOT >= 6.24
     //    grSetup->AddPoint(inoise, hSetup->GetMean());
     //    grNoise->AddPoint(inoise, hTime->GetMean());
     grSetup->SetPoint(grSetup->GetN(), inoise, hSetup->GetMean());
     grNoise->SetPoint(grNoise->GetN(), inoise, hTime->GetMean());
   }
-
+  
   c1.Clear();
   grNoise->Draw("alp");
   c1.SaveAs(Form("hNoise-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, nchips, nrec1, noisy2));
-
+  
   c1.Clear();
   grSetup->Draw("alp");
   c1.SaveAs(Form("hSetup-mode%d-nchips%d-nrec%d-noisemax%d.pdf", mode, nchips, nrec1, noisy2));
-
+  
   cout << "gRandom->Rndm() = " << gRandom->Rndm() << endl;
 }
 
@@ -203,23 +203,23 @@ int main(int argc, char* argv[]) {
 // ----------------------------------------------------------------------
 string writeBlob(string filename, int nchip, int nnoisy) {
   map<unsigned int, vector<double> > mdet;
-
+  
   long unsigned int header(0xdeadface);
   stringstream ONS;
   if (1) {
     ONS << dumpArray(uint2Blob(header));
   }
-
+  
   if (1) cout << " nchip = " << nchip
-              << " nnoisy = " << nnoisy
-              << endl;
+                << " nnoisy = " << nnoisy
+                << endl;
   for (int i = 0; i < nchip; ++i) {
     vector<double> vchip{};
     int nnoisypix(nnoisy);
     ONS << dumpArray(uint2Blob(i))
         << dumpArray(int2Blob(nnoisypix));
     vchip.push_back(static_cast<double>(nnoisypix));
-
+    
     for (int ipix = 0; ipix < nnoisypix; ++ipix) {
       int icol = 100 + 50*gRandom->Rndm();
       int irow = 120 + 50*gRandom->Rndm();
@@ -230,14 +230,14 @@ string writeBlob(string filename, int nchip, int nnoisy) {
       vchip.push_back(static_cast<double>(icol));
       vchip.push_back(static_cast<double>(irow));
       vchip.push_back(static_cast<double>(iqual));
-
+      
       if (0) cout << "icol/irow = " << icol << "/" << irow
-                  << " qual = " << static_cast<unsigned int>(iqual)
-                  << endl;
+                    << " qual = " << static_cast<unsigned int>(iqual)
+                    << endl;
     }
     mdet.insert(make_pair(i, vchip));
   }
-
+  
   return ONS.str();
 }
 
@@ -250,10 +250,10 @@ void dumpBlob(string filename, int nchip, int nnoisy) {
   if (1) {
     ONS << dumpArray(uint2Blob(header));
   }
-
+  
   if (1) cout << " nchip = " << nchip
-              << " nnoisy = " << nnoisy
-              << endl;
+                << " nnoisy = " << nnoisy
+                << endl;
   for (int i = 0; i < nchip; ++i) {
     int nnoisypix(nnoisy);
     ONS << dumpArray(uint2Blob(i))
@@ -266,11 +266,11 @@ void dumpBlob(string filename, int nchip, int nnoisy) {
           << dumpArray(int2Blob(irow))
           << dumpArray(uint2Blob(static_cast<unsigned int>(iqual)));
       if (0) cout << "icol/irow = " << icol << "/" << irow
-                  << " qual = " << static_cast<unsigned int>(iqual)
-                  << endl;
+                    << " qual = " << static_cast<unsigned int>(iqual)
+                    << endl;
     }
   }
-
+  
   ONS.close();
 }
 
@@ -278,7 +278,7 @@ void dumpBlob(string filename, int nchip, int nnoisy) {
 // ----------------------------------------------------------------------
 void createPayload(string hash, calAbs *a, int nchips, int nnoisy) {
   string tmpfilename("bla");
-
+  
   if (0) {
     dumpBlob(tmpfilename, nchips, nnoisy);
   } else {
@@ -287,18 +287,18 @@ void createPayload(string hash, calAbs *a, int nchips, int nnoisy) {
     ONS.open(tmpfilename);
     ONS << blobs;
     ONS.close();
-
+    
     map<unsigned int, vector<double> > mdet = a->decodeBLOB(blobs);
     string sdet = a->makeBLOB(mdet);
     cout << " a->makeBLOB(mdet): " << endl;
   }
-
+  
   std::ifstream file;
   file.open(tmpfilename);
   vector<char> buffer(std::istreambuf_iterator<char>(file), {});
   string sblob("");
   for (unsigned int i = 0; i < buffer.size(); ++i) sblob.push_back(buffer[i]);
-
+  
   payload pl;
   pl.fHash = hash;
   pl.fComment = "testing";
@@ -312,9 +312,9 @@ void createRandomHits(map<unsigned int, vector<pixhit> > &dethits, int nrecchips
 
   dethits.clear();
   if (1) cout << " nrecchips = " << nrecchips
-              << " nrechits = " << nrechits
-              << endl;
-
+                << " nrechits = " << nrechits
+                << endl;
+                
   pixhit a;
   for (int ic = 0; ic < nrecchips; ++ic) {
     vector<pixhit> v;

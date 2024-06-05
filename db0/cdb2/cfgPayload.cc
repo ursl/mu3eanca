@@ -10,9 +10,9 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 cfgPayload::cfgPayload() : fHash("cfg_X_gt"),
-                           fDate("insertion date"),
-                           fCfgString(std::string("empty configuration string")),
-                           fError("unset") {
+  fDate("insertion date"),
+  fCfgString(std::string("empty configuration string")),
+  fError("unset") {
 };
 
 
@@ -60,9 +60,9 @@ void cfgPayload::readFromFile(string hash, string dir) {
   std::stringstream sspl;
   sspl << "(cdbJSON>  config for hash = " << hash
        << " not found)";
-
+       
   fCfgString = sspl.str();
-
+  
   // -- read config
   ifstream INS;
   string filename = dir + "/" + hash;
@@ -72,14 +72,14 @@ void cfgPayload::readFromFile(string hash, string dir) {
     fError = "Error: file not found";
     return;
   }
-
+  
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
-
+  
   string jstring = buffer.str();
   fHash      = jsonGetString(jstring, "cfgHash");
   fDate      = jsonGetString(jstring, "cfgDate");
   fCfgString = jsonGetCfgStringEsc(jstring, "cfgString");
-
+  
 }

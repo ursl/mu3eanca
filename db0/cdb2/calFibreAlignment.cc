@@ -35,7 +35,7 @@ bool calFibreAlignment::getNextID(uint32_t &ID) {
 // ----------------------------------------------------------------------
 calFibreAlignment::calFibreAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
   if (0) 	cout << "calFibreAlignment created and registered with tag ->" << fTag << "<-"
-               << endl;
+                 << endl;
 }
 
 
@@ -51,13 +51,13 @@ void calFibreAlignment::calculate(string hash) {
        << "fHash ->" << hash << "<- ";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
-
+  
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << " header: " << hex << header << dec;
-
+  
   int cntPrint(0);
   while (ibuffer != buffer.end()) {
     constants a;
@@ -71,7 +71,7 @@ void calFibreAlignment::calculate(string hash) {
     a.round = static_cast<bool>(blob2UnsignedInt(getData(ibuffer)));
     a.square = static_cast<bool>(blob2UnsignedInt(getData(ibuffer)));
     a.diameter = blob2Double(getData(ibuffer));
-
+    
     fMapConstants.insert(make_pair(a.id, a));
     if (cntPrint < -1) {
       cout << "added fibre ID = " << a.id << " c = " << a.cx << "/" << a.cy << "/" << a.cz << endl;
@@ -79,7 +79,7 @@ void calFibreAlignment::calculate(string hash) {
     }
   }
   cout << " inserted " << fMapConstants.size() << " constants" << endl;
-
+  
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
@@ -90,11 +90,11 @@ void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calFibreAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-
+  
   int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
@@ -121,10 +121,10 @@ void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calFibreAlignment::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-
+  
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calFibreAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
@@ -144,14 +144,18 @@ map<unsigned int, vector<double> > calFibreAlignment::decodeBLOB(string spl) {
     a.round = blob2Double(getData(ibuffer));
     a.square = blob2Double(getData(ibuffer));
     a.diameter = blob2Double(getData(ibuffer));
-    vdet.push_back(a.cx);        vdet.push_back(a.cy);     vdet.push_back(a.cz);
-    vdet.push_back(a.fx);        vdet.push_back(a.fy);     vdet.push_back(a.fz);
+    vdet.push_back(a.cx);
+    vdet.push_back(a.cy);
+    vdet.push_back(a.cz);
+    vdet.push_back(a.fx);
+    vdet.push_back(a.fy);
+    vdet.push_back(a.fz);
     vdet.push_back(static_cast<double>(a.round));
     vdet.push_back(static_cast<double>(a.square));
     vdet.push_back(a.diameter);
     vmap.insert(make_pair(chipID, vdet));
   }
-
+  
   return vmap;
 }
 
@@ -161,7 +165,7 @@ string calFibreAlignment::makeBLOB() {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-
+  
   for (auto it: fMapConstants) {
     s << dumpArray(uint2Blob(it.first));
     constants a = it.second;
@@ -187,7 +191,7 @@ string calFibreAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-
+  
   // -- format of m
   // chipID => cx,cy,cz,fx,fy,fz,round,square,diameter
   for (auto it: m) {
@@ -216,17 +220,17 @@ string calFibreAlignment::readCsv(string filename) {
   if (!INS.is_open()) {
     return string("calFibreAlignment::readCsv> Error, file " + filename + " not found");
   }
-
+  
   string sline;
   while (getline(INS, sline)) {
     spl += sline;
     spl += ",";
   }
   INS.close();
-
+  
   spl.pop_back();
   vector<string> tokens = split(spl, ',');
-
+  
   for (unsigned int it = 0; it < tokens.size(); it += 10) {
     constants a;
     int idx = it;
@@ -234,21 +238,21 @@ string calFibreAlignment::readCsv(string filename) {
     a.cx = ::stod(tokens[idx++]);
     a.cy = ::stod(tokens[idx++]);
     a.cz = ::stod(tokens[idx++]);
-
+    
     a.fx = ::stod(tokens[idx++]);
     a.fy = ::stod(tokens[idx++]);
     a.fz = ::stod(tokens[idx++]);
-
+    
     a.round    = static_cast<bool>(::stoi(tokens[idx++]));
     a.square   = static_cast<bool>(::stoi(tokens[idx++]));
     a.diameter = ::stod(tokens[idx++]);
-
+    
     fMapConstants.insert(make_pair(a.id, a));
-
+    
   }
-
+  
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
-
+  
   return spl;
 }

@@ -35,7 +35,7 @@ bool calTileAlignment::getNextID(uint32_t &ID) {
 // ----------------------------------------------------------------------
 calTileAlignment::calTileAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
   if (0) 	cout << "calTileAlignment created and registered with tag ->" << fTag << "<-"
-               << endl;
+                 << endl;
 }
 
 
@@ -51,13 +51,13 @@ void calTileAlignment::calculate(string hash) {
        << "fHash ->" << hash << "<- ";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
-
+  
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "header: " << hex << header << dec;
-
+  
   int cntPrint(0);
   while (ibuffer != buffer.end()) {
     constants a;
@@ -69,7 +69,7 @@ void calTileAlignment::calculate(string hash) {
     a.dirx = blob2Double(getData(ibuffer));
     a.diry = blob2Double(getData(ibuffer));
     a.dirz = blob2Double(getData(ibuffer));
-
+    
     fMapConstants.insert(make_pair(a.id, a));
     if (cntPrint < -1) {
       cout << "added tile ID = " << a.id << " pos = " << a.posx << "/" << a.posy << "/" << a.posz << endl;
@@ -77,7 +77,7 @@ void calTileAlignment::calculate(string hash) {
     }
   }
   cout << " inserted " << fMapConstants.size() << " constants" << endl;
-
+  
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
@@ -88,11 +88,11 @@ void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calTileAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-
+  
   int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
@@ -115,10 +115,10 @@ void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calTileAlignment::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-
+  
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calTileAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
@@ -137,11 +137,15 @@ map<unsigned int, vector<double> > calTileAlignment::decodeBLOB(string spl) {
     a.diry = blob2Double(getData(ibuffer));
     a.dirz = blob2Double(getData(ibuffer));
     vdet.push_back(static_cast<double>(sensor));
-    vdet.push_back(a.posx);      vdet.push_back(a.posy);   vdet.push_back(a.posz);
-    vdet.push_back(a.dirx);      vdet.push_back(a.diry);   vdet.push_back(a.dirz);
+    vdet.push_back(a.posx);
+    vdet.push_back(a.posy);
+    vdet.push_back(a.posz);
+    vdet.push_back(a.dirx);
+    vdet.push_back(a.diry);
+    vdet.push_back(a.dirz);
     vmap.insert(make_pair(id, vdet));
   }
-
+  
   return vmap;
 }
 
@@ -151,17 +155,17 @@ string calTileAlignment::makeBLOB() {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-
+  
   for (auto it: fMapConstants) {
     // id => sensor,posx,posy,posz,dirx,diry,dirz
     s << dumpArray(uint2Blob(it.first));
     constants a = it.second;
     s << dumpArray(int2Blob(a.sensor));
-
+    
     s << dumpArray(double2Blob(a.posx));
     s << dumpArray(double2Blob(a.posy));
     s << dumpArray(double2Blob(a.posz));
-
+    
     s << dumpArray(double2Blob(a.dirx));
     s << dumpArray(double2Blob(a.diry));
     s << dumpArray(double2Blob(a.dirz));
@@ -175,7 +179,7 @@ string calTileAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-
+  
   // -- format of m
   // id => sensor,posx,posy,posz,dirx,diry,dirz
   for (auto it: m) {
@@ -202,17 +206,17 @@ string calTileAlignment::readCsv(string filename) {
   if (!INS.is_open()) {
     return string("calTileAlignment::readCsv> Error, file " + filename + " not found");
   }
-
+  
   string sline;
   while (getline(INS, sline)) {
     spl += sline;
     spl += ",";
   }
   INS.close();
-
+  
   spl.pop_back();
   vector<string> tokens = split(spl, ',');
-
+  
   for (unsigned int it = 0; it < tokens.size(); it += 8) {
     constants a;
     int idx = it;
@@ -224,13 +228,13 @@ string calTileAlignment::readCsv(string filename) {
     a.dirx   = ::stod(tokens[idx++]);
     a.diry   = ::stod(tokens[idx++]);
     a.dirz   = ::stod(tokens[idx++]);
-
+    
     fMapConstants.insert(make_pair(a.id, a));
-
+    
   }
-
+  
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
-
+  
   return spl;
 }

@@ -30,8 +30,8 @@ bool calPixelQualityV::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calPixelQualityV::calPixelQualityV(cdbAbs *db, string tag) : calAbs(db, tag) {
-	cout << "calPixelQualityV created and registered with tag ->" << fTag << "<-"
-			 << endl;
+  cout << "calPixelQualityV created and registered with tag ->" << fTag << "<-"
+       << endl;
 }
 
 
@@ -50,13 +50,13 @@ void calPixelQualityV::calculate(string hash) {
        << endl;
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
-
+  
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelQualityV header: " << hex << header << dec << endl;
-
+  
   int npix(0);
   while (ibuffer != buffer.end()) {
     constants a;
@@ -64,7 +64,7 @@ void calPixelQualityV::calculate(string hash) {
     // -- get number of pixel entries
     npix = blob2Int(getData(ibuffer));
     a.vpixel.reserve(npix);
-
+    
     for (int i = 0; i < npix; ++i) {
       pixel px;
       px.icol            = blob2Int(getData(ibuffer));
@@ -76,7 +76,7 @@ void calPixelQualityV::calculate(string hash) {
     // cout << "inserting " << a.id << " with size = " << sizeof(a) << endl;
     fMapConstants.insert(make_pair(a.id, a));
   }
-
+  
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
@@ -102,11 +102,11 @@ void calPixelQualityV::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelQualityV::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-
+  
   while (ibuffer != buffer.end()) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
@@ -126,10 +126,10 @@ void calPixelQualityV::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calPixelQualityV::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-
+  
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-
+  
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calPixelQuality::decodeBLOB> header is wrong. Something is really messed up!" << endl;
@@ -150,7 +150,7 @@ map<unsigned int, vector<double> > calPixelQualityV::decodeBLOB(string spl) {
     }
     vmap.insert(make_pair(chipID, vdet));
   }
-
+  
   return vmap;
 }
 
@@ -160,7 +160,7 @@ string calPixelQualityV::makeBLOB(map<unsigned int, vector<double> > m) {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-
+  
   // -- format of m
   // chipID => [npix, n*(col, row, iqual)]
   for (auto it: m) {
@@ -174,7 +174,7 @@ string calPixelQualityV::makeBLOB(map<unsigned int, vector<double> > m) {
       int irow  = static_cast<int>(it.second[idx]);
       idx       = ipix*3 + 2;
       int iqual = static_cast<int>(it.second[idx]);
-
+      
       s << dumpArray(int2Blob(icol));
       s << dumpArray(int2Blob(irow));
       s << dumpArray(int2Blob(iqual));

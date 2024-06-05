@@ -9,7 +9,7 @@ public:
   void print(bool prtAll = true);
   std::string printString(bool prtAll = true);
   std::string json();
-
+  
   std::string fHash;
   std::string fComment, fSchema;
   std::string fDate;

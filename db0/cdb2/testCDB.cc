@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
   int mode(0), run(3), verbose(0);
   string db("json"), gt("mcidealv5.0");
   string scals, sconfigs;
-  for (int i = 0; i < argc; i++){
+  for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-cal")) {scals = string(argv[++i]);}
     if (!strcmp(argv[i], "-cfg")) {sconfigs = string(argv[++i]);}
     if (!strcmp(argv[i], "-db"))  {db = string(argv[++i]);}
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-r"))   {run = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-v"))   {verbose = atoi(argv[++i]);}
   }
-
+  
   cdbAbs *pDB(0);
   if (string::npos != db.find("json")) {
     pDB = new cdbJSON(gt, db, verbose);
@@ -80,18 +80,18 @@ int main(int argc, char* argv[]) {
     cout << "ERROR: " << db << " not known." << endl;
     return 0;
   }
-
-
+  
+  
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
   pDC->setRunNumber(run);
-
+  
   if (0 == mode) {
     cout << "----------------------------------------------------------------------" << endl;
-
+    
     calAbs *cal0 = pDC->createClass("pixelalignment_");
     if (verbose > 0) cal0->setVerbosity(verbose);
-
+    
     cout << "set run number to " << pDC->getRunNumber() << endl;
     printStuff(pDB, gt);
     cout << "----------------------------------------------------------------------" << endl;
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
     calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(cal);
     cout << "==> default calPixelAlignment: " << endl;
     cpa->printBLOB(cal->makeBLOB(), 4);
-
+    
     // -- create special pixelalignment for test purposes
     cout << "==> now setup new calPixelAlignment: " << endl;
     calPixelAlignment *cpa2 = new calPixelAlignment();
@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
     calPixelAlignment* cpaNew = dynamic_cast<calPixelAlignment*>(calNew);
     cout << " new calPixelAlignment: " << endl;
     cpaNew->printBLOB(calNew->makeBLOB(), 4);
-
+    
     // -- register it as the OLD one with pDC
     pDC->registerCalibration("pixelalignment_mcidealv5.0", cpa3);
     calAbs *calNewAsOld = pDC->getCalibration("pixelalignment_");
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
     cpa->printBLOB(cpa->makeBLOB(), 4);
     calMppcAlignment* cma = dynamic_cast<calMppcAlignment*>(pDC->getCalibration("mppcalignment_"));
     cma->printBLOB(cma->makeBLOB(), 4);
-
+    
   } else if (6 == mode) {
     cout << "Test config payloads from different origins with command line options passed into vector" << endl;
     Mu3eConditions *pDC = Mu3eConditions::instance();
@@ -199,7 +199,7 @@ int main(int argc, char* argv[]) {
     cout << "conf trirec: " << endl;
     cout << pDC->getConfString("trirec") << endl;
     cout << pDC->getConfString("vertex") << endl;
-
+    
   } else if (7 == mode) {
     string jsonFileName = string(LOCALDIR) + string("/ascii/detector.json");
     cout << "Test reading from " << jsonFileName << endl;
@@ -228,10 +228,10 @@ void printStuff(cdbAbs *db, string gt) {
       }
     }
   }
-
+  
   payload pl = db->getPayload("tag_pixelalignment_" + gt + "_iov_1");
   cout << "printStuff> pixel payload: " << pl.printString(false) << endl;
-
+  
   runRecord rr = db->getRunRecord(4001);
   rr.print();
 }
@@ -243,10 +243,10 @@ void aFewRuns(cdbAbs *db, string gt, calAbs *cal) {
   cout << "DB " << pDC->getGlobalTag() << endl;
   vector<int> vruns{23,24,157,201,202};
   pDC->printCalibrations();
-
+  
   calAbs *cl = pDC->getCalibration("pixelalignment_");
   std::cout << "cl = " << cl << std::endl;
-
+  
   //  calPixelAlignment *al = dynamic_cast<calPixelAlignment*>(cal);
   for (auto it: vruns) {
     pDC->setRunNumber(it);
@@ -278,7 +278,7 @@ void printAll(cdbAbs *db) {
       }
     }
   }
-
+  
   cout << "Test run record" << endl;
   Mu3eConditions *pDC = Mu3eConditions::instance();
   runRecord rr = pDC->getRunRecord(12);
@@ -286,6 +286,6 @@ void printAll(cdbAbs *db) {
   cout << "----------------------------------------------------------------------" << endl;
   cout << rr.json() << endl;
   cout << "----------------------------------------------------------------------" << endl;
-
+  
   return;
 }
