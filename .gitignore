@@ -1,5 +1,7 @@
 *~
 *.orig
+.DS_Store
+*.txt
 *.pdf
 *.root
 #util
