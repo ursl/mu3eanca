@@ -4,6 +4,7 @@
 #include "calFibreAlignment.hh"
 #include "calMppcAlignment.hh"
 #include "calTileAlignment.hh"
+#include "calDetConfV1.hh"
 
 #include <algorithm>
 #include <chrono>
@@ -28,7 +29,7 @@ Mu3eCalFactory::Mu3eCalFactory(std::string gt, cdbAbs *db) : fGT(gt), fDB(db) {
   if (fDB) {
     fTags       = fDB->readTags(fGT);
   }
-  
+
 }
 
 
@@ -49,12 +50,12 @@ calAbs* Mu3eCalFactory::createClass(string name) {
       break;
     }
   }
-  
+
   if (string::npos != tag.find("nada")) {
     if (fVerbose > 0) cout << "Mu3eCalFactory::createClass> ERROR did not find tag containing " << name << endl;
     return 0;
   }
-  
+
   return createClassWithDB(name, tag, fDB);
 }
 
@@ -77,19 +78,21 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
     a = new calMppcAlignment(db, tag);
   } else if (!name.compare("tilealignment_"))  {
     a = new calTileAlignment(db, tag);
+  } else if (!name.compare("detconfv1_"))  {
+    a = new calDetConfV1(db, tag);
   } else {
     cout << "ERROR: " << name
          << " is an unknown class. Nothing registered in Mu3Conditions"
          << endl;
     return 0;
   }
-  
+
   if (fVerbose > 0) cout << "Mu3eCalFactory::createClassWithDB("
                            << name << ", " << db->getName()
                            << ", " << tag << ")"
                            << ", " << db->getName() << ") " << (a? " success" : "failure")
                            << endl;
-                           
+
   return a;
 }
 
@@ -105,24 +108,26 @@ calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
     a = new calMppcAlignment();
   } else if (!hash.compare("tilealignment_"))  {
     a = new calTileAlignment();
+  } else if (!hash.compare("detconfv1_"))  {
+    a = new calDetConfV1();
   } else {
     cout << "ERROR: " << hash
          << " indicates an unknown class. Nothing known in Mu3CalFactory"
          << endl;
     return 0;
   }
-  
+
   a->readPayloadFromFile(hash, dir);
   if (a->getError() == "Error: file not found") {
     cout << "file ->" << dir << "/" << hash << "<- not found" << endl;
     return 0;
   }
   a->calculate(hash);
-  
+
   if (fVerbose > 0) cout << "Mu3eCalFactory::createClassFromFile("
                            << hash  << ", " << dir << ")"
                            << ") " << (a? " success" : "failure")
                            << endl;
-                           
+
   return a;
 }
