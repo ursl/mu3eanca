@@ -226,7 +226,7 @@ payload cdbJSON::getPayload(string hash) {
   string jstring = buffer.str();
   pl.fHash       = jsonGetString(jstring, "hash");
   pl.fComment    = jsonGetString(jstring, "comment");
-  pl.fSchema     = jsonGetString(fCurlReadBuffer, "schema");
+  pl.fSchema     = jsonGetString(jstring, "schema");
   pl.fBLOB       = base64_decode(jsonGetString(jstring, "BLOB"));
 
   return pl;
