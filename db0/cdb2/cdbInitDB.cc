@@ -66,11 +66,19 @@ int main(int argc, char* argv[]) {
   // -- command line arguments
   string jsondir("");
   string mode("mcideal");
-  int verbose(0);
+  int verbose(0), banner(0);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-j"))  {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))  {mode    = argv[++i];}
     if (!strcmp(argv[i], "-v"))  {verbose = 1;}
+    if (!strcmp(argv[i], "-b"))  {banner = 1;}
+  }
+  
+  if (banner > 0) {
+    cout << "===============" << endl;
+    cout << "== cdbInitDB ==" << endl;
+    cout << "===============" << endl;
+    cout << "== installing in directory " << jsondir << endl;
   }
   
   // -- handle meta-mode
