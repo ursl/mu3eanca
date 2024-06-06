@@ -242,15 +242,16 @@ string jsonGetString(string& jstring, string key) {
   string::size_type s0 = jstring.find(key);
   s0 = jstring.find(":", s0+key.length());
   s0 = jstring.find("\"", s0+1);
-  string::size_type s1 = jstring.find(",", s0);
-  string::size_type s2 = jstring.find("}", s0);
-  if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << " s2: " << s2 << endl;
+  string::size_type s1 = jstring.find("\"", s0+1);
   string result("");
-  if ((string::npos != s1) && (s1 < s2)) {
+  
+  if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << endl;
+  if (string::npos != s1) {
     result = jstring.substr(s0, s1-s0);
   } else {
-    result = jstring.substr(s0, s2-s0);
+    result = "parse error";
   }
+  
   if (DBX) cout << "result ->" << result << "<-" << endl;
   ltrim(result);
   rtrim(result);
@@ -268,7 +269,6 @@ string jsonGetString(string& jstring, vector<string> keys) {
     for (auto it: keys) cout << it << ",";
     cout << endl;
   }
-  bool found(false);
   string::size_type s0(0);
   for (unsigned int i = 0; i < keys.size(); ++i) {
     string key = string("\"") + keys[i] + string("\"");
@@ -277,14 +277,13 @@ string jsonGetString(string& jstring, vector<string> keys) {
     s0 = jstring.find(":", s0+key.length());
   }
   s0 = jstring.find("\"", s0+1);
-  string::size_type s1 = jstring.find(",", s0);
-  string::size_type s2 = jstring.find("}", s0);
-  if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << " s2: " << s2 << endl;
+  string::size_type s1 = jstring.find("\"", s0+1);
+  if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << endl;
   string result("");
-  if ((string::npos != s1) && (s1 < s2)) {
+  if (string::npos != s1) {
     result = jstring.substr(s0, s1-s0);
   } else {
-    result = jstring.substr(s0, s2-s0);
+    result = "parse error";
   }
   if (DBX) cout << "result ->" << result << "<-" << endl;
   ltrim(result);
@@ -303,7 +302,6 @@ string jsonGetValue(string& jstring, vector<string> keys) {
     for (auto it: keys) cout << it << ",";
     cout << endl;
   }
-  bool found(false);
   string::size_type s0(0);
   for (unsigned int i = 0; i < keys.size(); ++i) {
     string key = string("\"") + keys[i] + string("\"");

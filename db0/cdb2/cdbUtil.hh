@@ -27,9 +27,9 @@ std::string timeStamp(int format = 0);
 // ======================================================================
 std::string jsFormat(std::vector<std::string>);
 std::string jsFormat(std::vector<int>);
-// -- get value index by a single key
+// -- get string (enclosed by double quotation marks) indexed by a single key
 std::string jsonGetString(std::string& jstring, std::string key);
-// -- get value index by a vector of keys (e.g. "magnet,field,strength")
+// -- get string (enclosed by double quotation marks) indexed by a vector of keys
 std::string jsonGetString(std::string& jstring, std::vector<std::string> keys);
 // -- this is for the runlog where the values are not string, but directly numbers
 std::string jsonGetValue(std::string& jstring, std::string key);
