@@ -80,6 +80,7 @@ void calPixelAlignment::calculate(string hash) {
     
     fMapConstants.insert(make_pair(a.id, a));
   }
+  cout << " inserted " << fMapConstants.size() << " constants" << endl;
   
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
