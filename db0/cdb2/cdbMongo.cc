@@ -50,7 +50,7 @@ void cdbMongo::init() {
   mongocxx::uri uri(fURI);
   fConn = mongocxx::client(uri);
   fDB = fConn["mu3e"];
-  
+
   // -- list all collections
   if (fVerbose > 4) {
     cout << "list all collections " << endl;
@@ -61,7 +61,7 @@ void cdbMongo::init() {
       cout << " " << name << endl;
     }
   }
-  
+
   cdbAbs::init();
 }
 
@@ -128,12 +128,12 @@ map<string, vector<int>> cdbMongo::readIOVs(vector<string> tags) {
     }
     m.insert(make_pair(tname, viov));
   }
-  
+
   if (fVerbose > 1) {
     cout << "cdbMongo::readIOVs>" << endl;
     print(m);
   }
-  
+
   return m;
 }
 
@@ -146,11 +146,11 @@ runRecord cdbMongo::getRunRecord(int irun) {
        << " not found)";
   runRecord rr;
   rr.fEORComments = sspl.str();
-  
+
   auto cursor_filtered =  fDB["runrecords"].find(make_document(kvp("BOR.Run number", irun)));
   for (auto doc : cursor_filtered) {
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
-    
+
     auto bor = doc["BOR"];
     rr.fBORRunNumber     = bor["Run number"].get_int32().value;
     rr.fBORStartTime     = bor["Start time"].get_string().value.to_string();
@@ -161,7 +161,7 @@ runRecord cdbMongo::getRunRecord(int irun) {
       rr.fBORBeam          = static_cast<double>(bor["Beam"].get_int32().value);
     }
     rr.fBORShiftCrew     = bor["Shift crew"].get_string().value.to_string();
-    
+
     auto eor = doc["EOR"];
     rr.fEORStopTime      = eor["Stop time"].get_string().value.to_string();
     if (eor["Events"].type() == bsoncxx::type::k_double) {
@@ -173,7 +173,7 @@ runRecord cdbMongo::getRunRecord(int irun) {
     rr.fEORDataSize      = eor["Uncompressed data size"].get_double().value;
     rr.fEORComments      = eor["Comments"].get_string().value.to_string();
   }
-  
+
   return rr;
 }
 
@@ -187,15 +187,16 @@ payload cdbMongo::getPayload(string hash) {
        << " not found)";
   payload pl;
   pl.fComment = sspl.str();
-  
+
   auto cursor_filtered =  fDB["payloads"].find(make_document(kvp("hash", hash)));
   for (auto doc : cursor_filtered) {
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
     pl.fComment = doc["comment"].get_string().value.to_string();
+    pl.fSchema  = doc["schema"].get_string().value.to_string();
     pl.fHash    = doc["hash"].get_string().value.to_string();
     pl.fBLOB    = base64_decode(doc["BLOB"].get_string().value.to_string());
   }
-  
+
   return pl;
 }
 
@@ -204,13 +205,13 @@ payload cdbMongo::getPayload(string hash) {
 cfgPayload cdbMongo::getConfig(string hash) {
 
   cfgPayload cfg;
-  
+
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(cdbMongo>  hash = " << hash
        << " not found)";
   cfg.fCfgString = sspl.str();
-  
+
   auto cursor_filtered =  fDB["configs"].find(make_document(kvp("cfgHash", hash)));
   for (auto doc : cursor_filtered) {
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
