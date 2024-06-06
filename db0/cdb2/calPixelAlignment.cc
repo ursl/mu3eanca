@@ -57,7 +57,7 @@ void calPixelAlignment::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "header: " << hex << header << dec << endl;
+  cout << "header: " << hex << header << dec;
   
   while (ibuffer != buffer.end()) {
     constants a;
