@@ -24,7 +24,7 @@ Mu3eConditions* Mu3eConditions::instance(std::string gt, cdbAbs *db) {
   if (0 == fInstance) {
     fInstance = new Mu3eConditions(gt, db);
   }
-
+  
   if (gt != "unset" && gt != fInstance->fGT) {
     cout << "Mu3eConditions::instance(" << gt<< ", " << (db? db->getName(): "no DB")
          << ") called with global tag different from the initial one."
@@ -50,7 +50,7 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
   cout << "Mu3eConditions::Mu3eConditions(" << fGT
        << ", " << (fDB? fDB->getName(): "no DB")
        << ")" << endl;
-
+       
   if (fDB) {
     fGlobalTags = fDB->readGlobalTags();
     fTags       = fDB->readTags(fGT);
@@ -59,7 +59,7 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
     // -- safe guard to keep Mu3eConditions::setRunNumber free of DB checks in mu3e code
     return;
   }
-
+  
   // -- setup basic classes
   int verbose(0);
   calAbs *cal = createClass("pixelalignment_");
@@ -92,12 +92,12 @@ calAbs* Mu3eConditions::createClass(string name) {
       break;
     }
   }
-
+  
   if (string::npos != tag.find("nada")) {
     cout << "Mu3eConditions::createClass> ERROR did not find tag containing " << name << endl;
     return 0;
   }
-
+  
   return createClassWithDB(name, tag, fDB);
 }
 
@@ -112,17 +112,17 @@ calAbs* Mu3eConditions::createClass(string name, string tag) {
 calAbs* Mu3eConditions::createClassWithDB(string name, string tag, cdbAbs *db) {
   calAbs* a(0);
   //dbx  auto tbegin = std::chrono::high_resolution_clock::now();
-
+  
   Mu3eCalFactory *mcf = Mu3eCalFactory::instance(fGT, db);
   mcf->setVerbosity(fVerbose);
-
+  
   a = mcf->createClassWithDB(name, tag, db);
-
+  
   //dbx  auto tend = std::chrono::high_resolution_clock::now();
   //dbx  if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
   //dbx                         << "us ::timing::" << tag << " ctor"
   //dbx                         << endl;
-
+  
   if (fPrintTiming) a->setPrintTiming(fPrintTiming);
   //dbx  tbegin = chrono::high_resolution_clock::now();
   a->setIOVs(getIOVs(tag));
@@ -157,13 +157,13 @@ void Mu3eConditions::setRunNumber(int runnumber) {
                              << fRunNumber
                              << " fCalibrations.size() = " << fCalibrations.size()
                              << endl;
-
+                             
   // -- safe guard to keep Mu3eConditions::setRunNumber free of DB checks in mu3e code
   if (!fDB) return;
-
+  
   //dbx  auto tbegin = chrono::high_resolution_clock::now();
   //dbx auto tend = chrono::high_resolution_clock::now();
-
+  
   if (runnumber != fRunNumber) {
     fRunNumber = runnumber;
     // -- call update for all registered calibrations
@@ -281,7 +281,7 @@ string Mu3eConditions::getConfString(string cfgName) {
 // ----------------------------------------------------------------------
 string Mu3eConditions::getConfStringWithHash(string hash) {
   if (fVerbose > 2) cout << "Mu3eConditions::getConfStringWithHash(" << hash << ") " << endl;
-
+  
   if (fConfigs.find(hash) == fConfigs.end()) {
     if (fVerbose > 2) cout << "Mu3eConditions::getConfString(" << hash
                              << ") not cached, retrieve from DB"
@@ -293,7 +293,7 @@ string Mu3eConditions::getConfStringWithHash(string hash) {
                              << ") cached."
                              << endl;
   }
-
+  
   map<string, cfgPayload>::iterator it = fConfigs.find(hash);
   return it->second.fCfgString;
 }
@@ -302,19 +302,19 @@ string Mu3eConditions::getConfStringWithHash(string hash) {
 // ----------------------------------------------------------------------
 void Mu3eConditions::localCalPayloads(string scals) {
   Mu3eCalFactory *mcf = Mu3eCalFactory::instance(fGT, 0);
-
+  
   vector<string> cals;
   split(scals, ':', cals);
   for (auto it: cals) {
     string dir  = it.substr(0, it.rfind("/"));
     string hash = it.substr(it.rfind("/")+1);
     cout << "dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
-
+    
     calAbs *a = mcf->createClassFromFile(hash, dir);
     string tagName = hash.substr(0, hash.find("_"));
     registerCalibration(tagName, a);
   }
-
+  
 }
 
 
@@ -326,7 +326,7 @@ void Mu3eConditions::localCfgPayloads(string scfgs) {
     string dir  = it.substr(0, it.rfind("/"));
     string hash = it.substr(it.rfind("/")+1);
     cout << "Mu3eConditions::localCfgPayloads> dir ->" << dir << "<-,  hash ->"<< hash << "<-" << endl;
-
+    
     cfgPayload cfg;
     cfg.readFromFile(hash, dir);
     if (cfg.fError == "Error: file not found") {
@@ -338,5 +338,5 @@ void Mu3eConditions::localCfgPayloads(string scfgs) {
     cname = cname.substr(0, cname.find("_"));
     registerConf(cname, cfg);
   }
-
+  
 }
