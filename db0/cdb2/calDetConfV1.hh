@@ -18,16 +18,16 @@ public:
   ~calDetConfV1();
   
   // -- direct accessors
-  int targetShape() {return 0;}
-  double targetThickness1() {return 0;}
-  double targetThickness2() {return 0;}
-  double targetLength() {return 0;}
-  double targetRadius() {return 0;}
-  double targetOffsetX() {return 0;}
-  double targetOffsetY() {return 0;}
-  double targetOffsetZ() {return 0;}
+  int targetShape() {return fConstants.target.shape;}
+  double targetThickness1() {return fConstants.target.thickness1;}
+  double targetThickness2() {return fConstants.target.thickness2;}
+  double targetLength() {return fConstants.target.length;}
+  double targetRadius() {return fConstants.target.radius;}
+  double targetOffsetX() {return fConstants.target.offsetX;}
+  double targetOffsetY() {return fConstants.target.offsetY;}
+  double targetOffsetZ() {return fConstants.target.offsetZ;}
   
-  double magnetFieldStrength() {return 0;}
+  double magnetFieldStrength() {return fConstants.magnet.fieldStrength;}
   
   std::string getName() override {return fDetConfTag;}
   void        calculate(std::string hash) override;
