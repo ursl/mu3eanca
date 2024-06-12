@@ -28,20 +28,20 @@ std::string timeStamp(int format = 0);
 std::string jsFormat(std::vector<std::string>);
 std::string jsFormat(std::vector<int>);
 // -- get string (enclosed by double quotation marks) indexed by a single key
-std::string jsonGetString(std::string& jstring, std::string key);
+std::string jsonGetString(const std::string& jstring, const std::string& key);
 // -- get string (enclosed by double quotation marks) indexed by a vector of keys
-std::string jsonGetString(std::string& jstring, std::vector<std::string> keys);
+std::string jsonGetString(const std::string& jstring, const std::vector<std::string>& keys);
 // -- this is for the runlog where the values are not string, but directly numbers
-std::string jsonGetValue(std::string& jstring, std::string key);
+std::string jsonGetValue(const std::string& jstring, const std::string& key);
 // -- this is for the run/detector.json, where the values are not strings, but directly numbers
-std::string jsonGetValue(std::string& jstring, std::vector<std::string> keys);
+std::string jsonGetValue(const std::string& jstring, const std::vector<std::string>& keys);
 // -- normal base64 encoded (from rest/mongodb API)
-std::string jsonGetCfgString(std::string& jstring, std::string key);
+std::string jsonGetCfgString(const std::string& jstring, const std::string& key);
 // -- escaped " (\") embedded in string (from JSON API)
-std::string jsonGetCfgStringEsc(std::string& jstring, std::string key);
-std::string jsonGetVector(std::string& jstring, std::string key);
-std::vector<std::string> jsonGetValueVector(std::string& jstring, std::string key);
-std::vector<std::string> jsonGetVectorVector(std::string& jstring, std::string key);
+std::string jsonGetCfgStringEsc(const std::string& jstring, const std::string& key);
+std::string jsonGetVector(const std::string& jstring, const std::string& key);
+std::vector<std::string> jsonGetValueVector(const std::string& jstring, const std::string& key);
+std::vector<std::string> jsonGetVectorVector(const std::string& jstring, const std::string& key);
 
 // ======================================================================
 // BLOB utilities

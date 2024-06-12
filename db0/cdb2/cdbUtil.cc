@@ -217,7 +217,7 @@ void /*vector<string>&*/ split(const string &s, char delim, vector<string> &elem
 
 
 // ----------------------------------------------------------------------
-string jsonGetValue(string& jstring, string key) {
+string jsonGetValue(const string& jstring, const string& key) {
   string::size_type s0 = jstring.find(key);
   s0 = jstring.find(":", s0+key.length());
   string::size_type s1 = jstring.find(",", s0);
@@ -236,7 +236,7 @@ string jsonGetValue(string& jstring, string key) {
 
 
 // ----------------------------------------------------------------------
-string jsonGetString(string& jstring, string key) {
+string jsonGetString(const string& jstring, const string& key) {
   const bool DBX(false);
   if (DBX) cout << "jsonGetString key = " << key << endl;
   string::size_type s0 = jstring.find(key);
@@ -244,14 +244,14 @@ string jsonGetString(string& jstring, string key) {
   s0 = jstring.find("\"", s0+1);
   string::size_type s1 = jstring.find("\"", s0+1);
   string result("");
-  
+
   if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << endl;
   if (string::npos != s1) {
     result = jstring.substr(s0, s1-s0);
   } else {
     result = "parse error";
   }
-  
+
   if (DBX) cout << "result ->" << result << "<-" << endl;
   ltrim(result);
   rtrim(result);
@@ -262,7 +262,7 @@ string jsonGetString(string& jstring, string key) {
 
 
 // ----------------------------------------------------------------------
-string jsonGetString(string& jstring, vector<string> keys) {
+string jsonGetString(const string& jstring, const vector<string>& keys) {
   const bool DBX(false);
   if (DBX) {
     cout << "jsonGetString keys = ";
@@ -295,7 +295,7 @@ string jsonGetString(string& jstring, vector<string> keys) {
 
 
 // ----------------------------------------------------------------------
-string jsonGetValue(string& jstring, vector<string> keys) {
+string jsonGetValue(const string& jstring, const vector<string>& keys) {
   const bool DBX(false);
   if (DBX) {
     cout << "jsonGetString keys = ";
@@ -329,13 +329,13 @@ string jsonGetValue(string& jstring, vector<string> keys) {
 
 
 // ----------------------------------------------------------------------
-string jsonGetCfgString(std::string& jstring, std::string key) {
+string jsonGetCfgString(const std::string& jstring, const std::string& key) {
   string::size_type s0 = jstring.find(key);
   s0 = jstring.find(":", s0);
   s0 = jstring.find("\"", s0);
   string result = jstring.substr(s0);
   ltrim(result);
-  
+
   // -- there is another } to trim
   result.pop_back();
   replaceAll(result, "\"", "");
@@ -344,13 +344,13 @@ string jsonGetCfgString(std::string& jstring, std::string key) {
 
 
 // ----------------------------------------------------------------------
-string jsonGetCfgStringEsc(std::string& jstring, std::string key) {
+string jsonGetCfgStringEsc(const std::string& jstring, const std::string& key) {
   string::size_type s0 = jstring.find(key);
   s0 = jstring.find(":", s0);
   s0 = jstring.find("\"", s0);
   string result = jstring.substr(s0);
   ltrim(result);
-  
+
   // -- magic to form the resulting string
   result.pop_back(); // remove an end
   result.erase(0, 1); // remove front char
@@ -363,7 +363,7 @@ string jsonGetCfgStringEsc(std::string& jstring, std::string key) {
 
 
 // ----------------------------------------------------------------------
-vector<string> jsonGetValueVector(string& jstring, string key) {
+vector<string> jsonGetValueVector(const string& jstring, const string& key) {
   vector<string> result;
   string::size_type s0(0);
   while (string::npos != s0) {
@@ -393,7 +393,7 @@ vector<string> jsonGetValueVector(string& jstring, string key) {
 
 
 // ----------------------------------------------------------------------
-string jsonGetVector(string& jstring, string key) {
+string jsonGetVector(const string& jstring, const string& key) {
   string::size_type s0 = jstring.find(key);
   s0 = jstring.find(":", s0);
   string::size_type s1 = jstring.find("[", s0);
@@ -413,7 +413,7 @@ string jsonGetVector(string& jstring, string key) {
 
 
 // ----------------------------------------------------------------------
-vector<string> jsonGetVectorVector(string& jstring, string key) {
+vector<string> jsonGetVectorVector(const string& jstring, const string& key) {
   vector<string> result;
   string::size_type s0(0);
   while (string::npos != s0) {
@@ -443,11 +443,11 @@ vector<string> jsonGetVectorVector(string& jstring, string key) {
 string timeStamp(int format) {
   time_t t;
   time(&t);
-  
+
   // strftime(buffer, sizeof(buffer), "%X", localtime_r(&t, &r));
   struct timeval tv;
   gettimeofday(&tv, 0);
-  
+
   tm *ltm = localtime(&t);
   int year  = 1900 + ltm->tm_year;
   int month = 1 + ltm->tm_mon;

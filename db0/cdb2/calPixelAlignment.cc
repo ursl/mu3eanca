@@ -35,8 +35,8 @@ bool calPixelAlignment::getNextID(uint32_t &ID) {
 // ----------------------------------------------------------------------
 calPixelAlignment::calPixelAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
   if (fVerbose) cout << "calPixelAlignment created and registered with tag ->"
-                       << fTag << "<-"
-                       << endl;
+                     << fTag << "<-"
+                     << endl;
 }
 
 
@@ -52,13 +52,13 @@ void calPixelAlignment::calculate(string hash) {
        << "fHash ->" << hash << "<-";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
+
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "header: " << hex << header << dec;
-  
+
   while (ibuffer != buffer.end()) {
     constants a;
     a.id = blob2UnsignedInt(getData(ibuffer));
@@ -77,11 +77,11 @@ void calPixelAlignment::calculate(string hash) {
     a.length = blob2Double(getData(ibuffer));
     a.thickness = blob2Double(getData(ibuffer));
     a.pixelSize = blob2Double(getData(ibuffer));
-    
+
     fMapConstants.insert(make_pair(a.id, a));
   }
   cout << " inserted " << fMapConstants.size() << " constants" << endl;
-  
+
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
@@ -92,13 +92,13 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
+
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
-  
+
   if (0 == verbosity) return;
-  
+
   int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
@@ -135,10 +135,10 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calPixelAlignment::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
+
   long unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calPixelAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
@@ -181,7 +181,7 @@ map<unsigned int, vector<double> > calPixelAlignment::decodeBLOB(string spl) {
     vdet.push_back(a.pixelSize);
     vmap.insert(make_pair(chipID, vdet));
   }
-  
+
   return vmap;
 }
 
@@ -191,7 +191,7 @@ string calPixelAlignment::makeBLOB() {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-  
+
   for (auto it: fMapConstants) {
     s << dumpArray(uint2Blob(it.first));
     constants a = it.second;
@@ -225,7 +225,7 @@ string calPixelAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-  
+
   // -- format of m
   // chipID => vx,vy,vz,rowx,rowy,rowz,colx,coly,colz,nrow,ncol,width,length,thickness,pixelSize
   for (auto it: m) {
@@ -262,17 +262,17 @@ string calPixelAlignment::readCsv(string filename) {
   if (!INS.is_open()) {
     return string("calPixelAlignment::readCsv> Error, file " + filename + " not found");
   }
-  
+
   string sline;
   while (getline(INS, sline)) {
     spl += sline;
     spl += ",";
   }
   INS.close();
-  
+
   spl.pop_back();
   vector<string> tokens = split(spl, ',');
-  
+
   for (unsigned int it = 0; it < tokens.size(); it += 16) {
     constants a;
     int idx = it;
@@ -280,29 +280,29 @@ string calPixelAlignment::readCsv(string filename) {
     a.vx = ::stod(tokens[idx++]);
     a.vy = ::stod(tokens[idx++]);
     a.vz = ::stod(tokens[idx++]);
-    
+
     a.rowx = ::stod(tokens[idx++]);
     a.rowy = ::stod(tokens[idx++]);
     a.rowz = ::stod(tokens[idx++]);
-    
+
     a.colx = ::stod(tokens[idx++]);
     a.coly = ::stod(tokens[idx++]);
     a.colz = ::stod(tokens[idx++]);
-    
+
     a.nrow = ::stoi(tokens[idx++]);
     a.ncol = ::stoi(tokens[idx++]);
-    
+
     a.width     = ::stod(tokens[idx++]);
     a.length    = ::stod(tokens[idx++]);
     a.thickness = ::stod(tokens[idx++]);
     a.pixelSize = ::stod(tokens[idx++]);
-    
+
     fMapConstants.insert(make_pair(a.id, a));
-    
+
   }
-  
+
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
-  
+
   return spl;
 }
