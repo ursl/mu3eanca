@@ -36,17 +36,19 @@ using namespace std;
 // -j JSONDIR  output directory with subdirectories globaltags, tags, payloads
 // -m MODE     "mcidealv5.1", ...
 //
-// requires ./ascii/*.csv
-// requires run -> mu3e/run (i.e. a symlink pointing to the run directory
-//                           with the config template files)
 //
 // Usage examples
+// --------------
 //
-// merlin> bin/cdbInitDB -j ~/data/mdc2023/json/ -m all
+// -- NOTE: This executable is called during "make install"!
+//          The JSON CDB will be installed in /install/cdb
 //
-// moor>   bin/cdbInitDB -j ~/data/mu3e/json -m cr2022
-// moor>   bin/cdbInitDB -j ~/data/mu3e/json -m mcideal
-// moor>   bin/cdbInitDB -j ~/data/mu3e/json -m dc2023
+// -- create all global tags with everything:
+// merlin> _build/conddb/test/cdbInitDB -j ~/data/mdc2023/json/ -m all
+//
+// moor>   _build/conddb/test/cdbInitDB -j ~/data/mu3e/json -m cr2022
+// moor>   _build/conddb/test/cdbInitDB -j ~/data/mu3e/json -m mcideal
+// moor>   _build/conddb/test/cdbInitDB -j ~/data/mu3e/json -m dc2023
 //
 // ----------------------------------------------------------------------
 
@@ -182,7 +184,7 @@ int main(int argc, char* argv[]) {
       // -- pixelalignment
       if (string::npos != tag.find("pixelalignment_")) {
         calPixelAlignment *cpa = new calPixelAlignment();
-        filename = "./ascii/sensors-" + tagLess + ".csv";
+        filename = string(LOCALDIR) + "/ascii/sensors-" + tagLess + ".csv";
         result = cpa->readCsv(filename);
         if (string::npos == result.find("Error")) {
           spl = cpa->makeBLOB();
@@ -201,7 +203,7 @@ int main(int argc, char* argv[]) {
       // -- fibrealignment
       if (string::npos != tag.find("fibrealignment_")) {
         calFibreAlignment *cfa = new calFibreAlignment();
-        filename = "./ascii/fibres-" + tagLess + ".csv";
+        filename = string(LOCALDIR) + "/ascii/fibres-" + tagLess + ".csv";
         result = cfa->readCsv(filename);
         if (string::npos == result.find("Error")) {
           spl = cfa->makeBLOB();
@@ -220,7 +222,7 @@ int main(int argc, char* argv[]) {
       // -- tilealignment
       if (string::npos != tag.find("tilealignment_")) {
         calTileAlignment *cta = new calTileAlignment();
-        filename = "./ascii/tiles-" + tagLess + ".csv";
+        filename = string(LOCALDIR) + "/ascii/tiles-" + tagLess + ".csv";
         result = cta->readCsv(filename);
         if (string::npos == result.find("Error")) {
           spl = cta->makeBLOB();
@@ -239,7 +241,7 @@ int main(int argc, char* argv[]) {
       // -- mppcalignment
       if (string::npos != tag.find("mppcalignment_")) {
         calMppcAlignment *cma = new calMppcAlignment();
-        filename = "./ascii/mppcs-" + tagLess + ".csv";
+        filename = string(LOCALDIR) + "/ascii/mppcs-" + tagLess + ".csv";
         result = cma->readCsv(filename);
         if (string::npos == result.find("Error")) {
           spl = cma->makeBLOB();
@@ -258,7 +260,7 @@ int main(int argc, char* argv[]) {
       // -- detconfv1
       if (string::npos != tag.find("detconfv1_")) {
         calDetConfV1 *cdc = new calDetConfV1();
-        filename = "./ascii/detector-" + tagLess + ".json";
+        filename = string(LOCALDIR) + "/../run/detector.json";
         result = cdc->readJSON(filename);
         if (string::npos == result.find("Error")) {
           spl = cdc->makeBLOB();
@@ -336,7 +338,7 @@ int main(int argc, char* argv[]) {
   // -- create a runRecord
   filename = "runlog_004001.json";
   ifstream INS;
-  INS.open("./ascii/" + filename);
+  INS.open(string(LOCALDIR) + "/ascii/" + filename);
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
@@ -351,54 +353,6 @@ int main(int argc, char* argv[]) {
   }
   JS << buffer.str();
   JS.close();
-  
-  
-  // -- create configs
-  if (0) {
-    vector<string> conffiles = {
-      "detector.json",
-      "trirec.conf", "vertex.conf"
-    };
-    
-    for (auto igt: iniGlobalTags) {
-      for (auto ic: conffiles) {
-        string cfgname = ic.substr(0, ic.find("."));
-        filename = "run/" + ic;
-        ifstream INS;
-        INS.open(filename);
-        if (INS.fail()) {
-          cout << "Error failed to open ->" << filename << "<-" << endl;
-          continue;
-        }
-        
-        std::stringstream buffer;
-        buffer << INS.rdbuf();
-        INS.close();
-        
-        string sbuffer = buffer.str();
-        
-        jdir = jsondir + "/configs";
-        hash = "cfg_" + cfgname + "_" + igt.first;
-        
-        JS.open(jdir + "/" + hash);
-        if (JS.fail()) {
-          cout << "cdbInitDB> Error failed to open " << jdir << "/" << hash <<  endl;
-        }
-        
-        cfgPayload cfg;
-        cfg.fHash = hash;
-        cfg.fDate = timeStamp();
-        //      cfg.fCfgString = base64_encode(buffer.str());
-        replaceAll(sbuffer, "\"", "\\\"");
-        // replaceAll(sbuffer, "\n", " ");
-        cfg.fCfgString = sbuffer;
-        
-        JS << cfg.getJson();
-        JS.close();
-        
-      }
-    }
-  }
   
   return 0;
 }

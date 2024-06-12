@@ -5,7 +5,7 @@
 
 #include "Mu3eConditions.hh"
 #include "cdbUtil.hh"
-#include "cdbMongo.hh"
+//no #include "cdbMongo.hh"
 #include "cdbJSON.hh"
 #include "cdbRest.hh"
 #include "runRecord.hh"
@@ -27,25 +27,23 @@ void printAll(cdbAbs *);
 //
 // Examples:
 // ---------
-// bin/testCDB -v 1 -gt mcidealv5.1 -db mongo
 //
-// The following two require
-//   pc11740>cd ~/mu3eanca/db1/rest && sudo npm run start
+// The following runs within the PSI network
 //
-// bin/testCDB -v 1 -gt mcidealv5.0 -db rest
-// bin/testCDB -v 1 -gt mcidealv5.1 -db http://pc11740.psi.ch/cdb
+// _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -db rest
+// _build/conddb/test/testCDB -v 1 -gt mcidealv5.1 -db http://pc11740.psi.ch/cdb
 //
-// bin/testCDB -v 1 -gt mcidealv5.0 -db ~/data/mu3e/json10
+// _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -db ~/data/mu3e/json10
 //
 //
 // The following dumps the entire CDB contents
-// bin/testCDB -v 1 -gt mcidealv5.0 -m 1
+// _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -m 1
 //
 // The following dumps a config file
-// bin/testCDB -v 1 -gt mcidealv5.0 -m 2
+// _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -m 2
 //
 // The following dumps a runRecord
-// bin/testCDB -v 1 -gt mcidealv5.0 -m 3
+// _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -m 3
 // ----------------------------------------------------------------------
 
 
@@ -71,7 +69,9 @@ int main(int argc, char* argv[]) {
     pDB = new cdbJSON(gt, db, verbose);
   } else if (string::npos != db.find("mongo")) {
     string ms("mongodb://pc11740.psi.ch:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
-    pDB = new cdbMongo(gt, ms, verbose);
+    //no    pDB = new cdbMongo(gt, ms, verbose);
+    cout << "ERROR: " << db << " not available in this context." << endl;
+    return 0;
   } else if (string::npos != db.find("rest") || string::npos != db.find("http://")) {
     //    string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
     string ms("http://pc11740.psi.ch/cdb");
