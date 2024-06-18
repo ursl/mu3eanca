@@ -19,3 +19,9 @@ Have a file `config/local.json` with
     }
 }
 ```
+
+## Running
+First steps
+```
+node test1.js
+```
