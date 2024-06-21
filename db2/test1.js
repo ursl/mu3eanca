@@ -23,7 +23,9 @@ const alice = nano.db.use('mu3epartdb');
 
 
 //console.log("call listPixelProducts");
-listMyProducts('pix');
+
+const pars = ['pix', 'sci', 'daq'];
+listMyProducts(pars);
 
 
 // ----------------------------------------------------------------------
@@ -60,49 +62,84 @@ async function listProducts() {
 
 // ----------------------------------------------------------------------
 async function listMyProducts(myprod) {
-    var cnt = 0;
     var myprods = [];
     var alltypes = [];
     var alltags = [];
+    var output = "[";
+
     const doclist = await alice.list({include_docs: true}).then((body)=>{
-        // -- find all products containing myprod among the tags
+        // -- find all products containing myprod[i] among the tags
         body.rows.forEach((doc) => {
             if (!alltypes.includes(doc.doc.type)) alltypes.push(doc.doc.type);
-            if ((doc.doc.type == 'product') && doc.doc.tags) {
+            if (typeof doc.doc.type == "undefined") return;
+            if (typeof doc.doc.tags == "undefined") return;
+            if (!doc.doc.type.localeCompare("product")) {
+                var lctags = [];
                 const words = doc.doc.tags.split(',');
                 words.forEach((word) => {
                     word = word.trim();
+                    word = word.toLowerCase();
+                    lctags.push(word);
                     if (!alltags.includes(word)) {
                         alltags.push(word);
                     }
                 });
 
-                if (doc.doc.tags.includes(myprod)) {
-                    myprods.push(doc.doc.pn);
-                    // console.log(JSON.stringify(doc));
-                    cnt++;
+                for (i=0; i < myprod.length; ++i) {
+                    var lcword  = myprod[i].toLowerCase();
+                    for (j = 0; j < lctags.length; ++j) {
+                        var lctag   = lctags[j].toLowerCase();
+                        if (!lctag.indexOf(lcword)) {
+                            myprods.push(doc.doc.pn);
+                        }
+                    }
+                };
+            }
+        })
+
+        if (0) {
+            console.log("myprods = " + myprods);
+            console.log(myprods.length);
+            return;
+        }
+
+        let maxcnt = body.rows.length;
+        // -- now find all items with pn among myprods
+        for (var i = 0; i < maxcnt; i++) {
+            var doc = body.rows[i];
+            if (typeof doc.doc.type == "undefined") continue;
+            if (!doc.doc.type.localeCompare("attitem")) continue;
+            if (!doc.doc.type.localeCompare("productdoc")) continue;
+            if (!doc.doc.type.localeCompare("item")) {
+                if (myprods.includes(doc.doc.pn)) {
+                    output += JSON.stringify(doc) + ", \n";
                 }
             }
-        })
-
-        // console.log("*** found " + cnt + " products");
-        // console.log("*** myprods = " + myprods);
-
-        cnt = 0;
-        // -- now find all items with pn among myprods
-        body.rows.forEach((doc) => {
-            if (doc.doc.type == 'attachment') return;
-            if (doc.doc.type == 'attitem') return;
-            if ((doc.doc.type == 'item') && myprods.includes(doc.doc.pn)) {
-                console.log(JSON.stringify(doc));
-                cnt++;
+            if (!doc.doc.type.localeCompare("lot")) {
+                if (myprods.includes(doc.doc.pn)) {
+                    output += JSON.stringify(doc) + ", \n";
+                }
             }
-        })
+            if (!doc.doc.type.localeCompare("product")) {
+                if (myprods.includes(doc.doc.pn)) {
+                    output += JSON.stringify(doc) + ", \n";
+                }
+            }
+        }
 
-        console.log("*** myprods = " + myprods);
+        // -- remove trailing ,
+        output = output.replace(/,\s*$/, "");
+
+        output += "]";
+
+        console.log(output);
+
+        // console.log("*** myprods = " + myprods);
         // console.log("*** found " + cnt + " items");
         // console.log("*** all types: " + alltypes);
         // console.log("*** all tags: " + alltags);
 
     });
+
+
 }
