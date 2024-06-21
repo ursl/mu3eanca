@@ -44,6 +44,9 @@ DICTHEADERS = ${READER:.o=Dict.h}
 DICTSOURCES = ${READER:.o=Dict.cc}
 
 # -- Default rules
+$(addprefix obj/,%.o) : %.cc
+	$(CXX) $(CXXFLAGS) $(EXTHEADERS) -c $< -o $@
+
 $(addprefix obj/,%.o) : %.cc %.hh
 	$(CXX) $(CXXFLAGS) $(EXTHEADERS) -c $< -o $@
 
@@ -71,12 +74,13 @@ all: vars prep lib bin
 lib: prep $(addprefix obj/,$(CSTUFF) $(READER)  $(DICT))
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(DICT)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit $(UTIL)/lib/libAnaUtil.so
 
-bin: lib obj/runSkimMu3e.o obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o obj/anaNoiseMaskFiles.o
+bin: lib obj/runSkimMu3e.o obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o obj/anaNoiseMaskFiles.o obj/test1.o
 	$(LD) $(LDFLAGS) -o bin/runSkimMu3e obj/runSkimMu3e.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runHitDataAna obj/runHitDataAna.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runTreeReader obj/runTreeReader.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runPlot obj/runPlot.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/anaNoiseMaskFiles obj/anaNoiseMaskFiles.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
+	$(LD) $(LDFLAGS) -o bin/test1 obj/test1.o $(GLIBS)  $(UTIL)/lib/libAnaUtil.so
 
 # -- preparatory setup
 prep:
