@@ -44,7 +44,7 @@ void readJSON(string filename) {
 
   // -- prepare list of tags
   map<int, string> keywords;
-  vector pars = {"sci", "pix", "daq"}; // LOWER CASE!
+  vector pars = {"scifi", "sciti", "pix", "daq"}; // LOWER CASE!
   for (auto [key, val] : jComp.items()) {
     string bla = val["doc"]["type"].dump();
     if (bla == "\"product\"") {
@@ -95,8 +95,8 @@ void readJSON(string filename) {
   int pn, lot, item, lotsize, stocksize;
 
   int nstatus;
-  string  stState[10];
-  TDatime stTime[10];
+  vector<string>       stState;
+  vector<unsigned int> stTime;
 
   pdbTree->Branch("id",       &id);
   pdbTree->Branch("name",     &type);
@@ -111,8 +111,8 @@ void readJSON(string filename) {
   pdbTree->Branch("stocksize",  &stocksize);
 
   pdbTree->Branch("n", &nstatus);
-  pdbTree->Branch("stState", &stState[0]);
-  pdbTree->Branch("stTime", &stTime[0]);
+  pdbTree->Branch("stState", &stState);
+  pdbTree->Branch("stTime",  &stTime);
 
   for (auto [key, val] : jComp.items()) {
     string bla = val["doc"]["_rev"].dump();
@@ -174,6 +174,8 @@ void readJSON(string filename) {
     }
 
     nstatus = 0;
+    stState.clear();
+    stTime.clear();
     if (type != "product") {
       nstatus = -1;
       for (auto istat: val["doc"]["status"]) {
@@ -183,11 +185,14 @@ void readJSON(string filename) {
         string bla1 = istat["datetime"].dump();
         bla1 = bla1.substr(1, bla1.rfind("\"") - 1);
         string time = time2SqlFormat(bla1);
-        cout << "    " << bla0 << " -> " << bla1 << " = " << time << endl;
+        cout << "    " << bla0 << " -> " << bla1 << " = " << time
+             << " id = " << id
+             << endl;
 
         nstatus = 0;
-        stState[nstatus] = bla0;
-        stTime[nstatus]  = TDatime(time.c_str());
+        stState.push_back(bla0);
+        unsigned int uitime = TDatime(time.c_str()).Convert();
+        stTime.push_back(uitime);
       }
 
       for (auto istat: val["doc"]["sizestock"]) {
@@ -216,11 +221,15 @@ void readJSON(string filename) {
         string bla1 = istat["datetime"].dump();
         bla1 = bla1.substr(1, bla1.rfind("\"") - 1);
         string time = time2SqlFormat(bla1);
-        cout << "    " << bla0 << " -> " << bla1 << " = " << time << endl;
+        cout << "    " << bla0 << " -> " << bla1 << " = " << time
+             << " id = " << id
+             << endl;
 
         nstatus = 0;
-        stState[nstatus] = bla0;
-        stTime[nstatus]  = TDatime(time.c_str());
+        stState.push_back(bla0);
+
+        unsigned int uitime = TDatime(time.c_str()).Convert();
+        stTime.push_back(uitime);
       }
 
     }
