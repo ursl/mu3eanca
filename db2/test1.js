@@ -19,14 +19,21 @@ const alice = nano.db.use('mu3epartdb');
 //listOneDoc();
 
 //console.log("call listProducts");
-//listProducts();
-
+if (0) {
+    listAllTags();
+}
 
 //console.log("call listPixelProducts");
 
-const pars = ['pix', 'sci', 'daq'];
-listMyProducts(pars);
+if (1) {
+    cntDocuments();
+}
 
+
+if (0) {
+    const pars = ['pix', 'sci', 'daq'];
+    listMyProducts(pars);
+}
 
 // ----------------------------------------------------------------------
 async function searchDoc() {
@@ -60,12 +67,53 @@ async function listProducts() {
     });
 }
 
+
+// ----------------------------------------------------------------------
+async function cntDocuments() {
+    const doclist = await alice.list({include_docs: true}).then((body)=>{
+        console.log("Number of docs = " + body.rows.length);
+    });
+}
+
+
+// ----------------------------------------------------------------------
+async function listAllTags() {
+    var output = "";
+    var alltags = [];
+    const doclist = await alice.list({include_docs: true}).then((body)=>{
+        // -- find all products containing myprod[i] among the tags
+        body.rows.forEach((doc) => {
+            if (typeof doc.doc.type == "undefined") return;
+            if (typeof doc.doc.tags == "undefined") return;
+            if (!doc.doc.type.localeCompare("product")) {
+                var lctags = [];
+                const words = doc.doc.tags.split(',');
+                words.forEach((word) => {
+                    word = word.trim();
+                    word = word.toLowerCase();
+                    lctags.push(word);
+                    if (!alltags.includes(word)) {
+                        alltags.push(word);
+                        output += word + ", ";
+                    }
+                });
+
+            }
+        })
+
+    })
+
+    console.log(output);
+}
+
 // ----------------------------------------------------------------------
 async function listMyProducts(myprod) {
     var myprods = [];
     var alltypes = [];
     var alltags = [];
     var output = "[";
+
+    var doFilter = false;
 
     const doclist = await alice.list({include_docs: true}).then((body)=>{
         // -- find all products containing myprod[i] among the tags
@@ -111,17 +159,29 @@ async function listMyProducts(myprod) {
             if (!doc.doc.type.localeCompare("attitem")) continue;
             if (!doc.doc.type.localeCompare("productdoc")) continue;
             if (!doc.doc.type.localeCompare("item")) {
-                if (myprods.includes(doc.doc.pn)) {
+                if (doFilter) {
+                    if (myprods.includes(doc.doc.pn)) {
+                        output += JSON.stringify(doc) + ", \n";
+                    }
+                } else {
                     output += JSON.stringify(doc) + ", \n";
                 }
             }
             if (!doc.doc.type.localeCompare("lot")) {
-                if (myprods.includes(doc.doc.pn)) {
+                if (doFilter) {
+                    if (myprods.includes(doc.doc.pn)) {
+                        output += JSON.stringify(doc) + ", \n";
+                    }
+                } else {
                     output += JSON.stringify(doc) + ", \n";
                 }
             }
             if (!doc.doc.type.localeCompare("product")) {
-                if (myprods.includes(doc.doc.pn)) {
+                if (doFilter) {
+                    if (myprods.includes(doc.doc.pn)) {
+                        output += JSON.stringify(doc) + ", \n";
+                    }
+                } else {
                     output += JSON.stringify(doc) + ", \n";
                 }
             }
@@ -129,17 +189,8 @@ async function listMyProducts(myprod) {
 
         // -- remove trailing ,
         output = output.replace(/,\s*$/, "");
-
         output += "]";
 
         console.log(output);
-
-        // console.log("*** myprods = " + myprods);
-        // console.log("*** found " + cnt + " items");
-        // console.log("*** all types: " + alltypes);
-        // console.log("*** all tags: " + alltags);
-
     });
-
-
 }
