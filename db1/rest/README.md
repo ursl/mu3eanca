@@ -1,21 +1,42 @@
 # Simple REST server
 based on https://www.mongodb.com/languages/express-mongodb-rest-api-tutorial
 
+# Installation
+Install `node/npm/pm2` the correct way by using [https://github.com/nvm-sh/nvm](nvm).
+
 # Setup
 ```
 npm install express cors express-async-errors dotenv mongodb
 ```
 
 # Run it
-By default, it is running on port 80 (no good reason). If apache is running, that needs to be stopped, e.g.
+By default, the REST interface seems to listen on port 80, though in reality it is on port 5050. If apache is running, that needs to be stopped, e.g. 
 ```
 sudo systemctl stop apache2.service
 ```
 
-Port 80 also implies that you need to run it with sudo:
+Use nginx to redirect port 80 requests to port 5050. On opensuse (LEAP 15.5.), create the file `/etc/nginx/vhosts.d/pc11740.conf`
+
 ```
-pc11740>sudo npm run start
-pc11740>sudo /usr/local/bin/pm2 start index.mjs 
+server {
+      listen 80;
+      server_name pc11740.psi.ch;
+      location / {
+          proxy_pass http://localhost:5050;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection ’upgrade’;
+          proxy_set_header Host $host;
+          proxy_cache_bypass $http_upgrade;
+      }
+}
+```
+where, of course, `pc11740.psi.ch` should be replaced with whatever machine you are running the server on. Test the configuration with `sudo nginx -t` and then `sudo service nginx restart`. 
+
+
+```
+pc11740>npm run start
+pc11740>pm2 start index.mjs 
 ```
 
 The following works within PSI's network. pc11740.psi.ch is not reachable from outside (sigh)!
