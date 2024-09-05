@@ -2,7 +2,7 @@
 based on https://www.mongodb.com/languages/express-mongodb-rest-api-tutorial
 
 # Installation
-Install `node/npm/pm2` the correct way by using [https://github.com/nvm-sh/nvm](nvm).
+Install `node/npm/pm2` the correct way by using (https://github.com/nvm-sh/nvm)[nvm].
 
 # Setup
 ```
