@@ -15,7 +15,7 @@ By default, the REST interface seems to listen on port 80, though in reality it 
 sudo systemctl stop apache2.service
 ```
 
-Use nginx to redirect port 80 requests to port 5050. On opensuse (LEAP 15.5.), create the file `/etc/nginx/vhosts.d/pc11740.conf`
+Use nginx to redirect port 80 requests to port 5050. On opensuse (LEAP 15.5.), create the file `/etc/nginx/vhosts.d/pc11740.conf` with 
 
 ```
 server {
