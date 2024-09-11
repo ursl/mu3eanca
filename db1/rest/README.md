@@ -6,7 +6,7 @@ Install `node/npm/pm2` the correct way by using [nvm](https://github.com/nvm-sh/
 
 # Setup
 ```
-npm install express cors express-async-errors dotenv mongodb
+npm install express cors express-async-errors dotenv mongodb node-fetch
 ```
 
 # Run it
