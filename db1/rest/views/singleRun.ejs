@@ -146,9 +146,11 @@
 
     <tr>
     <td> Comments </td>
-    <td> <textarea id="editComment" name="editComment" rows="4"
-                   cols="50"><%= data.EOR["Comments"]%></textarea>
-      <input id="btnUpdateComments" type="button" value="Update" onclick=updateComments() />
+    <td>
+        <form method ='post' action="updateRun/<%= data.BOR["Run number"]%>" >
+					  <textarea><%= data.EOR["Comments"]%></textarea><br>
+					  <button type="submit" class="button">Submit</button>
+        </form>
     </td>
     </tr>
 
