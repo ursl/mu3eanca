@@ -54,10 +54,11 @@ using namespace std;
 
 bool gDBX(false);
 
-//mongocxx::instance gInstance{}; // This should be done only once.
-//mongocxx::uri gUri("mongodb://pc11740:27017");
-mongocxx::uri gUri("mongodb://localhost:27017");
-mongocxx::client gClient{gUri};
+//mongocxx::uri gUri("mongodb://localhost:27017");
+//mongocxx::client gClient{gUri};
+
+mongocxx::uri gUri;
+mongocxx::client gClient;
 
 // ----------------------------------------------------------------------
 void clearCollection(string scollection, string pattern) {
