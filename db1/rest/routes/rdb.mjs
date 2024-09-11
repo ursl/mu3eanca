@@ -107,20 +107,28 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-
 // -- Put a single runrecord
-router.post("/updateRun/:id", async (req, res) => {
-    console.log("posting ... /updateRun/" + req.params.id);
+router.post("/updateRun", (req, res) => {
+    console.log("=>router.post");
     console.log("params:" + JSON.stringify(req.params));
+    console.log("req:" + JSON.stringify(req.body));
+
+    const {runNumber, startTime } = req.body;
+
+
+    console.log("runNumber ->" + runNumber + "<-");
+
+    if (!runNumber) {
+        return res.status(400).json({ message: 'content required!' });
+    }
+
+    // Respond back with success message
+    res.status(200).json({
+        message: 'Form submitted successfully',
+        data: { runNumber, startTime }
+    });
+
 });
 
-
-
-//app.post('/',function(req,res){
-    //   var username = req.body.username;
-    //   var html = 'Hello:' + username;
-    //   res.send(html);
-    //   console.log(html);
-    //});
 
 export default router;
