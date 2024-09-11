@@ -107,4 +107,20 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+
+// -- Put a single runrecord
+router.post("/updateRun/:id", async (req, res) => {
+    console.log("posting ... /updateRun/" + req.params.id);
+    console.log("params:" + JSON.stringify(req.params));
+});
+
+
+
+//app.post('/',function(req,res){
+    //   var username = req.body.username;
+    //   var html = 'Hello:' + username;
+    //   res.send(html);
+    //   console.log(html);
+    //});
+
 export default router;
