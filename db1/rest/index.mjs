@@ -6,7 +6,6 @@ import "express-async-errors";
 import cdb from "./routes/cdb.mjs";
 import rdb from "./routes/rdb.mjs";
 
-
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
