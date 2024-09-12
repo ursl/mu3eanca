@@ -3,6 +3,10 @@ import cors from "cors";
 import path from "path";
 import "./loadEnvironment.mjs";
 import "express-async-errors";
+
+//import db from "./db/conn.mjs";
+import db from "./db/conn.mjs";
+
 import cdb from "./routes/cdb.mjs";
 import rdb from "./routes/rdb.mjs";
 
