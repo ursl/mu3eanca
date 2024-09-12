@@ -1,6 +1,6 @@
 import express from "express";
 import db from "../db/conn.mjs";
-import { ObjectId } from "mongodb";
+//?? import { ObjectId } from "mongodb";
 
 const router = express.Router();
 
@@ -107,26 +107,51 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// -- Put a single runrecord
-router.post("/updateRun", (req, res) => {
+// -- Post a single runrecord
+router.post("/updateRun", async (req, res) => {
     console.log("=>router.post");
     console.log("params:" + JSON.stringify(req.params));
     console.log("req:" + JSON.stringify(req.body));
 
-    const {runNumber, startTime } = req.body;
 
+    var bor = req.body.BOR;    
+    console.log("bor:" + JSON.stringify(bor));
+    
+    const runNumber = bor["Run number"];
 
     console.log("runNumber ->" + runNumber + "<-");
 
-    if (!runNumber) {
-        return res.status(400).json({ message: 'content required!' });
+    let collection = await db.collection("runrecords");
+
+    let runno = parseInt(runNumber);
+    let query = {"BOR.Run number": runno};
+
+    let ndata = req.body;
+    delete ndata["_id"];
+    console.log("ndata: " + JSON.stringify(ndata));                
+    const nval = {$set: ndata};
+    collection.updateOne(query, nval, function(err, res) {
+        if (err) throw err;
+        console.log("1 document updated");
+    });
+    await db.save();
+
+    let result = await collection.findOne(query);
+
+    if (!result) res.send("Not found").status(404);
+    else {
+        //        console.log("calling singleRun with result: " + JSON.stringify(result));
+        //        res.render('singleRun', {'data': result, 'runs': req.query.runs});
+        console.log("calling rdb/" + runno);
+        res.redirect('/rdb/' + runno);
     }
 
     // Respond back with success message
-    res.status(200).json({
-        message: 'Form submitted successfully',
-        data: { runNumber, startTime }
-    });
+    //    res.status(200).json({
+    //        message: 'Form submitted successfully',
+    //        data: { runNumber, startTime }
+    //    });
+    //    res.render('singleRun', {'data': req.body, 'runs': {}});
 
 });
 

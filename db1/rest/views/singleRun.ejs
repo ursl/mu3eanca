@@ -86,56 +86,23 @@
  }
 
  function updateRun() {
-     // Get the input values
-     const runNumber = "1";
-     const startTime = "Dark ages";
-     
-     // Prepare the data to send
-     const data = { runNumber, startTime };
+     var ldata = <%- JSON.stringify(data) %>;
 
-     console.log("data: " + JSON.stringify(data));
+     // -- update the modified data
+     ldata.BOR["Comments"] = document.getElementById('comments').value;
      
-     // Send the POST request
+     console.log("ldata: " + JSON.stringify(ldata));
+     
+     // -- Send the POST request
      fetch('/rdb/updateRun', {
          method: 'POST',
          headers: {
              'Content-Type': 'application/json',
          },
-         body: JSON.stringify(data),  // Send data as JSON
+         body: JSON.stringify(ldata),  // Send data as JSON
      })
-         .then(response => {
-             console.log('dbx Content-Type:', response.headers.get('Content-Type'));
-             return response.json()
-         })
-         .then(result => {
-             // Handle the response from the server
-             console.log(result);
-             //             alert('Form submitted: ' + result.message);
-         })
-         .catch(error => {
-             console.error('Error:', error);
-         });
  }
  
- 
- function updateRun2() {
-     console.log("updateRun called 0");
-     const data = {
-         id:  '<%= data.BOR["Run number"]%>'
-     };
-     
-     fetch('/updateRun/<%= data.BOR["Run number"]%>', {
-         method: 'POST',
-         body: JSON.stringify(data)
-     })
-         .then(response => {
-             console.log(response.data);
-         })
-         .catch(error => {
-             console.log(error);
-         });
- }
-
 </script>
 
 <body>
@@ -178,11 +145,7 @@
 
     <tr>
     <td> Comments </td>
-    <td>
-        <form method ='post' action="updateRun/<%= data.BOR["Run number"]%>" >
-					  <textarea><%= data.EOR["Comments"]%></textarea><br>
-					  <button type="submit" class="button">Submit</button>
-        </form>
+    <td> <textarea id="comments"><%= data.EOR["Comments"]%></textarea><br>
     </td>
     </tr>
 
