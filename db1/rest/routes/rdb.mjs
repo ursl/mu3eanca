@@ -130,7 +130,7 @@ router.post("/updateRun", async (req, res) => {
     delete ndata["_id"];
     console.log("ndata: " + JSON.stringify(ndata));                
     const nval = {$set: ndata};
-    collection.updateOne(query, nval, function(err, res) {
+    await collection.updateOne(query, nval, function(err, res) {
         if (err) throw err;
         console.log("1 document updated");
     });
