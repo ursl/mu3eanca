@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string.h>
 #include <dirent.h>  /// for directory reading
+#include <sys/time.h>
 
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
@@ -59,6 +60,34 @@ bool gDBX(false);
 
 mongocxx::uri gUri;
 mongocxx::client gClient;
+
+// ----------------------------------------------------------------------
+string shortTimeStamp() {
+  char buffer[11];
+  time_t t;
+  time(&t);
+  tm r;
+  strftime(buffer, sizeof(buffer), "%X", localtime_r(&t, &r));
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+ 
+  tm *ltm = localtime(&t);
+  int year  = 1900 + ltm->tm_year;
+  int month = 1 + ltm->tm_mon;
+  int day   = ltm->tm_mday;
+  int hour  = ltm->tm_hour;
+  int min   = ltm->tm_min;
+  int sec   = ltm->tm_sec;
+  std::stringstream result;
+  result << year << "/"
+         << std::setfill('0') << std::setw(2) << month << "/"
+         << std::setfill('0') << std::setw(2) << day << " ";
+  result << std::setfill('0') << std::setw(2) << hour << ":"
+         << std::setfill('0') << std::setw(2) << min << ":"
+         << std::setfill('0') << std::setw(2) << sec ;
+  return result.str();
+}
+
 
 // ----------------------------------------------------------------------
 void clearCollection(string scollection, string pattern) {
@@ -174,7 +203,7 @@ int main(int argc, char* argv[]) {
   auto db = gClient["mu3e"];
   auto collection = db[dirName];
   
-  string collectionContents;
+  string collectionContents, historyString;
   ifstream INS;
   for (auto it: vfiles) {
     INS.open(it);
@@ -184,6 +213,16 @@ int main(int argc, char* argv[]) {
     INS.close();
     
     collectionContents = buffer.str();
+
+    if (dirName == "runrecords") {
+      collectionContents = collectionContents.substr(0, collectionContents.size() - 3);
+      collectionContents += ",\n";
+    
+      historyString = "  \"History\": ";
+      historyString += "[{\"date\": \"" + shortTimeStamp() + "\", \"comment\": \"Database entry inserted\"}]";
+      collectionContents += historyString + "\n";
+      collectionContents += "}";
+    }
     
     if (gDBX) {
       cout << "insert: " << it << endl
