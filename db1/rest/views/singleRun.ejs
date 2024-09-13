@@ -3,202 +3,260 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <title>EJS Example</title>
-    <style>
-        h1 {
-            color: green;
-        }
+    <head>
+        <meta charset="UTF-8">
+        <title>Mu3e RDB <%=data.BOR["Run number"]%></title>
+        <style>
+         h1 {
+             color: #00703c;
+         }
+         
+         h2 {
+             color: #507d2a;
+         }
+         
+         div {
+             padding-top: 20px;
+             padding-right: 0px;
+             padding-bottom: 10px;
+             padding-left: 0px;
+         }
+         
+         .button {
+             background-color: #00703c; /* Green */
+             border: none;
+             color: white;
+             padding: 5px 20px ;
+             text-align: center;
+             text-decoration: none;
+             display: inline-block;
+             font-size: 16px;
+         }
+         
+         textarea {
+             width: 100%; /* Make textarea fill the cell's width */
+             height: 50px; /* You can adjust the height as needed */
+             box-sizing: border-box; /* Ensure padding and borders are included in width */
+         }
+         
+         #runs {
+             font-family: Arial, Helvetica, sans-serif;
+             border-collapse: collapse;
+             width: 100%;
+         }
+         
+         #runs td, #runs th {
+             border: 1px solid #ddd;
+             padding: 4px;
+         }
+         
+         #runs tr:nth-child(even){background-color: #f2f2f2;}
+         
+         #runs tr:hover {background-color: #ddd;}
+         
+         #runs th {
+             padding-top: 12px;
+             padding-bottom: 12px;
+             text-align: left;
+             background-color: #00703c;
+             color: white;
+         }
 
-    div {
-        padding-top: 20px;
-        padding-right: 10px;
-        padding-bottom: 10px;
-        padding-left: 10px;
-    }
 
-    .button {
-        background-color: #04AA6D; /* Green */
-        border: none;
-        color: white;
-        padding: 15px 32px ;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-    }
+         #histcomments {
+             font-family: Arial, Helvetica, sans-serif;
+             border-collapse: collapse;
+             width: 100%;
+         }
+         
+         #histcomments td, #histcomments th {
+             border: 1px solid #ddd;
+             padding: 4px;
+         }
+         
+         #histcomments tr:nth-child(even){background-color: #f2f2f2;}
+         
+         #histcomments tr:hover {background-color: #ddd;}
+         
+         #histcomments th {
+             padding-top: 12px;
+             padding-bottom: 12px;
+             text-align: left;
+             background-color: #507d2a;
+             color: white;
+         }
 
-     textarea {
-         width: 100%; /* Make textarea fill the cell's width */
-         height: 50px; /* You can adjust the height as needed */
-         box-sizing: border-box; /* Ensure padding and borders are included in width */
+         
+        </style>
+    </head>
+
+    <script>
+     let sruns = '<%-runs%>'
+     let aruns = sruns.split(",");
+     const sthisRun = <%= data.BOR["Run number"]%>;
+     const thisRun = String(sthisRun);
+     const idxThisRun = aruns.indexOf(thisRun);
+     let idxPrevRun = (idxThisRun > 0? idxThisRun - 1: -1);
+     let idxNextRun = (idxThisRun < aruns.length? idxThisRun + 1: -1);
+     console.log("idxThisRun / idxPrevRun / idxnextRun :" + idxThisRun + " / " + idxPrevRun + " / " + idxNextRun);
+
+     let doEdit = -1;
+
+     function setNext() {
+         if (idxNextRun < aruns.length) {
+             window.location.href = '/rdb/' + aruns[idxNextRun] + '/?runs=' + sruns;
+         } else {
+             window.location.href = '/rdb/';
+         }
      }
-     
-     #runs {
-         font-family: Arial, Helvetica, sans-serif;
-         border-collapse: collapse;
-         width: 100%;
+
+     function setPrev() {
+         if (idxPrevRun > -1) {
+             window.location.href = '/rdb/' + aruns[idxPrevRun] + '/?runs=' + sruns;
+         } else {
+             window.location.href = '/rdb/';
+         }
      }
 
-    #runs td, #runs th {
-        border: 1px solid #ddd;
-        padding: 4px;
-    }
-
-    #runs tr:nth-child(even){background-color: #f2f2f2;}
-
-    #runs tr:hover {background-color: #ddd;}
-
-    #runs th {
-        padding-top: 12px;
-        padding-bottom: 12px;
-        text-align: left;
-        background-color: #04AA6D;
-        color: white;
-    }
-
-</style>
-</head>
-
-<script>
- let sruns = '<%-runs%>'
- let aruns = sruns.split(",");
- const sthisRun = <%= data.BOR["Run number"]%>;
- const thisRun = String(sthisRun);
- const idxThisRun = aruns.indexOf(thisRun);
- let idxPrevRun = (idxThisRun > 0? idxThisRun - 1: -1);
- let idxNextRun = (idxThisRun < aruns.length? idxThisRun + 1: -1);
- console.log("idxThisRun / idxPrevRun / idxnextRun :" + idxThisRun + " / " + idxPrevRun + " / " + idxNextRun);
-
- let doEdit = -1;
- 
- function setNext() {
-     if (idxNextRun < aruns.length) {
-         window.location.href = '/rdb/' + aruns[idxNextRun] + '/?runs=' + sruns;
-     } else {
+     function setBack() {
          window.location.href = '/rdb/';
      }
- }
 
- function setPrev() {
-     if (idxPrevRun > -1) {
-         window.location.href = '/rdb/' + aruns[idxPrevRun] + '/?runs=' + sruns;
-     } else {
-         window.location.href = '/rdb/';
+     function setEdit() {
+         if (doEdit < 1) {
+             document.getElementById('comments').disabled = false;
+             document.getElementById('btnSubm').style = "float: right; background-color:#00703c";
+             doEdit = 1; 
+         } 
      }
- }
 
- function setBack() {
-     window.location.href = '/rdb/';
- }
+     function updateRun() {
+         if (doEdit < 1) {
+             alert("Nothing edited. Will not save.\nClick Edit button to allow editing.");
+             return;
+         } 
 
- function setEdit() {
-     if (doEdit < 1) {
-         document.getElementById('comments').disabled = false;
-         document.getElementById('btnSubm').style = "float: right; background-color:#04AA6D";
-         doEdit = 1; 
-     } 
- }
+         var ldata = <%- JSON.stringify(data) %>;
 
- function updateRun() {
-     if (doEdit < 1) {
-         alert("Nothing edited. Will not save.\nClick Edit button to allow editing.");
-         return;
-     } 
+         // -- update the modified data
+         ldata.EOR["Comments"] = document.getElementById('comments').value;
+         console.log("ldata.History = " + JSON.stringify(ldata.History));
+         
 
-     var ldata = <%- JSON.stringify(data) %>;
-
-     // -- update the modified data
-     ldata.EOR["Comments"] = document.getElementById('comments').value;
+         var currentdate = new Date(); 
+         var datetime = currentdate.getFullYear() + "/" 
+                      + (currentdate.getMonth()+1)  + "/" 
+                      + currentdate.getDate() + " "
+                      + currentdate.getHours() + ":"  
+                      + currentdate.getMinutes() + ":" 
+                      + currentdate.getSeconds();
+         let addComment = {"date": datetime, "comment": "Comment updated"};
+         ldata.History.push(addComment);
+         
+         console.log("ldata: " + JSON.stringify(ldata));
+         
+         // -- Send the POST request
+         fetch('/rdb/updateRun', {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+             },
+             body: JSON.stringify(ldata)  // Send data as JSON
+         })
+     }
      
-     console.log("ldata: " + JSON.stringify(ldata));
-     
-     // -- Send the POST request
-     fetch('/rdb/updateRun', {
-         method: 'POST',
-         headers: {
-             'Content-Type': 'application/json',
-         },
-         body: JSON.stringify(ldata),  // Send data as JSON
-     })
- }
- 
-</script>
+    </script>
 
-<body>
-    <h1>Run 
-        <%=data.BOR["Run number"]%>
-    </h1>
+    <body>
+        <h1>Run 
+            <%=data.BOR["Run number"]%>
+        </h1>
 
-    <div>
-        <input id="btnBack" type="button" class="button" value="Back" onclick=setBack() />
-        <input id="btnPrev" type="button" class="button" value="Previous" onclick=setPrev() />
-        <input id="btnNext" type="button" class="button" value="Next" onclick=setNext() />
-        <input id="btnEdit" type="button" class="button" color="blue" value="Edit" onclick=setEdit() />
-        <input id="btnSubm" type="button" class="button" value="Save" style="float: right; background-color:#90EE90" onclick=updateRun() />
-    </div>
+        <div>
+            <input id="btnBack" type="button" class="button" value="Back" onclick=setBack() />
+            <input id="btnPrev" type="button" class="button" value="Previous" onclick=setPrev() />
+            <input id="btnNext" type="button" class="button" value="Next" onclick=setNext() />
+            <input id="btnEdit" type="button" class="button" color="blue" value="Edit" onclick=setEdit() />
+            <input id="btnSubm" type="button" class="button" value="Save" style="float: right; background-color:#93c572" onclick=updateRun() />
+        </div>
 
-    <table id="runs">
-    <thead>
-    <tr>
-    <th id="runsCol1">Field </th>
-    <th id="runsCol2">Value </th>
-    </tr>
-    </thead>
+        <table id="runs">
+            <thead>
+                <tr>
+                    <th id="runsCol1">Field </th>
+                    <th id="runsCol2">Value </th>
+                </tr>
+            </thead>
 
-    <tr>
-    <td> Run number </td>
-    <td>  <%= data.BOR["Run number"]%>  </td>
-    </tr>
+            <tr>
+                <td> Run number </td>
+                <td>  <%= data.BOR["Run number"]%>  </td>
+            </tr>
 
-    <tr>
-    <td> Start time </td>
-    <td> <%= data.BOR["Start time"]%> </td>
-    </tr>
+            <tr>
+                <td> Start time </td>
+                <td> <%= data.BOR["Start time"]%> </td>
+            </tr>
 
-    <tr>
-    <td> Stop time </td>
-    <td> <%= data.EOR["Stop time"]%> </td>
-    </tr>
+            <tr>
+                <td> Stop time </td>
+                <td> <%= data.EOR["Stop time"]%> </td>
+            </tr>
 
-    <tr>
-    <td> Events </td>
-    <td> <%= data.EOR["Events"]%> </td>
-    </tr>
+            <tr>
+                <td> Events </td>
+                <td> <%= data.EOR["Events"]%> </td>
+            </tr>
 
-    <tr>
-    <td> Shift crew </td>
-    <td> <%= data.BOR["Shift crew"]%> </td>
-    </tr>
+            <tr>
+                <td> Shift crew </td>
+                <td> <%= data.BOR["Shift crew"]%> </td>
+            </tr>
 
-    <tr>
-    <td> Comments </td>
-    <td> <textarea id="comments" disabled="true"><%=data.EOR["Comments"]%></textarea><br>
-    </td>
-    </tr>
+            <tr>
+                <td> Comments </td>
+                <td> <textarea id="comments" disabled="true"><%=data.EOR["Comments"]%></textarea><br>
+                </td>
+            </tr>
 
-    <tr>
-    <td> Subsystems </td>
-    <td> <%= data.BOR["Subsystems"]%> </td>
-    </tr>
+            <tr>
+                <td> Subsystems </td>
+                <td> <%= data.BOR["Subsystems"]%> </td>
+            </tr>
 
-    <tr>
-    <td> Beam </td>
-    <td> <%= data.BOR["Beam"]%> </td>
-    </tr>
+            <tr>
+                <td> Beam </td>
+                <td> <%= data.BOR["Beam"]%> </td>
+            </tr>
 
-    <tr>
-    <td> File size </td>
-    <td> <%= data.EOR["File size"]%> </td>
-    </tr>
+            <tr>
+                <td> File size </td>
+                <td> <%= data.EOR["File size"]%> </td>
+            </tr>
 
-    <tr>
-    <td> Uncompressed data size </td>
-    <td> <%= data.EOR["Uncompressed data size"]%> </td>
-    </tr>
-    </table>
-
-</body>
+            <tr>
+                <td> Uncompressed data size </td>
+                <td> <%= data.EOR["Uncompressed data size"]%> </td>
+            </tr>
+        </table>
+        
+        <h2>Record history</h2>
+        <table  id="histcomments">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Comment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% data.History.forEach(function(entry) { %>
+                    <tr>
+                        <td><%= entry.date %></td>
+                        <td><%= entry.comment %></td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>    
+    </body>
 
 </html>
