@@ -69,8 +69,8 @@ LBINARIES = testCDB fillDB \
             syncCloud syncMongo \
             testPixelQuality pcrPixelQuality \
             cdbInitDB cdbPrintPayload  \
-            cdbPrintConfig
-
+            cdbPrintConfig \
+            uploadDetConfig # getDetConfig 
 
 ifneq (,$(findstring merlin,$(LHOST)))
        $(info ************  MERLIN VERSION ************)
