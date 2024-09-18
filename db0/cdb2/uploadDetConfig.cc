@@ -17,14 +17,18 @@ mongocxx::uri gUri;
 mongocxx::client gClient;
 
 // ----------------------------------------------------------------------
-void store_file_in_mongo(const std::string& filepath, const std::string& tag, mongocxx::collection& collection) {
+void store_file_in_mongo(const std::string& filepath, const std::string& tag, mongocxx::collection& collection, string dir) {
   // -- Open the file
-  ifstream file(filepath, std::ios::binary);
+  string fullname = dir + "/" + filepath;
+  cout << "Reading to ->" << fullname << "<-" << endl;
+
+  ifstream file(fullname, std::ios::binary);
   if (!file.is_open()) {
     cout << "Failed to open file: " << filepath << endl;
     return;
   }
   
+
   vector<uint8_t> buffer((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
   
   bsoncxx::builder::stream::document document{};
@@ -47,12 +51,6 @@ void store_file_in_mongo(const std::string& filepath, const std::string& tag, mo
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
-  mongocxx::instance instance{};  // This must be done only once per application
-  mongocxx::client client{gUri};  // Connect to MongoDB
-  
-  // Access the database and collection
-  auto db = gClient["mu3e"];
-  mongocxx::collection collection = db["detconfigs"];
   
   string dirPath("."), tag("nada");
   for (int i = 0; i < argc; i++) {
@@ -63,6 +61,10 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-t"))    {tag = string(argv[++i]);}
     if (!strcmp(argv[i], "--tag")) {tag = string(argv[++i]);}
   }
+
+  // Access the database and collection
+  auto db = gClient["mu3e"];
+  mongocxx::collection collection = db["detconfigs"];
   
   vector<string> vfiles;
   DIR *folder;
@@ -75,7 +77,7 @@ int main(int argc, char* argv[]) {
   
     while ((entry=readdir(folder))) {
       if (8 == entry->d_type) {
-        vfiles.push_back(dirPath + "/" + entry->d_name);
+        vfiles.push_back(entry->d_name);
       }
     }
     closedir(folder);
@@ -84,7 +86,7 @@ int main(int argc, char* argv[]) {
   
   // -- Iterate over the files and store them in MongoDB
   for (const auto& filepath : vfiles) {
-    store_file_in_mongo(filepath, tag, collection);
+    store_file_in_mongo(filepath, tag, collection, dirPath);
   }
   
   return 0;
