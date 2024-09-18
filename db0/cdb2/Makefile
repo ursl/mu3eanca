@@ -70,7 +70,7 @@ LBINARIES = testCDB fillDB \
             testPixelQuality pcrPixelQuality \
             cdbInitDB cdbPrintPayload  \
             cdbPrintConfig \
-            uploadDetConfig # getDetConfig 
+            uploadDetConfig downloadDetConfig 
 
 ifneq (,$(findstring merlin,$(LHOST)))
        $(info ************  MERLIN VERSION ************)
