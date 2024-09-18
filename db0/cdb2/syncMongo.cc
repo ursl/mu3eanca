@@ -242,10 +242,11 @@ int main(int argc, char* argv[]) {
         size_t offset = string("cfgString").size() + 5;
         replaceAll(collectionContents, "\n", "\\n", collectionContents.find("cfgString") + offset);
       }
-      cout << "insert: " << it << endl
+      cout << "start inserting " << it << endl
            << collectionContents
            << endl;
       auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
+      cout << "done inserting " << it << endl;
     }
   }
   
