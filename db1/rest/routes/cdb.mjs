@@ -5,22 +5,15 @@ import multer from "multer";
 const upload = multer(); // Multer for handling file uploads
 
 import db from "../db/conn.mjs";
-//import { ObjectId } from "mongodb";
 
 const router = express.Router();
 
-// Get a single runrecord
+// -- Get a single runrecord
 router.get("/findOne/runrecords/:id", async (req, res) => {
   let runno = parseInt(req.params.id);
   console.log("serving /findOne/runrecords/" + req.params.id + " from " + req.ip);
-  // console.log("req.params.id ->" + req.params.id + "<-" );
-  // console.log(typeof req.params.id); // string
-  // console.log("runno = " + runno);
 
   let collection = await db.collection("runrecords");
-//OK   let query = {"BOR.RunNumber": 12};
-//NOK  let query = {"BOR.RunNumber": req.params.id};
-//OK   let query = {"BOR.RunNumber": runno};
 
   let query = {"BOR.Run number": runno};
   let result = await collection.findOne(query);
@@ -29,7 +22,8 @@ router.get("/findOne/runrecords/:id", async (req, res) => {
   else res.send(result).status(200);
 });
 
-// Get a single global tag
+
+// -- Get a single global tag
 router.get("/findOne/globaltags/:id", async (req, res) => {
   console.log("serving /findOne/globaltags/" + req.params.id);
   let collection = await db.collection("globaltags");
@@ -40,7 +34,8 @@ router.get("/findOne/globaltags/:id", async (req, res) => {
   else res.send(result).status(200);
 });
 
-// Get a single tag/IOV
+
+// -- Get a single tag/IOV
 router.get("/findOne/tags/:id", async (req, res) => {
   console.log("serving /findOne/tags/" + req.params.id);
   let collection = await db.collection("tags");
@@ -50,7 +45,8 @@ router.get("/findOne/tags/:id", async (req, res) => {
   else res.send(result).status(200);
 });
 
-// Get a single payload
+
+// -- Get a single payload
 router.get("/findOne/payloads/:id", async (req, res) => {
   console.log("serving /findOne/payloads/" + req.params.id);
   let collection = await db.collection("payloads");
@@ -62,7 +58,7 @@ router.get("/findOne/payloads/:id", async (req, res) => {
 });
 
 
-// Get a single configuration 
+// -- Get a single configuration 
 router.get("/findOne/configs/:id", async (req, res) => {
   console.log("serving /findOne/configs/" + req.params.id);
   let collection = await db.collection("configs");
@@ -74,7 +70,7 @@ router.get("/findOne/configs/:id", async (req, res) => {
 });
 
 
-// Get all globaltags
+// -- Get all globaltags
 router.get("/findAll/globaltags", async (req, res) => {
   console.log("serving /findAll/globaltags/" + req.params.id);
   let collection = await db.collection("globaltags");
@@ -111,8 +107,9 @@ router.put("/runrecords", async (req, res) => {
 });
 
 
-// Upload a file to MongoDB
+// -- Upload a single file to MongoDB
 router.post('/upload', upload.single('file'), async (req, res) => {
+    console.log("upload req.body:" + JSON.stringify(req.body));
     if (!req.file || !req.body.tag) {
       return res.status(400).send('File and tag are required');
     }
@@ -130,6 +127,29 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         res.status(200).send(`File uploaded successfully with ID: ${result.insertedId}`);
     } catch (err) {
         res.status(500).send('Error uploading file: ' + err.message);
+    }
+});
+
+
+// -- Upload multiple files to MongoDB
+router.post('/uploadMany', upload.array('file'), async (req, res) => {
+    if (!req.files || !req.body.tag) {
+        return res.status(400).send('Files and tag are required');
+    }
+    
+    let filesCollection = db.collection("detconfigs");
+    
+    try {
+        const fileDocs = req.files.map(file => ({
+            tag: req.body.tag,
+            filename: file.originalname,
+            content: file.buffer,
+        }));
+        
+        const result = await filesCollection.insertMany(fileDocs);
+        res.status(200).send(`Files uploaded successfully with IDs: ${result.insertedIds}`);
+    } catch (err) {
+        res.status(500).send('Error uploading files: ' + err.message);
     }
 });
 

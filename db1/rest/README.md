@@ -63,5 +63,11 @@ moor>curl http://pc11740.psi.ch/cdb/findOne/tags/fibrealignment_mcidealv5.0
 
 moor>curl http://pc11740.psi.ch/cdb/findOne/payloads/tag_mppcalignment_mcidealv5.1_iov_1
 {"_id":"659bc2d672ec635e5d0cad04","hash":"tag_mppcalignment_mcidealv5.1_iov_1","comment":"mcidealv5.1 MPPC detector initialization","schema":"define this","date":"2024-01-05 10:49:09","BLOB":"zvqt3gAAAAAAAAAAAAAAANMAkhp1Iz/AV8buw ...
+
+
+moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=5" http://localhost:5050/cdb/upload
+
+moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "file=@mask_408_1_12_DS_chip5.bin" -F "file=@mask_408_1_12_DS_chip6.bin" -F "tag=4" http://localhost:5050/cdb/uploadMany
+
 ```
 
