@@ -1,4 +1,9 @@
 import express from "express";
+
+import multer from "multer";
+
+const upload = multer(); // Multer for handling file uploads
+
 import db from "../db/conn.mjs";
 //import { ObjectId } from "mongodb";
 
@@ -81,6 +86,7 @@ router.get("/findAll/globaltags", async (req, res) => {
 });
 
 
+// FIXME still used? not all in rdb?
 // Post a runrecord
 router.put("/runrecords", async (req, res) => {
   console.log("PUT  /runrecords/ insert document from " + req.ip);
@@ -102,6 +108,29 @@ router.put("/runrecords", async (req, res) => {
       + 'CDB result:' + '\n' + JSON.stringify(result, null, 3) + '\n';
   res.send(retRes).status(204);
 
+});
+
+
+// Upload a file to MongoDB
+router.post('/upload', upload.single('file'), async (req, res) => {
+    if (!req.file || !req.body.tag) {
+      return res.status(400).send('File and tag are required');
+    }
+    
+    let filesCollection = db.collection("detconfigs");
+    
+    try {
+        const fileData = {
+            tag: req.body.tag,
+            filename: req.file.originalname,
+            content: req.file.buffer,
+        };
+        
+        const result = await filesCollection.insertOne(fileData);
+        res.status(200).send(`File uploaded successfully with ID: ${result.insertedId}`);
+    } catch (err) {
+        res.status(500).send('Error uploading file: ' + err.message);
+    }
 });
 
 
