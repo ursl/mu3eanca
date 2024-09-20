@@ -1,6 +1,9 @@
 import express from "express";
 
 import multer from "multer";
+import archiver from "archiver";
+import stream from "stream";
+import JSZip from 'jszip';
 
 const upload = multer(); // Multer for handling file uploads
 
@@ -150,6 +153,59 @@ router.post('/uploadMany', upload.array('file'), async (req, res) => {
         res.status(200).send(`Files uploaded successfully with IDs: ${result.insertedIds}`);
     } catch (err) {
         res.status(500).send('Error uploading files: ' + err.message);
+    }
+});
+
+
+// -- Route to download all files as a ZIP archive by tag
+router.get('/downloadTag', async (req, res) => {
+    const tag = req.query.tag;
+    
+    if (!tag) {
+        return res.status(400).send('Tag parameter is required');
+    }
+    
+    let filesCollection = db.collection("detconfigs");
+    
+    try {
+        const files = await filesCollection.find({ tag }).toArray();
+
+        files.forEach(file => {
+            console.log("file: " + file.filename + " buffer size = " + file.content.buffer.length);           
+        });
+        console.log(" .. ..  ");
+
+        if (files.length === 0) {
+            return res.status(404).send('No files found for the given tag');
+        }
+
+        
+        // -- Create a ZIP archive and stream it to the response
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename=${tag}.zip`);
+        
+        // -- Pipe the archive to the response
+        archive.pipe(res);
+        
+        // -- Append all files to the archive
+        files.forEach(file => {
+            const bufferStream = new stream.PassThrough();
+            // -- note: .buffer is absolutely essential
+            bufferStream.end(file.content.buffer);
+            archive.append(bufferStream, { name: file.filename });
+        });
+        
+        // -- Listen for any errors
+        archive.on('error', (err) => {
+            throw err;
+        });
+        
+        // -- Finalize the archive (must be called to finish the stream)
+        archive.finalize();
+        
+    } catch (err) {
+        res.status(500).send('Error retrieving files: ' + err.message);
     }
 });
 
