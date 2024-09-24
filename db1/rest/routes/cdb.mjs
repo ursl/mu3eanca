@@ -3,7 +3,6 @@ import express from "express";
 import multer from "multer";
 import archiver from "archiver";
 import stream from "stream";
-import JSZip from 'jszip';
 
 const upload = multer(); // Multer for handling file uploads
 
