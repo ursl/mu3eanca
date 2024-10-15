@@ -170,7 +170,8 @@ router.get('/downloadTag', async (req, res) => {
         const files = await filesCollection.find({ tag }).toArray();
 
         files.forEach(file => {
-            console.log("file: " + file.filename + " buffer size = " + file.content.buffer.length);           
+            console.log("file: " + file.filename);           
+            //            console.log("file: " + file.filename + " buffer size = " + file.content.buffer.length);           
         });
         console.log(" .. ..  ");
 
@@ -206,6 +207,29 @@ router.get('/downloadTag', async (req, res) => {
     } catch (err) {
         res.status(500).send('Error retrieving files: ' + err.message);
     }
+});
+
+
+// -- Route to download SINGLE file for a tag
+//    Note: This returns (as of now) base64 encoded data, not binary zip!
+router.get('/downloadSingleDetConfig', async (req, res) => {
+    const tag = req.query.tag;
+    
+    if (!tag) {
+        return res.status(400).send('Tag parameter is required');
+    }
+    
+    let filesCollection = db.collection("detconfigs");
+    
+    let query = {"tag": tag};
+    let result = await filesCollection.findOne(query);
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename=${tag}.base64`);
+
+    if (!result) res.send("Not found").status(404);
+    else res.send(result.content).status(200);
+
 });
 
 
