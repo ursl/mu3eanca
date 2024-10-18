@@ -1,10 +1,15 @@
 import express from "express";
+import {MongoClient, Binary} from "mongodb";
 
 import multer from "multer";
 import archiver from "archiver";
 import stream from "stream";
+import fs  from "fs";
 
 const upload = multer(); // Multer for handling file uploads
+
+// Multer setup to handle file uploads
+const singleUpload = multer({ dest: 'uploads/' });
 
 import db from "../db/conn.mjs";
 
@@ -210,27 +215,59 @@ router.get('/downloadTag', async (req, res) => {
 });
 
 
-// -- Route to download SINGLE file for a tag
-//    Note: This returns (as of now) base64 encoded data, not binary zip!
-router.get('/downloadSingleDetConfig', async (req, res) => {
-    const tag = req.query.tag;
-    
-    if (!tag) {
-        return res.status(400).send('Tag parameter is required');
-    }
-    
-    let filesCollection = db.collection("detconfigs");
-    
-    let query = {"tag": tag};
-    let result = await filesCollection.findOne(query);
+// ----------------------------------------------------------------------
+//moor>curl -X POST -F "tag=j1" -F "filename=j1/root.json" -F "file=@j1/root.json" http://localhost:5050/cdb/uploadJSON
+router.post('/uploadJSON', singleUpload.single('file'), async (req, res) => {
+         try {
+        let collection = db.collection('detconfigs');
+        
+        const { tag, filename } = req.body; // Get 'tag' and 'filename' from form data
+        const filePath = req.file.path; // Temporary path of the uploaded file
 
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename=${tag}.base64`);
+        // Read the file contents as a BLOB (binary data)
+        const fileContent = fs.readFileSync(filePath);
 
-    if (!result) res.send("Not found").status(404);
-    else res.send(result.content).status(200);
+        // Insert the document into MongoDB as a BLOB (Binary)
+        await collection.insertOne({
+            tag,
+            filename,
+            content: Binary(fileContent) // Store file content as Binary
+        });
 
+        // Clean up the temporary file
+        fs.unlinkSync(filePath);
+
+        res.status(200).send('File uploaded successfully');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error uploading file');
+    } 
 });
 
+
+// ----------------------------------------------------------------------
+// moor>curl http://localhost:5050/cdb/downloadJSON/j2 -o root.json
+router.get('/downloadJSON/:tag', async (req, res) => {
+    try {
+        let collection = db.collection("detconfigs");
+
+        // Find the document with the given tag
+        const fileDocument = await collection.findOne({ tag: req.params.tag });
+
+        if (fileDocument) {
+            // The file content is stored as a BLOB (Binary), so convert it back to JSON
+            const fileContentBuffer = fileDocument.content.buffer;
+            const fileContentJson = JSON.parse(fileContentBuffer.toString('utf8'));
+
+            // Send the parsed JSON content as the response
+            res.json(fileContentJson);
+        } else {
+            res.status(404).send('File not found');
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error retrieving file');
+    } 
+});
 
 export default router;
