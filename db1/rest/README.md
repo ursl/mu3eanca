@@ -69,5 +69,12 @@ moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=5" http://localhost:5
 
 moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "file=@mask_408_1_12_DS_chip5.bin" -F "file=@mask_408_1_12_DS_chip6.bin" -F "tag=4" http://localhost:5050/cdb/uploadMany
 
+
+moor>curl -X POST -F "tag=j1" -F "filename=j1/root.json" -F "file=@j1/root.json" http://localhost:5050/cdb/uploadJSON
+
+moor>curl http://localhost:5050/cdb/downloadJSON/j1 -o root.json
+
+
+
 ```
 
