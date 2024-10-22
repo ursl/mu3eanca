@@ -5,11 +5,16 @@ import "./loadEnvironment.mjs";
 import "express-async-errors";
 import bodyParser from "body-parser";
 
-//import db from "./db/conn.mjs";
 import db from "./db/conn.mjs";
 
+// -- conditions database
 import cdb from "./routes/cdb.mjs";
+
+// -- run database
 import rdb from "./routes/rdb.mjs";
+
+// -- provide access to DQM plots
+import dqm from "./routes/dqm.mjs";
 
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -27,6 +32,7 @@ app.locals.isFiltered = false;
 // Load the /posts routes
 app.use("/cdb", cdb);
 app.use("/rdb", rdb);
+app.use("/dqm", dqm);
 
 app.set('view engine', 'ejs');
 app.set("views", path.join(__dirname, "views"));
