@@ -4,6 +4,48 @@ import db from "../db/conn.mjs";
 
 const router = express.Router();
 
+// ----------------------------------------------------------------------
+// -- Post a runrecord
+// curl -X PUT -H "Content-Type: application/json" \
+//   --data-binary @/Users/ursl/data/mu3e/json13/runrecords/runlog_005559.json \
+//   http://localhost:5050/rdb/runrecords
+router.put("/runrecords", async (req, res) => {
+    console.log("PUT  /runrecords/ insert document from " + req.ip);
+    const data    = req.body;
+    let borData   = data.BOR;
+    let runnumber = borData["Run number"];
+    
+    let collection = await db.collection("runrecords");
+    
+    let query = {"BOR.Run number": runnumber};
+    let rDel = await collection.deleteMany(query);
+    console.log("rDel ->" + JSON.stringify(rDel) + "<-");    
+    console.log("runnumber ->" + runnumber + "<-");
+    
+    let newDocument = req.body;
+    var currentdate = new Date(); 
+    var datetime = currentdate.getFullYear() + "/" 
+                 + (currentdate.getMonth()+1).toString().padStart(2, '0')  + "/" 
+                 + currentdate.getDate().toString().padStart(2, '0') + " "
+                 + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                 + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                 + currentdate.getSeconds().toString().padStart(2, '0');
+    let addComment = {"date": datetime, "comment": "Database entry inserted "};
+    if (newDocument.hasOwnProperty("History")) {
+        newDocument["History"].push(addComment);
+    } else {
+        newDocument["History"] = [addComment];
+    }
+
+    let result = await collection.insertOne(newDocument);
+    let retRes = 'CDB inserted:' + '\n' + JSON.stringify(req.body, null, 3) + '\n'
+               + 'CDB result:' + '\n' + JSON.stringify(result, null, 3) + '\n';
+    res.send(retRes).status(204);
+
+});
+
+
+// ----------------------------------------------------------------------
 // -- index page (with possible filters)
 router.get("/", async (req, res) => {
     let collection = await db.collection("runrecords");
@@ -90,6 +132,8 @@ router.get("/", async (req, res) => {
 
 });
 
+
+// ----------------------------------------------------------------------
 // -- Get a single runrecord
 router.get("/:id", async (req, res) => {
     let runno = parseInt(req.params.id);
@@ -107,6 +151,8 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+
+// ----------------------------------------------------------------------
 // -- Post a single runrecord
 router.post("/updateRun", async (req, res) => {
     console.log("=>router.post, req:" + JSON.stringify(req.body));
@@ -130,6 +176,58 @@ router.post("/updateRun", async (req, res) => {
     });
     // await db.save(); // FIXME: will lead to "500 (Internal Server Error)"
 
+});
+
+
+// ----------------------------------------------------------------------
+// -- Adds a JSON fragment to the attributes array
+router.put("/addAttribute/:id", async (req, res) => {
+    let adata = req.body;
+
+    // -- get first key (e.g. DQMOnline)
+    let jsonKey;
+    for(var key in adata) {
+        jsonKey = key;
+        break;
+    }
+
+    let runno = parseInt(req.params.id);
+
+    let collection = await db.collection("runrecords");
+
+    let query = {"BOR.Run number": runno};
+    let result = await collection.findOne(query);
+    let ndata = result;
+    
+    if (ndata.hasOwnProperty("Attributes")) {
+        ndata["Attributes"].push(adata);
+    } else {
+        ndata["Attributes"] = [adata];
+    }
+    delete ndata["_id"];
+
+    var currentdate = new Date(); 
+    var datetime = currentdate.getFullYear() + "/" 
+                 + (currentdate.getMonth()+1).toString().padStart(2, '0')  + "/" 
+                 + currentdate.getDate().toString().padStart(2, '0') + " "
+                 + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                 + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                 + currentdate.getSeconds().toString().padStart(2, '0');
+    let addComment = {"date": datetime, "comment": "Added " + jsonKey};
+    ndata.History.push(addComment);
+
+    //    console.log("addAttribute> runno = " + runno ); 
+    //    console.log("addAttribute> adata ->" + JSON.stringify(adata) + "<-"); 
+    //    console.log("addAttribute> ndata ->" + JSON.stringify(ndata) + "<-"); 
+    //    console.log("addAttribute> result ->" + JSON.stringify(result) + "<-"); 
+
+    const nval = {$set: ndata};
+    await collection.updateOne(query, nval, function(err, res) {
+        if (err) throw err;
+        console.log("1 document updated");
+    });
+
+    res.sendStatus(204);
 });
 
 
