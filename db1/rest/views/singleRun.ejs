@@ -100,6 +100,12 @@
      let idxNextRun = (idxThisRun < aruns.length? idxThisRun + 1: -1);
      console.log("idxThisRun / idxPrevRun / idxnextRun :" + idxThisRun + " / " + idxPrevRun + " / " + idxNextRun);
 
+     const dqmMap = new Map();
+     
+     dqmMap.set(-1, 'unset');
+     dqmMap.set(0, 'bad');
+     dqmMap.set(1, 'good');
+     
      let doEdit = -1;
 
      function setNext() {
@@ -126,6 +132,9 @@
          if (doEdit < 1) {
              document.getElementById('comments').disabled = false;
              document.getElementById('btnSubm').style = "float: right; background-color:#00703c";
+             document.getElementById('dqm0Pix').disabled = false;
+             document.getElementById('dqm0Fib').disabled = false;
+             document.getElementById('dqm0Til').disabled = false;
              doEdit = 1; 
          } 
      }
@@ -145,11 +154,12 @@
 
          var currentdate = new Date(); 
          var datetime = currentdate.getFullYear() + "/" 
-                      + (currentdate.getMonth()+1)  + "/" 
-                      + currentdate.getDate() + " "
-                      + currentdate.getHours() + ":"  
-                      + currentdate.getMinutes() + ":" 
-                      + currentdate.getSeconds();
+                      + (currentdate.getMonth()+1).toString().padStart(2, '0')  + "/" 
+                      + currentdate.getDate().toString().padStart(2, '0') + " "
+                      + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                      + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                      + currentdate.getSeconds().toString().padStart(2, '0');
+         
          let addComment = {"date": datetime, "comment": "Comment updated"};
          ldata.History.push(addComment);
          
@@ -238,6 +248,16 @@
                 <td> Uncompressed data size </td>
                 <td> <%= data.EOR["Uncompressed data size"]%> </td>
             </tr>
+            <tr>
+                <td> Online DQM summary </td>
+                <td> Vertex
+                    <select name="cars" id="cars"  disabled="true">
+                        <option value= <%= data.Attributes.DQMOnline["vertex"]%> > <%  dqmMap(<%= data.Attributes.DQMOnline["vertex"]%> ) %> </option>
+                    </select>
+                </td>
+            </tr>
+
+
         </table>
         
         <h2>Record history</h2>
