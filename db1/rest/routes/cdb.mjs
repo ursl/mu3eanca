@@ -89,31 +89,6 @@ router.get("/findAll/globaltags", async (req, res) => {
 });
 
 
-// FIXME still used? not all in rdb?
-// Post a runrecord
-router.put("/runrecords", async (req, res) => {
-  console.log("PUT  /runrecords/ insert document from " + req.ip);
-  const data    = req.body;
-  let borData   = data.BOR;
-  let runnumber = borData["Run number"];
-
-  let collection = await db.collection("runrecords");
-  
-  let query = {"BOR.Run number": runnumber};
-  let rDel = await collection.deleteMany(query);
-  console.log("rDel ->" + rDel + "<-");
-
-  console.log("runnumber ->" + runnumber + "<-");
-
-  let newDocument = req.body;
-  let result = await collection.insertOne(newDocument);
-  let retRes = 'CDB inserted:' + '\n' + JSON.stringify(req.body, null, 3) + '\n'
-      + 'CDB result:' + '\n' + JSON.stringify(result, null, 3) + '\n';
-  res.send(retRes).status(204);
-
-});
-
-
 // -- Upload a single file to MongoDB
 router.post('/upload', upload.single('file'), async (req, res) => {
     console.log("upload req.body:" + JSON.stringify(req.body));
