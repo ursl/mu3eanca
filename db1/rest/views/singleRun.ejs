@@ -21,7 +21,7 @@
              padding-bottom: 10px;
              padding-left: 0px;
          }
-         
+
          .button {
              background-color: #00703c; /* Green */
              border: none;
@@ -32,7 +32,7 @@
              display: inline-block;
              font-size: 16px;
          }
-         
+        
          textarea {
              width: 100%; /* Make textarea fill the cell's width */
              height: 50px; /* You can adjust the height as needed */
@@ -85,97 +85,9 @@
              background-color: #507d2a;
              color: white;
          }
-
-         
+       
         </style>
     </head>
-
-    <script>
-     let sruns = '<%-runs%>'
-     let aruns = sruns.split(",");
-     const sthisRun = <%= data.BOR["Run number"]%>;
-     const thisRun = String(sthisRun);
-     const idxThisRun = aruns.indexOf(thisRun);
-     let idxPrevRun = (idxThisRun > 0? idxThisRun - 1: -1);
-     let idxNextRun = (idxThisRun < aruns.length? idxThisRun + 1: -1);
-     console.log("idxThisRun / idxPrevRun / idxnextRun :" + idxThisRun + " / " + idxPrevRun + " / " + idxNextRun);
-
-     const dqmMap = new Map();
-     
-     dqmMap.set(-1, 'unset');
-     dqmMap.set(0, 'bad');
-     dqmMap.set(1, 'good');
-     
-     let doEdit = -1;
-
-     function setNext() {
-         if (idxNextRun < aruns.length) {
-             window.location.href = '/rdb/' + aruns[idxNextRun] + '/?runs=' + sruns;
-         } else {
-             window.location.href = '/rdb/';
-         }
-     }
-
-     function setPrev() {
-         if (idxPrevRun > -1) {
-             window.location.href = '/rdb/' + aruns[idxPrevRun] + '/?runs=' + sruns;
-         } else {
-             window.location.href = '/rdb/';
-         }
-     }
-
-     function setBack() {
-         window.location.href = '/rdb/';
-     }
-
-     function setEdit() {
-         if (doEdit < 1) {
-             document.getElementById('comments').disabled = false;
-             document.getElementById('btnSubm').style = "float: right; background-color:#00703c";
-             document.getElementById('dqm0Pix').disabled = false;
-             document.getElementById('dqm0Fib').disabled = false;
-             document.getElementById('dqm0Til').disabled = false;
-             doEdit = 1; 
-         } 
-     }
-
-     function updateRun() {
-         if (doEdit < 1) {
-             alert("Nothing edited. Will not save.\nClick Edit button to allow editing.");
-             return;
-         } 
-
-         var ldata = <%- JSON.stringify(data) %>;
-
-         // -- update the modified data
-         ldata.EOR["Comments"] = document.getElementById('comments').value;
-         console.log("ldata.History = " + JSON.stringify(ldata.History));
-         
-
-         var currentdate = new Date(); 
-         var datetime = currentdate.getFullYear() + "/" 
-                      + (currentdate.getMonth()+1).toString().padStart(2, '0')  + "/" 
-                      + currentdate.getDate().toString().padStart(2, '0') + " "
-                      + currentdate.getHours().toString().padStart(2, '0') + ":"  
-                      + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
-                      + currentdate.getSeconds().toString().padStart(2, '0');
-         
-         let addComment = {"date": datetime, "comment": "Comment updated"};
-         ldata.History.push(addComment);
-         
-         console.log("ldata: " + JSON.stringify(ldata));
-         
-         // -- Send the POST request
-         fetch('/rdb/updateRun', {
-             method: 'POST',
-             headers: {
-                 'Content-Type': 'application/json',
-             },
-             body: JSON.stringify(ldata)  // Send data as JSON
-         })
-     }
-     
-    </script>
 
     <body>
         <h1>Run 
@@ -250,10 +162,12 @@
             </tr>
             <tr>
                 <td> Online DQM summary </td>
-                <td> Vertex
+                <td>
+                    <input type="checkbox" id="dqmVtx" name="dqmVtx" indeterminate disabled/> <label for="dqmVtx">Vertex</label>
+                    <input type="checkbox" id="dqmFib" name="dqmFib" indeterminate disabled/> <label for="dqmFib">Fibres</label>
+                    <input type="checkbox" id="dqmTil" name="dqmTil" indeterminate disabled/> <label for="dqmTil">Tiles</label>
                 </td>
             </tr>
-
 
         </table>
         
@@ -276,4 +190,144 @@
         </table>    
     </body>
 
+    <script>
+     const lData = <%- JSON.stringify(data) %>;
+     console.log(lData);
+     
+     let sruns = '<%-runs%>';
+     let aruns = sruns.split(",");
+     const sthisRun = <%= data.BOR["Run number"]%>;
+     const thisRun = String(sthisRun);
+     const idxThisRun = aruns.indexOf(thisRun);
+     let idxPrevRun = (idxThisRun > 0? idxThisRun - 1: -1);
+     let idxNextRun = (idxThisRun < aruns.length? idxThisRun + 1: -1);
+     console.log("idxThisRun / idxPrevRun / idxnextRun :" + idxThisRun + " / " + idxPrevRun + " / " + idxNextRun);
+     
+     let mycolors = [];
+     mycolors.push('#1450fa'); // blue
+     mycolors.push('#0ac80a'); // darker green
+     mycolors.push('#50f000'); // light green
+     mycolors.push('#f0f000'); // yellow
+     mycolors.push('#f05000'); // orange
+     mycolors.push('#f00000'); // red
+
+     let dqmOnline = 0;
+     var dqmOnlineIdx = -1;
+
+     const hasAttributes = lData.hasOwnProperty('Attributes');
+
+     if (hasAttributes) {
+         for (var idx = 0; idx < lData.Attributes.length; ++idx) {
+             console.log(lData.Attributes[idx].DQMOnline);
+             dqmOnlineIdx = idx; 
+         }
+         
+         console.log("lData.Attributes.length: ");
+         console.log(lData.Attributes.length);
+     }
+     
+     if (dqmOnlineIdx > -1) {
+         console.log("HALLO OK");
+         dqmOnline = 1; 
+         var onlineDQM = lData.Attributes[dqmOnlineIdx].DQMOnline;
+         console.log(onlineDQM.fibres);
+         if (onlineDQM["vertex"] === '1') {
+             console.log("vertex good");
+             document.getElementById('dqmVtx').checked = true;
+         } else {
+             console.log("vertex bad");
+             document.getElementById('dqmVtx').checked = false;
+         }
+         if (onlineDQM["fibres"] === '1') {
+             console.log("fibre good");
+             document.getElementById('dqmFib').checked = true;
+         } else {
+             console.log("fibre bad");
+             document.getElementById('dqmFib').checked = false;
+         }
+         if (onlineDQM["tiles"] === '1') {
+             console.log("tiles good");
+             document.getElementById('dqmTil').checked = true;
+         } else {
+             console.log("tiles bad");
+             document.getElementById('dqmTil').checked = false;
+         }
+     } else {
+         console.log("HALLO blurp");
+         document.getElementById('dqmVtx').indeterminate = true;
+         document.getElementById('dqmFib').indeterminate = true;
+         document.getElementById('dqmTil').indeterminate = true;
+     }
+        
+     let doEdit = -1;
+
+     function setNext() {
+         if (idxNextRun < aruns.length) {
+             window.location.href = '/rdb/' + aruns[idxNextRun] + '/?runs=' + sruns;
+         } else {
+             window.location.href = '/rdb/';
+         }
+     }
+
+     function setPrev() {
+         if (idxPrevRun > -1) {
+             window.location.href = '/rdb/' + aruns[idxPrevRun] + '/?runs=' + sruns;
+         } else {
+             window.location.href = '/rdb/';
+         }
+     }
+
+     function setBack() {
+         window.location.href = '/rdb/';
+     }
+
+     function setEdit() {
+         if (doEdit < 1) {
+             document.getElementById('comments').disabled = false;
+             document.getElementById('btnSubm').style = "float: right; background-color:#00703c";
+             document.getElementById('dqmVtx').disabled = false;
+             document.getElementById('dqmFib').disabled = false;
+             document.getElementById('dqmTil').disabled = false;
+             doEdit = 1; 
+         } 
+     }
+
+     function updateRun() {
+         if (doEdit < 1) {
+             alert("Nothing edited. Will not save.\nClick Edit button to allow editing.");
+             return;
+         } 
+
+         var ldata = <%- JSON.stringify(data) %>;
+
+         // -- update the modified comment
+         ldata.EOR["Comments"] = document.getElementById('comments').value;
+         console.log("ldata.History = " + JSON.stringify(ldata.History));
+
+         var currentdate = new Date(); 
+         var datetime = currentdate.getFullYear() + "/" 
+                      + (currentdate.getMonth()+1).toString().padStart(2, '0')  + "/" 
+                      + currentdate.getDate().toString().padStart(2, '0') + " "
+                      + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                      + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                      + currentdate.getSeconds().toString().padStart(2, '0');
+         
+         let addComment = {"date": datetime, "comment": "Comment updated"};
+         ldata.History.push(addComment);
+         
+         console.log("ldata: " + JSON.stringify(ldata));
+     
+         // -- Send the POST request
+         fetch('/rdb/updateRun', {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+             },
+             body: JSON.stringify(ldata)  // Send data as JSON
+         })
+     }
+     
+    </script>
+
+    
 </html>
