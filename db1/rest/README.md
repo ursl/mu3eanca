@@ -74,6 +74,7 @@ moor>curl -X POST -F "tag=j1" -F "filename=j1/root.json" -F "file=@j1/root.json"
 
 moor>curl http://localhost:5050/cdb/downloadJSON/j1 -o root.json
 
+curl -X PUT -H "Content-Type: application/json" --data-binary @/Users/ursl/tmp/maskfiles/dqm101.json http://pc11740/rdb/addAttribute/7559
 
 
 ```
