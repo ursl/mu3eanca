@@ -163,6 +163,8 @@
             <tr>
                 <td> Online DQM summary </td>
                 <td>
+                    <input type="checkbox" id="dqmMu3e" name="dqmMu3e" indeterminate disabled/> <label for="dqmVtx">Mu3e</label>
+                    <input type="checkbox" id="dqmBeam" name="dqmBeam" indeterminate disabled/> <label for="dqmVtx">Beam</label>
                     <input type="checkbox" id="dqmVtx" name="dqmVtx" indeterminate disabled/> <label for="dqmVtx">Vertex</label>
                     <input type="checkbox" id="dqmFib" name="dqmFib" indeterminate disabled/> <label for="dqmFib">Fibres</label>
                     <input type="checkbox" id="dqmTil" name="dqmTil" indeterminate disabled/> <label for="dqmTil">Tiles</label>
@@ -211,54 +213,74 @@
      mycolors.push('#f05000'); // orange
      mycolors.push('#f00000'); // red
 
+     // -- all the DQM flags to be shown
+     const detMap = new Map([
+         ["mu3e", "dqmMu3e"], 
+         ["beam", "dqmBeam"], 
+         ["vertex", "dqmVtx"], 
+         ["fibres", "dqmFib"], 
+         ["tiles", "dqmTil"]
+     ]);
+
+     var dqmOrigIdx = -1; 
+     const dqmOrig = new Map([
+         ["mu3e", "nada"], 
+         ["beam", "nada"], 
+         ["vertex", "nada"], 
+         ["fibres", "nada"], 
+         ["tiles", "nada"]
+     ]);
+
+
+     let commentChange = 0; 
+     
      let dqmOnline = 0;
      var dqmOnlineIdx = -1;
 
      const hasAttributes = lData.hasOwnProperty('Attributes');
 
+     // -- get most recent (last) DQMOnline
      if (hasAttributes) {
          for (var idx = 0; idx < lData.Attributes.length; ++idx) {
              console.log(lData.Attributes[idx].DQMOnline);
              dqmOnlineIdx = idx; 
          }
-         
-         console.log("lData.Attributes.length: ");
-         console.log(lData.Attributes.length);
      }
      
      if (dqmOnlineIdx > -1) {
-         console.log("HALLO OK");
          dqmOnline = 1; 
          var onlineDQM = lData.Attributes[dqmOnlineIdx].DQMOnline;
-         console.log(onlineDQM.fibres);
-         if (onlineDQM["vertex"] === '1') {
-             console.log("vertex good");
-             document.getElementById('dqmVtx').checked = true;
-         } else {
-             console.log("vertex bad");
-             document.getElementById('dqmVtx').checked = false;
-         }
-         if (onlineDQM["fibres"] === '1') {
-             console.log("fibre good");
-             document.getElementById('dqmFib').checked = true;
-         } else {
-             console.log("fibre bad");
-             document.getElementById('dqmFib').checked = false;
-         }
-         if (onlineDQM["tiles"] === '1') {
-             console.log("tiles good");
-             document.getElementById('dqmTil').checked = true;
-         } else {
-             console.log("tiles bad");
-             document.getElementById('dqmTil').checked = false;
+         dqmOrigIdx = dqmOnlineIdx;
+         
+         for (var prop in onlineDQM) {
+             if (Object.prototype.hasOwnProperty.call(onlineDQM, prop)) {
+                 console.log("prop: " + prop + " -> val: " + onlineDQM[prop]);
+                 if (detMap.has(prop)) {
+                     if (onlineDQM[prop] === '1') {
+                         console.log("prop " + prop + " good");
+                         document.getElementById(detMap.get(prop)).checked = true;
+                         dqmOrig.set(prop, "1");
+                     } else if (onlineDQM[prop] === '0') {
+                         console.log("prop " + prop + " bad");
+                         document.getElementById(detMap.get(prop)).checked = false;
+                         dqmOrig.set(prop, "0");
+                     } else {
+                         console.log("prop " + prop + " unset");
+                         document.getElementById(detMap.get(prop)).indeterminate = true;
+                         dqmOrig.set(prop, "-1");
+                     }
+                 }
+             }
+
          }
      } else {
          console.log("HALLO blurp");
-         document.getElementById('dqmVtx').indeterminate = true;
-         document.getElementById('dqmFib').indeterminate = true;
-         document.getElementById('dqmTil').indeterminate = true;
+         for (const value of detMap.values()) {
+             console.log(value);
+             document.getElementById(value).indeterminate = true;
+         }
      }
-        
+     
      let doEdit = -1;
 
      function setNext() {
@@ -285,9 +307,16 @@
          if (doEdit < 1) {
              document.getElementById('comments').disabled = false;
              document.getElementById('btnSubm').style = "float: right; background-color:#00703c";
-             document.getElementById('dqmVtx').disabled = false;
-             document.getElementById('dqmFib').disabled = false;
-             document.getElementById('dqmTil').disabled = false;
+             
+             for (const [key, value] of detMap) {
+                 console.log("key: " + key + " unsetting disabled: " + value);
+                 document.getElementById(value).disabled = false;
+             }
+
+             for (const [key, value] of dqmOrig) {
+                 console.log("original key: " + key + " : " + value);
+             }
+
              doEdit = 1; 
          } 
      }
@@ -299,11 +328,30 @@
          } 
 
          var ldata = <%- JSON.stringify(data) %>;
-
+         
          // -- update the modified comment
          ldata.EOR["Comments"] = document.getElementById('comments').value;
          console.log("ldata.History = " + JSON.stringify(ldata.History));
 
+         // -- check for updated DQM summary
+         var dqmChange = "DQM changes: "; 
+         var dqmChanged = 0; 
+         for (const [key, value] of detMap) {
+             var status = -1;
+             if (document.getElementById(value).indeterminate) {
+                 status = -1;
+             } else if (document.getElementById(value).checked) {
+                 status = 1;
+             } else {
+                 status = 0;
+             }
+             if (status != dqmOrig.get(key)) {
+                 dqmChange = dqmChange + key + " ";
+                 dqmChanged = 1; 
+                 lData.Attributes[dqmOrigIdx].DQMOnline[key] = status;
+             }
+         }
+         
          var currentdate = new Date(); 
          var datetime = currentdate.getFullYear() + "/" 
                       + (currentdate.getMonth()+1).toString().padStart(2, '0')  + "/" 
@@ -312,11 +360,22 @@
                       + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
                       + currentdate.getSeconds().toString().padStart(2, '0');
          
-         let addComment = {"date": datetime, "comment": "Comment updated"};
+         let addComment = {"date": datetime, "comment": ""};
+
+         if (commentChange) {
+             addComment.comment = "Comment changed. ";
+         }
+         if (dqmChanged) {
+             addComment.comment = addComment.comment + dqmChange;
+         }
+         
+
          ldata.History.push(addComment);
          
          console.log("ldata: " + JSON.stringify(ldata));
-     
+         
+         return;
+         
          // -- Send the POST request
          fetch('/rdb/updateRun', {
              method: 'POST',
@@ -326,6 +385,10 @@
              body: JSON.stringify(ldata)  // Send data as JSON
          })
      }
+
+     document.querySelector('textarea').addEventListener('change', function (event) {
+         commentChange = 1; 
+     });
      
     </script>
 
