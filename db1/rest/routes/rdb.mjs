@@ -7,7 +7,7 @@ const router = express.Router();
 // ----------------------------------------------------------------------
 // -- Post a runrecord
 // curl -X PUT -H "Content-Type: application/json" \
-//   --data-binary @/Users/ursl/data/mu3e/json13/runrecords/runlog_005559.json \
+//   --data-binary @/Users/ursl/data/mu3e/json13/runrecords/runlog_007552.json \
 //   http://localhost:5050/rdb/runrecords
 router.put("/runrecords", async (req, res) => {
     console.log("PUT  /runrecords/ insert document from " + req.ip);
