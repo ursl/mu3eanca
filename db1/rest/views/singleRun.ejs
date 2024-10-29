@@ -359,7 +359,7 @@
                  status = "0";
              }
              if (status != dqmOrig.get(key)) {
-                 dqmChange = dqmChange + key + " ";
+                 dqmChange = dqmChange + key + ": " + status + " ";
                  dqmChanged = 1; 
                  newDQM.DQMOnline[key] = status;
                  console.log("key: " + key);
