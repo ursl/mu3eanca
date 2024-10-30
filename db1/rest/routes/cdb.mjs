@@ -226,16 +226,18 @@ router.get('/downloadJSON/:tag', async (req, res) => {
     try {
         let collection = db.collection("detconfigs");
 
-        // Find the document with the given tag
-        const fileDocument = await collection.findOne({ tag: req.params.tag });
+        // Find the (last) document with the given tag
+        const fileDocuments = await collection.find({ tag: req.params.tag }).toArray();
+        if (fileDocuments.length > 0) {
+            const fileDocument = fileDocuments[fileDocuments.length-1]
+            if (fileDocument) {
+                // The file content is stored as a BLOB (Binary), so convert it back to JSON
+                const fileContentBuffer = fileDocument.content.buffer;
+                const fileContentJson = JSON.parse(fileContentBuffer.toString('utf8'));
 
-        if (fileDocument) {
-            // The file content is stored as a BLOB (Binary), so convert it back to JSON
-            const fileContentBuffer = fileDocument.content.buffer;
-            const fileContentJson = JSON.parse(fileContentBuffer.toString('utf8'));
-
-            // Send the parsed JSON content as the response
-            res.json(fileContentJson);
+                // Send the parsed JSON content as the response
+                res.json(fileContentJson);
+            }
         } else {
             res.status(404).send('File not found');
         }
