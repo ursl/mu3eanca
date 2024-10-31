@@ -90,7 +90,7 @@
     </head>
 
     <body>
-        <h1>Run 
+        <h1>Run
             <%=data.BOR["Run number"]%>
         </h1>
 
@@ -160,6 +160,7 @@
                 <td> Uncompressed data size </td>
                 <td> <%= data.EOR["Uncompressed data size"]%> </td>
             </tr>
+            <% if (data.hasOwnProperty('Attributes')) { %>
             <tr>
                 <td> Online DQM summary </td>
                 <td>
@@ -170,6 +171,7 @@
                     <input type="checkbox" id="dqmTil" name="dqmTil" indeterminate disabled/> <label for="dqmTil">Tiles</label>
                 </td>
             </tr>
+            <% } %>
 
         </table>
         
@@ -276,10 +278,14 @@
 
          }
      } else {
-         console.log("HALLO blurp");
-         for (const value of detMap.values()) {
-             console.log(value);
-             document.getElementById(value).indeterminate = true;
+         if (hasAttributes) {
+             console.log("Set attributes to indeterminate");
+             for (const value of detMap.values()) {
+                 console.log(value);
+                 document.getElementById(value).indeterminate = true;
+             }
+         } else {
+             console.log("do nothing as this runrecord has no Attributes");
          }
      }
      
@@ -306,24 +312,48 @@
      }
 
      function setEdit() {
+         console.log("HALLO setEdit");
          if (doEdit < 1) {
              document.getElementById('comments').disabled = false;
              document.getElementById('btnSubm').style = "float: right; background-color:#00703c";
              
-             for (const [key, value] of detMap) {
-                 console.log("key: " + key + " unsetting disabled: " + value);
-                 document.getElementById(value).disabled = false;
-             }
+             if (hasAttributes) {
+                 for (const [key, value] of detMap) {
+                     console.log("key: " + key + " unsetting disabled: " + value);
+                     document.getElementById(value).disabled = false;
+                 }
 
-             for (const [key, value] of dqmOrig) {
-                 console.log("original key: " + key + " : " + value);
+                 for (const [key, value] of dqmOrig) {
+                     console.log("original key: " + key + " : " + value);
+                 }
              }
-
+             
              doEdit = 1; 
          } 
      }
 
+     function unsetEdit() {
+         if (doEdit > 0) {
+             document.getElementById('comments').disabled = true;
+             document.getElementById('btnSubm').style = "float: right; background-color:#93c572";
+             
+             if (hasAttributes) {
+                 for (const [key, value] of detMap) {
+                     console.log("key: " + key + " unsetting disabled: " + value);
+                     document.getElementById(value).disabled = true;
+                 }
+                 
+                 for (const [key, value] of dqmOrig) {
+                     console.log("original key: " + key + " : " + value);
+                 }
+             }
+             
+             doEdit = 0; 
+         } 
+     }
+
      function updateRun() {
+         console.log("HALLO");
          if (doEdit < 1) {
              alert("Nothing edited. Will not save.\nClick Edit button to allow editing.");
              return;
@@ -347,25 +377,28 @@
              }
          };
 
-         var dqmChange = "DQM status changes: "; 
+         var dqmChange = "";
          var dqmChanged = 0; 
-         for (const [key, value] of detMap) {
-             var status = "-3";
-             if (document.getElementById(value).indeterminate) {
-                 status = "-1";
-             } else if (document.getElementById(value).checked) {
-                 status = "1";
-             } else {
-                 status = "0";
-             }
-             if (status != dqmOrig.get(key)) {
-                 dqmChange = dqmChange + key + ": " + status + " ";
-                 dqmChanged = 1; 
-                 newDQM.DQMOnline[key] = status;
-                 console.log("key: " + key);
-                 console.log("changed " + lData.Attributes[dqmOrigIdx].DQMOnline[key]);
-             } else {
-                 newDQM.DQMOnline[key] = dqmOrig.get(key);
+         if (dqmOrigIdx > -1) {
+             dqmChange = "DQM status changes: "; 
+             for (const [key, value] of detMap) {
+                 var status = "-3";
+                 if (document.getElementById(value).indeterminate) {
+                     status = "-1";
+                 } else if (document.getElementById(value).checked) {
+                     status = "1";
+                 } else {
+                     status = "0";
+                 }
+                 if (status != dqmOrig.get(key)) {
+                     dqmChange = dqmChange + key + ": " + status + " ";
+                     dqmChanged = 1; 
+                     newDQM.DQMOnline[key] = status;
+                     console.log("key: " + key);
+                     console.log("changed " + lData.Attributes[dqmOrigIdx].DQMOnline[key]);
+                 } else {
+                     newDQM.DQMOnline[key] = dqmOrig.get(key);
+                 }
              }
          }
          
@@ -387,7 +420,9 @@
          }
          
 
-         ldata.Attributes.push(newDQM);
+         if (dqmChanged > 0) { 
+             ldata.Attributes.push(newDQM);
+         }
          ldata.History.push(addComment);
          
          console.log("ldata: " + JSON.stringify(ldata));
@@ -400,12 +435,15 @@
              },
              body: JSON.stringify(ldata)  // Send data as JSON
          })
+
+         // -- reset color of Save button
+         unsetEdit();
+         location.reload();
      }
 
      document.querySelector('textarea').addEventListener('change', function (event) {
          commentChange = 1; 
      });
-     
     </script>
 
     
