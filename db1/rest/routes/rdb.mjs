@@ -127,7 +127,7 @@ router.get("/", async (req, res) => {
    }
 
     const result = await collection.find(query, options).limit(15).toArray();
-    console.log("default result: " + JSON.stringify(result));
+    //    console.log("default result: " + JSON.stringify(result));
     res.render('index', {'data': result});
 
 });
