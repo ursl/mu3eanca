@@ -85,7 +85,7 @@ ifneq (,$(findstring merlin,$(LHOST)))
 else ifneq (,$(findstring mu3ebe,$(LHOST)))
        $(info ************  MU3EBE VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
-       BINARIES = $(filter-out uploadDetConfig testCDB fillDB syncCloud syncMongo, $(LBINARIES))
+       BINARIES = $(filter-out uploadDetConfig downloadDetConfig testCDB fillDB syncCloud syncMongo, $(LBINARIES))
 else
        $(info ************  non-MERLIN VERSION ************)
        FILES = $(LFILES)
