@@ -61,6 +61,7 @@ int main(int argc, char* argv[]) {
   map<string, vector<string>> iniGlobalTags = {
     {"mcidealv5.0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
     {"mcidealv5.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_"} },
+    {"mcidealv5.3", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
     {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} }
   };
   
@@ -260,7 +261,7 @@ int main(int argc, char* argv[]) {
       // -- detconfv1
       if (string::npos != tag.find("detconfv1_")) {
         calDetConfV1 *cdc = new calDetConfV1();
-        filename = string(LOCALDIR) + "/../run/detector.json";
+        filename = string(LOCALDIR) + "/ascii/detector-" + tagLess + ".json";
         result = cdc->readJSON(filename);
         if (string::npos == result.find("Error")) {
           spl = cdc->makeBLOB();
