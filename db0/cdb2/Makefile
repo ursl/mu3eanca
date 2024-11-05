@@ -13,6 +13,12 @@ ifneq (,$(findstring merlin,$(LHOST)))
   LIBCURL       = -L/usr/lib64 -lcurl
   LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
   SOFLAGS       =
+else ifneq (,$(findstring mu3ebe,$(LHOST)))
+  INCMONGODB    =
+  LIBMONGODB    =
+  LIBCURL       = -L/usr/lib64 -lcurl
+  LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
+  SOFLAGS       =
 else ifneq (,$(findstring moor,$(LHOST)))
   INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
   INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
