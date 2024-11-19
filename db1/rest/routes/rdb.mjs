@@ -13,6 +13,7 @@ router.put("/runrecords", async (req, res) => {
     console.log("PUT  /runrecords/ insert document from " + req.ip);
     const data    = req.body;
     let borData   = data.BOR;
+    let eorData   = data.EOR;
     let runnumber = borData["Run number"];
     
     let collection = await db.collection("runrecords");
@@ -23,6 +24,12 @@ router.put("/runrecords", async (req, res) => {
     console.log("runnumber ->" + runnumber + "<-");
     
     let newDocument = req.body;
+
+    var docBORDate = borData["Start time"];
+    var docEORDate = eorData["Stop time"];
+    console.log("docBORDate ->" + docBORDate + "<-");
+    console.log("docEORDate ->" + docEORDate + "<-");
+    
     var currentdate = new Date(); 
     var datetime = currentdate.getFullYear() + "/" 
                  + (currentdate.getMonth()+1).toString().padStart(2, '0')  + "/" 
