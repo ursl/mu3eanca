@@ -731,12 +731,13 @@ void readBlobMppcs(string filename = "mppcs.bin") {
 
 // ----------------------------------------------------------------------
 // intrun:  ~/data/mu3e/mc/run000042-sort_100k.root
-// mcideal: ~/data/mu3e/mc/mu3e_sorted_000779.root
-void writeAll(string mode = "mcideal_v5.0", string filename = "nada") {
+// mcideal full det: ~/data/mu3e/mc/mu3e_sorted_000779.root
+// mcideal cosmic run: ~/data/mu3e/mc/mu3e_1E4_2layer_beam_run000001.root
+void writeAll(string mode = "mcideal_2024CosmicRun", string filename = "nada") {
   if (string::npos != mode.find("mcideal_v5.0") && (string::npos != filename.find("nada"))) {
     filename = "/data/experiment/mu3e/mc/build_5.0/michel/mu3e_run_000011.root";
   } else {
-    cout << "we trust that you properly specified tag and directory" << endl;
+    cout << "we trust that you properly specified tag and filename" << endl;
   }
 
   TFile *f = TFile::Open(filename.c_str());
