@@ -28,7 +28,7 @@ using namespace std;
 // cdbInitDB [-j JSONDIR] [-m MODE]
 // ---------
 //
-// initialize the JSON filesystem-based CDB for several starting points
+// initialize the JSON filesystem-based CDB for all starting points
 // "mcidealv5.0" old MC
 // "mcidealv5.1" MC after tag v5.1
 // "qc2024v1.0"  pixel sensor chipIds for first vertex module (aka half-shell)
@@ -43,17 +43,14 @@ using namespace std;
 // -- NOTE: This executable is called during "make install"!
 //          The JSON CDB will be installed in /install/cdb
 //
-// -- create all global tags with everything:
-// merlin> _build/conddb/test/cdbInitDB -j ~/data/mdc2023/json/ -m all
-//
-// moor>   _build/conddb/test/cdbInitDB -j ~/data/mu3e/json -m cr2022
-// moor>   _build/conddb/test/cdbInitDB -j ~/data/mu3e/json -m mcideal
-// moor>   _build/conddb/test/cdbInitDB -j ~/data/mu3e/json -m dc2023
+// -- create all global tags with everything or with a single tag only
+// merlin> _build/conddb/test/cdbInitDB -j ~/data/cdb -m all
+// moor>   _build/conddb/test/cdbInitDB -j ~/data/cdb -m mcidealv5.4
 //
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
-int main(int argc, char* argv[]) {
+int main(int argc, const char* argv[]) {
 
   // ----------------------------------------------------------------------
   // -- global tags
@@ -62,6 +59,8 @@ int main(int argc, char* argv[]) {
     {"mcidealv5.0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
     {"mcidealv5.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_"} },
     {"mcidealv5.3", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
+    {"mcidealv5.4", {"pixelalignment_mcidealv5.3", "fibrealignment_mcidealv5.3", "tilealignment_mcidealv5.3", "mppcalignment_mcidealv5.3", "detconfv1_mcidealv5.1"} },
+    // -- data
     {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} }
   };
   
