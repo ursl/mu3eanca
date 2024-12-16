@@ -1,4 +1,4 @@
-#include "anaLadder.hh"
+#include "anaEnsemble.hh"
 
 
 #include <iostream>
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   cout << "Running under process ID  " << processID << endl;
 
   string fileName("nada")
-    , dirName("/Users/ursl/mu3e/2024-laddertests")
+    , dirName("/Users/ursl/mu3e/2024-laddertests/results-1")
     ;
   int verbose(-99);
   
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-D"))  {dirName  = argv[++i]; }                 // directory with input files
   }
 
-  anaLadder *a = new anaLadder(dirName);
+  anaEnsemble *a = new anaEnsemble(dirName);
 
   cout << "This is the end of the world as we know it" << endl;
 
