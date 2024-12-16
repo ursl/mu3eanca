@@ -18,6 +18,10 @@
 using namespace std;
 
 anaLadder::anaLadder(string filename) {
+  cout << "anaLadder::anaLadder(" << filename << ") ctor" << endl;
+};
+
+anaLadder::anaLadder() {
   cout << "anaLadder::anaLadder ctor" << endl;
 };
 

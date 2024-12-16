@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------
 class anaLadder  {
 public:
+  anaLadder();
   anaLadder(std::string filename);
   ~anaLadder();
 
