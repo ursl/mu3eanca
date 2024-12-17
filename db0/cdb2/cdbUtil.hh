@@ -1,5 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef CDBUTIL_H
+#define CDBUTIL_H
 
 #include <vector>
 #include <array>
