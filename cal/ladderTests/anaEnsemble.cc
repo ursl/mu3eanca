@@ -47,13 +47,18 @@ anaEnsemble::anaEnsemble(string dirname): fDirectory(dirname) {
 
   fEnsemble.clear();
   for (auto it: vfiles) {
-    cout << it << endl;
+    if (string::npos != it.find("_US.json")) continue;
     string lname = it;
     replaceAll(lname, string("sequencer_variables_"), string(""));
-    replaceAll(lname, string(".json"), string(""));
-    fEnsemble.insert({lname, new anaLadder()});
+    replaceAll(lname, string("_DS.json"), string(""));
+    fEnsemble.insert({lname, new anaLadder(dirname, lname)});
   }
+
   
+  for (auto it: fEnsemble) {
+    cout << it.first << endl;
+    
+  }
 };
 
 anaEnsemble::~anaEnsemble() {
