@@ -11,7 +11,7 @@ EXTHEADERS    = -I../..
 
 UTIL         := ../../util
 
-CXXFLAGS     := -std=c++1z -g -O0 -Wall -fPIC -pipe  #CXXFLAGS     += $(ROOTCFLAGS)
+CXXFLAGS     := -std=c++1z -g -O0 -Wall -fPIC -pipe 
 CXXFLAGS     += $(ROOTCFLAGS)
 
 LD           := $(CXX)
@@ -30,6 +30,8 @@ LBINARIES = runAnaLadder
 FILES = $(LFILES)
 BINARIES = $(LBINARIES)
 
+LLIBRARIES = lib/libCalLaddertests.so lib/libAnaUtil.so lib/libCDB.so 
+
 
 # -- Default rules
 $(addprefix obj/,%.o) : %.cc %.hh
@@ -39,7 +41,7 @@ $(addprefix obj/,%.o) : %.cc
 	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\"  $(EXTHEADERS) -c $< -o $@
 
 $(addprefix bin/,%) : $(addprefix obj/,%.o)
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@  lib/libCalLaddertests.so lib/libAnaUtil.so $(GLIBS) 
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LLIBRARIES) $(GLIBS) 
 
 
 # -- targets
@@ -50,7 +52,7 @@ lib: lib/libCalLaddertests.so
 bin: $(addprefix bin/,$(BINARIES) )
 
 lib/libCalLaddertests.so: $(addprefix obj/,$(FILES) )
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCalLaddertests.so lib/libAnaUtil.so $(GLIBS)
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o $(LLIBRARIES) $(GLIBS)
 
 
 clean:
@@ -59,4 +61,4 @@ clean:
 # -- preparatory setup
 prep:
 	mkdir -p obj bin lib
-	cd lib && ln -s ../../../util/lib/libAnaUtil.so && cd - 
+	cd lib && rm -f libAnaUtil.so && rm -f libCDB.so && ln -s ../../../util/lib/libAnaUtil.so && ln -s ../../../db0/cdb2/lib/libCDB.so && cd -
