@@ -222,7 +222,7 @@ string jsonGetValue(const string& jstring, const string& key) {
   s0 = jstring.find(":", s0+key.length());
   string::size_type s1 = jstring.find(",", s0);
   string::size_type s2 = jstring.find("}", s0);
-  string result("");
+  string result("parseError");
   if (string::npos != s1) {
     result = jstring.substr(s0+1, s1-s0-1);
   } else {
@@ -243,14 +243,12 @@ string jsonGetString(const string& jstring, const string& key) {
   s0 = jstring.find(":", s0+key.length());
   s0 = jstring.find("\"", s0+1);
   string::size_type s1 = jstring.find("\"", s0+1);
-  string result("");
+  string result("parseError");
 
   if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << endl;
   if (string::npos != s1) {
     result = jstring.substr(s0, s1-s0);
-  } else {
-    result = "parse error";
-  }
+  } 
 
   if (DBX) cout << "result ->" << result << "<-" << endl;
   ltrim(result);
@@ -279,11 +277,9 @@ string jsonGetString(const string& jstring, const vector<string>& keys) {
   s0 = jstring.find("\"", s0+1);
   string::size_type s1 = jstring.find("\"", s0+1);
   if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << endl;
-  string result("");
+  string result("parseError");
   if (string::npos != s1) {
     result = jstring.substr(s0, s1-s0);
-  } else {
-    result = "parse error";
   }
   if (DBX) cout << "result ->" << result << "<-" << endl;
   ltrim(result);
@@ -313,7 +309,7 @@ string jsonGetValue(const string& jstring, const vector<string>& keys) {
   string::size_type s1 = jstring.find(",", s0);
   string::size_type s2 = jstring.find("}", s0);
   if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << " s2: " << s2 << endl;
-  string result("");
+  string result("parseError");
   if ((string::npos != s1) && (s1 < s2)) {
     result = jstring.substr(s0, s1-s0);
   } else {
@@ -398,7 +394,7 @@ string jsonGetVector(const string& jstring, const string& key) {
   s0 = jstring.find(":", s0);
   string::size_type s1 = jstring.find("[", s0);
   string::size_type s2 = jstring.find("]", s0);
-  string result("");
+  string result("parseError");
   if (string::npos != s1 && string::npos != s2) {
     result = jstring.substr(s1+1, s2-s1-1);
   } else {
@@ -431,7 +427,7 @@ string jsonGetVector(const string& jstring, const vector<string>& keys) {
 
   string::size_type s1 = jstring.find("[", s0);
   string::size_type s2 = jstring.find("]", s0);
-  string result("");
+  string result("parseError");
   if (string::npos != s1 && string::npos != s2) {
     result = jstring.substr(s1+1, s2-s1-1);
   } else {
@@ -459,7 +455,7 @@ vector<string> jsonGetVectorVector(const string& jstring, const string& key) {
     s0 = jstring.find(":", s0);
     string::size_type s1 = jstring.find("[", s0);
     string::size_type s2 = jstring.find("]", s0);
-    string sresult("");
+    string sresult("parseError");
     if (string::npos != s1 && string::npos != s2) {
       sresult = jstring.substr(s1+1, s2-s1-1);
       s0 = s2;
