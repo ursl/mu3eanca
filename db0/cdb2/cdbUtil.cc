@@ -427,7 +427,7 @@ string jsonGetVector(const string& jstring, const vector<string>& keys) {
     if (string::npos == s0) break;
     s0 = jstring.find(":", s0+key.length());
   }
-  s0 = jstring.find("\"", s0+1);
+  //  s0 = jstring.find("\"", s0+1);
 
   string::size_type s1 = jstring.find("[", s0);
   string::size_type s2 = jstring.find("]", s0);
@@ -435,7 +435,9 @@ string jsonGetVector(const string& jstring, const vector<string>& keys) {
   if (string::npos != s1 && string::npos != s2) {
     result = jstring.substr(s1+1, s2-s1-1);
   } else {
-    cout << "jsonGetVector> parse error" << endl;
+    cout << "jsonGetVector> parse error for keys: ";
+    for (auto it: keys) cout << it << ",";
+    cout << endl;
   }
   if (DBX) cout << "result ->" << result << "<-" << endl;
   ltrim(result);
