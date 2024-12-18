@@ -37,24 +37,30 @@ anaLadder::anaLadder(string dirname, string pn): fDirectory(dirname),
   printAll();
 };
 
+
 // ----------------------------------------------------------------------
 anaLadder::anaLadder() {
   //  cout << "anaLadder::anaLadder ctor" << endl;
   bookHist();
 };
 
+
 // ----------------------------------------------------------------------
 anaLadder::~anaLadder() {
 
 }
 
+
 // ----------------------------------------------------------------------
 void anaLadder::parseFiles() {
+  parseNoiseScans();
+  parseCheckContact();
+}
 
-  vector<string> halves = {"US", "DS"};
- 
-  // -- start with noise files to fill a vector
-  for (auto it: halves) {
+
+// ----------------------------------------------------------------------
+void anaLadder::parseNoiseScans() {
+  for (auto it: fHalves) {
     int startIdx(1); 
     if (it == "DS") startIdx = 4;
     ifstream INS;
@@ -67,7 +73,7 @@ void anaLadder::parseFiles() {
     INS.close();
     string lBuffer = buffer.str();
     
-    vector<string> params = {"Noisy Pixels", "Noisy Hits", "Iterations"
+    vector<string> params = {"ThHigh", "Noisy Pixels", "Noisy Hits", "Iterations"
                              , "Not maskable Pixels"
                              , "Errorrate_link_A",  "Errorrate_link_B",  "Errorrate_link_C"
     };
@@ -80,6 +86,7 @@ void anaLadder::parseFiles() {
         vector<string> svector = split(sarr, ',');
         cout << fLadderPN + "_" + it + "_" + chipID << ": " << ip << endl;        
         vector<int> *v;
+        if (ip == "ThHigh") v = &(fNoiseScan[chipID].NoisyPixels);
         if (ip == "Noisy Pixels") v = &(fNoiseScan[chipID].NoisyPixels);
         if (ip == "Noisy Hits") v = &(fNoiseScan[chipID].NoisyHits);
         if (ip == "Iterations") v = &(fNoiseScan[chipID].Iterations);
@@ -97,6 +104,42 @@ void anaLadder::parseFiles() {
 
 
 // ----------------------------------------------------------------------
+void anaLadder::parseCheckContact() {
+  for (auto it: fHalves) {
+    int startIdx(1); 
+    if (it == "DS") startIdx = 4;
+    ifstream INS;
+    string noiseFile = fDirectory + "/check_contact_" + fLadderPN + "_" + it + ".json";
+    cout << "Reading file: " << noiseFile << endl;   
+    INS.open(noiseFile);
+    
+    std::stringstream buffer;
+    buffer << INS.rdbuf();
+    INS.close();
+    string lBuffer = buffer.str();
+    
+    vector<string> params = {"LV current (mA)"};
+    
+    for (auto ip: params) {
+      for (int ic = startIdx; ic < startIdx+3; ++ic) {
+        string chipID = Form("C%d", ic);
+        vector<string> getChip = {chipID, ip};
+        string sarr = jsonGetVector(lBuffer, getChip);
+        vector<string> svector = split(sarr, ',');
+        cout << fLadderPN + "_" + it + "_" + chipID << ": " << ip << endl;        
+        vector<int> *v;
+        if (ip == "LV current (mA)") v = &(fCheckContact[chipID].LVCurrent);
+        for (auto iv: svector) {
+          v->push_back(stof(iv));
+        }
+      }
+    }
+  }
+}
+
+
+
+// ----------------------------------------------------------------------
 void anaLadder::bookHist() {
   
 }
@@ -109,6 +152,8 @@ void anaLadder::printAll() {
   cout << "Directory: " << fDirectory
        << " PN: " << fLadderPN
        << endl;
+
+  // -- Information from noise_scan files
   for (auto it: fNoiseScan) {
     // -- print chipID
     cout << it.first << " " << fLadderPN << endl;
@@ -155,4 +200,17 @@ void anaLadder::printAll() {
     }
     cout << endl;
   }
+
+  // -- Information from check_contact files
+  for (auto it: fCheckContact) {
+    // -- print chipID
+    cout << it.first << " " << fLadderPN << endl;
+    // -- 
+    cout << "LV current:" << endl;
+    for (auto iv: it.second.LVCurrent) {
+      cout << iv << ",";
+    }
+    cout << endl;
+  }
+  
 }

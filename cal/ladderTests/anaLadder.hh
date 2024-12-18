@@ -6,6 +6,7 @@
 #include <TTree.h>
 
 struct noise_scan {
+  std::vector<int> ThHigh;
   std::vector<int> NoisyPixels;
   std::vector<int> NoisyHits;
   std::vector<int> Iterations;
@@ -15,6 +16,11 @@ struct noise_scan {
   std::vector<int> Errorrate_link_C;
 };
 
+struct check_contact {
+  std::vector<int> LVCurrent;
+};
+
+
 // ----------------------------------------------------------------------
 class anaLadder  {
 public:
@@ -23,12 +29,18 @@ public:
   ~anaLadder();
 
   void   parseFiles();
+  void   parseNoiseScans();
+  void   parseCheckContact();
   void   printAll();
   void   bookHist();
   
 private:
   std::string fDirectory, fLadderPN;
+  std::vector<std::string> fHalves = {"US", "DS"};
+ 
+
   std::map<std::string, struct noise_scan> fNoiseScan;
+  std::map<std::string, struct check_contact> fCheckContact;
 };
 
 #endif
