@@ -28,19 +28,36 @@ public:
   anaLadder(std::string dirname, std::string ladderPN);
   ~anaLadder();
 
+  // -- input and preparation
   void   parseFiles();
   void   parseNoiseScans();
   void   parseCheckContact();
+  //void parseHitmaps()  FIXME
+  //void parseMasks()    FIXME
   void   printAll();
   void   bookHist();
+
+  // -- analysis
+  void   anaErrorRate(int stableLinkCut = 500);
   
 private:
-  std::string fDirectory, fLadderPN;
+  std::string fDirectory, fLadderPN, fLadderInformation;
   std::vector<std::string> fHalves = {"US", "DS"};
  
-
+  // -- data from files
   std::map<std::string, struct noise_scan> fNoiseScan;
   std::map<std::string, struct check_contact> fCheckContact;
+
+  // -- analysis results
+  struct errorRate {
+    int thr;
+    int nerror;
+    std::vector<int> linkErrors; // int gives the MINIMUM error rate/link. -99 means all > maxErr(1e5)
+  };
+  
+  std::map<std::string, struct errorRate> fAnaErrorRate;
+  std::map<std::string, int> fAnaLastStableThreshold;
+
 };
 
 #endif

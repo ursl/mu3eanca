@@ -5,11 +5,13 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 // ----------------------------------------------------------------------
 class anaEnsemble  {
 public:
   anaEnsemble(std::string dirname);
+  anaEnsemble(std::string dirname, std::vector<std::string>& ladderlist);
   ~anaEnsemble();
 
 

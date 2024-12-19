@@ -18,6 +18,7 @@
 
 using namespace std;
 
+// ----------------------------------------------------------------------
 anaEnsemble::anaEnsemble(string dirname): fDirectory(dirname) {
   cout << "anaEnsemble::anaEnsemble ctor, fDirectory = "
        << fDirectory
@@ -51,18 +52,38 @@ anaEnsemble::anaEnsemble(string dirname): fDirectory(dirname) {
     string lname = it;
     replaceAll(lname, string("sequencer_variables_"), string(""));
     replaceAll(lname, string("_DS.json"), string(""));
-    fEnsemble.insert({lname, new anaLadder(dirname, lname)});
+    fEnsemble.insert({lname, new anaLadder(fDirectory, lname)});
   }
 
-  
-  for (auto it: fEnsemble) {
-    cout << it.first << endl;
-    
-  }
 };
 
-anaEnsemble::~anaEnsemble() {
+// ----------------------------------------------------------------------
+anaEnsemble::anaEnsemble(string dirname, vector<string>& ladderlist): fDirectory(dirname) {
+  cout << "anaEnsemble::anaEnsemble ctor, fDirectory = "
+       << fDirectory
+       << " reading ladders: "
+       << endl;
+  for (auto it: ladderlist) {
+    cout << it << endl;
+  }
+ 
+  fEnsemble.clear();
+  for (auto it: ladderlist) {
+    if (string::npos != it.find("_US.json")) continue;
+    string lname = it;
+    replaceAll(lname, string("sequencer_variables_"), string(""));
+    replaceAll(lname, string("_DS.json"), string(""));
+    fEnsemble.insert({lname, new anaLadder(fDirectory, lname)});
+  }
 
+}
+
+
+
+anaEnsemble::~anaEnsemble() {
+  for (auto it: fEnsemble) {
+    it.second->printAll();
+  }
 }
 
   
