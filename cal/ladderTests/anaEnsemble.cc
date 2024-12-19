@@ -88,6 +88,13 @@ anaEnsemble::~anaEnsemble() {
   // for (auto it: fEnsemble) {
   //   it.second->printAll();
   // }
+
+  TFile *f = TFile::Open(Form("%s/anaEnsemble.root", fPDFDir.c_str()), "RECREATE");
+  for (auto it: fHists) {
+    it.second->SetDirectory(f);
+    it.second->Write();
+  }
+  f->Close();
 }
 
   
