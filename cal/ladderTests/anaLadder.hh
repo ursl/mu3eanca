@@ -39,6 +39,19 @@ public:
 
   // -- analysis
   void   anaErrorRate(int stableLinkCut = 500);
+  void   anaLVCurrents(int mode = 0);
+
+
+  // -- analysis results
+  struct errorRate {
+    int thr;
+    int nerror;
+    std::vector<int> linkErrors; // int gives the MINIMUM error rate/link. -99 means all > maxErr(1e5)
+  };
+
+  std::map<std::string, struct errorRate> fAnaErrorRate;
+  std::map<std::string, int> fAnaLastStableThreshold;
+  std::map<std::string, int> fAnaLVCurrents;
   
 private:
   std::string fDirectory, fLadderPN, fLadderInformation;
@@ -48,15 +61,6 @@ private:
   std::map<std::string, struct noise_scan> fNoiseScan;
   std::map<std::string, struct check_contact> fCheckContact;
 
-  // -- analysis results
-  struct errorRate {
-    int thr;
-    int nerror;
-    std::vector<int> linkErrors; // int gives the MINIMUM error rate/link. -99 means all > maxErr(1e5)
-  };
-  
-  std::map<std::string, struct errorRate> fAnaErrorRate;
-  std::map<std::string, int> fAnaLastStableThreshold;
 
 };
 

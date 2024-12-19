@@ -48,7 +48,8 @@ anaLadder::anaLadder(string dirname, string pn): fDirectory(dirname),
   if (fLadderInformation == "nada") fLadderInformation = "goodRead";
 
   anaErrorRate();
-  
+  anaLVCurrents();
+
 };
 
 
@@ -277,21 +278,21 @@ void anaLadder::printAll() {
   // -- Information from noise_scan files
   cout << fLadderPN << " broken links: ";
   for (auto it: fAnaErrorRate) {
-    cout << it.first << ": " 
-         << ((it.second.linkErrors[0] < -990)? "A":"")
-         << ((it.second.linkErrors[1] < -990)? "B":"")
-         << ((it.second.linkErrors[2] < -990)? "C":"")
-         << "  ";
+    if (0)    cout << it.first << ": " 
+                   << ((it.second.linkErrors[0] < -990)? "A":"")
+                   << ((it.second.linkErrors[1] < -990)? "B":"")
+                   << ((it.second.linkErrors[2] < -990)? "C":"")
+                   << "  ";
   }
-  cout << endl;
+  if (0) cout << endl;
 
   cout << fLadderPN << " link quality: ";
   for (auto it: fAnaErrorRate) {
-    cout << it.first << ": " 
-         <<       Form("(%d/%d/%d) ", it.second.linkErrors[0], it.second.linkErrors[1],it.second.linkErrors[2])
-         << "  ";
+    if (0) cout << it.first << ": " 
+                <<       Form("(%d/%d/%d) ", it.second.linkErrors[0], it.second.linkErrors[1],it.second.linkErrors[2])
+                << "  ";
   }
-  cout << endl;
+  if (0) cout << endl;
 
   // -- Information from check_contact files
   cout << fLadderPN << " LV currents: ";
@@ -300,6 +301,14 @@ void anaLadder::printAll() {
   }
   cout << endl;
   
+}
+
+
+// ----------------------------------------------------------------------
+void anaLadder::anaLVCurrents(int mode) {
+  for (auto it: fCheckContact) {
+    fAnaLVCurrents.insert({it.first, it.second.LVCurrent[2]});
+  }
 }
 
 

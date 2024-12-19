@@ -81,10 +81,13 @@ int main(int argc, char *argv[]) {
   
   anaEnsemble *a(0);
   if (mode > -1) {
-    a = new anaEnsemble(dirName, ladderList);
+    a = new anaEnsemble(dirName, ladderList, Form("mode%d-", mode));
+    a->setPDFDir(Form("mode%d", mode));
   } else {   
     a = new anaEnsemble(dirName);
   }
+
+  a->analysis(0);
 
   delete a;
 
