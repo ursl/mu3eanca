@@ -119,10 +119,10 @@ void anaEnsemble::analysis(int mode) {
 // ----------------------------------------------------------------------
 void anaEnsemble::plotLinkQuality(int mode) {
   TH2D *h;
-  if (fHists.find("linkQuality") == fHists.end()) {
-    h = new TH2D("linkQuality", "link quality", 6, 0., 6., fnLadders, 0., fnLadders);
+  if (fHists.find("goodLinks") == fHists.end()) {
+    h = new TH2D("goodLinks", "good links", 6*3, 0., 6., fnLadders, 0., fnLadders);
     labelAxes(h);
-    fHists.insert({"linkQuality", h});
+    fHists.insert({"goodLinks", h});
   }
 
 }
