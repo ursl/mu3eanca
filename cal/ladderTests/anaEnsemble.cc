@@ -113,6 +113,7 @@ void anaEnsemble::analysis(int mode) {
   if (!c0) c0 = new TCanvas("c0","--c0--",0,0,1200,700);
 
   plotLVCurrents(mode);
+  plotLinkQuality(mode);
 }
 
 
@@ -120,10 +121,44 @@ void anaEnsemble::analysis(int mode) {
 void anaEnsemble::plotLinkQuality(int mode) {
   TH2D *h;
   if (fHists.find("goodLinks") == fHists.end()) {
-    h = new TH2D("goodLinks", "good links", 6*3, 0., 6., fnLadders, 0., fnLadders);
+    h = new TH2D("goodLinks", "Link quality", 6*3, 0., 6., fnLadders, 0., fnLadders);
     labelAxes(h);
+    // -- override x-axis labeling
+    TAxis *ha = h->GetXaxis();
+    for (int i = 1; i <= 6; ++i) {
+      ha->SetBinLabel(3*(i-1) + 1, Form("C%d/0", i));
+      ha->SetBinLabel(3*(i-1) + 2, Form("C%d/1", i));
+      ha->SetBinLabel(3*(i-1) + 3, Form("C%d/2", i));
+    }
+
     fHists.insert({"goodLinks", h});
   }
+
+  cout << "== anaEnsemble::plotLinkQuality" << endl;
+  for (auto iy: fEnsemble) {
+    cout << "## anaEnsemble::plotLVCurrents: " << iy.first << endl;
+    for (auto ix: iy.second->fAnaErrorRate) {
+      int bx = 0;
+      if (ix.first == "C1") bx = 1;
+      if (ix.first == "C2") bx = 2;
+      if (ix.first == "C3") bx = 3;
+      if (ix.first == "C4") bx = 4;
+      if (ix.first == "C5") bx = 5;
+      if (ix.first == "C6") bx = 6;
+      int by = getYbin(iy.first, h);
+      cout << "   ## anaEnsemble::plotLinkQuality: " << ix.first 
+           << " -> " << ix.second.linkErrors[0]
+           << " bins: " << bx << "/" << by
+           << endl;
+      h->SetBinContent((bx-1)*3+1, by, ix.second.linkErrors[0]); 
+      h->SetBinContent((bx-1)*3+2, by, ix.second.linkErrors[1]); 
+      h->SetBinContent((bx-1)*3+3, by, ix.second.linkErrors[2]); 
+    }  
+  }
+  
+  gStyle->SetOptStat(0);
+  h->Draw("colztext");
+  c0->SaveAs(Form("%s/%sLinkQuality.pdf", fPDFDir.c_str(), fPDFPrefix.c_str()));
 
 }
 
