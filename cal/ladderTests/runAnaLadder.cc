@@ -25,7 +25,14 @@
 
 using namespace std;
 
+// -- Examples:
+// moor>bin/runAnaLadder -m 1
+// moor>bin/runAnaLadder -l 408_1_9,408_1_11,408_1_12,408_1_21
 
+
+
+
+// ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
 
   int processID = gSystem->GetPid();
