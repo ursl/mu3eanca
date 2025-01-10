@@ -114,6 +114,43 @@ void anaEnsemble::analysis(int mode) {
 
   plotLVCurrents(mode);
   plotLinkQuality(mode);
+  plotNoisyPixels(1);
+}
+
+
+// ----------------------------------------------------------------------
+void anaEnsemble::plotNoisyPixels(int thr) {
+  TH2D *h;
+  if (fHists.find(Form("noisypixels%d", thr)) == fHists.end()) {
+    h = new TH2D(Form("noisypixels%d", thr), Form("threshold for N(noisy pixels) < %d", thr), 6, 0., 6., 
+                 fnLadders, 0., fnLadders);
+    labelAxes(h);
+
+    fHists.insert({Form("noisypixels%d", thr), h});
+  }
+
+  cout << "== anaEnsemble::plotNoisyPixels" << endl;
+  for (auto iy: fEnsemble) {
+    cout << "## anaEnsemble::plotNoisyPixels: " << iy.first << endl;
+    for (auto ic: iy.second->fAnaNoisyPixels) {
+      vector<pair<int, int>> v = ic.second;
+      for (unsigned ithr = 0; ithr < v.size(); ++ithr) {
+        if (v[ithr].first == thr) {
+          int bx = getXbin(ic.first, h);
+          int by = getYbin(iy.first, h);
+          cout << "   ## anaEnsemble::plotNoisyPixels: n(np) = " << v[ithr].second
+               << " thr =  " << v[ithr].first
+               << " bins: " << bx << "/" << by
+               << endl;
+          h->SetBinContent(bx, by, v[ithr].second); 
+        }  
+      }
+    }
+  }
+
+  gStyle->SetOptStat(0);
+  h->Draw("colztext");
+  c0->SaveAs(Form("%s/%sThrForNoisyPixels%d.pdf", fPDFDir.c_str(), fPDFPrefix.c_str(), thr));
 }
 
 
@@ -139,12 +176,11 @@ void anaEnsemble::plotLinkQuality(int mode) {
     cout << "## anaEnsemble::plotLVCurrents: " << iy.first << endl;
     for (auto ix: iy.second->fAnaErrorRate) {
       int bx = 0;
-      if (ix.first == "C1") bx = 1;
-      if (ix.first == "C2") bx = 2;
-      if (ix.first == "C3") bx = 3;
-      if (ix.first == "C4") bx = 4;
-      if (ix.first == "C5") bx = 5;
-      if (ix.first == "C6") bx = 6;
+      sscanf(ix.first.c_str(), "C%d", &bx);
+      if (bx < 1 || bx > 6) {
+        cout << "XXXXXXXX Chip number invalid: " << ix.first << endl;
+        continue;
+      }
       int by = getYbin(iy.first, h);
       cout << "   ## anaEnsemble::plotLinkQuality: " << ix.first 
            << " -> " << ix.second.linkErrors[0]
@@ -159,7 +195,6 @@ void anaEnsemble::plotLinkQuality(int mode) {
   gStyle->SetOptStat(0);
   h->Draw("colztext");
   c0->SaveAs(Form("%s/%sLinkQuality.pdf", fPDFDir.c_str(), fPDFPrefix.c_str()));
-
 }
 
 

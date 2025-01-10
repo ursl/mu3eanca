@@ -5,21 +5,6 @@
 #include <fstream>
 #include <TTree.h>
 
-struct noise_scan {
-  std::vector<int> ThHigh;
-  std::vector<int> NoisyPixels;
-  std::vector<int> NoisyHits;
-  std::vector<int> Iterations;
-  std::vector<int> NotMaskablePixels;
-  std::vector<int> Errorrate_link_A;
-  std::vector<int> Errorrate_link_B;
-  std::vector<int> Errorrate_link_C;
-};
-
-struct check_contact {
-  std::vector<int> LVCurrent;
-};
-
 
 // ----------------------------------------------------------------------
 class anaLadder  {
@@ -39,8 +24,24 @@ public:
 
   // -- analysis
   void   anaErrorRate(int stableLinkCut = 500);
+  void   anaNoisyPixels(int maxNoise = 1);
   void   anaLVCurrents(int mode = 0);
 
+  // -- internal data structures
+  struct noise_scan {
+    std::vector<int> ThHigh;
+    std::vector<int> NoisyPixels;
+    std::vector<int> NoisyHits;
+    std::vector<int> Iterations;
+    std::vector<int> NotMaskablePixels;
+    std::vector<int> Errorrate_link_A;
+    std::vector<int> Errorrate_link_B;
+    std::vector<int> Errorrate_link_C;
+  };
+  
+  struct check_contact {
+    std::vector<int> LVCurrent;
+  };
 
   // -- analysis results
   struct errorRate {
@@ -49,7 +50,11 @@ public:
     std::vector<int> linkErrors; // int gives the MINIMUM error rate/link. -99 means all > maxErr(1e5)
   };
 
+  // -- payload as defined above
   std::map<std::string, struct errorRate> fAnaErrorRate;
+  // -- payload has vector of pairs (noiseCut, thrValue)
+  std::map<std::string, std::vector<std::pair<int, int>>> fAnaNoisyPixels;
+  // -- simple payloads
   std::map<std::string, int> fAnaLastStableThreshold;
   std::map<std::string, int> fAnaLVCurrents;
   

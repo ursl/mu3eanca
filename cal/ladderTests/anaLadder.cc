@@ -42,6 +42,8 @@ anaLadder::anaLadder(string dirname, string pn): fDirectory(dirname),
     fAnaErrorRate.insert({chipID, er});
 
     fAnaLastStableThreshold.insert({chipID, -999});
+
+    fAnaNoisyPixels.insert({chipID, vector<pair<int, int>>()});
   }
 
   parseFiles();
@@ -49,6 +51,11 @@ anaLadder::anaLadder(string dirname, string pn): fDirectory(dirname),
 
   anaErrorRate();
   anaLVCurrents();
+  // -- scan for different thresholds
+  anaNoisyPixels(1);
+  anaNoisyPixels(10);
+  anaNoisyPixels(100);
+  anaNoisyPixels(1000);
 
 };
 
@@ -160,6 +167,30 @@ void anaLadder::parseCheckContact() {
   }
 }
 
+
+// ----------------------------------------------------------------------
+void anaLadder::anaNoisyPixels(int maxNoise) {
+  for (auto it: fNoiseScan) {
+    int idxMax(-1);
+    for (unsigned int idx = 0; idx < it.second.ThHigh.size(); ++idx) {
+      // cout << "thr = " << it.second.ThHigh[idx] << " inoise = " << it.second.NoisyPixels[idx] << endl;
+      if (it.second.NoisyPixels[idx] < maxNoise) {
+        idxMax = idx; 
+      }  
+    }
+    fAnaNoisyPixels[it.first].push_back({maxNoise, it.second.ThHigh[idxMax]});
+  }
+
+  // -- simple iteration over results
+  bool DBX(false);
+  if (DBX) {
+    for (auto ic: fAnaNoisyPixels) {
+      for (auto it: ic.second) {
+        cout << ic.first << ": " << it.first << " / " << it.second << endl;
+      }
+    }
+  }
+}
 
 // ----------------------------------------------------------------------
 void anaLadder::anaErrorRate(int stableLinkCut)  {

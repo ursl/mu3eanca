@@ -39,6 +39,7 @@ public:
   void analysis(int mode);
   void plotLinkQuality(int mode);
   void plotLVCurrents(int mode);
+  void plotNoisyPixels(int mode); 
   
   void makeCanvas(int i);
   void labelAxes(TH2D*);
