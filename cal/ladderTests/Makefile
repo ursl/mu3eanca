@@ -23,14 +23,13 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 OSUFFIX := .o
 
 # -- ana files
-LFILES = anaLadder.o anaEnsemble.o
+LFILES = anaLadder.o plotEnsemble.o
+FILES = $(LFILES)
 
 LBINARIES = runAnaLadder
-
-FILES = $(LFILES)
 BINARIES = $(LBINARIES)
 
-LLIBRARIES = lib/libCalLaddertests.so lib/libAnaUtil.so lib/libCDB.so 
+LLIBRARIES = lib/libAnaUtil.so lib/libCDB.so 
 
 
 # -- Default rules
@@ -40,19 +39,19 @@ $(addprefix obj/,%.o) : %.cc %.hh
 $(addprefix obj/,%.o) : %.cc
 	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\"  $(EXTHEADERS) -c $< -o $@
 
-$(addprefix bin/,%) : $(addprefix obj/,%.o)
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LLIBRARIES) $(GLIBS) 
-
 
 # -- targets
 all: prep lib bin
 
-lib: lib/libCalLaddertests.so
+lib: $(addprefix obj/,$(FILES))
+	echo "hallo lib"
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCalLaddertests.so  $(LLIBRARIES) $(GLIBS)
 
-bin: $(addprefix bin/,$(BINARIES) )
+bin: lib obj/runAnaLadder.o
+	echo "hallo bin"
+	$(LD) $(LDFLAGS) -o bin/runAnaLadder obj/runAnaLadder.o lib/libCalLaddertests.so  $(LLIBRARIES) $(GLIBS)
+#	$(CXX) $(CXXFLAGS)  $(EXTHEADERS) -c runAnaLadder.cc -o bin/runAnaLadder.o
 
-lib/libCalLaddertests.so: $(addprefix obj/,$(FILES) )
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o $(LLIBRARIES) $(GLIBS)
 
 
 clean:
