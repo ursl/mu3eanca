@@ -1,4 +1,4 @@
-#include "anaEnsemble.hh"
+#include "plotEnsemble.hh"
 
 
 #include <iostream>
@@ -86,15 +86,15 @@ int main(int argc, char *argv[]) {
     mode = 0;
   }
   
-  anaEnsemble *a(0);
+  plotEnsemble *a(0);
   if (mode > -1) {
-    a = new anaEnsemble(dirName, ladderList, Form("mode%d-", mode));
+    a = new plotEnsemble(dirName, ladderList, Form("mode%d-", mode));
     a->setPDFDir(Form("mode%d", mode));
   } else {   
-    a = new anaEnsemble(dirName);
+    a = new plotEnsemble(dirName);
   }
 
-  a->analysis(0);
+  a->plotAll(0);
 
   delete a;
 

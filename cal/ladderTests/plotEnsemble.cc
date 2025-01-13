@@ -1,4 +1,4 @@
-#include "anaEnsemble.hh"
+#include "plotEnsemble.hh"
 
 #include <dirent.h>  /// for directory reading
 #include <algorithm> /// for sorting
@@ -19,8 +19,8 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-anaEnsemble::anaEnsemble(string dirname, string pdf): fDirectory(dirname), fPDFPrefix(pdf) {
-  cout << "anaEnsemble::anaEnsemble ctor, fDirectory = "
+plotEnsemble::plotEnsemble(string dirname, string pdf): fDirectory(dirname), fPDFPrefix(pdf) {
+  cout << "plotEnsemble::plotEnsemble ctor, fDirectory = "
        << fDirectory
        << endl;
  
@@ -60,9 +60,9 @@ anaEnsemble::anaEnsemble(string dirname, string pdf): fDirectory(dirname), fPDFP
 
 
 // ----------------------------------------------------------------------
-anaEnsemble::anaEnsemble(string dirname, vector<string>& ladderlist, string pdf): 
+plotEnsemble::plotEnsemble(string dirname, vector<string>& ladderlist, string pdf): 
   fDirectory(dirname), fPDFPrefix(pdf) {
-  cout << "anaEnsemble::anaEnsemble ctor, fDirectory = "
+  cout << "plotEnsemble::plotEnsemble ctor, fDirectory = "
        << fDirectory
        << " reading ladders: "
        << endl;
@@ -84,12 +84,12 @@ anaEnsemble::anaEnsemble(string dirname, vector<string>& ladderlist, string pdf)
 
 
 // ----------------------------------------------------------------------
-anaEnsemble::~anaEnsemble() {
+plotEnsemble::~plotEnsemble() {
   // for (auto it: fEnsemble) {
   //   it.second->printAll();
   // }
 
-  TFile *f = TFile::Open(Form("%s/anaEnsemble.root", fPDFDir.c_str()), "RECREATE");
+  TFile *f = TFile::Open(Form("%s/plotEnsemble.root", fPDFDir.c_str()), "RECREATE");
   for (auto it: fHists) {
     it.second->SetDirectory(f);
     it.second->Write();
@@ -99,7 +99,7 @@ anaEnsemble::~anaEnsemble() {
 
   
 // ----------------------------------------------------------------------
-void anaEnsemble::analysis(int mode) {
+void plotEnsemble::plotAll(int mode) {
 
   legg = 0;
   c0 = c1 = c2 = c3 = c4 = c5 =0;
@@ -119,7 +119,7 @@ void anaEnsemble::analysis(int mode) {
 
 
 // ----------------------------------------------------------------------
-void anaEnsemble::plotNoisyPixels(int thr) {
+void plotEnsemble::plotNoisyPixels(int thr) {
   TH2D *h;
   if (fHists.find(Form("noisypixels%d", thr)) == fHists.end()) {
     h = new TH2D(Form("noisypixels%d", thr), Form("threshold for N(noisy pixels) < %d", thr), 6, 0., 6., 
@@ -129,16 +129,16 @@ void anaEnsemble::plotNoisyPixels(int thr) {
     fHists.insert({Form("noisypixels%d", thr), h});
   }
 
-  cout << "== anaEnsemble::plotNoisyPixels" << endl;
+  cout << "== plotEnsemble::plotNoisyPixels" << endl;
   for (auto iy: fEnsemble) {
-    cout << "## anaEnsemble::plotNoisyPixels: " << iy.first << endl;
+    cout << "## plotEnsemble::plotNoisyPixels: " << iy.first << endl;
     for (auto ic: iy.second->fAnaNoisyPixels) {
       vector<pair<int, int>> v = ic.second;
       for (unsigned ithr = 0; ithr < v.size(); ++ithr) {
         if (v[ithr].first == thr) {
           int bx = getXbin(ic.first, h);
           int by = getYbin(iy.first, h);
-          cout << "   ## anaEnsemble::plotNoisyPixels: n(np) = " << v[ithr].second
+          cout << "   ## plotEnsemble::plotNoisyPixels: n(np) = " << v[ithr].second
                << " thr =  " << v[ithr].first
                << " bins: " << bx << "/" << by
                << endl;
@@ -155,7 +155,7 @@ void anaEnsemble::plotNoisyPixels(int thr) {
 
 
 // ----------------------------------------------------------------------
-void anaEnsemble::plotLinkQuality(int mode) {
+void plotEnsemble::plotLinkQuality(int mode) {
   TH2D *h;
   if (fHists.find("goodLinks") == fHists.end()) {
     h = new TH2D("goodLinks", "Link quality", 6*3, 0., 6., fnLadders, 0., fnLadders);
@@ -171,9 +171,9 @@ void anaEnsemble::plotLinkQuality(int mode) {
     fHists.insert({"goodLinks", h});
   }
 
-  cout << "== anaEnsemble::plotLinkQuality" << endl;
+  cout << "== plotEnsemble::plotLinkQuality" << endl;
   for (auto iy: fEnsemble) {
-    cout << "## anaEnsemble::plotLVCurrents: " << iy.first << endl;
+    cout << "## plotEnsemble::plotLVCurrents: " << iy.first << endl;
     for (auto ix: iy.second->fAnaErrorRate) {
       int bx = 0;
       sscanf(ix.first.c_str(), "C%d", &bx);
@@ -182,7 +182,7 @@ void anaEnsemble::plotLinkQuality(int mode) {
         continue;
       }
       int by = getYbin(iy.first, h);
-      cout << "   ## anaEnsemble::plotLinkQuality: " << ix.first 
+      cout << "   ## plotEnsemble::plotLinkQuality: " << ix.first 
            << " -> " << ix.second.linkErrors[0]
            << " bins: " << bx << "/" << by
            << endl;
@@ -199,7 +199,7 @@ void anaEnsemble::plotLinkQuality(int mode) {
 
 
 // ----------------------------------------------------------------------
-void anaEnsemble::plotLVCurrents(int mode) {
+void plotEnsemble::plotLVCurrents(int mode) {
   TH2D *h;
   if (fHists.find("LVCurrents") == fHists.end()) {
     h = new TH2D("LVCurrents", "LV currents", 6, 0., 6., fnLadders, 0., fnLadders);
@@ -207,13 +207,13 @@ void anaEnsemble::plotLVCurrents(int mode) {
     fHists.insert({"LVCurrents", h});
   }
 
-  cout << "== anaEnsemble::plotLVCurrents" << endl;
+  cout << "== plotEnsemble::plotLVCurrents" << endl;
   for (auto iy: fEnsemble) {
-    cout << "## anaEnsemble::plotLVCurrents: " << iy.first << endl;
+    cout << "## plotEnsemble::plotLVCurrents: " << iy.first << endl;
     for (auto ix: iy.second->fAnaLVCurrents) {
       int bx = getXbin(ix.first, h);
       int by = getYbin(iy.first, h);
-      cout << "   ## anaEnsemble::plotLVCurrents: " << ix.first 
+      cout << "   ## plotEnsemble::plotLVCurrents: " << ix.first 
            << " -> " << ix.second
            << " bins: " << bx << "/" << by
            << endl;
@@ -228,7 +228,7 @@ void anaEnsemble::plotLVCurrents(int mode) {
 
 
 // ----------------------------------------------------------------------
-void anaEnsemble::labelAxes(TH2D *h) {
+void plotEnsemble::labelAxes(TH2D *h) {
   TAxis *ha = h->GetXaxis();
   for (int i = 1; i <= h->GetNbinsX(); ++i) {
     ha->SetBinLabel(i, Form("C%d", i));
@@ -242,7 +242,7 @@ void anaEnsemble::labelAxes(TH2D *h) {
 
 
 // ----------------------------------------------------------------------
-int anaEnsemble::getXbin(string label, TH2D *h) {
+int plotEnsemble::getXbin(string label, TH2D *h) {
   TAxis *ha = h->GetXaxis();
   int idx(-1);
   for (int i = 1; i <= h->GetNbinsX(); ++i) {
@@ -257,7 +257,7 @@ int anaEnsemble::getXbin(string label, TH2D *h) {
 
 
 // ----------------------------------------------------------------------
-int anaEnsemble::getYbin(string label, TH2D *h) {
+int plotEnsemble::getYbin(string label, TH2D *h) {
   TAxis *ha = h->GetYaxis();
   int idx(-1);
   for (int i = 1; i <= h->GetNbinsY(); ++i) {
@@ -272,7 +272,7 @@ int anaEnsemble::getYbin(string label, TH2D *h) {
 
 
 // ----------------------------------------------------------------------
-void anaEnsemble::makeCanvas(int i) {
+void plotEnsemble::makeCanvas(int i) {
   if (i & 16) {
     c5 = new TCanvas("c5", "c5", 210,   0, 800, 900);
     c5->ToggleEventStatus();

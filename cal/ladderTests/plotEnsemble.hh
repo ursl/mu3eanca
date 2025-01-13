@@ -1,5 +1,5 @@
-#ifndef ANAENSEMBLE_H
-#define ANAENSEMBLE_H
+#ifndef PLOTENSEMBLE_H
+#define PLOTENSEMBLE_H
 
 #include "anaLadder.hh"
 
@@ -30,13 +30,13 @@
 #include <TH2D.h>
 
 // ----------------------------------------------------------------------
-class anaEnsemble  {
+class plotEnsemble  {
 public:
-  anaEnsemble(std::string dirname, std::string pdfprefix = "ldrmode");
-  anaEnsemble(std::string dirname, std::vector<std::string>& ladderlist, std::string pdfprefix = "ldrlist");
-  ~anaEnsemble();
+  plotEnsemble(std::string dirname, std::string pdfprefix = "ldrmode");
+  plotEnsemble(std::string dirname, std::vector<std::string>& ladderlist, std::string pdfprefix = "ldrlist");
+  ~plotEnsemble();
 
-  void analysis(int mode);
+  void plotAll(int mode);
   void plotLinkQuality(int mode);
   void plotLVCurrents(int mode);
   void plotNoisyPixels(int mode); 
