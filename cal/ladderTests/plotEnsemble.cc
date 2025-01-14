@@ -158,7 +158,8 @@ void plotEnsemble::plotNoisyPixels(int thr) {
 void plotEnsemble::plotLinkQuality(int mode) {
   TH2D *h;
   if (fHists.find("goodLinks") == fHists.end()) {
-    h = new TH2D("goodLinks", "Link quality", 6*3, 0., 6., fnLadders, 0., fnLadders);
+    h = new TH2D("goodLinks", "Link quality (error rate)", 6*3, 0., 18., fnLadders, 0., fnLadders);
+    h->GetZaxis()->SetRangeUser(0., 1000.);
     labelAxes(h);
     // -- override x-axis labeling
     TAxis *ha = h->GetXaxis();
@@ -187,12 +188,14 @@ void plotEnsemble::plotLinkQuality(int mode) {
            << " bins: " << bx << "/" << by
            << endl;
       h->SetBinContent((bx-1)*3+1, by, ix.second.linkErrors[0]); 
+      h->SetBinContent((bx-1)*3+1, by, 0); 
       h->SetBinContent((bx-1)*3+2, by, ix.second.linkErrors[1]); 
       h->SetBinContent((bx-1)*3+3, by, ix.second.linkErrors[2]); 
     }  
   }
   
   gStyle->SetOptStat(0);
+  gStyle->SetHistMinimumZero();
   h->Draw("colztext");
   c0->SaveAs(Form("%s/%sLinkQuality.pdf", fPDFDir.c_str(), fPDFPrefix.c_str()));
 }
