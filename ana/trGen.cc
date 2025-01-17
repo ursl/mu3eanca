@@ -2,6 +2,8 @@
 #include "trGen.hh"
 #include "trIncludes.hh"
 
+#include <TChainElement.h>
+
 // ----------------------------------------------------------------------
 // Run with: bin/runTreeReader -t mu3e -f data/mu3e_run_000779.root -D results/
 // ----------------------------------------------------------------------
@@ -66,6 +68,7 @@ trGen::trGen(TChain *chain, string treeName) : trBase(chain, treeName) {
   cout << "==> trGen: constructor..." << endl;
 
   initMu3e();
+  initMu3e_mchits();
   initVariables();
 
 }
@@ -109,6 +112,15 @@ void trGen::eventProcessing() {
 
   fillHist();
   genStudy();
+  overlapHitsInVertex();
+
+
+}
+
+
+// ----------------------------------------------------------------------
+void trGen::overlapHitsInVertex() {
+
 
 
 }
@@ -233,13 +245,24 @@ void trGen::initMu3e() {
 
 // ----------------------------------------------------------------------
 void trGen::initMu3e_mchits() {
-  fTree2->SetBranchAddress("det", &fdet);
-  fTree2->SetBranchAddress("tid", &ftid);
-  fTree2->SetBranchAddress("pdg", &fpdg);
-  fTree2->SetBranchAddress("hid", &fhid);
-  fTree2->SetBranchAddress("hid_g", &fhid_g);
-  fTree2->SetBranchAddress("edep", &fedep);
-  fTree2->SetBranchAddress("time", &ftime);
+  fpChain2 = new TChain("mu3e_mchits");
+  TObjArray *fileElements = fpChain->GetListOfFiles();
+  TIter next(fileElements);
+  TChainElement *chEl(0);
+  cout << "Adding the following files to chain fTree2(\"mu3e_mchits\")" << endl;
+  while ((chEl=(TChainElement*)next())) {
+    cout << "   " << chEl->GetTitle() << endl;
+    fpChain2->Add(chEl->GetTitle());
+  }
+        
+  // FIXME: read list of files from fpChain!
+  fpChain2->SetBranchAddress("det", &fdet);
+  fpChain2->SetBranchAddress("tid", &ftid);
+  fpChain2->SetBranchAddress("pdg", &fpdg);
+  fpChain2->SetBranchAddress("hid", &fhid);
+  fpChain2->SetBranchAddress("hid_g", &fhid_g);
+  fpChain2->SetBranchAddress("edep", &fedep);
+  fpChain2->SetBranchAddress("time", &ftime);
 }
 
 
@@ -257,22 +280,22 @@ void trGen::printBranches() {
        << endl;
   for (unsigned int i = 0; i < ftraj_ID->size(); ++i) {
     cout << Form("trj %2d", i)
-	 << Form(" ID = %7d", ftraj_ID->at(i))
-	 << Form(" PID = %+4d", ftraj_PID->at(i))
-	 << Form(" type = %3d", ftraj_type->at(i))
-	 << Form(" mother ID = %7d", ftraj_mother->at(i))
-	 << Form(" vz = %+9.3f", ftraj_vz->at(i))
-	 << Form(" vr = %+8.3f", TMath::Sqrt(ftraj_vx->at(i)*ftraj_vx->at(i) + ftraj_vy->at(i)*ftraj_vy->at(i)))
-	 << " time = " << ftraj_time->at(i)
-	 << endl;
+         << Form(" ID = %7d", ftraj_ID->at(i))
+         << Form(" PID = %+4d", ftraj_PID->at(i))
+         << Form(" type = %3d", ftraj_type->at(i))
+         << Form(" mother ID = %7d", ftraj_mother->at(i))
+         << Form(" vz = %+9.3f", ftraj_vz->at(i))
+         << Form(" vr = %+8.3f", TMath::Sqrt(ftraj_vx->at(i)*ftraj_vx->at(i) + ftraj_vy->at(i)*ftraj_vy->at(i)))
+         << " time = " << ftraj_time->at(i)
+         << endl;
   }
   for (unsigned int i = 0; i < fNhit; ++i) {
     cout << Form("hit %3d", i)
-	 << Form(" pxhitid = %4d", fhit_pixelid->at(i))
-	 << Form(" timestamp = %4d", fhit_timestamp->at(i))
-	 << Form(" hit_mc_i = %4d", fhit_mc_i->at(i))
-	 << Form(" hit_mc_n = %4d", fhit_mc_n->at(i))
-	 << endl;
+         << Form(" pxhitid = %4d", fhit_pixelid->at(i))
+         << Form(" timestamp = %4d", fhit_timestamp->at(i))
+         << Form(" hit_mc_i = %4d", fhit_mc_i->at(i))
+         << Form(" hit_mc_n = %4d", fhit_mc_n->at(i))
+         << endl;
   }
   cout << "----------------------------------------------------------------------" << endl;
 }
