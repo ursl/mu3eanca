@@ -38,7 +38,7 @@ using namespace std;
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // %% Usage examples:
 // %% bin/runTreeReader -t frames -f data/mu3e_trirec_000779.root -D results/
-// %% bin/runTreeReader -t mu3e -f data/mu3e_run_000779.root -D results/
+// %% bin/runTreeReader -t mu3e -f ~/data/mu3e/mu3e-v5.3/mu3e_sorted_000779.root -D results
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 int main(int argc, char *argv[]) {
@@ -67,18 +67,18 @@ int main(int argc, char *argv[]) {
   // -- command line arguments
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i],"-h")) {
-	cout << "List of arguments:" << endl;
-	cout << "-c filename   chain definition file" << endl;
-	cout << "-C filename   file with cuts" << endl;
-	cout << "-D path       where to put the output" << endl;
-	cout << "-f filename   single file instead of chain" << endl;
-	cout << "-n integer    number of events to run on" << endl;
-	cout << "-s number     seed for random number generator" << endl;
-	cout << "-S start      starting event number" << endl;
-	cout << "-o filename   set output file" << endl;
-	cout << "-v level      set verbosity level" << endl;
-	cout << "-h            prints this message and exits" << endl;
-	return 0;
+      cout << "List of arguments:" << endl;
+      cout << "-c filename   chain definition file" << endl;
+      cout << "-C filename   file with cuts" << endl;
+      cout << "-D path       where to put the output" << endl;
+      cout << "-f filename   single file instead of chain" << endl;
+      cout << "-n integer    number of events to run on" << endl;
+      cout << "-s number     seed for random number generator" << endl;
+      cout << "-S start      starting event number" << endl;
+      cout << "-o filename   set output file" << endl;
+      cout << "-v level      set verbosity level" << endl;
+      cout << "-h            prints this message and exits" << endl;
+      return 0;
     }
     if (!strcmp(argv[i],"-c"))  {fileName   = string(argv[++i]); file = 0; }     // file with chain definition
     if (!strcmp(argv[i],"-C"))  {cutFile    = string(argv[++i]);           }     // file with cuts
@@ -105,24 +105,24 @@ int main(int argc, char *argv[]) {
     if (file == 0) {
       // -- input from chain
       if (barefile.Contains("chains/")) {
-	barefile.ReplaceAll("chains/", "");
-	histfile = barefile + "." + fn + ".root";
-	if (dirspec) {
-	  if (dirName[0] == '/') {
-	    histfile = dirName + "/" + histfile;
-	  } else {
-	    histfile = dirBase + "/" + dirName + "/" + histfile;
-	  }
-	}
+        barefile.ReplaceAll("chains/", "");
+        histfile = barefile + "." + fn + ".root";
+        if (dirspec) {
+          if (dirName[0] == '/') {
+            histfile = dirName + "/" + histfile;
+          } else {
+            histfile = dirBase + "/" + dirName + "/" + histfile;
+          }
+        }
       } else {
-	histfile =  barefile + "." + fn + ".root";
-	if (dirspec) {
-	  if (dirName[0] == '/') {
-	    histfile = dirName + "/" + histfile;
-	  } else {
-	    histfile = dirBase + "/" + dirName + "/" + histfile;
-	  }
-	}
+        histfile =  barefile + "." + fn + ".root";
+        if (dirspec) {
+          if (dirName[0] == '/') {
+            histfile = dirName + "/" + histfile;
+          } else {
+            histfile = dirBase + "/" + dirName + "/" + histfile;
+          }
+        }
       }
       // -- The following lines strip everything from the string up to and including the last '/'
       int fl = barefile.Last('/');
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
       bla.Replace(0, fl+1, ' '); bla.Strip(TString::kLeading, ' ');  bla.Remove(0,1);
       histfile =  bla + "." + fn + ".root";
       if (dirspec) {
-	histfile = dirBase + "/" + dirName + "/" + histfile;
+        histfile = dirBase + "/" + dirName + "/" + histfile;
       }
     }  else if (file == 1) {
       // -- single file input
@@ -142,11 +142,11 @@ int main(int argc, char *argv[]) {
       replaceAll(histfile, ".root", "");
       histfile +=  "." + fn + ".root";
       if (dirspec) {
-	if (dirName[0] == '/') {
-	  histfile = dirName + "/" + histfile;
-	} else {
-	  histfile = dirBase + "/" + dirName + "/" + histfile;
-	}
+        if (dirName[0] == '/') {
+          histfile = dirName + "/" + histfile;
+        } else {
+          histfile = dirBase + "/" + dirName + "/" + histfile;
+        }
       }
     }
   }

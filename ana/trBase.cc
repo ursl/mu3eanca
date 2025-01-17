@@ -17,7 +17,9 @@ trBase::trBase(TChain *chain, string treeName): fVerbose(0), fMode(UNSET) {
   fChainName = treeName;
 
   fNentries = fpChain->GetEntries();
-  cout << "==> trBase: constructor fpChain: " << fpChain << "/" << fpChain->GetName() << " entries = " <<   fNentries << endl;
+  cout << "==> trBase: constructor fpChain: " << fpChain 
+       << "/" << fpChain->GetName() << " entries = " << fNentries 
+       << endl;
 
   fNBranches = 0;
   fBranches.resize(1000);
