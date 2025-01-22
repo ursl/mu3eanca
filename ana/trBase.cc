@@ -1,6 +1,8 @@
 #include "trBase.hh"
 #include "trIncludes.hh"
 
+#include <TChainElement.h>
+
 // ----------------------------------------------------------------------
 // Run with: see derived classes!
 //
@@ -315,3 +317,57 @@ Long64_t trBase::LoadTree(Long64_t entry) {
   }
   return centry;
 }
+
+// ----------------------------------------------------------------------
+void trBase::initMu3e() {
+  cout << "==> trGen::initMu3e() ... " << endl;
+
+  fpChain->SetBranchAddress("Header", &fHeader);
+  initBranch("Weight", &fWeight);
+  initBranch("RandomState", &fRandomState);
+  initBranch("Nhit", &fNhit);
+
+  initBranch("hit_pixelid", &fhit_pixelid);
+  initBranch("hit_timestamp", &fhit_timestamp);
+  initBranch("hit_mc_i", &fhit_mc_i);
+  initBranch("hit_mc_n", &fhit_mc_n);
+
+  initBranch("Ntrajectories", &fNtrajectories);
+  initBranch("traj_ID", &ftraj_ID);
+  initBranch("traj_mother", &ftraj_mother);
+  initBranch("traj_fbhid", &ftraj_fbhid);
+  initBranch("traj_tlhid", &ftraj_tlhid);
+  initBranch("traj_PID", &ftraj_PID);
+  initBranch("traj_type", &ftraj_type);
+  initBranch("traj_time", &ftraj_time);
+  initBranch("traj_vx", &ftraj_vx);
+  initBranch("traj_vy", &ftraj_vy);
+  initBranch("traj_vz", &ftraj_vz);
+  initBranch("traj_px", &ftraj_px);
+  initBranch("traj_py", &ftraj_py);
+  initBranch("traj_pz", &ftraj_pz);
+}
+
+
+// ----------------------------------------------------------------------
+void trBase::initMu3e_mchits() {
+  fpChain2 = new TChain("mu3e_mchits");
+  TObjArray *fileElements = fpChain->GetListOfFiles();
+  TIter next(fileElements);
+  TChainElement *chEl(0);
+  cout << "Adding the following files to chain fTree2(\"mu3e_mchits\")" << endl;
+  while ((chEl=(TChainElement*)next())) {
+    cout << "   " << chEl->GetTitle() << endl;
+    fpChain2->Add(chEl->GetTitle());
+  }
+        
+  // FIXME: read list of files from fpChain!
+  fpChain2->SetBranchAddress("det", &fdet);
+  fpChain2->SetBranchAddress("tid", &ftid);
+  fpChain2->SetBranchAddress("pdg", &fpdg);
+  fpChain2->SetBranchAddress("hid", &fhid);
+  fpChain2->SetBranchAddress("hid_g", &fhid_g);
+  fpChain2->SetBranchAddress("edep", &fedep);
+  fpChain2->SetBranchAddress("time", &ftime);
+}
+
