@@ -102,6 +102,7 @@ void trGen::closeHistFile() {
 
 // ----------------------------------------------------------------------
 void trGen::eventProcessing() {
+
   initVariables();
 
   if (fVerbose > -1) {
@@ -123,8 +124,42 @@ void trGen::eventProcessing() {
 
 // ----------------------------------------------------------------------
 void trGen::overlapHitsInVertex() {
+  static bool first (true); 
+  if (first) {
+    first = false; 
+
+    fpHistFile->cd();
+    new TH1D("hSensorRadius", "sensor radius", 100, 0., 100.);
+
+    new TH2D("hL1Sensors", "sensors L1", 8, 0., 8., 6, 0., 6.);
+    new TH2D("hL2Sensors", "sensors L2", 10, 0., 10., 6, 0., 6.);
+  }      
+
+  TH2D *hl1 = (TH2D*)fpHistFile->Get("hL1Sensors");
+  TH2D *hl2 = (TH2D*)fpHistFile->Get("hL2Sensors");
+
+  TH1D *hr = (TH1D*)fpHistFile->Get("hSensorRadius");
+
   for (unsigned i = 0; i < fNhit; ++i) {
-    cout << i << ": " << fhit_pixelid->at(i) << endl;
+    uint32_t id = fhit_pixelid->at(i);
+    int pixID  = (id & (0xffff << 16)) >> 16;
+    int pixRow = (id & 0x000000ff);
+    int pixCol = (id & 0x0000ff00) >> 8;
+    int radius = TMath::Sqrt(fSensors[pixID].vx*fSensors[pixID].vx + fSensors[pixID].vy*fSensors[pixID].vy);
+
+    hr->Fill(radius); 
+
+    if (radius < 50) {
+
+    } else {
+
+    }
+
+    cout << i << ": 0x" << hex << id << " mask = " <<  (0xffff << 16)  << dec << " pixID = " << pixID
+         << " at " << fSensors[pixID].vx << "/" <<  fSensors[pixID].vy << "/" <<  fSensors[pixID].vz 
+         << " row " << pixRow << " col " <<  pixCol
+         << " radius = " << radius
+         << endl;
   }
 
 
