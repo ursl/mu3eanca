@@ -68,6 +68,7 @@ trGen::trGen(TChain *chain, string treeName) : trBase(chain, treeName) {
   initMu3e();
   initMu3e_mchits();
   initVariables();
+  initAlignment();
 
 }
 

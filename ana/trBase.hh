@@ -14,14 +14,25 @@
 
 #define DR      57.29577951
 
-
+// -- what?
 struct header {
   int event;
   int run;
   int type;
   int setup;
-  double weight;
 };
+
+
+// -- pixel sensor alignment
+struct sensor {
+  uint32_t id;
+  double vx, vy, vz;
+  double rowx, rowy, rowz;
+  double colx, coly, colz;
+  int nrow, ncol;
+  double width, length, thickness, pixelSize;
+};
+
 
 class trBase {
 public:
@@ -41,6 +52,7 @@ public:
   virtual void       initBranch(std::string name, std::vector<double>** vect);
 
   virtual void       initMu3e();
+  virtual void       initAlignment();
   virtual void       initMu3e_mchits();
 
 
@@ -125,7 +137,9 @@ protected:
   double                     fedep, ftime;
 
 
-  struct header              fHeader;
+  struct header                fHeader;
+  std::map<uint32_t, struct sensor> fSensors;
+
   double                     fWeight;
   std::string                *fRandomState;
 

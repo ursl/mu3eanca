@@ -318,6 +318,48 @@ Long64_t trBase::LoadTree(Long64_t entry) {
   return centry;
 }
 
+
+// ----------------------------------------------------------------------
+void trBase::initAlignment() {
+  TObjArray *fileElements = fpChain->GetListOfFiles();
+  TIter next(fileElements);
+  TChainElement *chEl(0);
+  cout << "Opening the following file to read alignment/sensor" << endl;
+  TFile *f(0); 
+  while ((chEl=(TChainElement*)next())) {
+    f = TFile::Open(chEl->GetTitle());
+    break;
+  }
+  if (f->IsOpen()) {
+    TTree *ta = (TTree*)f->Get("alignment/sensors");
+    struct sensor a;
+    ta->SetBranchAddress("id", &a.id);
+    ta->SetBranchAddress("vx", &a.vx);
+    ta->SetBranchAddress("vy", &a.vy);
+    ta->SetBranchAddress("vz", &a.vz);
+    ta->SetBranchAddress("rowx", &a.rowx);
+    ta->SetBranchAddress("rowy", &a.rowy);
+    ta->SetBranchAddress("rowz", &a.rowz);
+    ta->SetBranchAddress("colx", &a.colx);
+    ta->SetBranchAddress("coly", &a.coly);
+    ta->SetBranchAddress("colz", &a.colz);
+    int nbytes(0);
+    for (int i = 0; i < ta->GetEntries(); ++i) {
+      nbytes += ta->GetEntry(i);
+      // -- FIXME
+      fSensors.insert({a.id, a});
+    }
+  }
+
+  for (auto it: fSensors) {
+    cout << it.second.id 
+         << " v = " << it.second.vx << "/" << it.second.vy << "/" << it.second.vz
+         << endl;
+  }
+
+}
+
+
 // ----------------------------------------------------------------------
 void trBase::initMu3e() {
   cout << "==> trGen::initMu3e() ... " << endl;
