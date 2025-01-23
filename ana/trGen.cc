@@ -131,13 +131,19 @@ void trGen::overlapHitsInVertex() {
     fpHistFile->cd();
     new TH1D("hSensorRadius", "sensor radius", 100, 0., 100.);
 
-    new TH2D("hL1Sensors", "sensors L1", 8, 0., 8., 6, 0., 6.);
-    new TH2D("hL2Sensors", "sensors L2", 10, 0., 10., 6, 0., 6.);
+    new TH2D("hL1Sensors", "sensors L1", 6, -62., 62., 8, -3.15, 3.15);
+    new TH2D("hL2Sensors", "sensors L2", 6, -62., 62., 10, -3.15, 3.15);
+
+    new TH2D("hL1XY", "Layer 1", 70, -35., 35., 70, -35., 35.);
+    new TH2D("hL2XY", "Layer 2", 70, -35., 35., 70, -35., 35.);
   }      
 
   TH2D *hl1 = (TH2D*)fpHistFile->Get("hL1Sensors");
   TH2D *hl2 = (TH2D*)fpHistFile->Get("hL2Sensors");
 
+  TH2D *hxy1 = (TH2D*)fpHistFile->Get("hL1XY");
+  TH2D *hxy2 = (TH2D*)fpHistFile->Get("hL2XY");
+  
   TH1D *hr = (TH1D*)fpHistFile->Get("hSensorRadius");
 
   for (unsigned i = 0; i < fNhit; ++i) {
@@ -145,23 +151,39 @@ void trGen::overlapHitsInVertex() {
     int pixID  = (id & (0xffff << 16)) >> 16;
     int pixRow = (id & 0x000000ff);
     int pixCol = (id & 0x0000ff00) >> 8;
-    int radius = TMath::Sqrt(fSensors[pixID].vx*fSensors[pixID].vx + fSensors[pixID].vy*fSensors[pixID].vy);
+    double radius = TMath::Sqrt(fSensors[pixID].vx*fSensors[pixID].vx + fSensors[pixID].vy*fSensors[pixID].vy);
+    double phi = TMath::ATan2(fSensors[pixID].vy, fSensors[pixID].vx); 
+    double z   = fSensors[pixID].vz;
+
+    // FIXME
+    double x = 0.;
+    double y = 0.;
 
     hr->Fill(radius); 
 
-    if (radius < 50) {
-
-    } else {
-
+    int ix, iy;
+    if (radius < 28.) {
+      ix = hl1->GetXaxis()->FindBin(z); 
+      iy = hl1->GetYaxis()->FindBin(phi); 
+      hl1->SetBinContent(ix, iy, pixID);
+      hxy1->Fill(
+      //      cout << "  hl1->SetBinContent(" << i << ", " << iy << ", " << pixID << ");" << endl;
+    } else if (radius < 35.) {
+      ix = hl2->GetXaxis()->FindBin(z); 
+      iy = hl2->GetYaxis()->FindBin(phi); 
+      hl2->SetBinContent(ix, iy, pixID);
+      //      cout << "  hl2->SetBinContent(" << i << ", " << iy << ", " << pixID << ");" << endl;
     }
 
-    cout << i << ": 0x" << hex << id << " mask = " <<  (0xffff << 16)  << dec << " pixID = " << pixID
-         << " at " << fSensors[pixID].vx << "/" <<  fSensors[pixID].vy << "/" <<  fSensors[pixID].vz 
-         << " row " << pixRow << " col " <<  pixCol
-         << " radius = " << radius
-         << endl;
+    if (fVerbose > 1) {
+      cout << i << ": 0x" << hex << id  << dec << " pixID = " << pixID
+           << " at " << fSensors[pixID].vx << "/" <<  fSensors[pixID].vy << "/" <<  fSensors[pixID].vz 
+           << " row/col = " << pixRow << "/" <<  pixCol
+           << " radius = " << radius << " phi = " << phi << " z = " << z 
+           << " ix = " << ix << " iy = " << iy
+           << endl;
+    }
   }
-
 
 
 
