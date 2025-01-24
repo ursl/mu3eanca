@@ -31,10 +31,13 @@ public:
   void       overlapHitsInVertex();
 
   // -- utilities
-
-  // -- creates a map between tid (unique trajectory ID) and all hits (in mu3e tree) associated with that tid
-  void       mapTID2Hits();
-  TVector3   getHitLocation(uint32_t pixelid);
+  int        pixelID(uint32_t hit_pixelid) {return ((hit_pixelid & (0xffff << 16)) >> 16);}
+  int        pixelRow(uint32_t hit_pixelid) {return (hit_pixelid & 0x000000ff);}
+  int        pixelCol(uint32_t hit_pixelid) {return ((hit_pixelid & 0x0000ff00) >> 8);}
+  
+  // -- creates a map between tid (unique trajectory ID) and hit_pixelid (in mu3e tree) associated with that tid
+  void       mapTID2PixelID();
+  TVector3   getHitLocation(uint32_t hit_pixelid);
 
 protected:
 

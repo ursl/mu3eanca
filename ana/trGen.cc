@@ -129,7 +129,8 @@ void trGen::overlapHitsInVertex() {
     first = false; 
 
     fpHistFile->cd();
-    new TH1D("hSensorRadius", "sensor radius", 100, 0., 100.);
+    new TH1D("hSensorRadius", "sensor radius", 1000, 0., 100.);
+    new TH1D("hHitDist", "hit distance (for same traj)", 1000, 0., 500.);
 
     new TH2D("hL1Sensors", "sensors L1", 6, -62., 62., 8, -3.15, 3.15);
     new TH2D("hL2Sensors", "sensors L2", 6, -62., 62., 10, -3.15, 3.15);
@@ -145,32 +146,24 @@ void trGen::overlapHitsInVertex() {
   TH2D *hxy2 = (TH2D*)fpHistFile->Get("hL2XY");
   
   TH1D *hr = (TH1D*)fpHistFile->Get("hSensorRadius");
+  TH1D *hd = (TH1D*)fpHistFile->Get("hHitDist");
 
-  mapTID2Hits();
+  mapTID2PixelID();
   
   // -- plot all hit locations
   for (unsigned i = 0; i < fNhit; ++i) {
     uint32_t id = fhit_pixelid->at(i);
 
-    int pixID  = (id & (0xffff << 16)) >> 16;
-    int pixRow = (id & 0x000000ff);
-    int pixCol = (id & 0x0000ff00) >> 8;
-    double radius = TMath::Sqrt(fSensors[pixID].vx*fSensors[pixID].vx + fSensors[pixID].vy*fSensors[pixID].vy);
-    double phi = TMath::ATan2(fSensors[pixID].vy, fSensors[pixID].vx); 
-    double z   = fSensors[pixID].vz;
-
-    fpChain2->GetEntry(fhit_mc_i->at(i));
-
-    // v + drow * (0.5 + row) + dcol * (0.5 + col)
-    TVector3 v(fSensors[pixID].vx, fSensors[pixID].vy, fSensors[pixID].vz);
-    TVector3 dcol(fSensors[pixID].colx, fSensors[pixID].coly, fSensors[pixID].colz);
-    TVector3 drow(fSensors[pixID].rowx, fSensors[pixID].rowy, fSensors[pixID].rowz);
-    TVector3 pix3DOld = v + drow * (0.5 + pixRow) + dcol * (0.5 + pixCol);
-
     TVector3 pix3D =  getHitLocation(id);
+
+    int pixID = pixelID(id);
+    int pixRow = pixelRow(id);
+    int pixCol = pixelCol(id);
+
+    double radius = pix3D.Perp();
+    double phi    = pix3D.Phi();
+    double z      = pix3D.Z();
     
-
-
     hr->Fill(radius); 
 
     int ix, iy;
@@ -180,7 +173,7 @@ void trGen::overlapHitsInVertex() {
       hl1->SetBinContent(ix, iy, pixID);
       hxy1->Fill(pix3D.X(), pix3D.Y());
       //      cout << "  hl1->SetBinContent(" << i << ", " << iy << ", " << pixID << ");" << endl;
-    } else if (radius < 35.) {
+    } else if (radius < 34.) {
       ix = hl2->GetXaxis()->FindBin(z); 
       iy = hl2->GetYaxis()->FindBin(phi); 
       hl2->SetBinContent(ix, iy, pixID);
@@ -204,8 +197,12 @@ void trGen::overlapHitsInVertex() {
   // -- plot distances between hit pairs on tid
   for (auto it: fMapTID2Hits) {
     for (unsigned int i = 0; i < it.second.size(); ++i) {
+      TVector3 ri = getHitLocation(it.second[i]);
       for (unsigned int j = i+1; j < it.second.size(); ++j) {
-        
+        TVector3 rj = getHitLocation(it.second[j]);
+        TVector3 diff = ri - rj;
+        double dist = diff.Mag();
+        hd->Fill(dist);
       }
     }
   }
@@ -405,7 +402,7 @@ void trGen::readCuts(string filename, int dump) {
 
 
 // ----------------------------------------------------------------------
-void trGen::mapTID2Hits() {
+void trGen::mapTID2PixelID() {
   fMapTID2Hits.clear();
 
   if (fVerbose > 9) {
@@ -416,16 +413,17 @@ void trGen::mapTID2Hits() {
   }
 
   for (unsigned i = 0; i < fNhit; ++i) {
-    int idx = fhit_mc_i->at(i);
+    int pixelid = fhit_pixelid->at(i);
+    int idx     = fhit_mc_i->at(i);
     fpChain2->GetEntry(idx);
     if (fMapTID2Hits.find(ftid) == fMapTID2Hits.end()) {
       // -- not found
       vector<int> a; 
-      a.push_back(i);
+      a.push_back(pixelid);
       fMapTID2Hits.insert({ftid, a});
     } else {
       // -- found
-      fMapTID2Hits[ftid].push_back(i);
+      fMapTID2Hits[ftid].push_back(pixelid);
     }
   }
 
@@ -444,9 +442,13 @@ void trGen::mapTID2Hits() {
 
 // ----------------------------------------------------------------------
 TVector3  trGen::getHitLocation(uint32_t id) {
-  int pixID  = (id & (0xffff << 16)) >> 16;
-  int pixRow = (id & 0x000000ff);
-  int pixCol = (id & 0x0000ff00) >> 8;
+  // int pixID  = (id & (0xffff << 16)) >> 16;
+  // int pixRow = (id & 0x000000ff);
+  // int pixCol = (id & 0x0000ff00) >> 8;
+
+  int pixID = pixelID(id);
+  int pixRow = pixelRow(id);
+  int pixCol = pixelCol(id);
 
   // v + drow * (0.5 + row) + dcol * (0.5 + col)
   TVector3 v(fSensors[pixID].vx, fSensors[pixID].vy, fSensors[pixID].vz);
