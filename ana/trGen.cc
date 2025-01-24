@@ -110,7 +110,7 @@ void trGen::eventProcessing() {
   }
 
   // -- generic debug output
-  if (fVerbose > 9) {
+  if (fVerbose > 90) {
     printBranches();
   }
 
@@ -134,8 +134,8 @@ void trGen::overlapHitsInVertex() {
     new TH2D("hL1Sensors", "sensors L1", 6, -62., 62., 8, -3.15, 3.15);
     new TH2D("hL2Sensors", "sensors L2", 6, -62., 62., 10, -3.15, 3.15);
 
-    new TH2D("hL1XY", "Layer 1", 70, -35., 35., 70, -35., 35.);
-    new TH2D("hL2XY", "Layer 2", 70, -35., 35., 70, -35., 35.);
+    new TH2D("hL1XY", "Layer 1", 700, -35., 35., 700, -35., 35.);
+    new TH2D("hL2XY", "Layer 2", 700, -35., 35., 700, -35., 35.);
   }      
 
   TH2D *hl1 = (TH2D*)fpHistFile->Get("hL1Sensors");
@@ -146,8 +146,12 @@ void trGen::overlapHitsInVertex() {
   
   TH1D *hr = (TH1D*)fpHistFile->Get("hSensorRadius");
 
+  mapTID2Hits();
+  
+  // -- plot all hit locations
   for (unsigned i = 0; i < fNhit; ++i) {
     uint32_t id = fhit_pixelid->at(i);
+
     int pixID  = (id & (0xffff << 16)) >> 16;
     int pixRow = (id & 0x000000ff);
     int pixCol = (id & 0x0000ff00) >> 8;
@@ -155,9 +159,17 @@ void trGen::overlapHitsInVertex() {
     double phi = TMath::ATan2(fSensors[pixID].vy, fSensors[pixID].vx); 
     double z   = fSensors[pixID].vz;
 
-    // FIXME
-    double x = 0.;
-    double y = 0.;
+    fpChain2->GetEntry(fhit_mc_i->at(i));
+
+    // v + drow * (0.5 + row) + dcol * (0.5 + col)
+    TVector3 v(fSensors[pixID].vx, fSensors[pixID].vy, fSensors[pixID].vz);
+    TVector3 dcol(fSensors[pixID].colx, fSensors[pixID].coly, fSensors[pixID].colz);
+    TVector3 drow(fSensors[pixID].rowx, fSensors[pixID].rowy, fSensors[pixID].rowz);
+    TVector3 pix3DOld = v + drow * (0.5 + pixRow) + dcol * (0.5 + pixCol);
+
+    TVector3 pix3D =  getHitLocation(id);
+    
+
 
     hr->Fill(radius); 
 
@@ -166,12 +178,13 @@ void trGen::overlapHitsInVertex() {
       ix = hl1->GetXaxis()->FindBin(z); 
       iy = hl1->GetYaxis()->FindBin(phi); 
       hl1->SetBinContent(ix, iy, pixID);
-      hxy1->Fill(
+      hxy1->Fill(pix3D.X(), pix3D.Y());
       //      cout << "  hl1->SetBinContent(" << i << ", " << iy << ", " << pixID << ");" << endl;
     } else if (radius < 35.) {
       ix = hl2->GetXaxis()->FindBin(z); 
       iy = hl2->GetYaxis()->FindBin(phi); 
       hl2->SetBinContent(ix, iy, pixID);
+      hxy2->Fill(pix3D.X(), pix3D.Y());
       //      cout << "  hl2->SetBinContent(" << i << ", " << iy << ", " << pixID << ");" << endl;
     }
 
@@ -181,9 +194,22 @@ void trGen::overlapHitsInVertex() {
            << " row/col = " << pixRow << "/" <<  pixCol
            << " radius = " << radius << " phi = " << phi << " z = " << z 
            << " ix = " << ix << " iy = " << iy
+           << " mc_i = " << fhit_mc_i->at(i) << " mc_n = " << fhit_mc_n->at(i)
+           << " tid = " << ftid
            << endl;
     }
+    
   }
+
+  // -- plot distances between hit pairs on tid
+  for (auto it: fMapTID2Hits) {
+    for (unsigned int i = 0; i < it.second.size(); ++i) {
+      for (unsigned int j = i+1; j < it.second.size(); ++j) {
+        
+      }
+    }
+  }
+  
 
 
 
@@ -303,6 +329,8 @@ void trGen::printBranches() {
          << Form(" hit_mc_i = %4d", fhit_mc_i->at(i))
          << Form(" hit_mc_n = %4d", fhit_mc_n->at(i))
          << endl;
+
+    //    cout << Form("  mchit det = %2d", 
   }
   cout << "----------------------------------------------------------------------" << endl;
 }
@@ -373,4 +401,59 @@ void trGen::readCuts(string filename, int dump) {
   }
 
   if (dump)  cout << "------------------------------------" << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void trGen::mapTID2Hits() {
+  fMapTID2Hits.clear();
+
+  if (fVerbose > 9) {
+    for (unsigned i = fhit_mc_i->at(0); i < fhit_mc_i->at(fNhit-1); ++i) {
+      fpChain2->GetEntry(i);
+      cout << "det: " << fdet << " tid: " << ftid << endl;
+    }
+  }
+
+  for (unsigned i = 0; i < fNhit; ++i) {
+    int idx = fhit_mc_i->at(i);
+    fpChain2->GetEntry(idx);
+    if (fMapTID2Hits.find(ftid) == fMapTID2Hits.end()) {
+      // -- not found
+      vector<int> a; 
+      a.push_back(i);
+      fMapTID2Hits.insert({ftid, a});
+    } else {
+      // -- found
+      fMapTID2Hits[ftid].push_back(i);
+    }
+  }
+
+  if (fVerbose > 9) {
+    for (auto it: fMapTID2Hits) {
+      cout << it.first << ": ";
+      for (auto iv: it.second) {
+        cout << iv << ", ";
+      }
+      cout << endl;
+    }
+  }
+
+}
+
+
+// ----------------------------------------------------------------------
+TVector3  trGen::getHitLocation(uint32_t id) {
+  int pixID  = (id & (0xffff << 16)) >> 16;
+  int pixRow = (id & 0x000000ff);
+  int pixCol = (id & 0x0000ff00) >> 8;
+
+  // v + drow * (0.5 + row) + dcol * (0.5 + col)
+  TVector3 v(fSensors[pixID].vx, fSensors[pixID].vy, fSensors[pixID].vz);
+  TVector3 dcol(fSensors[pixID].colx, fSensors[pixID].coly, fSensors[pixID].colz);
+  TVector3 drow(fSensors[pixID].rowx, fSensors[pixID].rowy, fSensors[pixID].rowz);
+  TVector3 pix3D = v + drow * (0.5 + pixRow) + dcol * (0.5 + pixCol);
+  
+  return pix3D;
+
 }
