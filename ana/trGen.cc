@@ -132,18 +132,35 @@ void trGen::overlapHitsInVertex() {
     new TH1D("hSensorRadius", "sensor radius", 1000, 0., 100.);
     new TH1D("hHitDist", "hit distance (for same traj)", 1000, 0., 500.);
 
-    new TH2D("hL1Sensors", "sensors L1", 6, -62., 62., 8, -3.15, 3.15);
-    new TH2D("hL2Sensors", "sensors L2", 6, -62., 62., 10, -3.15, 3.15);
+    new TH2D("hL1Sensors", "sensors L1", 6, -62., 62., 8, -3.2, 3.2);
+    new TH2D("hL2Sensors", "sensors L2", 6, -62., 62., 10, -3.2, 3.2);
+    new TH2D("hL3Sensors", "sensors L3", 17, -170., 170., 24, -3.2, 3.2);
+    new TH2D("hL4Sensors", "sensors L4", 18, -180., 180., 28, -3.2, 3.2);
+
+    new TH2D("hL3USSensors", "sensors US L3", 17, -580., -230., 24, -3.2, 3.2);
+    new TH2D("hL4USSensors", "sensors US L4", 18, -590., -220., 28, -3.2, 3.2);
+    new TH2D("hL3DSSensors", "sensors DS L3", 17, 230., 580., 24, -3.2, 3.2);
+    new TH2D("hL4DSSensors", "sensors DS L4", 18, 220., 590., 28, -3.2, 3.2);
 
     new TH2D("hL1XY", "Layer 1", 700, -35., 35., 700, -35., 35.);
     new TH2D("hL2XY", "Layer 2", 700, -35., 35., 700, -35., 35.);
+    new TH2D("hL3XY", "Layer 3", 1000, -100., 100., 1000, -100., 100.);
+    new TH2D("hL4XY", "Layer 4", 1000, -100., 100., 1000, -100., 100.);
   }      
 
   TH2D *hl1 = (TH2D*)fpHistFile->Get("hL1Sensors");
   TH2D *hl2 = (TH2D*)fpHistFile->Get("hL2Sensors");
+  TH2D *hl3 = (TH2D*)fpHistFile->Get("hL3Sensors");
+  TH2D *hl4 = (TH2D*)fpHistFile->Get("hL4Sensors");
+  TH2D *husl3 = (TH2D*)fpHistFile->Get("hL3USSensors");
+  TH2D *husl4 = (TH2D*)fpHistFile->Get("hL4USSensors");
+  TH2D *hdsl3 = (TH2D*)fpHistFile->Get("hL3DSSensors");
+  TH2D *hdsl4 = (TH2D*)fpHistFile->Get("hL4DSSensors");
 
   TH2D *hxy1 = (TH2D*)fpHistFile->Get("hL1XY");
   TH2D *hxy2 = (TH2D*)fpHistFile->Get("hL2XY");
+  TH2D *hxy3 = (TH2D*)fpHistFile->Get("hL3XY");
+  TH2D *hxy4 = (TH2D*)fpHistFile->Get("hL4XY");
   
   TH1D *hr = (TH1D*)fpHistFile->Get("hSensorRadius");
   TH1D *hd = (TH1D*)fpHistFile->Get("hHitDist");
@@ -166,19 +183,63 @@ void trGen::overlapHitsInVertex() {
     
     hr->Fill(radius); 
 
+    // -- sensor center
+    TVector3 v(fSensors[pixID].vx, fSensors[pixID].vy, fSensors[pixID].vz);
+    TVector3 dcol(fSensors[pixID].colx, fSensors[pixID].coly, fSensors[pixID].colz);
+    TVector3 drow(fSensors[pixID].rowx, fSensors[pixID].rowy, fSensors[pixID].rowz);
+    TVector3 pixC = v + drow * (0.5 + 125) + dcol * (0.5 + 125);
+    double phiC = pixC.Phi();
+    double zC   = pixC.Z();
+
     int ix, iy;
     if (radius < 28.) {
-      ix = hl1->GetXaxis()->FindBin(z); 
-      iy = hl1->GetYaxis()->FindBin(phi); 
+      ix = hl1->GetXaxis()->FindBin(zC); 
+      iy = hl1->GetYaxis()->FindBin(phiC); 
       hl1->SetBinContent(ix, iy, pixID);
       hxy1->Fill(pix3D.X(), pix3D.Y());
-      //      cout << "  hl1->SetBinContent(" << i << ", " << iy << ", " << pixID << ");" << endl;
     } else if (radius < 34.) {
-      ix = hl2->GetXaxis()->FindBin(z); 
-      iy = hl2->GetYaxis()->FindBin(phi); 
+      ix = hl2->GetXaxis()->FindBin(zC); 
+      iy = hl2->GetYaxis()->FindBin(phiC); 
       hl2->SetBinContent(ix, iy, pixID);
       hxy2->Fill(pix3D.X(), pix3D.Y());
-      //      cout << "  hl2->SetBinContent(" << i << ", " << iy << ", " << pixID << ");" << endl;
+    } else if (radius < 75.) {
+      if (TMath::Abs(zC) < 200) {
+        ix = hl3->GetXaxis()->FindBin(zC); 
+        iy = hl3->GetYaxis()->FindBin(phiC); 
+        hl3->SetBinContent(ix, iy, pixID);
+        hxy3->Fill(pix3D.X(), pix3D.Y());
+      } else if (zC < -210) {
+        ix = husl3->GetXaxis()->FindBin(zC); 
+        iy = husl3->GetYaxis()->FindBin(phiC); 
+        husl3->SetBinContent(ix, iy, pixID);
+        hxy3->Fill(pix3D.X(), pix3D.Y());
+      } else if (zC > -210) {
+        ix = hdsl3->GetXaxis()->FindBin(zC); 
+        iy = hdsl3->GetYaxis()->FindBin(phiC); 
+        hdsl3->SetBinContent(ix, iy, pixID);
+        hxy3->Fill(pix3D.X(), pix3D.Y());
+      } else {
+        cout << "L3 zC = " << zC << " not filled?" << endl;
+      }
+    } else {
+      if (TMath::Abs(zC) < 200) {
+        ix = hl4->GetXaxis()->FindBin(zC); 
+        iy = hl4->GetYaxis()->FindBin(phiC); 
+        hl4->SetBinContent(ix, iy, pixID);
+        hxy3->Fill(pix3D.X(), pix3D.Y());
+      } else if (zC < -210) {
+        ix = husl4->GetXaxis()->FindBin(zC); 
+        iy = husl4->GetYaxis()->FindBin(phiC); 
+        husl4->SetBinContent(ix, iy, pixID);
+        hxy3->Fill(pix3D.X(), pix3D.Y());
+      } else if (zC > 210) {
+        ix = hdsl4->GetXaxis()->FindBin(zC); 
+        iy = hdsl4->GetYaxis()->FindBin(phiC); 
+        hdsl4->SetBinContent(ix, iy, pixID);
+        hxy3->Fill(pix3D.X(), pix3D.Y());
+      } else {
+        cout << "L4 zC = " << zC << " not filled?" << endl;
+      }
     }
 
     if (fVerbose > 1) {
@@ -458,4 +519,16 @@ TVector3  trGen::getHitLocation(uint32_t id) {
   
   return pix3D;
 
+}
+
+
+// ----------------------------------------------------------------------
+int trGen::pixelLayer(uint32_t id) {
+  int pixID = pixelID(id);
+  
+  if (pixID < 300) {
+    return 1; 
+  } else if (pixID < 1400) {
+    return 2; 
+  }
 }
