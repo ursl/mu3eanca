@@ -33,7 +33,6 @@ struct sensor {
   double width, length, thickness, pixelSize;
 };
 
-
 class trBase {
 public:
   trBase(TChain *tree, std::string para);
@@ -43,6 +42,7 @@ public:
 
   Long64_t           LoadTree(Long64_t entry);
   virtual void       commonVar();
+  // -- these refer to the tree/chain passed in as "tree" in c'tor
   virtual void       initBranch(std::string name, int* var);
   virtual void       initBranch(std::string name, float* var);
   virtual void       initBranch(std::string name, double* var);

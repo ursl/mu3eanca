@@ -346,17 +346,17 @@ void trBase::initAlignment() {
     int nbytes(0);
     for (int i = 0; i < ta->GetEntries(); ++i) {
       nbytes += ta->GetEntry(i);
-      // -- FIXME
       fSensors.insert({a.id, a});
     }
   }
 
-  for (auto it: fSensors) {
-    cout << it.second.id 
-         << " v = " << it.second.vx << "/" << it.second.vy << "/" << it.second.vz
-         << endl;
+  if (fVerbose > 0) {
+    for (auto it: fSensors) {
+      cout << it.second.id 
+           << " v = " << it.second.vx << "/" << it.second.vy << "/" << it.second.vz
+           << endl;
+    }
   }
-
 }
 
 
@@ -403,7 +403,6 @@ void trBase::initMu3e_mchits() {
     fpChain2->Add(chEl->GetTitle());
   }
         
-  // FIXME: read list of files from fpChain!
   fpChain2->SetBranchAddress("det", &fdet);
   fpChain2->SetBranchAddress("tid", &ftid);
   fpChain2->SetBranchAddress("pdg", &fpdg);
