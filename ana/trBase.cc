@@ -80,6 +80,29 @@ void trBase::initVariables() {
 
 
 
+// ----------------------------------------------------------------------
+int trBase::pixelLayer(uint32_t id) {
+  int pixID = pixelID(id);
+  
+  if (pixID < 231) {
+    return 1; 
+  } else if (pixID < 1400) {
+    return 2; 
+  } else if (
+             (6152 < pixID && pixID < 6904) 
+             || (2056 < pixID && pixID < 2808)
+             || (10248 < pixID && pixID < 11000)) {
+    return 3; 
+  } else if (
+             (7175 < pixID && pixID < 8056)
+             || (3079 < pixID) && (3960 < pixID) 
+             || (11271 < pixID) && (pixID < 12152)) {
+    return 4; 
+  } 
+  return -1;
+}
+
+
 // ======================================================================
 // -- Below is the icc material
 // ======================================================================
@@ -411,4 +434,5 @@ void trBase::initMu3e_mchits() {
   fpChain2->SetBranchAddress("edep", &fedep);
   fpChain2->SetBranchAddress("time", &ftime);
 }
+
 

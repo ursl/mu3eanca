@@ -146,6 +146,11 @@ void trGen::overlapHitsInVertex() {
     new TH2D("hL2XY", "Layer 2", 700, -35., 35., 700, -35., 35.);
     new TH2D("hL3XY", "Layer 3", 1000, -100., 100., 1000, -100., 100.);
     new TH2D("hL4XY", "Layer 4", 1000, -100., 100., 1000, -100., 100.);
+
+    new TH1D("hL1Hits", "Layer 1 Hits", 6, 0., 6.);
+    new TH1D("hL2Hits", "Layer 2 Hits", 6, 0., 6.);
+    new TH1D("hL3Hits", "Layer 3 Hits", 6, 0., 6.);
+    new TH1D("hL4Hits", "Layer 4 Hits", 6, 0., 6.);
   }      
 
   TH2D *hl1 = (TH2D*)fpHistFile->Get("hL1Sensors");
@@ -164,6 +169,12 @@ void trGen::overlapHitsInVertex() {
   
   TH1D *hr = (TH1D*)fpHistFile->Get("hSensorRadius");
   TH1D *hd = (TH1D*)fpHistFile->Get("hHitDist");
+
+  TH1D *hl1h = (TH1D*)fpHistFile->Get("hL1Hits");
+  TH1D *hl2h = (TH1D*)fpHistFile->Get("hL2Hits");
+  TH1D *hl3h = (TH1D*)fpHistFile->Get("hL3Hits");
+  TH1D *hl4h = (TH1D*)fpHistFile->Get("hL4Hits");
+
 
   mapTID2PixelID();
   
@@ -256,8 +267,10 @@ void trGen::overlapHitsInVertex() {
   }
 
   // -- plot distances between hit pairs on tid
+  map<int, int> layerHitCounter;
   for (auto it: fMapTID2Hits) {
     for (unsigned int i = 0; i < it.second.size(); ++i) {
+      ++layerHitCounter[pixelLayer(it.second[i])];
       TVector3 ri = getHitLocation(it.second[i]);
       for (unsigned int j = i+1; j < it.second.size(); ++j) {
         TVector3 rj = getHitLocation(it.second[j]);
@@ -266,9 +279,15 @@ void trGen::overlapHitsInVertex() {
         hd->Fill(dist);
       }
     }
+    for (auto ith: layerHitCounter) {
+      if (ith.first == 1) hl1h->Fill(ith.second);
+      if (ith.first == 2) hl2h->Fill(ith.second);
+      if (ith.first == 3) hl3h->Fill(ith.second);
+      if (ith.first == 4) hl4h->Fill(ith.second);
+    }
+    layerHitCounter.clear();
   }
   
-
 
 
 }
@@ -521,25 +540,3 @@ TVector3  trGen::getHitLocation(uint32_t id) {
 
 }
 
-
-// ----------------------------------------------------------------------
-int trGen::pixelLayer(uint32_t id) {
-  int pixID = pixelID(id);
-  
-  if (pixID < 231) {
-    return 1; 
-  } else if (pixID < 1400) {
-    return 2; 
-  } else if (
-             (6152 < pixID && pixID < 6904) 
-             || (2056 < pixID && pixID < 2808)
-             || (10248 < pixID && pixID < 11000)) {
-    return 3; 
-  } else if (
-             (7175 < pixID && pixID < 8056)
-             || (3079 < pixID) && (3960 < pixID) 
-             || (11271 < pixID) && (pixID < 12152)) {
-    return 4; 
-  } 
-  return -1;
-}

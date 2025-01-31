@@ -71,6 +71,14 @@ public:
   virtual void       setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
 
 
+  // -- utilities
+  int        pixelID(uint32_t hit_pixelid) {return ((hit_pixelid & (0xffff << 16)) >> 16);}
+  int        pixelRow(uint32_t hit_pixelid) {return (hit_pixelid & 0x000000ff);}
+  int        pixelCol(uint32_t hit_pixelid) {return ((hit_pixelid & 0x0000ff00) >> 8);}
+  int        pixelLayer(uint32_t hit_pixelid); 
+  
+
+
   int  fVerbose;
   MODE fMode;
 
