@@ -174,7 +174,7 @@ void plotEnsemble::plotLinkQuality(int mode) {
 
   cout << "== plotEnsemble::plotLinkQuality" << endl;
   for (auto iy: fEnsemble) {
-    cout << "## plotEnsemble::plotLVCurrents: " << iy.first << endl;
+    cout << "## plotEnsemble::plotLinkCurrents: " << iy.first << endl;
     for (auto ix: iy.second->fAnaErrorRate) {
       int bx = 0;
       sscanf(ix.first.c_str(), "C%d", &bx);
@@ -205,7 +205,7 @@ void plotEnsemble::plotLinkQuality(int mode) {
 void plotEnsemble::plotLVCurrents(int mode) {
   TH2D *h;
   if (fHists.find("LVCurrents") == fHists.end()) {
-    h = new TH2D("LVCurrents", "LV currents", 6, 0., 6., fnLadders, 0., fnLadders);
+    h = new TH2D("LVCurrents", "LV currents (bias block on)", 6, 0., 6., fnLadders, 0., fnLadders);
     labelAxes(h);
     fHists.insert({"LVCurrents", h});
   }
@@ -226,7 +226,7 @@ void plotEnsemble::plotLVCurrents(int mode) {
   
   gStyle->SetOptStat(0);
   h->Draw("colztext");
-  c0->SaveAs(Form("%s/%slvcurrents.pdf", fPDFDir.c_str(), fPDFPrefix.c_str()));
+  c0->SaveAs(Form("%s/%slvcurrentsBiasBlockOn.pdf", fPDFDir.c_str(), fPDFPrefix.c_str()));
 }
 
 
