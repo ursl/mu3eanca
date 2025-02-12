@@ -130,7 +130,11 @@ void trGen::overlapHitsInVertex() {
 
     fpHistFile->cd();
     new TH1D("hSensorRadius", "sensor radius", 1000, 0., 100.);
-    new TH1D("hHitDist", "hit distance (for same traj)", 1000, 0., 500.);
+    new TH1D("hHitDist", "hit distance (for same traj)", 2000, 0., 200.);
+
+    new TH2D("ho1", "map of overlap hits (method 1)", 256, 0., 256., 250, 0., 250.);
+    new TH2D("ho2", "map of overlap hits (method 2)", 256, 0., 256., 250, 0., 250.);
+    new TH2D("ho3", "map of overlap hits (method 3)", 256, 0., 256., 250, 0., 250.);
 
     new TH2D("hL1Sensors", "sensors L1", 6, -62., 62., 8, -3.2, 3.2);
     new TH2D("hL2Sensors", "sensors L2", 6, -62., 62., 10, -3.2, 3.2);
@@ -169,6 +173,10 @@ void trGen::overlapHitsInVertex() {
   
   TH1D *hr = (TH1D*)fpHistFile->Get("hSensorRadius");
   TH1D *hd = (TH1D*)fpHistFile->Get("hHitDist");
+
+  TH2D *ho1 = (TH2D*)fpHistFile->Get("ho1");
+  TH2D *ho2 = (TH2D*)fpHistFile->Get("ho2");
+  TH2D *ho3 = (TH2D*)fpHistFile->Get("ho3");
 
   TH1D *hl1h = (TH1D*)fpHistFile->Get("hL1Hits");
   TH1D *hl2h = (TH1D*)fpHistFile->Get("hL2Hits");
@@ -277,6 +285,29 @@ void trGen::overlapHitsInVertex() {
         TVector3 diff = ri - rj;
         double dist = diff.Mag();
         hd->Fill(dist);
+
+        // -- here do this only for L1
+        if (1 == pixelLayer(it.second[i])) {
+          if (dist < 1.0) {
+            int icol = pixelCol(it.second[i]);
+            int irow = pixelRow(it.second[i]);
+            ho1->Fill(icol, irow);
+          }
+          
+          double dphi = ri.DeltaPhi(rj);
+          if (dist < 1.0 && dphi < 0.02) {
+            int icol = pixelCol(it.second[i]);
+            int irow = pixelRow(it.second[i]);
+            ho2->Fill(icol, irow);
+          }
+          if (dist < 2
+              && (1 == pixelLayer(it.second[j]))
+              ) {
+            int icol = pixelCol(it.second[i]);
+            int irow = pixelRow(it.second[i]);
+            ho3->Fill(icol, irow);
+          }
+        }
       }
     }
     for (auto ith: layerHitCounter) {
