@@ -103,6 +103,20 @@ int trBase::pixelLayer(uint32_t id) {
 }
 
 
+// ----------------------------------------------------------------------
+int trBase::trajIdx(uint32_t traj_ID) {
+  cout << "  ftraj_ID->size() = " << ftraj_ID->size() << endl;
+  for (unsigned int idx = 0; idx < ftraj_ID->size(); ++idx) {
+    cout << "  trBase::trajId = " << ftraj_ID->at(idx) << endl;
+    if (ftraj_ID->at(idx) == traj_ID) {
+      cout << "  -> returning " << idx << endl;
+      return idx; 
+    }
+  }
+  return -1;
+}
+
+
 // ======================================================================
 // -- Below is the icc material
 // ======================================================================

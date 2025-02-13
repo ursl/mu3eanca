@@ -77,7 +77,7 @@ public:
   int        pixelCol(uint32_t hit_pixelid) {return ((hit_pixelid & 0x0000ff00) >> 8);}
   int        pixelLayer(uint32_t hit_pixelid); 
   
-
+  int        trajIdx(uint32_t traj_ID); 
 
   int  fVerbose;
   MODE fMode;
