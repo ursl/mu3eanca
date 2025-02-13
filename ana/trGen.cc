@@ -132,6 +132,11 @@ void trGen::overlapHitsInVertex() {
     new TH1D("hSensorRadius", "sensor radius", 1000, 0., 100.);
     new TH1D("hHitDist", "hit distance (for same traj)", 2000, 0., 200.);
 
+    // -- inside overlap (edge) region
+    new TH1D("hp", "p", 100, 0., 40.);
+    // -- away from overlap region
+    new TH1D("hq", "p", 100, 0., 40.);
+
     new TH2D("ho1", "map of overlap hits (method 1)", 256, 0., 256., 250, 0., 250.);
     new TH2D("ho2", "map of overlap hits (method 2)", 256, 0., 256., 250, 0., 250.);
     new TH2D("ho3", "map of overlap hits (method 3)", 256, 0., 256., 250, 0., 250.);
@@ -182,6 +187,10 @@ void trGen::overlapHitsInVertex() {
   TH1D *hl2h = (TH1D*)fpHistFile->Get("hL2Hits");
   TH1D *hl3h = (TH1D*)fpHistFile->Get("hL3Hits");
   TH1D *hl4h = (TH1D*)fpHistFile->Get("hL4Hits");
+
+  TH1D *hp = (TH1D*)fpHistFile->Get("hp");
+  TH1D *hq = (TH1D*)fpHistFile->Get("hq");
+
 
 
   mapTID2PixelID();
@@ -292,6 +301,7 @@ void trGen::overlapHitsInVertex() {
             int icol = pixelCol(it.second[i]);
             int irow = pixelRow(it.second[i]);
             ho1->Fill(icol, irow);
+            
           }
           
           double dphi = ri.DeltaPhi(rj);
@@ -306,6 +316,20 @@ void trGen::overlapHitsInVertex() {
             int icol = pixelCol(it.second[i]);
             int irow = pixelRow(it.second[i]);
             ho3->Fill(icol, irow);
+
+            int tidx = trajIdx(it.first);
+            cout << "it.first = " << it.first << " tidx = " << tidx << endl;
+
+            double px = ftraj_px->at(tidx);
+            double py = ftraj_py->at(tidx);
+            double pz = ftraj_pz->at(tidx);
+            LorentzVector<PxPyPzMVector> p4 = LorentzVector<PxPyPzMVector>(px, py, pz, MMUON);
+
+            if (irow < 11) {
+              hp->Fill(p4.Rho());
+            } else if (irow > 20) {
+              hp->Fill(p4.Rho());
+            }
           }
         }
       }
