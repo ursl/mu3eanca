@@ -70,7 +70,6 @@ public:
   virtual void       fillHist();
   virtual void       setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
 
-
   // -- utilities
   int        pixelID(uint32_t hit_pixelid) {return ((hit_pixelid & (0xffff << 16)) >> 16);}
   int        pixelRow(uint32_t hit_pixelid) {return (hit_pixelid & 0x000000ff);}
@@ -99,6 +98,10 @@ protected:
   int                   fNBranches;
   std::vector<TBranch*> fBranches;
 
+
+  // ----------------------------------------------------------------------
+  // -- Mu3e tree
+  // ----------------------------------------------------------------------
 
   // -- pixel information in Mu3e tree
   // Nhit: Number of pixel hits
@@ -129,8 +132,10 @@ protected:
   std::vector<double>        *ftraj_px, *ftraj_py, *ftraj_pz;
 
 
-
+  // ----------------------------------------------------------------------
   // -- mu3e_mchits tree
+  // ----------------------------------------------------------------------
+
   // Linkage information between detector hits and truth trajectories, to be indexed by the _mc_i and _mc_n variables
   // det: Detector that was hit. Encoding 1) pixel, 2) fibre, 3) fibre.mppc 4) tile
   // tid: Unique trajectory ID
