@@ -30,6 +30,19 @@ router.get("/findOne/runrecords/:id", async (req, res) => {
 });
 
 
+
+// -- Default CDB landing page 
+router.get("/", async (req, res) => {
+  console.log("serving default landing page");
+  let collection = await db.collection("globaltags");
+  let results = await collection.find({})
+    .limit(50)
+    .toArray();
+
+  res.send(results).status(200);
+});
+
+
 // -- Get a single global tag
 router.get("/findOne/globaltags/:id", async (req, res) => {
   console.log("serving /findOne/globaltags/" + req.params.id);
