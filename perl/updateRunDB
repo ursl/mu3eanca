@@ -1,0 +1,71 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# updateRunDB
+# ===========
+#           
+# Usage:   cd .../mu3eanca/perl
+#          ./updateRunDB
+#
+# Options:  -d     debug, nothing is updated
+#           -n X   do at most X updates
+#
+# History 2025/03/26 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+use File::Basename;
+
+getopts('dn:');
+
+
+print "updateRunDB executed at ". localtime, "\n";
+
+my $RDBURL = "http://pc11740/rdb/runrecords";
+my $RUNLOGDIR = "/home/mu3e/online/online/runlogs";
+my $RUNSDONE = "/home/ursl/mu3e/software/mu3eanca/runs.txt";
+
+# -- read list of runs already done
+open(IN,  "$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE\n";
+my @runsdone;
+while(<IN>) {
+    chop($_);
+    push @runsdone, $_;
+}
+close(IN); 
+
+# -- read runlog file(names)
+opendir(RNLG, "$RUNLOGDIR") || die "Cannot read $RUNLOGDIR\n";
+@filelist = sort(grep(/\.json$/,readdir(RNLG)));
+@runsToDo = (); 
+foreach $d (@filelist) {
+    #  print "->$d\n";
+    if (grep(/$d/, @runsdone)) {
+    } else {
+        # print "  .. ->$d<- added to runsToDo\n";
+        push @runsToDo, $d;
+    }
+}
+closedir RNLG;
+
+my $cnt = 0; 
+foreach $d (@runsToDo) {
+    if ($opt_n && $cnt == $opt_n) {
+        exit;
+    }
+
+    if ($opt_d) {
+        print("dbx: curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$RUNLOGDIR/$d $RDBURL\n");
+    } else {
+        print "transfer run information $d\n";
+        system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$RUNLOGDIR/$d $RDBURL");
+        open(IN,  ">>$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE for output\n";
+        print IN "$d\n";
+        close(IN);
+    }
+    $cnt++;
+}
