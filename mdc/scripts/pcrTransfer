@@ -40,12 +40,12 @@ my $pcrMu3eBEDir = "online/online";
 my $pcrDataDir   = "/data/experiment/mu3e/data/2024/datachallenge/2025/raw";
 
 while (1) {
-    print(&prefix("pcrTransfer"),  "rsync --include='*.mid.*' --exclude='*' -avL mu3e\@$mu3ebeif:$pcrMu3eBEDir/ $pcrDataDir/\n");
+    print(&prefix("pcrTransfer"),  "rsync --include='*.mid.*' --exclude='*' -avL mu3e@$mu3ebeif:$pcrMu3eBEDir/ $pcrDataDir/\n");
     # -- Note
     #    o the trailing '/'
     #    o -L transform symlink into referent file/dir
     #    system("rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir/");
-    system("rsync --exclude='*' --include='*.mid.*' -avL mu3e\@$mu3ebeif:$pcrMu3eBEDir/ $pcrDataDir/");
+    system("rsync --exclude='*' --include='*.mid.*' -avL mu3e@$mu3ebeif:$pcrMu3eBEDir/ $pcrDataDir/");
     sleep(100);
 }
 
