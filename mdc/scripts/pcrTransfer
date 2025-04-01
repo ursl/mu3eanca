@@ -37,7 +37,7 @@ my $pcrMu3eBEDir = "online/online";
 
 # -- target data directory on merlin
 #my $pcrDataDir   = "/data/experiment/mu3e/data/2024/datachallenge/data/raw";
-my $pcrDataDir   = "/data/experiment/mu3e/data/2024/datachallenge/2025/raw"
+my $pcrDataDir   = "/data/experiment/mu3e/data/2024/datachallenge/2025/raw";
 
 while (1) {
     print(&prefix("pcrTransfer"),  "rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir\n");
