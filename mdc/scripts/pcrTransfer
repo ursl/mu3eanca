@@ -45,7 +45,7 @@ while (1) {
     #    o the trailing '/'
     #    o -L transform symlink into referent file/dir
     #    system("rsync -avL -e \"ssh mu3e\@mu3egw ssh\" mu3e\@mu3ebe:$pcrMu3eBEDir/ $pcrDataDir/");
-    system("rsync --exclude='*' --include='*.mid.*' -avL -e \"ssh mu3e\@$mu3ebeif:$pcrMu3eBEDir/ $pcrDataDir/");
+    system("rsync --exclude='*' --include='*.mid.*' -avL mu3e\@$mu3ebeif:$pcrMu3eBEDir/ $pcrDataDir/");
     sleep(100);
 }
 
