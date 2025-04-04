@@ -59,7 +59,11 @@ router.get("/", async (req, res) => {
 
     // -- number of runs to show
     let nruns = -1;
-    nruns = Number(req.query.nRun);
+    if (req.query.nRun) {
+        nruns = Number(req.query.nRun);
+    } else {
+        nruns = 500;
+    }
     console.log("nruns = " + nruns);
 
     // -- run range to show
