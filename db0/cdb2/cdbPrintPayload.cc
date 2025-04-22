@@ -14,6 +14,7 @@
 #include "calMppcAlignment.hh"
 #include "calTileAlignment.hh"
 #include "calDetConfV1.hh"
+#include "calDetSetupV1.hh"
 #include "calPixelCablingMap.hh"
 #include "calPixelQuality.hh"
 
@@ -71,6 +72,10 @@ int main(int argc, char* argv[]) {
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("detconfv1_")) {
     c = new calDetConfV1();
+    c->readPayloadFromFile(hash, pdir);
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("detsetupv1_")) {
+    c = new calDetSetupV1();
     c->readPayloadFromFile(hash, pdir);
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixelquality_")) {
