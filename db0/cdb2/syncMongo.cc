@@ -45,11 +45,14 @@ using namespace std;
 //    configs/*
 //
 // Usage:
-// ../bin/syncMongo --dir ~/data/mu3e/json12/globaltags
-// ../bin/syncMongo --dir /Users/ursl/data/mu3e/json12/tags
-// ../bin/syncMongo --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
-// ../bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir runrecords
-// ../bin/syncMongo --dir configs
+// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir ~/data/mu3e/json12/globaltags
+// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir /Users/ursl/data/mu3e/json12/tags
+// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
+// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir runrecords
+// ./bin/syncMongo --uri mongodb://pc11740.psi.ch:27017 --dir configs
+//
+// NOTABENE: * NO trailing slash
+//           * --uri is compulsory
 //
 // ----------------------------------------------------------------------
 
