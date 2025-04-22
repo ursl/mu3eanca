@@ -4,8 +4,9 @@
 #include "runRecord.hh"
 #include "cfgPayload.hh"
 
-#include <string>
 #include <map>
+#include <string>
+#include <vector>
 
 class cdbAbs;
 class calAbs;
