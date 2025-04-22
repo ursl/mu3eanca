@@ -66,7 +66,7 @@ LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
          calPixelAlignment.o calFibreAlignment.o  \
          calMppcAlignment.o calTileAlignment.o \
          calPixelQuality.o calPixelQualityV.o calPixelQualityM.o \
-         calPixelCablingMap.o calDetConfV1.o \
+         calPixelCablingMap.o calDetConfV1.o calDetSetupV1.o \
          Mu3eConditions.o Mu3eCalFactory.o \
          base64.o \
          payload.o cfgPayload.o cdbUtil.o runRecord.o
