@@ -227,6 +227,7 @@ string jsonGetValue(const string& jstring, const string& key) {
     result = jstring.substr(s0+1, s1-s0-1);
   } else {
     result = jstring.substr(s0+1, s2-s0);
+    return result;
   }
   ltrim(result);
   rtrim(result);
@@ -399,6 +400,7 @@ string jsonGetVector(const string& jstring, const string& key) {
     result = jstring.substr(s1+1, s2-s1-1);
   } else {
     cout << "jsonGetVector> parse error" << endl;
+    return result;
   }
   ltrim(result);
   rtrim(result);
@@ -431,9 +433,10 @@ string jsonGetVector(const string& jstring, const vector<string>& keys) {
   if (string::npos != s1 && string::npos != s2) {
     result = jstring.substr(s1+1, s2-s1-1);
   } else {
-    cout << "jsonGetVector> parse error for keys: ";
+    cout << "jsonGetVector> did not find keys: ";
     for (auto it: keys) cout << it << ",";
     cout << endl;
+    return result;
   }
   if (DBX) cout << "result ->" << result << "<-" << endl;
   ltrim(result);
@@ -460,7 +463,7 @@ vector<string> jsonGetVectorVector(const string& jstring, const string& key) {
       sresult = jstring.substr(s1+1, s2-s1-1);
       s0 = s2;
     } else {
-      cout << "jsonGetVector> parse error" << endl;
+      cout << "jsonGetVectorVector> parse error" << endl;
       s0 = string::npos;
     }
     ltrim(sresult);
