@@ -39,11 +39,13 @@ std::string jsonGetValue(const std::string& jstring, const std::vector<std::stri
 std::string jsonGetCfgString(const std::string& jstring, const std::string& key);
 // -- escaped " (\") embedded in string (from JSON API)
 std::string jsonGetCfgStringEsc(const std::string& jstring, const std::string& key);
-// -- get vector indexed by single key
+// -- get vector, contained in one string, indexed by single key
 std::string jsonGetVector(const std::string& jstring, const std::string& key);
-// -- get vector indexed by a vector of keys
+// -- get vector, contained in one string, indexed by a vector of keys
 std::string jsonGetVector(const std::string& jstring, const std::vector<std::string>& key);
+// -- get vector indexed by single key
 std::vector<std::string> jsonGetValueVector(const std::string& jstring, const std::string& key);
+// -- get vector indexed by a vector keys
 std::vector<std::string> jsonGetVectorVector(const std::string& jstring, const std::string& key);
 
 // ======================================================================
