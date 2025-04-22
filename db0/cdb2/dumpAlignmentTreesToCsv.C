@@ -105,7 +105,7 @@ void writeSensors(std::string filename = "sensors.csv", bool modify = false) {
   long unsigned int header(0xdeadface);
   double width, length, thickness, pixelSize;
 
-  t->SetBranchAddress("sensor", &sensor);
+  t->SetBranchAddress("id", &sensor);
 
   t->SetBranchAddress("vx", &vx);
   t->SetBranchAddress("vy", &vy);
