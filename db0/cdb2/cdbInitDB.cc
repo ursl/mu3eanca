@@ -20,7 +20,8 @@
 #include "calPixelCablingMap.hh"
 #include "calPixelQuality.hh"
 
-#include "calDetConfV1.hh"
+#include "calDetConfV1.hh" // decrepit!
+#include "calDetSetupV1.hh"
 
 using namespace std;
 
@@ -45,7 +46,7 @@ using namespace std;
 //
 // -- create all global tags with everything or with a single tag only
 // merlin> _build/conddb/test/cdbInitDB -j ~/data/cdb -m all
-// moor>   _build/conddb/test/cdbInitDB -j ~/data/cdb -m mcidealv5.4
+// moor>   ./bin/cdbInitDB -j ~/data/cdb -m mcidealv5.4
 //
 // ----------------------------------------------------------------------
 
@@ -60,8 +61,9 @@ int main(int argc, const char* argv[]) {
     {"mcidealv5.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_"} },
     {"mcidealv5.3", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
     {"mcidealv5.4", {"pixelalignment_mcidealv5.3", "fibrealignment_mcidealv5.3", "tilealignment_mcidealv5.3", "mppcalignment_mcidealv5.3", "detconfv1_mcidealv5.1"} },
-    {"mcidealv5.4=2025CosmicsVtxOnly", {"pixelalignment_", "detconfv1_mcidealv5.1"} },
-    // -- data
+    {"mcidealv5.4=2025CosmicsVtxOnly", {"pixelalignment_", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
+    {"mcidealv6.0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detsetupv1_mcidealv5.1"} },
+      // -- data
     {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} }
   };
   
@@ -182,6 +184,12 @@ int main(int argc, const char* argv[]) {
       string tag = ('_' == it.back()? it + igt.first: it);
       string tagLess = tag.substr(tag.rfind('_') + 1);
       
+
+      stringstream sstr;
+      sstr << "   \"payload\" : \"" << tag << " tagless = " << tagLess; 
+      sstr << " " << endl;
+      cout << sstr.str();
+
       // -- pixelalignment
       if (string::npos != tag.find("pixelalignment_")) {
         calPixelAlignment *cpa = new calPixelAlignment();
@@ -257,7 +265,7 @@ int main(int argc, const char* argv[]) {
           cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
         }
       }
-      
+
       // -- detconfv1
       if (string::npos != tag.find("detconfv1_")) {
         calDetConfV1 *cdc = new calDetConfV1();
@@ -267,7 +275,26 @@ int main(int argc, const char* argv[]) {
           spl = cdc->makeBLOB();
           hash = string("tag_detconfv1_" + tagLess + "_iov_1");
           pl.fHash = hash;
-          pl.fComment = tagLess + " detector configuration";
+          pl.fComment = tagLess + " detector conf";
+          pl.fSchema  = cdc->getSchema();
+          pl.fBLOB = spl;
+          if (verbose) cdc->printBLOB(spl);
+          cdc->writePayloadToFile(hash, jdir, pl);
+        } else {
+          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
+        }
+      }
+      
+      // -- detsetupv1
+      if (string::npos != tag.find("detsetupv1_")) {
+        calDetSetupV1 *cdc = new calDetSetupV1();
+        filename = string(LOCALDIR) + "/ascii/detector-" + tagLess + ".json";
+        result = cdc->readJSON(filename);
+        if (string::npos == result.find("Error")) {
+          spl = cdc->makeBLOB();
+          hash = string("tag_detsetupv1_" + tagLess + "_iov_1");
+          pl.fHash = hash;
+          pl.fComment = tagLess + " detector setup";
           pl.fSchema  = cdc->getSchema();
           pl.fBLOB = spl;
           if (verbose) cdc->printBLOB(spl);
