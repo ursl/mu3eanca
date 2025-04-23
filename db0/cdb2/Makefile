@@ -66,7 +66,7 @@ LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
          calPixelAlignment.o calFibreAlignment.o  \
          calMppcAlignment.o calTileAlignment.o \
          calPixelQuality.o calPixelQualityV.o calPixelQualityM.o \
-         calPixelCablingMap.o calDetConfV1.o calDetSetupV1.o \
+         calPixelCablingMap.o calDetConfV1.o calDetSetupV1 \
          Mu3eConditions.o Mu3eCalFactory.o \
          base64.o \
          payload.o cfgPayload.o cdbUtil.o runRecord.o
@@ -81,11 +81,11 @@ LBINARIES = testCDB fillDB \
 ifneq (,$(findstring merlin,$(LHOST)))
        $(info ************  MERLIN VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
-       BINARIES = $(filter-out testCDB fillDB syncCloud syncMongo, $(LBINARIES))
+       BINARIES = $(filter-out testCDB fillDB syncCloud syncMongo uploadDetConfig downloadDetConfig, $(LBINARIES))
 else ifneq (,$(findstring mu3ebe,$(LHOST)))
        $(info ************  MU3EBE VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
-       BINARIES = $(filter-out uploadDetConfig downloadDetConfig testCDB fillDB syncCloud syncMongo, $(LBINARIES))
+       BINARIES = $(filter-out uploadDetConfig downloadDetConfig testCDB fillDB syncCloud syncMongo uploadDetConfig downloadDetConfig, $(LBINARIES))
 else
        $(info ************  non-MERLIN VERSION ************)
        FILES = $(LFILES)
