@@ -41,7 +41,7 @@ public:
   std::string getSchema() override {return fSchema;}
 
 private:
-  std::string fDetConfTag{"detconfv1_"};
+  std::string fDetConfTag{"detsetupv1_"};
 
   // -- local and private
   struct constants {

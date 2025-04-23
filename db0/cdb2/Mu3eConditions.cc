@@ -63,7 +63,7 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
   // -- setup basic classes
   int verbose(0);
   calAbs *cal(0);
-
+  cout << "Mu3eConditions::Mu3eConditions> creating basic classes" << endl;
   cal = createClass("pixelalignment_");
   if (cal) cal->setVerbosity(verbose);
   cal = createClass("fibrealignment_");
@@ -72,7 +72,7 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
   if (cal) cal->setVerbosity(verbose);
   cal = createClass("tilealignment_");
   if (cal) cal->setVerbosity(verbose);
-  cal = createClass("detconfv1_");
+  cal = createClass("detsetupv1_");
   if (cal) cal->setVerbosity(verbose);
 }
 
@@ -87,10 +87,10 @@ Mu3eConditions::~Mu3eConditions() {
 calAbs* Mu3eConditions::createClass(string name) {
   string tag("nada");
   for (auto it : fTags) {
-    // cout << "Mu3eConditions::createClass> searching " << name << ", looking at " << it << endl;
+    //cout << "Mu3eConditions::createClass> searching " << name << ", looking at " << it << endl;
     if (string::npos != it.find(name)) {
       tag = it;
-      // cout << "Mu3eConditions::createClass> found " << tag << endl;
+      //cout << "Mu3eConditions::createClass> found " << tag << endl;
       break;
     }
   }
