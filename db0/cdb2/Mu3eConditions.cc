@@ -62,16 +62,18 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
 
   // -- setup basic classes
   int verbose(0);
-  calAbs *cal = createClass("pixelalignment_");
-  cal->setVerbosity(verbose);
+  calAbs *cal(0);
+
+  cal = createClass("pixelalignment_");
+  if (cal) cal->setVerbosity(verbose);
   cal = createClass("fibrealignment_");
-  cal->setVerbosity(verbose);
+  if (cal) cal->setVerbosity(verbose);
   cal = createClass("mppcalignment_");
-  cal->setVerbosity(verbose);
+  if (cal) cal->setVerbosity(verbose);
   cal = createClass("tilealignment_");
-  cal->setVerbosity(verbose);
+  if (cal) cal->setVerbosity(verbose);
   cal = createClass("detconfv1_");
-  cal->setVerbosity(verbose);
+  if (cal) cal->setVerbosity(verbose);
 }
 
 
