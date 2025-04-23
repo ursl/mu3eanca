@@ -1,0 +1,214 @@
+{ "detector" : {
+  "#" : "units are mm, ns, MeV, Hz, Tesla",
+  "world" : {
+    "length" : 3200.0,
+    "width" : 3200.0,
+    "height" : 1500.0
+  },
+  "phase" : 1,
+  "phase_options" : {
+    "0" : "phase 1a",
+    "1" : "phase 1b",
+    "2" : "phase 2"
+  },
+  "target" : {
+    "shape" : 0,
+    "shape_options" : {
+      "0" : "double cone",
+      "1" : "plane",
+      "2" : "garland",
+      "3" : "reverse garland",
+      "4" : "two-turn garland",
+      "5" : "reverse two-turn garland",
+      "6" : "no target"
+    },
+    "thickness1" : 0.075,
+    "thickness2" : 0.085,
+    "length" : 50.0,
+    "radius" : 19.0,
+    "offset" : {
+      "x" : 0.0,
+      "y" : 0.0,
+      "z" : 0.0
+    },
+    "material" : "Mylar",
+    "material_options" : {
+      "Al" : "Al",
+      "Si" : "Si",
+      "Fe" : "Fe",
+      "Cu" : "Cu",
+      "Au" : "Au",
+      "Pb" : "Pb",
+      "Kapton" : "Kapton",
+      "Mylar" : "Mylar"
+    },
+    "MottScattering" : {
+      "placeBall" : 0,
+      "ballRadius" : 5.0,
+      "ballZOffset" : -30.0
+    }
+  },
+  "pixels" : {
+    "small" : {
+      "length" : 20.66,
+      "width" : 23.18,
+      "thickness" : 0.05,
+      "deadWidth" : 3.0,
+      "inactiveFrameSize" : 0.09,
+      "pixelSize" : 0.08,
+      "nLayers" : 2,
+      "nZSensors" : 6,
+      "zSpacing" : 0.04
+    },
+    "large" : {
+      "length" : 20.66,
+      "width" : 23.18,
+      "thickness" : 0.05,
+      "deadWidth" : 3.0,
+      "inactiveFrameSize" : 0.09,
+      "pixelSize" : 0.08,
+      "nLayers" : 2,
+      "nZSensors3" : 17,
+      "nZSensors4" : 18,
+      "zSpacing" : 0.04
+    },
+    "nPhiSensors" : {
+      "layer1" : 8,
+      "layer2" : 10,
+      "layer3" : 24,
+      "layer4" : 28
+    },
+    "kapton" : {
+      "thickness" : 0.025,
+      "fpOverlengthInner" : 1.0,
+      "extLengthInner" : 10.65,
+      "fpOverlengthOuter" : 3.8,
+      "extLengthOuter" : 2.0
+    },
+    "mylarCondom" : {
+      "thickness_inner" : 0.002,
+      "thickness_outer" : 0.002
+    },
+    "conductor" : {
+      "thickness" : 0.015,
+      "width" : 5.0
+    }
+  },
+  "fibres" : {
+    "square" : 0,
+    "diameter" : 0.250,
+    "length" : 287.75,
+    "alCoating" : 0.000,
+    "refractiveIndex" : 1.59,
+    "deadWidth" : 0.005,
+    "nLayers" : 3,
+    "maxFibresPerLayer" : 126,
+    "ribbons" : {
+      "n" : 12,
+      "pitch" : 0.18,
+      "geometry" : 0,
+      "geometry_options" : {
+        "0" : "zigzag",
+        "1" : "trapezium"
+      },
+      "rOffset" : 0.0,
+      "stagger" : 12.5
+    },
+    "mppcs" : {
+      "width" : 32.0,
+      "height" : 1.6,
+      "thickness" : 0.3,
+      "epoxy" : {
+        "thickness" : 0.1
+      },
+      "pcb" : {
+        "thickness" : 1.0
+      }
+    }
+  },
+  "tiles" : {
+    "nPhi" : 56,
+    "nZ" : 52,
+    "nModules" : 7,
+    "stationLength" : 342.32,
+    "stationActiveLength" : 335.12,
+    "tile" : {
+      "height" : 5.0,
+      "gapPhi" : 0.2,
+      "gapZ" : 0.2,
+      "matrixGapPhi" : 0.165,
+      "matrixGapZ" : 0.15
+      },
+    "radius" : {
+      "inner" : 47.0,
+      "outer" : 62.5,
+      "matrixInner" : 57.328,
+      "supportInner" : 49.287,
+      "endringInner" : 49.0
+    },
+    "sipms" : {
+      "thickness" : 1.45,
+      "width" : 3.4,
+      "PCBthickness" : 0.7
+    },
+    "mutrig" : {
+      "thickness" : 1.5,
+      "width": 15.0
+    },
+    "tmb" : {
+      "thickness" : 0.8,
+      "width": 44.6
+    },
+    "support" : {
+      "width" : 46.5,
+      "height" : 7.31,
+      "endring" : 3.5,
+      "pipeID" : 2.0,
+      "pipeOD" : 2.5,
+      "pipePitch" : 13
+    }
+  },
+  "magnet" : {
+    "length" : 3000.0,
+    "radius" : {
+      "inner" : 500.0,
+      "outer" : 550.0
+    },
+    "field" : {
+      "strength" : -1.0,
+      "configuration" : 6,
+      "configuration_options" : {
+        "0" : "none",
+        "1" : "constant Bz",
+        "2" : "COBRA",
+        "3" : "solenoid with spin tracking",
+        "4" : "solenoid",
+        "5" : "realistic thin solenoid, including radial components",
+        "6" : "field map",
+        "7" : "solenoid plus optional transport solenoid from current loops",
+        "8" : "solenoid with compensation plus optional transport solenoid from current loops"
+      },
+      "map" : "${CWD}/cryogenics.bin",
+      "transportFieldStrength" : 0.0,
+      "compensationCoilScale" : 0.9
+    }
+  },
+  "beampipe" : {
+    "radius" : {
+      "outer" : 33.0,
+      "inner" : 30.0
+    },
+    "endpoint_us" : 93.13,
+    "endpoint_ds" : 109.13,
+    "window" : {
+      "thickness" : 0.035,
+      "z" : 6.0
+    },
+    "collimator1" : {
+      "z" : -406.13, "r" : 22, "t" : 20.0
+    },
+    "degrader1" : {
+      "zOffset" : 0.0, "thickness" : 0.6
+    }
+  }
+}}
