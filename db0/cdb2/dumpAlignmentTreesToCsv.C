@@ -91,7 +91,10 @@ std::array<char,8> getData(std::vector<char>::iterator &it) {
 
 
 // ----------------------------------------------------------------------
-void writeSensors(std::string filename = "sensors.csv", bool modify = false) {
+// -- modify = 0 do nothing
+// -- modify = 1 write out only layers 1 and 2
+// -- modify = 2 add 0.0001 to x/y/z
+void writeSensors(std::string filename = "sensors.csv", int modify = 0) {
   TTree *t = gFile->Get<TTree>("alignment/sensors");
   if (0 == t) {
     cout << "dumpAlignmentToCsv/writeSensors> Error in retrieving tree alignment/sensors" << endl;
@@ -138,6 +141,9 @@ void writeSensors(std::string filename = "sensors.csv", bool modify = false) {
     if (0) ONS << dumpArray(uint2Blob(header));
   }
 
+  vector<int> vtxIds = {1,2,3,4,5,6,33,34,35,36,37,38,65,66,67,68,69,70,97,98,99,100,101,102,129,130,131,132,133,134,161,162,163,164,165,166,193,194,195,196,197,198,225,226,227,228,229,230,1025,1026,1027,1028,1029,1030,1057,1058,1059,1060,1061,1062,1089,1090,1091,1092,1093,1094,1121,1122,1123,1124,1125,1126,1153,1154,1155,1156,1157,1158,1185,1186,1187,1188,1189,1190,1217,1218,1219,1220,1221,1222,1249,1250,1251,1252,1253,1254,1281,1282,1283,1284,1285,1286,1313,1314,1315,1316,1317,1318};
+  cout << "vtxIds.size() = " << vtxIds.size() << endl;
+
   char data[8], data1[8], data2[8];
   for (unsigned int i = 0; i < t->GetEntries(); ++i) {
     t->GetEntry(i);
@@ -149,7 +155,14 @@ void writeSensors(std::string filename = "sensors.csv", bool modify = false) {
                 << "/" << length << "/" << thickness << "/" << pixelSize
                 << endl;
     double mx, my, mz;
-    if (modify) {
+    // -- write out only layers 1 and 2
+    if (1 == modify) {
+      if (std::find(vtxIds.begin(), vtxIds.end(), sensor) == vtxIds.end()) {
+        continue;
+      }
+    }
+
+    if (2 == modify) {
       if (0 == i%2) {
         mx = vx + 0.0001;
         my = vy + 0.0001;
@@ -297,13 +310,11 @@ void writeTiles(string filename = "tiles.csv", bool modify = false) {
     cout << "dumpAlignmentToCsv/writeTiles> Error in retrieving tree alignment/tiles" << endl;
     return;
   }
-  int sensor;
   unsigned int id;
   double posx, posy, posz;
   double dirx, diry, dirz;
   long unsigned int header(0xdeadface);
 
-  t->SetBranchAddress("sensor", &sensor);
   t->SetBranchAddress("id", &id);
 
   t->SetBranchAddress("posx", &posx);
@@ -330,7 +341,7 @@ void writeTiles(string filename = "tiles.csv", bool modify = false) {
   char data[8], data1[8], data2[8];
   for (unsigned int i = 0; i < t->GetEntries(); ++i) {
     t->GetEntry(i);
-    if (1) cout << "sensor = " << sensor << " id = " << id
+    if (1) cout << "sensor = " << id << " id = " << id
                 << " pos x/y/z = " << posx << "/" << posy << "/" << posz
                 << " dir x/y/z = " << dirx << "/" << diry << "/" << dirz
                 << endl;
@@ -351,21 +362,10 @@ void writeTiles(string filename = "tiles.csv", bool modify = false) {
       mz = posz;
     }
 
-    // -- print it
-    if (0) {
-      printArray(ONS, int2Blob(sensor));
-      printArray(ONS, uint2Blob(id));
-      printArray(ONS, double2Blob(posx));
-      printArray(ONS, double2Blob(posy));
-      printArray(ONS, double2Blob(posz));
-      printArray(ONS, double2Blob(dirx));
-      printArray(ONS, double2Blob(diry));
-      printArray(ONS, double2Blob(dirz));
-    }
 
     // -- dump BLOB
     if (1 == mode) {
-      ONS << dumpArray(int2Blob(sensor))
+      ONS << dumpArray(uint2Blob(id))
           << dumpArray(uint2Blob(id))
           << dumpArray(double2Blob(posx))
           << dumpArray(double2Blob(posy))
@@ -377,7 +377,7 @@ void writeTiles(string filename = "tiles.csv", bool modify = false) {
 
     // -- dump CSV
     if (0 == mode) {
-      ONS << sensor << ","
+      ONS << id << ","
           << id << ","
           << std::setprecision(15)
           << posx << ","
@@ -732,7 +732,7 @@ void readBlobMppcs(string filename = "mppcs.bin") {
 // ----------------------------------------------------------------------
 // intrun:  ~/data/mu3e/mc/run000042-sort_100k.root
 // mcideal full det: ~/data/mu3e/mc/mu3e_sorted_000779.root
-void writeAll(string mode = "mcideal_2024CosmicRun", string filename = "nada") {
+void writeAll(string mode = "mcideal_2024CosmicRun", string filename = "nada", int modify = 0) {
   if (string::npos != mode.find("mcideal_v5.0") && (string::npos != filename.find("nada"))) {
     filename = "/data/experiment/mu3e/mc/build_5.0/michel/mu3e_run_000011.root";
   } else {
@@ -743,7 +743,7 @@ void writeAll(string mode = "mcideal_2024CosmicRun", string filename = "nada") {
   string ofile("");
 
   ofile  = "sensors-" + mode + ".csv";
-  writeSensors(ofile);
+  writeSensors(ofile, modify);
 
   ofile = "fibres-" + mode + ".csv";
   writeFibres(ofile);
