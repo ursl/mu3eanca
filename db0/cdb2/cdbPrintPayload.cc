@@ -30,7 +30,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------=
-int main(int argc, char* argv[]) {
+int main(int argc, const char* argv[]) {
 
   string filename(""), pdir(""), hash("");
   int verbose(10000);
