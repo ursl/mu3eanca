@@ -55,7 +55,7 @@ void calFibreAlignment::calculate(string hash) {
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << " header: " << hex << header << dec;
 
   int cntPrint(0);
@@ -91,7 +91,7 @@ void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calFibreAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
 
@@ -125,7 +125,7 @@ map<unsigned int, vector<double> > calFibreAlignment::decodeBLOB(string spl) {
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calFibreAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
   }
@@ -163,7 +163,7 @@ map<unsigned int, vector<double> > calFibreAlignment::decodeBLOB(string spl) {
 // ----------------------------------------------------------------------
 string calFibreAlignment::makeBLOB() {
   stringstream s;
-  long unsigned int header(0xdeadface);
+  unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
 
   for (auto it: fMapConstants) {
@@ -187,9 +187,9 @@ string calFibreAlignment::makeBLOB() {
 
 
 // ----------------------------------------------------------------------
-string calFibreAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
+string calFibreAlignment::makeBLOB(const map<unsigned int, vector<double>>& m) {
   stringstream s;
-  long unsigned int header(0xdeadface);
+  unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
 
   // -- format of m
@@ -218,7 +218,7 @@ string calFibreAlignment::readCsv(string filename) {
   string spl("");
   ifstream INS(filename);
   if (!INS.is_open()) {
-    return string("calFibreAlignment::readCsv> Error, file " + filename + " not found");
+    return "calFibreAlignment::readCsv> Error, file " + filename + " not found";
   }
 
   string sline;

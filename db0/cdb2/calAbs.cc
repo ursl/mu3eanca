@@ -36,9 +36,9 @@ void calAbs::update(string hash) {
     cout << "ERROR: no database handle provided" << endl;
     return;
   }
-  
+
   if (fVerbose > 4) cout << "calAbs::update() hash = " << hash << endl;
-  
+
   if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
     if (fVerbose > 2) cout << "calAbs::getPayload(" << hash
                              << ") not cached, retrieve from DB"
@@ -49,7 +49,7 @@ void calAbs::update(string hash) {
     if (fPrintTiming) cout << chrono::duration_cast<chrono::microseconds>(tend-tbegin).count()
                              << "us ::timing::" << hash << " getpayload"
                              << endl;
-                             
+
     fTagIOVPayloadMap.insert(make_pair(hash, pl));
     calculate(hash);
     fHash = hash;
@@ -63,7 +63,6 @@ void calAbs::update(string hash) {
   }
 }
 
-
 // ----------------------------------------------------------------------
 void calAbs::readPayloadFromFile(string hash, string dir) {
   // -- check whether this payload is stored already and delete if found
@@ -73,14 +72,14 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
     // -- found, delete it
     fTagIOVPayloadMap.erase(hash);
   }
-  
+
   // -- initialize with default
   std::stringstream sspl;
   sspl << "(calAbs>  hash = " << hash
        << " not found)";
   payload pl;
   pl.fComment = sspl.str();
-  
+
   // -- read payload for hash
   ifstream INS;
   string filename = dir + "/" + hash;
@@ -90,7 +89,7 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
     fError = "Error: file not found";
     return;
   }
-  
+
   std::stringstream buffer;
   buffer << INS.rdbuf();
   INS.close();
@@ -98,7 +97,7 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   pl.fHash    = jsonGetString(fPayloadString, "hash");
   pl.fComment = jsonGetString(fPayloadString, "comment");
   pl.fBLOB    = base64_decode(jsonGetString(fPayloadString, "BLOB"));
-  
+
   fTagIOVPayloadMap.insert(make_pair(hash, pl));
   if (fVerbose > 0) cout << "calAbs::readPayloadFromFile() Inserted "
                            << " hash ->" << hash << "<-"
@@ -120,7 +119,7 @@ void calAbs::writePayloadToFile(string hash, string dir) {
   // sstr << "\"schema\" : " << pl.fSchema << "\", ";
   // sstr << "\"date\" : " << pl.fDate << "\", ";
   // sstr << "\"BLOB\" : \"" << base64_encode(pl.fBLOB) << "\" }" << endl;
-  
+
   // -- JSON
   ofstream JS;
   JS.open(dir + "/" + hash);
@@ -131,7 +130,7 @@ void calAbs::writePayloadToFile(string hash, string dir) {
   }
   JS << sstr.str();
   JS.close();
-  
+
 }
 
 
@@ -144,7 +143,7 @@ void calAbs::writePayloadToFile(string hash, string dir, payload &pl) {
   // sstr << "{ \"hash\" : \"" << hash << "\", \"comment\" : ";
   // sstr << "\"" << pl.fComment << "\", ";
   // sstr << "\"BLOB\" : \"" << base64_encode(pl.fBLOB) << "\" }" << endl;
-  
+
   // -- JSON
   ofstream JS;
   JS.open(dir + "/" + hash);
@@ -153,7 +152,7 @@ void calAbs::writePayloadToFile(string hash, string dir, payload &pl) {
   }
   JS << sstr.str();
   JS.close();
-  
+
 }
 
 

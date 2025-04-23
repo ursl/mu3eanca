@@ -56,7 +56,7 @@ void calPixelAlignment::calculate(string hash) {
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "header: " << hex << header << dec;
 
   while (ibuffer != buffer.end()) {
@@ -93,7 +93,7 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
 
@@ -139,7 +139,7 @@ map<unsigned int, vector<double> > calPixelAlignment::decodeBLOB(string spl) {
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calPixelAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
   }
@@ -189,7 +189,7 @@ map<unsigned int, vector<double> > calPixelAlignment::decodeBLOB(string spl) {
 // ----------------------------------------------------------------------
 string calPixelAlignment::makeBLOB() {
   stringstream s;
-  long unsigned int header(0xdeadface);
+  unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
 
   for (auto it: fMapConstants) {
@@ -208,8 +208,8 @@ string calPixelAlignment::makeBLOB() {
     s << dumpArray(double2Blob(a.coly));
     s << dumpArray(double2Blob(a.colz));
     // -- nrow,ncol
-    s << dumpArray(int2Blob(static_cast<int>(a.nrow)));
-    s << dumpArray(int2Blob(static_cast<int>(a.ncol)));
+    s << dumpArray(int2Blob(a.nrow));
+    s << dumpArray(int2Blob(a.ncol));
     // -- width,length,thickness,pixelSize
     s << dumpArray(double2Blob(a.width));
     s << dumpArray(double2Blob(a.length));
@@ -221,9 +221,9 @@ string calPixelAlignment::makeBLOB() {
 
 
 // ----------------------------------------------------------------------
-string calPixelAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
+string calPixelAlignment::makeBLOB(const map<unsigned int, vector<double>>& m) {
   stringstream s;
-  long unsigned int header(0xdeadface);
+  unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
 
   // -- format of m
@@ -260,7 +260,7 @@ string calPixelAlignment::readCsv(string filename) {
   string spl("");
   ifstream INS(filename);
   if (!INS.is_open()) {
-    return string("calPixelAlignment::readCsv> Error, file " + filename + " not found");
+    return "calPixelAlignment::readCsv> Error, file " + filename + " not found";
   }
 
   string sline;

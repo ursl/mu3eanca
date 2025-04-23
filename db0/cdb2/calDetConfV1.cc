@@ -130,7 +130,7 @@ string calDetConfV1::makeBLOB() {
 
 
 // ----------------------------------------------------------------------
-string calDetConfV1::makeBLOB(map<unsigned int, vector<double> > m) {
+string calDetConfV1::makeBLOB(const map<unsigned int, vector<double> > &m) {
   stringstream s;
   long unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));

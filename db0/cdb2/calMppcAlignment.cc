@@ -55,7 +55,7 @@ void calMppcAlignment::calculate(string hash) {
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "header: " << hex << header << dec;
 
   int cntPrint(0);
@@ -92,7 +92,7 @@ void calMppcAlignment::printBLOB(std::string sblob, int verbosity) {
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calMppcAlignment::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << endl;
 
@@ -123,7 +123,7 @@ map<unsigned int, vector<double> > calMppcAlignment::decodeBLOB(string spl) {
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calMppcAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
   }
@@ -156,7 +156,7 @@ map<unsigned int, vector<double> > calMppcAlignment::decodeBLOB(string spl) {
 // ----------------------------------------------------------------------
 string calMppcAlignment::makeBLOB() {
   stringstream s;
-  long unsigned int header(0xdeadface);
+  unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
 
   for (auto it: fMapConstants) {
@@ -178,9 +178,9 @@ string calMppcAlignment::makeBLOB() {
 
 
 // ----------------------------------------------------------------------
-string calMppcAlignment::makeBLOB(map<unsigned int, vector<double> > m) {
+string calMppcAlignment::makeBLOB(const map<unsigned int, vector<double>>& m) {
   stringstream s;
-  long unsigned int header(0xdeadface);
+  unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
 
   // -- format of m
@@ -207,7 +207,7 @@ string calMppcAlignment::readCsv(string filename) {
   string spl("");
   ifstream INS(filename);
   if (!INS.is_open()) {
-    return string("calMppcAlignment::readCsv> Error, file " + filename + " not found");
+    return "calMppcAlignment::readCsv> Error, file " + filename + " not found";
   }
 
   string sline;

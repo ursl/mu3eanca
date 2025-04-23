@@ -48,20 +48,20 @@ void calPixelCablingMap::calculate(string hash) {
        << endl;
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelCablingMap header: " << hex << header << dec << endl;
-  
+
   unsigned int sensor(0), online(0);
   while (ibuffer != buffer.end()) {
     sensor = blob2UnsignedInt(getData(ibuffer));
     online = blob2UnsignedInt(getData(ibuffer));
     fMapConstants.insert(make_pair(sensor, online));
   }
-  
+
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
@@ -72,14 +72,14 @@ void calPixelCablingMap::printBLOB(std::string sblob, int verbosity) {
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelCablingMap::printBLOB(string," << verbosity << ")" << endl;
   cout << "   header: " << hex << header << dec << endl;
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calPixelCablingMap::printBLOB> header is wrong. Something is really messed up!" << endl;
   }
-  
+
   string summary("calPixelCablingMap ");
   int nchips(0);
   while (ibuffer != buffer.end()) {
@@ -101,22 +101,22 @@ void calPixelCablingMap::printBLOB(std::string sblob, int verbosity) {
 // ----------------------------------------------------------------------
 map<unsigned int, vector<double> > calPixelCablingMap::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
-  
+
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
-  long unsigned int header = blob2UnsignedInt(getData(ibuffer));
+
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (0xdeadface != header) {
     cout << "XXXXX ERRROR in calPixelCablingMap::decodeBLOB> header is wrong. Something is really messed up!" << endl;
   }
-  
+
   unsigned int sensor(0), online(0);
   while (ibuffer != buffer.end()) {
     sensor = blob2UnsignedInt(getData(ibuffer));
     online = blob2UnsignedInt(getData(ibuffer));
     vmap.insert(make_pair(sensor, online));
   }
-  
+
   return vmap;
 }
 
@@ -124,24 +124,24 @@ map<unsigned int, vector<double> > calPixelCablingMap::decodeBLOB(string spl) {
 // ----------------------------------------------------------------------
 string calPixelCablingMap::makeBLOB() {
   stringstream s;
-  long unsigned int header(0xdeadface);
+  unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-  
+
   for (auto it: fMapConstants) {
     s << dumpArray(uint2Blob(it.first));
     s << dumpArray(uint2Blob(it.second));
   }
   return s.str();
-  
+
 }
 
 
 // ----------------------------------------------------------------------
-string calPixelCablingMap::makeBLOB(map<unsigned int, vector<double> > m) {
+string calPixelCablingMap::makeBLOB(const map<unsigned int, vector<double>>& m) {
   stringstream s;
-  long unsigned int header(0xdeadface);
+  unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
-  
+
   // -- format of m
   // chipID => [online]
   for (auto it: m) {
@@ -157,15 +157,15 @@ string calPixelCablingMap::readJson(string filename) {
   string spl("");
   ifstream INS(filename);
   if (!INS.is_open()) {
-    return string("calPixelCablingMap::readJson> Error, file " + filename + " not found");
+    return "calPixelCablingMap::readJson> Error, file " + filename + " not found";
   }
-  
+
   string sline;
   while (getline(INS, sline)) {
     spl += sline;
   }
   INS.close();
-  
+
   // FIXME migrate to NON-BSONCXX code
   // -- iterate over the elements in a bson document
   // bsoncxx::document::value doc = bsoncxx::from_json(spl.c_str());
@@ -182,6 +182,6 @@ string calPixelCablingMap::readJson(string filename) {
   // }
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
-  
+
   return spl;
 }

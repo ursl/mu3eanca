@@ -34,13 +34,13 @@ public:
     return "calAbs::makeBLOB() ?";
   }
   // -- BLOB creation from a vector<double>. This is base-class dependent and hence needs to be overridden.
-  virtual std::string makeBLOB(std::map<unsigned int, std::vector<double> >) {
+  virtual std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
     return "calAbs::makeBLOB(map<int, vector<double>>) ?";
   }
   
   // -- BLOB decoding. This is base-class dependent and hence needs to be overridden.
-  virtual std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) {
-    return std::map<unsigned int, std::vector<double> > {};
+  virtual std::map<unsigned int, std::vector<double>> decodeBLOB(std::string) {
+    return std::map<unsigned int, std::vector<double>> {};
   }
   
   // -- print the payload. This is base-class dependent and hence needs to be overridden.
