@@ -153,7 +153,7 @@ int main(int argc, const char* argv[]) {
       for (auto it : vIni) arrayBuilder.push_back(it);
       
       stringstream sstr;
-      sstr << "{ \"tag\" : \"" << tag << "\", \"iovs\" : ";
+      sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
       sstr << jsFormat(arrayBuilder);
       sstr << " }" << endl;
       
@@ -176,6 +176,8 @@ int main(int argc, const char* argv[]) {
   
   string spl(""), hash(""), result("");
   
+  map<string, int> mPayloadCount;
+
   string filename("");
   for (auto igt: iniGlobalTags) {
     // string it = igt.first;
@@ -185,10 +187,13 @@ int main(int argc, const char* argv[]) {
       string tag = ('_' == it.back()? it + igt.first: it);
       string tagLess = tag.substr(tag.rfind('_') + 1);
       
+      // -- skip if this payload has already been written 
+      mPayloadCount[tag]++;
+      if (mPayloadCount[tag] > 1) continue;
 
       stringstream sstr;
-      sstr << "   \"payload\" : \"" << tag << " tagless = " << tagLess; 
-      sstr << " " << endl;
+      sstr << "    { \"payload\" : \"" << tag << " tagless = " << tagLess << " it = " << it; 
+      sstr << " } " << endl;
       cout << sstr.str();
 
       // -- pixelalignment
