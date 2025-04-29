@@ -62,8 +62,8 @@ int main(int argc, const char* argv[]) {
     {"mcidealv5.3", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
     {"mcidealv5.4", {"pixelalignment_mcidealv5.3", "fibrealignment_mcidealv5.3", "tilealignment_mcidealv5.3", "mppcalignment_mcidealv5.3", "detconfv1_mcidealv5.1"} },
     {"mcidealv5.4=2025CosmicsVtxOnly", {"pixelalignment_", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
-    {"mcidealv6.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detsetupv1_"} },
-    {"mcidealv6.1=2025CosmicsVtxOnly", {"pixelalignment_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly"} },
+    {"mcidealv6.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detsetupv1_", "detconfv1_mcidealv5.1", } },
+    {"mcidealv6.1=2025CosmicsVtxOnly", {"pixelalignment_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
       // -- data
     {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} }
   };
