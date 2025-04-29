@@ -73,7 +73,7 @@ LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
 
 LBINARIES = testCDB fillDB \
             syncCloud syncMongo \
-            testPixelQuality pcrPixelQuality \
+            testPixelQuality pcrPixelQuality pcrPixelHistograms \
             cdbInitDB cdbPrintPayload  \
             cdbPrintConfig \
             uploadDetConfig downloadDetConfig 
