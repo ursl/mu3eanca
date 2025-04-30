@@ -30,8 +30,7 @@ using namespace std;
 // pcrPixelQuality
 // ---------------
 //
-// Examples:
-// bin/pcrPixelQuality pcr-run00265.root
+// DO NOT USE ANYMORE! MIGRATED TO run2025/analysis!
 // ----------------------------------------------------------------------
 
 #define MDCJSONDIR "/psi/home/langenegger/data/mdc2023/json"
