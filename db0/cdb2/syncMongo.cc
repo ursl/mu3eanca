@@ -161,19 +161,35 @@ void clearCollection(string scollection, string pattern) {
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
-  string dirName("fixme"), dirPath("fixme"), pattern("unset");
+  string dirName("fixme"), dirPath("fixme"), pattern("unset"), uriString("unset");
+  bool all(false);
   bool onlyDelete(false); // ONLY delete, do not write new records
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-d"))    {gDBX = true;}
+    if (!strcmp(argv[i], "--all")) {all = true;}
     if (!strcmp(argv[i], "--dir")) {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "-dir"))  {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "--del")) {onlyDelete = true;}
     if (!strcmp(argv[i], "-del"))  {onlyDelete = true;}
     if (!strcmp(argv[i], "--pat")) {pattern = string(argv[++i]);}
     if (!strcmp(argv[i], "-p"))    {pattern = string(argv[++i]);}
-    if (!strcmp(argv[i], "--uri")) {gUri = bsoncxx::string::view_or_value(argv[++i]); gClient = gUri;}
+    if (!strcmp(argv[i], "--uri")) {uriString = argv[i+1]; gUri = bsoncxx::string::view_or_value(argv[++i]); gClient = gUri;}
     if (!strcmp(argv[i], "-u"))    {gUri = bsoncxx::string::view_or_value(argv[++i]); gClient = gUri;}
   }
+
+  if (all) {
+    string string1 = string(argv[0]) + " --dir " + dirPath + "/" + "globalTags" + " --uri " + uriString;
+    string string2 = string(argv[0]) + " --dir " + dirPath + "/" + "tags" + " --uri " + uriString;
+    string string3 = string(argv[0]) + " --dir " + dirPath + "/" + "payloads" + " --uri " + uriString;
+    cout << string1 << endl;
+    system(string1.c_str()); 
+    cout << string2 << endl;
+    system(string2.c_str()); 
+    cout << string3 << endl;
+    system(string3.c_str()); 
+    return 0;
+  }
+
   
   vector<string> vfiles;
   DIR *folder;
