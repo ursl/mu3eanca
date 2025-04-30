@@ -1,0 +1,127 @@
+#! /usr/bin/perl
+ 
+# ----------------------------------------------------------------------
+# processRuns
+# ===========
+#
+# Usage:       cd mu3eana/run2025/scripts
+#              ./processRuns -m minalyzer -e "2025April
+#              ./processRuns -m anadqm -e 2025April
+#
+#              ./processRuns -m minanalyzer -e runs -r "553,552,551"
+#
+#
+# History
+#         2025/04/30 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+use File::Basename;
+ 
+my $dir = getcwd;
+ 
+use Getopt::Std;
+getopts('de:m:n:r:');
+ 
+my $BASEDIR = "/Users/ursl/mu3e/software/250429";
+my $DATADIR = "/Users/ursl/data/mu3e/run2025";
+my $CDB     = "/Users/ursl/data/mu3e/cdb";
+my $ROF     = "$ROF/minalyzer/root_output_files/";
+my $MAXRUN  = -1;
+
+if ($opt_n) {
+    $MAXRUN = $opt_n;
+}
+
+my @goodRuns = ();
+
+if ($opt_e eq "2025April") {
+    push(@goodRuns, 553);
+    push(@goodRuns, 552);
+    push(@goodRuns, 551);
+
+    push(@goodRuns, 490);
+    push(@goodRuns, 489);
+
+    push(@goodRuns, 483);
+    push(@goodRuns, 482);
+    push(@goodRuns, 481);
+
+    push(@goodRuns, 473);
+    push(@goodRuns, 472);
+    push(@goodRuns, 471);
+    push(@goodRuns, 470);
+    push(@goodRuns, 469);
+    push(@goodRuns, 468);
+    push(@goodRuns, 467);
+    push(@goodRuns, 466);
+    push(@goodRuns, 465);
+} elsif ($opt_e eq "runs") {
+    if ($opt_r) {
+        @goodRuns = split(/,/, $opt_r);
+    } else {
+        print "Error: No run numbers provided with -r option\n";
+        exit(1);
+    }
+}
+
+# ----------------------------------------------------------------------
+if ($opt_m eq "minalyzer") {
+    &runMinalyzer();
+} elsif ($opt_m eq "anadqm") {
+    &runAnaDQM();
+} else {
+    print "Unknown option $opt_m\n";
+    print "Usage: rerunDQM -m <min|dqm> -e <2025April>\n";
+    exit(1);
+}
+
+# ----------------------------------------------------------------------
+sub runAnaDQM() {
+    print "Running DQM for runs: @goodRuns\n";
+    my $dir = "../analysis";
+    my $nrun = 0;
+    foreach my $run (@goodRuns) {
+        $nrun++;
+        if ($MAXRUN > 0 && $nrun > $MAXRUN) {
+            print "Skipping run $run, as too many runs processed\n";
+            next;
+        }
+        print "Processing DQM output for run $run in directory $dir\n";
+        my $cmd = "bin/pixelHistograms -j $CDB -f $ROF/dqm_histos_00$run.root --offline cdb.dbconn=$CDB cdb.gt=mcidealv6.1 >& dqm_00$run.log ";
+        if ($opt_d) {
+            print "Running DQM for run $run in directory $dir\n";
+            print("cd $dir &&  bin/dqm -j $CDB -f $ROF/dqm_histos_00$run.root && cd - \n");
+        } else {
+            print "Running DQM for run $run in directory $dir\n";
+            system("cd $dir &&  bin/dqm -j $CDB -f $ROF/dqm_histos_00$run.root --offline cdb.dbconn=$CDB cdb.gt=mcidealv6.1 >& dqm_00$run.log && cd - ");
+        }
+    }
+}
+
+
+# ----------------------------------------------------------------------
+sub runMinalyzer() {
+    my $dir = "$BASEDIR/minalyzer";
+    my $nrun = 0;
+    print "Running minalyzer in $dir for runs: @goodRuns\n";
+    foreach my $run (@goodRuns) {
+        $nrun++;
+        if ($MAXRUN > 0 && $nrun > $MAXRUN) {
+            print "Skipping run $run, as too many runs processed\n";
+            next;
+        }
+        my $cmd = "_build/analyzer/minalyzer --mt $DATADIR/run00$run.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=mcidealv6.1  >& dqm_00$run.log ";
+        if ($opt_d) {
+            print("->$cmd<-\n");
+            print("cd $dir &&  $cmd && cd - \n");
+        } else {
+            print("->$cmd<-\n");
+            system("cd $dir &&  $cmd && cd - ");
+        }
+    }
+
+}
