@@ -73,7 +73,7 @@ LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
 
 LBINARIES = testCDB fillDB \
             syncCloud syncMongo \
-            testPixelQuality pcrPixelQuality pcrPixelHistograms \
+            testPixelQuality \
             cdbInitDB cdbPrintPayload  \
             cdbPrintConfig \
             uploadDetConfig downloadDetConfig 
@@ -108,11 +108,9 @@ $(addprefix bin/,%) : $(addprefix obj/,%.o)
 # -- targets
 all: prep lib bin
 
-lib: lib/libCDB.so
-
 bin: $(addprefix bin/,$(BINARIES) )
 
-lib/libCDB.so: $(addprefix obj/,$(FILES) )
+lib: $(addprefix obj/,$(FILES) )
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS)
 
 
