@@ -29,7 +29,7 @@ getopts('de:m:n:r:');
 my $BASEDIR = "/Users/ursl/mu3e/software/250429";
 my $DATADIR = "/Users/ursl/data/mu3e/run2025";
 my $CDB     = "/Users/ursl/data/mu3e/cdb";
-my $ROF     = "$ROF/minalyzer/root_output_files/";
+my $ROF     = "$BASEDIR/minalyzer/root_output_files/";
 my $MAXRUN  = -1;
 
 if ($opt_n) {
@@ -91,13 +91,15 @@ sub runAnaDQM() {
             next;
         }
         print "Processing DQM output for run $run in directory $dir\n";
-        my $cmd = "bin/pixelHistograms -j $CDB -f $ROF/dqm_histos_00$run.root --offline cdb.dbconn=$CDB cdb.gt=mcidealv6.1 >& dqm_00$run.log ";
+        my $cmd0 = "rm -f dqm_00$run.log";
+        my $cmd1 = "bin/pixelHistograms -j $CDB -f $ROF/dqm_histos_00$run.root  >& dqm_00$run.log ";
         if ($opt_d) {
             print "Running DQM for run $run in directory $dir\n";
-            print("cd $dir &&  bin/dqm -j $CDB -f $ROF/dqm_histos_00$run.root && cd - \n");
+            print("->$cmd0 && $cmd1<-\n");
         } else {
             print "Running DQM for run $run in directory $dir\n";
-            system("cd $dir &&  bin/dqm -j $CDB -f $ROF/dqm_histos_00$run.root --offline cdb.dbconn=$CDB cdb.gt=mcidealv6.1 >& dqm_00$run.log && cd - ");
+            print("->$cmd0 && $cmd1<-\n");
+            system("cd $dir && $cmd0 && $cmd1 && cd - ");
         }
     }
 }
@@ -114,13 +116,14 @@ sub runMinalyzer() {
             print "Skipping run $run, as too many runs processed\n";
             next;
         }
-        my $cmd = "_build/analyzer/minalyzer --mt $DATADIR/run00$run.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=mcidealv6.1  >& dqm_00$run.log ";
+        my $cmd0 = "rm -f dqm_00$run.log";
+        my $cmd1 = "_build/analyzer/minalyzer --mt $DATADIR/run00$run.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=mcidealv6.1  >& dqm_00$run.log ";
         if ($opt_d) {
-            print("->$cmd<-\n");
-            print("cd $dir &&  $cmd && cd - \n");
+            print("->$cmd1<-\n");
+            print("cd $dir && $cmd0 && $cmd1 && cd - \n");
         } else {
-            print("->$cmd<-\n");
-            system("cd $dir &&  $cmd && cd - ");
+            print("->$cmd1<-\n");
+            system("cd $dir && $cmd0 && $cmd1 && cd - ");
         }
     }
 
