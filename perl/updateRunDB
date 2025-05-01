@@ -10,7 +10,9 @@
 # Options:  -d     debug, nothing is updated
 #           -n X   do at most X updates
 #
-# History 2025/03/26 first shot
+# History 
+#         2025/04/01 add -f 
+#         2025/03/26 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -20,7 +22,7 @@
 use Getopt::Std;
 use File::Basename;
 
-getopts('dn:');
+getopts('df:n:');
 
 
 print "updateRunDB executed at ". localtime, "\n";
@@ -42,18 +44,44 @@ close(IN);
 opendir(RNLG, "$RUNLOGDIR") || die "Cannot read $RUNLOGDIR\n";
 @filelist = sort(grep(/\.json$/,readdir(RNLG)));
 @runsToDo = (); 
-foreach $d (@filelist) {
-    #  print "->$d\n";
-    if (grep(/$d/, @runsdone)) {
-    } else {
-        # print "  .. ->$d<- added to runsToDo\n";
-        push @runsToDo, $d;
+if ($opt_f && $opt_f == $d) {
+    push @runsToDo, $d;
+} else {
+    my @stringd;
+    my $goodFile; 
+    foreach $d (@filelist) {
+        #  print "->$d\n";
+        if (grep(/$d/, @runsdone)) {
+        } else {
+            # -- check that this runlog is already complete
+            @stringd = ();
+            $goodFile = 0;     
+            open(IND,  "$RUNLOGDIR/$d") || die "updateRunDB: Cannot open $RUNLOGDIR/$d\n";
+            while(<IND>) {
+                chop($_);
+                push(@stringd, $_);
+            }
+            close(IND);
+            $clos = pop(@stringd);
+            if ((grep(/EOR/, @stringd)) && ($clos eq '}')) {
+                $goodFile = 1;     
+                print("found all for $d, will add to runsToDo\n");
+            } elsif  ($clos =~ /\},/) {
+                print("incomplete file for $d\n");
+            } else {
+                print("missing something else ->$clos<-\n");
+                print("$stringd\n");
+            }
+            # print "  .. ->$d<- added to runsToDo\n";
+            if ($goodFile == 1) {push @runsToDo, $d;}
+        }
     }
 }
 closedir RNLG;
 
 my $cnt = 0; 
 foreach $d (@runsToDo) {
+    print("updateRunDB for record ->$d<-\n");
     if ($opt_n && $cnt == $opt_n) {
         exit;
     }
@@ -61,11 +89,25 @@ foreach $d (@runsToDo) {
     if ($opt_d) {
         print("dbx: curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$RUNLOGDIR/$d $RDBURL\n");
     } else {
-        print "transfer run information $d\n";
-        system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$RUNLOGDIR/$d $RDBURL");
-        open(IN,  ">>$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE for output\n";
-        print IN "$d\n";
-        close(IN);
+        my $tcnt = 0; 
+        my $res = 1;
+        while (($tcnt < 10) && ($res != 0)) {
+            $res = `curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$RUNLOGDIR/$d $RDBURL`;
+            print("res ->$res<-\n");
+            $tcnt++;
+        }
+        if ($res eq "Uh oh! An unexpected error occured.") {
+            print("  transfer unsuccessful?!\n");
+            system("cat $RUNLOGDIR/$d");
+            print("end file\n");
+        } elsif ($opt_f && $opt_f == $d) {
+            print("  transfer successful!\n");
+        } else {
+            print("  transfer successful!\n");
+            open(IN,  ">>$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE for output\n";
+            print IN "$d\n";
+            close(IN);
+        }
     }
     $cnt++;
 }
