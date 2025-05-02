@@ -48,6 +48,10 @@ struct pixhit {
 // ----------------------------------------------------------------------
 void createPayload(string, calAbs *, map<unsigned int, vector<double> >, string);
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
+void determineBrokenLinks(TH2 *h, vector<int> &links);
+void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links);
+
+
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
@@ -144,6 +148,7 @@ int main(int argc, char* argv[]) {
   map<string, int> vLayers  = {{"layer_1", 8}, {"layer_2", 10}};
   map<int, TH2*> mHitmaps;
 
+  // -- read in all hitmaps
   for (auto itS : vStations) {
     for (auto itL : vLayers) {
       for (int iLdr = 1; iLdr <= itL.second; ++iLdr) {
@@ -176,20 +181,55 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  // -- do analysis
   TCanvas *c0 = new TCanvas("c0", "c0", 800, 600);
   c0->Divide(3,5);
   int ipad(1);
   gStyle->SetOptStat(0);
+  vector<int> deadlinks, deadcolumns;
+  ofstream ofs;
+  ofs.open("deadlinks.csv");
+  ofs << "#chipID,linkA,linkB,linkC,linkM,ncol[,icol] NB: linkX: 0 = no error, 1 = dead" << endl;
   for (auto it: mChipIDOK){
     c0->cd(ipad++);
     shrinkPad(0.1, 0.17);
+    deadlinks.clear();
+    deadcolumns.clear();
+    determineBrokenLinks(mHitmaps[it.first], deadlinks);
+    if (deadlinks.size() > 0) {
+      cout << "chipID = " << it.first << " has broken links: ";
+      ofs << it.first << ",";
+      for (auto itL : deadlinks) {
+        ofs << itL << ",";
+        cout << itL << " ";
+      }
+      cout << endl;
+    } else {
+      cout << "chipID = " << it.first << " has no broken links" << endl;
+    }
+    determineDeadColumns(mHitmaps[it.first], deadcolumns, deadlinks);
+    if (deadcolumns.size() > 0) {
+      cout << "chipID = " << it.first << " has dead columns: ";
+      ofs << deadcolumns.size() << ",";
+      for (auto itC = deadcolumns.begin(); itC != deadcolumns.end(); ++itC) {
+        cout << *itC << " ";
+        ofs << *itC;
+        if (itC != deadcolumns.end() - 1) ofs << ",";
+      }
+      cout << endl;
+    } else {
+      cout << "chipID = " << it.first << " has no dead columns" << endl;
+      ofs << 0;
+    }
+    ofs << endl;
     mHitmaps[it.first]->Draw("colz");
-    mHitmaps[it.first]->SetTitle(Form("Run %d, LAY/LDR/CHP %d/%d/%d", run, get<0>(it.second), get<1>(it.second), get<2>(it.second)));
+    mHitmaps[it.first]->SetTitle(Form("Run %d, LAY/LDR/CHP %d/%d/%d (%d)", 
+      run, get<0>(it.second), get<1>(it.second), get<2>(it.second), it.first));
     mHitmaps[it.first]->GetXaxis()->SetTitle("col");
     mHitmaps[it.first]->GetYaxis()->SetTitle("row");
   }
   c0->SaveAs(Form("run%d_hitmaps.pdf", run));
-
+  ofs.close();
 
   for (auto it: mHitmaps) {
     // TODO: check that non-zero entries and that it.first is not in mChipIDOK
@@ -228,6 +268,84 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
     z = zp - 6;
   } else {
     z = zp;
+  }
+
+}
+
+// ----------------------------------------------------------------------
+void determineBrokenLinks(TH2 *h, vector<int> &links) {
+  bool DBX(false);
+  double fractionHits(0.1);
+  double nLinkA = h->Integral(1, 88, 1, 250);
+  double nLinkB = h->Integral(89, 172, 1, 250);
+  double nLinkC = h->Integral(173, 256, 1, 250);
+  double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
+  double cutMinHits = (nLinkAverage < 10? 1: fractionHits*nLinkAverage);
+  if (DBX)
+    cout << "histogram " << h->GetName() << " nLinkA = " << nLinkA
+         << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC
+         << " nLinkAverage = " << nLinkAverage 
+         << " cutMinHits = " << cutMinHits
+         << endl;
+  if (nLinkA < cutMinHits) {
+    links.push_back(1);
+  } else {
+    links.push_back(0);
+  }
+  if (nLinkB < cutMinHits) {
+    links.push_back(1);
+  } else {
+    links.push_back(0);
+  }
+  if (nLinkC < cutMinHits) {
+    links.push_back(1);
+  } else {
+    links.push_back(0);
+  }
+  // -- add dummy MUX link
+  links.push_back(0);
+}
+
+// ----------------------------------------------------------------------
+void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links) {
+  bool DBX(true);
+  double minHits(1);
+  double meanHits = h->Integral(1, 256, 1, 250)/h->GetNbinsX();
+  if (meanHits < 10) {
+    minHits = 0;
+  } else {
+    minHits = meanHits/10.;
+    minHits = 1;
+  }
+  bool linkA = links[0] > 0;
+  bool linkB = links[1] > 0;
+  bool linkC = links[2] > 0;
+  // -- loop over bin indices, not column indices
+  for (int ix = 1; ix <= h->GetNbinsX(); ++ix) {
+    double nHits = h->Integral(ix, ix, 1, 250);
+
+    if (nHits < minHits) {
+      // -- first check if already contained in dead links  
+      if (linkA > 0 && ix < 89) {
+        continue;
+      } 
+      if (linkB > 0 && (ix >= 89 && ix < 173)) {
+       continue;
+      }
+      if (linkC > 0 && ix >= 173) {
+        continue;
+      }
+      colums.push_back(ix-1);
+      if (DBX) {
+        cout << "determineDeadColumns> ix = " << ix << " pushed! nHits = " << nHits
+             << " minHits = " << minHits << " deadlinks = ";
+        for (auto itL : links) {
+          cout << itL << " ";
+        }
+        cout << endl; 
+      }
+
+    }
   }
 
 }
