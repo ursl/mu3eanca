@@ -11,6 +11,7 @@
 #include "calPixelQuality.hh"
 #include "calPixelQualityV.hh"
 #include "calPixelQualityM.hh"
+#include "calPixelQualityLM.hh"
 
 #include "cdbJSON.hh"
 #include "base64.hh"
@@ -57,11 +58,13 @@ int main(int argc, char* argv[]) {
   // -- command line arguments
   int verbose(0), mode(1), nevts(2);
   unsigned long int rseed(123456);
-  // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
+  // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM, 4 PixelQualityLM
   int nchips(NCHIPS);
   int noisy1(0), noisy2(NNOISY);
   int nrec1(NRECHITS), nrec2(NRECHITS);
+  string jsondir("json");
   for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-n"))      {nevts = atoi(argv[++i]);}
@@ -75,14 +78,23 @@ int main(int argc, char* argv[]) {
   
   gRandom->SetSeed(rseed);
   
-  string gt("mcideal");
-  cdbAbs *pDB = new cdbJSON(gt, "json", verbose);
+  string gt("mcidealv6.1");
+  cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
   
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
   
   int nstep (10);
-  
+
+  if (4 == mode) {
+    calPixelQualityLM *cpq = new calPixelQualityLM();
+    cpq->readCsv("ascii/pixelqualitylm-datav6.1=2025CosmicsVtxOnly.csv");
+
+    string blob = cpq->makeBLOB();
+    cpq->printBLOB(blob);
+    return 0;
+  }
+
   TCanvas c1;
   long long totalTime(0);
   TH1D *hTime;
