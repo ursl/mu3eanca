@@ -11,6 +11,7 @@
 #           -n X   do at most X updates
 #
 # History 
+#         2025/05/01 migration of path
 #         2025/04/01 add -f 
 #         2025/03/26 first shot
 # ----------------------------------------------------------------------
@@ -28,7 +29,7 @@ getopts('df:n:');
 print "updateRunDB executed at ". localtime, "\n";
 
 my $RDBURL = "http://pc11740/rdb/runrecords";
-my $RUNLOGDIR = "/home/mu3e/online/online/runlogs";
+my $RUNLOGDIR = "/data1/run2025/message/runlogs";
 my $RUNSDONE = "/home/ursl/mu3e/software/mu3eanca/runs.txt";
 
 # -- read list of runs already done
