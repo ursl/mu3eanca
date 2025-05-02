@@ -77,8 +77,8 @@ int main(int argc, char* argv[]) {
     string ms("http://pc11740.psi.ch/cdb");
     pDB = new cdbRest(gt, ms, verbose);
   } else {
-    cout << "ERROR: " << db << " not known." << endl;
-    return 0;
+    // -- hope for the best that this is a JSON directory without the magic word
+    pDB = new cdbJSON(gt, db, verbose);
   }
   
   
