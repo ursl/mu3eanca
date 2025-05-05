@@ -6,12 +6,13 @@
 #
 # Usage:       cd mu3eana/run2025/scripts
 #              ./processRuns -m minalyzer -e "2025April
-#              ./processRuns -m anadqm -e 2025April
+#              ./processRuns -m anadqm -e 2025April -g datav6.1=2025CosmicsVtxOnly 
 #
 #              ./processRuns -m minanalyzer -e runs -r "553,552,551"
 #
 #
 # History
+#         2025/05/03 add GT for pixelqualitylm payload generation
 #         2025/04/30 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the
@@ -24,16 +25,21 @@ use File::Basename;
 my $dir = getcwd;
  
 use Getopt::Std;
-getopts('de:m:n:r:');
+getopts('de:g:m:n:r:');
  
 my $BASEDIR = "/Users/ursl/mu3e/software/250429";
 my $DATADIR = "/Users/ursl/data/mu3e/run2025";
 my $CDB     = "/Users/ursl/data/mu3e/cdb";
 my $ROF     = "$BASEDIR/minalyzer/root_output_files/";
 my $MAXRUN  = -1;
+my $GT      = " ";
 
 if ($opt_n) {
     $MAXRUN = $opt_n;
+}
+
+if ($opt_g) {
+    $GT = " -g $opt_g";
 }
 
 my @goodRuns = ();
@@ -92,7 +98,7 @@ sub runAnaDQM() {
         }
         print "Processing DQM output for run $run in directory $dir\n";
         my $cmd0 = "rm -f dqm_00$run.log";
-        my $cmd1 = "bin/pixelHistograms -j $CDB -f $ROF/dqm_histos_00$run.root  >& dqm_00$run.log ";
+        my $cmd1 = "bin/pixelHistograms -j $CDB $GT -f $ROF/dqm_histos_00$run.root  >& dqm_00$run.log ";
         if ($opt_d) {
             print "Running DQM for run $run in directory $dir\n";
             print("->$cmd0 && $cmd1<-\n");
