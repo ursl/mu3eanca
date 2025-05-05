@@ -135,7 +135,7 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelQuality::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << " (note: 1 means dead and no entry means good)" << endl;
+  cout << "   header: " << hex << header << dec << " (note: 0 = good, 1 = dead, 9 = not turned on)" << endl;
 
   while (ibuffer != buffer.end()) {
     // -- chipID
