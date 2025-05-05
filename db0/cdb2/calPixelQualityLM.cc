@@ -6,6 +6,7 @@
 #include <sstream>
 #include "calPixelQualityLM.hh"
 
+#include "TString.h"
 
 using namespace std;
 
@@ -134,7 +135,7 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelQuality::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << endl;
+  cout << "   header: " << hex << header << dec << " (note: 1 means dead and no entry means good)" << endl;
 
   while (ibuffer != buffer.end()) {
     // -- chipID
@@ -144,25 +145,29 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
     unsigned int linkB = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkC = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkM = blob2UnsignedInt(getData(ibuffer));
-    cout << "   chipID: " << chipID << endl;
-    cout << "     linkA: " << linkA
-         << " linkB: " << linkB << " linkC: " << linkC
-         << " linkM: " << linkM << endl;
+    cout << "   chipID: " << Form("%5d", chipID);
+    cout << " link status A/B/C/M: " << linkA  << "/" << linkB << "/" << linkC  << "/" << linkM << endl;
     // -- get number of column entries
     int ncol = blob2Int(getData(ibuffer));
-    cout << "   ncol: " << ncol << endl;
-    for (int i = 0; i < ncol; ++i) {
-      int icol           = blob2Int(getData(ibuffer));
-      cout << "      icol = " << icol << endl;
+    if (ncol > 0) { 
+      cout << "            dead columns: ";
+      for (int i = 0; i < ncol; ++i) {
+        int icol = blob2Int(getData(ibuffer));
+        cout << icol << (i < ncol-1? ", ":"");
+      }
+      cout << endl;
     }
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
-    cout << "   npix: " << npix << endl;
-    for (int i = 0; i < npix; ++i) {
-      int icol           = blob2Int(getData(ibuffer));
-      int irow           = blob2Int(getData(ibuffer));
-      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      cout << "      icol/irow = " << icol << "/" << irow << " iqual = " << iqual << endl;
+    if (npix > 0) { 
+      cout << "            defective pixels (col/row/qual): " ;
+      for (int i = 0; i < npix; ++i) {
+        int icol           = blob2Int(getData(ibuffer));
+        int irow           = blob2Int(getData(ibuffer));
+        unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
+        cout << icol << "/" << irow << "/" << iqual << (i < npix-1? ", ":"");
+      }
+      cout << endl;
     }
   }
 }
@@ -228,7 +233,7 @@ string calPixelQualityLM::makeBLOB() {
       int icol = it.first;
       s << dumpArray(int2Blob(icol));
     }
-    
+
     // -- get number of pixel entries
     int npix = a.mpixel.size();
     s << dumpArray(int2Blob(npix));
