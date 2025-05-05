@@ -11,6 +11,8 @@
 #include "calPixelQuality.hh"
 #include "calPixelQualityV.hh"
 #include "calPixelQualityM.hh"
+#include "calPixelQualityLM.hh"
+
 #include "util.hh"
 
 #include "cdbJSON.hh"
@@ -28,11 +30,12 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-// pcrPixelHistograms
+// pixelHistograms
 // ---------------
 //
 // Examples:
-// bin/pcrPixelHistograms root_output_files/dqm_histos_00537.root
+// cd mu3eanca/run2025/analysis
+// bin/pixelHistograms -j /Users/ursl/data/mu3e/cdb/ -g datav6.1=2025CosmicsVtxOnly -f /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.root
 // ----------------------------------------------------------------------
 
 #define JSONDIR "/Users/ursl/data/mu3e/cdb"
@@ -46,9 +49,9 @@ struct pixhit {
 };
 
 // ----------------------------------------------------------------------
-void createPayload(string, calAbs *, map<unsigned int, vector<double> >, string);
+void createPayload(string, calAbs *, string);
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
-void determineBrokenLinks(TH2 *h, vector<int> &links);
+void determineBrokenLinks(TH2 *h, vector<int> &links, bool turnedOn);
 void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links);
 
 
@@ -73,7 +76,7 @@ int main(int argc, char* argv[]) {
 
 
   // -- command line arguments
-  int verbose(0), mode(1);
+  int verbose(0), mode(1), printMode(0);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(JSONDIR), filename("nada.root");
   string gt("mcidealv6.1");
@@ -82,14 +85,42 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-p"))      {printMode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
+  // -- this is just to get the list of all chipIDs
   cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
-  Mu3eConditions* pDC = Mu3eConditions::instance(gt, pDB);
+  Mu3eConditions* pDC = Mu3eConditions::instance("mcidealv6.1", pDB);
   pDC->setRunNumber(1);
   if(!pDC->getDB()) {
       std::cout << "CDB database not found" << std::endl;
+  }
+
+  if (1 <= printMode && printMode <= 3) {
+    cout << "print chipIDs printMode = " << printMode << endl;
+    int station(0), layer(0), phi(0), z(0);
+    calAbs* cal = pDC->getCalibration("pixelalignment_");
+    calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(cal);
+    uint32_t i = 0;
+    cpa->resetIterator();
+    while(cpa->getNextID(i)) {
+      uint32_t chipID = cpa->id(i);
+      chipIDSpecBook(chipID, station, layer, phi, z);
+      if (printMode == 1 && (layer < 3)) {
+        // -- print all chipIDs
+        cout << "chipID = " << cpa->id(i) << endl;
+      } else if (printMode == 2 && (layer < 3) && (z < 4)) {
+        // -- print US chipIDs
+        cout << "chipID = " << cpa->id(i) <<  endl;
+      } else if (printMode == 3 && (layer< 3) && (z > 3)) {
+        // -- print DS chipIDs
+        cout << "chipID = " << cpa->id(i) << endl;
+
+      }
+
+    }
+    return 0;
   }
 
   vector<uint32_t> allSensorIDs;
@@ -107,18 +138,28 @@ int main(int argc, char* argv[]) {
   for (auto chipID : allSensorIDs) {
     bool found(false);
     int station(0), layer(0), phi(0), z(0);
-    for (auto itL : vLayLdrTurnedOn) {
-      chipIDSpecBook(chipID, station, layer, phi, z);
-      // cout << "chipID = " << chipID << " in layer/ladder = " << layer << "/" << phi << endl;
+    if (1) {
       // -- check if chipID is in the list of turned on chips
-      if (itL.first == layer && itL.second == phi && (filterUS ? (z < 4) : true)) {
-        // cout << " FOUND chipID = " << chipID << " in layer/ladder = " << layer << "/" << phi << endl;
-        found = true;
-        break;
+      for (auto itL : vLayLdrTurnedOn) {
+        chipIDSpecBook(chipID, station, layer, phi, z);
+
+        if (itL.first == layer && itL.second == phi && (filterUS ? (z < 4) : true)) {
+          // cout << " FOUND chipID = " << chipID << " in layer/ladder = " << layer << "/" << phi << endl;
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+        mChipIDOK.insert({chipID, {layer, phi, z}});
       }
     }
-    if (found) {
-      mChipIDOK.insert({chipID, {layer, phi, z}});
+
+    if (0) {
+      // -- place all VTX chipIDs in the map
+      chipIDSpecBook(chipID, station, layer, phi, z);
+      if (layer < 3) {
+        mChipIDOK.insert({chipID, {layer, phi, z}});
+      }
     }
   }
 
@@ -138,11 +179,11 @@ int main(int argc, char* argv[]) {
   cout << "run = " << run << endl;
   
 
-  string hash = string("tag_pixelquality_") + gt + string("_iov_") + to_string(run);
+  string hash = string("tag_pixelqualitylm_") + gt + string("_iov_") + to_string(run);
   
   TFile *f = TFile::Open(filename.c_str());
   
-  // -- read in all chipids in VTX
+  // -- read in ALL chipids in VTX
   vector<unsigned int> vchipid;
   vector<string> vStations = {"station_0"};
   map<string, int> vLayers  = {{"layer_1", 8}, {"layer_2", 10}};
@@ -181,6 +222,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  cout << "mHitmaps.size() = " << mHitmaps.size() << endl;
+
   // -- do analysis
   TCanvas *c0 = new TCanvas("c0", "c0", 800, 600);
   c0->Divide(3,5);
@@ -188,14 +231,18 @@ int main(int argc, char* argv[]) {
   gStyle->SetOptStat(0);
   vector<int> deadlinks, deadcolumns;
   ofstream ofs;
-  ofs.open("deadlinks.csv");
+  ofs.open(Form("csv/deadlinks-run%d.csv", run));
   ofs << "#chipID,linkA,linkB,linkC,linkM,ncol[,icol] NB: linkX: 0 = no error, 1 = dead" << endl;
-  for (auto it: mChipIDOK){
-    c0->cd(ipad++);
-    shrinkPad(0.1, 0.17);
+  for (auto it: mHitmaps){
+    bool turnedOn = mChipIDOK.find(it.first) != mChipIDOK.end();
+    if (turnedOn) {
+      cout << "chipID = " << it.first << " is turned on" << endl;
+    } else {
+      cout << "chipID = " << it.first << " is NOT turned on" << endl;
+    }
     deadlinks.clear();
     deadcolumns.clear();
-    determineBrokenLinks(mHitmaps[it.first], deadlinks);
+    determineBrokenLinks(mHitmaps[it.first], deadlinks, turnedOn);
     if (deadlinks.size() > 0) {
       cout << "chipID = " << it.first << " has broken links: ";
       ofs << it.first << ",";
@@ -222,14 +269,23 @@ int main(int argc, char* argv[]) {
       ofs << 0;
     }
     ofs << endl;
-    mHitmaps[it.first]->Draw("colz");
-    mHitmaps[it.first]->SetTitle(Form("Run %d, LAY/LDR/CHP %d/%d/%d (%d)", 
-      run, get<0>(it.second), get<1>(it.second), get<2>(it.second), it.first));
-    mHitmaps[it.first]->GetXaxis()->SetTitle("col");
-    mHitmaps[it.first]->GetYaxis()->SetTitle("row");
+    if (turnedOn) {
+      c0->cd(ipad++);
+      shrinkPad(0.1, 0.17);
+      mHitmaps[it.first]->Draw("colz");
+      mHitmaps[it.first]->SetTitle(Form("Run %d, LAY/LDR/CHP %d/%d/%d (%d)",  run, 
+        get<0>(mChipIDOK[it.first]), get<1>(mChipIDOK[it.first]), get<2>(mChipIDOK[it.first]), it.first));
+      mHitmaps[it.first]->GetXaxis()->SetTitle("col");
+      mHitmaps[it.first]->GetYaxis()->SetTitle("row");
+    }
   }
-  c0->SaveAs(Form("run%d_hitmaps.pdf", run));
+  c0->SaveAs(Form("out/run%d_hitmaps.pdf", run));
   ofs.close();
+
+  calPixelQualityLM *cpq = new calPixelQualityLM();
+  cpq->readCsv(Form("csv/deadlinks-run%d.csv", run));
+  string blob = cpq->makeBLOB();
+  createPayload(hash, cpq, "./payloads");
 
   for (auto it: mHitmaps) {
     // TODO: check that non-zero entries and that it.first is not in mChipIDOK
@@ -239,17 +295,17 @@ int main(int argc, char* argv[]) {
 }
 
 // ----------------------------------------------------------------------
-void createPayload(string hash, calAbs *a, map<unsigned int, vector<double> > mdet, string jsondir) {
+void createPayload(string hash, calAbs *a, string jsondir) {
 
-  string sblob = a->makeBLOB(mdet);
+  string sblob = a->makeBLOB();
   
   payload pl;
   pl.fHash = hash;
-  pl.fComment = "testing";
+  pl.fComment = "pixelqualitylm";
   pl.fBLOB = sblob;
-  //  cout << "######################################################################" << endl;
-  //  cout << "### createPayload" << endl;
-  //  a->printBLOB(sblob);
+  cout << "######################################################################" << endl;
+  cout << "### createPayload" << endl;
+  a->printBLOB(sblob);
   
   a->writePayloadToFile(hash, jsondir, pl);
 }
@@ -273,7 +329,7 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 }
 
 // ----------------------------------------------------------------------
-void determineBrokenLinks(TH2 *h, vector<int> &links) {
+void determineBrokenLinks(TH2 *h, vector<int> &links, bool turnedOn) {
   bool DBX(false);
   double fractionHits(0.1);
   double nLinkA = h->Integral(1, 88, 1, 250);
@@ -281,29 +337,42 @@ void determineBrokenLinks(TH2 *h, vector<int> &links) {
   double nLinkC = h->Integral(173, 256, 1, 250);
   double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
   double cutMinHits = (nLinkAverage < 10? 1: fractionHits*nLinkAverage);
+
+  string schip = h->GetName();
+  replaceAll(schip, "hitmap_perChip_", "");
+  int chipID = ::stoi(schip);
+
   if (DBX)
     cout << "histogram " << h->GetName() << " nLinkA = " << nLinkA
          << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC
-         << " nLinkAverage = " << nLinkAverage 
-         << " cutMinHits = " << cutMinHits
+         << " nLinkAverage = " << nLinkAverage << " cutMinHits = " << cutMinHits
          << endl;
-  if (nLinkA < cutMinHits) {
-    links.push_back(1);
+  if (!turnedOn) {
+    links.push_back(9);
+    links.push_back(9);
+    links.push_back(9);
+    links.push_back(9);
   } else {
+    
+    if (nLinkA < cutMinHits) {
+      links.push_back(1);
+    } else {
+      links.push_back(0);
+    }
+    if (nLinkB < cutMinHits) {
+      links.push_back(1);
+    } else {
+      links.push_back(0);
+    }
+    if (nLinkC < cutMinHits) {
+      links.push_back(1);
+    } else {
+      links.push_back(0);
+    }
+    // -- add dummy MUX link
     links.push_back(0);
   }
-  if (nLinkB < cutMinHits) {
-    links.push_back(1);
-  } else {
-    links.push_back(0);
-  }
-  if (nLinkC < cutMinHits) {
-    links.push_back(1);
-  } else {
-    links.push_back(0);
-  }
-  // -- add dummy MUX link
-  links.push_back(0);
+  
 }
 
 // ----------------------------------------------------------------------
