@@ -5,13 +5,15 @@
 # ===========
 #
 # Usage:       cd mu3eana/run2025/scripts
-#              ./processRuns -m minalyzer -e "2025April
-#              ./processRuns -m anadqm -e 2025April -g datav6.1=2025CosmicsVtxOnly 
-#
+#              ./processRuns -m minalyzer -e "2025April"
 #              ./processRuns -m minanalyzer -e runs -r "553,552,551"
 #
+#              ./processRuns -m anadqm -e 2025April -g datav6.1=2025CosmicsVtxOnly 
+#              ./processRuns -m anadqm -e runs -r "553" -g datav6.1=2025CosmicsVtxOnly 
+#              ./processRuns -m anadqm -e 2025April -g datav6.1=2025CosmicsVtxOnly -u
 #
 # History
+#         2025/05/05 add -u option to update CDB tag IOV list
 #         2025/05/03 add GT for pixelqualitylm payload generation
 #         2025/04/30 first shot
 # ----------------------------------------------------------------------
@@ -25,46 +27,44 @@ use File::Basename;
 my $dir = getcwd;
  
 use Getopt::Std;
-getopts('de:g:m:n:r:');
+getopts('de:g:m:n:r:u');
  
-my $BASEDIR = "/Users/ursl/mu3e/software/250429";
-my $DATADIR = "/Users/ursl/data/mu3e/run2025";
-my $CDB     = "/Users/ursl/data/mu3e/cdb";
-my $ROF     = "$BASEDIR/minalyzer/root_output_files/";
-my $MAXRUN  = -1;
-my $GT      = " ";
+my $BASEDIR  = "/Users/ursl/mu3e/software/250429";
+my $MU3EANCA = "/Users/ursl/mu3e/mu3eanca/run2025";
+my $BASEGT   = "mcidealv6.1";
+my $DATADIR  = "/Users/ursl/data/mu3e/run2025";
+my $CDB      = "/Users/ursl/data/mu3e/cdb";
+my $ROF      = "$BASEDIR/minalyzer/root_output_files/";
+my $MAXRUN   = -1;
+my $GT       = " ";
 
 if ($opt_n) {
     $MAXRUN = $opt_n;
 }
 
 if ($opt_g) {
-    $GT = " -g $opt_g";
+    $GT = "$opt_g";
 }
 
 my @goodRuns = ();
 
 if ($opt_e eq "2025April") {
-    push(@goodRuns, 553);
-    push(@goodRuns, 552);
-    push(@goodRuns, 551);
-
-    push(@goodRuns, 490);
-    push(@goodRuns, 489);
-
-    push(@goodRuns, 483);
-    push(@goodRuns, 482);
-    push(@goodRuns, 481);
-
-    push(@goodRuns, 473);
-    push(@goodRuns, 472);
-    push(@goodRuns, 471);
-    push(@goodRuns, 470);
-    push(@goodRuns, 469);
-    push(@goodRuns, 468);
-    push(@goodRuns, 467);
-    push(@goodRuns, 466);
-    push(@goodRuns, 465);
+    push(@goodRuns, (551, 552, 553));
+    push(@goodRuns, (512, 513));
+    push(@goodRuns, (489, 490));
+    push(@goodRuns, (481, 482, 483));
+    for (my $i = 462; $i <= 473; $i++) { push(@goodRuns, $i); }
+    push(@goodRuns, 460);
+    for (my $i = 443; $i <= 453; $i++) { push(@goodRuns, $i); }
+    for (my $i = 431; $i <= 437; $i++) { push(@goodRuns, $i); }
+    for (my $i = 415; $i <= 425; $i++) { push(@goodRuns, $i); }
+    for (my $i = 337; $i <= 342; $i++) { push(@goodRuns, $i); }
+    push(@goodRuns, (323, 330));
+    push(@goodRuns, (283, 284));
+    push(@goodRuns, (277, 278));
+    push(@goodRuns, 264);
+    push(@goodRuns, 256);
+    push(@goodRuns, 248);
 } elsif ($opt_e eq "runs") {
     if ($opt_r) {
         @goodRuns = split(/,/, $opt_r);
@@ -74,6 +74,8 @@ if ($opt_e eq "2025April") {
     }
 }
 
+# ----------------------------------------------------------------------
+# -- main decision point is here
 # ----------------------------------------------------------------------
 if ($opt_m eq "minalyzer") {
     &runMinalyzer();
@@ -88,24 +90,42 @@ if ($opt_m eq "minalyzer") {
 # ----------------------------------------------------------------------
 sub runAnaDQM() {
     print "Running DQM for runs: @goodRuns\n";
-    my $dir = "../analysis";
+    my $dir = "$MU3EANCA/analysis";
     my $nrun = 0;
+    system("mkdir -p $dir/log");
+    system("mkdir -p $dir/out");
+    system("mkdir -p $dir/csv");
+    system("mkdir -p $dir/payloads");
     foreach my $run (@goodRuns) {
         $nrun++;
+        my $srun = sprintf("%05d", $run);
         if ($MAXRUN > 0 && $nrun > $MAXRUN) {
             print "Skipping run $run, as too many runs processed\n";
             next;
         }
         print "Processing DQM output for run $run in directory $dir\n";
-        my $cmd0 = "rm -f dqm_00$run.log";
-        my $cmd1 = "bin/pixelHistograms -j $CDB $GT -f $ROF/dqm_histos_00$run.root  >& dqm_00$run.log ";
+        my $cmd0 = "rm -f log/dqm_$srun.log";
+        my $lgt = ""; 
+        if ($GT) {
+            $lgt = "-g $GT";
+        }
+        my $cmd1 = "bin/pixelHistograms -j $CDB $lgt -f $ROF/dqm_histos_$srun.root  >& log/dqm_$srun.log ";
         if ($opt_d) {
             print "Running DQM for run $run in directory $dir\n";
-            print("->$cmd0 && $cmd1<-\n");
+            print("->$cmd0 && $cmd1 && $cmd2<-\n");
         } else {
             print "Running DQM for run $run in directory $dir\n";
             print("->$cmd0 && $cmd1<-\n");
             system("cd $dir && $cmd0 && $cmd1 && cd - ");
+        }
+        # insertIovTag -j ~/data/mu3e/cdb -t pixelqualitylm_datav6.1=2025CosmicsVtxOnly -i 472
+        if ($opt_u) {
+            my $cmd2 = "$MU3EANCA/scripts/insertIovTag -j $CDB -t pixelqualitylm_$GT -i $run";
+            print "cmd2: $cmd2\n";
+            my $payloadname = "tag_pixelqualitylm_" . $GT . "_iov_$run";
+            my $cmd3 = "/bin/cp payloads/$payloadname $CDB/payloads/";
+            print "cmd3: $cmd3\n";           
+            system("cd $dir && $cmd2 && $cmd3 && cd - ");
         }
     }
 }
@@ -116,14 +136,16 @@ sub runMinalyzer() {
     my $dir = "$BASEDIR/minalyzer";
     my $nrun = 0;
     print "Running minalyzer in $dir for runs: @goodRuns\n";
+    system("mkdir -p $dir/log");
     foreach my $run (@goodRuns) {
         $nrun++;
         if ($MAXRUN > 0 && $nrun > $MAXRUN) {
             print "Skipping run $run, as too many runs processed\n";
             next;
         }
-        my $cmd0 = "rm -f dqm_00$run.log";
-        my $cmd1 = "_build/analyzer/minalyzer --mt $DATADIR/run00$run.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=mcidealv6.1  >& dqm_00$run.log ";
+        my $srun = sprintf("run%05d", $run);
+        my $cmd0 = "rm -f log/dqm_$srun.log";
+        my $cmd1 = "_build/analyzer/minalyzer --mt $DATADIR/$srun.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=$BASEGT  >& log/dqm_$srun.log ";
         if ($opt_d) {
             print("->$cmd1<-\n");
             print("cd $dir && $cmd0 && $cmd1 && cd - \n");
