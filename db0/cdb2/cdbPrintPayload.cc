@@ -17,6 +17,7 @@
 #include "calDetSetupV1.hh"
 #include "calPixelCablingMap.hh"
 #include "calPixelQuality.hh"
+#include "calPixelQualityLM.hh"
 
 #include "calFibreAlignment.hh"
 
@@ -80,6 +81,10 @@ int main(int argc, const char* argv[]) {
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixelquality_")) {
     c = new calPixelQuality();
+    c->readPayloadFromFile(hash, pdir);
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("pixelqualitylm_")) {
+    c = new calPixelQualityLM();
     c->readPayloadFromFile(hash, pdir);
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixelcabling_")) {
