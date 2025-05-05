@@ -19,6 +19,7 @@
 #include "calTileAlignment.hh"
 #include "calPixelCablingMap.hh"
 #include "calPixelQuality.hh"
+#include "calPixelQualityLM.hh"
 
 #include "calDetConfV1.hh" // decrepit!
 #include "calDetSetupV1.hh"
@@ -32,6 +33,9 @@ using namespace std;
 // initialize the JSON filesystem-based CDB for all starting points
 // "mcidealv5.0" old MC
 // "mcidealv5.1" MC after tag v5.1
+// "mcidealv6.1" MC for tag v6.1
+// 
+// "datav6.1=2025CosmicsVtxOnly"  data for tag v6.1
 // "qc2024v1.0"  pixel sensor chipIds for first vertex module (aka half-shell)
 //
 // -j JSONDIR  output directory with subdirectories globaltags, tags, payloads
@@ -65,8 +69,9 @@ int main(int argc, const char* argv[]) {
     {"mcidealv6.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detsetupv1_", "detconfv1_mcidealv5.1", } },
     {"mcidealv6.1=2025CosmicsVtxOnly", {"pixelalignment_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
       // -- data
-    {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} }
-  };
+    {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} },
+    {"datav6.1=2025CosmicsVtxOnly", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} }
+  };    
   
   
   // -- command line arguments
