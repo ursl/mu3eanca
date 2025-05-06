@@ -110,7 +110,7 @@ void trGen::eventProcessing() {
   }
 
   // -- generic debug output
-  if (fVerbose > 90) {
+  if (fVerbose > 2) {
     printBranches();
   }
 
@@ -440,8 +440,8 @@ void trGen::printBranches() {
        << " event: " << fHeader.event
        << " run: "  << fHeader.run
        << " type: " << fHeader.type
-       << ": fNtrajectories = " << fNtrajectories << ":  "
-       << ": fNhit = " << fNhit << ":  "
+       << ": fNtrajectories = " << fNtrajectories << "/" << ftraj_ID->size()
+       << ": fNhit = " << fNhit << "/" << fhit_pixelid->size()
        << endl;
   for (unsigned int i = 0; i < ftraj_ID->size(); ++i) {
     cout << Form("trj %2d", i)
@@ -543,7 +543,7 @@ void trGen::mapTID2PixelID() {
   if (fVerbose > 9) {
     for (unsigned i = fhit_mc_i->at(0); i < fhit_mc_i->at(fNhit-1); ++i) {
       fpChain2->GetEntry(i);
-      cout << "det: " << fdet << " tid: " << ftid << endl;
+      cout << "det: " << fdet << " tid: " << ftid << " hid: " << fhid << endl;
     }
   }
 
