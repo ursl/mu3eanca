@@ -37,19 +37,19 @@ $iovs = $3;
 print("insertIovTag: oldRuns = @oldRuns\n");
 my @runs = ();
 
-my $inserted = 0; 
-for ($i; $i <= $#oldRuns; $i++) {
-    if ($opt_i > $oldRuns[$i]) {
-        push(@runs, $oldRuns[$i]);
-    } elsif ($opt_i < $oldRuns[$i]) {
-        push(@runs, $opt_i);
-        push(@runs, $oldRuns[$i]);
-        $inserted = 1; 
-    } else {
+
+@runs = @oldRuns;
+for (my $i = 0; $i <= $#runs; $i++) {
+    if ($opt_i == $runs[$i]) {
         print "same, not updating\n";
+        last;
+    }
+    if ($opt_i < $runs[$i]) {
+        splice(@runs, $i, 0, $opt_i);
+        last;
     }
 }
-if ($inserted == 0) {
+if (!grep { $_ == $opt_i } @runs) {
     push(@runs, $opt_i);
 }
 
