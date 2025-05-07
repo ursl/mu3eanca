@@ -52,13 +52,13 @@ function runsFilter() {
     console.log("minRun: " + minRun);
     const maxRun =  document.getElementById("filterRunMax").value;
     console.log("maxRun: " + maxRun);
-    window.location.href = '/rdb/?minRun=' + minRun + '&maxRun=' + maxRun;
+    window.location.href = '/rdb/run/?minRun=' + minRun + '&maxRun=' + maxRun;
 }
 
 function runsLimit() {
     isFiltered = true;
     const nRun = document.getElementById("filterRunLimit").value;
-    window.location.href = '/rdb/?nRun=' + nRun;
+    window.location.href = '/rdb/run/?nRun=' + nRun;
 }
 
 function timeFilter() {
@@ -67,7 +67,7 @@ function timeFilter() {
     console.log("startTime: " + startTime);
     const stopTime  = document.getElementById("filterStopTime").value;
     console.log("stopTime: " + stopTime);
-    window.location.href = '/rdb/?startTime=' + startTime + '&stopTime=' + stopTime;
+    window.location.href = '/rdb/?run/startTime=' + startTime + '&stopTime=' + stopTime;
 }
 
 </script>
@@ -120,7 +120,7 @@ function timeFilter() {
 
     <% data.map((result)=>{ %>
                             <tr>
-                            <td> <a href="/rdb/<%= result.BOR["Run number"]%>?runs=<%=runList%>"><%= result.BOR["Run number"]%> </a>
+                            <td> <a href="/rdb/run/<%= result.BOR["Run number"]%>?runs=<%=runList%>"><%= result.BOR["Run number"]%> </a>
                             <td>
                             <%= result.BOR["Start time"]%>
                             <td>
