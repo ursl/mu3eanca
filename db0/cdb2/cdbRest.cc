@@ -121,6 +121,18 @@ map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
   return m;
 }
 
+// ----------------------------------------------------------------------
+vector<string> cdbRest::getAllRunNumbers() {
+  doCurl("runNumbers", "nada", "findAll");
+  
+  if (0) cout << "fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
+  replaceAll(fCurlReadBuffer, "[", "");
+  replaceAll(fCurlReadBuffer, "]", "");
+  vector<string> v = split(fCurlReadBuffer, ',');
+    
+  return v;
+}
+
 
 // ----------------------------------------------------------------------
 runRecord cdbRest::getRunRecord(int irun) {
@@ -134,10 +146,19 @@ runRecord cdbRest::getRunRecord(int irun) {
   fCurlReadBuffer.clear();
   doCurl("runrecords", to_string(irun), "findOne");
   stripOverhead();
-  cout << "fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
+  cout << "irun = " << irun << " fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
   if (fCurlReadBuffer == "Not found") {
     return rr;
   }
+  if (fCurlReadBuffer == "") {
+    sspl.clear();
+    sspl << "cdbRest::getRunRecord> runRecord for run = " << irun
+         << " ERROR: empty response";
+    rr.fEORComments = sspl.str();
+    return rr;
+  }
+
+
   rr.fBORRunNumber     = stoi(jsonGetValue(fCurlReadBuffer, "Run number"));
   rr.fBORStartTime     = jsonGetString(fCurlReadBuffer, "Start time");
   rr.fBORSubsystems    = stoi(jsonGetValue(fCurlReadBuffer, "Subsystems"));
@@ -241,6 +262,7 @@ void cdbRest::doCurl(string collection, string filter, string api) {
                 << " sapi ->" << sapi << "<- result: "
                 << fCurlReadBuffer
                 << endl;
+  
 }
 
 
