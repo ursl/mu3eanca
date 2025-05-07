@@ -120,8 +120,33 @@ int main(int argc, char* argv[]) {
       }
 
     }
-    return 0;
   }
+  if (4 == printMode) {
+    // -- create turned on CSV for all chipIDs
+    ofstream ofs;
+    ofs.open(Form("csv/deadlinks-allpixels.csv"));
+    ofs << "#chipID,linkA,linkB,linkC,linkM,ncol[,icol] NB: linkX: 0 = no error, 1 = dead" << endl;
+    
+    cout << "print all chipIDs" << endl;
+    int station(0), layer(0), phi(0), z(0);
+    calAbs* cal = pDC->getCalibration("pixelalignment_");
+    calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(cal);
+    uint32_t i = 0;
+    cpa->resetIterator();
+    while(cpa->getNextID(i)) {
+      ofs << cpa->id(i) << ",0,0,0,0,0" << endl;
+    }  
+    ofs.close();
+
+    string hash = string("tag_pixelqualitylm_") + gt + string("_iov_0");
+    calPixelQualityLM *cpq = new calPixelQualityLM();
+    cpq->readCsv(Form("csv/deadlinks-allpixels.csv"));
+    string blob = cpq->makeBLOB();
+    createPayload(hash, cpq, "./payloads");
+  
+    return 0; 
+  }
+
 
   vector<uint32_t> allSensorIDs;
   allSensorIDs.reserve(3000);
