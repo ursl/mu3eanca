@@ -15,6 +15,7 @@ import db from "../db/conn.mjs";
 
 const router = express.Router();
 
+// --------------------------------------------------------------
 // -- Get a single runrecord
 router.get("/findOne/runrecords/:id", async (req, res) => {
   let runno = parseInt(req.params.id);
@@ -29,8 +30,23 @@ router.get("/findOne/runrecords/:id", async (req, res) => {
   else res.send(result).status(200);
 });
 
+// ----------------------------------------------------------------------
+// -- Get all run numbers
+router.get("/findAll/runNumbers", async (req, res) => {
+    console.log("serving from CDB /findAll/runNumbers " + req.params.id);
+    let collection = await db.collection("runrecords");
+    let results = await collection.find({})
+      .toArray();
+
+    let runNumbers = results.map(record => record.BOR["Run number"]);
+    res.send(runNumbers).status(200);
+  
+  });
 
 
+
+
+// --------------------------------------------------------------
 // -- Default CDB landing page 
 router.get("/", async (req, res) => {
   console.log("serving default landing page");
@@ -43,6 +59,7 @@ router.get("/", async (req, res) => {
 });
 
 
+// --------------------------------------------------------------
 // -- Get a single global tag
 router.get("/findOne/globaltags/:id", async (req, res) => {
   console.log("serving /findOne/globaltags/" + req.params.id);
@@ -55,6 +72,7 @@ router.get("/findOne/globaltags/:id", async (req, res) => {
 });
 
 
+// --------------------------------------------------------------
 // -- Get a single tag/IOV
 router.get("/findOne/tags/:id", async (req, res) => {
   console.log("serving /findOne/tags/" + req.params.id);
@@ -66,6 +84,7 @@ router.get("/findOne/tags/:id", async (req, res) => {
 });
 
 
+// --------------------------------------------------------------
 // -- Get a single payload
 router.get("/findOne/payloads/:id", async (req, res) => {
   console.log("serving /findOne/payloads/" + req.params.id);
@@ -78,6 +97,7 @@ router.get("/findOne/payloads/:id", async (req, res) => {
 });
 
 
+// --------------------------------------------------------------
 // -- Get a single configuration 
 router.get("/findOne/configs/:id", async (req, res) => {
   console.log("serving /findOne/configs/" + req.params.id);
@@ -90,6 +110,7 @@ router.get("/findOne/configs/:id", async (req, res) => {
 });
 
 
+// --------------------------------------------------------------
 // -- Get all globaltags
 router.get("/findAll/globaltags", async (req, res) => {
   console.log("serving /findAll/globaltags/" + req.params.id);
@@ -102,6 +123,7 @@ router.get("/findAll/globaltags", async (req, res) => {
 });
 
 
+// --------------------------------------------------------------
 // -- Upload a single file to MongoDB
 router.post('/upload', upload.single('file'), async (req, res) => {
     console.log("upload req.body:" + JSON.stringify(req.body));
@@ -126,6 +148,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 
+// --------------------------------------------------------------
 // -- Upload multiple files to MongoDB
 router.post('/uploadMany', upload.array('file'), async (req, res) => {
     if (!req.files || !req.body.tag) {
@@ -149,6 +172,7 @@ router.post('/uploadMany', upload.array('file'), async (req, res) => {
 });
 
 
+// --------------------------------------------------------------
 // -- Route to download all files as a ZIP archive by tag
 router.get('/downloadTag', async (req, res) => {
     const tag = req.query.tag;
