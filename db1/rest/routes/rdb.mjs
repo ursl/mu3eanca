@@ -62,7 +62,7 @@ router.get("/", async (req, res) => {
     if (req.query.nRun) {
         nruns = Number(req.query.nRun);
     } else {
-        nruns = 500;
+        nruns = 1000;
     }
     console.log("nruns = " + nruns);
 
@@ -146,7 +146,7 @@ router.get("/", async (req, res) => {
 
 // ----------------------------------------------------------------------
 // -- Get a single runrecord
-router.get("/:id", async (req, res) => {
+router.get("/run/:id", async (req, res) => {
     let runno = parseInt(req.params.id);
     console.log("serving ... /rdb/" + req.params.id + " from " + req.ip);
 
@@ -162,6 +162,18 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// ----------------------------------------------------------------------
+// -- Get all run numbers
+router.get("/allRunNumbers", async (req, res) => {
+    console.log("serving from RDB /allRunNumbers " + req.params.id);
+    let collection = await db.collection("runrecords");
+    let results = await collection.find({})
+      .toArray();
+
+    let runNumbers = results.map(record => record.BOR["Run number"]);
+    res.send(runNumbers).status(200);
+  
+  });
 
 // ----------------------------------------------------------------------
 // -- Post a single runrecord
