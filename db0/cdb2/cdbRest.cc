@@ -263,6 +263,7 @@ void cdbRest::doCurl(string collection, string filter, string api) {
                 << fCurlReadBuffer
                 << endl;
   
+  curl_easy_cleanup(curl);
 }
 
 
