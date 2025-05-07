@@ -1,0 +1,84 @@
+#include "cdbRest.hh"
+#include "runRecord.hh"
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <string.h>
+#include <dirent.h>  /// for directory reading
+#include <sys/time.h>
+#include <unistd.h>
+
+
+
+using namespace std;
+// ----------------------------------------------------------------------
+int main(int argc, char* argv[]) {
+
+  // -- command line arguments
+  string dirName("fixme"), dirPath("fixme"), pattern("unset"), urlString("localhost:5050/cdb/");
+  bool all(false);
+  bool onlyDelete(false); // ONLY delete, do not write new records
+  int maxRuns(10000), firstRunIdx(0);
+  for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "--all")) {all = true;}
+    if (!strcmp(argv[i], "--dir")) {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "-dir"))  {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "-f"))    {firstRunIdx = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-m"))    {maxRuns = atoi(argv[++i]);}
+
+    if (!strcmp(argv[i], "--url")) {urlString = string(argv[++i]);}
+    if (!strcmp(argv[i], "-u"))    {urlString = string(argv[++i]);}
+  }
+
+  cdbRest *pDB(0);
+
+  pDB = new cdbRest("mcidealv6.1", urlString, 0);
+  vector<string> vGlobalTags = pDB->readGlobalTags();
+  
+  for (auto it: vGlobalTags) {
+    vector<string> vTags = pDB->readTags(it);
+    cout << "global tag: " << it << endl;
+    map<string, vector<int>> mIOVs = pDB->readIOVs(vTags);
+    for (auto ittt: mIOVs) {
+      cout << "    tag: " << ittt.first << " iovs: ";
+      for (auto itttt: ittt.second) {
+        cout << itttt << " ";
+        payload pl = pDB->getPayload("tag_" + ittt.first + "_iov_" + to_string(itttt));
+        cout << "    hash: " << pl.fHash << endl;
+        cout << "    comment: " << pl.fComment << endl;
+        cout << "    schema: " << pl.fSchema << endl;
+        cout << "    date: " << pl.fDate << endl;
+        cout << "    blob: " << pl.fBLOB.size() << endl;
+      }
+      cout << endl;
+    }
+  }
+
+  // for (int irun = 1; irun < maxRuns; ++irun) {
+  //   runRecord rr = pDB->getRunRecord(irun);
+  //   cout << rr.printString() << endl;
+  // }
+
+
+  vector<string> vRunNumbers = pDB->getAllRunNumbers();
+  int cnt(0);
+  int startIdx(firstRunIdx);
+  //  for (int it = startIdx; it < startIdx + maxRuns; ++it) {
+  for (int it = 0; it < vRunNumbers.size(); ++it) {
+    cout << "run number: " << it << endl;
+    int irun = stoi(vRunNumbers[it]);
+    if (irun > maxRuns) continue;
+    if (irun < 0) continue;
+    
+    runRecord rr = pDB->getRunRecord(irun);
+    cout << rr.printString() << endl;
+    //usleep(1000);
+    //sleep(1);
+    //if (cnt > 100) break;
+    ++cnt;
+  }
+
+  delete pDB; 
+} 
