@@ -293,7 +293,7 @@
 
      function setNext() {
          if (idxNextRun < aruns.length) {
-             window.location.href = '/rdb/' + aruns[idxNextRun] + '/?runs=' + sruns;
+             window.location.href = '/rdb/run/' + aruns[idxNextRun] + '/?runs=' + sruns;
          } else {
              window.location.href = '/rdb/';
          }
@@ -301,7 +301,7 @@
 
      function setPrev() {
          if (idxPrevRun > -1) {
-             window.location.href = '/rdb/' + aruns[idxPrevRun] + '/?runs=' + sruns;
+             window.location.href = '/rdb/run/' + aruns[idxPrevRun] + '/?runs=' + sruns;
          } else {
              window.location.href = '/rdb/';
          }
