@@ -72,7 +72,7 @@ LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
          payload.o cfgPayload.o cdbUtil.o runRecord.o
 
 LBINARIES = testCDB fillDB \
-            syncCloud syncMongo syncJSON \
+            syncCloud syncMongo syncJSON syncRDB\
             testPixelQuality \
             cdbInitDB cdbPrintPayload  \
             cdbPrintConfig \
