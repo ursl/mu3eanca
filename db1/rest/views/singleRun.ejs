@@ -102,6 +102,10 @@
             <input id="btnSubm" type="button" class="button" value="Save" style="float: right; background-color:#93c572" onclick=updateRun() />
         </div>
 
+        <div>
+            <span id="riClass"></span>
+        </div>
+
         <table id="runs">
             <thead>
                 <tr>
@@ -165,15 +169,15 @@
                 <% if (data.hasOwnProperty('Attributes') && Array.isArray(data.Attributes) && data.Attributes.some(attr => attr.hasOwnProperty('RunInfo'))) { %>
                    <tr>
                         <td> RunInfo run-type class </td>
-                        <td> <%= data.Attributes.find(attr => attr.hasOwnProperty('RunInfo')).RunInfo.Class %> </td>
+                        <td id="riClassCell"> <%= data.Attributes.find(attr => attr.hasOwnProperty('RunInfo')).RunInfo.Class %> </td>
                     </tr>
                     <tr>
                         <td> RunInfo comments </td>
-                        <td> <textarea id="riComments" disabled="true"><%= data.Attributes.find(attr => attr.hasOwnProperty('RunInfo')).RunInfo.Comments %></textarea><br>
+                        <td id="riCommentsCell"> <textarea disabled="true"><%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Comments %></textarea><br>
                     </tr>
                     <tr>
                         <td> RunInfo junk </td>
-                        <td> <%= data.Attributes.find(attr => attr.hasOwnProperty('RunInfo')).RunInfo.Junk %> </td>
+                        <td id="riJunkCell"> <%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Junk %> </td>
                     </tr>
                 <% } %>
             <% } %>    
@@ -269,19 +273,40 @@
      
      let dataQuality = 0;
      var dqIdx = -1;
+     var riIdx = -1;
 
      const hasAttributes = lData.hasOwnProperty('Attributes');
 
+     console.log("hasAttributes: " + hasAttributes + " lData.Attributes.length: " + lData.Attributes.length);
      // -- get most recent (last) DataQuality
      if (hasAttributes) {
          for (var idx = 0; idx < lData.Attributes.length; ++idx) {
-             console.log(lData.Attributes[idx].DataQuality);
              if (lData.Attributes[idx].hasOwnProperty('DataQuality')) {
-                 dqIdx = idx; 
+                console.log("DataQuality found");
+                dqIdx = idx; 
+             }
+             if (lData.Attributes[idx].hasOwnProperty('RunInfo')) {
+                 console.log("RunInfo found");
+                 riIdx = idx; 
              }
          }
      }
      
+     if (riIdx > -1) {
+         console.log("riIdx: " + riIdx);
+         var onlineruninfo = lData.Attributes[riIdx].RunInfo;
+         console.log("onlineruninfo: " + JSON.stringify(onlineruninfo));
+         if (onlineruninfo.hasOwnProperty('Class')) {
+             document.getElementById('riClassCell').textContent = onlineruninfo.Class;
+         }
+         if (onlineruninfo.hasOwnProperty('Junk')) {
+             document.getElementById('riJunkCell').textContent = onlineruninfo.Junk;
+         }
+         if (onlineruninfo.hasOwnProperty('Comments')) {
+             document.getElementById('riCommentsCell').textContent = onlineruninfo.Comments;
+         }
+    }
+    
      if (dqIdx > -1) {
          dataQuality = 1; 
          console.log("dqIdx: " + dqIdx);
