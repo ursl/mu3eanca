@@ -136,7 +136,7 @@
             </tr>
 
             <tr>
-                <td> Comments </td>
+                <td> Shift comments </td>
                 <td> <textarea id="comments" disabled="true"><%=data.EOR["Comments"]%></textarea><br>
                 </td>
             </tr>
@@ -160,17 +160,40 @@
                 <td> Uncompressed data size </td>
                 <td> <%= data.EOR["Uncompressed data size"]%> </td>
             </tr>
+
             <% if (data.hasOwnProperty('Attributes')) { %>
-            <tr>
-                <td> Online DQM summary </td>
-                <td>
-                    <input type="checkbox" id="dqmMu3e" name="dqmMu3e" indeterminate disabled/> <label for="dqmVtx">Mu3e</label>
-                    <input type="checkbox" id="dqmBeam" name="dqmBeam" indeterminate disabled/> <label for="dqmVtx">Beam</label>
-                    <input type="checkbox" id="dqmVtx" name="dqmVtx" indeterminate disabled/> <label for="dqmVtx">Vertex</label>
-                    <input type="checkbox" id="dqmFib" name="dqmFib" indeterminate disabled/> <label for="dqmFib">Fibres</label>
-                    <input type="checkbox" id="dqmTil" name="dqmTil" indeterminate disabled/> <label for="dqmTil">Tiles</label>
-                </td>
-            </tr>
+                <% if (data.hasOwnProperty('Attributes') && Array.isArray(data.Attributes) && data.Attributes.some(attr => attr.hasOwnProperty('RunInfo'))) { %>
+                   <tr>
+                        <td> RunInfo run-type class </td>
+                        <td> <%= data.Attributes.find(attr => attr.hasOwnProperty('RunInfo')).RunInfo.Class %> </td>
+                    </tr>
+                    <tr>
+                        <td> RunInfo comments </td>
+                        <td> <textarea id="riComments" disabled="true"><%= data.Attributes.find(attr => attr.hasOwnProperty('RunInfo')).RunInfo.Comments %></textarea><br>
+                    </tr>
+                    <tr>
+                        <td> RunInfo junk </td>
+                        <td> <%= data.Attributes.find(attr => attr.hasOwnProperty('RunInfo')).RunInfo.Junk %> </td>
+                    </tr>
+                <% } %>
+            <% } %>    
+
+            <% if (data.hasOwnProperty('Attributes')) { %>
+                <% if (data.hasOwnProperty('Attributes') && Array.isArray(data.Attributes) && data.Attributes.some(attr => attr.hasOwnProperty('DataQuality'))) { %>
+                <tr>
+                    <td> Data Quality Summary </td>
+                    <td>
+                        <input type="checkbox" id="dqMu3e" name="dqMu3e" indeterminate disabled/> <label for="dqMu3e">Mu3e</label>
+                        <input type="checkbox" id="dqBeam" name="dqBeam" indeterminate disabled/> <label for="dqBeam">Beam</label>
+                        <input type="checkbox" id="dqVtx" name="dqVtx" indeterminate disabled/> <label for="dqVtx">Vertex</label>
+                        <input type="checkbox" id="dqPix" name="dqPix" indeterminate disabled/> <label for="dqPix">Pixel</label>
+                        <input type="checkbox" id="dqFib" name="dqFib" indeterminate disabled/> <label for="dqFib">Fibres</label>
+                        <input type="checkbox" id="dqTil" name="dqTil" indeterminate disabled/> <label for="dqTil">Tiles</label>
+                        <input type="checkbox" id="dqCal" name="dqCal" indeterminate disabled/> <label for="dqCal">Calibration</label>
+                        <input type="checkbox" id="dqLks" name="dqLks" indeterminate disabled/> <label for="dqLks">Links</label>
+                    </td>
+                </tr>
+                <% } %>
             <% } %>
 
         </table>
@@ -215,63 +238,73 @@
      mycolors.push('#f05000'); // orange
      mycolors.push('#f00000'); // red
 
-     // -- all the DQM flags to be shown
+     // -- all the dq flags to be shown
      const detMap = new Map([
-         ["mu3e", "dqmMu3e"], 
-         ["beam", "dqmBeam"], 
-         ["vertex", "dqmVtx"], 
-         ["fibres", "dqmFib"], 
-         ["tiles", "dqmTil"]
+         ["mu3e", "dqMu3e"], 
+         ["beam", "dqBeam"], 
+         ["vertex", "dqVtx"], 
+         ["pixel", "dqPix"],
+         ["fibres", "dqFib"], 
+         ["tiles", "dqTil"], 
+         ["calibration", "dqCal"], 
+         ["goodLinks", "dqLks"] //,
+         //["version", "dqVer"]        
      ]);
 
-     var dqmOrigIdx = -1; 
-     const dqmOrig = new Map([
+     var dqOrigIdx = -1; 
+     const dqOrig = new Map([
          ["mu3e", "nada"], 
          ["beam", "nada"], 
          ["vertex", "nada"], 
+         ["pixel", "nada"], 
          ["fibres", "nada"], 
-         ["tiles", "nada"]
+         ["tiles", "nada"],
+         ["calibration", "nada"], 
+         ["goodLinks", "nada"]//, 
+         //["version", "nada"]
      ]);
 
 
      let commentChange = 0; 
      
-     let dqmOnline = 0;
-     var dqmOnlineIdx = -1;
+     let dataQuality = 0;
+     var dqIdx = -1;
 
      const hasAttributes = lData.hasOwnProperty('Attributes');
 
-     // -- get most recent (last) DQMOnline
+     // -- get most recent (last) DataQuality
      if (hasAttributes) {
          for (var idx = 0; idx < lData.Attributes.length; ++idx) {
-             console.log(lData.Attributes[idx].DQMOnline);
-             dqmOnlineIdx = idx; 
+             console.log(lData.Attributes[idx].DataQuality);
+             if (lData.Attributes[idx].hasOwnProperty('DataQuality')) {
+                 dqIdx = idx; 
+             }
          }
      }
      
-     if (dqmOnlineIdx > -1) {
-         dqmOnline = 1; 
-         console.log("dqmOnlineIdx: " + dqmOnlineIdx);
-         var onlineDQM = lData.Attributes[dqmOnlineIdx].DQMOnline;
-         dqmOrigIdx = dqmOnlineIdx;
-         console.log("dqmOrigIdx:" + dqmOrigIdx); 
+     if (dqIdx > -1) {
+         dataQuality = 1; 
+         console.log("dqIdx: " + dqIdx);
+         var onlinedq = lData.Attributes[dqIdx].DataQuality;
+         dqOrigIdx = dqIdx;
+         console.log("dqOrigIdx:" + dqOrigIdx); 
          
-         for (var prop in onlineDQM) {
-                 if (Object.prototype.hasOwnProperty.call(onlineDQM, prop)) {
-                 console.log("prop: " + prop + " -> val: " + onlineDQM[prop]);
+         for (var prop in onlinedq) {
+                 if (Object.prototype.hasOwnProperty.call(onlinedq, prop)) {
+                 console.log("prop: " + prop + " -> val: " + onlinedq[prop]);
                  if (detMap.has(prop)) {
-                     if (onlineDQM[prop] === '1') {
+                     if (onlinedq[prop] === '1') {
                          console.log("prop " + prop + " good");
                          document.getElementById(detMap.get(prop)).checked = true;
-                         dqmOrig.set(prop, "1");
-                     } else if (onlineDQM[prop] === '0') {
+                         dqOrig.set(prop, "1");
+                     } else if (onlinedq[prop] === '0') {
                          console.log("prop " + prop + " bad");
                          document.getElementById(detMap.get(prop)).checked = false;
-                         dqmOrig.set(prop, "0");
+                         dqOrig.set(prop, "0");
                      } else {
                          console.log("prop " + prop + " unset");
                          document.getElementById(detMap.get(prop)).indeterminate = true;
-                         dqmOrig.set(prop, "-1");
+                         dqOrig.set(prop, "-1");
                      }
                  }
              }
@@ -315,6 +348,7 @@
          console.log("HALLO setEdit");
          if (doEdit < 1) {
              document.getElementById('comments').disabled = false;
+             document.getElementById('riComments').disabled = false; 
              document.getElementById('btnSubm').style = "float: right; background-color:#00703c";
              
              if (hasAttributes) {
@@ -323,7 +357,7 @@
                      document.getElementById(value).disabled = false;
                  }
 
-                 for (const [key, value] of dqmOrig) {
+                 for (const [key, value] of dqOrig) {
                      console.log("original key: " + key + " : " + value);
                  }
              }
@@ -343,7 +377,7 @@
                      document.getElementById(value).disabled = true;
                  }
                  
-                 for (const [key, value] of dqmOrig) {
+                 for (const [key, value] of dqOrig) {
                      console.log("original key: " + key + " : " + value);
                  }
              }
@@ -365,22 +399,25 @@
          ldata.EOR["Comments"] = document.getElementById('comments').value;
          console.log("ldata.History = " + JSON.stringify(ldata.History));
 
-         // -- check for updated DQM summary
-         var newDQM = {
-             DQMOnline : {
+         // -- check for updated dq summary
+         var newdq = {
+             DataQuality : {
                  mu3e: "-2",
                  beam: "-2",
                  vertex: "-2",
+                 pixel: "-2",
                  fibres: "-2",
                  tiles: "-2", 
+                 calibration: "-2",
+                 goodLinks: "-2",
                  version: "unset-2"
              }
          };
 
-         var dqmChange = "";
-         var dqmChanged = 0; 
-         if (dqmOrigIdx > -1) {
-             dqmChange = "DQM status changes: "; 
+         var dqChange = "";
+         var dqChanged = 0; 
+         if (dqOrigIdx > -1) {
+             dqChange = "dq status changes: "; 
              for (const [key, value] of detMap) {
                  var status = "-3";
                  if (document.getElementById(value).indeterminate) {
@@ -390,14 +427,16 @@
                  } else {
                      status = "0";
                  }
-                 if (status != dqmOrig.get(key)) {
-                     dqmChange = dqmChange + key + ": " + status + " ";
-                     dqmChanged = 1; 
-                     newDQM.DQMOnline[key] = status;
+                 if (status != dqOrig.get(key)) {
+                     dqChange = dqChange + key + ": " + status + " ";
+                     dqChanged = 1; 
+                     newdq.DataQuality[key] = status;
                      console.log("key: " + key);
-                     console.log("changed " + lData.Attributes[dqmOrigIdx].DQMOnline[key]);
+                     console.log("dqOrigIdx: " + dqOrigIdx);
+                     console.log("attributes[dqOrigIdx]: " + JSON.stringify(lData.Attributes[dqOrigIdx]));
+                     console.log("changed " + lData.Attributes[dqOrigIdx].DataQuality[key]);
                  } else {
-                     newDQM.DQMOnline[key] = dqmOrig.get(key);
+                     newdq.DataQuality[key] = dqOrig.get(key);
                  }
              }
          }
@@ -415,13 +454,13 @@
          if (commentChange) {
              addComment.comment = "Comment changed. ";
          }
-         if (dqmChanged) {
-             addComment.comment = addComment.comment + dqmChange;
+         if (dqChanged) {
+             addComment.comment = addComment.comment + dqChange;
          }
          
 
-         if (dqmChanged > 0) { 
-             ldata.Attributes.push(newDQM);
+         if (dqChanged > 0) { 
+             ldata.Attributes.push(newdq);
          }
          ldata.History.push(addComment);
          
