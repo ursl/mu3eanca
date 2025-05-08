@@ -234,6 +234,22 @@ int main(int argc, char* argv[]) {
     collectionContents = buffer.str();
 
     if (dirName == "runrecords") {
+      // -- check whether EOR is present
+      size_t pos = collectionContents.find("EOR");
+      if (string::npos == pos) {
+        cout << "EOR not found in ->" << it << "<- ... skipping" << endl;
+        continue;
+      }
+      // -- count multiple EORs
+      size_t pos2 = collectionContents.find("EOR");
+      if (string::npos != pos2) {
+        size_t pos3 = collectionContents.find("EOR", pos2 + 1);
+        if (string::npos != pos3) {
+          cout << "multiple EORs found in ->" << it << "<- ... skipping" << endl;
+          continue;
+        }
+      }
+
       collectionContents = collectionContents.substr(0, collectionContents.size() - 3);
       collectionContents += ",\n";
     
