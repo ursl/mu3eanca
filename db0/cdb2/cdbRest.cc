@@ -146,7 +146,7 @@ runRecord cdbRest::getRunRecord(int irun) {
   fCurlReadBuffer.clear();
   doCurl("runrecords", to_string(irun), "findOne");
   stripOverhead();
-  cout << "irun = " << irun << " fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
+  //cout << "irun = " << irun << " fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
   if (fCurlReadBuffer == "Not found") {
     return rr;
   }
@@ -157,22 +157,7 @@ runRecord cdbRest::getRunRecord(int irun) {
     rr.fEORComments = sspl.str();
     return rr;
   }
-
-
-  rr.fBORRunNumber     = stoi(jsonGetValue(fCurlReadBuffer, "Run number"));
-  rr.fBORStartTime     = jsonGetString(fCurlReadBuffer, "Start time");
-  rr.fBORSubsystems    = stoi(jsonGetValue(fCurlReadBuffer, "Subsystems"));
-  rr.fBORBeam          = stof(jsonGetValue(fCurlReadBuffer, "Beam"));
-  rr.fBORShiftCrew     = jsonGetString(fCurlReadBuffer, "Shift crew");
-  
-  rr.fEORStopTime      = jsonGetString(fCurlReadBuffer, "Stop time");
-  rr.fEOREvents        = stoi(jsonGetValue(fCurlReadBuffer, "Events"));
-  rr.fEORFileSize      = stod(jsonGetValue(fCurlReadBuffer, "File size"));
-  rr.fEORDataSize      = stod(jsonGetValue(fCurlReadBuffer, "Uncompressed data size"));
-  rr.fEORComments      = jsonGetString(fCurlReadBuffer, "Comments");
-  
-  rr.fConfigurationKey = jsonGetString(fCurlReadBuffer, "Configuration key");
-  
+  rr.fillFromJson(fCurlReadBuffer);
   return rr;
 }
 
