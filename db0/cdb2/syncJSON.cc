@@ -45,12 +45,11 @@ int main(int argc, char* argv[]) {
       cout << "    tag: " << ittt.first << " iovs: ";
       for (auto itttt: ittt.second) {
         cout << itttt << " ";
-        payload pl = pDB->getPayload("tag_" + ittt.first + "_iov_" + to_string(itttt));
-        cout << "    hash: " << pl.fHash << endl;
-        cout << "    comment: " << pl.fComment << endl;
-        cout << "    schema: " << pl.fSchema << endl;
-        cout << "    date: " << pl.fDate << endl;
-        cout << "    blob: " << pl.fBLOB.size() << endl;
+        string payloadName = "tag_" + ittt.first + "_iov_" + to_string(itttt);
+        payload pl = pDB->getPayload(payloadName);
+        ofstream ofs("payloads/" + payloadName);
+        ofs << pl.json() << endl;
+        ofs.close();
       }
       cout << endl;
     }
