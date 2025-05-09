@@ -20,12 +20,13 @@ int main(int argc, char* argv[]) {
   string dirName("fixme"), dirPath("fixme"), pattern("unset"), urlString("localhost:5050/cdb/");
   bool all(false);
   bool onlyDelete(false); // ONLY delete, do not write new records
-  int maxRuns(10000), firstRunIdx(0);
+  int maxRuns(10000), firstRun(0), lastRun(-1);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "--all")) {all = true;}
     if (!strcmp(argv[i], "--dir")) {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "-dir"))  {dirPath = string(argv[++i]);}
-    if (!strcmp(argv[i], "-f"))    {firstRunIdx = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-f"))    {firstRun = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-l"))    {lastRun = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-m"))    {maxRuns = atoi(argv[++i]);}
 
     if (!strcmp(argv[i], "--url")) {urlString = string(argv[++i]);}
@@ -63,13 +64,11 @@ int main(int argc, char* argv[]) {
 
   vector<string> vRunNumbers = pDB->getAllRunNumbers();
   int cnt(0);
-  int startIdx(firstRunIdx);
   //  for (int it = startIdx; it < startIdx + maxRuns; ++it) {
   for (int it = 0; it < vRunNumbers.size(); ++it) {
-    cout << "run number: " << it << endl;
     int irun = stoi(vRunNumbers[it]);
-    if (irun > maxRuns) continue;
-    if (irun < 0) continue;
+    if (irun < firstRun) continue;
+    if (irun > lastRun) continue;
     
     runRecord rr = pDB->getRunRecord(irun);
     cout << rr.printString() << endl;
