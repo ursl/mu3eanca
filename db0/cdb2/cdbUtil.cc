@@ -269,16 +269,16 @@ string jsonGetString(const string& jstring, const vector<string>& keys) {
     cout << endl;
   }
   string::size_type s0(0);
+  string result("parseError");
   for (unsigned int i = 0; i < keys.size(); ++i) {
     string key = string("\"") + keys[i] + string("\"");
     s0 = jstring.find(key, s0);
-    if (string::npos == s0) break;
+    if (string::npos == s0) return result;
     s0 = jstring.find(":", s0+key.length());
   }
   s0 = jstring.find("\"", s0+1);
   string::size_type s1 = jstring.find("\"", s0+1);
   if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << endl;
-  string result("parseError");
   if (string::npos != s1) {
     result = jstring.substr(s0, s1-s0);
   }
@@ -300,18 +300,20 @@ string jsonGetValue(const string& jstring, const vector<string>& keys) {
     cout << endl;
   }
   string::size_type s0(0);
+  string result("parseError");
   for (unsigned int i = 0; i < keys.size(); ++i) {
     string key = string("\"") + keys[i] + string("\"");
     s0 = jstring.find(key, s0);
-    if (string::npos == s0) break;
+    if (string::npos == s0) return result;
   }
+  if (DBX) cout << "s0: " << s0 << endl;
   s0 = jstring.find(":", s0+1);
   ++s0;
   string::size_type s1 = jstring.find(",", s0);
   string::size_type s2 = jstring.find("}", s0);
   if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << " s2: " << s2 << endl;
-  string result("parseError");
   if ((string::npos != s1) && (s1 < s2)) {
+    if (DBX) cout << "found looking at ->" << jstring << "<-" << endl;
     result = jstring.substr(s0, s1-s0);
   } else {
     result = jstring.substr(s0, s2-s0);
