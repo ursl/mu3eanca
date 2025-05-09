@@ -1,7 +1,7 @@
 {
     "DataQuality": {
-        "mu3e": "1",
-        "beam": "1",
+        "mu3e": "-1",
+        "beam": "-1",
         "vertex": "-1",
         "pixel": "-1",
         "fibres": "-1",
