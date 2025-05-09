@@ -10,7 +10,10 @@ public:
   std::string printString();
   std::string json() const;
   void fillFromJson(const std::string &jsonString);
+  void corrupted(std::string );
   
+  bool              fBOREORValid, fDataQualityValid, fRunInfoValid;
+
   long unsigned int fBORRunNumber;
   std::string       fBORStartTime;
   int               fBORSubsystems;
@@ -24,6 +27,16 @@ public:
   std::string       fEORComments;
   
   std::string       fConfigurationKey;
+
+  int               fDQMu3e;
+  int               fDQBeam;
+  int               fDQVertex;
+  int               fDQPixel;
+  int               fDQTiles;
+  int               fDQFibres;
+  int               fDQCalibration;
+  int               fDQGoodLinks;
+  std::string       fDQVersion;
 
   std::string       fRIClass;
   std::string       fRIJunk;
