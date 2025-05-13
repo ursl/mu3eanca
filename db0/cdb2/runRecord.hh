@@ -39,7 +39,7 @@ public:
   std::string       fDQVersion;
 
   std::string       fRIClass;
-  std::string       fRIJunk;
+  std::string       fRISignificant;
   std::string       fRIComments;
   std::string       fRIComponents;
   std::string       fRIComponentsOut;

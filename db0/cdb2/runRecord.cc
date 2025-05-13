@@ -33,7 +33,7 @@ runRecord::runRecord() :
   fDQGoodLinks(-1),
   fDQVersion("unset"),
   fRIClass("unset"),
-  fRIJunk("unset"),
+  fRISignificant("unset"),
   fRIComments("unset"),
   fRIComponents("unset"),
   fRIComponentsOut("unset"),
@@ -82,7 +82,7 @@ string runRecord::printString() {
        << " DQ: " << fDataQualityValid
        << " runInfo: " << fRunInfoValid;
   if (fDataQualityValid) sstr << " class: " << fRIClass;
-  if (fRunInfoValid) sstr << " junk: " << fRIJunk;
+  if (fRunInfoValid) sstr << " significant: " << fRISignificant;
   return sstr.str();
 }
 
@@ -262,7 +262,7 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
     fRIFibGitRevision = jsonGetString(curlReadBuffer, "FibGitRevision");
 
     fRIClass = jsonGetString(curlReadBuffer, "Class");
-    fRIJunk = jsonGetString(curlReadBuffer, "Junk");
+    fRISignificant = jsonGetString(curlReadBuffer, "Significant");
     fRIComments = jsonGetString(curlReadBuffer, vector<string>{"RunInfo", "Comments"});
   }
 }

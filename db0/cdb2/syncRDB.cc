@@ -28,6 +28,7 @@ using namespace std;
 // --          1: parse shift comments and set runInfo fields "class" and "junk"
 // -- History:
 // --   2025/05/08: first shot
+// --   2025/05/12: replace junk with significant
 // ------------------------------------------------------------------------
 
 void rdbMode1(runRecord &, bool);
@@ -129,7 +130,7 @@ void rdbMode0(runRecord &rr, bool debug) {
 // ----------------------------------------------------------------------
 // -- set the following flags by parsing the shift comments
 // -- RunInfo class: source/cosmic/daq
-// -- RunInfo junk:  bad
+// -- RunInfo significant:  bad
 void rdbMode1(runRecord &rr, bool debug) {
 
   vector<string> newRunInfo = runInfoTemplateFileLines;
@@ -138,44 +139,39 @@ void rdbMode1(runRecord &rr, bool debug) {
   transform(xstring.begin(), xstring.end(), xstring.begin(), [](unsigned char c) { return tolower(c); });
 
   string classFromComments = "not found";
-  string junkFromComments = "not found";
+  string significantFromComments = "not found";
 
   cout << "run number: " << rr.fBORRunNumber << ": ";
 
   // -- check for junk indicators stored in vector
-  vector<string> vClassIndicators = {"beam", "source", "cosmics", "daq", "calibration", "tuning"};
+  vector<string> vClassIndicators = {"beam", "source", "cosmics", "good", "ana"};
   for (const auto &indicator : vClassIndicators) {
     if (xstring.find(indicator) != string::npos) {
      cout << " found class indicator: " << indicator;
       classFromComments = indicator;
-      if (indicator == "daq") {
-        junkFromComments = "true";
-      } else if (indicator == "calibration") {
-        junkFromComments = "true";
-      } else if (indicator == "tuning") {
-        junkFromComments = "true";
-      }
+      significantFromComments = "true";
       break;
     }
   }
 
   // -- check for junk indicators stored in vector
-  if (junkFromComments == "not found") {
-    vector<string> vJunkIndicators = {"bad", "error", "problem", "dbx", "fail", "debug", "test", "dummy"};
+  if (significantFromComments == "not found") {
+    vector<string> vJunkIndicators = {"bad", "unstable", "error", "problem", "dbx", "fail", "debug", "test", "dummy", "tune", 
+                                      "calib"};
     for (const auto &indicator : vJunkIndicators) {
       if (xstring.find(indicator) != string::npos) {
       cout << " and junk indicator: " << indicator;
-        junkFromComments = "true";
+        significantFromComments = "false";
         break;
       }
     }
   } else {
-    cout << " and junk indicator: " << junkFromComments;
+    cout << " and junk indicator: " << significantFromComments;
   }
   cout << endl;
 
-  if (junkFromComments == "not found") {
-    junkFromComments = "false";
+  if (significantFromComments == "not found") {
+    significantFromComments = "false";
   }
 
   for (auto &it: newRunInfo) {
@@ -189,11 +185,11 @@ void rdbMode1(runRecord &rr, bool debug) {
       }
     }
     // -- replace Junk value
-    if (it.find("Junk") != string::npos) {
+    if (it.find("Significant") != string::npos) {
       size_t pos =  it.rfind(":");
       if (string::npos != pos) {
         stringstream ss;
-        ss << " \"" << junkFromComments << "\",";
+        ss << " \"" << significantFromComments << "\",";
         it.replace(pos + 1, string::npos, ss.str());
       }
     }
