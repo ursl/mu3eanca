@@ -22,7 +22,7 @@ using namespace std;
 // -- produce updates to either DataQuality or RunInfo attributes of run records in RDB
 // -- updates a mongoDB server, does not run on the JSON backend server
 // --
-// -- Usage: bin/syncRunDB -m mode -f firstRun -l lastRun [-t ../../db1/rest/runInfoTemplate.json] [-u localhost:5050/rdb/addAttribute/]
+// -- Usage: bin/syncRDB -m mode -f firstRun -l lastRun [-t ../../db1/rest/runInfoTemplate.json] [-u localhost:5050/rdb/addAttribute/]
 // --
 // -- -m mode: 0: upload template (magic words: dqTemplate.json or runInfoTemplate.json) to run records
 // --          1: parse shift comments and set runInfo fields "class" and "junk"
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-l"))   {lastRun = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-m"))    {mode    = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-t"))    {runInfoTemplateFile = string(argv[++i]);}
-    if (!strcmp(argv[i], "-u"))    {urlString = string(argv[++i]);}
+    if (!strcmp(argv[i], "-u"))    {rdbUpdateString = string(argv[++i]);}
   }
 
   // -- read in template
@@ -75,6 +75,7 @@ int main(int argc, char* argv[]) {
 
   vector<string> vRunNumbers = pDB->getAllRunNumbers();
   for (int it = 0; it < vRunNumbers.size(); ++it) {
+    cout << "run number: " << vRunNumbers[it] << endl;
     int irun = stoi(vRunNumbers[it]);
     if (irun < firstRun) continue;
     if ((lastRun > 0) && (irun > lastRun)) continue;
@@ -154,19 +155,15 @@ void rdbMode1(runRecord &rr, bool debug) {
     }
   }
 
-  // -- check for junk indicators stored in vector
-  if (significantFromComments == "not found") {
-    vector<string> vJunkIndicators = {"bad", "unstable", "error", "problem", "dbx", "fail", "debug", "test", "dummy", "tune", 
-                                      "calib"};
-    for (const auto &indicator : vJunkIndicators) {
-      if (xstring.find(indicator) != string::npos) {
-      cout << " and junk indicator: " << indicator;
-        significantFromComments = "false";
-        break;
-      }
+  // -- modify significantFromComments for special tags
+  vector<string> vJunkIndicators = {"bad", "unstable", "error", "problem", "dbx", "fail", "debug", "test", "dummy", "tune", 
+                                    "calib"};
+  for (const auto &indicator : vJunkIndicators) {
+    if (xstring.find(indicator) != string::npos) {
+      cout << ", overriding junk significant indicator: " << indicator;
+      significantFromComments = "false";
+      break;
     }
-  } else {
-    cout << " and junk indicator: " << significantFromComments;
   }
   cout << endl;
 
