@@ -112,7 +112,11 @@ router.get("/", async (req, res) => {
         return;
     } else if (minrun > -1) {
         if (maxrun > 0) {
-            query = {"BOR.Run number": {$gte: minrun, $lte: maxrun}};
+            if (onlySignificant === "yes") {    
+                query = {"Attributes.RunInfo.Significant": "true", "BOR.Run number": {$gte: minrun, $lte: maxrun}};
+            } else {
+                query = {"BOR.Run number": {$gte: minrun, $lte: maxrun}};
+            }
             console.log("query: " + JSON.stringify(query));
             const result = await collection.find(query).toArray();
             //console.log("result: " + JSON.stringify(result));
@@ -120,7 +124,11 @@ router.get("/", async (req, res) => {
             console.log("2");
             return;
         } else {
-            query = {"BOR.Run number": {$gte: minrun} };
+            if (onlySignificant === "yes") {    
+                query = {"Attributes.RunInfo.Significant": "true", "BOR.Run number": {$gte: minrun} };
+            } else {
+                query = {"BOR.Run number": {$gte: minrun} };
+            }
             console.log("query: " + JSON.stringify(query));
             const result = await collection.find(query).toArray();
             //console.log("result: " + JSON.stringify(result));
@@ -129,7 +137,11 @@ router.get("/", async (req, res) => {
             return;
         }
     } else if (maxrun > -1) {
-        query = {"BOR.Run number": {$lte: maxrun}};
+        if (onlySignificant === "yes") {    
+            query = {"Attributes.RunInfo.Significant": "true", "BOR.Run number": {$lte: maxrun}};
+        } else {
+            query = {"BOR.Run number": {$lte: maxrun}};
+        }
         console.log("query: " + JSON.stringify(query));
         const result = await collection.find(query).toArray();
         //console.log("result: " + JSON.stringify(result));
@@ -137,7 +149,11 @@ router.get("/", async (req, res) => {
         console.log("4");
         return;
     } else if (starttime !== undefined) {
-        query = {"BOR.Start time": {$regex: starttime}};
+        if (onlySignificant === "yes") {    
+            query = {"Attributes.RunInfo.Significant": "true", "BOR.Start time": {$regex: starttime}};
+        } else {
+            query = {"BOR.Start time": {$regex: starttime}};
+        }
         console.log("query: " + JSON.stringify(query));
         const result = await collection.find(query).toArray();
         //console.log("result: " + JSON.stringify(result));
@@ -145,7 +161,11 @@ router.get("/", async (req, res) => {
         console.log("5");
         return;
     } else if (stoptime !== undefined) {
-        query = {"BOR.Stop time": {$regex: stoptime}};
+        if (onlySignificant === "yes") {    
+            query = {"Attributes.RunInfo.Significant": "true", "BOR.Stop time": {$regex: stoptime}};
+        } else {
+            query = {"BOR.Stop time": {$regex: stoptime}};
+        }
         console.log("query: " + JSON.stringify(query));
         const result = await collection.find(query).toArray();
         //console.log("result: " + JSON.stringify(result));
@@ -153,7 +173,11 @@ router.get("/", async (req, res) => {
         console.log("6");
         return;
     } else if ((starttime !== undefined) && (stoptime !== undefined)) {
-        query = [{"BOR.Start time": {$regex: starttime}}, {"BOR.Stop time": {$regex: stoptime}}];
+        if (onlySignificant === "yes") {    
+            query = [{"Attributes.RunInfo.Significant": "true", "BOR.Start time": {$regex: starttime}}, {"Attributes.RunInfo.Significant": "true", "BOR.Stop time": {$regex: stoptime}}];
+        } else {
+            query = [{"BOR.Start time": {$regex: starttime}}, {"BOR.Stop time": {$regex: stoptime}}];
+        }
         console.log("query: " + JSON.stringify(query));
         const result = await collection.find(query).toArray();
         //console.log("result: " + JSON.stringify(result));
