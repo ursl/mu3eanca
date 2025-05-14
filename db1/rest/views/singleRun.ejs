@@ -62,6 +62,20 @@
              color: white;
          }
 
+         .status-significant {
+             color: #2e7d32;
+             font-weight: bold;
+         }
+
+         .status-not-significant {
+             color: #c62828;
+             font-weight: bold;
+         }
+
+         .status-unset {
+             color: #757575;
+             font-style: italic;
+         }
 
          #histcomments {
              font-family: Arial, Helvetica, sans-serif;
@@ -99,10 +113,6 @@
             <input id="btnBack" type="button" class="button" value="Back" onclick=setBack() />
             <input id="btnEdit" type="button" class="button" color="blue" value="Edit" onclick=setEdit() />
             <input id="btnSubm" type="button" class="button" value="Save" style="float: right; background-color:#93c572" onclick=updateRun() />
-        </div>
-
-        <div>
-            <span id="riClass"></span>
         </div>
 
         <table id="runs">
@@ -168,15 +178,30 @@
                 <% if (data.hasOwnProperty('Attributes') && Array.isArray(data.Attributes) && data.Attributes.some(attr => attr.hasOwnProperty('RunInfo'))) { %>
                    <tr>
                         <td> RunInfo class </td>
-                        <td id="riClassCell"> <%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Class %> </td>
+                        <td> <textarea id="riClass" disabled="true"><%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Class %></textarea> </td>
                     </tr>
                     <tr>
                         <td> RunInfo comments </td>
-                        <td id="riCommentsCell"> <textarea disabled="true"><%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Comments %></textarea><br>
+                        <td> <textarea id="riComments" disabled="true"><%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Comments %></textarea> </td>
                     </tr>
                     <tr>
                         <td> RunInfo significant </td>
-                        <td id="riSignificantCell"> <%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant %> </td>
+                        <td id="riSignificantCell"> 
+                            <span id="riSignificantStatus" class="status-unset">
+                                <% if (data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant === "true") { %>
+                                    <span class="status-significant">✓</span>
+                                <% } else if (data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant === "false") { %>
+                                    <span class="status-not-significant">✗</span>
+                                <% } else { %>
+                                    <span class="status-unset">n/a</span>
+                                <% } %>
+                            </span>
+                            <select id="riSignificant" disabled="true">
+                                <option value="true" <%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant === "true" ? "selected" : "" %>>Yes</option>
+                                <option value="false" <%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant === "false" ? "selected" : "" %>>No</option>
+                                <option value="unset" <%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant !== "true" && data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant !== "false" ? "selected" : "" %>>Unset</option>
+                            </select>
+                        </td>
                     </tr>
                 <% } %>
             <% } %>    
@@ -296,13 +321,16 @@
          var onlineruninfo = lData.Attributes[riIdx].RunInfo;
          console.log("onlineruninfo: " + JSON.stringify(onlineruninfo));
          if (onlineruninfo.hasOwnProperty('Class')) {
-             document.getElementById('riClassCell').textContent = onlineruninfo.Class;
+             const riClass = document.getElementById('riClass');
+             if (riClass) riClass.value = onlineruninfo.Class;
          }
          if (onlineruninfo.hasOwnProperty('Significant')) {
-             document.getElementById('riSignificantCell').textContent = onlineruninfo.Significant;
+             const riSignificant = document.getElementById('riSignificant');
+             if (riSignificant) riSignificant.value = onlineruninfo.Significant;
          }
          if (onlineruninfo.hasOwnProperty('Comments')) {
-             document.getElementById('riCommentsCell').textContent = onlineruninfo.Comments;
+             const riComments = document.getElementById('riComments');
+             if (riComments) riComments.value = onlineruninfo.Comments;
          }
     }
     
@@ -376,15 +404,35 @@
      function setEdit() {
          console.log("HALLO setEdit");
          if (doEdit < 1) {
+             // Enable all textareas
              const commentsElement = document.getElementById('comments');
+             console.log("comments element:", commentsElement);
              if (commentsElement) {
                  commentsElement.disabled = false;
              }
+             const riClass = document.getElementById('riClass');
+             console.log("riClass element:", riClass);
+             if (riClass) {
+                 riClass.disabled = false;
+             }
+             const riComments = document.getElementById('riComments');
+             console.log("riComments element:", riComments);
+             if (riComments) {
+                 riComments.disabled = false;
+             }
+             const riSignificant = document.getElementById('riSignificant');
+             console.log("riSignificant element:", riSignificant);
+             if (riSignificant) {
+                 riSignificant.disabled = false;
+             }
+
+             // Update Save button color
              const submitButton = document.getElementById('btnSubm');
              if (submitButton) {
                  submitButton.style = "float: right; background-color:#00703c";
              }
              
+             // Enable Data Quality checkboxes if they exist
              if (hasAttributes) {
                  for (const [key, value] of detMap) {
                      const element = document.getElementById(value);
@@ -393,27 +441,59 @@
                          element.disabled = false;
                      }
                  }
-
-                 for (const [key, value] of dqOrig) {
-                     console.log("original key: " + key + " : " + value);
-                 }
              }
              
              doEdit = 1; 
          } 
      }
 
+     // Add event listener for the Edit button
+     document.getElementById('btnEdit').addEventListener('click', function() {
+         console.log("Edit button clicked");
+         setEdit();
+     });
+
+     // Add event listener for the Save button
+     document.getElementById('btnSubm').addEventListener('click', function() {
+         console.log("Save button clicked");
+         updateRun();
+     });
+
+     // Add event listeners for textarea changes
+     document.querySelectorAll('textarea').forEach(textarea => {
+         textarea.addEventListener('change', function() {
+             console.log("Textarea changed:", this.id);
+             commentChange = 1;
+         });
+     });
+
      function unsetEdit() {
          if (doEdit > 0) {
+             // Disable all textareas
              const commentsElement = document.getElementById('comments');
              if (commentsElement) {
                  commentsElement.disabled = true;
              }
+             const riClass = document.getElementById('riClass');
+             if (riClass) {
+                 riClass.disabled = true;
+             }
+             const riComments = document.getElementById('riComments');
+             if (riComments) {
+                 riComments.disabled = true;
+             }
+             const riSignificant = document.getElementById('riSignificant');
+             if (riSignificant) {
+                 riSignificant.disabled = true;
+             }
+
+             // Update Save button color
              const submitButton = document.getElementById('btnSubm');
              if (submitButton) {
                  submitButton.style = "float: right; background-color:#93c572";
              }
              
+             // Disable Data Quality checkboxes if they exist
              if (hasAttributes) {
                  for (const [key, value] of detMap) {
                      const element = document.getElementById(value);
@@ -421,10 +501,6 @@
                          console.log("key: " + key + " unsetting disabled: " + value);
                          element.disabled = true;
                      }
-                 }
-                 
-                 for (const [key, value] of dqOrig) {
-                     console.log("original key: " + key + " : " + value);
                  }
              }
              
@@ -444,6 +520,89 @@
          // -- update the modified comment
          ldata.EOR["Comments"] = document.getElementById('comments').value;
          console.log("ldata.History = " + JSON.stringify(ldata.History));
+
+         // -- update RunInfo fields if they exist
+         var riChanged = 0;
+         var lastRunInfoIndex = -1;
+         if (hasAttributes) {
+             const riClass = document.getElementById('riClass');
+             const riComments = document.getElementById('riComments');
+             const riSignificant = document.getElementById('riSignificant');
+             
+             if (riClass && riComments && riSignificant) {
+                 // Find the last RunInfo entry
+                 lastRunInfoIndex = ldata.Attributes.findIndex(attr => attr.hasOwnProperty('RunInfo'));
+                 if (lastRunInfoIndex !== -1) {
+                     if (ldata.Attributes[lastRunInfoIndex].RunInfo.Class !== riClass.value) {
+                         riChanged = 1;
+                     }
+                     if (ldata.Attributes[lastRunInfoIndex].RunInfo.Comments !== riComments.value) {
+                         ldata.Attributes[lastRunInfoIndex].RunInfo.Comments = riComments.value;
+                         riChanged = 1;
+                     }
+                     if (ldata.Attributes[lastRunInfoIndex].RunInfo.Significant !== riSignificant.value) {
+                         ldata.Attributes[lastRunInfoIndex].RunInfo.Significant = riSignificant.value;
+                         riChanged = 1;
+                     }
+                 }
+             }
+         }
+
+         // Update the status symbol when Significant changes
+         const riSignificant = document.getElementById('riSignificant');
+         const riSignificantStatus = document.getElementById('riSignificantStatus');
+         if (riSignificant && riSignificantStatus) {
+             riSignificant.addEventListener('change', function() {
+                 const statusSpan = riSignificantStatus.querySelector('span');
+                 if (statusSpan) {
+                     if (this.value === "true") {
+                         statusSpan.className = "status-significant";
+                         statusSpan.textContent = "✓";
+                     } else if (this.value === "false") {
+                         statusSpan.className = "status-not-significant";
+                         statusSpan.textContent = "✗";
+                     } else {
+                         statusSpan.className = "status-unset";
+                         statusSpan.textContent = "n/a";
+                     }
+                 }
+             });
+         }
+
+         var newri = {
+            RunInfo : {
+                Class: "",
+                Comments: "",
+                Significant: "",
+                Components: "unset", 
+                ComponentsOut: "unset", 
+                MidasVersion: "unset", 
+                MidasGitRevision: "unset",
+                DAQVersion: "unset", 
+                DAQGitRevision: "unset", 
+                VtxVersion: "unset", 
+                VtxGitRevision: "unset", 
+                PixVersion: "unset", 
+                PixGitRevision: "unset", 
+                TilVersion: "unset", 
+                TilGitRevision: "unset", 
+                FibVersion: "unset", 
+                FibGitRevision: "unset", 
+                Version: "unset"
+            }
+         }
+         console.log("riChanged: " + riChanged + " lastRunInfoIndex: " + lastRunInfoIndex);
+         if (riChanged > 0 && lastRunInfoIndex > -1) {
+             // Copy all existing RunInfo fields
+             newri.RunInfo = {...ldata.Attributes[lastRunInfoIndex].RunInfo};
+             
+             // Update only the changed fields
+             newri.RunInfo.Class = riClass.value;
+             newri.RunInfo.Comments = riComments.value;
+             newri.RunInfo.Significant = riSignificant.value;
+     
+             console.log("newri: " + JSON.stringify(newri));
+         } 
 
          // -- check for updated dq summary
          var newdq = {
@@ -506,10 +665,19 @@
          if (dqChanged) {
              addComment.comment = addComment.comment + dqChange;
          }
-         
+         if (riChanged) {
+             addComment.comment = addComment.comment + "RunInfo changed. ";
+         }
 
          if (dqChanged > 0) { 
+            console.log("pushing to ldata newdq: " + JSON.stringify(newdq));
              ldata.Attributes.push(newdq);
+         }
+
+         console.log("2nd riChanged: " + riChanged);
+         if (riChanged > 0) {
+             console.log("pushing to ldata newri: " + JSON.stringify(newri));
+             ldata.Attributes.push(newri);
          }
          ldata.History.push(addComment);
          
@@ -536,10 +704,6 @@
              alert('Error saving changes: ' + error.message);
          });
      }
-
-     document.querySelector('textarea').addEventListener('change', function (event) {
-         commentChange = 1; 
-     });
     </script>
 
     

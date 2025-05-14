@@ -254,7 +254,7 @@ function significantFilter() {
     <th>Class</th>
     <th>Events</th>
     <th>Shift crew</th>
-    <th>Comments</th>
+    <th>Shift Comments/RunInfo Comments</th>
     </tr>
     </thead>
 
@@ -278,17 +278,23 @@ function significantFilter() {
                     <% } %>
                 </td>
                 <td><%= lastRunInfo.RunInfo.Class || 'n/a' %></td>
+                <td><%= result.EOR["Events"] %></td>
+                <td><%= result.BOR["Shift crew"] %></td>
+                <td><%= result.EOR["Comments"] %>/<%= lastRunInfo.RunInfo.Comments %></td>
             <% } else { %>
                 <td><span class="status-unset">N/A</span></td>
                 <td>n/a</td>
+                <td><%= result.EOR["Events"] %></td>
+                <td><%= result.BOR["Shift crew"] %></td>
+                <td><%= result.EOR["Comments"] %></td>
             <% } %>
         <% } else { %>
             <td>-</td>
             <td>n/a</td>
+            <td><%= result.EOR["Events"] %></td>
+            <td><%= result.BOR["Shift crew"] %></td>
+            <td><%= result.EOR["Comments"] %></td>
         <% } %>
-        <td><%= result.EOR["Events"] %></td>
-        <td><%= result.BOR["Shift crew"] %></td>
-        <td><%= result.EOR["Comments"] %></td>
         </tr>
     <% }) %>
 
