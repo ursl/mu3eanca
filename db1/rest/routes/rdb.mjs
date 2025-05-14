@@ -56,14 +56,17 @@ router.put("/runrecords", async (req, res) => {
 // -- index page (with possible filters)
 router.get("/", async (req, res) => {
     let collection = await db.collection("runrecords");
+    let MAXRUNS = 1000;
 
+    console.log("----------------------------------------------------");
+    console.log("req.query: " + JSON.stringify(req.query));
+    console.log("serving from RDB / " + req.params.id);
     // -- number of runs to show
     let nruns = -1;
     if (req.query.nRun) {
         nruns = Number(req.query.nRun);
-    } else {
-        nruns = 1000;
-    }
+    } 
+
     console.log("nruns = " + nruns);
 
     // -- run range to show
@@ -73,6 +76,13 @@ router.get("/", async (req, res) => {
     let maxrun = -1;
     maxrun = Number(req.query.maxRun);
     console.log("maxrun = " + maxrun);
+
+    // -- significant runs filtering
+    let onlySignificant = "unset";
+    onlySignificant = req.query.onlySignificant;
+    console.log("HalloHallo>  onlySignificant = " + onlySignificant);
+    let querySignificant  = [{"Attributes.RunInfo.Significant": "true"}];
+
 
     // -- time filtering attempts
     let starttime = "unset";
@@ -88,58 +98,84 @@ router.get("/", async (req, res) => {
     };
     let query = { };
     if (nruns > 0) {
+        //query = querySignificant;
+        if (onlySignificant !== undefined) {
+            if (onlySignificant === "yes") {    
+                query = {"Attributes.RunInfo.Significant": "true"};
+            } else {
+                query = {};
+            }
+        }         
         const result = await collection.find(query, options).limit(nruns).toArray();
         res.render('index', {'data': result});
+        console.log("1");
         return;
     } else if (minrun > -1) {
         if (maxrun > 0) {
             query = {"BOR.Run number": {$gte: minrun, $lte: maxrun}};
             console.log("query: " + JSON.stringify(query));
             const result = await collection.find(query).toArray();
-            console.log("result: " + JSON.stringify(result));
+            //console.log("result: " + JSON.stringify(result));
             res.render('index', {'data': result});
+            console.log("2");
             return;
         } else {
             query = {"BOR.Run number": {$gte: minrun} };
             console.log("query: " + JSON.stringify(query));
             const result = await collection.find(query).toArray();
-            console.log("result: " + JSON.stringify(result));
+            //console.log("result: " + JSON.stringify(result));
             res.render('index', {'data': result});
+            console.log("3");
             return;
         }
     } else if (maxrun > -1) {
         query = {"BOR.Run number": {$lte: maxrun}};
         console.log("query: " + JSON.stringify(query));
         const result = await collection.find(query).toArray();
-        console.log("result: " + JSON.stringify(result));
+        //console.log("result: " + JSON.stringify(result));
         res.render('index', {'data': result});
+        console.log("4");
         return;
     } else if (starttime !== undefined) {
         query = {"BOR.Start time": {$regex: starttime}};
         console.log("query: " + JSON.stringify(query));
         const result = await collection.find(query).toArray();
-        console.log("result: " + JSON.stringify(result));
+        //console.log("result: " + JSON.stringify(result));
         res.render('index', {'data': result});
+        console.log("5");
         return;
     } else if (stoptime !== undefined) {
         query = {"BOR.Stop time": {$regex: stoptime}};
         console.log("query: " + JSON.stringify(query));
         const result = await collection.find(query).toArray();
-        console.log("result: " + JSON.stringify(result));
+        //console.log("result: " + JSON.stringify(result));
         res.render('index', {'data': result});
+        console.log("6");
         return;
     } else if ((starttime !== undefined) && (stoptime !== undefined)) {
         query = [{"BOR.Start time": {$regex: starttime}}, {"BOR.Stop time": {$regex: stoptime}}];
         console.log("query: " + JSON.stringify(query));
         const result = await collection.find(query).toArray();
-        console.log("result: " + JSON.stringify(result));
+        //console.log("result: " + JSON.stringify(result));
         res.render('index', {'data': result});
+        console.log("7");
         return;
-   }
+   } else if (onlySignificant !== undefined) {
+        query = [{"Attributes.RunInfo.Significant": "true"}];
+        console.log("query: " + JSON.stringify(query));
+        console.log("8a");
+        const result = await collection.find(query).toArray();
+        console.log("result: " + JSON.stringify(result));
+        res.render('index', {'data': result, 'onlySignificant': onlySignificant});
+        console.log("8");
+        return;
+   
+    }
 
-    const result = await collection.find(query, options).limit(15).toArray();
-    //    console.log("default result: " + JSON.stringify(result));
-    res.render('index', {'data': result});
+    // Default query - show significant runs by default
+    query = {"Attributes.RunInfo.Significant": "true"};
+    const result = await collection.find(query, options).limit(MAXRUNS).toArray();
+    res.render('index', {'data': result, 'onlySignificant': 'yes'});
 
 });
 
