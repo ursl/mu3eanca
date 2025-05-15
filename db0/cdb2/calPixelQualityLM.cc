@@ -145,7 +145,7 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
     unsigned int linkB = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkC = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkM = blob2UnsignedInt(getData(ibuffer));
-    cout << "   chipID: " << Form("%5d", chipID);
+    cout << "   chipID: " << chipID;
     cout << " link status A/B/C/M: " << linkA  << "/" << linkB << "/" << linkC  << "/" << linkM << endl;
     // -- get number of column entries
     int ncol = blob2Int(getData(ibuffer));
