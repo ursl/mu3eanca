@@ -22,6 +22,8 @@ public:
   std::vector<std::string>                 readTags(std::string gt) override;
   std::map<std::string, std::vector<int> > readIOVs(std::vector<std::string> tags) override;
 
+  std::vector<std::string>                 getAllRunNumbers();
+
 protected:
   std::vector<std::string> allFiles(std::string dirName);
 

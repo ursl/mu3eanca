@@ -135,10 +135,9 @@ runRecord cdbJSON::getRunRecord(int irun) {
   ifstream INS;
   //  string filename = fURI + "/runrecords/" + to_string(irun);
   std::ostringstream oss;
-  oss << "runlog_" << std::setfill('0') << std::setw(6) << irun << ".json";
+  oss << "runRecord_" << irun << ".json";
   string filename = fURI + "/runrecords/" + oss.str();
-  
-  
+    
   INS.open(filename);
   if (INS.fail()) {
     cout << "Error failed to open ->" << filename << "<-" << endl;
@@ -151,23 +150,25 @@ runRecord cdbJSON::getRunRecord(int irun) {
   
   cout << "cdbJSON::getRunRecord() Read " << filename << endl;
   string jstring = buffer.str();
-  rr.fBORRunNumber     = stoi(jsonGetValue(jstring, "Run number"));
-  rr.fBORStartTime     = jsonGetString(jstring, "Start time");
-  rr.fBORSubsystems    = stoi(jsonGetValue(jstring, "Subsystems"));
-  rr.fBORBeam          = stof(jsonGetValue(jstring, "Beam"));
-  rr.fBORShiftCrew     = jsonGetString(jstring, "Shift crew");
-  
-  rr.fEORStopTime      = jsonGetString(jstring, "Stop time");
-  rr.fEOREvents        = stoi(jsonGetValue(jstring, "Events"));
-  rr.fEORFileSize      = stod(jsonGetValue(jstring, "File size"));
-  rr.fEORDataSize      = stod(jsonGetValue(jstring, "Uncompressed data size"));
-  rr.fEORComments      = jsonGetString(jstring, "Comments");
-  
-  rr.fConfigurationKey = jsonGetString(jstring, "Configuration key");
-  
+  rr.fillFromJson(jstring);
+
   return rr;
 }
 
+
+// ----------------------------------------------------------------------
+vector<string> cdbJSON::getAllRunNumbers() {
+  vector<string> v;
+  // -- read run numbers from fURI
+  string dir = fURI + "/runrecords/";
+  vector<string> vfiles = allFiles(dir);
+  for (auto it: vfiles) {
+    string::size_type pos = it.rfind("/");
+    string file = it.substr(pos+1);
+    v.push_back(file);
+  }
+  return v;
+}
 
 // ----------------------------------------------------------------------
 cfgPayload cdbJSON::getConfig(string hash) {
