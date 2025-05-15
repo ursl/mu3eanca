@@ -2,17 +2,34 @@
 #define RUNRECORD_h
 
 #include <string>
+#include <vector>
+#include "DataQuality.hh"
+#include "RunInfo.hh"
 
 class runRecord {
 public:
   runRecord();
+  ~runRecord();
+
+  // -- query functions
+  bool isSignificant() const;
+  std::string getRunInfoClass() const;
+  std::string getRunInfoComments() const;
+
+  // -- print the run record to cout using printSummary()
   void print();
-  std::string printString();
+  // -- return a string with a summary of the run record
+  std::string printSummary() const;
+  // -- return a json string with raw JSON string from which the class was instantiated
   std::string json() const;
+  // -- return a json string with interpreted values
+  std::string jsonInterpreted() const;
   void fillFromJson(const std::string &jsonString);
   void corrupted(std::string );
   
-  bool              fBOREORValid, fDataQualityValid, fRunInfoValid;
+  bool              fBOREORValid; 
+  // -- index to last (most uptodate) instance
+  int               fDataQualityIdx, fRunInfoIdx;
 
   long unsigned int fBORRunNumber;
   std::string       fBORStartTime;
@@ -28,34 +45,11 @@ public:
   
   std::string       fConfigurationKey;
 
-  int               fDQMu3e;
-  int               fDQBeam;
-  int               fDQVertex;
-  int               fDQPixel;
-  int               fDQTiles;
-  int               fDQFibres;
-  int               fDQCalibration;
-  int               fDQGoodLinks;
-  std::string       fDQVersion;
+  std::vector<DataQuality>       fDQ;
+  std::vector<RunInfo>           fRI;
 
-  std::string       fRIClass;
-  std::string       fRISignificant;
-  std::string       fRIComments;
-  std::string       fRIComponents;
-  std::string       fRIComponentsOut;
-  std::string       fRIMidasVersion;
-  std::string       fRIMidasGitRevision;
-  std::string       fRIDAQVersion;
-  std::string       fRIDAQGitRevision;
-  std::string       fRIVtxVersion;
-  std::string       fRIVtxGitRevision; 
-  std::string       fRIPixVersion;
-  std::string       fRIPixGitRevision;
-  std::string       fRITilVersion;
-  std::string       fRITilGitRevision;
-  std::string       fRIFibVersion;
-  std::string       fRIFibGitRevision;
-  std::string       fRIVersion;  
+  std::string       fJSONString;
+private:
 };
 
 #endif

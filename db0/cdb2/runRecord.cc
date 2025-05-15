@@ -10,68 +10,58 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 runRecord::runRecord() :
-  fDataQualityValid(false), 
-  fRunInfoValid(false),
-  fBORRunNumber(0),
-  fBORStartTime("unset"),
-  fBORSubsystems(-9999),
-  fBORBeam(-9999.9),
-  fBORShiftCrew("unset"),
-  fEORStopTime("unset"),
-  fEOREvents(0),
-  fEORFileSize(0),
-  fEORDataSize(0),
-  fEORComments("unset"),
-  fConfigurationKey("unset"), 
-  fDQMu3e(-1),
-  fDQBeam(-1),
-  fDQVertex(-1),
-  fDQPixel(-1),
-  fDQTiles(-1),
-  fDQFibres(-1),
-  fDQCalibration(-1),
-  fDQGoodLinks(-1),
-  fDQVersion("unset"),
-  fRIClass("unset"),
-  fRISignificant("unset"),
-  fRIComments("unset"),
-  fRIComponents("unset"),
-  fRIComponentsOut("unset"),
-  fRIMidasVersion("unset"),
-  fRIMidasGitRevision("unset"),
-  fRIDAQVersion("unset"),
-  fRIDAQGitRevision("unset"),
-  fRIVtxVersion("unset"),
-  fRIVtxGitRevision("unset"),
-  fRIPixVersion("unset"),
-  fRIPixGitRevision("unset"),
-  fRITilVersion("unset"),
-  fRITilGitRevision("unset"),
-  fRIFibVersion("unset"),
-  fRIFibGitRevision("unset"),
-  fRIVersion("unset")
-{
+    fBORRunNumber(-1),
+    fBORStartTime("unset"),
+    fBORSubsystems(-9999),
+    fBORBeam(-9999.9),
+    fBORShiftCrew("unset"),
+    fEORStopTime("unset"),
+    fEOREvents(0),
+    fEORFileSize(0),
+    fEORDataSize(0),
+    fEORComments("unset"),
+    fConfigurationKey("unset") { }
 
-};
-
+runRecord::~runRecord() {
+  fDQ.clear();
+  fRI.clear();
+}
 
 // ----------------------------------------------------------------------
 void runRecord::corrupted(string jsonString) { 
   cout << "$$$ runRecord corrupted ->" << jsonString << "<-" << endl;
-  fDataQualityValid = false; 
-  fRunInfoValid = false; 
+  fDataQualityIdx = -1;
+  fRunInfoIdx = -1; 
   fBOREORValid = false; 
 }
+
+// ---------------------------------------------------------------------- 
+bool runRecord::isSignificant() const {
+  if (fRunInfoIdx > -1) return fRI[0].significant == "true";
+  return false;
+}
+
+// ----------------------------------------------------------------------
+std::string runRecord::getRunInfoClass() const {
+  if (fRunInfoIdx > -1) return fRI[0].Class;
+  return "unset";
+} 
+
+// ----------------------------------------------------------------------
+std::string runRecord::getRunInfoComments() const {
+  if (fRunInfoIdx > -1) return fRI[0].comments;
+  return "unset";
+} 
+
 
 
 // ----------------------------------------------------------------------
 void runRecord::print() {
-  cout << printString() << endl;
+  cout << printSummary() << endl;
 }
 
-
 // ----------------------------------------------------------------------
-string runRecord::printString() {
+string runRecord::printSummary() const {
   std::stringstream sstr;
   sstr << "/**/run " << fBORRunNumber
        << ": " << fBORStartTime
@@ -79,10 +69,10 @@ string runRecord::printString() {
        << " (" << fEORComments << ")"
        << " nevts: " << fEOREvents
        << " beam: " << fBORBeam
-       << " DQ: " << fDataQualityValid
-       << " runInfo: " << fRunInfoValid;
-  if (fDataQualityValid) sstr << " class: " << fRIClass;
-  if (fRunInfoValid) sstr << " significant: " << fRISignificant;
+       << " DQ: " << fDataQualityIdx
+       << " runInfo: " << fRunInfoIdx;
+  if (fDataQualityIdx > -1) sstr << " class: " << fRI[fDataQualityIdx].Class;
+  if (fRunInfoIdx > -1) sstr << " significant: " << fRI[fRunInfoIdx].significant;
   return sstr.str();
 }
 
@@ -90,25 +80,15 @@ string runRecord::printString() {
 // ----------------------------------------------------------------------
 string runRecord::json() const {
   std::stringstream sstr;
-  /*
-    {
-    "BOR": {
-    "Run number" : 5017,
-    "Start time" : "Thu Jan 18 04:48:51 2024",
-    "Subsystems" : 0,
-    "Beam" : 0,
-    "Shift crew" : "The data challenge crew"
-    },
-    "EOR": {
-    "Stop time" : "Thu Jan 18 04:49:44 2024",
-    "Events" : 2587814,
-    "File size" : 4.0360677850000000e+09,
-    "Uncompressed data size" : 5.1365311020000000e+09,
-    "Comments" : "Test data from the data challenge"
-    }
-    }
-  */
-  
+  sstr << fJSONString;
+  return sstr.str();
+} 
+
+
+// ----------------------------------------------------------------------
+string runRecord::jsonInterpreted() const {
+  std::stringstream sstr;
+    
   stringstream ssB;
   ssB << scientific << setprecision(6) << fBORBeam;
   stringstream ssF;
@@ -123,22 +103,38 @@ string runRecord::json() const {
        << "\"Beam\" : " << ssB.str() << ", "
        << "\"Shift crew\" : \"" << fBORShiftCrew << "\""
        << "}, "
-       
        << "\"EOR\" : {"
        << "\"Stop time\" : \"" << fEORStopTime << "\", "
        << "\"Events\" : " << fEOREvents << ", "
        << "\"File size\" : " << ssF.str() << ", "
        << "\"Uncompressed data size\" : " << ssD.str() << ", "
        << "\"Comments\" : \"" << fEORComments << "\" "
-       << "} }";
+       << "}";
+       if ((fDataQualityIdx > -1) || (fRunInfoIdx > -1)) {
+         sstr << ", \"Attributes\": [";
+         if (fDataQualityIdx > -1) {
+           for (int i = 0; i <= fDataQualityIdx; i++) {
+              sstr << fDQ[i].json();
+              if (i < fDataQualityIdx) sstr << ",";
+           }
+         }
+         if (fRunInfoIdx > -1) {
+           for (int i = 0; i <= fRunInfoIdx; i++) {
+              sstr << fRI[i].json();
+              if (i < fRunInfoIdx) sstr << ",";
+           }
+         }
+         sstr << "}]" << endl;
+      }
   return sstr.str();
 }
 
 // ----------------------------------------------------------------------
 // -- fill from JSON string
 void runRecord::fillFromJson(const std::string &curlReadBuffer) {
-  int verbose = 0;
+  int verbose = 2;
   if (verbose > 1) cout << "curlReadBuffer ->" << curlReadBuffer << "<-" << endl;
+  fJSONString = curlReadBuffer;
 
   // -- a lot of catching for developing run records and missing fields
   string parseString("");
@@ -229,40 +225,28 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
   // -- get dataQuality
   string existsDQ = jsonGetValue(curlReadBuffer, vector<string>{"DataQuality", "mu3e"});
   if (existsDQ != "parseError") {
-    fDataQualityValid = true;
-    if (verbose > 2) cout << " before DQ -> " << existsDQ << "<-" << endl;
-    fDQMu3e = stoi(jsonGetValue(curlReadBuffer, "mu3e")); 
-    fDQBeam = stoi(jsonGetValue(curlReadBuffer, "beam"));
-    fDQVertex = stoi(jsonGetValue(curlReadBuffer, "vertex"));
-    fDQPixel = stoi(jsonGetValue(curlReadBuffer, "pixel"));
-    fDQTiles = stoi(jsonGetValue(curlReadBuffer, "tiles"));
-    fDQFibres = stoi(jsonGetValue(curlReadBuffer, "fibres"));
-    fDQCalibration = stoi(jsonGetValue(curlReadBuffer, "calibration"));
-    fDQGoodLinks = stoi(jsonGetValue(curlReadBuffer, "goodLinks"));
-    fDQVersion = jsonGetString(curlReadBuffer, "version");
+    fDataQualityIdx = -1;
+    size_t pos = 1;
+    if (verbose > 2) cout << " before DQ" << endl;
+    while (pos != string::npos) {
+      ++fDataQualityIdx;
+      fDQ.push_back(DataQuality());
+      pos = fDQ[fDataQualityIdx].parse(curlReadBuffer, pos);
+      cout << " DQ " << fDataQualityIdx << " " << fDQ[fDataQualityIdx].print() << endl;
+    }
   }
-  if (verbose > 2) cout << " after DQ" << endl;
-
+ 
   // -- get RunInfo
   string existsRI = jsonGetValue(curlReadBuffer, vector<string>{"RunInfo", "Class"});
   if (existsRI != "parseError") {
-    fRunInfoValid = true;
+    fRunInfoIdx = -1;
+    size_t pos = 1;
     if (verbose > 2) cout << " before RI" << endl;
-    fRIMidasVersion = jsonGetString(curlReadBuffer, "MidasVersion");
-    fRIMidasGitRevision = jsonGetString(curlReadBuffer, "MidasGitRevision");
-    fRIDAQVersion = jsonGetString(curlReadBuffer, "DAQVersion");
-    fRIDAQGitRevision = jsonGetString(curlReadBuffer, "DAQGitRevision");
-    fRIVtxVersion = jsonGetString(curlReadBuffer, "VtxVersion");
-    fRIVtxGitRevision = jsonGetString(curlReadBuffer, "VtxGitRevision");
-    fRIPixVersion = jsonGetString(curlReadBuffer, "PixVersion");
-    fRIPixGitRevision = jsonGetString(curlReadBuffer, "PixGitRevision");
-    fRITilVersion = jsonGetString(curlReadBuffer, "TilVersion");
-    fRITilGitRevision = jsonGetString(curlReadBuffer, "TilGitRevision");
-    fRIFibVersion = jsonGetString(curlReadBuffer, "FibVersion");
-    fRIFibGitRevision = jsonGetString(curlReadBuffer, "FibGitRevision");
-
-    fRIClass = jsonGetString(curlReadBuffer, "Class");
-    fRISignificant = jsonGetString(curlReadBuffer, "Significant");
-    fRIComments = jsonGetString(curlReadBuffer, vector<string>{"RunInfo", "Comments"});
+    while (pos != string::npos) {
+      ++fRunInfoIdx;
+      fRI.push_back(RunInfo());
+      pos = fRI[fRunInfoIdx].parse(curlReadBuffer, pos);
+      cout << " RI " << fRunInfoIdx << " " << fRI[fRunInfoIdx].print() << endl;
+    }
   }
 }
