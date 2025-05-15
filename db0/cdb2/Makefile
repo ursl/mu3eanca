@@ -60,16 +60,16 @@ GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 
 OSUFFIX := .o
 
-# -- CDB (Conditions DB) files
-LFILES = cdbAbs.o cdbMongo.o cdbJSON.o cdbRest.o \
-         calAbs.o \
+# -- CDB (Conditions DB) files  // cdbMongo.o
+LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o \
          calPixelAlignment.o calFibreAlignment.o  \
          calMppcAlignment.o calTileAlignment.o \
          calPixelQuality.o calPixelQualityLM.o calPixelQualityV.o calPixelQualityM.o \
          calPixelCablingMap.o calDetConfV1.o calDetSetupV1.o \
          Mu3eConditions.o Mu3eCalFactory.o \
          base64.o \
-         payload.o cfgPayload.o cdbUtil.o runRecord.o
+         payload.o cfgPayload.o cdbUtil.o runRecord.o \
+         RunInfo.o DataQuality.o
 
 LBINARIES = testCDB fillDB \
             syncCloud syncMongo syncJSON syncRDB\
