@@ -52,6 +52,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-f"))   {firstRun = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-l"))   {lastRun = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-m"))    {mode    = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-r"))    {urlString = string(argv[++i]);}
     if (!strcmp(argv[i], "-t"))    {runInfoTemplateFile = string(argv[++i]);}
     if (!strcmp(argv[i], "-u"))    {rdbUpdateString = string(argv[++i]);}
   }
@@ -93,13 +94,13 @@ int main(int argc, char* argv[]) {
 void rdbMode0(runRecord &rr, bool debug) {
   if (!rr.fBOREORValid) {
     cout << "incomplete run record in RDB, skipping ................................. " << endl;
-    cout << rr.printString() << endl;
+    cout << rr.printSummary() << endl;
     return;
   }
 
   // -- check whether this is about uploading the dataQuality template and whether that exists
   if (string::npos != runInfoTemplateFile.find("dqTemplate")) {
-    if (!rr.fDataQualityValid) {
+    if (rr.fDataQualityIdx < 0) {
       cout << "no DataQuality attribute found for run number: " << rr.fBORRunNumber << endl;
       int irun = rr.fBORRunNumber;
       stringstream ss;
@@ -114,7 +115,7 @@ void rdbMode0(runRecord &rr, bool debug) {
 
   // -- check whether this is about uploading the dataQuality template and whether that exists
   if (string::npos != runInfoTemplateFile.find("runInfoTemplate")) {
-    if (!rr.fRunInfoValid) {
+    if (rr.fRunInfoIdx < 0) {
       cout << "no runInfo attribute found for run number: " << rr.fBORRunNumber << endl;
       int irun = rr.fBORRunNumber;
       stringstream ss;
@@ -145,7 +146,7 @@ void rdbMode1(runRecord &rr, bool debug) {
   cout << "run number: " << rr.fBORRunNumber << ": ";
 
   // -- check for junk indicators stored in vector
-  vector<string> vClassIndicators = {"beam", "source", "cosmics", "good", "ana"};
+  vector<string> vClassIndicators = {"beam", "source", "cosmic"};
   for (const auto &indicator : vClassIndicators) {
     if (xstring.find(indicator) != string::npos) {
      cout << " found class indicator: " << indicator;
