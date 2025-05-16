@@ -38,7 +38,7 @@ using namespace std;
 // "datav6.1=2025CosmicsVtxOnly"  data for tag v6.1
 // "qc2024v1.0"  pixel sensor chipIds for first vertex module (aka half-shell)
 //
-// -j JSONDIR  output directory with subdirectories globaltags, tags, payloads
+// -j JSONDIR  output directory with subdirectories globaltags, tags, payloads, runrecords
 // -m MODE     "mcidealv5.1", ...
 //
 //
@@ -375,7 +375,7 @@ int main(int argc, const char* argv[]) {
   }
   
   // -- create a runRecord
-  filename = "runlog_004001.json";
+  filename = "runRecord_226.json";
   ifstream INS;
   INS.open(string(LOCALDIR) + "/ascii/" + filename);
   std::stringstream buffer;
