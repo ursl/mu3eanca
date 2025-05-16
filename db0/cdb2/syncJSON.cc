@@ -47,11 +47,23 @@ int main(int argc, char* argv[]) {
   cout << "urlString: " << urlString << endl;
   pDB = new cdbRest("mcidealv6.1", urlString, 0);
 
-
-  // runRecord rr = pDB->getRunRecord(513);
-  // cout << rr.json() << endl;
-  // return 0;
-
+// -- check whether directories for JSONs already exist
+  vector<string> testdirs{dirPath,
+                          dirPath + "/globaltags",
+                          dirPath + "/tags",
+                          dirPath + "/payloads",
+                          dirPath + "/runrecords",
+                          dirPath + "/configs",
+                         };
+  for (auto it: testdirs) {
+    DIR *folder = opendir(it.c_str());
+    if (folder == NULL) {
+      cout << "creating " << it << endl;
+      system(string("mkdir -p " + it).c_str());
+    } else {
+      closedir(folder);
+    }
+  }
 
   vector<string> vGlobalTags = pDB->readGlobalTags();
   
