@@ -208,6 +208,20 @@ int main(int argc, char* argv[]) {
     cdc->readJSON(jsonFileName);
     string sbla = cdc->makeBLOB();
     cdc->printBLOB(sbla, 1000);
+
+  } else if (8 == mode) {
+    cout << "Test run numbers" << endl;
+    vector<string> vruns = pDB->getAllRunNumbers();
+    for (auto it: vruns) {
+      cout << "run number: " << it << endl;
+    }
+
+  } else if (9 == mode) {
+    cout << "Test run numbers" << endl;
+    vector<string> vruns = pDC->getAllRunNumbers();
+    for (auto it: vruns) {
+      cout << "run number: " << it << endl;
+    }
   }
   return 0;
 }
