@@ -257,6 +257,12 @@ runRecord Mu3eConditions::getRunRecord(int irun) {
 
 
 // ----------------------------------------------------------------------
+vector<string> Mu3eConditions::getAllRunNumbers() {
+  return fDB->getAllRunNumbers();
+}
+
+
+// ----------------------------------------------------------------------
 void Mu3eConditions::registerConf(std::string cfgName, cfgPayload c) {
   string hash = "cfg_" + cfgName + "_" + fGT;
   cout << "Mu3eConditions::registerConf> cfgName ->" << cfgName
