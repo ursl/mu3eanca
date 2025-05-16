@@ -31,6 +31,7 @@ getopts('df:n:');
 print "updateRunDB executed at ". localtime, "\n";
 
 my $RDBURL = "http://pc11740/rdb/runrecords";
+my $RDBADDURL = "http://pc11740/rdb/addAttribute";
 my $RUNLOGDIR = "/home/mu3e/online/message/runlogs";
 my $ATTRDIR = "/home/ursl/mu3e/software/mu3eanca/db1/rest";
 my $RUNSDONE = "/home/ursl/mu3e/software/mu3eanca/runs.txt";
@@ -115,12 +116,12 @@ foreach $d (@runsToDo) {
             print("end file\n");
         } elsif ($opt_f && $opt_f == $d) {
             print("  transfer successful! $d $now_string  Adding attributes\n");
-            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $RDBURL/$runno");
-            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBURL/$runno"); 
+            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $$RDBADDURL/$runno");
+            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBADDURL/$runno"); 
         } else {
             print("  transfer successful! $d $now_string  Adding attributes\n");
-            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $RDBURL/$runno");
-            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBURL/$runno"); 
+            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $$RDBADDURL/$runno");
+            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $$RDBADDURL/$runno"); 
             open(IN,  ">>$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE for output\n";
             print IN "$d\n";
             close(IN);
