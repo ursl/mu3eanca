@@ -11,6 +11,7 @@
 #           -n X   do at most X updates
 #
 # History 
+#         2025/05/16 add upload of DataQuality and RunInfo attributes
 #         2025/05/01 migration of path
 #         2025/04/01 add -f 
 #         2025/03/26 first shot
@@ -30,6 +31,7 @@ print "updateRunDB executed at ". localtime, "\n";
 
 my $RDBURL = "http://pc11740/rdb/runrecords";
 my $RUNLOGDIR = "/data1/run2025/message/runlogs";
+my $ATTRDIR = "/home/ursl/mu3e/software/mu3eanca/db1/rest";
 my $RUNSDONE = "/home/ursl/mu3e/software/mu3eanca/runs.txt";
 
 # -- read list of runs already done
@@ -87,6 +89,13 @@ foreach $d (@runsToDo) {
         exit;
     }
 
+    my $runno = $d;
+    $runno =~ s/\.json$//;
+    $runno =~ s/^runlog_//;
+    $runno = int($runno);
+    my $dqFile = "$ATTRDIR/dqTemplate.json";
+    my $riFile = "$ATTRDIR/runInfoTemplate.json";
+
     if ($opt_d) {
         print("dbx: curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$RUNLOGDIR/$d $RDBURL\n");
     } else {
@@ -98,13 +107,17 @@ foreach $d (@runsToDo) {
             $tcnt++;
         }
         if ($res eq "Uh oh! An unexpected error occured.") {
-            print("  transfer unsuccessful?!\n");
+            print("  transfer unsuccessful?! $d\n");
             system("cat $RUNLOGDIR/$d");
             print("end file\n");
         } elsif ($opt_f && $opt_f == $d) {
-            print("  transfer successful!\n");
+            print("  transfer successful! Adding attributes\n");
+            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $RDBURL/$runno");
+            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBURL/$runno"); 
         } else {
-            print("  transfer successful!\n");
+            print("  transfer successful! Adding attributes\n");
+            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $RDBURL/$runno");
+            system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBURL/$runno"); 
             open(IN,  ">>$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE for output\n";
             print IN "$d\n";
             close(IN);
