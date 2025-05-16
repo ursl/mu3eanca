@@ -12,6 +12,7 @@
 #
 # History 
 #         2025/05/16 add upload of DataQuality and RunInfo attributes
+#         2025/05/06 migration of path
 #         2025/05/01 migration of path
 #         2025/04/01 add -f 
 #         2025/03/26 first shot
@@ -30,7 +31,7 @@ getopts('df:n:');
 print "updateRunDB executed at ". localtime, "\n";
 
 my $RDBURL = "http://pc11740/rdb/runrecords";
-my $RUNLOGDIR = "/data1/run2025/message/runlogs";
+my $RUNLOGDIR = "/home/mu3e/online/message/runlogs";
 my $ATTRDIR = "/home/ursl/mu3e/software/mu3eanca/db1/rest";
 my $RUNSDONE = "/home/ursl/mu3e/software/mu3eanca/runs.txt";
 
