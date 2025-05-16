@@ -24,7 +24,11 @@ public:
 
 
   // -- access to runRecords
-  virtual runRecord       getRunRecord(int irun) {return runRecord();}
+  virtual runRecord                getRunRecord(int irun);
+  // -- all that are there (more from rest/mongodb than from JSON, usually)
+  virtual std::vector<std::string> getAllRunNumbers();
+  // -- all that match "class" selection and detector (csv list vtx,pix,fib,til)
+  virtual std::vector<std::string> getAllRunNumbers(std::string selection, std::string det = "");
 
   // -- access to configs
   virtual cfgPayload      getConfig(std::string hash) {return cfgPayload();}

@@ -65,3 +65,20 @@ void cdbAbs::print(std::map<std::string, std::vector<int>> m) {
   }
   cout << endl;
 }
+
+
+// ----------------------------------------------------------------------
+vector<string> cdbAbs::getAllRunNumbers(string selection, string det) {
+  return vector<string>();
+}
+
+// ----------------------------------------------------------------------
+vector<string> cdbAbs::getAllRunNumbers() {
+  return vector<string>();
+}
+
+// ----------------------------------------------------------------------
+runRecord cdbAbs::getRunRecord(int irun) {
+  return runRecord();
+}
+

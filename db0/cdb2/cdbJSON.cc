@@ -165,6 +165,25 @@ vector<string> cdbJSON::getAllRunNumbers() {
   for (auto it: vfiles) {
     string::size_type pos = it.rfind("/");
     string file = it.substr(pos+1);
+    replaceAll(file, "runRecord_", "");
+    replaceAll(file, ".json", "");
+    v.push_back(file);
+  }
+  return v;
+}
+
+// ----------------------------------------------------------------------
+vector<string> cdbJSON::getAllRunNumbers(string selection, string det) {
+  vector<string> v;
+  // -- read run numbers from fURI
+  string dir = fURI + "/runrecords/";
+  vector<string> vfiles = allFiles(dir);
+  for (auto it: vfiles) {
+    string::size_type pos = it.rfind("/");
+    string file = it.substr(pos+1);
+    replaceAll(file, "runRecord_", "");
+    replaceAll(file, ".json", "");
+    // FIXME add filtering!mm
     v.push_back(file);
   }
   return v;

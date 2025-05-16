@@ -14,7 +14,6 @@ public:
   ~cdbJSON();
 
   void                 init();
-  runRecord            getRunRecord(int irun) override;
   payload              getPayload(std::string hash) override;
   cfgPayload           getConfig(std::string hash) override;
 
@@ -22,8 +21,12 @@ public:
   std::vector<std::string>                 readTags(std::string gt) override;
   std::map<std::string, std::vector<int> > readIOVs(std::vector<std::string> tags) override;
 
-  std::vector<std::string>                 getAllRunNumbers();
-
+  // -- access to runRecords
+  runRecord            getRunRecord(int irun) override;
+  // -- all that are there (more from rest/mongodb than from JSON, usually) 
+  std::vector<std::string>                 getAllRunNumbers() override;
+  // -- all that match "class" selection and detector (csv list vtx,pix,fib,til)
+  std::vector<std::string>                 getAllRunNumbers(std::string selection, std::string det = "") override;
 protected:
   std::vector<std::string> allFiles(std::string dirName);
 

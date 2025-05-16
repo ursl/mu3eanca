@@ -121,6 +121,7 @@ map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
   return m;
 }
 
+
 // ----------------------------------------------------------------------
 vector<string> cdbRest::getAllRunNumbers() {
   doCurl("runNumbers", "nada", "findAll");
@@ -128,6 +129,20 @@ vector<string> cdbRest::getAllRunNumbers() {
   if (0) cout << "fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
   replaceAll(fCurlReadBuffer, "[", "");
   replaceAll(fCurlReadBuffer, "]", "");
+  vector<string> v = split(fCurlReadBuffer, ',');
+    
+  return v;
+}
+
+
+// ----------------------------------------------------------------------
+vector<string> cdbRest::getAllRunNumbers(string selection, string det) {
+  doCurl("runNumbers", "nada", "findAll");
+  
+  if (0) cout << "fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
+  replaceAll(fCurlReadBuffer, "[", "");
+  replaceAll(fCurlReadBuffer, "]", "");
+  // FIXME add filtering!
   vector<string> v = split(fCurlReadBuffer, ',');
     
   return v;
