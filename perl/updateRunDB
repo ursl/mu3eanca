@@ -97,6 +97,8 @@ foreach $d (@runsToDo) {
     my $dqFile = "$ATTRDIR/dqTemplate.json";
     my $riFile = "$ATTRDIR/runInfoTemplate.json";
 
+    $now_string = localtime; 
+
     if ($opt_d) {
         print("dbx: curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$RUNLOGDIR/$d $RDBURL\n");
     } else {
@@ -108,15 +110,15 @@ foreach $d (@runsToDo) {
             $tcnt++;
         }
         if ($res eq "Uh oh! An unexpected error occured.") {
-            print("  transfer unsuccessful?! $d\n");
+            print("  transfer unsuccessful?! $d   $now_string\n");
             system("cat $RUNLOGDIR/$d");
             print("end file\n");
         } elsif ($opt_f && $opt_f == $d) {
-            print("  transfer successful! Adding attributes\n");
+            print("  transfer successful! $d $now_string  Adding attributes\n");
             system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $RDBURL/$runno");
             system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBURL/$runno"); 
         } else {
-            print("  transfer successful! Adding attributes\n");
+            print("  transfer successful! $d $now_string  Adding attributes\n");
             system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $RDBURL/$runno");
             system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBURL/$runno"); 
             open(IN,  ">>$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE for output\n";
