@@ -22,6 +22,7 @@ runRecord::runRecord() :
     fEORComments("unset"),
     fConfigurationKey("unset") { }
 
+// ----------------------------------------------------------------------
 runRecord::~runRecord() {
   fDQ.clear();
   fRI.clear();
@@ -37,19 +38,19 @@ void runRecord::corrupted(string jsonString) {
 
 // ---------------------------------------------------------------------- 
 bool runRecord::isSignificant() const {
-  if (fRunInfoIdx > -1) return fRI[0].significant == "true";
+  if (fRunInfoIdx > -1) return fRI[fRunInfoIdx].significant == "true";
   return false;
 }
 
 // ----------------------------------------------------------------------
 std::string runRecord::getRunInfoClass() const {
-  if (fRunInfoIdx > -1) return fRI[0].Class;
+  if (fRunInfoIdx > -1) return fRI[fRunInfoIdx].Class;
   return "unset";
 } 
 
 // ----------------------------------------------------------------------
 std::string runRecord::getRunInfoComments() const {
-  if (fRunInfoIdx > -1) return fRI[0].comments;
+  if (fRunInfoIdx > -1) return fRI[fRunInfoIdx].comments;
   return "unset";
 } 
 
@@ -232,6 +233,11 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
       ++fDataQualityIdx;
       fDQ.push_back(DataQuality());
       pos = fDQ[fDataQualityIdx].parse(curlReadBuffer, pos);
+      // -- DataQuality is only filled validly if the returned pos is valid
+      if (pos == string::npos) {
+        --fDataQualityIdx;
+        fDQ.pop_back();
+      }
       if (verbose > 2) cout << " DQ " << fDataQualityIdx << " " << fDQ[fDataQualityIdx].print() << endl;
     }
   }
@@ -246,6 +252,11 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
       ++fRunInfoIdx;
       fRI.push_back(RunInfo());
       pos = fRI[fRunInfoIdx].parse(curlReadBuffer, pos);
+      // -- RunInfo is only filled validly if the returned pos is valid
+      if (pos == string::npos) {
+        --fRunInfoIdx;
+        fRI.pop_back();
+      }
       if (verbose > 2) cout << " RI " << fRunInfoIdx << " " << fRI[fRunInfoIdx].print() << endl;
     }
   }
