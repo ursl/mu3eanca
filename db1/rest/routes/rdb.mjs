@@ -264,6 +264,9 @@ router.post("/updateRun", async (req, res) => {
 
 // ----------------------------------------------------------------------
 // -- Adds a JSON fragment to the attributes array
+// curl -X PUT -H "Content-Type: application/json" \
+//      --data-binary @../../db1/rest/dqTemplate.json \
+//      pc11740:5050/rdb/addAttribute/780
 router.put("/addAttribute/:id", async (req, res) => {
     let adata = req.body;
 
