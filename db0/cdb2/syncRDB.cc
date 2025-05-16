@@ -36,14 +36,15 @@ void rdbMode0(runRecord &, bool);
 
 
 string runInfoTemplateFile = "../../db1/rest/runInfoTemplate.json";
-string rdbUpdateString("localhost:5050/rdb/addAttribute");
+string rdbUpdateString(":5050/rdb/addAttribute");
 vector<string> runInfoTemplateFileLines;
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
-  string urlString("localhost:5050/cdb");
+  string hostString("pc11740");
+  string urlString(":5050/cdb");
 
   bool debug(false);
   int firstRun(0), lastRun(-1), mode(0);
@@ -52,10 +53,12 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-f"))   {firstRun = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-l"))   {lastRun = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-m"))    {mode    = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-r"))    {urlString = string(argv[++i]);}
+    if (!strcmp(argv[i], "-h"))    {hostString = string(argv[++i]);}
     if (!strcmp(argv[i], "-t"))    {runInfoTemplateFile = string(argv[++i]);}
-    if (!strcmp(argv[i], "-u"))    {rdbUpdateString = string(argv[++i]);}
   }
+
+  urlString = hostString + urlString; 
+  rdbUpdateString = hostString + rdbUpdateString;
 
   // -- read in template
   ifstream file(runInfoTemplateFile);
@@ -113,7 +116,7 @@ void rdbMode0(runRecord &rr, bool debug) {
     }
   }
 
-  // -- check whether this is about uploading the dataQuality template and whether that exists
+  // -- check whether this is about uploading the RunInfo template and whether that exists
   if (string::npos != runInfoTemplateFile.find("runInfoTemplate")) {
     if (rr.fRunInfoIdx < 0) {
       cout << "no runInfo attribute found for run number: " << rr.fBORRunNumber << endl;
