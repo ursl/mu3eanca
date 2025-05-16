@@ -1,6 +1,8 @@
+#include "cdbAbs.hh"
 #include "cdbRest.hh"
 #include "runRecord.hh"
 #include "cdbUtil.hh"
+#include "Mu3eConditions.hh"
 
 #include <iostream>
 #include <fstream>
@@ -33,7 +35,7 @@ using namespace std;
 
 void rdbMode1(runRecord &, bool);
 void rdbMode0(runRecord &, bool);
-
+void rdbMode2(string &, string &, string &, bool);
 
 string runInfoTemplateFile = "../../db1/rest/runInfoTemplate.json";
 string rdbUpdateString(":5050/rdb/addAttribute");
@@ -45,16 +47,23 @@ int main(int argc, char* argv[]) {
   // -- command line arguments
   string hostString("pc11740");
   string urlString(":5050/cdb");
+  string selectionString("significant"), classString("cosmic"), goodString("");
 
   bool debug(false);
   int firstRun(0), lastRun(-1), mode(0);
   for (int i = 0; i < argc; i++) {
-    if (!strcmp(argv[i], "-d"))   {debug = true;}
-    if (!strcmp(argv[i], "-f"))   {firstRun = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-l"))   {lastRun = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-d"))    {debug = true;}
     if (!strcmp(argv[i], "-m"))    {mode    = atoi(argv[++i]);}
+    // -- run range selection
+    if (!strcmp(argv[i], "-f"))    {firstRun = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-l"))    {lastRun = atoi(argv[++i]);}
+    // -- stuff
     if (!strcmp(argv[i], "-h"))    {hostString = string(argv[++i]);}
     if (!strcmp(argv[i], "-t"))    {runInfoTemplateFile = string(argv[++i]);}
+    // -- selection for runlist output (mode = 2)
+    if (!strcmp(argv[i], "-g"))    {goodString = string(argv[++i]);}
+    if (!strcmp(argv[i], "-c"))    {classString = string(argv[++i]);}
+    if (!strcmp(argv[i], "-s"))    {selectionString = string(argv[++i]);}
   }
 
   urlString = hostString + urlString; 
@@ -73,9 +82,18 @@ int main(int argc, char* argv[]) {
   }
 
 
-  cdbRest *pDB(0);
+  cdbAbs *pDB(0);
 
   pDB = new cdbRest("mcidealv6.1", urlString, 0);
+  Mu3eConditions *pDC = Mu3eConditions::instance("mcidealv6.1", pDB);
+
+
+  if (2 == mode) {
+    rdbMode2(selectionString, classString, goodString, debug);
+    delete pDB;
+    return 0; 
+  }
+
 
   vector<string> vRunNumbers = pDB->getAllRunNumbers();
   for (int it = 0; it < vRunNumbers.size(); ++it) {
@@ -88,6 +106,8 @@ int main(int argc, char* argv[]) {
     if (0 == mode) rdbMode0(rr, debug);
     if (1 == mode) rdbMode1(rr, debug);
   }
+
+
   delete pDB; 
 } 
 
@@ -214,4 +234,36 @@ void rdbMode1(runRecord &rr, bool debug) {
     cout << ss.str() << endl;      
     system(ss.str().c_str());
   }
+}
+
+// ----------------------------------------------------------------------
+void rdbMode2(string &selectionString, string &classString, string &goodString, bool debug) {
+  Mu3eConditions *pDC = Mu3eConditions::instance();
+  vector<string> vRunNumbers = pDC->getAllRunNumbers();
+  vector<int> vSelectedRuns;
+  for (const auto &runNumber : vRunNumbers) {
+    int irun = stoi(runNumber); 
+    runRecord rr = pDC->getRunRecord(irun);
+    if (!rr.fBOREORValid) continue;
+    if (selectionString == "significant") {
+      if (rr.isSignificant()) {
+        cout << "run number: " << runNumber << " class: " << rr.getRunInfoClass() << endl;
+        if (classString != "") {
+          if (rr.getRunInfoClass() == classString) {
+            vSelectedRuns.push_back(irun);
+          }
+        } 
+      }
+    }
+  }
+
+  ofstream ofs("selectedRuns-" + selectionString + (classString != "" ? string("-" + classString) : "")
+                               + (goodString != "" ? string("-" + goodString) : "") + ".txt");
+  ofs << "{"; 
+  for (const auto &irun : vSelectedRuns) {
+    ofs << irun;
+    if (irun != vSelectedRuns.back()) ofs << ", ";
+  }
+  ofs << "}" << endl;
+  ofs.close();
 }
