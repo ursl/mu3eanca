@@ -132,7 +132,7 @@ string runRecord::jsonInterpreted() const {
 // ----------------------------------------------------------------------
 // -- fill from JSON string
 void runRecord::fillFromJson(const std::string &curlReadBuffer) {
-  int verbose = 2;
+  int verbose = 0;
   if (verbose > 1) cout << "curlReadBuffer ->" << curlReadBuffer << "<-" << endl;
   fJSONString = curlReadBuffer;
 
@@ -232,7 +232,7 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
       ++fDataQualityIdx;
       fDQ.push_back(DataQuality());
       pos = fDQ[fDataQualityIdx].parse(curlReadBuffer, pos);
-      cout << " DQ " << fDataQualityIdx << " " << fDQ[fDataQualityIdx].print() << endl;
+      if (verbose > 2) cout << " DQ " << fDataQualityIdx << " " << fDQ[fDataQualityIdx].print() << endl;
     }
   }
  
@@ -246,7 +246,7 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
       ++fRunInfoIdx;
       fRI.push_back(RunInfo());
       pos = fRI[fRunInfoIdx].parse(curlReadBuffer, pos);
-      cout << " RI " << fRunInfoIdx << " " << fRI[fRunInfoIdx].print() << endl;
+      if (verbose > 2) cout << " RI " << fRunInfoIdx << " " << fRI[fRunInfoIdx].print() << endl;
     }
   }
 }
