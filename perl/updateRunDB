@@ -120,6 +120,8 @@ foreach $d (@runsToDo) {
             system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBADDURL/$runno"); 
         } else {
             print("  transfer successful! $d $now_string  Adding attributes\n");
+            print("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $RDBADDURL/$runno\n");
+            print("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBADDURL/$runno\n"); 
             system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$dqFile $RDBADDURL/$runno");
             system("curl -X PUT -H \"Content-Type: application/json\" --data-binary \@$riFile $RDBADDURL/$runno"); 
             open(IN,  ">>$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE for output\n";
