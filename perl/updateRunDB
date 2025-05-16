@@ -71,10 +71,10 @@ if ($opt_f && $opt_f == $d) {
                 $goodFile = 1;     
                 print("found all for $d, will add to runsToDo\n");
             } elsif  ($clos =~ /\},/) {
-                print("incomplete file for $d\n");
+                # print("incomplete file for $d\n");
             } else {
-                print("missing something else ->$clos<-\n");
-                print("$stringd\n");
+                # print("missing something else ->$clos<-\n");
+                # print("$stringd\n");
             }
             # print "  .. ->$d<- added to runsToDo\n";
             if ($goodFile == 1) {push @runsToDo, $d;}
