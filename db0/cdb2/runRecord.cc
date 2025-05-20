@@ -54,7 +54,17 @@ std::string runRecord::getRunInfoComments() const {
   return "unset";
 } 
 
+// ----------------------------------------------------------------------
+RunInfo runRecord::getRunInfo() const {
+  if (fRunInfoIdx > -1) return fRI[fRunInfoIdx];
+  return RunInfo();
+}
 
+// ----------------------------------------------------------------------
+DataQuality runRecord::getDQ() const {
+  if (fDataQualityIdx > -1) return fDQ[fDataQualityIdx];
+  return DataQuality();
+}
 
 // ----------------------------------------------------------------------
 void runRecord::print() {

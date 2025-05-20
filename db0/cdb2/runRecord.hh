@@ -12,10 +12,12 @@ public:
   ~runRecord();
 
   // -- query functions
-  bool isSignificant() const;
+  bool        isSignificant() const;
   std::string getRunInfoClass() const;
   std::string getRunInfoComments() const;
-
+  RunInfo     getRunInfo() const;
+  DataQuality getDQ() const;
+  
   // -- print the run record to cout using printSummary()
   void print();
   // -- return a string with a summary of the run record
