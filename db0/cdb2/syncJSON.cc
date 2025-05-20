@@ -17,10 +17,16 @@
 // synJSON copy mongoDB CDB contents to JSON directory. 
 //         Will not delete what is there but will overwrite //
 // 
-// Usage:     ./bin/syncJSON --dir junk
+// Usage:     ./bin/syncJSON --dir junk [-a] [-h pc11740]
 // -----
+//
+// Options:   -a, --all        all runs dumped into the runrecords
+// -------    -d, --dir path   provide a location to dump the JSON files
+//            -h, --host host  provide a hostname from where to retrieve
+//            -f  run          provide a first run number
+//            -l  run          provide a last run number
+//            -m, --max runs  provide a maximum number of runs to dump
 // ----------------------------------------------------------------------
-
 
 using namespace std;
 // ----------------------------------------------------------------------
@@ -32,13 +38,15 @@ int main(int argc, char* argv[]) {
   bool onlyDelete(false); // ONLY delete, do not write new records
   int maxRuns(10000), firstRun(0), lastRun(-1);
   for (int i = 0; i < argc; i++) {
-    if (!strcmp(argv[i], "--all")) {all = true;}
-    if (!strcmp(argv[i], "--dir")) {dirPath = string(argv[++i]);}
-    if (!strcmp(argv[i], "-dir"))  {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "-a"))     {all = true;}
+    if (!strcmp(argv[i], "--all"))  {all = true;}
+    if (!strcmp(argv[i], "-d"))     {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "--dir"))  {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "-h"))     {host = string(argv[++i]);}
     if (!strcmp(argv[i], "--host")) {host = string(argv[++i]);}
-    if (!strcmp(argv[i], "-f"))    {firstRun = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-l"))    {lastRun = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-m"))    {maxRuns = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-f"))     {firstRun = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-l"))     {lastRun = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-m"))     {maxRuns = atoi(argv[++i]);}
   }
 
   cdbRest *pDB(0);
@@ -115,14 +123,16 @@ int main(int argc, char* argv[]) {
   cout << "total number of runs: " << vRunNumbers.size() << endl;
   int cnt(0);
   //  for (int it = startIdx; it < startIdx + maxRuns; ++it) {
+  cout << "all = " << all << endl;
   for (int it = 0; it < vRunNumbers.size(); ++it) {
     int irun = stoi(vRunNumbers[it]);
     if (irun < firstRun) continue;
     if (lastRun > -1 && irun > lastRun) continue;
     runRecord rr = pDB->getRunRecord(irun);
     cout << rr.printSummary() << endl;
-    if (rr.isSignificant()) {
-      ofstream ofs(dirPath + "/runrecords/" + "runRecord_" + to_string(irun) + ".json");
+    if (all || rr.isSignificant()) {
+      string filename = dirPath + "/runrecords/" + "runRecord_" + to_string(irun) + ".json";
+      ofstream ofs(filename);
       ofs << rr.json() << endl;
       ofs.close();
       ++cnt;  
