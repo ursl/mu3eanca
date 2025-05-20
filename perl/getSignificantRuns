@@ -4,10 +4,14 @@
 # rsyncSignificantRuns
 # ====================
 #
+# Usage: ./getSignificantRuns -c ~/mu3e/mu3eanca/db0/cdb2/certification/2025/2025-Cage-v1-significant-source.runs
 #
-#
+# Options: -c file              certification file to use for run list
+#          -l dir               local directory for data
+#          -r user@remote:/path remote directory (with login) for data
 #
 # History   2025/05/19 first shot
+#           2025/05/20 add description of Usage and Options 
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
