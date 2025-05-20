@@ -1,0 +1,65 @@
+#!/usr/bin/perl
+
+# ----------------------------------------------------------------------
+# rsyncSignificantRuns
+# ====================
+#
+#
+#
+#
+# History   2025/05/19 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+
+getopts('c:l:r:');
+
+if ($opt_c eq "") {
+    $opt_c = "../db0/cdb2/certification/2025/2025-Cage-v1-significant-cosmic.runs";
+}
+
+if ($opt_l eq "") {
+    $opt_l = "/Users/ursl/data/mu3e/run2025";
+}
+
+if ($opt_r eq "") {
+    $opt_r = "langenegger\@merlin-l-001:/data/experiment/mu3e/data/2025/raw";
+}
+
+
+
+# -- read in certification file
+open(IN, "$opt_c") || die "cannot open $opt_c\n";
+while (<IN>) {
+    s/^\{//g;
+    s/\}//g;
+    chomp;
+    my @fields = split(/,/, $_);
+    push(@runs, @fields);
+}
+close(IN);
+
+print "runs: @runs\n";
+
+# -- get the files if they are not present locally
+foreach my $run (@runs) {
+    my $file = sprintf("run%05d.mid.lz4", $run);
+    my $lfile = "$opt_l/$file";
+    print "checking $lfile\n";
+    if (!-e $lfile) {
+        $cmd = "scp $opt_r/$file $lfile";
+        print "$cmd\n";
+        system($cmd);
+    }
+    $file =~ s/\.mid\.lz4$/.json/g;
+    $lfile = "$opt_l/$file";
+    if (!-e $lfile) {
+        $cmd = "scp $opt_r/$file $lfile";
+        print "$cmd\n";
+        system($cmd);
+    }
+}
