@@ -28,9 +28,12 @@ using namespace std;
 // --
 // -- -m mode: 0: upload template (magic words: dqTemplate.json or runInfoTemplate.json) to run records
 // --          1: parse shift comments and set runInfo fields "class" and "junk"
+// --          2: select runs from RDB based on selection string and class string
 // -- History:
 // --   2025/05/08: first shot
 // --   2025/05/12: replace junk with significant
+// --   2025/05/20: add mode 2
+// 
 // ------------------------------------------------------------------------
 
 void rdbMode1(runRecord &, bool);
@@ -97,7 +100,6 @@ int main(int argc, char* argv[]) {
 
   vector<string> vRunNumbers = pDB->getAllRunNumbers();
   for (int it = 0; it < vRunNumbers.size(); ++it) {
-    cout << "run number: " << vRunNumbers[it] << endl;
     int irun = stoi(vRunNumbers[it]);
     if (irun < firstRun) continue;
     if ((lastRun > 0) && (irun > lastRun)) continue;
@@ -158,8 +160,8 @@ void rdbMode0(runRecord &rr, bool debug) {
 // -- RunInfo significant:  bad
 void rdbMode1(runRecord &rr, bool debug) {
 
-  vector<string> newRunInfo = runInfoTemplateFileLines;
-  
+  RunInfo ri = rr.getRunInfo();
+
   string xstring = rr.fEORComments;
   transform(xstring.begin(), xstring.end(), xstring.begin(), [](unsigned char c) { return tolower(c); });
 
@@ -168,7 +170,7 @@ void rdbMode1(runRecord &rr, bool debug) {
 
   cout << "run number: " << rr.fBORRunNumber << ": ";
 
-  // -- check for junk indicators stored in vector
+  // -- check for run class indicators stored in vector
   vector<string> vClassIndicators = {"beam", "source", "cosmic"};
   for (const auto &indicator : vClassIndicators) {
     if (xstring.find(indicator) != string::npos) {
@@ -180,49 +182,59 @@ void rdbMode1(runRecord &rr, bool debug) {
   }
 
   // -- modify significantFromComments for special tags
-  vector<string> vJunkIndicators = {"bad", "unstable", "error", "problem", "dbx", "fail", "debug", "test", "dummy", "tune", 
-                                    "calib"};
+  vector<string> vJunkIndicators = {"bad", "unstable", "error", "problem", "dbx", "fail", "debug", "test", "dummy"};
   for (const auto &indicator : vJunkIndicators) {
     if (xstring.find(indicator) != string::npos) {
       cout << ", overriding junk significant indicator: " << indicator;
+      classFromComments = "junk";
       significantFromComments = "false";
       break;
+    }
+  }
+
+  // -- modify classFromComments for special tags
+  if (classFromComments == "not found") {
+    vector<string> vClass2Indicators = {"mask", "tune", "calib"};
+    for (const auto &indicator : vClass2Indicators) {
+      if (xstring.find(indicator) != string::npos) {
+        cout << ", overriding class2 indicator: " << indicator << " -> " << "calib";
+        classFromComments = "calib";
+        break;
+      }
     }
   }
   cout << endl;
 
   if (significantFromComments == "not found") {
     significantFromComments = "false";
-  }
-
-  for (auto &it: newRunInfo) {
-    // -- replace Class value
-    if (it.find("Class") != string::npos) {
-      size_t pos =  it.rfind(":");
-      if (string::npos != pos) {
-        stringstream ss;
-        ss << " \"" << classFromComments << "\",";
-        it.replace(pos + 1, string::npos, ss.str());
-      }
+  } else {
+    if (significantFromComments != ri.significant) {
+      ri.significant = significantFromComments;
     }
-    // -- replace Junk value
-    if (it.find("Significant") != string::npos) {
-      size_t pos =  it.rfind(":");
-      if (string::npos != pos) {
-        stringstream ss;
-        ss << " \"" << significantFromComments << "\",";
-        it.replace(pos + 1, string::npos, ss.str());
+  }
+    
+  if (classFromComments == "not found") { 
+    classFromComments = "junk";
+  } else {
+    if (ri.Class == "not found") {
+      ri.Class = classFromComments;
+    } else {
+      if (ri.Class != classFromComments) {
+        if (ri.comments == "unset") ri.comments = "";
+        ri.comments += " from " + ri.Class + " to: " + classFromComments;
+        ri.Class = classFromComments;
       }
     }
   }
-
+  
   // -- write to file
   stringstream ss;
   ss << "rdb/runInfo_" << rr.fBORRunNumber << ".json";
   ofstream ofs(ss.str());
-  for (const auto &line : newRunInfo) {
-    ofs << line << endl;
-  }
+  // for (const auto &line : newRunInfo) {
+  //   ofs << line << endl;
+  // }
+  ofs << ri.json() << endl;
   ofs.close();
 
   if (!debug) {
