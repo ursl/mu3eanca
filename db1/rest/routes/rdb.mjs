@@ -81,7 +81,24 @@ router.get("/", async (req, res) => {
     let onlySignificant = "unset";
     onlySignificant = req.query.onlySignificant;
     console.log("HalloHallo>  onlySignificant = " + onlySignificant);
-    let querySignificant  = [{"Attributes.RunInfo.Significant": "true"}];
+    let querySignificant  = [{
+        $expr: {
+            $eq: [
+                {$getField: {
+                    field: "Significant",
+                    input: {$arrayElemAt: [
+                        {$filter: {
+                            input: "$Attributes",
+                            as: "attr",
+                            cond: {$eq: [{$getField: {field: "$$ROOT", input: "$$attr"}}, "RunInfo"]}
+                        }},
+                        -1
+                    ]}
+                }},
+                "true"
+            ]
+        }
+    }];
 
 
     // -- time filtering attempts
@@ -101,7 +118,24 @@ router.get("/", async (req, res) => {
         //query = querySignificant;
         if (onlySignificant !== undefined) {
             if (onlySignificant === "yes") {    
-                query = {"Attributes.RunInfo.Significant": "true"};
+                query = {
+                    $expr: {
+                        $eq: [
+                            {$getField: {
+                                field: "Significant",
+                                input: {$arrayElemAt: [
+                                    {$filter: {
+                                        input: "$Attributes",
+                                        as: "attr",
+                                        cond: {$eq: [{$getField: {field: "$$ROOT", input: "$$attr"}}, "RunInfo"]}
+                                    }},
+                                    -1
+                                ]}
+                            }},
+                            "true"
+                        ]
+                    }
+                };
             } else {
                 query = {};
             }
@@ -197,7 +231,24 @@ router.get("/", async (req, res) => {
     }
 
     // Default query - show significant runs by default
-    query = {"Attributes.RunInfo.Significant": "true"};
+    query = {
+        $expr: {
+            $eq: [
+                {$getField: {
+                    field: "Significant",
+                    input: {$arrayElemAt: [
+                        {$filter: {
+                            input: "$Attributes",
+                            as: "attr",
+                            cond: {$eq: [{$getField: {field: "$$ROOT", input: "$$attr"}}, "RunInfo"]}
+                        }},
+                        -1
+                    ]}
+                }},
+                "true"
+            ]
+        }
+    };
     const result = await collection.find(query, options).limit(MAXRUNS).toArray();
     res.render('index', {'data': result, 'onlySignificant': 'yes'});
 
