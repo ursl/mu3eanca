@@ -5,6 +5,14 @@
     <meta charset="UTF-8">
     <title>Mu3e Run Database</title>
     <style>
+    body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
     h1 {
         color: green;
         margin-bottom: 20px;
@@ -12,42 +20,96 @@
 
     .header-section {
         background-color: #f8f9fa;
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
+        padding: 10px;
+        border-radius: 0;
+        margin-bottom: 0;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+    }
+
+    .content-section {
+        flex: 1;
+        padding: 0 20px;
+        margin-top: 200px;
+        margin-bottom: 20px;
+        position: relative;
     }
 
     .filter-section {
         display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-        align-items: center;
+        flex-direction: column;
+        gap: 12px;
         margin-bottom: 15px;
+        background-color: white;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
     }
 
     .filter-group {
         display: flex;
         align-items: center;
-        gap: 10px;
-        background-color: white;
-        padding: 10px;
+        gap: 8px;
+        padding: 6px 10px;
         border-radius: 4px;
-        border: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+    }
+
+    .filter-group.significant {
+        background-color: #e8f5e9;
+        border-color: #c8e6c9;
+    }
+
+    .filter-group label {
+        white-space: nowrap;
+        font-size: 13px;
+        color: #495057;
+        font-weight: 500;
+    }
+
+    .filter-group input[type="numeric"],
+    .filter-group input[type="text"],
+    .filter-group select {
+        min-width: 120px;
+        padding: 4px 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .filter-group input[type="numeric"] {
+        width: 80px;
+    }
+
+    .filter-group.run-range input[type="numeric"] {
+        width: 70px;
     }
 
     .button {
         background-color: #04AA6D;
         border: none;
         color: white;
-        padding: 8px 16px;
+        padding: 6px 14px;
         text-align: center;
         text-decoration: none;
         display: inline-block;
-        font-size: 14px;
+        font-size: 13px;
         border-radius: 4px;
         cursor: pointer;
-        transition: background-color 0.3s;
+        transition: background-color 0.2s;
+        font-weight: 500;
     }
 
     .button:hover {
@@ -82,28 +144,68 @@
         font-style: italic;
     }
 
-    #runs {
-        font-family: Arial, Helvetica, sans-serif;
-        border-collapse: collapse;
-        width: 100%;
-    }
-
-    #runs td, #runs th {
+    .table-container {
+        display: flex;
+        flex-direction: column;
         border: 1px solid #ddd;
-        padding: 8px;
+        border-radius: 4px;
+        background: white;
+        height: calc(100vh - 250px);
     }
 
-    #runs tr:nth-child(even){background-color: #f2f2f2;}
+    .table-header {
+        background: #04AA6D;
+        color: white;
+        padding: 0;
+        border-bottom: 2px solid #ddd;
+    }
 
-    #runs tr:hover {background-color: #ddd;}
+    .table-header table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
-    #runs th {
-        padding-top: 12px;
-        padding-bottom: 12px;
+    .table-header th {
+        padding: 12px 8px;
         text-align: left;
-        background-color: #04AA6D;
+        border: 1px solid #ddd;
+        background: #04AA6D;
         color: white;
     }
+
+    .table-body {
+        flex: 1;
+        overflow: auto;
+    }
+
+    .table-body table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .table-body td {
+        padding: 8px;
+        border: 1px solid #ddd;
+    }
+
+    .table-body tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    .table-body tr:hover {
+        background-color: #ddd;
+    }
+
+    /* Column widths - applied to both header and body */
+    .table-header th:nth-child(1), .table-body td:nth-child(1) { width: 10%; }  /* Run */
+    .table-header th:nth-child(2), .table-body td:nth-child(2) { width: 15%; }  /* Start time */
+    .table-header th:nth-child(3), .table-body td:nth-child(3) { width: 15%; }  /* End time */
+    .table-header th:nth-child(4), .table-body td:nth-child(4) { width: 5%; }   /* Sig */
+    .table-header th:nth-child(5), .table-body td:nth-child(5) { width: 10%; }  /* Class */
+    .table-header th:nth-child(6), .table-body td:nth-child(6) { width: 10%; }  /* Events */
+    .table-header th:nth-child(7), .table-body td:nth-child(7) { width: 15%; }  /* Shift crew */
+    .table-header th:nth-child(8), .table-body td:nth-child(8) { width: 20%; }  /* Comments */
 </style>
 
 <script>
@@ -118,105 +220,58 @@ window.onload = function() {
     const significantParam = urlParams.get('onlySignificant');
     const checkbox = document.getElementById("filterSignificant");
     if (checkbox) {
-        // If no parameter is present, default to checked (true)
         checkbox.checked = significantParam === null ? true : significantParam === "yes";
         onlySignificant = significantParam === null ? "yes" : significantParam;
         isOnlySignificant = checkbox.checked;
     }
-    const nRun = urlParams.get('nRun') || NMAXRUNS;
-    const nRunInput = document.getElementById("filterRunLimit");
-    if (nRunInput) {
-        nRunInput.value = nRun;
-    }
 
-    // Add event listeners for Enter key on input fields
-    document.getElementById("filterRunLimit").addEventListener("keypress", function(event) {
+    // Set initial values from URL parameters
+    document.getElementById("filterRunLimit").value = urlParams.get('nRun') || '';
+    document.getElementById("filterRunMin").value = urlParams.get('minRun') || '';
+    document.getElementById("filterRunMax").value = urlParams.get('maxRun') || '';
+    document.getElementById("filterComment").value = urlParams.get('comment') || '';
+    document.getElementById("filterRunClass").value = urlParams.get('runClass') || '';
+
+    // Add event listener for Enter key on the filter form
+    document.getElementById("filterForm").addEventListener("keypress", function(event) {
         if (event.key === "Enter") {
             event.preventDefault();
-            runsLimit();
-        }
-    });
-
-    document.getElementById("filterRunMin").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            runsFilter();
-        }
-    });
-
-    document.getElementById("filterRunMax").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            runsFilter();
+            applyFilters();
         }
     });
 }
 
-function runsFilter() {
+function applyFilters() {
     isFiltered = true;
-    const minRun = document.getElementById("filterRunMin").value;
-    console.log("minRun: " + minRun);
-    const maxRun =  document.getElementById("filterRunMax").value;
-    console.log("maxRun: " + maxRun);
-    window.location.href = '/rdb/?minRun=' + minRun + '&maxRun=' + maxRun + '&onlySignificant=' + onlySignificant;
-}
+    const urlParams = new URLSearchParams();
+    
+    // Always include onlySignificant parameter
+    urlParams.set('onlySignificant', onlySignificant);
 
-function runsLimit() {
-    isFiltered = true;
+    // Get all filter values
     const nRun = document.getElementById("filterRunLimit").value;
-    window.location.href = '/rdb/?nRun=' + nRun + '&onlySignificant=' + onlySignificant;
-}
-
-function timeFilter() {
-    isFiltered = true;
-    const startTime = document.getElementById("filterStartTime").value;
-    console.log("startTime: " + startTime);
-    const stopTime  = document.getElementById("filterStopTime").value;
-    console.log("stopTime: " + stopTime);
-    window.location.href = '/rdb/?startTime=' + startTime + '&stopTime=' + stopTime + '&onlySignificant=' + onlySignificant;
-}
-
-function runClassFilter() {
-    isFiltered = true;
+    const minRun = document.getElementById("filterRunMin").value;
+    const maxRun = document.getElementById("filterRunMax").value;
+    const comment = document.getElementById("filterComment").value;
     const runClass = document.getElementById("filterRunClass").value;
-    console.log("runClass: " + runClass);
-    window.location.href = '/rdb/?runClass=' + runClass + '&onlySignificant=' + onlySignificant;
+
+    // Only add parameters that have values
+    if (nRun) urlParams.set('nRun', nRun);
+    if (minRun) urlParams.set('minRun', minRun);
+    if (maxRun) urlParams.set('maxRun', maxRun);
+    if (comment) urlParams.set('comment', comment);
+    if (runClass) urlParams.set('runClass', runClass);
+
+    // Navigate to the new URL with all active filters
+    window.location.href = '/rdb/?' + urlParams.toString();
 }
 
 function significantFilter() {
-    isFiltered = true;
     const checkbox = document.getElementById("filterSignificant");
     onlySignificant = checkbox.checked ? "yes" : "no";
-    if (onlySignificant === "yes") {
-        isOnlySignificant = true;
-    } else {
-        isOnlySignificant = false;
-    }
-    // Get current URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const minRun = urlParams.get('minRun') || '';
-    const maxRun = urlParams.get('maxRun') || '';
-    const nRun = urlParams.get('nRun') || NMAXRUNS;
-    const startTime = urlParams.get('startTime') || '';
-    const stopTime = urlParams.get('stopTime') || '';
-
-    // Build new URL with all parameters
-    let newUrl = '/rdb/?onlySignificant=';
-    if (onlySignificant === "yes") {
-        newUrl += 'yes';
-    } else {
-        newUrl += 'no';
-    }
-    if (minRun) newUrl += '&minRun=' + minRun;
-    if (maxRun) newUrl += '&maxRun=' + maxRun;
-    if (nRun) newUrl += '&nRun=' + nRun;
-    if (startTime) newUrl += '&startTime=' + startTime;
-    if (stopTime) newUrl += '&stopTime=' + stopTime;
-
-    // Force a page reload with the new URL
-    window.location.replace(newUrl);
+    isOnlySignificant = checkbox.checked;
+    applyFilters();
 }
-
 </script>
 </head>
 
@@ -231,43 +286,48 @@ function significantFilter() {
     <div class="header-section">
         <h1><a href="/rdb/" style="text-decoration: none; color: inherit;">Mu3e Run Database</a></h1>
         
-        <div class="filter-section">
-            <div class="filter-group">
-                <label for="filterSignificant">Significant Runs only?</label>
-                <input id="filterSignificant" type="checkbox" 
-                    <% if (locals.onlySignificant === "yes") { %>checked<% } %>
-                    onclick="significantFilter()" />
-            </div>
+        <form id="filterForm" class="filter-section">
+            <div class="filter-row">
+                <div class="filter-group significant">
+                    <label for="filterSignificant">Significant Runs only</label>
+                    <input id="filterSignificant" type="checkbox" 
+                        <% if (locals.onlySignificant === "yes") { %>checked<% } %>
+                        onchange="significantFilter()" />
+                </div>
 
-            <div class="filter-group">
-                <input id="filterRunLimit" type="numeric" placeholder="number of runs" />
-                <input id="applyRunsLimit" type="button" class="button" value="Filter" onclick="runsLimit()" />
-            </div>
+                <div class="filter-group">
+                    <label for="filterRunClass">Run class</label>
+                    <select id="filterRunClass">
+                        <option value="">All classes</option>
+                        <option value="beam" <% if (locals.runClass === 'beam') { %>selected<% } %>>beam</option>
+                        <option value="cosmic" <% if (locals.runClass === 'cosmic') { %>selected<% } %>>cosmic</option>
+                        <option value="source" <% if (locals.runClass === 'source') { %>selected<% } %>>source</option>
+                        <option value="calib" <% if (locals.runClass === 'calib') { %>selected<% } %>>calib</option>
+                        <option value="junk" <% if (locals.runClass === 'junk') { %>selected<% } %>>junk</option>
+                    </select>
+                </div>
 
-            <div class="filter-group">
-                <input id="filterRunMin" type="numeric" placeholder="minimum runnumber" />
-                <input id="filterRunMax" type="numeric" placeholder="maximum runnumber" />
-                <input id="applyRunsFilter" type="button" class="button" value="Filter" onclick="runsFilter()" />
-            </div>
+                <div class="filter-group run-range">
+                    <label for="filterRunMin">Run range</label>
+                    <input id="filterRunMin" type="numeric" placeholder="min" />
+                    <input id="filterRunMax" type="numeric" placeholder="max" />
+                </div>
 
-            <!-- <div class="filter-group">
-                <input id="filterStartTime" type="text" placeholder="Start time" />
-                <input id="filterStopTime" type="text" placeholder="Stop time" />
-                <input id="applyTimeFilter" type="button" class="button" value="Filter" onclick="timeFilter()" />
-            </div> -->
+                <div class="filter-group">
+                    <label for="filterRunLimit">Max runs</label>
+                    <input id="filterRunLimit" type="numeric" placeholder="limit" />
+                </div>
 
-            <div class="filter-group">
-                <select id="filterRunClass">
-                    <option value="" <% if (!locals.runClass) { %>selected<% } %>>All classes</option>
-                    <option value="beam" <% if (locals.runClass === 'beam') { %>selected<% } %>>beam</option>
-                    <option value="cosmic" <% if (locals.runClass === 'cosmic') { %>selected<% } %>>cosmic</option>
-                    <option value="source" <% if (locals.runClass === 'source') { %>selected<% } %>>source</option>
-                    <option value="calib" <% if (locals.runClass === 'calib') { %>selected<% } %>>calib</option>
-                    <option value="junk" <% if (locals.runClass === 'junk') { %>selected<% } %>>junk</option>
-                </select>
-                <input id="applyRunClassFilter" type="button" class="button" value="Filter" onclick="runClassFilter()" />
+                <div class="filter-group" style="flex-grow: 1;">
+                    <label for="filterComment">Search comments</label>
+                    <input id="filterComment" type="text" placeholder="search in comments" value="<%= locals.comment || '' %>" style="width: 100%;" />
+                </div>
+
+                <div class="filter-group">
+                    <input type="button" class="button" value="Apply Filters" onclick="applyFilters()" />
+                </div>
             </div>
-        </div>
+        </form>
 
         <div class="status-text">
             <% if (isFiltered) { %>
@@ -284,66 +344,87 @@ function significantFilter() {
         </div>
     </div>
 
-    <table id="runs">
-    <thead>
-    <tr>
-    <th>Run </th>
-    <th>Start time</th>
-    <th>End time</th>
-    <th>Sig.</th>
-    <th>Class</th>
-    <th>Events</th>
-    <th>Shift crew</th>
-    <th>Shift Comments/RunInfo Comments</th>
-    </tr>
-    </thead>
+    <div class="content-section">
+        <div class="table-container">
+            <div class="table-header">
+                <table>
+                    <tr>
+                        <th>Run</th>
+                        <th>Start time</th>
+                        <th>End time</th>
+                        <th>Sig.</th>
+                        <th>Class</th>
+                        <th>Events</th>
+                        <th>Shift crew</th>
+                        <th>Shift Comments/RunInfo Comments</th>
+                    </tr>
+                </table>
+            </div>
+            <div class="table-body">
+                <table>
+                    <tbody>
+                        <% data.map((result) => { %>
+                            <tr>
+                                <td><a href="/rdb/run/<%= result.BOR["Run number"] %>"><%= result.BOR["Run number"] %></a></td>
+                                <td><%= result.BOR["Start time"] %></td>
+                                <td><%= result.EOR["Stop time"] %></td>
+                                <% if (result.Attributes && result.Attributes.length > 0) { %>
+                                    <% const lastRunInfo = result.Attributes.filter(attr => attr.RunInfo).pop(); %>
+                                    <% if (lastRunInfo) { %>
+                                        <td>
+                                            <% if (lastRunInfo.RunInfo.Significant === "true") { %>
+                                                <span class="status-significant">✓</span>
+                                            <% } else if (lastRunInfo.RunInfo.Significant === "false") { %>
+                                                <span class="status-not-significant">✗</span>
+                                            <% } else { %>
+                                                <span class="status-unset">n/a</span>
+                                            <% } %>
+                                        </td>
+                                        <td><%= lastRunInfo.RunInfo.Class || 'n/a' %></td>
+                                        <td><%= result.EOR["Events"] %></td>
+                                        <td><%= result.BOR["Shift crew"] %></td>
+                                        <td>
+                                            <%= result.EOR["Comments"] %>
+                                            <% if (lastRunInfo.RunInfo.Comments && lastRunInfo.RunInfo.Comments !== "unset") { %>
+                                                /<%= lastRunInfo.RunInfo.Comments %>
+                                            <% } %>
+                                        </td>
+                                    <% } else { %>
+                                        <td><span class="status-unset">N/A</span></td>
+                                        <td>n/a</td>
+                                        <td><%= result.EOR["Events"] %></td>
+                                        <td><%= result.BOR["Shift crew"] %></td>
+                                        <td><%= result.EOR["Comments"] %></td>
+                                    <% } %>
+                                <% } else { %>
+                                    <td>-</td>
+                                    <td>n/a</td>
+                                    <td><%= result.EOR["Events"] %></td>
+                                    <td><%= result.BOR["Shift crew"] %></td>
+                                    <td><%= result.EOR["Comments"] %></td>
+                                <% } %>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-
-
-    <% data.map((result) => { %>
-        <tr>
-        <td> <a href="/rdb/run/<%= result.BOR["Run number"] %>"><%= result.BOR["Run number"] %> </a></td>
-        <td><%= result.BOR["Start time"] %></td>
-        <td><%= result.EOR["Stop time"] %></td>
-        <% if (result.Attributes && result.Attributes.length > 0) { %>
-            <% const lastRunInfo = result.Attributes.filter(attr => attr.RunInfo).pop(); %>
-            <% if (lastRunInfo) { %>
-                <td>
-                    <% if (lastRunInfo.RunInfo.Significant === "true") { %>
-                        <span class="status-significant">✓</span>
-                    <% } else if (lastRunInfo.RunInfo.Significant === "false") { %>
-                        <span class="status-not-significant">✗</span>
-                    <% } else { %>
-                        <span class="status-unset">n/a </span>
-                    <% } %>
-                </td>
-                <td><%= lastRunInfo.RunInfo.Class || 'n/a' %></td>
-                <td><%= result.EOR["Events"] %></td>
-                <td><%= result.BOR["Shift crew"] %></td>
-                <td>
-                    <%= result.EOR["Comments"] %>
-                    <% if (lastRunInfo.RunInfo.Comments && lastRunInfo.RunInfo.Comments !== "unset") { %>
-                        /<%= lastRunInfo.RunInfo.Comments %>
-                    <% } %>
-                </td>
-            <% } else { %>
-                <td><span class="status-unset">N/A</span></td>
-                <td>n/a</td>
-                <td><%= result.EOR["Events"] %></td>
-                <td><%= result.BOR["Shift crew"] %></td>
-                <td><%= result.EOR["Comments"] %></td>
-            <% } %>
-        <% } else { %>
-            <td>-</td>
-            <td>n/a</td>
-            <td><%= result.EOR["Events"] %></td>
-            <td><%= result.BOR["Shift crew"] %></td>
-            <td><%= result.EOR["Comments"] %></td>
-        <% } %>
-        </tr>
-    <% }) %>
-
-</table>
-    </body>
+        <div style="
+            margin-top: 30px;
+            padding: 15px;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            border-top: 1px solid #eee;
+        ">
+            Built with <a href="https://cursor.sh" target="_blank" style="
+                color: #04AA6D;
+                text-decoration: none;
+                font-weight: 500;
+            ">Cursor</a>
+        </div>
+    </div>
+</body>
 
 </html>

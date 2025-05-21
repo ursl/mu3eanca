@@ -91,9 +91,10 @@ router.get("/", async (req, res) => {
     const onlySignificant = req.query.onlySignificant === "no" ? "no" : "yes";  // Default to "yes" unless explicitly set to "no"
     const starttime = req.query.startTime;
     const stoptime = req.query.stopTime;
-    const runClass = req.query.runClass;  // Add run class parameter
+    const runClass = req.query.runClass;
+    const comment = req.query.comment;  // Add comment parameter
 
-    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass });
+    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass, comment });
 
     try {
         // Build the aggregation pipeline
@@ -122,7 +123,7 @@ router.get("/", async (req, res) => {
             pipeline.push({ $match: { "BOR.Stop time": { $regex: stoptime } } });
         }
 
-        // Add a field with the last RunInfo instance for both significant and class filtering
+        // Add a field with the last RunInfo instance for filtering
         pipeline.push({
             $addFields: {
                 lastRunInfo: {
@@ -158,6 +159,24 @@ router.get("/", async (req, res) => {
             });
         }
 
+        // If comment is specified, filter by both RunInfo Comments and EOR Comments (case-insensitive)
+        if (comment) {
+            pipeline.push({
+                $match: {
+                    $or: [
+                        { "lastRunInfo.RunInfo.Comments": { 
+                            $regex: comment,
+                            $options: 'i'  // 'i' makes the search case-insensitive
+                        }},
+                        { "EOR.Comments": { 
+                            $regex: comment,
+                            $options: 'i'  // 'i' makes the search case-insensitive
+                        }}
+                    ]
+                }
+            });
+        }
+
         // Sort by run number descending
         pipeline.push({ $sort: { "BOR.Run number": -1 } });
 
@@ -176,7 +195,8 @@ router.get("/", async (req, res) => {
         res.render('index', {
             'data': result,
             'onlySignificant': onlySignificant || 'yes',  // Default to 'yes' if not specified
-            'runClass': runClass || ''  // Pass the run class to the template
+            'runClass': runClass || '',  // Pass the run class to the template
+            'comment': comment || ''  // Pass the comment to the template
         });
     } catch (error) {
         console.error("Error executing query:", error);
