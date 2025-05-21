@@ -91,8 +91,9 @@ router.get("/", async (req, res) => {
     const onlySignificant = req.query.onlySignificant === "no" ? "no" : "yes";  // Default to "yes" unless explicitly set to "no"
     const starttime = req.query.startTime;
     const stoptime = req.query.stopTime;
+    const runClass = req.query.runClass;  // Add run class parameter
 
-    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime });
+    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass });
 
     try {
         // Build the aggregation pipeline
@@ -121,33 +122,40 @@ router.get("/", async (req, res) => {
             pipeline.push({ $match: { "BOR.Stop time": { $regex: stoptime } } });
         }
 
-        // If onlySignificant is "yes", add stages to filter by last RunInfo
-        if (onlySignificant === "yes") {
-            pipeline.push(
-                // Add a field with the last RunInfo instance
-                {
-                    $addFields: {
-                        lastRunInfo: {
-                            $arrayElemAt: [
-                                {
-                                    $filter: {
-                                        input: "$Attributes",
-                                        as: "attr",
-                                        cond: { $eq: [{ $type: "$$attr.RunInfo" }, "object"] }
-                                    }
-                                },
-                                -1  // Get the last element
-                            ]
-                        }
-                    }
-                },
-                // Match only documents where the last RunInfo is significant
-                {
-                    $match: {
-                        "lastRunInfo.RunInfo.Significant": "true"
-                    }
+        // Add a field with the last RunInfo instance for both significant and class filtering
+        pipeline.push({
+            $addFields: {
+                lastRunInfo: {
+                    $arrayElemAt: [
+                        {
+                            $filter: {
+                                input: "$Attributes",
+                                as: "attr",
+                                cond: { $eq: [{ $type: "$$attr.RunInfo" }, "object"] }
+                            }
+                        },
+                        -1  // Get the last element
+                    ]
                 }
-            );
+            }
+        });
+
+        // If onlySignificant is "yes", filter by last RunInfo's Significant field
+        if (onlySignificant === "yes") {
+            pipeline.push({
+                $match: {
+                    "lastRunInfo.RunInfo.Significant": "true"
+                }
+            });
+        }
+
+        // If runClass is specified, filter by last RunInfo's Class field
+        if (runClass) {
+            pipeline.push({
+                $match: {
+                    "lastRunInfo.RunInfo.Class": runClass
+                }
+            });
         }
 
         // Sort by run number descending
@@ -167,7 +175,8 @@ router.get("/", async (req, res) => {
         
         res.render('index', {
             'data': result,
-            'onlySignificant': onlySignificant || 'yes'  // Default to 'yes' if not specified
+            'onlySignificant': onlySignificant || 'yes',  // Default to 'yes' if not specified
+            'runClass': runClass || ''  // Pass the run class to the template
         });
     } catch (error) {
         console.error("Error executing query:", error);

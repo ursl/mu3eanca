@@ -176,6 +176,12 @@ function timeFilter() {
     window.location.href = '/rdb/?startTime=' + startTime + '&stopTime=' + stopTime + '&onlySignificant=' + onlySignificant;
 }
 
+function runClassFilter() {
+    isFiltered = true;
+    const runClass = document.getElementById("filterRunClass").value;
+    console.log("runClass: " + runClass);
+    window.location.href = '/rdb/?runClass=' + runClass + '&onlySignificant=' + onlySignificant;
+}
 
 function significantFilter() {
     isFiltered = true;
@@ -244,10 +250,22 @@ function significantFilter() {
                 <input id="applyRunsFilter" type="button" class="button" value="Filter" onclick="runsFilter()" />
             </div>
 
-            <div class="filter-group">
+            <!-- <div class="filter-group">
                 <input id="filterStartTime" type="text" placeholder="Start time" />
                 <input id="filterStopTime" type="text" placeholder="Stop time" />
                 <input id="applyTimeFilter" type="button" class="button" value="Filter" onclick="timeFilter()" />
+            </div> -->
+
+            <div class="filter-group">
+                <select id="filterRunClass">
+                    <option value="" <% if (!locals.runClass) { %>selected<% } %>>All classes</option>
+                    <option value="beam" <% if (locals.runClass === 'beam') { %>selected<% } %>>beam</option>
+                    <option value="cosmic" <% if (locals.runClass === 'cosmic') { %>selected<% } %>>cosmic</option>
+                    <option value="source" <% if (locals.runClass === 'source') { %>selected<% } %>>source</option>
+                    <option value="calib" <% if (locals.runClass === 'calib') { %>selected<% } %>>calib</option>
+                    <option value="junk" <% if (locals.runClass === 'junk') { %>selected<% } %>>junk</option>
+                </select>
+                <input id="applyRunClassFilter" type="button" class="button" value="Filter" onclick="runClassFilter()" />
             </div>
         </div>
 
