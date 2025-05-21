@@ -54,6 +54,28 @@ router.put("/runrecords", async (req, res) => {
 
 // ----------------------------------------------------------------------
 // -- index page (with possible filters)
+// Helper function to build base query with significant run filtering
+function buildBaseQuery(onlySignificant) {
+    if (onlySignificant === "yes") {
+        return {
+            "Attributes": {
+                $elemMatch: {
+                    "RunInfo.Significant": "true"
+                }
+            }
+        };
+    }
+    return {};
+}
+
+
+// ----------------------------------------------------------------------
+// Helper function to merge query conditions
+function mergeQueryConditions(baseQuery, additionalConditions) {
+    return { ...baseQuery, ...additionalConditions };
+}
+
+// ----------------------------------------------------------------------
 router.get("/", async (req, res) => {
     let collection = await db.collection("runrecords");
     let MAXRUNS = 1000;
@@ -61,279 +83,97 @@ router.get("/", async (req, res) => {
     console.log("----------------------------------------------------");
     console.log("req.query: " + JSON.stringify(req.query));
     console.log("serving from RDB / " + req.params.id);
-    // -- number of runs to show
-    let nruns = -1;
-    if (req.query.nRun) {
-        nruns = Number(req.query.nRun);
-    } 
 
-    console.log("nruns = " + nruns);
+    // Parse query parameters with onlySignificant defaulting to "yes"
+    const nruns = req.query.nRun ? Number(req.query.nRun) : -1;
+    const minrun = Number(req.query.minRun) || -1;
+    const maxrun = Number(req.query.maxRun) || -1;
+    const onlySignificant = req.query.onlySignificant === "no" ? "no" : "yes";  // Default to "yes" unless explicitly set to "no"
+    const starttime = req.query.startTime;
+    const stoptime = req.query.stopTime;
 
-    // -- run range to show
-    let minrun = -1;
-    minrun = Number(req.query.minRun);
-    console.log("minrun = " + minrun);
-    let maxrun = -1;
-    maxrun = Number(req.query.maxRun);
-    console.log("maxrun = " + maxrun);
+    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime });
 
-    // -- significant runs filtering
-    let onlySignificant = "unset";
-    onlySignificant = req.query.onlySignificant;
-    console.log("HalloHallo>  onlySignificant = " + onlySignificant);
-    let querySignificant  = [{
-        $expr: {
-            $eq: [
-                {$getField: {
-                    field: "Significant",
-                    input: {$arrayElemAt: [
-                        {$filter: {
-                            input: "$Attributes",
-                            as: "attr",
-                            cond: {$eq: [{$getField: {field: "$$ROOT", input: "$$attr"}}, "RunInfo"]}
-                        }},
-                        -1
-                    ]}
-                }},
-                "true"
-            ]
-        }
-    }];
-
-
-    // -- time filtering attempts
-    let starttime = "unset";
-    starttime = req.query.startTime;
-    console.log("starttime = " + starttime);
-    let stoptime = "unset";
-    stoptime = req.query.stopTime;
-    console.log("stoptime = " + stoptime);
-
-    const options = {
-        // Sort returned documents in ascending order by title (A->Z)
-        sort: { "BOR.Run number": -1 }
-    };
-    let query = { };
-    if (nruns > 0) {
-        if (onlySignificant !== undefined) {
-            if (onlySignificant === "yes") {    
-                query = {
-                    "Attributes": {
-                        $elemMatch: {
-                            "RunInfo.Significant": "true"
-                        }
-                    }
-                };
-            } else {
-                query = {};
-            }
-        }         
-        try {
-            console.log("Query with nruns:", JSON.stringify(query, null, 2));
-            const result = await collection.find(query, options).limit(nruns).toArray();
-            console.log("Query successful, found", result.length, "results");
-            res.render('index', {'data': result});
-        } catch (error) {
-            console.error("Error in nruns query:", error);
-            console.error("Error stack:", error.stack);
-            res.status(500).send("Internal server error: " + error.message);
-        }
-        return;
-    } else if (minrun > -1) {
-        if (maxrun > 0) {
-            if (onlySignificant === "yes") {    
-                query = {
-                    "Attributes": {
-                        $elemMatch: {
-                            "RunInfo.Significant": "true"
-                        }
-                    },
-                    "BOR.Run number": {$gte: minrun, $lte: maxrun}
-                };
-            } else {
-                query = {"BOR.Run number": {$gte: minrun, $lte: maxrun}};
-            }
-            try {
-                console.log("Query with min/max run:", JSON.stringify(query, null, 2));
-                const result = await collection.find(query).toArray();
-                console.log("Query successful, found", result.length, "results");
-                res.render('index', {'data': result});
-            } catch (error) {
-                console.error("Error in min/max run query:", error);
-                console.error("Error stack:", error.stack);
-                res.status(500).send("Internal server error: " + error.message);
-            }
-            return;
-        } else {
-            if (onlySignificant === "yes") {    
-                query = {
-                    "Attributes": {
-                        $elemMatch: {
-                            "RunInfo.Significant": "true"
-                        }
-                    },
-                    "BOR.Run number": {$gte: minrun}
-                };
-            } else {
-                query = {"BOR.Run number": {$gte: minrun}};
-            }
-            try {
-                console.log("Query with min run:", JSON.stringify(query, null, 2));
-                const result = await collection.find(query).toArray();
-                console.log("Query successful, found", result.length, "results");
-                res.render('index', {'data': result});
-            } catch (error) {
-                console.error("Error in min run query:", error);
-                console.error("Error stack:", error.stack);
-                res.status(500).send("Internal server error: " + error.message);
-            }
-            return;
-        }
-    } else if (maxrun > -1) {
-        if (onlySignificant === "yes") {    
-            query = {
-                "Attributes": {
-                    $elemMatch: {
-                        "RunInfo.Significant": "true"
-                    }
-                },
-                "BOR.Run number": {$lte: maxrun}
-            };
-        } else {
-            query = {"BOR.Run number": {$lte: maxrun}};
-        }
-        try {
-            console.log("Query with max run:", JSON.stringify(query, null, 2));
-            const result = await collection.find(query).toArray();
-            console.log("Query successful, found", result.length, "results");
-            res.render('index', {'data': result});
-        } catch (error) {
-            console.error("Error in max run query:", error);
-            console.error("Error stack:", error.stack);
-            res.status(500).send("Internal server error: " + error.message);
-        }
-        return;
-    } else if (starttime !== undefined) {
-        if (onlySignificant === "yes") {    
-            query = {
-                "Attributes": {
-                    $elemMatch: {
-                        "RunInfo.Significant": "true"
-                    }
-                },
-                "BOR.Start time": {$regex: starttime}
-            };
-        } else {
-            query = {"BOR.Start time": {$regex: starttime}};
-        }
-        try {
-            console.log("Query with start time:", JSON.stringify(query, null, 2));
-            const result = await collection.find(query).toArray();
-            console.log("Query successful, found", result.length, "results");
-            res.render('index', {'data': result});
-        } catch (error) {
-            console.error("Error in start time query:", error);
-            console.error("Error stack:", error.stack);
-            res.status(500).send("Internal server error: " + error.message);
-        }
-        return;
-    } else if (stoptime !== undefined) {
-        if (onlySignificant === "yes") {    
-            query = {
-                "Attributes": {
-                    $elemMatch: {
-                        "RunInfo.Significant": "true"
-                    }
-                },
-                "BOR.Stop time": {$regex: stoptime}
-            };
-        } else {
-            query = {"BOR.Stop time": {$regex: stoptime}};
-        }
-        try {
-            console.log("Query with stop time:", JSON.stringify(query, null, 2));
-            const result = await collection.find(query).toArray();
-            console.log("Query successful, found", result.length, "results");
-            res.render('index', {'data': result});
-        } catch (error) {
-            console.error("Error in stop time query:", error);
-            console.error("Error stack:", error.stack);
-            res.status(500).send("Internal server error: " + error.message);
-        }
-        return;
-    } else if ((starttime !== undefined) && (stoptime !== undefined)) {
-        if (onlySignificant === "yes") {    
-            query = {
-                "Attributes": {
-                    $elemMatch: {
-                        "RunInfo.Significant": "true"
-                    }
-                },
-                "BOR.Start time": {$regex: starttime},
-                "BOR.Stop time": {$regex: stoptime}
-            };
-        } else {
-            query = {
-                "BOR.Start time": {$regex: starttime},
-                "BOR.Stop time": {$regex: stoptime}
-            };
-        }
-        try {
-            console.log("Query with start/stop time:", JSON.stringify(query, null, 2));
-            const result = await collection.find(query).toArray();
-            console.log("Query successful, found", result.length, "results");
-            res.render('index', {'data': result});
-        } catch (error) {
-            console.error("Error in start/stop time query:", error);
-            console.error("Error stack:", error.stack);
-            res.status(500).send("Internal server error: " + error.message);
-        }
-        return;
-    } else if (onlySignificant !== undefined) {
-        if (onlySignificant === "yes") {
-            query = {
-                "Attributes": {
-                    $elemMatch: {
-                        "RunInfo.Significant": "true"
-                    }
-                }
-            };
-        } else {
-            query = {};
-        }
-        try {
-            console.log("Query with only significant:", JSON.stringify(query, null, 2));
-            const result = await collection.find(query).toArray();
-            console.log("Query successful, found", result.length, "results");
-            res.render('index', {'data': result, 'onlySignificant': onlySignificant});
-        } catch (error) {
-            console.error("Error in only significant query:", error);
-            console.error("Error stack:", error.stack);
-            res.status(500).send("Internal server error: " + error.message);
-        }
-        return;
-    }
-
-    // Default query - show significant runs by default
-    console.log("Default query - show significant runs by default");
     try {
-        query = {
-            "Attributes": {
-                $elemMatch: {
-                    "RunInfo.Significant": "true"
+        // Build the aggregation pipeline
+        let pipeline = [];
+        
+        // First stage: Filter by run number range if specified
+        if (minrun > -1 && maxrun > 0) {
+            pipeline.push({ $match: { "BOR.Run number": { $gte: minrun, $lte: maxrun } } });
+        } else if (minrun > -1) {
+            pipeline.push({ $match: { "BOR.Run number": { $gte: minrun } } });
+        } else if (maxrun > -1) {
+            pipeline.push({ $match: { "BOR.Run number": { $lte: maxrun } } });
+        }
+
+        // Filter by time if specified
+        if (starttime && stoptime) {
+            pipeline.push({ 
+                $match: { 
+                    "BOR.Start time": { $regex: starttime },
+                    "BOR.Stop time": { $regex: stoptime }
+                } 
+            });
+        } else if (starttime) {
+            pipeline.push({ $match: { "BOR.Start time": { $regex: starttime } } });
+        } else if (stoptime) {
+            pipeline.push({ $match: { "BOR.Stop time": { $regex: stoptime } } });
+        }
+
+        // If onlySignificant is "yes", add stages to filter by last RunInfo
+        if (onlySignificant === "yes") {
+            pipeline.push(
+                // Add a field with the last RunInfo instance
+                {
+                    $addFields: {
+                        lastRunInfo: {
+                            $arrayElemAt: [
+                                {
+                                    $filter: {
+                                        input: "$Attributes",
+                                        as: "attr",
+                                        cond: { $eq: [{ $type: "$$attr.RunInfo" }, "object"] }
+                                    }
+                                },
+                                -1  // Get the last element
+                            ]
+                        }
+                    }
+                },
+                // Match only documents where the last RunInfo is significant
+                {
+                    $match: {
+                        "lastRunInfo.RunInfo.Significant": "true"
+                    }
                 }
-            }
-        };
-        console.log("Query constructed:", JSON.stringify(query, null, 2));
-        const result = await collection.find(query, options).limit(MAXRUNS).toArray();
+            );
+        }
+
+        // Sort by run number descending
+        pipeline.push({ $sort: { "BOR.Run number": -1 } });
+
+        // Apply limit if specified
+        if (nruns > 0) {
+            pipeline.push({ $limit: nruns });
+        } else {
+            pipeline.push({ $limit: MAXRUNS });
+        }
+
+        console.log("Aggregation pipeline:", JSON.stringify(pipeline, null, 2));
+        
+        const result = await collection.aggregate(pipeline).toArray();
         console.log("Query successful, found", result.length, "results");
-        res.render('index', {'data': result, 'onlySignificant': 'yes'});
+        
+        res.render('index', {
+            'data': result,
+            'onlySignificant': onlySignificant || 'yes'  // Default to 'yes' if not specified
+        });
     } catch (error) {
-        console.error("Error in default query:", error);
+        console.error("Error executing query:", error);
         console.error("Error stack:", error.stack);
         res.status(500).send("Internal server error: " + error.message);
     }
-
 });
 
 
