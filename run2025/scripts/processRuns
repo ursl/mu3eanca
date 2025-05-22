@@ -5,7 +5,7 @@
 # ===========
 #
 # Usage:       cd mu3eana/run2025/scripts
-#              ./processRuns -m minalyzer -c .../certification/2025/
+#              ./processRuns -m minalyzer -c /Users/ursl/mu3e/mu3eanca/db0/cdb2/certification/2025/
 #              ./processRuns -m minalyzer -e "2025April"
 #              ./processRuns -m minanalyzer -e runs -r "553,552,551"
 #
@@ -84,9 +84,6 @@ if ($opt_c) {
     $lines =~ s/\}//g;
     $lines =~ s/\n//g;
     @goodRuns = split(/,/, $lines);
-    foreach my $run (@goodRuns) {
-        print "run: $run\n";
-    }
 }
 
 # ----------------------------------------------------------------------
