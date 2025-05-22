@@ -101,6 +101,7 @@ void clearCollection(string scollection, string pattern) {
   
   if (pattern != "unset") {
     auto tagCursor     = collection.find(document{} << "tag" << pattern << finalize);
+    cout << "hello" << endl;
     for (auto doc : tagCursor) {
       cout << "*********** Tags *** " << endl;
       cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
@@ -124,7 +125,6 @@ void clearCollection(string scollection, string pattern) {
       cout << "*** deleted" << endl;
     }
   } else {
-  
     auto cursor_all = collection.find({});
     cout << "collection " << collection.name()
          << " contains these documents:" << endl;
@@ -159,26 +159,36 @@ void clearCollection(string scollection, string pattern) {
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
+  mongocxx::instance instance;
 
   // -- command line arguments
-  string dirName("fixme"), dirPath("fixme"), pattern("unset"), uriString("unset");
+  string dirName("fixme"), dirPath("fixme"), pattern("unset"), uriString("unset"), host("localhost");
   bool all(false);
-  bool onlyDelete(false); // ONLY delete, do not write new records
+  bool noDeletion(true); // by default nothing is deleted
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-d"))    {gDBX = true;}
     if (!strcmp(argv[i], "--all")) {all = true;}
     if (!strcmp(argv[i], "--dir")) {dirPath = string(argv[++i]);}
-    if (!strcmp(argv[i], "-dir"))  {dirPath = string(argv[++i]);}
-    if (!strcmp(argv[i], "--del")) {onlyDelete = true;}
-    if (!strcmp(argv[i], "-del"))  {onlyDelete = true;}
+    if (!strcmp(argv[i], "--del")) {noDeletion = false;}
+    if (!strcmp(argv[i], "--host")) {host = string(argv[++i]);}
     if (!strcmp(argv[i], "--pat")) {pattern = string(argv[++i]);}
-    if (!strcmp(argv[i], "-p"))    {pattern = string(argv[++i]);}
     if (!strcmp(argv[i], "--uri")) {uriString = argv[i+1]; gUri = bsoncxx::string::view_or_value(argv[++i]); gClient = gUri;}
-    if (!strcmp(argv[i], "-u"))    {gUri = bsoncxx::string::view_or_value(argv[++i]); gClient = gUri;}
+  }
+
+  uriString = "mongodb://" + host + ":27017";
+  
+  if (uriString == "unset") {
+    cout << "uriString is unset" << endl;
+    return 0;
+  } else {
+    cout << "uriString ->" << uriString << "<-" << endl;
+    gUri = bsoncxx::string::view_or_value(uriString);
+    gClient = gUri;
+    cout << "gUri set" << endl;
   }
 
   if (all) {
-    string string1 = string(argv[0]) + " --dir " + dirPath + "/" + "globalTags" + " --uri " + uriString;
+    string string1 = string(argv[0]) + " --dir " + dirPath + "/" + "globalags" + " --uri " + uriString;
     string string2 = string(argv[0]) + " --dir " + dirPath + "/" + "tags" + " --uri " + uriString;
     string string3 = string(argv[0]) + " --dir " + dirPath + "/" + "payloads" + " --uri " + uriString;
     cout << string1 << endl;
@@ -198,10 +208,9 @@ int main(int argc, char* argv[]) {
   folder = opendir(dirPath.c_str());
   if (folder == NULL) {
     cout << "Unable to read directory ->" << dirPath << "<-" << endl;
-    if (!onlyDelete) return 0;
+    return 0;
   } else {
-  
-    while ((entry=readdir(folder))) {
+      while ((entry=readdir(folder))) {
       if (8 == entry->d_type) {
         vfiles.push_back(dirPath + "/" + entry->d_name);
       }
@@ -213,18 +222,26 @@ int main(int argc, char* argv[]) {
   dirName = dirPath.substr(dirPath.rfind("/")+1);
   cout << "dirPath ->" << dirPath << "<-" << endl;
   cout << "dirName ->" << dirName << "<-" << endl;
-  cout << "clearCollection(" << dirName << ");" << endl;
-  clearCollection(dirName, pattern);
-  
-  
-  if (onlyDelete) return 0;
-  
+  if (noDeletion) {
+    // -- do nothing
+  } else{
+    cout << "clearCollection(" << dirName << ");" << endl;
+    clearCollection(dirName, pattern);
+  }
+    
   auto db = gClient["mu3e"];
   auto collection = db[dirName];
   
   string collectionContents, historyString;
   ifstream INS;
   for (auto it: vfiles) {
+    if (pattern != "unset") {
+      if (string::npos == it.find(pattern)) {
+        cout << "pattern ->" << pattern << "<- not matched to ->" << it << "<- ... skipping" << endl;
+        continue;
+      }
+    }
+
     INS.open(it);
     
     std::stringstream buffer;
@@ -233,31 +250,31 @@ int main(int argc, char* argv[]) {
     
     collectionContents = buffer.str();
 
-    if (dirName == "runrecords") {
-      // -- check whether EOR is present
-      size_t pos = collectionContents.find("EOR");
-      if (string::npos == pos) {
-        cout << "EOR not found in ->" << it << "<- ... skipping" << endl;
-        continue;
-      }
-      // -- count multiple EORs
-      size_t pos2 = collectionContents.find("EOR");
-      if (string::npos != pos2) {
-        size_t pos3 = collectionContents.find("EOR", pos2 + 1);
-        if (string::npos != pos3) {
-          cout << "multiple EORs found in ->" << it << "<- ... skipping" << endl;
-          continue;
-        }
-      }
+    // if (dirName == "runrecords") {
+    //   // -- check whether EOR is present
+    //   size_t pos = collectionContents.find("EOR");
+    //   if (string::npos == pos) {
+    //     cout << "EOR not found in ->" << it << "<- ... skipping" << endl;
+    //     continue;
+    //   }
+    //   // -- count multiple EORs
+    //   size_t pos2 = collectionContents.find("EOR");
+    //   if (string::npos != pos2) {
+    //     size_t pos3 = collectionContents.find("EOR", pos2 + 1);
+    //     if (string::npos != pos3) {
+    //       cout << "multiple EORs found in ->" << it << "<- ... skipping" << endl;
+    //       continue;
+    //     }
+    //   }
 
-      collectionContents = collectionContents.substr(0, collectionContents.size() - 3);
-      collectionContents += ",\n";
+    //   collectionContents = collectionContents.substr(0, collectionContents.size() - 3);
+    //   collectionContents += ",\n";
     
-      historyString = "  \"History\": ";
-      historyString += "[{\"date\": \"" + shortTimeStamp() + "\", \"comment\": \"Database entry inserted\"}]";
-      collectionContents += historyString + "\n";
-      collectionContents += "}";
-    }
+    //   historyString = "  \"History\": ";
+    //   historyString += "[{\"date\": \"" + shortTimeStamp() + "\", \"comment\": \"Database entry inserted\"}]";
+    //   collectionContents += historyString + "\n";
+    //   collectionContents += "}";
+    // }
     
     if (gDBX) {
       cout << "insert: " << it << endl
