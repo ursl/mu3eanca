@@ -5,6 +5,7 @@
 # ===========
 #
 # Usage:       cd mu3eana/run2025/scripts
+#              ./processRuns -m minalyzer -c .../certification/2025/
 #              ./processRuns -m minalyzer -e "2025April"
 #              ./processRuns -m minanalyzer -e runs -r "553,552,551"
 #
@@ -27,7 +28,7 @@ use File::Basename;
 my $dir = getcwd;
  
 use Getopt::Std;
-getopts('de:g:m:n:r:u');
+getopts('dc:e:g:m:n:r:u');
  
 my $BASEDIR  = "/Users/ursl/mu3e/software/250429";
 my $MU3EANCA = "/Users/ursl/mu3e/mu3eanca/run2025";
@@ -71,6 +72,20 @@ if ($opt_e eq "2025April") {
     } else {
         print "Error: No run numbers provided with -r option\n";
         exit(1);
+    }
+}
+
+if ($opt_c) {
+    my $file = $opt_c;
+    open(IN, "$file") || die "processRuns: Cannot open $file\n";
+    $lines = <IN>;
+    close(IN);
+    $lines =~ s/\{//g;
+    $lines =~ s/\}//g;
+    $lines =~ s/\n//g;
+    @goodRuns = split(/,/, $lines);
+    foreach my $run (@goodRuns) {
+        print "run: $run\n";
     }
 }
 
