@@ -194,7 +194,7 @@ void rdbMode1(runRecord &rr, bool debug) {
 
   // -- modify classFromComments for special tags
   if (classFromComments == "not found") {
-    vector<string> vClass2Indicators = {"mask", "tune", "calib"};
+    vector<string> vClass2Indicators = {"mask", "tune", "tuning", "calib"};
     for (const auto &indicator : vClass2Indicators) {
       if (xstring.find(indicator) != string::npos) {
         cout << ", overriding class2 indicator: " << indicator << " -> " << "calib";
