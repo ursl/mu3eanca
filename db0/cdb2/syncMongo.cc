@@ -50,9 +50,8 @@ using namespace std;
 // ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
 // ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir runrecords
 // ./bin/syncMongo --uri mongodb://pc11740.psi.ch:27017 --dir configs
+// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir ../../run2025/analysis/payloads --pat tag_pixelqualitylm_mcidealv6.1_iov_218
 //
-// NOTABENE: * NO trailing slash
-//           * --uri is compulsory
 //
 // ----------------------------------------------------------------------
 
@@ -185,6 +184,11 @@ int main(int argc, char* argv[]) {
     gUri = bsoncxx::string::view_or_value(uriString);
     gClient = gUri;
     cout << "gUri set" << endl;
+  }
+
+  // -- remove trailing slash (if present)
+  if (!dirPath.empty() && dirPath.back() == '/') {
+    dirPath.pop_back();
   }
 
   if (all) {
