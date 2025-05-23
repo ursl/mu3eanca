@@ -188,9 +188,9 @@ int main(int argc, char* argv[]) {
   }
 
   if (all) {
-    string string1 = string(argv[0]) + " --dir " + dirPath + "/" + "globalags" + " --uri " + uriString;
-    string string2 = string(argv[0]) + " --dir " + dirPath + "/" + "tags" + " --uri " + uriString;
-    string string3 = string(argv[0]) + " --dir " + dirPath + "/" + "payloads" + " --uri " + uriString;
+    string string1 = string(argv[0]) + " --dir " + dirPath + "/" + "globaltags" + " --host " + host;
+    string string2 = string(argv[0]) + " --dir " + dirPath + "/" + "tags" + " --host " + host;
+    string string3 = string(argv[0]) + " --dir " + dirPath + "/" + "payloads" + " --host " + host;
     cout << string1 << endl;
     system(string1.c_str()); 
     cout << string2 << endl;
