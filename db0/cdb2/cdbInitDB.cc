@@ -18,7 +18,6 @@
 #include "calMppcAlignment.hh"
 #include "calTileAlignment.hh"
 #include "calPixelCablingMap.hh"
-#include "calPixelQuality.hh"
 #include "calPixelQualityLM.hh"
 
 #include "calDetConfV1.hh" // decrepit!
@@ -316,41 +315,20 @@ int main(int argc, const char* argv[]) {
       }
       
       
-      // -- pixelquality: zero problematic pixels for all sensors present in cpa
-      if (string::npos != tag.find("pixelquality_")) {
-        calPixelQuality *cpq = new calPixelQuality();
-        unsigned int uid(999999);
-        map<unsigned int, vector<double> > m;
-        while (cpq->getNextID(uid)) {
-          vector<double> v;
-          if (0) {
-            if (uid%2 == 0) {
-              v.push_back(uid%7);
-              v.push_back(uid%5);
-              v.push_back(1.);
-            } else {
-              v.push_back(uid%7);
-              v.push_back(uid%5);
-              v.push_back(1.);
-              v.push_back(uid%17);
-              v.push_back(uid%25);
-              v.push_back(1.);
-            }
-          }
-          m.insert(make_pair(uid, v));
-          //      cout << "sensor = " << uid << " vector size = " << v.size() << endl;
-        }
-        spl = cpq->makeBLOB(m);
-        hash = string("tag_pixelquality_" + tagLess + "_iov_1");
-        
+      // -- pixelqualitylm: zero problematic pixels for all sensors present in cpa
+      if (string::npos != tag.find("pixelqualitylm_")) {
+        calPixelQualityLM *cpq = new calPixelQualityLM();
+        filename = string(LOCALDIR) + "/ascii/pixelqualitylm-" + tagLess + ".csv";
+        cpq->readCsv(filename);
+        string blob = cpq->makeBLOB();
+
+        hash = string("tag_pixelqualitylm_" + tagLess + "_iov_1");
         pl.fHash = hash;
-        pl.fComment = tagLess + " pixel quality initialization";
-        pl.fBLOB = spl;
+        pl.fComment = tagLess + " pixelqualitylm initialization";
+        pl.fBLOB = blob;
         pl.fSchema  = cpq->getSchema();
-        if (verbose) cpq->printBLOB(spl);
+        if (verbose) cpq->printBLOB(blob);
         cpq->writePayloadToFile(hash, jdir, pl);
-        cpq->insertPayload(hash, pl);
-        cpq->writeCsv("pixelquality-example.csv");
       }
       
       // -- pixelcablingmap
