@@ -24,7 +24,9 @@ using namespace std;
 // -- produce updates to either DataQuality or RunInfo attributes of run records in RDB
 // -- updates a mongoDB server, does not run on the JSON backend server
 // --
-// -- Usage: bin/syncRDB -m mode -f firstRun -l lastRun [-t ../../db1/rest/runInfoTemplate.json] [-u localhost:5050/rdb/addAttribute/]
+// -- Usage: bin/syncRDB -m mode -f firstRun -l lastRun [-t ../../db1/rest/runInfoTemplate.json] [-h localhost]
+// --
+// -- Examples: bin/syncRDB -m 2 -g tkar -c cosmic -s significant -h pc11740
 // --
 // -- -m mode: 0: upload template (magic words: dqTemplate.json or runInfoTemplate.json) to run records
 // --          1: parse shift comments and set runInfo fields "class" and "junk"
@@ -259,10 +261,25 @@ void rdbMode2(string &selectionString, string &classString, string &goodString, 
     if (!rr.fBOREORValid) continue;
     if (selectionString == "significant") {
       if (rr.isSignificant()) {
-        cout << "run number: " << runNumber << " class: " << rr.getRunInfoClass() << endl;
         if (classString != "") {
           if (rr.getRunInfoClass() == classString) {
-            vSelectedRuns.push_back(irun);
+            if (goodString != "") {
+              string commentsLower = rr.getRunInfoComments();
+              string eorCommentsLower = rr.fEORComments;
+              string goodStringLower = goodString;
+              transform(commentsLower.begin(), commentsLower.end(), commentsLower.begin(), [](unsigned char c) { return tolower(c); });
+              transform(eorCommentsLower.begin(), eorCommentsLower.end(), eorCommentsLower.begin(), [](unsigned char c) { return tolower(c); });
+              transform(goodStringLower.begin(), goodStringLower.end(), goodStringLower.begin(), [](unsigned char c) { return tolower(c); });
+              if ((string::npos != commentsLower.find(goodStringLower))
+                || (string::npos != eorCommentsLower.find(goodStringLower))
+              ) {
+                cout << "added run number: " << runNumber << " selectionString: " << selectionString << " classString: " << classString << " goodString: " << goodString << endl;
+                vSelectedRuns.push_back(irun);
+              }
+            } else {
+              cout << "added run number: " << runNumber << " selectionString: " << selectionString << " classString: " << classString << endl;
+              vSelectedRuns.push_back(irun);
+            }
           }
         } 
       }
