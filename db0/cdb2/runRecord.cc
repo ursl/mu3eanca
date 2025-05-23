@@ -30,7 +30,7 @@ runRecord::~runRecord() {
 
 // ----------------------------------------------------------------------
 void runRecord::corrupted(string jsonString) { 
-  cout << "$$$ runRecord corrupted ->" << jsonString << "<-" << endl;
+  cout << "$$$ runRecord corrupt ->" << jsonString << "<-" << endl;
   fDataQualityIdx = -1;
   fRunInfoIdx = -1; 
   fBOREORValid = false; 
