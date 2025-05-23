@@ -45,20 +45,17 @@ using namespace std;
 //    configs/*
 //
 // Usage:
-// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir ~/data/mu3e/json12/globaltags
-// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir /Users/ursl/data/mu3e/json12/tags
-// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
-// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir runrecords
-// ./bin/syncMongo --uri mongodb://pc11740.psi.ch:27017 --dir configs
-// ./bin/syncMongo --uri mongodb://127.0.0.1:27017 --dir ../../run2025/analysis/payloads --pat tag_pixelqualitylm_mcidealv6.1_iov_218
+// ./bin/syncMongo --host 127.0.0.1 --dir ~/data/mu3e/json12/globaltags
+// ./bin/syncMongo --host localhost --dir /Users/ursl/data/mu3e/json12/tags
+// ./bin/syncMongo --host localhost --dir json/payloads [symlink: json -> /Users/ursl/data/mu3e/json12]
+// ./bin/syncMongo --host localhost --dir runrecords
+// ./bin/syncMongo --host pc11740 --dir configs
+// ./bin/syncMongo --host pc11740 --dir ../../run2025/analysis/payloads --pat tag_pixelqualitylm_mcidealv6.1_iov_218
 //
 //
 // ----------------------------------------------------------------------
 
 bool gDBX(false);
-
-//mongocxx::uri gUri("mongodb://localhost:27017");
-//mongocxx::client gClient{gUri};
 
 mongocxx::uri gUri;
 mongocxx::client gClient;
@@ -171,7 +168,6 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "--del")) {noDeletion = false;}
     if (!strcmp(argv[i], "--host")) {host = string(argv[++i]);}
     if (!strcmp(argv[i], "--pat")) {pattern = string(argv[++i]);}
-    if (!strcmp(argv[i], "--uri")) {uriString = argv[i+1]; gUri = bsoncxx::string::view_or_value(argv[++i]); gClient = gUri;}
   }
 
   uriString = "mongodb://" + host + ":27017";
@@ -302,7 +298,10 @@ int main(int argc, char* argv[]) {
            << collectionContents
            << endl;
       auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
-      cout << "done inserting " << it << endl;
+      bsoncxx::oid oid = insert_one_result->inserted_id().get_oid().value;
+      std::string oidString = oid.to_string();
+      cout << "oidString ->" << oidString << "<-" << endl;
+ 
     }
   }
   
