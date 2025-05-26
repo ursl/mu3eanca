@@ -33,6 +33,9 @@ using namespace std;
 // pixelHistograms
 // ---------------
 //
+//
+//
+// 
 // Examples:
 // cd mu3eanca/run2025/analysis
 // bin/pixelHistograms -j /Users/ursl/data/mu3e/cdb/ -g datav6.1=2025CosmicsVtxOnly -f /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.root
@@ -53,7 +56,7 @@ void createPayload(string, calAbs *, string);
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 void determineBrokenLinks(TH2 *h, vector<int> &links, bool turnedOn);
 void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links);
-
+void determineNoisyPixels(TH2 *h, vector<int> &pixels); // icol,irow,iqual
 
 
 // ----------------------------------------------------------------------
@@ -255,10 +258,10 @@ int main(int argc, char* argv[]) {
   c0->Divide(3,5);
   int ipad(1);
   gStyle->SetOptStat(0);
-  vector<int> deadlinks, deadcolumns;
+  vector<int> deadlinks, deadcolumns, noisyPixels;
   ofstream ofs;
-  ofs.open(Form("csv/deadlinks-run%d.csv", run));
-  ofs << "#chipID,linkA,linkB,linkC,linkM,ncol[,icol] NB: linkX: 0 = no error, 1 = dead" << endl;
+  ofs.open(Form("csv/pixelqualitylm-run%d.csv", run));
+  ofs << "#chipID,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0=no error, 1=noisy, 2=dead, 9=chip off" << endl;
   for (auto it: mHitmaps){
     bool turnedOn = mChipIDOK.find(it.first) != mChipIDOK.end();
     if (turnedOn) {
@@ -266,8 +269,11 @@ int main(int argc, char* argv[]) {
     } else {
       cout << "chipID = " << it.first << " is NOT turned on" << endl;
     }
+    // -- clear all vectors for this new chipID
     deadlinks.clear();
     deadcolumns.clear();
+    noisyPixels.clear();
+    // -- determine broken links
     determineBrokenLinks(mHitmaps[it.first], deadlinks, turnedOn);
     if (deadlinks.size() > 0) {
       cout << "chipID = " << it.first << " has broken links: ";
@@ -280,20 +286,36 @@ int main(int argc, char* argv[]) {
     } else {
       cout << "chipID = " << it.first << " has no broken links" << endl;
     }
+    // -- determine dead columns
     determineDeadColumns(mHitmaps[it.first], deadcolumns, deadlinks);
     if (deadcolumns.size() > 0) {
       cout << "chipID = " << it.first << " has dead columns: ";
       ofs << deadcolumns.size() << ",";
       for (auto itC = deadcolumns.begin(); itC != deadcolumns.end(); ++itC) {
         cout << *itC << " ";
-        ofs << *itC;
-        if (itC != deadcolumns.end() - 1) ofs << ",";
+        ofs << *itC << ",";
       }
       cout << endl;
     } else {
       cout << "chipID = " << it.first << " has no dead columns" << endl;
+      ofs << 0 << ",";
+    }
+    // -- determine noisy pixels
+    determineNoisyPixels(mHitmaps[it.first], noisyPixels);
+    if (noisyPixels.size() > 0) {
+      cout << "chipID = " << it.first << " has noisy pixels: ";
+      ofs << noisyPixels.size()/3 << ",";
+      for (auto itN = noisyPixels.begin(); itN != noisyPixels.end(); ++itN) {
+        cout << *itN << " ";
+        ofs << *itN;
+        if (itN != noisyPixels.end() - 1) ofs << ",";
+      }
+      cout << endl;
+    } else {
+      cout << "chipID = " << it.first << " has no noisy pixels" << endl;
       ofs << 0;
     }
+    
     ofs << endl;
     if (turnedOn) {
       c0->cd(ipad++);
@@ -309,9 +331,11 @@ int main(int argc, char* argv[]) {
   ofs.close();
 
   calPixelQualityLM *cpq = new calPixelQualityLM();
-  cpq->readCsv(Form("csv/deadlinks-run%d.csv", run));
+  cpq->readCsv(Form("csv/pixelqualitylm-run%d.csv", run));
   string blob = cpq->makeBLOB();
   createPayload(hash, cpq, "./payloads");
+
+  cpq->writeCsv(Form("csv/validatepixelqualitylm-run%d.csv", run));
 
   for (auto it: mHitmaps) {
     // TODO: check that non-zero entries and that it.first is not in mChipIDOK
@@ -444,3 +468,45 @@ void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links) {
   }
 
 }
+
+// ----------------------------------------------------------------------
+void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels) {
+  bool DBX(true);
+
+  int chipCnt = h->GetSumOfWeights();
+  int npix(0);
+  for (int ix = 1; ix <= h->GetNbinsX(); ++ix) {
+    for (int iy = 1; iy <= h->GetNbinsY(); ++iy) {
+      if (h->GetBinContent(ix,iy) > 0) ++npix;
+    }
+  }
+  if (DBX) cout << "chipID = " << h->GetName() << " nhits =  " << chipCnt << " for npix = " << npix << endl;
+  if (npix > 0) {
+    double NSIGMA(10.0);
+    double meanHits  = static_cast<double>(chipCnt)/npix;
+    // -- this is WRONG!
+    double meanHitsE = TMath::Sqrt(meanHits);
+    double noiseThr  = meanHits + NSIGMA*meanHitsE;
+    if (meanHits > 0.) {
+      if (DBX) cout << "meanHits = " << meanHits << " +/- " << meanHitsE << " noise threshold = " << noiseThr << endl;
+    }
+    int nNoisyPix(0);
+    for (int ix = 1; ix <= h->GetNbinsX(); ++ix) {
+      for (int iy = 1; iy <= h->GetNbinsY(); ++iy) {
+        float nhits = h->GetBinContent(ix,iy);
+        if (nhits > noiseThr) {
+          ++nNoisyPix;
+          noisyPixels.push_back(ix-1);
+          noisyPixels.push_back(iy-1);
+          noisyPixels.push_back(1);  
+          if (DBX) {
+            cout << "  noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << endl;
+          }
+        }
+      }
+    }
+    if (DBX) cout << "  -> nNoisyPixel = " << nNoisyPix << endl;
+  }
+}
+
+
