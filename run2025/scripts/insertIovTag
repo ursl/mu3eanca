@@ -5,6 +5,7 @@
 # ============
 #
 # Usage:   ~/mu3e/mu3eanca/mdc2023/scripts/insertIovTag -j jsondir -t tag -i 265
+#          ~/mu3e/mu3eanca/mdc2023/scripts/insertIovTag -j jsondir -t tag -r 265
 #
 #
 # History
@@ -20,7 +21,7 @@ use File::Basename;
 use File::Copy 'copy';
 
 use Getopt::Std;
-getopts('i:j:t:');
+getopts('ci:j:r:t:');
 
 my $file = $opt_j . "/tags/" . $opt_t;
 open(IN, "$file") || die "insertIovTag: Cannot open $file\n";
@@ -37,20 +38,27 @@ $iovs = $3;
 print("insertIovTag: oldRuns = @oldRuns\n");
 my @runs = ();
 
-
 @runs = @oldRuns;
-for (my $i = 0; $i <= $#runs; $i++) {
-    if ($opt_i == $runs[$i]) {
-        print "same, not updating\n";
-        last;
+
+if (defined($opt_r)) {
+    # -- remove run number if it exists
+    @runs = grep { $_ != $opt_r } @runs;
+    print("insertIovTag: removed run $opt_r, new list = @runs\n");
+} else {
+    # -- insert new run number
+    for (my $i = 0; $i <= $#runs; $i++) {
+        if ($opt_i == $runs[$i]) {
+            print "same, not updating\n";
+            last;
+        }
+        if ($opt_i < $runs[$i]) {
+            splice(@runs, $i, 0, $opt_i);
+            last;
+        }
     }
-    if ($opt_i < $runs[$i]) {
-        splice(@runs, $i, 0, $opt_i);
-        last;
+    if (!grep { $_ == $opt_i } @runs) {
+        push(@runs, $opt_i);
     }
-}
-if (!grep { $_ == $opt_i } @runs) {
-    push(@runs, $opt_i);
 }
 
 print("insertIovTag: $opt_t:  @runs, last index = $#runs\n");
@@ -59,12 +67,16 @@ copy $file, "$file.bac" || die("move $file, $file.bac failed: $!");
 
 open(OUT, ">$file") || die "insertIovTag: Cannot open $file for output\n";
 print OUT "{\"tag\" : \"$opt_t\", \"iovs\" : [";
-my $nruns = $#runs;
-for ($i = 0; $i <= $nruns; $i++) {
-    if ($i <= $nruns-1) {
-        print OUT "$runs[$i], ";
-    } else {
-        print OUT "$runs[$i]";
+if ($opt_c) {
+    print OUT "1";
+} else {
+    my $nruns = $#runs;
+    for ($i = 0; $i <= $nruns; $i++) {
+        if ($i <= $nruns-1) {
+            print OUT "$runs[$i], ";
+        } else {
+            print OUT "$runs[$i]";
+        }
     }
 }
 
