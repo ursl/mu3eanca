@@ -14,7 +14,7 @@
 
  
 // ----------------------------------------------------------------------
-// synJSON copy mongoDB CDB contents to JSON directory. 
+// synJSON copy mongoDB CDB contents via REST interface to JSON directory. 
 //         Will not delete what is there but will overwrite //
 // 
 // Usage:     ./bin/syncJSON --dir junk [-a] [-h pc11740]
