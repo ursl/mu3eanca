@@ -13,6 +13,7 @@
 #include "calPixelAlignment.hh"
 #include "calMppcAlignment.hh"
 #include "calDetConfV1.hh"
+#include "calPixelQualityLM.hh"
 
 
 using namespace std;
@@ -222,6 +223,11 @@ int main(int argc, char* argv[]) {
     for (auto it: vruns) {
       cout << "run number: " << it << endl;
     }
+  } else if (10 == mode) {
+    cout << "Test pixel quality LM" << endl;
+    calPixelQualityLM *cpq = new calPixelQualityLM();
+    cpq->readCsv("/Users/ursl/mu3e/mu3eanca/run2025/analysis/csv/pixelqualitylm-run483.csv");
+
   }
   return 0;
 }
