@@ -31,6 +31,7 @@ public:
   void printBLOB(std::string s, int verbosity = 1) override;
 
   void readCsv(std::string filename); 
+  void writeCsv(std::string filename);
 
 
   int         getStatus(unsigned int chipid, int icol, int irow)  override;
@@ -43,7 +44,7 @@ public:
 
 private:
   std::string fPixelQualityTag{"pixelqualitylm_"};
-  std::string fSchema{"ui_id,ui_linkA,ui_linkB,ui_linkC,ui_linkM,i_ncol,[i_col],i_npix,[i_col,i_row,ui_qual]"};
+  std::string fSchema{"ui_id,ui_linkA,ui_linkB,ui_linkC,ui_linkM,i_ncol[,i_col],i_npix[,i_col,i_row,ui_qual]"};
 
   // -- local and private
   struct constants {
