@@ -12,8 +12,10 @@
 #              ./processRuns -m anadqm -e 2025April -g datav6.1=2025CosmicsVtxOnly 
 #              ./processRuns -m anadqm -e runs -r "553" -g datav6.1=2025CosmicsVtxOnly 
 #              ./processRuns -m anadqm -e 2025April -g datav6.1=2025CosmicsVtxOnly -u
+#              ./processRuns -m anadqm -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
 #
 # History
+#         2025/05/26 remove leading whitespace when reading from certification file
 #         2025/05/05 add -u option to update CDB tag IOV list
 #         2025/05/03 add GT for pixelqualitylm payload generation
 #         2025/04/30 first shot
@@ -37,7 +39,7 @@ my $DATADIR  = "/Users/ursl/data/mu3e/run2025";
 my $CDB      = "/Users/ursl/data/mu3e/cdb";
 my $ROF      = "$BASEDIR/minalyzer/root_output_files/";
 my $MAXRUN   = -1;
-my $GT       = " ";
+my $GT       = "";
 
 if ($opt_n) {
     $MAXRUN = $opt_n;
@@ -83,6 +85,7 @@ if ($opt_c) {
     $lines =~ s/\{//g;
     $lines =~ s/\}//g;
     $lines =~ s/\n//g;
+    $lines =~ s/\s//g;
     @goodRuns = split(/,/, $lines);
 }
 
