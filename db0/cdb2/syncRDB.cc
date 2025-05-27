@@ -74,7 +74,8 @@ int main(int argc, char* argv[]) {
   urlString = hostString + urlString; 
   rdbUpdateString = hostString + rdbUpdateString;
 
-  // -- read in template
+  // -- read in template for mode = 0
+  if (0 == mode) {
   ifstream file(runInfoTemplateFile);
   if (file.is_open()) {
     string line;
@@ -83,9 +84,9 @@ int main(int argc, char* argv[]) {
     }
     file.close();
   } else {
-    cerr << "Error: Unable to open file " << runInfoTemplateFile << endl;
+      cout << "Error: Unable to open file " << runInfoTemplateFile << endl;
+    }
   }
-
 
   cdbAbs *pDB(0);
 
@@ -196,11 +197,12 @@ void rdbMode1(runRecord &rr, bool debug) {
 
   // -- modify classFromComments for special tags
   if (classFromComments == "not found") {
-    vector<string> vClass2Indicators = {"mask", "tune", "tuning", "calib"};
+    vector<string> vClass2Indicators = {"mask", "tune", "tuning", "calib", "noise"};
     for (const auto &indicator : vClass2Indicators) {
       if (xstring.find(indicator) != string::npos) {
         cout << ", overriding class2 indicator: " << indicator << " -> " << "calib";
         classFromComments = "calib";
+        significantFromComments = "false";
         break;
       }
     }
