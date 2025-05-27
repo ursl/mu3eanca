@@ -129,8 +129,8 @@ int main(int argc, char* argv[]) {
     if (irun < firstRun) continue;
     if (lastRun > -1 && irun > lastRun) continue;
     runRecord rr = pDB->getRunRecord(irun);
-    cout << rr.printSummary() << endl;
     if (all || rr.isSignificant()) {
+      cout << rr.printSummary() << endl;
       string filename = dirPath + "/runrecords/" + "runRecord_" + to_string(irun) + ".json";
       ofstream ofs(filename);
       ofs << rr.json() << endl;
