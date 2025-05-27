@@ -13,7 +13,7 @@ struct DataQuality {
     int tiles;
     int fibres;
     int calibration;
-    int goodLinks;
+    int links;
     std::string version;
 
     DataQuality();

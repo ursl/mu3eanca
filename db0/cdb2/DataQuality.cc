@@ -14,13 +14,13 @@ DataQuality::DataQuality() :
   tiles(0),
   fibres(0),
   calibration(0),
-  goodLinks(0),
+  links(0),
   version("unset") {
 }
 
 // ----------------------------------------------------------------------
 string DataQuality::print() const {
-  return "DataQuality: " + to_string(mu3e) + " " + to_string(beam) + " " + to_string(vertex) + " " + to_string(pixel) + " " + to_string(tiles) + " " + to_string(fibres) + " " + to_string(calibration) + " " + to_string(goodLinks) + " " + version;
+  return "DataQuality: " + to_string(mu3e) + " " + to_string(beam) + " " + to_string(vertex) + " " + to_string(pixel) + " " + to_string(tiles) + " " + to_string(fibres) + " " + to_string(calibration) + " " + to_string(links) + " " + version;
 }
 
 // ----------------------------------------------------------------------
@@ -33,7 +33,7 @@ string DataQuality::json() const {
   sjson += "\"tiles\":\"" + to_string(tiles) + "\", ";
   sjson += "\"fibres\":\"" + to_string(fibres) + "\", ";
   sjson += "\"calibration\":\"" + to_string(calibration) + "\", ";
-  sjson += "\"goodLinks\":\"" + to_string(goodLinks) + "\", ";
+  sjson += "\"links\":\"" + to_string(links) + "\", ";
   sjson += "\"version\":\"" + version + "\"}}";
   return sjson;
 }
@@ -87,7 +87,12 @@ size_t DataQuality::parse(const string &jsonString, size_t startPos) {
         tiles = stoi(extractValue(dqJson, "tiles"));
         fibres = stoi(extractValue(dqJson, "fibres"));
         calibration = stoi(extractValue(dqJson, "calibration"));
-        goodLinks = stoi(extractValue(dqJson, "goodLinks"));
+        // -- goodLinks -> links
+        if ("unset" == extractValue(dqJson, "links")) {
+          links = stoi(extractValue(dqJson, "goodLinks"));
+        } else {
+          links = stoi(extractValue(dqJson, "links"));
+        }
         version = extractValue(dqJson, "version");
 
         return end;  // Return position after the parsed RunInfo
