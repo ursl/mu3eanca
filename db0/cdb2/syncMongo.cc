@@ -225,8 +225,12 @@ int main(int argc, char* argv[]) {
   if (noDeletion) {
     // -- do nothing
   } else{
-    cout << "clearCollection(" << dirName << ");" << endl;
-    clearCollection(dirName, pattern);
+    if (dirName != "runrecords" && dirName != "configs") {
+      cout << "clearCollection(" << dirName << ");" << endl;
+      clearCollection(dirName, pattern);
+    } else {
+      cout << "NO! Do NOT clearCollection(" << dirName << ");" << endl;
+    }
   }
     
   auto db = gClient["mu3e"];
