@@ -403,17 +403,17 @@ void determineBrokenLinks(TH2 *h, vector<int> &links, bool turnedOn) {
   } else {
     
     if (nLinkA < cutMinHits) {
-      links.push_back(1);
+      links.push_back(2);
     } else {
       links.push_back(0);
     }
     if (nLinkB < cutMinHits) {
-      links.push_back(1);
+      links.push_back(2);
     } else {
       links.push_back(0);
     }
     if (nLinkC < cutMinHits) {
-      links.push_back(1);
+      links.push_back(2);
     } else {
       links.push_back(0);
     }
