@@ -67,23 +67,22 @@ my $nrun = 0;
 foreach my $run (@goodRuns) {
     $nrun++;
     if ($MAXRUN > 0 && $nrun > $MAXRUN) {
-        print "Skipping run $run, as too many runs processed\n";
+        print(&prefix("processRuns"), "Skipping run $run, as too many runs processed\n");
         next;
     }
 
     my $nEvents = &countEvents($run);
-    print "Run $run has $nEvents events\n";
     if ($nEvents < $MINEVENTS) {
-        print "Skipping run $run, as too few events\n";
+        print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
         next;
     }
     if ($opt_m eq "minalyzer") {
-        &runMinalyzer();
+        &runMinalyzer($run);
     } elsif ($opt_m eq "anadqm") {
-        &runAnaDQM();
+        &runAnaDQM($run);
     } else {
-        print "Unknown option $opt_m\n";
-        print "Usage: rerunDQM -m <min|dqm> -e <2025April>\n";
+        print(&prefix("processRuns"), "Unknown option $opt_m\n");
+        print(&prefix("processRuns"), "Usage: rerunDQM -m <min|dqm> -e <2025April>\n");
         exit(1);
     }
 }
@@ -91,16 +90,16 @@ foreach my $run (@goodRuns) {
 # ----------------------------------------------------------------------
 sub runMinalyzer() {
     my $dir = "$BASEDIR/minalyzer";
-    print "Running minalyzer in $dir for runs: @goodRuns\n";
+    print(&prefix("runMinalyzer"), "Running minalyzer in $dir for run $run\n");
     system("mkdir -p $dir/log");
     my $srun = sprintf("run%05d", $run);
     my $cmd0 = "rm -f log/dqm_$srun.log";
     my $cmd1 = "_build/analyzer/minalyzer --mt $DATADIR/$srun.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=$BASEGT  >& log/dqm_$srun.log ";
     if ($opt_d) {
-        print("->$cmd1<-\n");
-        print("cd $dir && $cmd0 && $cmd1 && cd - \n");
+        print(&prefix("runMinalyzer"), "->$cmd1<-\n");
+        print(&prefix("runMinalyzer"), "cd $dir && $cmd0 && $cmd1 && cd - \n");
     } else {
-        print("->$cmd1<-\n");
+        print(&prefix("runMinalyzer"), "->$cmd1<-\n");
         system("cd $dir && $cmd0 && $cmd1 && cd - ");
     }
 }
@@ -108,15 +107,14 @@ sub runMinalyzer() {
 
 # ----------------------------------------------------------------------
 sub runAnaDQM() {
-    print "Running DQM for runs: @goodRuns\n";
+    ($run) = @_;
     my $dir = "$MU3EANCA/analysis";
-    my $nrun = 0;
     system("mkdir -p $dir/log");
     system("mkdir -p $dir/out");
     system("mkdir -p $dir/csv");
     system("mkdir -p $dir/payloads");
     my $srun = sprintf("%05d", $run);
-    print "Processing DQM output for run $run in directory $dir\n";
+    print(&prefix("runAnaDQM"), "Processing DQM output for run $run in directory $dir\n");
     my $cmd0 = "rm -f log/dqm_$srun.log";
     my $lgt = ""; 
     if ($GT) {
@@ -124,20 +122,20 @@ sub runAnaDQM() {
     }
     my $cmd1 = "bin/pixelFillQualityLM -j $CDB $lgt -f $ROF/dqm_histos_$srun.root  >& log/dqm_$srun.log ";
     if ($opt_d) {
-        print "Running DQM for run $run in directory $dir\n";
-        print("->$cmd0 && $cmd1 && $cmd2<-\n");
+        print(&prefix("runAnaDQM"), "Running DQM for run $run in directory $dir\n");
+        print(&prefix("runAnaDQM"), "->$cmd0 && $cmd1 && $cmd2<-\n");
     } else {
-        print "Running DQM for run $run in directory $dir\n";
-        print("->$cmd0 && $cmd1<-\n");
+        print(&prefix("runAnaDQM"), "Running DQM for run $run in directory $dir\n");
+        print(&prefix("runAnaDQM"), "->$cmd0 && $cmd1<-\n");
         system("cd $dir && $cmd0 && $cmd1 && cd - ");
     }
     # insertIovTag -j ~/data/mu3e/cdb -t pixelqualitylm_datav6.1=2025CosmicsVtxOnly -i 472
     if ($opt_u) {
         my $cmd2 = "$MU3EANCA/scripts/insertIovTag -j $CDB -t pixelqualitylm_$GT -i $run";
-        print "cmd2: $cmd2\n";
+        print(&prefix("runAnaDQM"), "cmd2: $cmd2\n");
         my $payloadname = "tag_pixelqualitylm_" . $GT . "_iov_$run";
         my $cmd3 = "/bin/cp payloads/$payloadname $CDB/payloads/";
-        print "cmd3: $cmd3\n";           
+        print(&prefix("runAnaDQM"), "cmd3: $cmd3\n");           
         system("cd $dir && $cmd2 && $cmd3 && cd - ");
     }
 }
