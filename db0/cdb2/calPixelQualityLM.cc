@@ -6,8 +6,6 @@
 #include <sstream>
 #include "calPixelQualityLM.hh"
 
-#include "TString.h"
-
 using namespace std;
 
 // ----------------------------------------------------------------------
