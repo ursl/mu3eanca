@@ -1,0 +1,24 @@
+{
+    "name": "rest",
+    "version": "1.0.0",
+    "description": "based on https://www.mongodb.com/languages/express-mongodb-rest-api-tutorial",
+    "main": "index.js",
+    "dependencies": {
+        "archiver": "^7.0.1",
+        "body-parser": "^1.20.3",
+        "cors": "^2.8.5",
+        "dotenv": "^8.6.0",
+        "ejs": "^3.1.10",
+        "express": "^4.18.2",
+        "express-async-errors": "^3.1.1",
+        "mongodb": "^4.17.2",
+        "multer": "^1.4.5-lts.1",
+        "path": "^0.12.7"
+    },
+    "scripts": {
+        "start": "node index.mjs",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC"
+}

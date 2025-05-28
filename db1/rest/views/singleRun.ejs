@@ -1,0 +1,710 @@
+<!-- views/index.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>Mu3e RDB <%=data.BOR["Run number"]%></title>
+        <style>
+         h1 {
+             color: #00703c;
+         }
+         
+         h2 {
+             color: #507d2a;
+         }
+         
+         div {
+             padding-top: 20px;
+             padding-right: 0px;
+             padding-bottom: 10px;
+             padding-left: 0px;
+         }
+
+         .button {
+             background-color: #00703c; /* Green */
+             border: none;
+             color: white;
+             padding: 5px 20px ;
+             text-align: center;
+             text-decoration: none;
+             display: inline-block;
+             font-size: 16px;
+         }
+        
+         textarea {
+             width: 100%; /* Make textarea fill the cell's width */
+             height: 50px; /* You can adjust the height as needed */
+             box-sizing: border-box; /* Ensure padding and borders are included in width */
+         }
+         
+         #runs {
+             font-family: Arial, Helvetica, sans-serif;
+             border-collapse: collapse;
+             width: 100%;
+         }
+         
+         #runs td, #runs th {
+             border: 1px solid #ddd;
+             padding: 4px;
+         }
+         
+         #runs tr:nth-child(even){background-color: #f2f2f2;}
+         
+         #runs tr:hover {background-color: #ddd;}
+         
+         #runs th {
+             padding-top: 12px;
+             padding-bottom: 12px;
+             text-align: left;
+             background-color: #00703c;
+             color: white;
+         }
+
+         .status-significant {
+             color: #2e7d32;
+             font-weight: bold;
+         }
+
+         .status-not-significant {
+             color: #c62828;
+             font-weight: bold;
+         }
+
+         .status-unset {
+             color: #757575;
+             font-style: italic;
+         }
+
+         #histcomments {
+             font-family: Arial, Helvetica, sans-serif;
+             border-collapse: collapse;
+             width: 100%;
+         }
+         
+         #histcomments td, #histcomments th {
+             border: 1px solid #ddd;
+             padding: 4px;
+         }
+         
+         #histcomments tr:nth-child(even){background-color: #f2f2f2;}
+         
+         #histcomments tr:hover {background-color: #ddd;}
+         
+         #histcomments th {
+             padding-top: 12px;
+             padding-bottom: 12px;
+             text-align: left;
+             background-color: #507d2a;
+             color: white;
+         }
+       
+        </style>
+    </head>
+
+    <body>
+        <div id="runData" data-run='<%- JSON.stringify(data) %>' style="display: none;"></div>
+        <h1>Run
+            <%=data.BOR["Run number"]%>
+        </h1>
+
+        <div>
+            <input id="btnBack" type="button" class="button" value="Back" onclick=setBack() />
+            <input id="btnEdit" type="button" class="button" color="blue" value="Edit" onclick=setEdit() />
+            <input id="btnSubm" type="button" class="button" value="Save" style="float: right; background-color:#93c572" onclick=updateRun() />
+        </div>
+
+        <table id="runs">
+            <thead>
+                <tr>
+                    <th id="runsCol1">Field </th>
+                    <th id="runsCol2">Value </th>
+                </tr>
+            </thead>
+
+            <tr>
+                <td> Run number </td>
+                <td>  <%= data.BOR["Run number"]%>  </td>
+            </tr>
+
+            <tr>
+                <td> Start time </td>
+                <td> <%= data.BOR["Start time"] %> </td>
+            </tr>
+
+            <tr>
+                <td> Stop time </td>
+                <td> <%= data.EOR["Stop time"] %> </td>
+            </tr>
+
+            <tr>
+                <td> Events </td>
+                <td> <%= data.EOR["Events"]%> </td>
+            </tr>
+
+            <tr>
+                <td> Shift crew </td>
+                <td> <%= data.BOR["Shift crew"]%> </td>
+            </tr>
+
+            <tr>
+                <td> Shift comments </td>
+                <td> <textarea id="comments" disabled="true"><%=data.EOR["Comments"]%></textarea><br>
+                </td>
+            </tr>
+
+            <tr>
+                <td> Subsystems </td>
+                <td> <%= data.BOR["Subsystems"]%> </td>
+            </tr>
+
+            <tr>
+                <td> Beam </td>
+                <td> <%= data.BOR["Beam"]%> </td>
+            </tr>
+
+            <tr>
+                <td> File size </td>
+                <td> <%= data.EOR["File size"]%> </td>
+            </tr>
+
+            <tr>
+                <td> Uncompressed data size </td>
+                <td> <%= data.EOR["Uncompressed data size"]%> </td>
+            </tr>
+
+            <% if (data.hasOwnProperty('Attributes')) { %>
+                <% if (data.hasOwnProperty('Attributes') && Array.isArray(data.Attributes) && data.Attributes.some(attr => attr.hasOwnProperty('RunInfo'))) { %>
+                   <tr>
+                        <td> RunInfo class </td>
+                        <td> <textarea id="riClass" disabled="true"><%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Class %></textarea> </td>
+                    </tr>
+                    <tr>
+                        <td> RunInfo comments </td>
+                        <td> <textarea id="riComments" disabled="true"><%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Comments %></textarea> </td>
+                    </tr>
+                    <tr>
+                        <td> RunInfo significant </td>
+                        <td id="riSignificantCell"> 
+                            <span id="riSignificantStatus" class="status-unset">
+                                <% if (data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant === "true") { %>
+                                    <span class="status-significant">✓</span>
+                                <% } else if (data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant === "false") { %>
+                                    <span class="status-not-significant">✗</span>
+                                <% } else { %>
+                                    <span class="status-unset">n/a</span>
+                                <% } %>
+                            </span>
+                            <select id="riSignificant" disabled="true">
+                                <option value="true" <%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant === "true" ? "selected" : "" %>>Yes</option>
+                                <option value="false" <%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant === "false" ? "selected" : "" %>>No</option>
+                                <option value="unset" <%= data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant !== "true" && data.Attributes.filter(attr => attr.hasOwnProperty('RunInfo')).slice(-1)[0].RunInfo.Significant !== "false" ? "selected" : "" %>>Unset</option>
+                            </select>
+                        </td>
+                    </tr>
+                <% } %>
+            <% } %>    
+
+            <% if (data.hasOwnProperty('Attributes')) { %>
+                <% if (data.hasOwnProperty('Attributes') && Array.isArray(data.Attributes) && data.Attributes.some(attr => attr.hasOwnProperty('DataQuality'))) { %>
+                <tr>
+                    <td> Data Quality Summary </td>
+                    <td>
+                        <input type="checkbox" id="dqMu3e" name="dqMu3e" indeterminate disabled/> <label for="dqMu3e">Mu3e</label>
+                        <input type="checkbox" id="dqBeam" name="dqBeam" indeterminate disabled/> <label for="dqBeam">Beam</label>
+                        <input type="checkbox" id="dqVtx" name="dqVtx" indeterminate disabled/> <label for="dqVtx">Vertex</label>
+                        <input type="checkbox" id="dqPix" name="dqPix" indeterminate disabled/> <label for="dqPix">Pixel</label>
+                        <input type="checkbox" id="dqFib" name="dqFib" indeterminate disabled/> <label for="dqFib">Fibres</label>
+                        <input type="checkbox" id="dqTil" name="dqTil" indeterminate disabled/> <label for="dqTil">Tiles</label>
+                        <input type="checkbox" id="dqCal" name="dqCal" indeterminate disabled/> <label for="dqCal">Calibration</label>
+                        <input type="checkbox" id="dqLks" name="dqLks" indeterminate disabled/> <label for="dqLks">Links</label>
+                    </td>
+                </tr>
+                <% } %>
+            <% } %>
+
+        </table>
+        
+        <h2>Record history</h2>
+        <table  id="histcomments">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Comment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% data.History.forEach(function(entry) { %>
+                    <tr>
+                        <td><%= entry.date %></td>
+                        <td><%= entry.comment %></td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>    
+    </body>
+
+    <script>
+     const lData = <%- JSON.stringify(data) %>;
+     console.log(lData);
+     
+     let sruns = '<%-runs%>';
+     let aruns = sruns.split(",");
+     const sthisRun = <%= data.BOR["Run number"]%>;
+     const thisRun = String(sthisRun);
+     const idxThisRun = aruns.indexOf(thisRun);
+     let idxPrevRun = (idxThisRun > 0? idxThisRun - 1: -1);
+     let idxNextRun = (idxThisRun < aruns.length? idxThisRun + 1: -1);
+     console.log("idxThisRun / idxPrevRun / idxnextRun :" + idxThisRun + " / " + idxPrevRun + " / " + idxNextRun);
+     
+     let mycolors = [];
+     mycolors.push('#1450fa'); // blue
+     mycolors.push('#0ac80a'); // darker green
+     mycolors.push('#50f000'); // light green
+     mycolors.push('#f0f000'); // yellow
+     mycolors.push('#f05000'); // orange
+     mycolors.push('#f00000'); // red
+
+     // -- all the dq flags to be shown
+     const detMap = new Map([
+         ["mu3e", "dqMu3e"], 
+         ["beam", "dqBeam"], 
+         ["vertex", "dqVtx"], 
+         ["pixel", "dqPix"],
+         ["fibres", "dqFib"], 
+         ["tiles", "dqTil"], 
+         ["calibration", "dqCal"], 
+         ["goodLinks", "dqLks"],
+         ["version", "dqVer"]        
+     ]);
+
+     var dqOrigIdx = -1; 
+     const dqOrig = new Map([
+         ["mu3e", "nada"], 
+         ["beam", "nada"], 
+         ["vertex", "nada"], 
+         ["pixel", "nada"], 
+         ["fibres", "nada"], 
+         ["tiles", "nada"],
+         ["calibration", "nada"], 
+         ["goodLinks", "nada"], 
+         ["version", "nada"]
+     ]);
+
+
+     let commentChange = 0; 
+     
+     let dataQuality = 0;
+     var dqIdx = -1;
+     var riIdx = -1;
+
+     const hasAttributes = lData.hasOwnProperty('Attributes');
+
+     console.log("hasAttributes: " + hasAttributes + " lData.Attributes.length: " + lData.Attributes.length);
+     // -- get most recent (last) DataQuality
+     if (hasAttributes) {
+         for (var idx = 0; idx < lData.Attributes.length; ++idx) {
+             if (lData.Attributes[idx].hasOwnProperty('DataQuality')) {
+                console.log("DataQuality found");
+                dqIdx = idx; 
+             }
+             if (lData.Attributes[idx].hasOwnProperty('RunInfo')) {
+                 console.log("RunInfo found");
+                 riIdx = idx; 
+             }
+         }
+     }
+     
+     if (riIdx > -1) {
+         console.log("riIdx: " + riIdx);
+         var onlineruninfo = lData.Attributes[riIdx].RunInfo;
+         console.log("onlineruninfo: " + JSON.stringify(onlineruninfo));
+         if (onlineruninfo.hasOwnProperty('Class')) {
+             const riClass = document.getElementById('riClass');
+             if (riClass) riClass.value = onlineruninfo.Class;
+         }
+         if (onlineruninfo.hasOwnProperty('Significant')) {
+             const riSignificant = document.getElementById('riSignificant');
+             if (riSignificant) riSignificant.value = onlineruninfo.Significant;
+         }
+         if (onlineruninfo.hasOwnProperty('Comments')) {
+             const riComments = document.getElementById('riComments');
+             if (riComments) riComments.value = onlineruninfo.Comments;
+         }
+    }
+    
+     if (dqIdx > -1) {
+         dataQuality = 1; 
+         console.log("dqIdx: " + dqIdx);
+         var onlinedq = lData.Attributes[dqIdx].DataQuality;
+         dqOrigIdx = dqIdx;
+         console.log("dqOrigIdx:" + dqOrigIdx); 
+         
+         for (var prop in onlinedq) {
+                 if (Object.prototype.hasOwnProperty.call(onlinedq, prop)) {
+                 console.log("prop: " + prop + " -> val: " + onlinedq[prop]);
+                 if (detMap.has(prop)) {
+                     const element = document.getElementById(detMap.get(prop));
+                     if (element) {
+                         if (onlinedq[prop] === '1') {
+                             console.log("prop " + prop + " good");
+                             element.checked = true;
+                             dqOrig.set(prop, "1");
+                         } else if (onlinedq[prop] === '0') {
+                             console.log("prop " + prop + " bad");
+                             element.checked = false;
+                             dqOrig.set(prop, "0");
+                         } else {
+                             console.log("prop " + prop + " unset");
+                             element.indeterminate = true;
+                             dqOrig.set(prop, "-1");
+                         }
+                     }
+                 }
+             }
+         }
+     } else {
+         if (hasAttributes) {
+             console.log("Set attributes to indeterminate");
+             for (const value of detMap.values()) {
+                 const element = document.getElementById(value);
+                 if (element) {
+                     console.log(value);
+                     element.indeterminate = true;
+                 }
+             }
+         } else {
+             console.log("do nothing as this runrecord has no Attributes");
+         }
+     }
+     
+     let doEdit = -1;
+
+     function setNext() {
+         if (idxNextRun < aruns.length) {
+             window.location.href = '/rdb/run/' + aruns[idxNextRun] + '/?runs=' + sruns;
+         } else {
+             window.location.href = '/rdb/';
+         }
+     }
+
+     function setPrev() {
+         if (idxPrevRun > -1) {
+             window.location.href = '/rdb/run/' + aruns[idxPrevRun] + '/?runs=' + sruns;
+         } else {
+             window.location.href = '/rdb/';
+         }
+     }
+
+     function setBack() {
+         window.location.href = '/rdb/';
+     }
+
+     function setEdit() {
+         console.log("HALLO setEdit");
+         if (doEdit < 1) {
+             // Enable all textareas
+             const commentsElement = document.getElementById('comments');
+             console.log("comments element:", commentsElement);
+             if (commentsElement) {
+                 commentsElement.disabled = false;
+             }
+             const riClass = document.getElementById('riClass');
+             console.log("riClass element:", riClass);
+             if (riClass) {
+                 riClass.disabled = false;
+             }
+             const riComments = document.getElementById('riComments');
+             console.log("riComments element:", riComments);
+             if (riComments) {
+                 riComments.disabled = false;
+             }
+             const riSignificant = document.getElementById('riSignificant');
+             console.log("riSignificant element:", riSignificant);
+             if (riSignificant) {
+                 riSignificant.disabled = false;
+             }
+
+             // Update Save button color
+             const submitButton = document.getElementById('btnSubm');
+             if (submitButton) {
+                 submitButton.style = "float: right; background-color:#00703c";
+             }
+             
+             // Enable Data Quality checkboxes if they exist
+             if (hasAttributes) {
+                 for (const [key, value] of detMap) {
+                     const element = document.getElementById(value);
+                     if (element) {
+                         console.log("key: " + key + " unsetting disabled: " + value);
+                         element.disabled = false;
+                     }
+                 }
+             }
+             
+             doEdit = 1; 
+         } 
+     }
+
+     // Add event listener for the Edit button
+     document.getElementById('btnEdit').addEventListener('click', function() {
+         console.log("Edit button clicked");
+         setEdit();
+     });
+
+     // Add event listener for the Save button
+     document.getElementById('btnSubm').addEventListener('click', function() {
+         console.log("Save button clicked");
+         updateRun();
+     });
+
+     // Add event listeners for textarea changes
+     document.querySelectorAll('textarea').forEach(textarea => {
+         textarea.addEventListener('change', function() {
+             console.log("Textarea changed:", this.id);
+             commentChange = 1;
+         });
+     });
+
+     function unsetEdit() {
+         if (doEdit > 0) {
+             // Disable all textareas
+             const commentsElement = document.getElementById('comments');
+             if (commentsElement) {
+                 commentsElement.disabled = true;
+             }
+             const riClass = document.getElementById('riClass');
+             if (riClass) {
+                 riClass.disabled = true;
+             }
+             const riComments = document.getElementById('riComments');
+             if (riComments) {
+                 riComments.disabled = true;
+             }
+             const riSignificant = document.getElementById('riSignificant');
+             if (riSignificant) {
+                 riSignificant.disabled = true;
+             }
+
+             // Update Save button color
+             const submitButton = document.getElementById('btnSubm');
+             if (submitButton) {
+                 submitButton.style = "float: right; background-color:#93c572";
+             }
+             
+             // Disable Data Quality checkboxes if they exist
+             if (hasAttributes) {
+                 for (const [key, value] of detMap) {
+                     const element = document.getElementById(value);
+                     if (element) {
+                         console.log("key: " + key + " unsetting disabled: " + value);
+                         element.disabled = true;
+                     }
+                 }
+             }
+             
+             doEdit = 0; 
+         } 
+     }
+
+     function updateRun() {
+         if (doEdit < 1) {
+             alert("Nothing edited. Will not save.\nClick Edit button to allow editing.");
+             return;
+         } 
+
+         var ldata = <%- JSON.stringify(data) %>;
+         
+         console.log("HALLO updateRun");
+         // -- update the modified comment
+         ldata.EOR["Comments"] = document.getElementById('comments').value;
+         console.log("ldata.History = " + JSON.stringify(ldata.History));
+
+         // -- update RunInfo fields if they exist
+         var riChanged = 0;
+         var lastRunInfoIndex = -1;
+         if (hasAttributes) {
+             const riClass = document.getElementById('riClass');
+             const riComments = document.getElementById('riComments');
+             const riSignificant = document.getElementById('riSignificant');
+             
+             if (riClass && riComments && riSignificant) {
+                 // Find the last RunInfo entry
+                 lastRunInfoIndex = ldata.Attributes.findIndex(attr => attr.hasOwnProperty('RunInfo'));
+                 if (lastRunInfoIndex !== -1) {
+                     if (ldata.Attributes[lastRunInfoIndex].RunInfo.Class !== riClass.value) {
+                         riChanged = 1;
+                     }
+                     if (ldata.Attributes[lastRunInfoIndex].RunInfo.Comments !== riComments.value) {
+                         ldata.Attributes[lastRunInfoIndex].RunInfo.Comments = riComments.value;
+                         riChanged = 1;
+                     }
+                     if (ldata.Attributes[lastRunInfoIndex].RunInfo.Significant !== riSignificant.value) {
+                         ldata.Attributes[lastRunInfoIndex].RunInfo.Significant = riSignificant.value;
+                         riChanged = 1;
+                     }
+                 }
+             }
+         }
+
+         // Update the status symbol when Significant changes
+         const riSignificant = document.getElementById('riSignificant');
+         const riSignificantStatus = document.getElementById('riSignificantStatus');
+         if (riSignificant && riSignificantStatus) {
+             riSignificant.addEventListener('change', function() {
+                 const statusSpan = riSignificantStatus.querySelector('span');
+                 if (statusSpan) {
+                     if (this.value === "true") {
+                         statusSpan.className = "status-significant";
+                         statusSpan.textContent = "✓";
+                     } else if (this.value === "false") {
+                         statusSpan.className = "status-not-significant";
+                         statusSpan.textContent = "✗";
+                     } else {
+                         statusSpan.className = "status-unset";
+                         statusSpan.textContent = "n/a";
+                     }
+                 }
+             });
+         }
+
+         var newri = {
+            RunInfo : {
+                Class: "",
+                Comments: "",
+                Significant: "",
+                Components: "unset", 
+                ComponentsOut: "unset", 
+                MidasVersion: "unset", 
+                MidasGitRevision: "unset",
+                DAQVersion: "unset", 
+                DAQGitRevision: "unset", 
+                VtxVersion: "unset", 
+                VtxGitRevision: "unset", 
+                PixVersion: "unset", 
+                PixGitRevision: "unset", 
+                TilVersion: "unset", 
+                TilGitRevision: "unset", 
+                FibVersion: "unset", 
+                FibGitRevision: "unset", 
+                Version: "unset"
+            }
+         }
+         console.log("riChanged: " + riChanged + " lastRunInfoIndex: " + lastRunInfoIndex);
+         if (riChanged > 0 && lastRunInfoIndex > -1) {
+             // Copy all existing RunInfo fields
+             newri.RunInfo = {...ldata.Attributes[lastRunInfoIndex].RunInfo};
+             
+             // Update only the changed fields
+             newri.RunInfo.Class = riClass.value;
+             newri.RunInfo.Comments = riComments.value;
+             newri.RunInfo.Significant = riSignificant.value;
+     
+             console.log("newri: " + JSON.stringify(newri));
+         } 
+
+         // -- check for updated dq summary
+         var newdq = {
+             DataQuality : {
+                 mu3e: "-2",
+                 beam: "-2",
+                 vertex: "-2",
+                 pixel: "-2",
+                 fibres: "-2",
+                 tiles: "-2", 
+                 calibration: "-2",
+                 goodLinks: "-2",
+                 version: "unset-2"
+             }
+         };
+
+         var dqChange = "";
+         var dqChanged = 0; 
+         if (dqOrigIdx > -1) {
+             dqChange = "dq status changes: "; 
+             for (const [key, value] of detMap) {
+                 var status = "-3";
+                 const element = document.getElementById(value);
+                 if (element) {
+                     if (element.indeterminate) {
+                         status = "-1";
+                     } else if (element.checked) {
+                         status = "1";
+                     } else {
+                         status = "0";
+                     }
+                     if (status != dqOrig.get(key)) {
+                         dqChange = dqChange + key + ": " + status + " ";
+                         dqChanged = 1; 
+                         newdq.DataQuality[key] = status;
+                         console.log("key: " + key);
+                         console.log("dqOrigIdx: " + dqOrigIdx);
+                         console.log("attributes[dqOrigIdx]: " + JSON.stringify(lData.Attributes[dqOrigIdx]));
+                         console.log("changed " + lData.Attributes[dqOrigIdx].DataQuality[key]);
+                     } else {
+                         newdq.DataQuality[key] = dqOrig.get(key);
+                     }
+                 }
+             }
+         }
+         
+         var currentdate = new Date(); 
+         var datetime = currentdate.getFullYear() + "/" 
+                      + (currentdate.getMonth()+1).toString().padStart(2, '0')  + "/" 
+                      + currentdate.getDate().toString().padStart(2, '0') + " "
+                      + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                      + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                      + currentdate.getSeconds().toString().padStart(2, '0');
+         
+         let addComment = {"date": datetime, "comment": ""};
+
+         if (commentChange) {
+             addComment.comment = "Comment changed. ";
+         }
+         if (dqChanged) {
+             addComment.comment = addComment.comment + dqChange;
+         }
+         if (riChanged) {
+             addComment.comment = addComment.comment + "RunInfo changed. ";
+         }
+
+         if (dqChanged > 0) { 
+            console.log("pushing to ldata newdq: " + JSON.stringify(newdq));
+             ldata.Attributes.push(newdq);
+         }
+
+         console.log("2nd riChanged: " + riChanged);
+         if (riChanged > 0) {
+             console.log("pushing to ldata newri: " + JSON.stringify(newri));
+             ldata.Attributes.push(newri);
+         }
+         ldata.History.push(addComment);
+         
+         console.log("ldata: " + JSON.stringify(ldata));
+         
+         // -- Send the POST request
+         fetch('/rdb/updateRun', {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+             },
+             body: JSON.stringify(ldata)  // Send data as JSON
+         })
+         .then(response => {
+             if (!response.ok) {
+                 throw new Error('Network response was not ok');
+             }
+             // -- reset color of Save button
+             unsetEdit();
+             location.reload();
+         })
+         .catch(error => {
+             console.error('Error:', error);
+             alert('Error saving changes: ' + error.message);
+         });
+     }
+    </script>
+
+    
+</html>
