@@ -339,6 +339,7 @@ int main(int argc, char* argv[]) {
     // TODO: check that non-zero entries and that it.first is not in mChipIDOK
   }
 
+  cout << "This is the end, my friend" << endl;
   return 0;
 }
 
