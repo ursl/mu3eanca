@@ -4,7 +4,7 @@
 # processRuns
 # ===========
 #
-# Usage:       cd mu3eana/run2025/scripts
+# Usage:       cd mu3eanca/run2025/scripts
 #              ./processRuns -m minalyzer -c /Users/ursl/mu3e/mu3eanca/db0/cdb2/certification/2025/
 #              ./processRuns -m minalyzer -e "2025April"
 #              ./processRuns -m minanalyzer -e runs -r "553,552,551"
@@ -15,6 +15,7 @@
 #              ./processRuns -m anadqm -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
 #
 # History
+#         2025/05/28 
 #         2025/05/26 remove leading whitespace when reading from certification file
 #         2025/05/05 add -u option to update CDB tag IOV list
 #         2025/05/03 add GT for pixelqualitylm payload generation
@@ -40,6 +41,10 @@ my $CDB      = "/Users/ursl/data/mu3e/cdb";
 my $ROF      = "$BASEDIR/minalyzer/root_output_files/";
 my $MAXRUN   = -1;
 my $GT       = "";
+my $MINEVENTS= 10000;
+
+# -- counting executable (used to be [min]alyzer)
+my $counterExe= "mdump -j -x ";
 
 if ($opt_n) {
     $MAXRUN = $opt_n;
@@ -49,58 +54,57 @@ if ($opt_g) {
     $GT = "$opt_g";
 }
 
+# -- define which runs to process
 my @goodRuns = ();
+&setGoodRuns();
 
-if ($opt_e eq "2025April") {
-    push(@goodRuns, (551, 552, 553));
-    push(@goodRuns, (512, 513));
-    push(@goodRuns, (489, 490));
-    push(@goodRuns, (481, 482, 483));
-    for (my $i = 462; $i <= 473; $i++) { push(@goodRuns, $i); }
-    push(@goodRuns, 460);
-    for (my $i = 443; $i <= 453; $i++) { push(@goodRuns, $i); }
-    for (my $i = 431; $i <= 437; $i++) { push(@goodRuns, $i); }
-    for (my $i = 415; $i <= 425; $i++) { push(@goodRuns, $i); }
-    for (my $i = 337; $i <= 342; $i++) { push(@goodRuns, $i); }
-    push(@goodRuns, (323, 330));
-    push(@goodRuns, (283, 284));
-    push(@goodRuns, (277, 278));
-    push(@goodRuns, 264);
-    push(@goodRuns, 256);
-    push(@goodRuns, 248);
-} elsif ($opt_e eq "runs") {
-    if ($opt_r) {
-        @goodRuns = split(/,/, $opt_r);
+
+# ----------------------------------------------------------------------
+# -- main loop and decision point is here
+# ----------------------------------------------------------------------
+# -- count events for all runs
+my $nrun = 0;
+foreach my $run (@goodRuns) {
+    $nrun++;
+    if ($MAXRUN > 0 && $nrun > $MAXRUN) {
+        print "Skipping run $run, as too many runs processed\n";
+        next;
+    }
+
+    my $nEvents = &countEvents($run);
+    print "Run $run has $nEvents events\n";
+    if ($nEvents < $MINEVENTS) {
+        print "Skipping run $run, as too few events\n";
+        next;
+    }
+    if ($opt_m eq "minalyzer") {
+        &runMinalyzer();
+    } elsif ($opt_m eq "anadqm") {
+        &runAnaDQM();
     } else {
-        print "Error: No run numbers provided with -r option\n";
+        print "Unknown option $opt_m\n";
+        print "Usage: rerunDQM -m <min|dqm> -e <2025April>\n";
         exit(1);
     }
 }
 
-if ($opt_c) {
-    my $file = $opt_c;
-    open(IN, "$file") || die "processRuns: Cannot open $file\n";
-    $lines = <IN>;
-    close(IN);
-    $lines =~ s/\{//g;
-    $lines =~ s/\}//g;
-    $lines =~ s/\n//g;
-    $lines =~ s/\s//g;
-    @goodRuns = split(/,/, $lines);
+# ----------------------------------------------------------------------
+sub runMinalyzer() {
+    my $dir = "$BASEDIR/minalyzer";
+    print "Running minalyzer in $dir for runs: @goodRuns\n";
+    system("mkdir -p $dir/log");
+    my $srun = sprintf("run%05d", $run);
+    my $cmd0 = "rm -f log/dqm_$srun.log";
+    my $cmd1 = "_build/analyzer/minalyzer --mt $DATADIR/$srun.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=$BASEGT  >& log/dqm_$srun.log ";
+    if ($opt_d) {
+        print("->$cmd1<-\n");
+        print("cd $dir && $cmd0 && $cmd1 && cd - \n");
+    } else {
+        print("->$cmd1<-\n");
+        system("cd $dir && $cmd0 && $cmd1 && cd - ");
+    }
 }
 
-# ----------------------------------------------------------------------
-# -- main decision point is here
-# ----------------------------------------------------------------------
-if ($opt_m eq "minalyzer") {
-    &runMinalyzer();
-} elsif ($opt_m eq "anadqm") {
-    &runAnaDQM();
-} else {
-    print "Unknown option $opt_m\n";
-    print "Usage: rerunDQM -m <min|dqm> -e <2025April>\n";
-    exit(1);
-}
 
 # ----------------------------------------------------------------------
 sub runAnaDQM() {
@@ -111,63 +115,95 @@ sub runAnaDQM() {
     system("mkdir -p $dir/out");
     system("mkdir -p $dir/csv");
     system("mkdir -p $dir/payloads");
-    foreach my $run (@goodRuns) {
-        $nrun++;
-        my $srun = sprintf("%05d", $run);
-        if ($MAXRUN > 0 && $nrun > $MAXRUN) {
-            print "Skipping run $run, as too many runs processed\n";
-            next;
-        }
-        print "Processing DQM output for run $run in directory $dir\n";
-        my $cmd0 = "rm -f log/dqm_$srun.log";
-        my $lgt = ""; 
-        if ($GT) {
-            $lgt = "-g $GT";
-        }
-        my $cmd1 = "bin/pixelHistograms -j $CDB $lgt -f $ROF/dqm_histos_$srun.root  >& log/dqm_$srun.log ";
-        if ($opt_d) {
-            print "Running DQM for run $run in directory $dir\n";
-            print("->$cmd0 && $cmd1 && $cmd2<-\n");
-        } else {
-            print "Running DQM for run $run in directory $dir\n";
-            print("->$cmd0 && $cmd1<-\n");
-            system("cd $dir && $cmd0 && $cmd1 && cd - ");
-        }
-        # insertIovTag -j ~/data/mu3e/cdb -t pixelqualitylm_datav6.1=2025CosmicsVtxOnly -i 472
-        if ($opt_u) {
-            my $cmd2 = "$MU3EANCA/scripts/insertIovTag -j $CDB -t pixelqualitylm_$GT -i $run";
-            print "cmd2: $cmd2\n";
-            my $payloadname = "tag_pixelqualitylm_" . $GT . "_iov_$run";
-            my $cmd3 = "/bin/cp payloads/$payloadname $CDB/payloads/";
-            print "cmd3: $cmd3\n";           
-            system("cd $dir && $cmd2 && $cmd3 && cd - ");
-        }
+    my $srun = sprintf("%05d", $run);
+    print "Processing DQM output for run $run in directory $dir\n";
+    my $cmd0 = "rm -f log/dqm_$srun.log";
+    my $lgt = ""; 
+    if ($GT) {
+        $lgt = "-g $GT";
+    }
+    my $cmd1 = "bin/pixelFillQualityLM -j $CDB $lgt -f $ROF/dqm_histos_$srun.root  >& log/dqm_$srun.log ";
+    if ($opt_d) {
+        print "Running DQM for run $run in directory $dir\n";
+        print("->$cmd0 && $cmd1 && $cmd2<-\n");
+    } else {
+        print "Running DQM for run $run in directory $dir\n";
+        print("->$cmd0 && $cmd1<-\n");
+        system("cd $dir && $cmd0 && $cmd1 && cd - ");
+    }
+    # insertIovTag -j ~/data/mu3e/cdb -t pixelqualitylm_datav6.1=2025CosmicsVtxOnly -i 472
+    if ($opt_u) {
+        my $cmd2 = "$MU3EANCA/scripts/insertIovTag -j $CDB -t pixelqualitylm_$GT -i $run";
+        print "cmd2: $cmd2\n";
+        my $payloadname = "tag_pixelqualitylm_" . $GT . "_iov_$run";
+        my $cmd3 = "/bin/cp payloads/$payloadname $CDB/payloads/";
+        print "cmd3: $cmd3\n";           
+        system("cd $dir && $cmd2 && $cmd3 && cd - ");
     }
 }
 
 
 # ----------------------------------------------------------------------
-sub runMinalyzer() {
-    my $dir = "$BASEDIR/minalyzer";
-    my $nrun = 0;
-    print "Running minalyzer in $dir for runs: @goodRuns\n";
-    system("mkdir -p $dir/log");
-    foreach my $run (@goodRuns) {
-        $nrun++;
-        if ($MAXRUN > 0 && $nrun > $MAXRUN) {
-            print "Skipping run $run, as too many runs processed\n";
-            next;
-        }
-        my $srun = sprintf("run%05d", $run);
-        my $cmd0 = "rm -f log/dqm_$srun.log";
-        my $cmd1 = "_build/analyzer/minalyzer --mt $DATADIR/$srun.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=$BASEGT  >& log/dqm_$srun.log ";
-        if ($opt_d) {
-            print("->$cmd1<-\n");
-            print("cd $dir && $cmd0 && $cmd1 && cd - \n");
+sub setGoodRuns() {
+    if ($opt_e eq "2025April") {
+        push(@goodRuns, (551, 552, 553));
+        push(@goodRuns, (512, 513));
+        push(@goodRuns, (489, 490));
+        push(@goodRuns, (481, 482, 483));
+        for (my $i = 462; $i <= 473; $i++) { push(@goodRuns, $i); }
+        push(@goodRuns, 460);
+        for (my $i = 443; $i <= 453; $i++) { push(@goodRuns, $i); }
+        for (my $i = 431; $i <= 437; $i++) { push(@goodRuns, $i); }
+        for (my $i = 415; $i <= 425; $i++) { push(@goodRuns, $i); }
+        for (my $i = 337; $i <= 342; $i++) { push(@goodRuns, $i); }
+        push(@goodRuns, (323, 330));
+        push(@goodRuns, (283, 284));
+        push(@goodRuns, (277, 278));
+        push(@goodRuns, 264);
+        push(@goodRuns, 256);
+        push(@goodRuns, 248);
+    } elsif ($opt_e eq "runs") {
+        if ($opt_r) {
+            @goodRuns = split(/,/, $opt_r);
         } else {
-            print("->$cmd1<-\n");
-            system("cd $dir && $cmd0 && $cmd1 && cd - ");
+            print "Error: No run numbers provided with -r option\n";
+            exit(1);
         }
     }
 
+    if ($opt_c) {
+        my $file = $opt_c;
+        open(IN, "$file") || die "processRuns: Cannot open $file\n";
+        $lines = <IN>;
+        close(IN);
+        $lines =~ s/\{//g;
+        $lines =~ s/\}//g;
+        $lines =~ s/\n//g;
+        $lines =~ s/\s//g;
+        @goodRuns = split(/,/, $lines);
+    }
+}
+
+# ----------------------------------------------------------------------
+sub countEvents() {
+    ($run) = @_;
+    my $file = sprintf("$DATADIR/run%05d.mid.lz4", $run);
+    print(&prefix("countEvent"), "run = $run -> file = $file\n");
+
+    my $cmdString = "$counterExe $file | grep Evid:0001 | wc -m ";
+    print(&prefix("countEvent"), "$cmdString\n");
+    $result = `$cmdString`;
+    chop($result);
+    print(&prefix("countEvent"), "countEvents = $result\n");
+    return $result;
+}
+
+# ----------------------------------------------------------------------
+sub prefix() {
+    ($long) = @_;
+    my $now = localtime;
+    # -- fill up in case too short
+    $long .= "                         ";
+    $shorter = substr($long, 0, 15);
+    return ($now . "/" . $shorter . "/ ");
 }
