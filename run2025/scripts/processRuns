@@ -7,15 +7,15 @@
 # Usage:       cd mu3eanca/run2025/scripts
 #              ./processRuns -m minalyzer -c /Users/ursl/mu3e/mu3eanca/db0/cdb2/certification/2025/
 #              ./processRuns -m minalyzer -e "2025April"
-#              ./processRuns -m minanalyzer -e runs -r "553,552,551"
+#              ./processRuns -m minalyzer -e runs -r "553,552,551"
 #
-#              ./processRuns -m anadqm -e 2025April -g datav6.1=2025CosmicsVtxOnly 
-#              ./processRuns -m anadqm -e runs -r "553" -g datav6.1=2025CosmicsVtxOnly 
-#              ./processRuns -m anadqm -e 2025April -g datav6.1=2025CosmicsVtxOnly -u
-#              ./processRuns -m anadqm -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
+#              ./processRuns -m calibration -e 2025April -g datav6.1=2025CosmicsVtxOnly 
+#              ./processRuns -m calibration -e runs -r "553" -g datav6.1=2025CosmicsVtxOnly 
+#              ./processRuns -m calibration -e 2025April -g datav6.1=2025CosmicsVtxOnly -u
+#              ./processRuns -m calibration -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
 #
 # History
-#         2025/05/28 
+#         2025/05/28 complete rearrangement of loop/logic, merge in code from proCalRec
 #         2025/05/26 remove leading whitespace when reading from certification file
 #         2025/05/05 add -u option to update CDB tag IOV list
 #         2025/05/03 add GT for pixelqualitylm payload generation
@@ -31,19 +31,48 @@ use File::Basename;
 my $dir = getcwd;
  
 use Getopt::Std;
-getopts('dc:e:g:m:n:r:u');
+getopts('dc:e:g:m:n:r:t:u');
  
-my $BASEDIR  = "/Users/ursl/mu3e/software/250429";
-my $MU3EANCA = "/Users/ursl/mu3e/mu3eanca/run2025";
+# ----------------------------------------------------------------------
+# -- default values
+# ----------------------------------------------------------------------
+my $HOME     = getenv("HOME");
+# -- Base directory with mu3e and minalyzer installations
+my $BASEDIR  = "$HOME/mu3e/software/250429";
+# -- Base directory for mu3eanca
+my $MU3EANCA = "$HOME/mu3e/mu3eanca/run2025";
+# -- Base GT for running minalyzer
 my $BASEGT   = "mcidealv6.1";
-my $DATADIR  = "/Users/ursl/data/mu3e/run2025";
-my $CDB      = "/Users/ursl/data/mu3e/cdb";
+# -- Data directory
+my $DATADIR  = "$HOME/mu3e/data/run2025";
+# -- CDB directory (not the mirror of the master CDB!)
+my $CDB      = "$HOME/mu3e/cdb";
+# -- ROOT output directory
 my $ROF      = "$BASEDIR/minalyzer/root_output_files/";
+# -- Maximum number of runs to process
 my $MAXRUN   = -1;
+# -- GT for updating payloads and tag insertion
 my $GT       = "";
+# -- Minimum number of events to process a run
 my $MINEVENTS= 10000;
 
-# -- counting executable (used to be [min]alyzer)
+# -- tarfile
+#    create it with
+#      merlin-l-002>pwd
+#      /data/experiment/mu3e/code/offline/250528-v6.1pre
+#      merlin-l-002>tar zhcvf ~/data/mdc2023/slurm/230913-analyzer.tar.gz --exclude .git analyzer mu3e
+
+my $tarFile   = "unset.tar.gz";
+if ($opt_t) {
+    my($barefile, $directories) = fileparse($opt_t);
+    $tarFile = $barefile;
+}
+
+if ($tarFile eq "unset.tar.gz") {
+    die("A tar file MUST be specified!\n");
+}
+
+# -- event counting executable 
 my $counterExe= "mdump -j -x ";
 
 if ($opt_n) {
@@ -78,8 +107,8 @@ foreach my $run (@goodRuns) {
     }
     if ($opt_m eq "minalyzer") {
         &runMinalyzer($run);
-    } elsif ($opt_m eq "anadqm") {
-        &runAnaDQM($run);
+    } elsif ($opt_m eq "calibration") {
+        &runPixelFillQualityLM($run);
     } else {
         print(&prefix("processRuns"), "Unknown option $opt_m\n");
         print(&prefix("processRuns"), "Usage: rerunDQM -m <min|dqm> -e <2025April>\n");
@@ -106,7 +135,7 @@ sub runMinalyzer() {
 
 
 # ----------------------------------------------------------------------
-sub runAnaDQM() {
+sub runPixelFillQualityLM() {
     ($run) = @_;
     my $dir = "$MU3EANCA/analysis";
     system("mkdir -p $dir/log");
@@ -114,7 +143,7 @@ sub runAnaDQM() {
     system("mkdir -p $dir/csv");
     system("mkdir -p $dir/payloads");
     my $srun = sprintf("%05d", $run);
-    print(&prefix("runAnaDQM"), "Processing DQM output for run $run in directory $dir\n");
+    print(&prefix("runPixelFillQualityLM"), "Processing DQM output for run $run in directory $dir\n");
     my $cmd0 = "rm -f log/dqm_$srun.log";
     my $lgt = ""; 
     if ($GT) {
@@ -122,20 +151,20 @@ sub runAnaDQM() {
     }
     my $cmd1 = "bin/pixelFillQualityLM -j $CDB $lgt -f $ROF/dqm_histos_$srun.root  >& log/dqm_$srun.log ";
     if ($opt_d) {
-        print(&prefix("runAnaDQM"), "Running DQM for run $run in directory $dir\n");
-        print(&prefix("runAnaDQM"), "->$cmd0 && $cmd1 && $cmd2<-\n");
+        print(&prefix("runPixelFillQualityLM"), "Running DQM for run $run in directory $dir\n");
+        print(&prefix("runPixelFillQualityLM"), "->$cmd0 && $cmd1 && $cmd2<-\n");
     } else {
-        print(&prefix("runAnaDQM"), "Running DQM for run $run in directory $dir\n");
-        print(&prefix("runAnaDQM"), "->$cmd0 && $cmd1<-\n");
+        print(&prefix("runPixelFillQualityLM"), "Running DQM for run $run in directory $dir\n");
+        print(&prefix("runPixelFillQualityLM"), "->$cmd0 && $cmd1<-\n");
         system("cd $dir && $cmd0 && $cmd1 && cd - ");
     }
     # insertIovTag -j ~/data/mu3e/cdb -t pixelqualitylm_datav6.1=2025CosmicsVtxOnly -i 472
     if ($opt_u) {
         my $cmd2 = "$MU3EANCA/scripts/insertIovTag -j $CDB -t pixelqualitylm_$GT -i $run";
-        print(&prefix("runAnaDQM"), "cmd2: $cmd2\n");
+        print(&prefix("runPixelFillQualityLM"), "cmd2: $cmd2\n");
         my $payloadname = "tag_pixelqualitylm_" . $GT . "_iov_$run";
         my $cmd3 = "/bin/cp payloads/$payloadname $CDB/payloads/";
-        print(&prefix("runAnaDQM"), "cmd3: $cmd3\n");           
+        print(&prefix("runPixelFillQualityLM"), "cmd3: $cmd3\n");           
         system("cd $dir && $cmd2 && $cmd3 && cd - ");
     }
 }
