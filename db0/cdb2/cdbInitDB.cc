@@ -67,7 +67,6 @@ int main(int argc, const char* argv[]) {
     {"mcidealv5.4=2025CosmicsVtxOnly", {"pixelalignment_", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
     {"mcidealv6.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detsetupv1_", "detconfv1_mcidealv5.1", } },
     {"mcidealv6.1=2025CosmicsVtxOnly", {"pixelalignment_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
-      // -- data
     {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} },
     {"datav6.1=2025CosmicsVtxOnly", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} }
   };    
@@ -75,7 +74,7 @@ int main(int argc, const char* argv[]) {
   
   // -- command line arguments
   string jsondir("");
-  string mode("mcideal");
+  string mode("all");
   int verbose(0), banner(0);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-j"))  {jsondir = argv[++i];}
@@ -191,6 +190,7 @@ int main(int argc, const char* argv[]) {
       string tag = ('_' == it.back()? it + igt.first: it);
       string tagLess = tag.substr(tag.rfind('_') + 1);
       
+      cout << "cdbInitDB> tag = " << tag << " tagLess = " << tagLess << " it = " << it << endl; 
       // -- skip if this payload has already been written 
       mPayloadCount[tag]++;
       if (mPayloadCount[tag] > 1) continue;
@@ -319,7 +319,9 @@ int main(int argc, const char* argv[]) {
       if (string::npos != tag.find("pixelqualitylm_")) {
         calPixelQualityLM *cpq = new calPixelQualityLM();
         filename = string(LOCALDIR) + "/ascii/pixelqualitylm-" + tagLess + ".csv";
+        cout << "cdbInitDB> reading " << filename << endl;
         cpq->readCsv(filename);
+        cout << "cdbInitDB> readCsv done" << endl;
         string blob = cpq->makeBLOB();
 
         hash = string("tag_pixelqualitylm_" + tagLess + "_iov_1");
