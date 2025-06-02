@@ -37,7 +37,7 @@ getopts('dc:e:g:m:n:r:t:u');
 # ----------------------------------------------------------------------
 # -- default values
 # ----------------------------------------------------------------------
-my $HOME     = getenv("HOME");
+my $HOME     = $ENV{"HOME"};
 # -- Base directory with mu3e and minalyzer installations
 my $BASEDIR  = "$HOME/mu3e/software/250429";
 # -- Base directory for mu3eanca
