@@ -286,7 +286,7 @@ string calPixelQualityLM::makeBLOB(const map<unsigned int, vector<double>>& m) {
 
 // ----------------------------------------------------------------------
 void calPixelQualityLM::readCsv(string filename) {
-  bool DBX(true);
+  bool DBX(false);
   cout << "calPixelQualityLM::readCsv> reset fMapConstants" << endl;
   fMapConstants.clear();
 
