@@ -305,7 +305,10 @@ sub submitJobsRaw() {
 
         $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
 
-        print(&prefix("submitJobsRaw"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1
+        print(&prefix("submitJobsRaw"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/mlzr ROOTFILE anl-run$job.root $anlString\n");
+        print(&prefix("submitJobsRaw"), "SLURM: $cmdString\n");
+        if ($opt_d) {
+            print(&prefix("submitJobsRaw"), "DBX: $cmdString\n");
         } else {
             $line = `$cmdString`;
             # -- to see $line, uncomment the next line:
