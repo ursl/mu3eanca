@@ -226,7 +226,7 @@ sub setGoodRuns() {
 # ----------------------------------------------------------------------
 sub countEvents() {
     ($run) = @_;
-    my $file = sprintf("$DATADIR/run%05d.mid.lz4", $run);
+    my $file = sprintf("$DATADIR/raw/run%05d.mid.lz4", $run);
     print(&prefix("countEvent"), "run = $run -> file = $file\n");
 
     my $cmdString = "$counterExe $file | grep Evid:0001 | wc -m ";
