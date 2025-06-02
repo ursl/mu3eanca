@@ -48,13 +48,22 @@ my $DATADIR  = "$HOME/mu3e/data/run2025";
 # -- CDB directory (not the mirror of the master CDB!)
 my $CDB      = "$HOME/mu3e/cdb";
 # -- ROOT output directory
-my $ROF      = "$BASEDIR/minalyzer/root_output_files/";
+my $ROF      = "$BASEDIR/mlzr/root_output_files/";
 # -- Maximum number of runs to process
 my $MAXRUN   = -1;
 # -- GT for updating payloads and tag insertion
 my $GT       = "";
 # -- Minimum number of events to process a run
 my $MINEVENTS= 10000;
+
+# -- modifications for merlin
+if (%ENV{"HOST"} =~ "merlin") {
+    $BASEDIR  = "/data/experiment/mu3e/code/offline/250528-v6.1pre";
+    $MU3EANCA = "/psi/home/langenegger/mu3e/mu3eanca";
+    $CDB      = "/data/experiment/mu3e/code/cdb";
+    $DATADIR  = "/data/experiment/mu3e/data/2025";
+    $ROF      = "/data/experiment/mu3e/mlzr/root_output_files/";
+}
 
 # -- tarfile
 #    create it with
