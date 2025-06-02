@@ -118,6 +118,8 @@ foreach my $run (@goodRuns) {
         &runMinalyzer($run);
     } elsif ($opt_m eq "calibration") {
         &runPixelFillQualityLM($run);
+    } elsif ($opt_m eq "raw") {
+        &submitJobsRaw($run, $nEvents);
     } else {
         print(&prefix("processRuns"), "Unknown option $opt_m\n");
         print(&prefix("processRuns"), "Usage: rerunDQM -m <min|dqm> -e <2025April>\n");
@@ -275,7 +277,7 @@ sub submitJobsRaw() {
     print(&prefix("submitJobsRaw"), "submitJobsRaw rundir = $rundir, rootdir = $rootdir, file = $file\n");
 
     my $cmdIniString = "cd $rundir && ";
-    $cmdIniString .= "$BASEDIR/../slurm/run $queue -t ../../../../$tarFile -c $BASEDIR/scripts/slurm-analyzer.csh ";
+    $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../$tarFile -c $MU3EANCA/scripts/slurm-analyzer.csh ";
 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/mlzr";
