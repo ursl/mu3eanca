@@ -293,6 +293,7 @@ sub submitJobsRaw() {
     my %mSlurmIds;
     my @mergeFiles;
     my $NJOBS = int($lcevts/$nevts) + 1;
+    print(&prefix("submitJobsRaw"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts\n");
     # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
         last if ($ijob == 2);
