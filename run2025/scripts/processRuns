@@ -82,7 +82,7 @@ if ($tarFile eq "unset.tar.gz") {
     die("A tar file MUST be specified!\n");
 }
 
-my $nevts = 50000;
+my $nevts = 1000000;
 if ($opt_n) {
     $nevts = $opt_n;
 }
