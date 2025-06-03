@@ -296,6 +296,7 @@ sub submitJobsRaw() {
     my $rootdir = "$BASEDIR/slurm/storage1/mlzr/$run";
     if (-d $rootdir) {
         # -- remove possibly pre-existing job directory
+        system("/bin/rm -rf $BASEDIR/slurm/storage1/mlzr/old/$rootdir");
         system("/bin/mv $rootdir $BASEDIR/slurm/storage1/mlzr/old");
     }
     mkdir($rootdir);
