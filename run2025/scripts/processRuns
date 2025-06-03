@@ -411,7 +411,7 @@ sub submitJobsRaw() {
 
     $output = "$BASEDIR/slurm/storage1/mlzr";
     # my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
-    my @resultFiles = ("dqm_histos");
+    my @resultFiles = ("dqm_histos_");
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
         my $mergedFile = "$ROF/$file-run$srun.root";
