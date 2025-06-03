@@ -414,7 +414,7 @@ sub submitJobsRaw() {
     my @resultFiles = ("dqm_histos_");
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
-        my $mergedFile = "$ROF/$file-merged-$srun.root";
+        my $mergedFile = "$ROF/merged-$file$srun.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
