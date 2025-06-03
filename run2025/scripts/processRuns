@@ -15,6 +15,7 @@
 #              ./processRuns -m calibration -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
 #
 # History
+#         2025/06/03 change countEvents to use to RDB
 #         2025/05/28 complete rearrangement of loop/logic, merge in code from proCalRec
 #         2025/05/26 remove leading whitespace when reading from certification file
 #         2025/05/05 add -u option to update CDB tag IOV list
