@@ -175,7 +175,7 @@ sub runPixelFillQualityLM() {
     if ($GT) {
         $lgt = "-g $GT";
     }
-    my $cmd1 = "bin/pixelFillQualityLM -j $CDB $lgt -f $ROF/dqm_histos_$srun.root  >& log/dqm_$srun.log ";
+    my $cmd1 = "bin/pixelFillQualityLM -j $CDB $lgt -f $ROF/merged-dqm_histos_$srun.root  >& log/dqm_$srun.log ";
     if ($opt_d) {
         print(&prefix("runPixelFillQualityLM"), "Running DQM for run $run in directory $dir\n");
         print(&prefix("runPixelFillQualityLM"), "->$cmd0 && $cmd1 && $cmd2<-\n");
