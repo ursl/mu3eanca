@@ -89,7 +89,7 @@ if ($opt_t) {
     $tarFile = $barefile;
 }
 
-if ($tarFile eq "unset.tar.gz") {
+if (($opt_m eq "raw") && ($tarFile eq "unset.tar.gz")) {
     die("A tar file MUST be specified!\n");
 }
 
