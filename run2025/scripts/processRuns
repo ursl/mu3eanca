@@ -285,7 +285,7 @@ sub submitJobsRaw() {
 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/mlzr";
-    $envString .= "%DATADIR $DATADIR";
+    $envString .= "%DATADIR $DATADIR/raw";
     $envString .= "%MIDASFILE run$run.mid.lz4";
     $envString .= "%RUN $run";
 

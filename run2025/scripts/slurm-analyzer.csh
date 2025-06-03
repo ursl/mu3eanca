@@ -56,8 +56,8 @@ pwd
 echo "ls -l"
 ls -l
 
-echo "install/bin/minalyzer $ANLZR $PCRDATADIR/$MIDASFILE -- offline cdb.dbconn=rest cdb.gt=datav6.1=2025CosmicsVtxOnly"
-install/bin/minalyzer $ANLZR $PCRDATADIR/$MIDASFILE  -- offline cdb.dbconn=rest cdb.gt=datav6.1=2025CosmicsVtxOnly
+echo "_build/bin/minalyzer $ANLZR $PCRDATADIR/$MIDASFILE -- offline cdb.dbconn=rest cdb.gt=datav6.1=2025CosmicsVtxOnly"
+_build/bin/minalyzer $ANLZR $PCRDATADIR/$MIDASFILE  -- offline cdb.dbconn=rest cdb.gt=datav6.1=2025CosmicsVtxOnly
 date
 ls -rtl
 echo "slurm check size of rootfile produced"
