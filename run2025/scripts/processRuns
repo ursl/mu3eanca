@@ -64,7 +64,7 @@ if (%ENV{"HOST"} =~ "merlin") {
     $MU3EANCA = "/psi/home/langenegger/mu3e/mu3eanca";
     $CDB      = "/data/experiment/mu3e/code/cdb";
     $DATADIR  = "/data/experiment/mu3e/data/2025";
-    $ROF      = "/data/experiment/mu3e/mlzr/root_output_files/";
+    $ROF      = "/data/experiment/mu3e/data/2025/mlzr";
 }
 
 # -- tarfile
@@ -414,7 +414,7 @@ sub submitJobsRaw() {
     my @resultFiles = ("dqm_histos");
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
-        my $mergedFile = "$output/$run/$file-run$srun.root";
+        my $mergedFile = "$ROF/$file-run$srun.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
