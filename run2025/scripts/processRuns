@@ -281,7 +281,7 @@ sub submitJobsRaw() {
     print(&prefix("submitJobsRaw"), "submitJobsRaw rundir = $rundir, rootdir = $rootdir, file = $file\n");
 
     my $cmdIniString = "cd $rundir && ";
-    $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../$tarFile -c $MU3EANCA/scripts/slurm-analyzer.csh ";
+    $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025scripts/slurm-analyzer.csh ";
 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/mlzr";
