@@ -29,7 +29,6 @@
 use Cwd;
 use File::Basename;
 use Env;
-use LWP::Simple qw(get);
  
 my $dir = getcwd;
  
@@ -247,14 +246,7 @@ sub countEvents() {
     ($run) = @_;
     my $url = "http://pc11740/rdb/run/$run";
     print(&prefix("countEvents"), "run = $run -> url = $url\n");
-    my $result = get($url);
-    
-    # Extract line containing "const lData"
-    if ($result =~ /(const lData[^\n]*)/) {
-        $result = $1;
-    } else {
-        $result = "";
-    }
+    my $result = `curl -s $url`;
     
     print(&prefix("countEvents"), "result = $result\n");
     
@@ -327,7 +319,7 @@ sub submitJobsRaw() {
     # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
         # FIXME DO NOT FORGET
-        #last if ($ijob == 2);
+        last if ($ijob == 2);
         $job =  "$run" . "_$ijob";
 
         $rootString = "%ROOTFILE anl-run$job.root";
