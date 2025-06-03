@@ -390,13 +390,15 @@ sub submitJobsRaw() {
     print(&prefix("submitJobsRaw"), "all slurm jobs finished\n");
 
     $output = "$BASEDIR/slurm/storage1/mlzr";
-    my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
+    # my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
+    my @resultFiles = ("dqm_histos");
     foreach $file (@resultFiles) {
-        $pcrFile = "$output/$run/$file-run$run.root";
-        system("/bin/rm -f $pcrFile");
-        my $mergeString = "hadd $pcrFile";
+        my $srun = sprintf("%05d", $run);
+        my $mergedFile = "$output/$run/$file-run$srun.root";
+        system("/bin/rm -f $mergedFile");
+        my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
-            $mergeString .= " $output/$run/root_output_files_$rf/$file$run.root ";
+            $mergeString .= " $output/$run/root_output_files_$rf/root_output_files/$file$srun.root ";
         }
 
         if ($opt_d) {
@@ -405,8 +407,8 @@ sub submitJobsRaw() {
             print(&prefix("submitJobsRaw"), $mergeString);
             my $result = `$mergeString`;
             print("$result\n");
-            print(&prefix("submitJobsRaw"), "merged root file: $pcrFile\n");
+            print(&prefix("submitJobsRaw"), "merged root file: $mergedFile\n");
         }
     }
-    return $pcrFile;
+    return $mergedFile;
 }
