@@ -57,7 +57,7 @@ echo "ls -l"
 ls -l
 
 echo "_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --cdb.dbconn=rest --cdb.gt=datav6.1=2025CosmicsVtxOnly"
-_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --cdb.dbconn=rest --cdb.gt=datav6.1=2025CosmicsVtxOnly
+_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest --cdb.gt=datav6.1=2025CosmicsVtxOnly
 date
 ls -rtl
 echo "slurm check size of rootfile produced"
