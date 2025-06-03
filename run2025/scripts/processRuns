@@ -116,7 +116,6 @@ foreach my $run (@goodRuns) {
     }
 
     my $nEvents = &countEvents($run);
-    next;
     if ($nEvents < $MINEVENTS) {
         print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
         next;
@@ -328,7 +327,7 @@ sub submitJobsRaw() {
     # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
         # FIXME DO NOT FORGET
-        last if ($ijob == 2);
+        #last if ($ijob == 2);
         $job =  "$run" . "_$ijob";
 
         $rootString = "%ROOTFILE anl-run$job.root";
