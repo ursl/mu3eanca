@@ -283,10 +283,12 @@ sub submitJobsRaw() {
     my $cmdIniString = "cd $rundir && ";
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-analyzer.csh ";
 
+    my $srunfile = sprintf("run%05d.mid.lz4", $run);
+
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/mlzr";
     $envString .= "%DATADIR $DATADIR/raw";
-    $envString .= "%MIDASFILE run$run.mid.lz4";
+    $envString .= "%MIDASFILE $srunfile";
     $envString .= "%RUN $run";
 
     # map ($slurmID => logfile)
