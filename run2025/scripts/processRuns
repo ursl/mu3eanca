@@ -298,6 +298,7 @@ sub submitJobsRaw() {
     print(&prefix("submitJobsRaw"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts\n");
     # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
+        # FIXME DO NOT FORGET
         last if ($ijob == 2);
         $job =  "$run" . "_$ijob";
 
@@ -336,7 +337,7 @@ sub submitJobsRaw() {
                 }
             }
             if ($slurmid > 0) {
-                print(&prefix("pcrSubmitJobsA"), "SLURM job $slurmid -> $slurmout, rootout = $rootout\n");
+                print(&prefix("submitJobsRaw"), "SLURM job $slurmid -> $slurmout, rootout = $rootout\n");
                 $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
                 push(@mergeFiles, $job);
             }
@@ -345,7 +346,7 @@ sub submitJobsRaw() {
 
     my $njobs = keys %mSlurmIds;
     if ($njobs < 1) {
-        print(&prefix("pcrSubmitJobsA"), "ERROR no slurm job finished, something went wrong?!\n");
+        print(&prefix("submitJobsRaw"), "ERROR no slurm job finished, something went wrong?!\n");
         return $pcrFile;
     }
 
@@ -357,7 +358,7 @@ sub submitJobsRaw() {
         if ($cnt < $njobs) {$slurmids .= ", ";}
     }
     $slurmids .= ")";
-    print(&prefix("pcrSubmitJobsA"), "slurmids = $slurmids, sleep 30 second before looking at logfiles\n");
+    print(&prefix("submitJobsRaw"), "slurmids = $slurmids, sleep 30 second before looking at logfiles\n");
     sleep(30);
 
     # -- monitor jobs
@@ -374,8 +375,8 @@ sub submitJobsRaw() {
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
             my $tail = "no file yet\n";
-            if (-e "$BASEDIR/slurm/jobs/anl/$run/$mSlurmIds{$sjob}") {
-                $tail = `/bin/tail -1 $BASEDIR/slurm/jobs/anl/$run/$mSlurmIds{$sjob}`;
+            if (-e "$BASEDIR/slurm/jobs/mlzr/$run/$mSlurmIds{$sjob}") {
+                $tail = `/bin/tail -1 $BASEDIR/slurm/jobs/mlzr/$run/$mSlurmIds{$sjob}`;
             }
             print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
@@ -386,9 +387,9 @@ sub submitJobsRaw() {
         }
     }
 
-    print(&prefix("pcrSubmitJobsA"), "all slurm jobs finished\n");
+    print(&prefix("submitJobsRaw"), "all slurm jobs finished\n");
 
-    $output = "$BASEDIR/slurm/storage1/anl";
+    $output = "$BASEDIR/slurm/storage1/mlzr";
     my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
     foreach $file (@resultFiles) {
         $pcrFile = "$output/$run/$file-run$run.root";
@@ -399,12 +400,12 @@ sub submitJobsRaw() {
         }
 
         if ($opt_d) {
-            print(&prefix("pcrSubmitJobsA DBX"), $mergeString);
+            print(&prefix("submitJobsRaw DBX"), $mergeString);
         } else {
-            print(&prefix("pcrSubmitJobsA"), $mergeString);
+            print(&prefix("submitJobsRaw"), $mergeString);
             my $result = `$mergeString`;
             print("$result\n");
-            print(&prefix("pcrSubmitJobsA"), "merged root file: $pcrFile\n");
+            print(&prefix("submitJobsRaw"), "merged root file: $pcrFile\n");
         }
     }
     return $pcrFile;
