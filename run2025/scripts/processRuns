@@ -15,7 +15,7 @@
 #              ./processRuns -m calibration -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
 #
 # History
-#         2025/06/04 many small fixes for merging to work. GT passed into slurm-analyzer.csh
+#         2025/06/04 many small fixes for merging to work. GT passed into slurm-analyzer.csh. produce versioned directories for merged rootfiles.
 #         2025/06/03 change countEvents to use to RDB
 #         2025/05/28 complete rearrangement of loop/logic, merge in code from proCalRec
 #         2025/05/26 remove leading whitespace when reading from certification file
@@ -40,8 +40,10 @@ getopts('dc:e:g:m:n:r:t:u');
 # -- default values
 # ----------------------------------------------------------------------
 my $HOME     = $ENV{"HOME"};
+# -- Version of (re)processing
+my $VERSION  = "250429";
 # -- Base directory with mu3e and minalyzer installations
-my $BASEDIR  = "$HOME/mu3e/software/250429";
+my $BASEDIR  = "$HOME/mu3e/software/$VERSION";
 # -- Base directory for mu3eanca
 my $MU3EANCA = "$HOME/mu3e/mu3eanca/run2025";
 # -- Base GT for running minalyzer
@@ -61,11 +63,18 @@ my $MINEVENTS= 10000;
 
 # -- modifications for merlin
 if (%ENV{"HOST"} =~ "merlin") {
-    $BASEDIR  = "/data/experiment/mu3e/code/offline/250528-v6.1pre";
+    $VERSION  = "250528-v6.1pre";
+    $BASEDIR  = "/data/experiment/mu3e/code/offline/$VERSION";
     $MU3EANCA = "/psi/home/langenegger/mu3e/mu3eanca";
     $CDB      = "/data/experiment/mu3e/code/cdb";
     $DATADIR  = "/data/experiment/mu3e/data/2025";
-    $ROF      = "/data/experiment/mu3e/data/2025/mlzr";
+    $ROF      = "/data/experiment/mu3e/data/2025/mlzr/$VERSION";
+
+    if (-d $ROF) {
+        # -- all is fine
+    } else {
+        mkdir($ROF);
+    }
 }
 
 # -- tarfile
