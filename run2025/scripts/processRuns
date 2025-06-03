@@ -418,7 +418,7 @@ sub submitJobsRaw() {
         system("/bin/rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
-            $mergeString .= " $output/$run/root_output_files_$rf/root_output_files/$file$srun.root ";
+            $mergeString .= " $output/$run/root_output_files_$rf/$file$srun.root ";
         }
 
         if ($opt_d) {
