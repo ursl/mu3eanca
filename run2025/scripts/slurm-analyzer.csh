@@ -8,7 +8,7 @@ setenv JOB
 setenv RUN
 setenv DATADIR
 setenv MIDASFILE
-setenv ROOTFILE
+setenv GT
 setenv ANLZR
 setenv STORAGE1
 
@@ -56,8 +56,8 @@ pwd
 echo "ls -l"
 ls -l
 
-echo "_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --cdb.dbconn=rest --cdb.gt=datav6.1=2025CosmicsVtxOnly"
-_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest --cdb.gt=datav6.1=2025CosmicsVtxOnly
+echo "_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest --cdb.gt=$GT"
+_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest --cdb.gt=$GT
 date
 ls -rtl
 echo "slurm check size of rootfile produced"

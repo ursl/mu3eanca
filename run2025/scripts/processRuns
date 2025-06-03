@@ -15,6 +15,7 @@
 #              ./processRuns -m calibration -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
 #
 # History
+#         2025/06/04 many small fixes for merging to work. GT passed into slurm-analyzer.csh
 #         2025/06/03 change countEvents to use to RDB
 #         2025/05/28 complete rearrangement of loop/logic, merge in code from proCalRec
 #         2025/05/26 remove leading whitespace when reading from certification file
@@ -54,7 +55,7 @@ my $ROF      = "$BASEDIR/mlzr/root_output_files/";
 # -- Maximum number of runs to process
 my $MAXRUN   = -1;
 # -- GT for updating payloads and tag insertion
-my $GT       = "";
+my $GT       = "mcidealv6.1";
 # -- Minimum number of events to process a run
 my $MINEVENTS= 10000;
 
@@ -322,7 +323,7 @@ sub submitJobsRaw() {
         last if ($ijob == 2);
         $job =  "$run" . "_$ijob";
 
-        $rootString = "%ROOTFILE anl-run$job.root";
+        $gtString = "%GT $GT";
 
         $skipevts = $ijob * $nevts;
         if ($ijob < $NJOBS - 1) {
@@ -331,9 +332,9 @@ sub submitJobsRaw() {
             $anlString  = "%ANLZR \"-s$skipevts\" '";
         }
 
-        $cmdString = $cmdIniString . "-r $envString$rootString$anlString " . "$job";
+        $cmdString = $cmdIniString . "-r $envString$gtString$anlString " . "$job";
 
-        print(&prefix("submitJobsRaw"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/mlzr ROOTFILE anl-run$job.root $anlString\n");
+        print(&prefix("submitJobsRaw"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/mlzr $gtString $anlString\n");
         print(&prefix("submitJobsRaw"), "SLURM: $cmdString\n");
         if ($opt_d) {
             print(&prefix("submitJobsRaw"), "DBX: $cmdString\n");
@@ -344,7 +345,7 @@ sub submitJobsRaw() {
 
             my @lines = grep /\S/, split /\n/, $line;
 
-            my $slurmid = 0, $slurmout = "nada", $rootout = "nada";
+            my $slurmid = 0, $slurmout = "nada";
             foreach $ln (@lines) {
                 if ($ln =~ /Submitted ->([0-9]*)<- with name \.*/) {
                     $slurmid = $1;
@@ -352,12 +353,9 @@ sub submitJobsRaw() {
                 if ($ln =~ /batch submission: (\w*)/) {
                     $slurmout = $1;
                 }
-                if ($ln =~ /ROOTFILE/) {
-                    ($rootout = $ln) =~ s/ROOTFILE //g;
-                }
             }
             if ($slurmid > 0) {
-                print(&prefix("submitJobsRaw"), "SLURM job $slurmid -> $slurmout, rootout = $rootout\n");
+                print(&prefix("submitJobsRaw"), "SLURM job $slurmid -> $slurmout\n");
                 $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
                 push(@mergeFiles, $job);
             }
