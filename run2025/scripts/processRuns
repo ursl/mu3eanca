@@ -28,6 +28,7 @@
 use Cwd;
 use File::Basename;
 use Env;
+use LWP::Simple qw(get);
  
 my $dir = getcwd;
  
@@ -114,6 +115,7 @@ foreach my $run (@goodRuns) {
     }
 
     my $nEvents = &countEvents($run);
+    next;
     if ($nEvents < $MINEVENTS) {
         print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
         next;
@@ -227,7 +229,7 @@ sub setGoodRuns() {
 }
 
 # ----------------------------------------------------------------------
-sub countEvents() {
+sub countEvents0() {
     ($run) = @_;
     my $file = sprintf("$DATADIR/raw/run%05d.mid.lz4", $run);
     print(&prefix("countEvent"), "run = $run -> file = $file\n");
@@ -236,6 +238,32 @@ sub countEvents() {
     print(&prefix("countEvent"), "$cmdString\n");
     $result = `$cmdString`;
     chop($result);
+    print(&prefix("countEvent"), "countEvents = $result\n");
+    return $result;
+}
+
+# ----------------------------------------------------------------------
+sub countEvents() {
+    ($run) = @_;
+    my $url = "http://pc11740/rdb/run/$run";
+    print(&prefix("countEvents"), "run = $run -> url = $url\n");
+    my $result = get($url);
+    
+    # Extract line containing "const lData"
+    if ($result =~ /(const lData[^\n]*)/) {
+        $result = $1;
+    } else {
+        $result = "";
+    }
+    
+    print(&prefix("countEvents"), "result = $result\n");
+    
+    if ($result =~ /\"Events\":(\d+)/) {
+        $result = $1;
+    } else {
+        $result = 0;
+    }
+    
     print(&prefix("countEvent"), "countEvents = $result\n");
     return $result;
 }
