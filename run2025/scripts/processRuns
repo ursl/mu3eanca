@@ -163,7 +163,7 @@ sub runMinalyzer() {
 # ----------------------------------------------------------------------
 sub runPixelFillQualityLM() {
     ($run) = @_;
-    my $dir = "$MU3EANCA/analysis";
+    my $dir = "$MU3EANCA/run2025/analysis";
     system("mkdir -p $dir/log");
     system("mkdir -p $dir/out");
     system("mkdir -p $dir/csv");
