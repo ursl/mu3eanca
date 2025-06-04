@@ -36,7 +36,7 @@ router.put("/runrecords", async (req, res) => {
     let rDel = await collection.deleteMany(query);
     console.log("rDel ->" + JSON.stringify(rDel) + "<-");    
     console.log("runnumber ->" + runnumber + "<-");
-    
+
     let newDocument = req.body;
 
     var docBORDate = borData["Start time"];
@@ -51,7 +51,12 @@ router.put("/runrecords", async (req, res) => {
                  + currentdate.getHours().toString().padStart(2, '0') + ":"  
                  + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
                  + currentdate.getSeconds().toString().padStart(2, '0');
-    let addComment = {"date": datetime, "comment": "Database entry inserted "};
+
+    var addComment = {"date": datetime, "comment": "Database entry inserted "};
+    if (rDel.deletedCount > 0) {
+        addComment = {"date": datetime, "comment": "Database entry updated "};
+    }
+
     if (newDocument.hasOwnProperty("History")) {
         newDocument["History"].push(addComment);
     } else {
@@ -536,6 +541,24 @@ router.delete("/resource/:runNumber/:index", async (req, res) => {
     } catch (error) {
         console.error('Error deleting PDF resource:', error);
         res.status(500).send('Error deleting PDF resource: ' + error.message);
+    }
+});
+
+// ----------------------------------------------------------------------
+// -- Get a single runrecord as JSON
+router.get("/run/:id/json", async (req, res) => {
+    let runno = parseInt(req.params.id);
+    console.log("serving JSON for run " + req.params.id + " from " + req.ip);
+
+    let collection = await db.collection("runrecords");
+
+    let query = {"BOR.Run number": runno};
+    let result = await collection.findOne(query);
+
+    if (!result) {
+        res.status(404).json({ error: "Run not found" });
+    } else {
+        res.json(result);
     }
 });
 
