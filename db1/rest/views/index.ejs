@@ -205,7 +205,8 @@
     .table-header th:nth-child(5), .table-body td:nth-child(5) { width: 5%; }  /* Class */
     .table-header th:nth-child(6), .table-body td:nth-child(6) { width: 5%; }  /* Events */
     .table-header th:nth-child(7), .table-body td:nth-child(7) { width: 12%; }  /* Shift crew */
-    .table-header th:nth-child(8), .table-body td:nth-child(8) { width: 45%; }  /* Comments */
+    .table-header th:nth-child(8), .table-body td:nth-child(8) { width: 35%; }  /* Comments */
+    .table-header th:nth-child(9), .table-body td:nth-child(9) { width: 10%; }  /* PDF */
 </style>
 
 <script>
@@ -357,6 +358,7 @@ function significantFilter() {
                         <th>Events</th>
                         <th>Shift crew</th>
                         <th>Shift Comments/RunInfo Comments</th>
+                        <th>Resources</th>
                     </tr>
                 </table>
             </div>
@@ -403,6 +405,26 @@ function significantFilter() {
                                     <td><%= result.BOR["Shift crew"] %></td>
                                     <td><%= result.EOR["Comments"] %></td>
                                 <% } %>
+                                <td>
+                                    <% if (result.Resources && result.Resources.length > 0) { %>
+                                        <% 
+                                            // Sort resources by uploadDate to get the most recent PDF
+                                            const pdfResources = result.Resources
+                                                .filter(r => r.type === 'pdf')
+                                                .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+                                            const latestPdf = pdfResources[0];
+                                            const latestPdfIndex = result.Resources.indexOf(latestPdf);
+                                        %>
+                                        <% if (latestPdf) { %>
+                                            <a href="/rdb/resource/<%= result.BOR["Run number"] %>/<%= latestPdfIndex %>" target="_blank" title="<%= latestPdf.filename %>">
+                                                <%= latestPdf.description || 'No description' %>
+                                            </a>
+                                            <% if (pdfResources.length > 1) { %>
+                                                <span title="<%= pdfResources.length - 1 %> more PDF(s) available"> (+<%= pdfResources.length - 1 %>)</span>
+                                            <% } %>
+                                        <% } %>
+                                    <% } %>
+                                </td>
                             </tr>
                         <% }) %>
                     </tbody>

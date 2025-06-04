@@ -1,8 +1,22 @@
 import express from "express";
 import db from "../db/conn.mjs";
-//?? import { ObjectId } from "mongodb";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { ObjectId } from "mongodb";
 
 const router = express.Router();
+
+// Configure multer for PDF uploads - store in memory
+const upload = multer({
+    storage: multer.memoryStorage(),
+    fileFilter: function (req, file, cb) {
+        if (file.mimetype !== 'application/pdf') {
+            return cb(new Error('Only PDF files are allowed'));
+        }
+        cb(null, true);
+    }
+});
 
 // ----------------------------------------------------------------------
 // -- Post a runrecord
@@ -318,5 +332,211 @@ router.put("/addAttribute/:id", async (req, res) => {
     res.sendStatus(204);
 });
 
+// ----------------------------------------------------------------------
+// -- Add a PDF resource to a run record
+// curl -X POST -F "pdf=@/path/to/file.pdf" http://localhost:5050/rdb/addResource/780
+router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).send('No PDF file uploaded');
+        }
+
+        const runno = parseInt(req.params.id);
+        const runrecordsCollection = await db.collection("runrecords");
+        const uploadsCollection = await db.collection("uploads");
+        const query = {"BOR.Run number": runno};
+        const result = await runrecordsCollection.findOne(query);
+
+        if (!result) {
+            return res.status(404).send('Run not found');
+        }
+
+        // Create upload document
+        const uploadDoc = {
+            runNumber: runno,
+            type: 'pdf',
+            filename: req.file.originalname,
+            uploadDate: new Date().toISOString(),
+            description: req.body.description || 'PDF resource',
+            content: req.file.buffer,
+            contentType: req.file.mimetype
+        };
+
+        // Insert into uploads collection
+        const uploadResult = await uploadsCollection.insertOne(uploadDoc);
+        const uploadId = uploadResult.insertedId;
+
+        // Create resource reference
+        const resourceEntry = {
+            type: 'pdf',
+            uploadId: uploadId,
+            filename: req.file.originalname,
+            uploadDate: uploadDoc.uploadDate,
+            description: uploadDoc.description
+        };
+
+        // Update runrecord document
+        const updateData = { ...result };
+        delete updateData._id;
+
+        if (updateData.hasOwnProperty("Resources")) {
+            updateData.Resources.push(resourceEntry);
+        } else {
+            updateData.Resources = [resourceEntry];
+        }
+
+        // Add to history
+        const currentdate = new Date();
+        const datetime = currentdate.getFullYear() + "/" 
+                      + (currentdate.getMonth()+1).toString().padStart(2, '0') + "/" 
+                      + currentdate.getDate().toString().padStart(2, '0') + " "
+                      + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                      + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                      + currentdate.getSeconds().toString().padStart(2, '0');
+        
+        const addComment = {
+            date: datetime,
+            comment: `Added PDF resource: ${req.file.originalname}`
+        };
+        
+        if (updateData.hasOwnProperty("History")) {
+            updateData.History.push(addComment);
+        } else {
+            updateData.History = [addComment];
+        }
+
+        // Update runrecord
+        const nval = { $set: updateData };
+        await runrecordsCollection.updateOne(query, nval);
+        
+        res.status(200).json({
+            message: 'PDF resource added successfully',
+            resource: {
+                type: resourceEntry.type,
+                filename: resourceEntry.filename,
+                uploadDate: resourceEntry.uploadDate,
+                description: resourceEntry.description
+            }
+        });
+
+    } catch (error) {
+        console.error('Error adding PDF resource:', error);
+        res.status(500).send('Error adding PDF resource: ' + error.message);
+    }
+});
+
+// ----------------------------------------------------------------------
+// -- Serve a PDF resource
+// GET /rdb/resource/:runNumber/:index
+router.get("/resource/:runNumber/:index", async (req, res) => {
+    try {
+        const runno = parseInt(req.params.runNumber);
+        const index = parseInt(req.params.index);
+        
+        const runrecordsCollection = await db.collection("runrecords");
+        const uploadsCollection = await db.collection("uploads");
+        
+        const query = {"BOR.Run number": runno};
+        const result = await runrecordsCollection.findOne(query);
+
+        if (!result || !result.Resources || !result.Resources[index]) {
+            return res.status(404).send('Resource not found');
+        }
+
+        const resource = result.Resources[index];
+        if (resource.type !== 'pdf' || !resource.uploadId) {
+            return res.status(400).send('Not a valid PDF resource');
+        }
+
+        // Get the PDF from uploads collection
+        const uploadDoc = await uploadsCollection.findOne({ _id: new ObjectId(resource.uploadId) });
+        if (!uploadDoc) {
+            return res.status(404).send('PDF file not found');
+        }
+
+        // Convert MongoDB Binary to Buffer
+        const pdfBuffer = Buffer.from(uploadDoc.content.buffer);
+
+        // Set appropriate headers for PDF
+        res.writeHead(200, {
+            'Content-Type': 'application/pdf',
+            'Content-Length': pdfBuffer.length.toString(),
+            'Content-Disposition': `inline; filename="${uploadDoc.filename}"`,
+            'Cache-Control': 'public, max-age=31536000' // Cache for 1 year
+        });
+        
+        // Send the PDF content
+        res.end(pdfBuffer);
+
+    } catch (error) {
+        console.error('Error serving PDF resource:', error);
+        res.status(500).send('Error serving PDF resource: ' + error.message);
+    }
+});
+
+// ----------------------------------------------------------------------
+// -- Delete a PDF resource
+// DELETE /rdb/resource/:runNumber/:index
+router.delete("/resource/:runNumber/:index", async (req, res) => {
+    try {
+        const runno = parseInt(req.params.runNumber);
+        const index = parseInt(req.params.index);
+        
+        const runrecordsCollection = await db.collection("runrecords");
+        const uploadsCollection = await db.collection("uploads");
+        
+        const query = {"BOR.Run number": runno};
+        const result = await runrecordsCollection.findOne(query);
+
+        if (!result || !result.Resources || !result.Resources[index]) {
+            return res.status(404).send('Resource not found');
+        }
+
+        const resource = result.Resources[index];
+        if (resource.type !== 'pdf' || !resource.uploadId) {
+            return res.status(400).send('Not a valid PDF resource');
+        }
+
+        // Remove from uploads collection
+        await uploadsCollection.deleteOne({ _id: new ObjectId(resource.uploadId) });
+
+        // Update runrecord to remove the resource reference
+        const updateData = { ...result };
+        delete updateData._id;
+        updateData.Resources.splice(index, 1);
+
+        // Add to history
+        const currentdate = new Date();
+        const datetime = currentdate.getFullYear() + "/" 
+                      + (currentdate.getMonth()+1).toString().padStart(2, '0') + "/" 
+                      + currentdate.getDate().toString().padStart(2, '0') + " "
+                      + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                      + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                      + currentdate.getSeconds().toString().padStart(2, '0');
+        
+        const addComment = {
+            date: datetime,
+            comment: `Removed PDF resource: ${resource.filename}`
+        };
+        
+        if (updateData.hasOwnProperty("History")) {
+            updateData.History.push(addComment);
+        } else {
+            updateData.History = [addComment];
+        }
+
+        // Update runrecord
+        const nval = { $set: updateData };
+        await runrecordsCollection.updateOne(query, nval);
+
+        res.status(200).json({
+            message: 'PDF resource deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Error deleting PDF resource:', error);
+        res.status(500).send('Error deleting PDF resource: ' + error.message);
+    }
+});
 
 export default router;
