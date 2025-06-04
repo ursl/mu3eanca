@@ -186,7 +186,7 @@ sub runPixelFillQualityLM() {
     }
     # insertIovTag -j ~/data/mu3e/cdb -t pixelqualitylm_datav6.1=2025CosmicsVtxOnly -i 472
     if ($opt_u) {
-        my $cmd2 = "$MU3EANCA/scripts/insertIovTag -j $CDB -t pixelqualitylm_$GT -i $run";
+        my $cmd2 = "$MU3EANCA/run2025/scripts/insertIovTag -j $CDB -t pixelqualitylm_$GT -i $run";
         print(&prefix("runPixelFillQualityLM"), "cmd2: $cmd2\n");
         my $payloadname = "tag_pixelqualitylm_" . $GT . "_iov_$run";
         my $cmd3 = "/bin/cp payloads/$payloadname $CDB/payloads/";
