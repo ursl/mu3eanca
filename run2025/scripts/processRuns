@@ -66,7 +66,7 @@ if (%ENV{"HOST"} =~ "merlin") {
     $VERSION  = "250528-v6.1pre";
     $BASEDIR  = "/data/experiment/mu3e/code/offline/$VERSION";
     $MU3EANCA = "/psi/home/langenegger/mu3e/mu3eanca";
-    $CDB      = "/data/experiment/mu3e/code/cdb";
+    $CDB      = "$HOME/mu3e/cdb";
     $DATADIR  = "/data/experiment/mu3e/data/2025";
     $ROF      = "/data/experiment/mu3e/data/2025/mlzr/$VERSION";
 
