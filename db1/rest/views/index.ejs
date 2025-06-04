@@ -418,9 +418,9 @@ function significantFilter() {
                                         <% if (latestPdf) { %>
                                             <a href="/rdb/resource/<%= result.BOR["Run number"] %>/<%= latestPdfIndex %>" target="_blank" title="<%= latestPdf.filename %>">
                                                 <%= latestPdf.description || 'No description' %>
-                                            </a>
+                                            </a>&nbsp;
                                             <% if (pdfResources.length > 1) { %>
-                                                <span title="<%= pdfResources.length - 1 %> more PDF(s) available"> (+<%= pdfResources.length - 1 %>)</span>
+                                                <span title="<%= pdfResources.length - 1 %> more resource(s) available"> (+<%= pdfResources.length - 1 %>)</span>
                                             <% } %>
                                         <% } %>
                                     <% } %>
