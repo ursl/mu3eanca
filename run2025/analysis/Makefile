@@ -15,14 +15,42 @@ ROOTCFLAGS    = $(shell root-config --cflags)
 ROOTGLIBS     = $(shell root-config --glibs)
 ROOTLDFLAGS   = $(shell root-config --ldflags)
 
-ifdef SCRAM_ARCH
-  CXX         := $(shell scramv1 tool info gcc-cxxcompiler | grep CXX= | sed s/CXX=//)
+# -- ARGH!? But it works ...
+ifneq (,$(findstring merlin,$(LHOST)))
+  INCMONGODB    =
+  LIBMONGODB    =
+  LIBCURL       = -L/usr/lib64 -lcurl
+  LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
+  SOFLAGS       =
+else ifneq (,$(findstring mu3ebe,$(LHOST)))
+  INCMONGODB    =
+  LIBMONGODB    =
+  LIBCURL       = -L/usr/lib64 -lcurl
+  LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
+  SOFLAGS       =
+else ifneq (,$(findstring moor,$(LHOST)))
+  INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
+  INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
+  INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi/bsoncxx/third_party/mnmlstc
+  LIBMONGODB    = -L/usr/local/lib -lmongocxx -lbsoncxx
+  LIBCURL       = -L/opt/homebrew/lib -lcurl
+  LIBBOOST      = -L/usr/lib64 -lboost_serialization
+  SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
+else ifneq (,$(findstring mu3ebe,$(LHOST)))
+  INCMONGODB    = -I/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/include/mongocxx/v_noabi
+  INCMONGODB   += -I/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/include/bsoncxx/v_noabi
+  INCMONGODB   += -I/home/mu3e/.ursl/include
+  LIBMONGODB    = -L/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/lib64 -lmongocxx -lbsoncxx
+  LIBCURL       = -L/home/mu3e/.ursl/lib64 -lcurl
+  LIBBOOST      = -L/usr/lib64 -lboost_serialization
+  SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
 else
-  ifdef CXXCOMPILER
-    CXX         := $(CXXCOMPILER)
-  else
-    CXX         := c++
-  endif
+  INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
+  INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
+  LIBMONGODB    = -lmongocxx -lbsoncxx
+  LIBCURL       = -L/usr/lib64 -lcurl
+  LIBBOOST      = -L/usr/lib64 -lboost_serialization
+  SOFLAGS       =
 endif
 
 CXXFLAGS      = -std=c++1z -g -O0 -Wall -fPIC -pipe
@@ -34,7 +62,7 @@ CXXFLAGS     += $(ROOTCFLAGS)
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lTMVAGui -lMinuit 
 EXTHEADERS    = -I.. -I$(CDB)
 
-OTHERLIBS 	  = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so
+OTHERLIBS 	  = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so $(LIBCURL)
 
 
 # -- Files
