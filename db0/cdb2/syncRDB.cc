@@ -39,9 +39,10 @@ using namespace std;
 // --          3: modify field in runRecord and upload modified record to RDB
 // --          4: add field in runRecord and upload modified record to RDB
 // --          5: delete field in runRecord and upload modified record to RDB
+// --          6: if RunInfo.Class exists, copy its value into "BOR.Run Class". If RunInfo.Class is unset, copy from "Bor.Run Class".
 // --
 // -- History:
-// --   2025/06/05: add modes 3, 4, and 5
+// --   2025/06/05: add modes 3, 4, 5, and 6
 // --   2025/05/12: replace junk with significant
 // --   2025/05/20: add mode 2
 // --   2025/05/08: first shot
@@ -55,6 +56,7 @@ void rdbMode2(string &, string &, string &, bool);
 void rdbMode3(int irun, string key, string value, bool debug);
 void rdbMode4(int irun, string key, string value, bool debug);
 void rdbMode5(int irun, string key, bool debug);
+void rdbMode6(int irun, bool debug);
 
 
 // ----------------------------------------------------------------------
@@ -145,6 +147,10 @@ int main(int argc, char* argv[]) {
     }
     if (5 == mode) {
       rdbMode5(irun, key, debug);
+      continue;
+    }
+    if (6 == mode) {
+      rdbMode6(irun, debug);
       continue;
     }
 
@@ -295,6 +301,7 @@ void rdbMode1(runRecord &rr, bool debug) {
 }
 
 // ----------------------------------------------------------------------
+// -- select runs from RDB based on selection string and class string
 void rdbMode2(string &selectionString, string &classString, string &goodString, bool debug) {
   Mu3eConditions *pDC = Mu3eConditions::instance();
   vector<string> vRunNumbers = pDC->getAllRunNumbers();
@@ -374,6 +381,7 @@ json convertValueToType(const string& value, bool isAppend = false) {
 }
 
 // ----------------------------------------------------------------------
+// -- modify field in runRecord and upload modified record to RDB
 void rdbMode3(int irun, string key, string value, bool debug) {
   bool DBX(false);
   // Validate input parameters
@@ -497,6 +505,7 @@ void rdbMode3(int irun, string key, string value, bool debug) {
 }
 
 // ----------------------------------------------------------------------
+// -- add field in runRecord and upload modified record to RDB
 void rdbMode4(int irun, string key, string value, bool debug) {
   bool DBX(false);
   // Validate input parameters
@@ -607,6 +616,7 @@ void rdbMode4(int irun, string key, string value, bool debug) {
 }
 
 // ----------------------------------------------------------------------
+// -- delete field in runRecord and upload modified record to RDB
 void rdbMode5(int irun, string key, bool debug) {
   bool DBX(false);
   // Validate input parameters
@@ -714,3 +724,133 @@ void rdbMode5(int irun, string key, bool debug) {
     curl_easy_cleanup(curl);
   }
 }
+
+// ----------------------------------------------------------------------
+// -- Synchronize RunInfo.Class with BOR.Run Class
+void rdbMode6(int irun, bool debug) {
+  bool DBX(false);
+  string responseData;
+  CURL* curl = curl_easy_init();
+  if (curl) {
+    std::string url = rdbGetString + "/" + std::to_string(irun) + "/json";
+    
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+    
+    // Set headers
+    struct curl_slist* headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    
+    if (debug) {
+      cout << "Making request to: " << url << endl;
+    } else {
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+      
+      if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+      try {
+        // Parse the JSON response
+        json j = json::parse(responseData);
+        
+        // Find the RunInfo attribute
+        json* runInfo = nullptr;
+        if (j.contains("Attributes")) {
+          for (auto& attr : j["Attributes"]) {
+            if (attr.contains("RunInfo")) {
+              runInfo = &attr["RunInfo"];
+              break;
+            }
+          }
+        }
+        
+        // Get the current values
+        string runInfoClass = "unset";
+        string borRunClass = "unset";
+        
+        if (runInfo && runInfo->contains("Class")) {
+          runInfoClass = (*runInfo)["Class"].get<string>();
+        }
+        
+        if (j.contains("BOR") && j["BOR"].contains("Run Class")) {
+          borRunClass = j["BOR"]["Run Class"].get<string>();
+        }
+        
+        bool needsUpdate = false;
+        string targetValue;
+        string targetKey;
+        
+        // Determine which value to use and where to put it
+        if (runInfoClass != "unset") {
+          // If RunInfo.Class exists, use it to update BOR.Run Class
+          if (borRunClass != runInfoClass) {
+            needsUpdate = true;
+            targetValue = runInfoClass;
+            targetKey = "BOR.Run Class";
+          }
+        } else if (borRunClass != "unset") {
+          // If RunInfo.Class is unset but BOR.Run Class exists, use it to update RunInfo.Class
+          if (runInfo) {
+            needsUpdate = true;
+            targetValue = borRunClass;
+            targetKey = "Attributes[].RunInfo.Class";
+          }
+        }
+        
+        if (needsUpdate) {
+          // Update the appropriate field
+          if (targetKey == "BOR.Run Class") {
+            j["BOR"]["Run Class"] = targetValue;
+          } else {
+            // Find and update the RunInfo attribute
+            for (auto& attr : j["Attributes"]) {
+              if (attr.contains("RunInfo")) {
+                attr["RunInfo"]["Class"] = targetValue;
+                break;
+              }
+            }
+          }
+          
+          // Convert back to string
+          responseData = j.dump(2);  // Pretty print with 2-space indentation
+          
+          cout << "Run " << irun << ": Synchronized " << targetKey << " to " << targetValue << endl;
+          if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+
+          // Send the updated JSON back to the server
+          curl_easy_reset(curl);
+          curl_easy_setopt(curl, CURLOPT_URL, rdbPutString.c_str());
+          curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+          curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+          
+          // Perform the update request
+          res = curl_easy_perform(curl);
+          if (res != CURLE_OK) {
+            cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
+          } else {
+            cout << "Successfully synchronized class values" << endl;
+          }
+        } else {
+          cout << "Run " << irun << ": No synchronization needed" << endl;
+        }
+      } catch (const json::parse_error& e) {
+        cerr << "Run " << irun << ": Failed to parse JSON response: " << e.what() 
+             << "->" << responseData << "<-"
+             << endl;
+      } catch (const std::exception& e) {
+        cerr << "Run " << irun << ": Error processing JSON: " << e.what() << endl;
+      }
+    }
+    
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+  }
+}
+
