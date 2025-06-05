@@ -152,6 +152,7 @@ int main(int argc, char* argv[]) {
   p->Divide(6,8);
   for (int i = 0; i < vLayer1.size(); ++i) {    
     p->cd(i+1);
+    gPad->SetLogz(1);
     gPad->SetBottomMargin(0.0);
     gPad->SetLeftMargin(0.0);
     gPad->SetRightMargin(0.0);
@@ -170,6 +171,7 @@ int main(int argc, char* argv[]) {
   p->Divide(6,10);
   for (int i = 0; i < vLayer2.size(); ++i) {
     p->cd(i+1);
+    gPad->SetLogz(1);
     gPad->SetBottomMargin(0.0);
     gPad->SetLeftMargin(0.0);
     gPad->SetRightMargin(0.0);
