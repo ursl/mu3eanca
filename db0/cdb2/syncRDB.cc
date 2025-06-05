@@ -37,9 +37,11 @@ using namespace std;
 // --          1: parse shift comments and set runInfo fields "class" and "junk"
 // --          2: select runs from RDB based on selection string and class string
 // --          3: modify field in runRecord and upload modified record to RDB
+// --          4: add field in runRecord and upload modified record to RDB
+// --          5: delete field in runRecord and upload modified record to RDB
 // --
 // -- History:
-// --   2025/06/05: add mode 3
+// --   2025/06/05: add modes 3, 4, and 5
 // --   2025/05/12: replace junk with significant
 // --   2025/05/20: add mode 2
 // --   2025/05/08: first shot
@@ -52,7 +54,7 @@ void rdbMode0(runRecord &, bool);
 void rdbMode2(string &, string &, string &, bool);
 void rdbMode3(int irun, string key, string value, bool debug);
 void rdbMode4(int irun, string key, string value, bool debug);
-
+void rdbMode5(int irun, string key, bool debug);
 
 
 // ----------------------------------------------------------------------
@@ -139,6 +141,10 @@ int main(int argc, char* argv[]) {
     }
     if (4 == mode) {
       rdbMode4(irun, key, value, debug);
+      continue;
+    }
+    if (5 == mode) {
+      rdbMode5(irun, key, debug);
       continue;
     }
 
@@ -369,6 +375,7 @@ json convertValueToType(const string& value, bool isAppend = false) {
 
 // ----------------------------------------------------------------------
 void rdbMode3(int irun, string key, string value, bool debug) {
+  bool DBX(false);
   // Validate input parameters
   if (key == "unset" || value == "unset") {
     cerr << "Error: Both key and value must be set. Current values:" << endl;
@@ -409,7 +416,7 @@ void rdbMode3(int irun, string key, string value, bool debug) {
         return;
       }
       
-      cout << "responseData: ->" << responseData << "<-" << endl;
+      if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
       try {
         // Parse the JSON response
         json j = json::parse(responseData);
@@ -458,7 +465,7 @@ void rdbMode3(int irun, string key, string value, bool debug) {
           responseData = j.dump(2);  // Pretty print with 2-space indentation
           
           cout << "Updated run " << irun << ": " << key << " from " << oldValue << " to " << (*current)[finalKey].dump() << endl;
-          cout << "responseData: ->" << responseData << "<-" << endl;
+          if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
 
           // Now we need to send the updated JSON back to the server
           curl_easy_reset(curl);
@@ -491,6 +498,7 @@ void rdbMode3(int irun, string key, string value, bool debug) {
 
 // ----------------------------------------------------------------------
 void rdbMode4(int irun, string key, string value, bool debug) {
+  bool DBX(false);
   // Validate input parameters
   if (key == "unset" || value == "unset") {
     cerr << "Error: Both key and value must be set. Current values:" << endl;
@@ -524,7 +532,7 @@ void rdbMode4(int irun, string key, string value, bool debug) {
         return;
       }
       
-      cout << "responseData: ->" << responseData << "<-" << endl;
+      if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
       try {
         // Parse the JSON response
         json j = json::parse(responseData);
@@ -568,7 +576,7 @@ void rdbMode4(int irun, string key, string value, bool debug) {
         responseData = j.dump(2);  // Pretty print with 2-space indentation
         
         cout << "Added new key-value pair: " << key << " = " << (*current)[finalKey].dump() << endl;
-        cout << "responseData: ->" << responseData << "<-" << endl;
+        if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
 
         // Send the updated JSON back to the server
         curl_easy_reset(curl);
@@ -583,6 +591,115 @@ void rdbMode4(int irun, string key, string value, bool debug) {
             cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
         } else {
             cout << "Successfully added new key-value pair" << endl;
+        }
+      } catch (const json::parse_error& e) {
+        cerr << "Failed to parse JSON response: " << e.what() << endl;
+      } catch (const std::exception& e) {
+        cerr << "Error processing JSON: " << e.what() << endl;
+      }
+    }
+    
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+  }
+}
+
+// ----------------------------------------------------------------------
+void rdbMode5(int irun, string key, bool debug) {
+  bool DBX(false);
+  // Validate input parameters
+  if (key == "unset") {
+    cerr << "Error: Key must be set. Current value: " << key << endl;
+    return;
+  }
+
+  string responseData;
+  CURL* curl = curl_easy_init();
+  if (curl) {
+    std::string url = rdbGetString + "/" + std::to_string(irun) + "/json";
+    
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+    
+    // Set headers
+    struct curl_slist* headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    
+    if (debug) {
+      cout << "Making request to: " << url << endl;
+    } else {
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+      
+      if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+      try {
+        // Parse the JSON response
+        json j = json::parse(responseData);
+        
+        // Split the key into parts using dot notation
+        vector<string> keyParts;
+        stringstream keyStream(key);
+        string part;
+        while (getline(keyStream, part, '.')) {
+          keyParts.push_back(part);
+        }
+        
+        // Navigate to the nested key
+        json* current = &j;
+        for (size_t i = 0; i < keyParts.size() - 1; ++i) {
+          if (current->contains(keyParts[i])) {
+            current = &((*current)[keyParts[i]]);
+          } else {
+            cerr << "Parent object not found: " << keyParts[i] << " in path " << key << endl;
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(curl);
+            return;
+          }
+        }
+        
+        // Get the final key part
+        string finalKey = keyParts.back();
+        
+        // Check if the key exists
+        if (!current->contains(finalKey)) {
+            cout << "Key '" << key << "' does not exist, nothing to delete" << endl;
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(curl);
+            return;
+        }
+        
+        // Store the old value for logging
+        string oldValue = (*current)[finalKey].dump();
+        
+        // Delete the key
+        current->erase(finalKey);
+        
+        // Convert back to string
+        responseData = j.dump(2);  // Pretty print with 2-space indentation
+        
+        cout << "Deleted key-value pair: " << key << " = " << oldValue << endl;
+        if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+
+        // Send the updated JSON back to the server
+        curl_easy_reset(curl);
+        curl_easy_setopt(curl, CURLOPT_URL, rdbPutString.c_str());
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        
+        // Perform the update request
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
+        } else {
+            cout << "Successfully deleted key-value pair" << endl;
         }
       } catch (const json::parse_error& e) {
         cerr << "Failed to parse JSON response: " << e.what() << endl;
