@@ -173,7 +173,7 @@ router.get("/", async (req, res) => {
         if (runClass) {
             pipeline.push({
                 $match: {
-                    "lastRunInfo.RunInfo.Class": runClass
+                    "BOR.Run Class": runClass
                 }
             });
         }
