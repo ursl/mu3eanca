@@ -300,11 +300,11 @@ function significantFilter() {
                     <label for="filterRunClass">Run class</label>
                     <select id="filterRunClass">
                         <option value="">All classes</option>
-                        <option value="beam" <% if (locals.runClass === 'beam') { %>selected<% } %>>beam</option>
-                        <option value="cosmic" <% if (locals.runClass === 'cosmic') { %>selected<% } %>>cosmic</option>
-                        <option value="source" <% if (locals.runClass === 'source') { %>selected<% } %>>source</option>
-                        <option value="calib" <% if (locals.runClass === 'calib') { %>selected<% } %>>calib</option>
-                        <option value="junk" <% if (locals.runClass === 'junk') { %>selected<% } %>>junk</option>
+                        <option value="Beam" <% if (locals.runClass === 'Beam') { %>selected<% } %>>Beam</option>
+                        <option value="Cosmic" <% if (locals.runClass === 'Cosmic') { %>selected<% } %>>Cosmic</option>
+                        <option value="Source" <% if (locals.runClass === 'Source') { %>selected<% } %>>Source</option>
+                        <option value="Calibration" <% if (locals.runClass === 'Calibration') { %>selected<% } %>>Calibration</option>
+                        <option value="Junk" <% if (locals.runClass === 'Junk') { %>selected<% } %>>Junk</option>
                     </select>
                 </div>
 
@@ -382,7 +382,7 @@ function significantFilter() {
                                                 <span class="status-unset">n/a</span>
                                             <% } %>
                                         </td>
-                                        <td><%= lastRunInfo.RunInfo.Class || 'n/a' %></td>
+                                        <td><%= result.BOR["Run Class"] || 'n/a' %></td>
                                         <td><%= result.EOR["Events"] %></td>
                                         <td><%= result.BOR["Shift crew"] %></td>
                                         <td>
