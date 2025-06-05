@@ -14,8 +14,11 @@
 #include <unistd.h>
 #include <cctype> // for toupper()
 #include <algorithm> // for transform()
+#include <nlohmann/json.hpp>  // Add JSON library
 
+#include <curl/curl.h>
 
+using json = nlohmann::ordered_json;  // Use ordered_json instead of json
 using namespace std;
 // ----------------------------------------------------------------------
 // -- syncRunDB
@@ -27,23 +30,42 @@ using namespace std;
 // -- Usage: bin/syncRDB -m mode -f firstRun -l lastRun [-t ../../db1/rest/runInfoTemplate.json] [-h localhost]
 // --
 // -- Examples: bin/syncRDB -m 2 -g tkar -c cosmic -s significant -h pc11740
+//              bin/syncRDB -m 3 -k "EOR.Comments" -v "New comment" -h <hostname>
+//              bin/syncRDB -m 3 -k "EOR.Comments" -v "+= Additional comment" -h <hostname>
 // --
 // -- -m mode: 0: upload template (magic words: dqTemplate.json or runInfoTemplate.json) to run records
 // --          1: parse shift comments and set runInfo fields "class" and "junk"
 // --          2: select runs from RDB based on selection string and class string
+// --          3: modify field in runRecord and upload modified record to RDB
+// --
 // -- History:
-// --   2025/05/08: first shot
+// --   2025/06/05: add mode 3
 // --   2025/05/12: replace junk with significant
 // --   2025/05/20: add mode 2
+// --   2025/05/08: first shot
 // 
 // ------------------------------------------------------------------------
 
+// Forward declarations
 void rdbMode1(runRecord &, bool);
 void rdbMode0(runRecord &, bool);
 void rdbMode2(string &, string &, string &, bool);
+void rdbMode3(int irun, string key, string value, bool debug);
+void rdbMode4(int irun, string key, string value, bool debug);
+
+
+
+// ----------------------------------------------------------------------
+static size_t cdbRestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+  ((std::string*)userp)->append((char*)contents, size * nmemb);
+  return size * nmemb;
+}
+
 
 string runInfoTemplateFile = "../../db1/rest/runInfoTemplate.json";
 string rdbUpdateString(":5050/rdb/addAttribute");
+string rdbGetString(":5050/rdb/run");
+string rdbPutString(":5050/rdb/runrecords");
 vector<string> runInfoTemplateFileLines;
 
 // ----------------------------------------------------------------------
@@ -53,7 +75,7 @@ int main(int argc, char* argv[]) {
   string hostString("pc11740");
   string urlString(":5050/cdb");
   string selectionString("significant"), classString("cosmic"), goodString("");
-
+  string key("unset"), value("unset");
   bool debug(false);
   int firstRun(0), lastRun(-1), mode(0);
   for (int i = 0; i < argc; i++) {
@@ -69,10 +91,15 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-g"))    {goodString = string(argv[++i]);}
     if (!strcmp(argv[i], "-c"))    {classString = string(argv[++i]);}
     if (!strcmp(argv[i], "-s"))    {selectionString = string(argv[++i]);}
+    // -- key and value for mode = 3
+    if (!strcmp(argv[i], "-k"))    {key = string(argv[++i]);}
+    if (!strcmp(argv[i], "-v"))    {value = string(argv[++i]);}
   }
 
   urlString = hostString + urlString; 
   rdbUpdateString = hostString + rdbUpdateString;
+  rdbGetString = hostString + rdbGetString;
+  rdbPutString = hostString + rdbPutString;
 
   // -- read in template for mode = 0
   if (0 == mode) {
@@ -106,10 +133,19 @@ int main(int argc, char* argv[]) {
     int irun = stoi(vRunNumbers[it]);
     if (irun < firstRun) continue;
     if ((lastRun > 0) && (irun > lastRun)) continue;
-    
+    if (3 == mode) {
+      rdbMode3(irun, key, value, debug);
+      continue;
+    }
+    if (4 == mode) {
+      rdbMode4(irun, key, value, debug);
+      continue;
+    }
+
     runRecord rr = pDB->getRunRecord(irun);
     if (0 == mode) rdbMode0(rr, debug);
     if (1 == mode) rdbMode1(rr, debug);
+
   }
 
 
@@ -297,4 +333,265 @@ void rdbMode2(string &selectionString, string &classString, string &goodString, 
   }
   ofs << "}" << endl;
   ofs.close();
+}
+
+// ----------------------------------------------------------------------
+// Helper function to convert string to appropriate type
+json convertValueToType(const string& value, bool isAppend = false) {
+    // Convert to lowercase for boolean comparison
+    string valueLower = value;
+    transform(valueLower.begin(), valueLower.end(), valueLower.begin(), ::tolower);
+    
+    // Check for boolean values
+    if (valueLower == "true" || valueLower == "false") {
+        return valueLower == "true";
+    }
+    
+    // Check if the string contains a decimal point
+    if (value.find('.') != string::npos) {
+        try {
+            double floatVal = std::stod(value);  // Use stod instead of stof for better precision
+            return floatVal;
+        } catch (...) {
+            // If conversion fails, continue to other types
+        }
+    }
+    
+    // Try to convert to integer
+    try {
+        int intVal = std::stoi(value);
+        return intVal;
+    } catch (...) {
+        // Not a number or boolean, return as string
+        return value;
+    }
+}
+
+// ----------------------------------------------------------------------
+void rdbMode3(int irun, string key, string value, bool debug) {
+  // Validate input parameters
+  if (key == "unset" || value == "unset") {
+    cerr << "Error: Both key and value must be set. Current values:" << endl;
+    cerr << "  key: " << key << endl;
+    cerr << "  value: " << value << endl;
+    return;
+  }
+
+  // Check if this is an append operation
+  bool isAppend = false;
+  if (value.substr(0, 2) == "+=") {
+    isAppend = true;
+    value = value.substr(2);  // Remove the += prefix
+  }
+
+  string responseData;
+  CURL* curl = curl_easy_init();
+  if (curl) {
+    std::string url = rdbGetString + "/" + std::to_string(irun) + "/json";
+    
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);  // Use existing callback
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+    
+    // Set headers
+    struct curl_slist* headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    
+    if (debug) {
+      cout << "Making request to: " << url << endl;
+    } else {
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+      
+      cout << "responseData: ->" << responseData << "<-" << endl;
+      try {
+        // Parse the JSON response
+        json j = json::parse(responseData);
+        
+        // Split the key into parts using dot notation
+        vector<string> keyParts;
+        stringstream keyStream(key);
+        string part;
+        while (getline(keyStream, part, '.')) {
+          keyParts.push_back(part);
+        }
+        
+        // Navigate to the nested key
+        json* current = &j;
+        for (size_t i = 0; i < keyParts.size() - 1; ++i) {
+          if (current->contains(keyParts[i])) {
+            current = &((*current)[keyParts[i]]);
+          } else {
+            cerr << "Key path not found: " << keyParts[i] << " in path " << key << endl;
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(curl);
+            return;
+          }
+        }
+        
+        // Get the final key part
+        string finalKey = keyParts.back();
+        
+        // Check if the final key exists
+        if (current->contains(finalKey)) {
+          // Store the old value for logging
+          string oldValue = (*current)[finalKey].dump();
+          
+          // Handle the value update
+          if (isAppend && (*current)[finalKey].is_string()) {
+            // For append operation on strings
+            string currentValue = (*current)[finalKey].get<string>();
+            string newValue = currentValue + (currentValue.empty() ? "" : " ") + value;
+            (*current)[finalKey] = newValue;
+          } else {
+            // Normal update (or append on non-string which becomes a normal update)
+            (*current)[finalKey] = convertValueToType(value);
+          }
+          
+          // Convert back to string
+          responseData = j.dump(2);  // Pretty print with 2-space indentation
+          
+          cout << "Updated run " << irun << ": " << key << " from " << oldValue << " to " << (*current)[finalKey].dump() << endl;
+          cout << "responseData: ->" << responseData << "<-" << endl;
+
+          // Now we need to send the updated JSON back to the server
+          curl_easy_reset(curl);
+          curl_easy_setopt(curl, CURLOPT_URL, rdbPutString.c_str());
+          curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+          curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+          
+          // Perform the update request
+          res = curl_easy_perform(curl);
+          if (res != CURLE_OK) {
+            cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
+          } else {
+            cout << "Successfully updated run record" << endl;
+          }
+        } else {
+          cerr << "Key '" << finalKey << "' not found in path " << key << endl;
+        }
+      } catch (const json::parse_error& e) {
+        cerr << "Failed to parse JSON response: " << e.what() << endl;
+      } catch (const std::exception& e) {
+        cerr << "Error processing JSON: " << e.what() << endl;
+      }
+    }
+    
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+  }
+}
+
+// ----------------------------------------------------------------------
+void rdbMode4(int irun, string key, string value, bool debug) {
+  // Validate input parameters
+  if (key == "unset" || value == "unset") {
+    cerr << "Error: Both key and value must be set. Current values:" << endl;
+    cerr << "  key: " << key << endl;
+    cerr << "  value: " << value << endl;
+    return;
+  }
+
+  string responseData;
+  CURL* curl = curl_easy_init();
+  if (curl) {
+    std::string url = rdbGetString + "/" + std::to_string(irun) + "/json";
+    
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+    
+    // Set headers
+    struct curl_slist* headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    
+    if (debug) {
+      cout << "Making request to: " << url << endl;
+    } else {
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+      
+      cout << "responseData: ->" << responseData << "<-" << endl;
+      try {
+        // Parse the JSON response
+        json j = json::parse(responseData);
+        
+        // Split the key into parts using dot notation
+        vector<string> keyParts;
+        stringstream keyStream(key);
+        string part;
+        while (getline(keyStream, part, '.')) {
+          keyParts.push_back(part);
+        }
+        
+        // Navigate to the nested key
+        json* current = &j;
+        for (size_t i = 0; i < keyParts.size() - 1; ++i) {
+          if (current->contains(keyParts[i])) {
+            current = &((*current)[keyParts[i]]);
+          } else {
+            cerr << "Parent object not found: " << keyParts[i] << " in path " << key << endl;
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(curl);
+            return;
+          }
+        }
+        
+        // Get the final key part
+        string finalKey = keyParts.back();
+        
+        // Check if the key already exists
+        if (current->contains(finalKey)) {
+            cout << "Key '" << key << "' already exists with value: " << (*current)[finalKey].dump() << endl;
+            curl_slist_free_all(headers);
+            curl_easy_cleanup(curl);
+            return;
+        }
+        
+        // Add the new key-value pair
+        (*current)[finalKey] = convertValueToType(value);
+        
+        // Convert back to string
+        responseData = j.dump(2);  // Pretty print with 2-space indentation
+        
+        cout << "Added new key-value pair: " << key << " = " << (*current)[finalKey].dump() << endl;
+        cout << "responseData: ->" << responseData << "<-" << endl;
+
+        // Send the updated JSON back to the server
+        curl_easy_reset(curl);
+        curl_easy_setopt(curl, CURLOPT_URL, rdbPutString.c_str());
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        
+        // Perform the update request
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
+        } else {
+            cout << "Successfully added new key-value pair" << endl;
+        }
+      } catch (const json::parse_error& e) {
+        cerr << "Failed to parse JSON response: " << e.what() << endl;
+      } catch (const std::exception& e) {
+        cerr << "Error processing JSON: " << e.what() << endl;
+      }
+    }
+    
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+  }
 }
