@@ -167,22 +167,6 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
   if (verbose > 9) cout << "  Start time" << endl;
   fBORStartTime = parseString;
 
-  parseString = jsonGetValue(curlReadBuffer, vector<string>{"BOR", "Subsystems"});
-  if (parseString == "parseError") {
-    corrupted(curlReadBuffer);
-    return;
-  }
-  if (verbose > 9) cout << "  Subsystems ->" << parseString << "<-" << endl;
-  fBORSubsystems = stoi(parseString);
-
-  parseString = jsonGetValue(curlReadBuffer, vector<string>{"BOR", "Beam"});
-  if (parseString == "parseError") {
-    corrupted(curlReadBuffer);
-    return;
-  }
-  if (verbose > 9) cout << "  Beam" << endl;
-  fBORBeam = stod(parseString);
-
   parseString = jsonGetValue(curlReadBuffer, vector<string>{"BOR", "Shift crew"});
   if (parseString == "parseError") {
     corrupted(curlReadBuffer);
