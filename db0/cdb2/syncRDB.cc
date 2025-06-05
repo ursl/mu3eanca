@@ -40,9 +40,10 @@ using namespace std;
 // --          4: add field in runRecord and upload modified record to RDB
 // --          5: delete field in runRecord and upload modified record to RDB
 // --          6: if RunInfo.Class exists, copy its value into "BOR.Run Class". If RunInfo.Class is unset, copy from "Bor.Run Class".
+// --          7: capitalize RunInfo.Class and if its value is "calib" change it to "Calibration"
 // --
 // -- History:
-// --   2025/06/05: add modes 3, 4, 5, and 6
+// --   2025/06/05: add modes 3, 4, 5, and 6 and 7
 // --   2025/05/12: replace junk with significant
 // --   2025/05/20: add mode 2
 // --   2025/05/08: first shot
@@ -57,6 +58,7 @@ void rdbMode3(int irun, string key, string value, bool debug);
 void rdbMode4(int irun, string key, string value, bool debug);
 void rdbMode5(int irun, string key, bool debug);
 void rdbMode6(int irun, bool debug);
+void rdbMode7(int irun, bool debug);
 
 
 // ----------------------------------------------------------------------
@@ -151,6 +153,10 @@ int main(int argc, char* argv[]) {
     }
     if (6 == mode) {
       rdbMode6(irun, debug);
+      continue;
+    }
+    if (7 == mode) {
+      rdbMode7(irun, debug);
       continue;
     }
 
@@ -839,6 +845,128 @@ void rdbMode6(int irun, bool debug) {
           }
         } else {
           cout << "Run " << irun << ": No synchronization needed" << endl;
+        }
+      } catch (const json::parse_error& e) {
+        cerr << "Run " << irun << ": Failed to parse JSON response: " << e.what() 
+             << "->" << responseData << "<-"
+             << endl;
+      } catch (const std::exception& e) {
+        cerr << "Run " << irun << ": Error processing JSON: " << e.what() << endl;
+      }
+    }
+    
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+  }
+}
+
+// ----------------------------------------------------------------------
+// -- Capitalize RunInfo.Class and transform "calib" to "Calibration"
+void rdbMode7(int irun, bool debug) {
+  bool DBX(false);
+  string responseData;
+  CURL* curl = curl_easy_init();
+  if (curl) {
+    std::string url = rdbGetString + "/" + std::to_string(irun) + "/json";
+    
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+    
+    // Set headers
+    struct curl_slist* headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    
+    if (debug) {
+      cout << "Making request to: " << url << endl;
+    } else {
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+      
+      if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+      try {
+        // Parse the JSON response
+        json j = json::parse(responseData);
+        
+        if (!j.contains("Attributes")) {
+          cout << "Run " << irun << ": No Attributes found" << endl;
+          curl_slist_free_all(headers);
+          curl_easy_cleanup(curl);
+          return;
+        }
+
+        bool anyChanges = false;
+        int runInfoCount = 0;
+        
+        // Process all RunInfo instances in Attributes
+        for (auto& attr : j["Attributes"]) {
+          if (attr.contains("RunInfo") && attr["RunInfo"].contains("Class")) {
+            runInfoCount++;
+            string currentClass = attr["RunInfo"]["Class"].get<string>();
+            string oldClass = currentClass;  // Store for logging
+            
+            // Transform the value
+            if (currentClass == "calib") {
+              currentClass = "Calibration";
+            } else {
+              // Capitalize the first letter and lowercase the rest
+              if (!currentClass.empty()) {
+                currentClass[0] = toupper(currentClass[0]);
+                for (size_t i = 1; i < currentClass.length(); ++i) {
+                  currentClass[i] = tolower(currentClass[i]);
+                }
+              }
+            }
+            
+            // Update if the value has changed
+            if (currentClass != oldClass) {
+              attr["RunInfo"]["Class"] = currentClass;
+              anyChanges = true;
+              cout << "Run " << irun << ": Transformed RunInfo[" << runInfoCount 
+                   << "].Class from '" << oldClass << "' to '" << currentClass << "'" << endl;
+            } else {
+              cout << "Run " << irun << ": RunInfo[" << runInfoCount 
+                   << "].Class already in correct format: '" << currentClass << "'" << endl;
+            }
+          }
+        }
+        
+        if (runInfoCount == 0) {
+          cout << "Run " << irun << ": No RunInfo.Class found in any attribute" << endl;
+          curl_slist_free_all(headers);
+          curl_easy_cleanup(curl);
+          return;
+        }
+        
+        // Only update the server if any changes were made
+        if (anyChanges) {
+          // Convert back to string
+          responseData = j.dump(2);  // Pretty print with 2-space indentation
+          
+          if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+
+          // Send the updated JSON back to the server
+          curl_easy_reset(curl);
+          curl_easy_setopt(curl, CURLOPT_URL, rdbPutString.c_str());
+          curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+          curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+          
+          // Perform the update request
+          res = curl_easy_perform(curl);
+          if (res != CURLE_OK) {
+            cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
+          } else {
+            cout << "Successfully updated " << runInfoCount << " RunInfo.Class values" << endl;
+          }
+        } else {
+          cout << "Run " << irun << ": No changes needed for any RunInfo.Class values" << endl;
         }
       } catch (const json::parse_error& e) {
         cerr << "Run " << irun << ": Failed to parse JSON response: " << e.what() 
