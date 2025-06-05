@@ -593,9 +593,11 @@ void rdbMode4(int irun, string key, string value, bool debug) {
             cout << "Successfully added new key-value pair" << endl;
         }
       } catch (const json::parse_error& e) {
-        cerr << "Failed to parse JSON response: " << e.what() << endl;
+        cerr << "Run " << irun << ": Failed to parse JSON response: " << e.what() 
+        << "->" << responseData << "<-"
+        << endl;
       } catch (const std::exception& e) {
-        cerr << "Error processing JSON: " << e.what() << endl;
+        cerr << "Run " << irun << ": Error processing JSON: " << e.what() << endl;
       }
     }
     
