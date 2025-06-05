@@ -34,16 +34,17 @@ using namespace std;
 //              bin/syncRDB -m 3 -k "EOR.Comments" -v "+= Additional comment" -h <hostname>
 // --
 // -- -m mode: 0: upload template (magic words: dqTemplate.json or runInfoTemplate.json) to run records
-// --          1: parse shift comments and set runInfo fields "class" and "junk"
+// --          1: parse shift comments and set runInfo field "Significant"
 // --          2: select runs from RDB based on selection string and class string
 // --          3: modify field in runRecord and upload modified record to RDB
 // --          4: add field in runRecord and upload modified record to RDB
 // --          5: delete field in runRecord and upload modified record to RDB
 // --          6: if RunInfo.Class exists, copy its value into "BOR.Run Class". If RunInfo.Class is unset, copy from "Bor.Run Class".
 // --          7: capitalize RunInfo.Class and if its value is "calib" change it to "Calibration"
+// --          8: set RunInfo.Significant to value
 // --
 // -- History:
-// --   2025/06/05: add modes 3, 4, 5, and 6 and 7
+// --   2025/06/05: add modes 3, 4, 5, and 6 and 7. Add reading of certification files.
 // --   2025/05/12: replace junk with significant
 // --   2025/05/20: add mode 2
 // --   2025/05/08: first shot
@@ -59,6 +60,7 @@ void rdbMode4(int irun, string key, string value, bool debug);
 void rdbMode5(int irun, string key, bool debug);
 void rdbMode6(int irun, bool debug);
 void rdbMode7(int irun, bool debug);
+void rdbMode8(int irun, string value, bool debug);
 
 
 // ----------------------------------------------------------------------
@@ -84,7 +86,11 @@ int main(int argc, char* argv[]) {
   string key("unset"), value("unset");
   bool debug(false);
   int firstRun(0), lastRun(-1), mode(0);
+  string runfile("unset");
   for (int i = 0; i < argc; i++) {
+    // -- runfile
+    if (!strcmp(argv[i], "-r"))    {runfile = string(argv[++i]);}
+
     if (!strcmp(argv[i], "-d"))    {debug = true;}
     if (!strcmp(argv[i], "-m"))    {mode    = atoi(argv[++i]);}
     // -- run range selection
@@ -134,7 +140,26 @@ int main(int argc, char* argv[]) {
   }
 
 
-  vector<string> vRunNumbers = pDB->getAllRunNumbers();
+  vector<string> vRunNumbers;
+  if (runfile == "unset") {
+    vRunNumbers = pDB->getAllRunNumbers();
+  } else {
+    ifstream file(runfile);
+    string line;
+    string fileContent;
+    while (getline(file, line)) {
+      fileContent += line + "\n";
+    }
+    file.close();
+    replaceAll(fileContent, "\n", "");
+    replaceAll(fileContent, " ", "");
+    replaceAll(fileContent, "{", "");
+    replaceAll(fileContent, "}", "");
+    vRunNumbers = split(fileContent, ',');
+  } 
+
+  cout << "vRunNumbers.size() ->" << vRunNumbers.size() << "<-" << endl;
+
   for (int it = 0; it < vRunNumbers.size(); ++it) {
     int irun = stoi(vRunNumbers[it]);
     if (irun < firstRun) continue;
@@ -157,6 +182,10 @@ int main(int argc, char* argv[]) {
     }
     if (7 == mode) {
       rdbMode7(irun, debug);
+      continue;
+    }
+    if (8 == mode) {
+      rdbMode8(irun, value, debug);
       continue;
     }
 
@@ -213,37 +242,24 @@ void rdbMode0(runRecord &rr, bool debug) {
 
 // ----------------------------------------------------------------------
 // -- set the following flags by parsing the shift comments
-// -- RunInfo class: source/cosmic/daq
-// -- RunInfo significant:  bad
 void rdbMode1(runRecord &rr, bool debug) {
-
+  cout << "hallo" << endl;
   RunInfo ri = rr.getRunInfo();
 
   string xstring = rr.fEORComments;
   transform(xstring.begin(), xstring.end(), xstring.begin(), [](unsigned char c) { return tolower(c); });
 
-  string classFromComments = "not found";
   string significantFromComments = "not found";
+  string classFromComments = "not found";
 
   cout << "run number: " << rr.fBORRunNumber << ": ";
-
-  // -- check for run class indicators stored in vector
-  vector<string> vClassIndicators = {"beam", "source", "cosmic"};
-  for (const auto &indicator : vClassIndicators) {
-    if (xstring.find(indicator) != string::npos) {
-     cout << " found class indicator: " << indicator;
-      classFromComments = indicator;
-      significantFromComments = "true";
-      break;
-    }
-  }
 
   // -- modify significantFromComments for special tags
   vector<string> vJunkIndicators = {"bad", "unstable", "error", "problem", "dbx", "fail", "debug", "test", "dummy"};
   for (const auto &indicator : vJunkIndicators) {
     if (xstring.find(indicator) != string::npos) {
       cout << ", overriding junk significant indicator: " << indicator;
-      classFromComments = "junk";
+      classFromComments = "Junk";
       significantFromComments = "false";
       break;
     }
@@ -254,8 +270,6 @@ void rdbMode1(runRecord &rr, bool debug) {
     vector<string> vClass2Indicators = {"mask", "tune", "tuning", "calib", "noise"};
     for (const auto &indicator : vClass2Indicators) {
       if (xstring.find(indicator) != string::npos) {
-        cout << ", overriding class2 indicator: " << indicator << " -> " << "calib";
-        classFromComments = "calib";
         significantFromComments = "false";
         break;
       }
@@ -271,19 +285,19 @@ void rdbMode1(runRecord &rr, bool debug) {
     }
   }
     
-  if (classFromComments == "not found") { 
-    classFromComments = "junk";
-  } else {
-    if (ri.Class == "not found") {
-      ri.Class = classFromComments;
-    } else {
-      if (ri.Class != classFromComments) {
-        if (ri.comments == "unset") ri.comments = "";
-        ri.comments += " from " + ri.Class + " to: " + classFromComments;
-        ri.Class = classFromComments;
-      }
-    }
-  }
+  // if (classFromComments == "not found") { 
+  //   classFromComments = "Junk";
+  // } else {
+  //   if (ri.Class == "unset") {
+  //     ri.Class = classFromComments;
+  //   } else {
+  //     if (ri.Class != classFromComments) {
+  //       if (ri.comments == "unset") ri.comments = "";
+  //       //ri.comments += " from " + ri.Class + " to: " + classFromComments;
+  //       //ri.Class = classFromComments;
+  //     }
+  //   }
+  // }
   
   // -- write to file
   stringstream ss;
@@ -967,6 +981,114 @@ void rdbMode7(int irun, bool debug) {
           }
         } else {
           cout << "Run " << irun << ": No changes needed for any RunInfo.Class values" << endl;
+        }
+      } catch (const json::parse_error& e) {
+        cerr << "Run " << irun << ": Failed to parse JSON response: " << e.what() 
+             << "->" << responseData << "<-"
+             << endl;
+      } catch (const std::exception& e) {
+        cerr << "Run " << irun << ": Error processing JSON: " << e.what() << endl;
+      }
+    }
+    
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+  }
+}
+
+// ----------------------------------------------------------------------
+// -- set RunInfo.Significant to value
+void rdbMode8(int irun, string value, bool debug) {
+  bool DBX(false);
+  // Validate input parameters
+  if (value == "unset") {
+    cerr << "Error: Value must be set. Current value: " << value << endl;
+    return;
+  }
+
+  // Convert value to boolean
+  string valueLower = value;
+  transform(valueLower.begin(), valueLower.end(), valueLower.begin(), ::tolower);
+
+  string responseData;
+  CURL* curl = curl_easy_init();
+  if (curl) {
+    std::string url = rdbGetString + "/" + std::to_string(irun) + "/json";
+    
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+    
+    // Set headers
+    struct curl_slist* headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    
+    if (debug) {
+      cout << "Making request to: " << url << endl;
+    } else {
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+      
+      if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+      try {
+        // Parse the JSON response
+        json j = json::parse(responseData);
+        
+        if (!j.contains("Attributes")) {
+          cout << "Run " << irun << ": No Attributes found" << endl;
+          curl_slist_free_all(headers);
+          curl_easy_cleanup(curl);
+          return;
+        }
+
+        bool anyChanges = false;
+        int runInfoCount = 0;
+        
+        // Process all RunInfo instances in Attributes
+        for (auto& attr : j["Attributes"]) {
+          if (attr.contains("RunInfo")) {
+            runInfoCount++;
+            attr["RunInfo"]["Significant"] = valueLower;
+            anyChanges = true;
+          }
+        }
+        
+        if (runInfoCount == 0) {
+          cout << "Run " << irun << ": No RunInfo found in any attribute" << endl;
+          curl_slist_free_all(headers);
+          curl_easy_cleanup(curl);
+          return;
+        }
+        
+        // Only update the server if any changes were made
+        if (anyChanges) {
+          // Convert back to string
+          responseData = j.dump(2);  // Pretty print with 2-space indentation
+          
+          if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+
+          // Send the updated JSON back to the server
+          curl_easy_reset(curl);
+          curl_easy_setopt(curl, CURLOPT_URL, rdbPutString.c_str());
+          curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+          curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+          
+          // Perform the update request
+          res = curl_easy_perform(curl);
+          if (res != CURLE_OK) {
+            cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
+          } else {
+            cout << "Successfully updated " << runInfoCount << " RunInfo.Significant values" << endl;
+          }
+        } else {
+          cout << "Run " << irun << ": No changes needed for any RunInfo.Significant values" << endl;
         }
       } catch (const json::parse_error& e) {
         cerr << "Run " << irun << ": Failed to parse JSON response: " << e.what() 
