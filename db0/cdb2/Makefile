@@ -69,7 +69,7 @@ LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o \
          Mu3eConditions.o Mu3eCalFactory.o \
          base64.o \
          payload.o cfgPayload.o cdbUtil.o runRecord.o \
-         RunInfo.o DataQuality.o
+         RunInfo.o DataQuality.o Resource.o
 
 LBINARIES = testCDB fillDB \
             syncCloud syncMongo syncJSON syncRDB\
