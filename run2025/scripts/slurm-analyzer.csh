@@ -56,11 +56,12 @@ pwd
 echo "ls -l"
 ls -l
 
-#echo "_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest --cdb.gt=$GT"
-#_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest --cdb.gt=$GT
+echo "_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest --cdb.gt=$GT"
+_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest --cdb.gt=$GT
 
-echo "_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest "
-_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest 
+#echo "_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest "
+#_build/analyzer/minalyzer $ANLZR $DATADIR/$MIDASFILE  -- offline --config=config/prompt.json --cdb.dbconn=rest 
+
 date
 ls -rtl
 echo "slurm check size of rootfile produced"
