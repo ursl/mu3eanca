@@ -15,6 +15,7 @@
 #              ./processRuns -m calibration -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
 #
 # History
+#         2025/06/06 new option "prompt" to run minalyzer on raw and then produce the pixelqualitylm payload
 #         2025/06/04 many small fixes for merging to work. GT passed into slurm-analyzer.csh. produce versioned directories for merged rootfiles.
 #         2025/06/03 change countEvents to use to RDB
 #         2025/05/28 complete rearrangement of loop/logic, merge in code from proCalRec
@@ -135,6 +136,9 @@ foreach my $run (@goodRuns) {
         &runPixelFillQualityLM($run);
     } elsif ($opt_m eq "raw") {
         &submitJobsRaw($run, $nEvents);
+    } elsif ($opt_m eq "prompt") {
+        &submitJobsRaw($run, $nEvents);
+        &runPixelFillQualityLM($run);        
     } else {
         print(&prefix("processRuns"), "Unknown option $opt_m\n");
         print(&prefix("processRuns"), "Usage: rerunDQM -m <min|dqm> -e <2025April>\n");
