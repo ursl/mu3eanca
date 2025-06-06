@@ -4,8 +4,20 @@
 # processRuns
 # ===========
 #
+# Options: 
+#           -c  certification file (with run list)
+#           -d  debug mode
+#           -e  {runs|keyword|watch} (where keyword is a predefined setting in the code)
+#           -g  GT
+#           -m  mode (mode = raw|prompt|minalyzer|calibration)
+#           -n  number of events
+#           -r  run range (in combination with "-e runs")
+#           -t  tarFile (mandatory for raw processing)
+#           -u  update payloads
+#           -w  watchFile with runs already processed
+
 # Usage:       cd mu3eanca/run2025/scripts
-#              ./processRuns -m minalyzer -c /Users/ursl/mu3e/mu3eanca/db0/cdb2/certification/2025/
+#              ./processRuns -m minalyzer -c /Users/ursl/mu3e/mu3eanca/db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs
 #              ./processRuns -m minalyzer -e "2025April"
 #              ./processRuns -m minalyzer -e runs -r "553,552,551"
 #
@@ -14,6 +26,13 @@
 #              ./processRuns -m calibration -e 2025April -g datav6.1=2025CosmicsVtxOnly -u
 #              ./processRuns -m calibration -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
 #
+#
+#
+#             merlin-l-002>wpd
+#             /data/experiment/mu3e/code/offline/250528-v6.1pre
+#             merlin-l-002>tar zcvf slurm/250606-mlzr.tar.gz --exclude .git --exclude minalyzer/json_output --exclude mu3e/_build minalyzer mu3e
+#             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
+
 # History
 #         2025/06/06 new option "prompt" to run minalyzer on raw and then produce the pixelqualitylm payload
 #         2025/06/04 many small fixes for merging to work. GT passed into slurm-analyzer.csh. produce versioned directories for merged rootfiles.
@@ -35,7 +54,7 @@ use Env;
 my $dir = getcwd;
  
 use Getopt::Std;
-getopts('dc:e:g:m:n:r:t:u');
+getopts('c:de:g:m:n:r:t:u');
  
 # ----------------------------------------------------------------------
 # -- default values
@@ -295,7 +314,8 @@ sub submitJobsRaw() {
 
     # -- adapt in case of mu3e reservations
     # my $queue = "-p 'mu3e --reservation=mu3e'";
-    my $queue = "-p mu3e";
+    # my $queue = "-p mu3e";
+    my $queue = "-p hourly";
 
     # -- rundir
     my $rundir = "$BASEDIR/slurm/jobs/mlzr/$run";
