@@ -5,6 +5,7 @@
 
 using namespace std;
 
+// ----------------------------------------------------------------------
 Resource::Resource() :
     fName(""),
     fType(""),
@@ -13,48 +14,56 @@ Resource::Resource() :
     fJSONString("") {
 }
 
+// ----------------------------------------------------------------------
 Resource::~Resource() {
 }
 
-// -- query functions
+// ----------------------------------------------------------------------
 string Resource::getName() const {
     return fName;
 }
 
+// ----------------------------------------------------------------------
 string Resource::getType() const {
     return fType;
 }
 
+// ----------------------------------------------------------------------
 string Resource::getStatus() const {
     return fStatus;
 }
 
+// ----------------------------------------------------------------------
 string Resource::getComments() const {
     return fComments;
 }
 
-// -- setters
+// ----------------------------------------------------------------------
 void Resource::setName(const string& name) {
     fName = name;
 }
 
+// ----------------------------------------------------------------------
 void Resource::setType(const string& type) {
     fType = type;
 }
 
+// ----------------------------------------------------------------------
 void Resource::setStatus(const string& status) {
     fStatus = status;
 }
 
+// ----------------------------------------------------------------------
 void Resource::setComments(const string& comments) {
     fComments = comments;
 }
 
-// -- print functions
+// ----------------------------------------------------------------------
 void Resource::print() const {
     cout << printSummary() << endl;
 }
 
+// ----------------------------------------------------------------------
 string Resource::printSummary() const {
     stringstream ss;
     ss << "Resource: " << fName << " (Type: " << fType << ")"
@@ -65,6 +74,7 @@ string Resource::printSummary() const {
     return ss.str();
 }
 
+// ----------------------------------------------------------------------
 string Resource::json() const {
     string sjson = "{\"Resource\":{";
     sjson += "\"name\":\"" + fName + "\", ";
@@ -74,6 +84,7 @@ string Resource::json() const {
     return sjson;
 }
 
+// ----------------------------------------------------------------------
 string Resource::extractValue(const string& json, const string& key) {
     string pattern = "\"" + key + "\":\"([^\"]*)\"";
     regex re(pattern);
@@ -84,6 +95,7 @@ string Resource::extractValue(const string& json, const string& key) {
     return "unset";
 }
 
+// ----------------------------------------------------------------------
 size_t Resource::parse(const string &jsonString, size_t startPos) {
     try {
         // Find the first occurrence of "Resource" starting from startPos
@@ -126,6 +138,7 @@ size_t Resource::parse(const string &jsonString, size_t startPos) {
     }
 }
 
+// ----------------------------------------------------------------------
 void Resource::fillFromJson(const string& jsonString) {
     fJSONString = jsonString;
     parse(jsonString);
