@@ -74,10 +74,13 @@ vector<string> cdbRest::readTags(string gt) {
   doCurl("globaltags", "nada", "findAll");
   
   if (1) {
+    //cout << "fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
     vector<string> vgt = jsonGetValueVector(fCurlReadBuffer, "gt");
     for (auto it: vgt) {
-      if (it != gt) continue;
-      string stags = jsonGetVector(fCurlReadBuffer, it);
+      if (it != gt) {
+        continue;
+      }
+      string stags = jsonGetVector(fCurlReadBuffer, string("\"") + it + string("\""));
       v = split(stags, ',');
     }
     
