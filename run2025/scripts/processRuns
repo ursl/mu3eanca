@@ -223,7 +223,7 @@ sub runPixelFillQualityLM() {
     system("mkdir -p $dir/out");
     system("mkdir -p $dir/csv");
     system("mkdir -p $dir/payloads");
-    my $srun = sprintf("%d", $run);
+    my $srun = sprintf("%05d", $run);
     print(&prefix("runPixelFillQualityLM"), "Processing DQM output for run $run in directory $dir\n");
     my $cmd0 = "rm -f log/dqm_$srun.log";
     my $lgt = ""; 
@@ -257,12 +257,21 @@ sub runPixelFillQualityLM() {
         print(&prefix("runPixelFillQualityLM"), "Running pixelHistograms for run $run in directory $dir\n");
         print(&prefix("runPixelFillQualityLM"), "->$cmd2<-\n");
         system("cd $dir && $cmd2 && cd -");
-
-        my $cmd3 = "curl -X POST -F \"pdf=\@/psi/home/langenegger/mu3e/mu3eanca/run2025/analysis/vtxHitmaps-$run.pdf\" -F \"description=vtx\" http://pc11740:5050/rdb/addResource/$run";
-        print(&prefix("runPixelFillQualityLM"), "->$cmd3<-\n");
-        system("cd $dir && $cmd3 && cd -");
+        
+        # -- Check if merged file exists and is larger than 1 MB
+        my $mergedFile = "$ROF/merged-dqm_histos_$srun.root";
+        if (-e $mergedFile) {
+            my $filesize = -s $mergedFile;
+            if ($filesize < 1048576) {  # 1 MB = 1048576 bytes
+                print(&prefix("submitJobsRaw"), "WARNING: Merged file $mergedFile is smaller than 1 MB (size: " . sprintf("%.2f", $filesize/1048576) . " MB)\n");
+            } else {
+                print(&prefix("submitJobsRaw"), "Merged file size: " . sprintf("%.2f", $filesize/1048576) . " MB\n");
+                my $cmd3 = "curl -X POST -F \"pdf=\@/psi/home/langenegger/mu3e/mu3eanca/run2025/analysis/vtxHitmaps-$run.pdf\" -F \"description=vtx\" http://pc11740:5050/rdb/addResource/$run";
+                print(&prefix("runPixelFillQualityLM"), "->$cmd3<-\n");
+                system("cd $dir && $cmd3 && cd -");
+            }
+        }
     }
-
 
 }
 
@@ -407,7 +416,7 @@ sub submitJobsRaw() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
 
-    my $file = sprintf("$DATADIR/raw/run%d.mid.lz4", $run);
+    my $file = sprintf("$DATADIR/raw/run%05d.mid.lz4", $run);
     my $cmdString = "";
     my $envString = "";
 
@@ -437,7 +446,7 @@ sub submitJobsRaw() {
     my $cmdIniString = "cd $rundir && ";
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-analyzer.csh ";
 
-    my $srunfile = sprintf("run%d.mid.lz4", $run);
+    my $srunfile = sprintf("run%05d.mid.lz4", $run);
 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/mlzr";
@@ -544,7 +553,7 @@ sub submitJobsRaw() {
     # my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
     my @resultFiles = ("dqm_histos_");
     foreach $file (@resultFiles) {
-        my $srun = sprintf("%d", $run);
+        my $srun = sprintf("%05d", $run);
         my $mergedFile = "$ROF/merged-$file$srun.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
