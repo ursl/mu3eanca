@@ -34,6 +34,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/06/07 invoke pixelHistograms and curl-upload to RDB
 #         2025/06/06 new option "prompt" to run minalyzer on raw and then produce the pixelqualitylm payload
 #         2025/06/04 many small fixes for merging to work. GT passed into slurm-analyzer.csh. produce versioned directories for merged rootfiles.
 #         2025/06/03 change countEvents to use to RDB
@@ -145,6 +146,27 @@ my @goodRuns = ();
 # ----------------------------------------------------------------------
 # -- main loop and decision point is here
 # ----------------------------------------------------------------------
+
+if ($opt_w) {
+    print(&prefix("processRuns"), "Watch mode\n");
+    while (1) {
+        my $run = &checkForNewRun();
+        if ($run ne "nada") {
+            &submitJobsRaw($run, $nEvents);
+            &runPixelFillQualityLM($run); 
+            # -- update $WATCHFILE
+            open(OUT, ">>$WATCHFILE") || die "processRuns: Cannot open $WATCHFILE\n";
+            print OUT "$run\n";
+            close(OUT);
+            # -- update @processedRuns
+            push(@processedRuns, $run);
+        }
+        sleep(10);
+    }
+    exit(0);
+}
+
+
 # -- count events for all runs
 my $nrun = 0;
 foreach my $run (@goodRuns) {
@@ -318,7 +340,7 @@ sub prefix() {
 
 # ----------------------------------------------------------------------
 sub readProcessedRuns() {
-    open(IN, "$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
+    open(IN, "$WATCHFILE") || die "processRuns: Cannot open $WATCHFILE\n";
     while (<IN>) {
         chop;
         push(@processedRuns, $_);
