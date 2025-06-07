@@ -15,7 +15,7 @@
 #           -t  tarFile (mandatory for raw processing)
 #           -u  update payloads
 #           -w  watchFile with runs already processed
-
+#
 # Usage:       cd mu3eanca/run2025/scripts
 #              ./processRuns -m minalyzer -c /Users/ursl/mu3e/mu3eanca/db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs
 #              ./processRuns -m minalyzer -e "2025April"
@@ -32,7 +32,7 @@
 #             /data/experiment/mu3e/code/offline/250528-v6.1pre
 #             merlin-l-002>tar zcvf slurm/250606-mlzr.tar.gz --exclude .git --exclude minalyzer/json_output --exclude mu3e/_build minalyzer mu3e
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
-
+#
 # History
 #         2025/06/06 new option "prompt" to run minalyzer on raw and then produce the pixelqualitylm payload
 #         2025/06/04 many small fixes for merging to work. GT passed into slurm-analyzer.csh. produce versioned directories for merged rootfiles.
@@ -54,7 +54,7 @@ use Env;
 my $dir = getcwd;
  
 use Getopt::Std;
-getopts('c:de:g:m:n:r:t:u');
+getopts('c:de:g:m:n:r:t:uw:');
  
 # ----------------------------------------------------------------------
 # -- default values
@@ -80,6 +80,10 @@ my $MAXRUN   = -1;
 my $GT       = "mcidealv6.1";
 # -- Minimum number of events to process a run
 my $MINEVENTS= 10000;
+# -- watch file with runs already processed
+my $WATCHFILE = "$BASEDIR/processedRuns";
+ 
+
 
 # -- modifications for merlin
 if (%ENV{"HOST"} =~ "merlin") {
@@ -88,7 +92,8 @@ if (%ENV{"HOST"} =~ "merlin") {
     $MU3EANCA = "/psi/home/langenegger/mu3e/mu3eanca";
     $CDB      = "$HOME/mu3e/cdb";
     $DATADIR  = "/data/experiment/mu3e/data/2025";
-    $ROF      = "/data/experiment/mu3e/data/2025/mlzr/$VERSION";
+    $ROF      = "$DATADIR/mlzr/$VERSION";
+    $WATCHFILE = "$BASEDIR/processedRuns";
 
     if (-d $ROF) {
         # -- all is fine
@@ -119,13 +124,18 @@ if ($opt_n) {
 }
 print(&prefix("processRuns"), "nevts: $nevts\n");
 
-
-# -- event counting executable 
-my $counterExe= "mdump -j -x ";
-
+# -- GT
 if ($opt_g) {
     $GT = "$opt_g";
 }
+
+# -- initialize what has been processed so far
+my @processedRuns;
+if ($opt_w) {
+    $WATCHFILE = $opt_w;
+    &readProcessedRuns();
+}
+
 
 # -- define which runs to process
 my @goodRuns = ();
@@ -216,6 +226,22 @@ sub runPixelFillQualityLM() {
         print(&prefix("runPixelFillQualityLM"), "cmd3: $cmd3\n");           
         system("cd $dir && $cmd2 && $cmd3 && cd - ");
     }
+
+    my $cmd2 = "bin/pixelHistograms -f $ROF/merged-dqm_histos_$srun.root  >& log/pixelHistograms_$srun.log ";
+    if ($opt_d) {
+        print(&prefix("runPixelFillQualityLM"), "Running pixelHistograms for run $run in directory $dir\n");
+        print(&prefix("runPixelFillQualityLM"), "->$cmd2<-\n");
+    } else {
+        print(&prefix("runPixelFillQualityLM"), "Running pixelHistograms for run $run in directory $dir\n");
+        print(&prefix("runPixelFillQualityLM"), "->$cmd2<-\n");
+        system("cd $dir && $cmd2 && cd -");
+
+        my $cmd3 = "curl -X POST -F \"pdf=\@/psi/home/langenegger/mu3e/mu3eanca/run2025/analysis/vtxHitmaps-$run.pdf\" -F \"description=vtx\" http://pc11740:5050/rdb/addResource/$run";
+        print(&prefix("runPixelFillQualityLM"), "->$cmd3<-\n");
+        system("cd $dir && $cmd3 && cd -");
+    }
+
+
 }
 
 
@@ -260,19 +286,6 @@ sub setGoodRuns() {
     }
 }
 
-# ----------------------------------------------------------------------
-sub countEvents0() {
-    ($run) = @_;
-    my $file = sprintf("$DATADIR/raw/run%05d.mid.lz4", $run);
-    print(&prefix("countEvent"), "run = $run -> file = $file\n");
-
-    my $cmdString = "$counterExe $file | grep Evid:0001 | wc -m ";
-    print(&prefix("countEvent"), "$cmdString\n");
-    $result = `$cmdString`;
-    chop($result);
-    print(&prefix("countEvent"), "countEvents = $result\n");
-    return $result;
-}
 
 # ----------------------------------------------------------------------
 sub countEvents() {
@@ -302,6 +315,70 @@ sub prefix() {
     $shorter = substr($long, 0, 15);
     return ($now . "/" . $shorter . "/ ");
 }
+
+# ----------------------------------------------------------------------
+sub readProcessedRuns() {
+    open(IN, "$pcrBaseDir/proCalRec.runs") || die "proCalRec: Cannot open $pcrBaseDir/proCalRec.runs\n";
+    while (<IN>) {
+        chop;
+        push(@processedRuns, $_);
+    }
+    close(IN);
+ 
+    print(&prefix("readProcessedRuns"), "processed runs: ");
+    if ($opt_d) {
+        foreach $irun (@processedRuns) {
+            print(" $irun");
+        }
+    } else {
+        print(" $#processedRuns runs  (use -d to see full list)");
+    }
+    print("\n");
+}
+ 
+
+# ----------------------------------------------------------------------
+sub checkForNewRun() {
+    my @midFiles  = glob("$pcrDataDir/*.$midfext");
+    my @newruns = ();
+ 
+    print(&prefix("checkForNewRun"), "contents of processedRuns: ");
+    if ($opt_d) {
+        foreach $irun (@processedRuns) {
+            print(" $irun");
+        }
+    } else {
+        print(" $#processedRuns runs (use -d to see full list)");
+    }
+    print("\n");
+ 
+    foreach $file (@midFiles) {
+        my($barefile, $directories) = fileparse($file);
+        $barefile =~ /run([0-9]*).$midfext/;
+        $run = $1;
+ 
+        if (grep( /^$run$/, @processedRuns ) ) {
+            # print "Found $run in processedRuns\n";
+        } else {
+            push(@newruns, $run);
+        }
+    }
+    print(&prefix("checkForNewRun"), "New runs: ");
+ 
+    foreach $irun (@newruns) {
+        print(" $irun");
+    }
+    print("\n");
+ 
+    $result = "nada";
+    if ($#newruns > -1) {
+        $result = shift(@newruns);
+    }
+    # print("checkForNewRun() return $result\n");
+ 
+    return $result;
+}
+
 
 # ----------------------------------------------------------------------
 sub submitJobsRaw() {
