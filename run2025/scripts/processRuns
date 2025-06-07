@@ -152,14 +152,20 @@ if ($opt_w) {
     while (1) {
         my $run = &checkForNewRun();
         if ($run ne "nada") {
-            &submitJobsRaw($run, $nEvents);
-            &runPixelFillQualityLM($run); 
+            my $nEvents = &countEvents($run);
+            if ($nEvents < $MINEVENTS) {
+                print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
+            } else {
+                &submitJobsRaw($run, $nEvents);
+                &runPixelFillQualityLM($run); 
+            }
             # -- update $WATCHFILE
             open(OUT, ">>$WATCHFILE") || die "processRuns: Cannot open $WATCHFILE\n";
             print OUT "$run\n";
             close(OUT);
             # -- update @processedRuns
             push(@processedRuns, $run);
+            
         }
         sleep(10);
     }
