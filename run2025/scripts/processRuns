@@ -361,7 +361,7 @@ sub readProcessedRuns() {
 
 # ----------------------------------------------------------------------
 sub checkForNewRun() {
-    my @midFiles  = glob("$pcrDataDir/*.$midfext");
+    my @midFiles  = glob("$DATADIR/raw/*.mid.lz4");
     my @newruns = ();
  
     print(&prefix("checkForNewRun"), "contents of processedRuns: ");
@@ -376,7 +376,7 @@ sub checkForNewRun() {
  
     foreach $file (@midFiles) {
         my($barefile, $directories) = fileparse($file);
-        $barefile =~ /run([0-9]*).$midfext/;
+        $barefile =~ /run([0-9]*).mid.lz4/;
         $run = $1;
  
         if (grep( /^$run$/, @processedRuns ) ) {
