@@ -378,7 +378,7 @@ sub checkForNewRun() {
         my($barefile, $directories) = fileparse($file);
         $barefile =~ /run([0-9]*).mid.lz4/;
         $run = $1;
- 
+        print(&prefix("checkForNewRun"), "run = $run\n");
         if (grep( /^$run$/, @processedRuns ) ) {
             # print "Found $run in processedRuns\n";
         } else {
