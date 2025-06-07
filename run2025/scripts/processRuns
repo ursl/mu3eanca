@@ -223,7 +223,7 @@ sub runPixelFillQualityLM() {
     system("mkdir -p $dir/out");
     system("mkdir -p $dir/csv");
     system("mkdir -p $dir/payloads");
-    my $srun = sprintf("%05d", $run);
+    my $srun = sprintf("%d", $run);
     print(&prefix("runPixelFillQualityLM"), "Processing DQM output for run $run in directory $dir\n");
     my $cmd0 = "rm -f log/dqm_$srun.log";
     my $lgt = ""; 
@@ -377,8 +377,8 @@ sub checkForNewRun() {
     foreach $file (@midFiles) {
         my($barefile, $directories) = fileparse($file);
         $barefile =~ /run([0-9]*).mid.lz4/;
-        $run = $1;
-        print(&prefix("checkForNewRun"), "run = $run\n");
+        $run = int($1);
+        
         if (grep( /^$run$/, @processedRuns ) ) {
             # print "Found $run in processedRuns\n";
         } else {
@@ -407,7 +407,7 @@ sub submitJobsRaw() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
 
-    my $file = sprintf("$DATADIR/raw/run%05d.mid.lz4", $run);
+    my $file = sprintf("$DATADIR/raw/run%d.mid.lz4", $run);
     my $cmdString = "";
     my $envString = "";
 
@@ -437,7 +437,7 @@ sub submitJobsRaw() {
     my $cmdIniString = "cd $rundir && ";
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-analyzer.csh ";
 
-    my $srunfile = sprintf("run%05d.mid.lz4", $run);
+    my $srunfile = sprintf("run%d.mid.lz4", $run);
 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/mlzr";
@@ -544,7 +544,7 @@ sub submitJobsRaw() {
     # my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
     my @resultFiles = ("dqm_histos_");
     foreach $file (@resultFiles) {
-        my $srun = sprintf("%05d", $run);
+        my $srun = sprintf("%d", $run);
         my $mergedFile = "$ROF/merged-$file$srun.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
