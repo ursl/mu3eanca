@@ -154,9 +154,14 @@ if ($opt_w) {
         if ($run ne "nada") {
             my $nEvents = &countEvents($run);
             if ($nEvents == 0) {
-                print(&prefix("processRuns"), "Run $run has no events, waiting 10 seconds\n");
-                sleep(10);
+                print(&prefix("processRuns"), "Run $run has no events, waiting 100 seconds\n");
+                sleep(100);
                 $nEvents = &countEvents($run);
+                if ($nEvents == 0) {
+                    print(&prefix("processRuns"), "Run $run still has no events, waiting 200 seconds\n");
+                    sleep(200);
+                    $nEvents = &countEvents($run);
+                }
             }
             if ($nEvents < $MINEVENTS) {
                 print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
