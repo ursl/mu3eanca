@@ -150,7 +150,10 @@ if ($opt_i) {
     print(&prefix("processRuns"), "Initializing setup for VERSION = $VERSION\n");
     system("mkdir -p slurm/jobs/mlzr/old");
     system("mkdir -p slurm/storage1/mlzr/old")
-    system("rm -f slurm/$VERSION.tar.gz");
+    my $cmd0 = "rm -f slurm/$VERSION.tar.gz";
+    print(&prefix("processRuns"), "cmd0: $cmd0\n");
+    system($cmd0);
+
     my $cmd = "cd $BASEDIR && tar zcvf slurm/$VERSION.tar.gz --exclude .git --exclude minalyzer/json_output --exclude mu3e/_build minalyzer mu3e";
     print(&prefix("processRuns"), "cmd: $cmd\n");
     system($cmd);
