@@ -246,15 +246,34 @@ router.get("/run/:id", async (req, res) => {
 // ----------------------------------------------------------------------
 // -- Get all run numbers
 router.get("/allRunNumbers", async (req, res) => {
-    console.log("serving from RDB /allRunNumbers " + req.params.id);
+    console.log("serving from RDB /allRunNumbers");
     let collection = await db.collection("runrecords");
     let results = await collection.find({})
+      .sort({ "BOR.Run number": -1 })  // Sort by run number in descending order
       .toArray();
 
     let runNumbers = results.map(record => record.BOR["Run number"]);
-    res.send(runNumbers).status(200);
-  
-  });
+    res.send(runNumbers);
+});
+
+// ----------------------------------------------------------------------
+// -- Get last run number
+router.get("/lastRunNumber", async (req, res) => {
+    try {
+        let collection = await db.collection("runrecords");
+        let result = await collection.find({})
+          .sort({ "BOR.Run number": -1 })
+          .limit(1)
+          .toArray();
+
+        if (result && result.length > 0) {
+            return res.json(result[0].BOR["Run number"]);
+        }
+        return res.sendStatus(404);
+    } catch (error) {
+        return res.sendStatus(500);
+    }
+});
 
 // ----------------------------------------------------------------------
 // -- Post a single runrecord
