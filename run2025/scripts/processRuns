@@ -108,7 +108,7 @@ if ($ENV{"HOST"} =~ "merlin") {
     }
 }
 
-# -- initialization
+# -- initialization after git cloning mu3e, minalyzer, anacombo and running relinkBin
 if ($opt_i) {
      print(&prefix("processRuns"), "Initializing setup for VERSION ->$VERSION<- \n");
      system("mkdir -p slurm/jobs/mlzr/old");
@@ -225,7 +225,8 @@ foreach my $run (@goodRuns) {
         &submitJobsRaw($run, $nEvents);
     } elsif ($opt_m eq "prompt") {
         &submitJobsRaw($run, $nEvents);
-        &runPixelFillQualityLM($run);        
+        &runPixelFillQualityLM($run);      
+        &runPDFSummary($run);
     } else {
         print(&prefix("processRuns"), "Unknown option $opt_m\n");
         print(&prefix("processRuns"), "Usage: rerunDQM -m <min|dqm> -e <2025April>\n");
@@ -248,6 +249,24 @@ sub runMinalyzer() {
         print(&prefix("runMinalyzer"), "->$cmd1<-\n");
         system("cd $dir && $cmd0 && $cmd1 && cd - ");
     }
+}
+
+# ----------------------------------------------------------------------
+sub runPDFSummary() {
+    ($run) = @_;
+    my $dir = "$BASEDIR/pdf_summary";
+    my $srun = sprintf("%05d", $run);
+
+    my $cmd = "_build/Prompt $ROF/merged-dqm_histos_$srun.root";
+    print(&prefix("runPDFSummary"), "Running PDF summary for run $run in directory $dir, ->$cmd<-\n");
+
+    my $cmd2 = "mv dqm_$srun.tex dqm-$VERSION-$srun.tex && pdflatex dqm-$VERSION-$srun.tex";
+    print(&prefix("runPDFSummary"), "->$cmd2<-\n");
+    system("cd $dir && $cmd2 && cd - ");
+
+    my $cmd3 = "curl -X POST -F \"pdf=\@$BASEDIR/pdf_summary/dqm-$VERSION-$srun.pdf\" -F \"description=prompt\" http://pc11740:5050/rdb/addResource/$run";
+    print(&prefix("runPDFSummary"), "->$cmd3<-\n");
+    system("cd $dir && $cmd3 && cd -");
 }
 
 
