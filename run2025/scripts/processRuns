@@ -91,7 +91,7 @@ my $WATCHFILE = "$BASEDIR/processedRuns";
 # -- modifications for merlin
 if (%ENV{"HOST"} =~ "merlin") {
     $VERSION  = "250528-v6.1pre";
-    ($filename, $directories) = fileparse($ENV{"PWD"});
+    ($filename, $directories) = fileparse(%ENV{"PWD"});
     $VERSION = $filename;
     print(&prefix("processRuns"), "VERSION: $VERSION\n");
     $BASEDIR  = "/data/experiment/mu3e/code/offline/$VERSION";
