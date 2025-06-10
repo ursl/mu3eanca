@@ -259,12 +259,13 @@ sub runPDFSummary() {
 
     my $cmd = "_build/Prompt $ROF/merged-dqm_histos_$srun.root";
     print(&prefix("runPDFSummary"), "Running PDF summary for run $run in directory $dir, ->$cmd<-\n");
+    system("cd $dir && $cmd && cd - ");
 
     my $cmd2 = "mv dqm_$srun.tex dqm-$VERSION-$srun.tex && pdflatex dqm-$VERSION-$srun.tex";
     print(&prefix("runPDFSummary"), "->$cmd2<-\n");
     system("cd $dir && $cmd2 && cd - ");
 
-    my $cmd3 = "curl -X POST -F \"pdf=\@$BASEDIR/pdf_summary/dqm-$VERSION-$srun.pdf\" -F \"description=prompt\" http://pc11740:5050/rdb/addResource/$run";
+    my $cmd3 = "curl -X POST -F \"pdf=\@$BASEDIR/pdf_summary/dqm-$VERSION-$srun.pdf\" -F \"description=pr\" http://pc11740:5050/rdb/addResource/$run";
     print(&prefix("runPDFSummary"), "->$cmd3<-\n");
     system("cd $dir && $cmd3 && cd -");
 }
