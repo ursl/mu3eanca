@@ -382,10 +382,44 @@ sub readProcessedRuns() {
     }
     print("\n");
 }
- 
+
 
 # ----------------------------------------------------------------------
 sub checkForNewRun() {
+
+    my $url = "http://pc11740/rdb/allRunNumbers";
+    print(&prefix("checkForNewRun"), "url = $url\n");
+    my $result = `curl -s $url`;
+    $result =~ s/\[//g;
+    $result =~ s/\]//g;
+    $result =~ s/\n//g;
+    $result =~ s/\s//g;
+    my @runNumbers = split(/,/, $result);
+    foreach $irun (@runNumbers) {
+        if (grep(/^$irun$/, @processedRuns) ) {
+            # print "Found $irun in processedRuns\n";
+        } else {
+            push(@newruns, $irun);
+        }
+    }
+    print(&prefix("checkForNewRun"), "New runs: ");
+    foreach $irun (@newruns) {
+        print(" $irun");
+    }
+    print("\n");
+ 
+    $result = "nada";
+    if ($#newruns > -1) {
+        $result = shift(@newruns);
+    }
+    # print("checkForNewRun() return $result\n");
+ 
+    return $result;
+}
+
+
+# ----------------------------------------------------------------------
+sub checkForNewRunOld() {
     my @midFiles  = glob("$DATADIR/raw/*.mid.lz4");
     my @newruns = ();
  
