@@ -152,7 +152,7 @@ if ($opt_i) {
      print(&prefix("processRuns"), "Initializing setup for VERSION = $VERSION\n");
      system("mkdir -p slurm/jobs/mlzr/old");
      system("mkdir -p slurm/storage1/mlzr/old")
-     my $cmd0 = "rm -f slurm/$VERSION.tar.gz";
+     my $cmd0 = "rm -f slurm/" . $VERSION . ".tar.gz";
      print(&prefix("processRuns"), "cmd0: $cmd0\n");
 #     system($cmd0);
 
