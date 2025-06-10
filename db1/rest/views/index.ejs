@@ -409,21 +409,29 @@ function significantFilter() {
                                 <td>
                                     <% if (result.Resources && result.Resources.length > 0) { %>
                                         <% 
-                                            // Sort resources by uploadDate to get the most recent PDF
-                                            const pdfResources = result.Resources
+                                            // Group resources by description and get latest version of each type
+                                            const resourcesByType = result.Resources
                                                 .filter(r => r.type === 'pdf')
-                                                .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
-                                            const latestPdf = pdfResources[0];
-                                            const latestPdfIndex = result.Resources.indexOf(latestPdf);
+                                                .reduce((acc, resource) => {
+                                                    const desc = resource.description || 'No description';
+                                                    if (!acc[desc] || new Date(resource.uploadDate) > new Date(acc[desc].uploadDate)) {
+                                                        acc[desc] = resource;
+                                                    }
+                                                    return acc;
+                                                }, {});
+                                            
+                                            // Convert to array and sort by description
+                                            const latestResources = Object.values(resourcesByType)
+                                                .sort((a, b) => (a.description || '').localeCompare(b.description || ''));
                                         %>
-                                        <% if (latestPdf) { %>
-                                            <a href="/rdb/resource/<%= result.BOR["Run number"] %>/<%= latestPdfIndex %>" target="_blank" title="<%= latestPdf.filename %>">
-                                                <%= latestPdf.description || 'No description' %>
-                                            </a>&nbsp;
-                                            <% if (pdfResources.length > 1) { %>
-                                                <span title="<%= pdfResources.length - 1 %> more resource(s) available"> (+<%= pdfResources.length - 1 %>)</span>
-                                            <% } %>
-                                        <% } %>
+                                        <% latestResources.forEach((resource, index) => { %>
+                                            <% const resourceIndex = result.Resources.indexOf(resource); %>
+                                            <a href="/rdb/resource/<%= result.BOR["Run number"] %>/<%= resourceIndex %>" 
+                                               target="_blank" 
+                                               title="<%= resource.filename %>">
+                                                <%= resource.description || 'No description' %>
+                                            </a><% if (index < latestResources.length - 1) { %>, <% } %>
+                                        <% }); %>
                                     <% } %>
                                 </td>
                             </tr>
