@@ -42,8 +42,10 @@ using namespace std;
 // --          6: if RunInfo.Class exists, copy its value into "BOR.Run Class". If RunInfo.Class is unset, copy from "Bor.Run Class".
 // --          7: capitalize RunInfo.Class and if its value is "calib" change it to "Calibration"
 // --          8: set RunInfo.Significant to value
+// --          9: check if Resources exist and remove all documents with description XXX in that array
 // --
 // -- History:
+// --   2025/06/10: add mode 9
 // --   2025/06/05: add modes 3, 4, 5, and 6 and 7. Add reading of certification files.
 // --   2025/05/12: replace junk with significant
 // --   2025/05/20: add mode 2
@@ -61,7 +63,8 @@ void rdbMode5(int irun, string key, bool debug);
 void rdbMode6(int irun, bool debug);
 void rdbMode7(int irun, bool debug);
 void rdbMode8(int irun, string value, bool debug);
-
+void rdbMode9(int irun, string description, bool debug);
+string getCurrentDateTime();
 
 // ----------------------------------------------------------------------
 static size_t cdbRestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -186,6 +189,10 @@ int main(int argc, char* argv[]) {
     }
     if (8 == mode) {
       rdbMode8(irun, value, debug);
+      continue;
+    }
+    if (9 == mode) {
+      rdbMode9(irun, value, debug);
       continue;
     }
 
@@ -1050,12 +1057,15 @@ void rdbMode8(int irun, string value, bool debug) {
         bool anyChanges = false;
         int runInfoCount = 0;
         
-        // Process all RunInfo instances in Attributes
+        // -- Process all RunInfo instances in Attributes and change IFF unset (for bulk processing)
         for (auto& attr : j["Attributes"]) {
           if (attr.contains("RunInfo")) {
             runInfoCount++;
-            attr["RunInfo"]["Significant"] = valueLower;
-            anyChanges = true;
+            if (attr["RunInfo"]["Significant"] == "unset") {
+              attr["RunInfo"]["Significant"] = valueLower;
+              anyChanges = true;
+              cout << "Run " << irun << ": Set RunInfo[" << runInfoCount << "].Significant to " << valueLower << endl;
+            }
           }
         }
         
@@ -1102,5 +1112,139 @@ void rdbMode8(int irun, string value, bool debug) {
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
   }
+}
+
+// ----------------------------------------------------------------------
+// -- Remove resources with specific description
+void rdbMode9(int irun, string description, bool debug) {
+  bool DBX(false);
+  // Validate input parameters
+  if (description == "unset") {
+    cerr << "Error: Description must be set. Current value: " << description << endl;
+    return;
+  }
+
+  string responseData;
+  CURL* curl = curl_easy_init();
+  if (curl) {
+    std::string url = rdbGetString + "/" + std::to_string(irun) + "/json";
+    
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+    
+    // Set headers
+    struct curl_slist* headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    
+    if (debug) {
+      cout << "Making request to: " << url << endl;
+    } else {
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+      
+      if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+      try {
+        // Parse the JSON response
+        json j = json::parse(responseData);
+        
+        // Check if Resources array exists
+        if (!j.contains("Resources")) {
+          cout << "Run " << irun << ": No Resources array found" << endl;
+          curl_slist_free_all(headers);
+          curl_easy_cleanup(curl);
+          return;
+        }
+
+        // Count resources before removal
+        size_t initialCount = j["Resources"].size();
+        
+        // Remove resources with matching description
+        j["Resources"].erase(
+          std::remove_if(j["Resources"].begin(), j["Resources"].end(),
+            [&description](const json& resource) {
+              return resource.contains("description") && 
+                     resource["description"].get<string>() == description;
+            }
+          ),
+          j["Resources"].end()
+        );
+
+        // Count resources after removal
+        size_t finalCount = j["Resources"].size();
+        size_t removedCount = initialCount - finalCount;
+
+        if (removedCount > 0) {
+          // Add to history
+          string currentdate = getCurrentDateTime();
+          json historyEntry = {
+            {"date", currentdate},
+            {"comment", "Removed " + to_string(removedCount) + " resources with description: " + description}
+          };
+
+          if (j.contains("History")) {
+            j["History"].push_back(historyEntry);
+          } else {
+            j["History"] = json::array({historyEntry});
+          }
+
+          // Convert back to string
+          responseData = j.dump(2);  // Pretty print with 2-space indentation
+          
+          cout << "Run " << irun << ": Removed " << removedCount << " resources with description '" << description << "'" << endl;
+          if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+
+          // Send the updated JSON back to the server
+          curl_easy_reset(curl);
+          curl_easy_setopt(curl, CURLOPT_URL, rdbPutString.c_str());
+          curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+          curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+          
+          // Perform the update request
+          res = curl_easy_perform(curl);
+          if (res != CURLE_OK) {
+            cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
+          } else {
+            cout << "Successfully removed resources" << endl;
+          }
+        } else {
+          cout << "Run " << irun << ": No resources found with description '" << description << "'" << endl;
+        }
+      } catch (const json::parse_error& e) {
+        cerr << "Run " << irun << ": Failed to parse JSON response: " << e.what() 
+             << "->" << responseData << "<-"
+             << endl;
+      } catch (const std::exception& e) {
+        cerr << "Run " << irun << ": Error processing JSON: " << e.what() << endl;
+      }
+    }
+    
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+  }
+}
+
+// Helper function to get current date/time in the required format
+string getCurrentDateTime() {
+  auto now = chrono::system_clock::now();
+  auto now_time_t = chrono::system_clock::to_time_t(now);
+  auto now_tm = localtime(&now_time_t);
+  
+  stringstream ss;
+  ss << now_tm->tm_year + 1900 << "/"
+     << setw(2) << setfill('0') << now_tm->tm_mon + 1 << "/"
+     << setw(2) << setfill('0') << now_tm->tm_mday << " "
+     << setw(2) << setfill('0') << now_tm->tm_hour << ":"
+     << setw(2) << setfill('0') << now_tm->tm_min << ":"
+     << setw(2) << setfill('0') << now_tm->tm_sec;
+  
+  return ss.str();
 }
 

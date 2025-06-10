@@ -590,4 +590,79 @@ router.get("/run/:id/json", async (req, res) => {
     }
 });
 
+// ----------------------------------------------------------------------
+// -- Remove resources with specific description
+// curl -X PUT -H "Content-Type: application/json" \
+//      --data '{"description": "vtx"}' \
+//      http://localhost:5050/rdb/removeResources/780
+router.put("/removeResources/:id", async (req, res) => {
+    try {
+        const runno = parseInt(req.params.id);
+        const description = req.body.description;
+
+        if (!description) {
+            return res.status(400).send('Description is required');
+        }
+
+        const runrecordsCollection = await db.collection("runrecords");
+        const query = {"BOR.Run number": runno};
+        const result = await runrecordsCollection.findOne(query);
+
+        if (!result) {
+            return res.status(404).send('Run not found');
+        }
+
+        // Get resources to be deleted for GridFS cleanup
+        const resourcesToDelete = result.Resources?.filter(r => r.description === description) || [];
+        
+        // Delete files from GridFS
+        for (const resource of resourcesToDelete) {
+            if (resource.type === 'pdf' && resource.fileId) {
+                await bucket.delete(new ObjectId(resource.fileId));
+            }
+        }
+
+        // Update runrecord to remove resources with matching description
+        const updateData = { ...result };
+        delete updateData._id;
+        
+        if (updateData.Resources) {
+            updateData.Resources = updateData.Resources.filter(r => r.description !== description);
+        }
+
+        // Add to history
+        const currentdate = new Date();
+        const datetime = currentdate.getFullYear() + "/" 
+                      + (currentdate.getMonth()+1).toString().padStart(2, '0') + "/" 
+                      + currentdate.getDate().toString().padStart(2, '0') + " "
+                      + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                      + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                      + currentdate.getSeconds().toString().padStart(2, '0');
+        
+        const addComment = {
+            date: datetime,
+            comment: `Removed resources with description: ${description}`
+        };
+        
+        if (updateData.hasOwnProperty("History")) {
+            updateData.History.push(addComment);
+        } else {
+            updateData.History = [addComment];
+        }
+
+        // Update runrecord
+        const nval = { $set: updateData };
+        await runrecordsCollection.updateOne(query, nval);
+
+        res.status(200).json({
+            message: 'Resources removed successfully',
+            removedCount: resourcesToDelete.length
+        });
+
+    } catch (error) {
+        console.error('Error removing resources:', error);
+        res.status(500).send('Error removing resources: ' + error.message);
+    }
+});
+
 export default router;
