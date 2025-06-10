@@ -4,12 +4,21 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { ObjectId } from "mongodb";
+import { GridFSBucket } from "mongodb";
 
 const router = express.Router();
+
+// Initialize GridFS bucket
+const bucket = new GridFSBucket(db, {
+    bucketName: 'uploads'
+});
 
 // Configure multer for PDF uploads - store in memory
 const upload = multer({
     storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 100 * 1024 * 1024  // 100MB limit
+    },
     fileFilter: function (req, file, cb) {
         if (file.mimetype !== 'application/pdf') {
             return cb(new Error('Only PDF files are allowed'));
@@ -367,7 +376,6 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
 
         const runno = parseInt(req.params.id);
         const runrecordsCollection = await db.collection("runrecords");
-        const uploadsCollection = await db.collection("uploads");
         const query = {"BOR.Run number": runno};
         const result = await runrecordsCollection.findOne(query);
 
@@ -375,28 +383,33 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
             return res.status(404).send('Run not found');
         }
 
-        // Create upload document
-        const uploadDoc = {
-            runNumber: runno,
-            type: 'pdf',
-            filename: req.file.originalname,
-            uploadDate: new Date().toISOString(),
-            description: req.body.description || 'PDF resource',
-            content: req.file.buffer,
-            contentType: req.file.mimetype
-        };
+        // Upload to GridFS
+        const uploadStream = bucket.openUploadStream(req.file.originalname, {
+            metadata: {
+                runNumber: runno,
+                type: 'pdf',
+                description: req.body.description || 'PDF resource',
+                contentType: req.file.mimetype
+            }
+        });
 
-        // Insert into uploads collection
-        const uploadResult = await uploadsCollection.insertOne(uploadDoc);
-        const uploadId = uploadResult.insertedId;
+        // Write the file buffer to GridFS
+        uploadStream.write(req.file.buffer);
+        uploadStream.end();
+
+        // Wait for the upload to complete
+        const uploadResult = await new Promise((resolve, reject) => {
+            uploadStream.on('finish', resolve);
+            uploadStream.on('error', reject);
+        });
 
         // Create resource reference
         const resourceEntry = {
             type: 'pdf',
-            uploadId: uploadId,
+            fileId: uploadStream.id,
             filename: req.file.originalname,
-            uploadDate: uploadDoc.uploadDate,
-            description: uploadDoc.description
+            uploadDate: new Date().toISOString(),
+            description: req.body.description || 'PDF resource'
         };
 
         // Update runrecord document
@@ -458,8 +471,6 @@ router.get("/resource/:runNumber/:index", async (req, res) => {
         const index = parseInt(req.params.index);
         
         const runrecordsCollection = await db.collection("runrecords");
-        const uploadsCollection = await db.collection("uploads");
-        
         const query = {"BOR.Run number": runno};
         const result = await runrecordsCollection.findOne(query);
 
@@ -468,29 +479,29 @@ router.get("/resource/:runNumber/:index", async (req, res) => {
         }
 
         const resource = result.Resources[index];
-        if (resource.type !== 'pdf' || !resource.uploadId) {
+        if (resource.type !== 'pdf' || !resource.fileId) {
             return res.status(400).send('Not a valid PDF resource');
         }
 
-        // Get the PDF from uploads collection
-        const uploadDoc = await uploadsCollection.findOne({ _id: new ObjectId(resource.uploadId) });
-        if (!uploadDoc) {
+        // Get file metadata from GridFS
+        const files = await bucket.find({ _id: new ObjectId(resource.fileId) }).toArray();
+        if (files.length === 0) {
             return res.status(404).send('PDF file not found');
         }
 
-        // Convert MongoDB Binary to Buffer
-        const pdfBuffer = Buffer.from(uploadDoc.content.buffer);
+        const file = files[0];
 
-        // Set appropriate headers for PDF
+        // Set appropriate headers
         res.writeHead(200, {
             'Content-Type': 'application/pdf',
-            'Content-Length': pdfBuffer.length.toString(),
-            'Content-Disposition': `inline; filename="${uploadDoc.filename}"`,
+            'Content-Length': file.length,
+            'Content-Disposition': `inline; filename="${file.filename}"`,
             'Cache-Control': 'public, max-age=31536000' // Cache for 1 year
         });
-        
-        // Send the PDF content
-        res.end(pdfBuffer);
+
+        // Stream the file from GridFS to the response
+        const downloadStream = bucket.openDownloadStream(new ObjectId(resource.fileId));
+        downloadStream.pipe(res);
 
     } catch (error) {
         console.error('Error serving PDF resource:', error);
@@ -507,8 +518,6 @@ router.delete("/resource/:runNumber/:index", async (req, res) => {
         const index = parseInt(req.params.index);
         
         const runrecordsCollection = await db.collection("runrecords");
-        const uploadsCollection = await db.collection("uploads");
-        
         const query = {"BOR.Run number": runno};
         const result = await runrecordsCollection.findOne(query);
 
@@ -517,12 +526,12 @@ router.delete("/resource/:runNumber/:index", async (req, res) => {
         }
 
         const resource = result.Resources[index];
-        if (resource.type !== 'pdf' || !resource.uploadId) {
+        if (resource.type !== 'pdf' || !resource.fileId) {
             return res.status(400).send('Not a valid PDF resource');
         }
 
-        // Remove from uploads collection
-        await uploadsCollection.deleteOne({ _id: new ObjectId(resource.uploadId) });
+        // Delete from GridFS
+        await bucket.delete(new ObjectId(resource.fileId));
 
         // Update runrecord to remove the resource reference
         const updateData = { ...result };
