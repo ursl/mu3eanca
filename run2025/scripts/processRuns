@@ -9,6 +9,7 @@
 #           -d  debug mode
 #           -e  {runs|keyword|watch} (where keyword is a predefined setting in the code)
 #           -g  GT
+#           -i  initialize a new area. Note that the directory name will be the version
 #           -m  mode (mode = raw|prompt|minalyzer|calibration)
 #           -n  number of events
 #           -r  run range (in combination with "-e runs")
@@ -34,6 +35,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/06/10 add -i for initialization
 #         2025/06/07 invoke pixelHistograms and curl-upload to RDB
 #         2025/06/06 new option "prompt" to run minalyzer on raw and then produce the pixelqualitylm payload
 #         2025/06/04 many small fixes for merging to work. GT passed into slurm-analyzer.csh. produce versioned directories for merged rootfiles.
@@ -55,7 +57,7 @@ use Env;
 my $dir = getcwd;
  
 use Getopt::Std;
-getopts('c:de:g:m:n:r:t:uw:');
+getopts('c:de:g:im:n:r:t:uw:');
  
 # ----------------------------------------------------------------------
 # -- default values
@@ -89,6 +91,7 @@ my $WATCHFILE = "$BASEDIR/processedRuns";
 # -- modifications for merlin
 if (%ENV{"HOST"} =~ "merlin") {
     $VERSION  = "250528-v6.1pre";
+    my($VERSION, $directories) = fileparse($ENV{"PWD"});
     $BASEDIR  = "/data/experiment/mu3e/code/offline/$VERSION";
     $MU3EANCA = "/psi/home/langenegger/mu3e/mu3eanca";
     $CDB      = "$HOME/mu3e/cdb";
@@ -141,6 +144,18 @@ if ($opt_w) {
 # -- define which runs to process
 my @goodRuns = ();
 &setGoodRuns();
+
+# -- initialization
+if ($opt_i) {
+    print(&prefix("processRuns"), "Initializing setup for VERSION = $VERSION\n");
+    system("mkdir -p slurm/jobs/mlzr/old");
+    system("mkdir -p slurm/storage1/mlzr/old")
+    system("rm -f slurm/$VERSION.tar.gz");
+    my $cmd = "cd $BASEDIR && tar zcvf slurm/$VERSION.tar.gz --exclude .git --exclude minalyzer/json_output --exclude mu3e/_build minalyzer mu3e";
+    print(&prefix("processRuns"), "cmd: $cmd\n");
+    system($cmd);
+    exit(0);
+}
 
 
 # ----------------------------------------------------------------------
@@ -403,10 +418,14 @@ sub checkForNewRun() {
         }
     }
     print(&prefix("checkForNewRun"), "New runs: ");
+    if ($opt_d) {
     foreach $irun (@newruns) {
-        print(" $irun");
+            print(" $irun");
+        }
+        print("\n");
+    } else {
+        print(" $#newruns runs  (use -d to see full list)");
     }
-    print("\n");
  
     $result = "nada";
     if ($#newruns > -1) {
