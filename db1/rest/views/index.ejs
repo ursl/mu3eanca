@@ -197,6 +197,51 @@
         background-color: #ddd;
     }
 
+    /* Collapsible CSV box styles */
+    .csv-box {
+        margin-top: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+    }
+
+    .csv-header {
+        background: #04AA6D;
+        color: white;
+        padding: 10px 15px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        user-select: none;
+    }
+
+    .csv-header:hover {
+        background: #038857;
+    }
+
+    .csv-content {
+        padding: 15px;
+        display: none;
+        font-family: monospace;
+        white-space: pre-wrap;
+        word-break: break-all;
+        background: #f8f9fa;
+        border-top: 1px solid #ddd;
+    }
+
+    .csv-content.expanded {
+        display: block;
+    }
+
+    .toggle-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .toggle-icon.expanded {
+        transform: rotate(180deg);
+    }
+
     /* Column widths - applied to both header and body */
     .table-header th:nth-child(1), .table-body td:nth-child(1) { width: 5%; }  /* Run */
     .table-header th:nth-child(2), .table-body td:nth-child(2) { width: 13%; }  /* Start time */
@@ -240,6 +285,18 @@ window.onload = function() {
             applyFilters();
         }
     });
+
+    // Initialize CSV box toggle
+    const csvHeader = document.querySelector('.csv-header');
+    const csvContent = document.querySelector('.csv-content');
+    const toggleIcon = document.querySelector('.toggle-icon');
+    
+    if (csvHeader && csvContent) {
+        csvHeader.addEventListener('click', () => {
+            csvContent.classList.toggle('expanded');
+            toggleIcon.classList.toggle('expanded');
+        });
+    }
 }
 
 function applyFilters() {
@@ -344,6 +401,7 @@ function significantFilter() {
                 <% } %>
             <% } %>
         </div>
+        
     </div>
 
     <div class="content-section">
@@ -438,6 +496,22 @@ function significantFilter() {
                         <% }) %>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <div class="csv-box">
+            <div class="csv-header">
+                <span>Run Numbers (CSV)</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="csv-content">
+                <% 
+                    const runNumbers = data
+                        .map(result => result.BOR["Run number"])
+                        .sort((a, b) => b - a)
+                        .join(',');
+                %>
+                <%= runNumbers %>
             </div>
         </div>
 
