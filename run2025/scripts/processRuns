@@ -119,11 +119,18 @@ if ($opt_i) {
      system($cmd0);
 
     system("rm -f $BASEDIR/githashes");
-    system("cd $BASEDIR/minalyzer/ && git --no-pager log -n 1 > $BASEDIR/githashes");
+    system("touch $BASEDIR/githashes");
+    print(&prefix("processRuns"), "git hashes: $BASEDIR/minalyzer\n");
+    system("cd $BASEDIR/minalyzer/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
+    print(&prefix("processRuns"), "git hashes: $BASEDIR/mu3e\n");
     system("cd $BASEDIR/mu3e/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
+    print(&prefix("processRuns"), "git hashes: $BASEDIR/mu3e/modules/mu3eUtil\n");
     system("cd $BASEDIR/mu3e/modules/mu3eUtil/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
+    print(&prefix("processRuns"), "git hashes: $BASEDIR/mu3e/pdf_summary\n");
     system("cd $BASEDIR/mu3e/pdf_summary/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
+    print(&prefix("processRuns"), "git hashes: $BASEDIR/mu3e/anacomba\n");
     system("cd $BASEDIR/mu3e/anacomba/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
+    system("cd $BASEDIR && cat githashes");
 
      my $cmd = "cd $BASEDIR && tar zcvf slurm/$VERSION.tar.gz --exclude .git --exclude minalyzer/json_output --exclude mu3e/_build --exclude minalyzer/root_output_files minalyzer mu3e";
      print(&prefix("processRuns"), "cmd: $cmd\n");
