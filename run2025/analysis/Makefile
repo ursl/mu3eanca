@@ -60,7 +60,7 @@ SOFLAGS       = -g -shared  #?? -Wl -rpath
 
 CXXFLAGS     += $(ROOTCFLAGS)
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lTMVAGui -lMinuit 
-EXTHEADERS    = -I.. -I$(CDB)
+EXTHEADERS    = -I../../util -I..  -I$(CDB)
 
 OTHERLIBS 	  = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so $(LIBCURL)
 

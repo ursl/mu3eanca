@@ -32,6 +32,7 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 void mkCombinedPDF(int run);
 void mkVtxPlots(int run, string barefilename);
 void mkTilePlots(int run, string barefilename);
+void mkFiberPlots(int run, string barefilename);
 
 
 
@@ -67,6 +68,7 @@ int main(int argc, char* argv[]) {
 
   mkVtxPlots(run, barefilename);
   mkTilePlots(run, barefilename);
+  mkFiberPlots(run, barefilename);
 
 
   mkCombinedPDF(run);
@@ -232,7 +234,7 @@ void mkVtxPlots(int run, string barefilename) {
       if (find(allTimeCorrelations.begin(), allTimeCorrelations.end(), kname) != allTimeCorrelations.end()) {
         TH2 *h = (TH2*)key->ReadObj();
         cout << "time correlation " << kname << endl;
-        h->Rebin2D(32,32);
+        h->Rebin2D(64,64);
         mTimeCorrelations[kname] = h;
       }
     }
@@ -396,7 +398,7 @@ void mkTilePlots(int run, string barefilename) {
     cout << "kname " << kname << " " << hname << endl;
     TH1 *h = (TH1*)gDirectory->Get(hname.c_str());
     if (h) {
-      h->Rebin(10);
+      h->Rebin(20);
       c->cd(i);
       setFilledHist(h);
       h->Draw("hist");
@@ -409,6 +411,49 @@ void mkTilePlots(int run, string barefilename) {
 
 }
 
+
+// ----------------------------------------------------------------------
+void mkFiberPlots(int run, string barefilename) {
+  gFile->cd("fibre");
+  TCanvas *c = new TCanvas("c", "c", 800, 400);
+  c->Divide(4,2);
+  TH1 *h1; 
+  TH2 *h2;
+  c->cd(1);
+  h1 = (TH1*)gDirectory->Get("totalTS_all_50ps");
+  h1->Rebin(5);
+  h1->Draw("hist");
+  c->cd(2);
+  h1 = (TH1*)gDirectory->Get("ASICID_all");
+  h1->Rebin(5);
+  h1->Draw("hist");
+  c->cd(3);
+  h1 = (TH1*)gDirectory->Get("FEBID_all");
+  h1->Rebin(5);
+  h1->Draw("hist");
+  c->cd(4);
+  h2 = (TH2*)gDirectory->Get("channelID_TimeStampDeltaSameChannelPerChannel");
+  h2->Rebin2D(5,5);
+  h2->Draw("box");
+  c->cd(5);
+  h1->Rebin(5);
+  h1 = (TH1*)gDirectory->Get("channelID_all");
+  h1->Rebin(5);
+  h1->Draw("hist");
+  c->cd(6);
+  h1 = (TH1*)gDirectory->Get("timeStampDeltaSameChannel_all");
+  h1->Rebin(5);
+  h1->Draw("hist");
+  c->cd(7);
+  h1->Rebin(5);
+  h1 = (TH1*)gDirectory->Get("totalTS_all_50ps");
+  h1->Draw("hist");
+
+  c->SaveAs(("fibers-" + to_string(run) + ".pdf").c_str());
+  delete c;
+
+
+} 
 
 
 
