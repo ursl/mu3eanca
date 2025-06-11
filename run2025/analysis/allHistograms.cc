@@ -6,12 +6,7 @@
 #include <string.h>
 #include <chrono>
 
-#include "Mu3eConditions.hh"
-#include "cdbUtil.hh"
-#include "calPixelQualityLM.hh"
-
-#include "cdbJSON.hh"
-#include "base64.hh"
+#include "util.hh"
 
 #include "TCanvas.h"
 #include "TStyle.h"
@@ -36,6 +31,7 @@ using namespace std;
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 void mkCombinedPDF(int run);
 void mkVtxPlots(int run, string barefilename);
+void mkTilePlots(int run, string barefilename);
 
 
 
@@ -70,7 +66,7 @@ int main(int argc, char* argv[]) {
   TFile *f = TFile::Open(filename.c_str());
 
   mkVtxPlots(run, barefilename);
-  
+  mkTilePlots(run, barefilename);
 
 
   mkCombinedPDF(run);
@@ -252,7 +248,7 @@ void mkVtxPlots(int run, string barefilename) {
 
 
     // -- hitmaps
-    TCanvas *c = new TCanvas("c", "c", 1000, 1000);
+    TCanvas *c = new TCanvas("c", "c", 800, 1000);
     gStyle->SetOptStat(0);
     gStyle->SetPadBorderMode(0);
     gStyle->SetPadBorderSize(0);
@@ -305,7 +301,7 @@ void mkVtxPlots(int run, string barefilename) {
     delete c;
 
     // -- toTs
-    c = new TCanvas("c", "c", 1000, 1000);
+    c = new TCanvas("c", "c", 800, 1000);
     c->Divide(2, 1);
     c->cd(1);
     gPad->SetBottomMargin(0.0);
@@ -344,7 +340,7 @@ void mkVtxPlots(int run, string barefilename) {
     delete c;
 
     // -- time correlations
-    c = new TCanvas("c", "c", 1000, 1000);
+    c = new TCanvas("c", "c", 800, 1000);
     c->Divide(4,4);
     int i(1);
     // -- first plot for "global" correlations
@@ -368,5 +364,51 @@ void mkVtxPlots(int run, string barefilename) {
     c->SaveAs(("vtxTimeCorrelations-" + to_string(run) + ".pdf").c_str());
     delete c;
 }
+
+
+
+// ----------------------------------------------------------------------
+void mkTilePlots(int run, string barefilename) {
+  TCanvas *c = new TCanvas("c", "c", 800, 1000);
+  c->cd();
+  shrinkPad(0.1,0.1,0.1,0.1);
+  gFile->cd("tile");
+  TH2 *h = (TH2*)gDirectory->Get("Zphi_TileHitmap_DS");
+  h->Draw("col");
+  replaceAll(barefilename, ".root", "");
+  c->SaveAs(("tileHitmapZphi-" + to_string(run) + ".pdf").c_str());
+  delete c;
+
+  vector<int> vASICID;
+  TH1 *h1 = (TH1*)gDirectory->Get("ASICID");
+  for (int ibin = 1; ibin <= h1->GetNbinsX(); ++ibin) {
+    if (h1->GetBinContent(ibin) > 0) {
+      cout << "ibin " << ibin << " " << h1->GetBinContent(ibin) << endl;
+      vASICID.push_back(ibin);
+    }
+  }
+
+  c = new TCanvas("c", "c", 800, 1000);
+  c->Divide(8, 5);
+  int i(1);
+  for (auto kname : vASICID) {
+    string hname = "Energy_ASIC_" + to_string(kname);
+    cout << "kname " << kname << " " << hname << endl;
+    TH1 *h = (TH1*)gDirectory->Get(hname.c_str());
+    if (h) {
+      h->Rebin(10);
+      c->cd(i);
+      setFilledHist(h);
+      h->Draw("hist");
+      i++;
+    }
+  }
+  replaceAll(barefilename, ".root", "");
+  c->SaveAs(("tileASICEnergy-" + to_string(run) + ".pdf").c_str());
+  delete c;
+
+}
+
+
 
 
