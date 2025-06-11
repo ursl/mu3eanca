@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MU3E CDB Browser</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container-fluid { padding: 20px; }
+        .data-box {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            height: 500px;
+            overflow-y: auto;
+        }
+        .data-box h3 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table-hover tbody tr:hover {
+            cursor: pointer;
+            background-color: #f8f9fa;
+        }
+        .selected {
+            background-color: #e9ecef !important;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading::after {
+            content: "Loading...";
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: "Loading"; }
+            40% { content: "Loading."; }
+            60% { content: "Loading.."; }
+            80% { content: "Loading..."; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <h1 class="mb-4">MU3E CDB Browser</h1>
+        
+        <div class="row">
+            <!-- Globaltags Box -->
+            <div class="col-md-6">
+                <div class="data-box">
+                    <h3>Global Tags</h3>
+                    <div id="globaltags-loading" class="loading"></div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="globaltags-table">
+                            <thead>
+                                <tr>
+                                    <th>Global Tag</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tags Box -->
+            <div class="col-md-6">
+                <div class="data-box">
+                    <h3>Tags <span id="tags-tag-label" style="font-weight: normal; color: #555; vertical-align: baseline;"></span></h3>
+                    <div id="tags-loading" class="loading"></div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="tags-table">
+                            <thead>
+                                <tr>
+                                    <th>Tag</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Payloads Box below -->
+        <div class="row">
+            <div class="col-12">
+                <div class="data-box">
+                    <h3>Payloads <span id="payloads-tag-label" style="font-weight: normal; color: #555; vertical-align: baseline;"></span></h3>
+                    <div id="payloads-loading" class="loading"></div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="payloads-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 8%">IOV</th>
+                                    <th style="width: 15%">Date</th>
+                                    <th style="width: 20%">Comment</th>
+                                    <th style="width: 57%">Schema</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Detconfigs Summary Box below -->
+        <div class="row">
+            <div class="col-12">
+                <div class="data-box">
+                    <h3>Detconfigs Summary</h3>
+                    <div id="detconfigs-loading" class="loading"></div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="detconfigs-table">
+                            <thead>
+                                <tr>
+                                    <th>Tag</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Utility function to show/hide loading indicator
+        function setLoading(elementId, isLoading) {
+            document.getElementById(elementId).style.display = isLoading ? 'block' : 'none';
+        }
+
+        // Utility function to clear table
+        function clearTable(tableId) {
+            document.querySelector(`#${tableId} tbody`).innerHTML = '';
+        }
+
+        // Fetch and display globaltags
+        async function loadGlobaltags() {
+            setLoading('globaltags-loading', true);
+            clearTable('globaltags-table');
+            clearTable('tags-table');
+            clearTable('payloads-table');
+
+            try {
+                const response = await fetch('/cdb/findAll/globaltags');
+                const globaltags = await response.json();
+                
+                const tbody = document.querySelector('#globaltags-table tbody');
+                globaltags.forEach(gt => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${gt.gt || ''}</td>
+                        <td>${gt.description || ''}</td>
+                    `;
+                    tr.addEventListener('click', () => {
+                        document.querySelectorAll('#globaltags-table tr').forEach(row => row.classList.remove('selected'));
+                        tr.classList.add('selected');
+                        loadTags(gt.gt);
+                    });
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading globaltags:', error);
+            } finally {
+                setLoading('globaltags-loading', false);
+            }
+        }
+
+        // Fetch and display tags for a globaltag
+        async function loadTags(globaltag) {
+            setLoading('tags-loading', true);
+            clearTable('tags-table');
+            clearTable('payloads-table');
+
+            // Set the global tag label
+            const tagLabel = document.getElementById("tags-tag-label");
+            tagLabel.textContent = globaltag;
+
+            try {
+                console.log('Fetching tags for globaltag:', globaltag);
+                const response = await fetch(`/cdb/findTagsByGlobaltag/${globaltag}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const tags = await response.json();
+                console.log('Received tags:', tags);
+                
+                const tbody = document.querySelector('#tags-table tbody');
+                if (!tags || tags.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="2" class="text-center">No tags found</td>';
+                    tbody.appendChild(tr);
+                } else {
+                    tags.forEach(tag => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${tag.tag || ''}</td>
+                            <td>${tag.description || ''}</td>
+                        `;
+                        tr.addEventListener('click', () => {
+                            document.querySelectorAll('#tags-table tr').forEach(row => row.classList.remove('selected'));
+                            tr.classList.add('selected');
+                            loadPayloads(tag.tag);
+                        });
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading tags:', error);
+                const tbody = document.querySelector('#tags-table tbody');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="2" class="text-center text-danger">Error: ${error.message}</td>`;
+                tbody.appendChild(tr);
+            } finally {
+                setLoading('tags-loading', false);
+            }
+        }
+
+        // Fetch and display payloads for a tag
+        async function loadPayloads(tag) {
+            console.log("Loading payloads for tag:", tag);
+            const payloadsTable = document.getElementById("payloads-table");
+            const payloadsBody = payloadsTable.getElementsByTagName("tbody")[0];
+            payloadsBody.innerHTML = ""; // Clear existing rows
+            
+            // Clear the payloads tag label initially
+            document.getElementById("payloads-tag-label").textContent = "";
+            
+            try {
+                const response = await fetch(`/cdb/findPayloadsByTag/${tag}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (!data.payloads || data.payloads.length === 0) {
+                    const row = payloadsBody.insertRow();
+                    const cell = row.insertCell();
+                    cell.colSpan = 4;
+                    cell.textContent = "No payloads found for this tag";
+                    cell.style.textAlign = "center";
+                    return;
+                }
+                
+                // Sort payloads by IOV number
+                data.payloads.sort((a, b) => {
+                    const iovA = parseInt(a.hash.split("_iov_")[1]);
+                    const iovB = parseInt(b.hash.split("_iov_")[1]);
+                    return iovA - iovB;
+                });
+                
+                // Set the tag label next to the Payloads title
+                const tagLabel = document.getElementById("payloads-tag-label");
+                tagLabel.textContent = `${data.tag} (Total IOVs: ${data.iovs.length})`;
+                
+                // Add each payload
+                data.payloads.forEach(payload => {
+                    const row = payloadsBody.insertRow();
+                    
+                    // Extract IOV number from hash
+                    const iov = payload.hash.split("_iov_")[1];
+                    
+                    // Format date
+                    const date = new Date(payload.date);
+                    const formattedDate = date.toLocaleString();
+                    
+                    // Add cells
+                    row.insertCell().textContent = iov;
+                    row.insertCell().textContent = formattedDate;
+                    row.insertCell().textContent = payload.comment || "";
+                    row.insertCell().textContent = payload.schema || "";
+                    
+                    // Highlight if this IOV is in the tag's IOVs array
+                    if (data.iovs.includes(parseInt(iov))) {
+                        row.style.backgroundColor = "#e6ffe6"; // Light green
+                    }
+                });
+                
+            } catch (error) {
+                console.error("Error loading payloads:", error);
+                const row = payloadsBody.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = 4;
+                cell.textContent = "Error loading payloads: " + error.message;
+                cell.style.color = "red";
+                cell.style.textAlign = "center";
+                document.getElementById("payloads-tag-label").textContent = "";
+            }
+        }
+
+        // Fetch and display detconfigs summary
+        async function loadDetconfigsSummary() {
+            setLoading('detconfigs-loading', true);
+            clearTable('detconfigs-table');
+            try {
+                const response = await fetch('/cdb/findAll/detconfigsSummary');
+                const detconfigs = await response.json();
+                const tbody = document.querySelector('#detconfigs-table tbody');
+                if (!detconfigs || detconfigs.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="2" class="text-center">No detconfigs found</td>';
+                    tbody.appendChild(tr);
+                } else {
+                    detconfigs.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${row.tag || ''}</td>
+                            <td>${row.count || 0}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading detconfigs summary:', error);
+                const tbody = document.querySelector('#detconfigs-table tbody');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="2" class="text-center text-danger">Error: ${error.message}</td>`;
+                tbody.appendChild(tr);
+            } finally {
+                setLoading('detconfigs-loading', false);
+            }
+        }
+
+        // Load initial data when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGlobaltags();
+            loadDetconfigsSummary();
+        });
+    </script>
+</body>
+</html> 

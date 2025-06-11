@@ -5,6 +5,9 @@ import multer from "multer";
 import archiver from "archiver";
 import stream from "stream";
 import fs  from "fs";
+import path from "path";
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 const upload = multer(); // Multer for handling file uploads
 
@@ -48,14 +51,8 @@ router.get("/findAll/runNumbers", async (req, res) => {
 
 // --------------------------------------------------------------
 // -- Default CDB landing page 
-router.get("/", async (req, res) => {
-  console.log("serving default landing page");
-  let collection = await db.collection("globaltags");
-  let results = await collection.find({})
-    .limit(50)
-    .toArray();
-
-  res.send(results).status(200);
+router.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/cdb.html"));
 });
 
 
@@ -282,6 +279,138 @@ router.get('/downloadJSON/:tag', async (req, res) => {
         console.error(error);
         res.status(500).send('Error retrieving file');
     } 
+});
+
+// --------------------------------------------------------------
+// -- Get tags for a specific globaltag
+router.get("/findTagsByGlobaltag/:globaltag", async (req, res) => {
+  console.log("serving /findTagsByGlobaltag/" + req.params.globaltag);
+  
+  try {
+    // First get the globaltag document to get its tags array
+    let globaltagsCollection = await db.collection("globaltags");
+    let globaltag = await globaltagsCollection.findOne({gt: req.params.globaltag});
+    
+    if (!globaltag || !globaltag.tags) {
+      console.log("No globaltag found or no tags array:", req.params.globaltag);
+      return res.send([]).status(200);
+    }
+    
+    console.log("Found globaltag with tags:", globaltag.tags);
+    
+    // Then get distinct tags that are in the globaltag's tags array
+    let tagsCollection = await db.collection("tags");
+    let results = await tagsCollection.aggregate([
+      { $match: { tag: { $in: globaltag.tags } } },
+      { $group: { 
+          _id: "$tag",
+          tag: { $first: "$tag" },
+          description: { $first: "$description" },
+          iovs: { $first: "$iovs" }
+        }
+      },
+      { $project: { 
+          _id: 0,
+          tag: 1,
+          description: 1,
+          iovs: 1
+        }
+      }
+    ]).toArray();
+    
+    console.log("Found distinct tags:", results.length);
+    console.log("First tag (if any):", results.length > 0 ? JSON.stringify(results[0]) : "none");
+    
+    res.send(results).status(200);
+  } catch (error) {
+    console.error("Error in findTagsByGlobaltag:", error);
+    res.status(500).send({ error: error.message });
+  }
+});
+
+// --------------------------------------------------------------
+// -- Get payloads for a specific tag
+router.get("/findPayloadsByTag/:tag", async (req, res) => {
+  console.log("serving /findPayloadsByTag/" + req.params.tag);
+  
+  try {
+    // First get the tag document to get its IOVs array
+    let tagsCollection = await db.collection("tags");
+    let tag = await tagsCollection.findOne({tag: req.params.tag});
+    
+    if (!tag || !tag.iovs) {
+      console.log("No tag found or no IOVs array:", req.params.tag);
+      return res.send([]).status(200);
+    }
+    
+    console.log("Found tag with IOVs:", tag.iovs);
+    
+    // Then get all payloads for this tag
+    let payloadsCollection = await db.collection("payloads");
+    let query = {hash: { $regex: "^tag_" + req.params.tag + "_iov_" }};
+    console.log("MongoDB query for payloads:", JSON.stringify(query));
+    
+    let results = await payloadsCollection.find(query).toArray();
+    console.log("Found payloads:", results.length);
+    
+    // Add the IOVs array from the tag document to the response
+    let response = {
+      tag: tag.tag,
+      iovs: tag.iovs,
+      payloads: results
+    };
+    
+    res.send(response).status(200);
+  } catch (error) {
+    console.error("Error in findPayloadsByTag:", error);
+    res.status(500).send({ error: error.message });
+  }
+});
+
+// --------------------------------------------------------------
+// -- Debug route to check payloads collection
+router.get("/debug/payloads", async (req, res) => {
+  console.log("Debug: checking payloads collection");
+  
+  try {
+    let payloadsCollection = await db.collection("payloads");
+    let results = await payloadsCollection.find({}).limit(5).toArray();
+    
+    console.log("Found payloads:", results.length);
+    console.log("Sample payloads:", JSON.stringify(results, null, 2));
+    
+    res.send({
+      count: await payloadsCollection.countDocuments(),
+      sample: results
+    }).status(200);
+  } catch (error) {
+    console.error("Error in debug/payloads:", error);
+    res.status(500).send({ error: error.message });
+  }
+});
+
+// --------------------------------------------------------------
+// -- Get summary of detconfigs tags and their counts
+router.get("/findAll/detconfigsSummary", async (req, res) => {
+  try {
+    let detconfigsCollection = await db.collection("detconfigs");
+    let results = await detconfigsCollection.aggregate([
+      { $group: { _id: "$tag", count: { $sum: 1 } } },
+      { $project: { _id: 0, tag: "$_id", count: 1 } },
+      { $sort: { tag: 1 } }
+    ]).toArray();
+    res.send(results).status(200);
+  } catch (error) {
+    console.error("Error in detconfigsSummary:", error);
+    res.status(500).send({ error: error.message });
+  }
+});
+
+// Serve cdb.html for GET /cdb
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+router.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/cdb.html"));
 });
 
 export default router;
