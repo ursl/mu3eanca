@@ -188,6 +188,7 @@ if ($opt_w) {
             } else {
                 &submitJobsRaw($run, $nEvents);
                 &runPixelFillQualityLM($run); 
+                &runPDFSummary($run);
             }
             # -- update $WATCHFILE
             open(OUT, ">>$WATCHFILE") || die "processRuns: Cannot open $WATCHFILE\n";
