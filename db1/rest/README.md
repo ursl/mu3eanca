@@ -66,6 +66,8 @@ moor>curl http://pc11740.psi.ch/cdb/findOne/payloads/tag_mppcalignment_mcidealv5
 
 
 moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=5" http://localhost:5050/cdb/upload
+moor>curl -O -J "http://pc11740:5050/cdb/downloadTag?tag=5"
+
 
 moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "file=@mask_408_1_12_DS_chip5.bin" -F "file=@mask_408_1_12_DS_chip6.bin" -F "tag=4" http://localhost:5050/cdb/uploadMany
 
