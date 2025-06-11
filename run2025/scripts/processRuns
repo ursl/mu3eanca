@@ -447,12 +447,12 @@ sub checkForNewRun() {
     }
     print(&prefix("checkForNewRun"), "New runs: ");
     if ($opt_d) {
-    foreach $irun (@newruns) {
+        foreach $irun (@newruns) {
             print(" $irun");
         }
         print("\n");
     } else {
-        print(" $#newruns runs  (use -d to see full list)");
+        print(" $#newruns runs  (use -d to see full list)\n");
     }
  
     $result = "nada";
