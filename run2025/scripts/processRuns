@@ -326,7 +326,7 @@ sub runPixelFillQualityLM() {
                 print(&prefix("submitJobsRaw"), "WARNING: Merged file $mergedFile is smaller than 1 MB (size: " . sprintf("%.2f", $filesize/1048576) . " MB)\n");
             } else {
                 print(&prefix("submitJobsRaw"), "Merged file size: " . sprintf("%.2f", $filesize/1048576) . " MB\n");
-                my $cmd3 = "curl -X POST -F \"pdf=\@/psi/home/langenegger/mu3e/mu3eanca/run2025/analysis/vtxHitmaps-$run.pdf\" -F \"description=ov\" http://pc11740:5050/rdb/addResource/$run";
+                my $cmd3 = "curl -X POST -F \"pdf=\@/psi/home/langenegger/mu3e/mu3eanca/run2025/analysis/summary-$run.pdf\" -F \"description=ov\" http://pc11740:5050/rdb/addResource/$run";
                 print(&prefix("runPixelFillQualityLM"), "->$cmd3<-\n");
                 system("cd $dir && $cmd3 && cd -");
             }
