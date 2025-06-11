@@ -25,16 +25,18 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-// pixelHistograms
+// allHistograms
 // ---------------
 //
 // Examples:
-// bin/pixelHistograms -f /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.root
+// bin/allHistograms -f /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.root
 // ----------------------------------------------------------------------
 
 
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 void mkCombinedPDF(int run);
+void mkVtxPlots(int run, string barefilename);
+
 
 
 
@@ -54,44 +56,6 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
-  vector<int> vLayer1, vLayer2;
-  vLayer1 = {1,2,3,4,5,6,
-             33, 34, 35, 36, 37, 38,
-             65, 66, 67, 68, 69, 70,
-             97, 98, 99, 100, 101, 102,
-             129, 130, 131, 132, 133, 134,
-             161, 162, 163, 164, 165, 166,
-             193, 194, 195, 196, 197, 198,
-             225, 226, 227, 228, 229, 230};
-  vLayer2 = {1025, 1026, 1027, 1028, 1029, 1030,
-             1057, 1058, 1059, 1060, 1061, 1062,
-             1089, 1090, 1091, 1092, 1093, 1094,
-             1121, 1122, 1123, 1124, 1125, 1126,
-             1153, 1154, 1155, 1156, 1157, 1158,
-             1185, 1186, 1187, 1188, 1189, 1190,
-             1217, 1218, 1219, 1220, 1221, 1222,
-             1249, 1250, 1251, 1252, 1253, 1254,
-             1281, 1282, 1283, 1284, 1285, 1286,
-             1313, 1314, 1315, 1316, 1317, 1318};
-
-  int station(0), layer(0), phi(0), z(0);
-  for (auto ichip: vLayer1) {
-    chipIDSpecBook(ichip, station, layer, phi, z);
-    cout << "layer 1 chip " << ichip << " station " << station << " layer " << layer << " phi " << phi << " z " << z << endl;
-  }
-  for (auto ichip: vLayer2) {
-    chipIDSpecBook(ichip, station, layer, phi, z);
-    cout << "layer 2 chip " << ichip << " station " << station << " layer " << layer << " phi " << phi << " z " << z << endl;
-  }
-
-  chipIDSpecBook(103, station, layer, phi, z);
-  cout << "chip 103 station " << station << " layer " << layer << " phi " << phi << " z " << z << endl;
-  cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
-  
-  calAbs *cpq = new calPixelQualityLM();
-
-
-  map<unsigned int, vector<double> > mdet{};
   
   int run(-1);
   string barefilename(filename);
@@ -104,219 +68,10 @@ int main(int argc, char* argv[]) {
   }
   
   TFile *f = TFile::Open(filename.c_str());
+
+  mkVtxPlots(run, barefilename);
   
-  vector<string> allLadders;
-  for (int iLadder = 1; iLadder <= 8; ++iLadder) {
-    allLadders.push_back(string("pixel/hitmaps/station_0/layer_1/ladder_") + (iLadder < 10 ? "0" : "") + to_string(iLadder));
-  }
-  for (int iLadder = 1; iLadder <= 10; ++iLadder) {
-    allLadders.push_back(string("pixel/hitmaps/station_0/layer_2/ladder_") + (iLadder < 10 ? "0" : "") + to_string(iLadder));
-  }
-  
-  map<int, TH2*> mHitmaps;
-  string name1("hitmap_perChip_");
-  // -- read in all hitmaps
-  for (auto sLadder : allLadders) {
-    f->cd(sLadder.c_str());
-    TIter next(gDirectory->GetListOfKeys());
-    TKey *key(0);
-    while (key = (TKey*)next()) {
-      string kname = key->GetName();
-      if (kname.find(name1) != string::npos) {
-        TH2 *h = (TH2*)key->ReadObj();
-        string hname(h->GetName());
-        replaceAll(hname, "hitmap_perChip_", "");
-        int ichip = ::stoi(hname);  
-        cout << "hitmap chip " << ichip << " " << hname << endl;
-        h->Rebin2D(4,10);
-        mHitmaps[ichip] = h;
-      }
-    }
-  }
 
-  // -- read in all tots
-  map<int, TH1*> mToTs;
-  string name2("hitToT_perChip_");
-  // Replace "hitmap" with "hitToA" in all ladder paths
-  for (auto& ladder : allLadders) {
-    replaceAll(ladder, "hitmaps", "timing");
-  }
-
-  for (auto sLadder : allLadders) {
-    f->cd(sLadder.c_str());
-    TIter next(gDirectory->GetListOfKeys());
-    TKey *key(0);
-    while (key = (TKey*)next()) {
-      string kname = key->GetName();
-      if (kname.find(name2) != string::npos) {
-        TH1 *h = (TH1*)key->ReadObj();
-        string hname(h->GetName());
-        replaceAll(hname, "hitToT_perChip_", "");
-        int ichip = ::stoi(hname);  
-        cout << "toa chip " << ichip << " " << hname << endl;
-        mToTs[ichip] = h;
-      }
-    }
-  }
-
-  // -- read in all relevant time correlations
-  map<string, TH2*> mTimeCorrelations;
-  vector<string> allTimeCorrelations;
-  allTimeCorrelations = {
-    "localTimeL1TopVsL1Bot",
-    "localTimeL1TopVsL2Bot",
-    "localTimeL1TopVsL2Top",
-    "localTimeL2TopVsL2Bot",
-    "localTimeL1BotVsL2Bot",
-    "localTimeL1BotVsL2Top",
-    "localTimeL1Lad1VsL2Lad1",
-    "localTimeL1Lad2VsL2Lad23",
-    "localTimeL1Lad3VsL2Lad34",
-    "localTimeL1Lad4VsL2Lad5",
-    "localTimeL1Lad5VsL2Lad6",
-    "localTimeL1Lad6VsL2Lad78",
-    "localTimeL1Lad7VsL2Lad89",
-    "localTimeL1Lad8VsL2Lad10"
-  };
-  f->cd("timecorrelations/pixel");
-  TIter next(gDirectory->GetListOfKeys());
-  TKey *key(0);
-  while (key = (TKey*)next()) {
-    string kname = key->GetName();
-    if (find(allTimeCorrelations.begin(), allTimeCorrelations.end(), kname) != allTimeCorrelations.end()) {
-      TH2 *h = (TH2*)key->ReadObj();
-      cout << "time correlation " << kname << endl;
-      h->Rebin2D(32,32);
-      mTimeCorrelations[kname] = h;
-    }
-  }
-
-
-  for (auto ichip : mHitmaps) {
-    cout << ichip.first << " " << ichip.second << endl;
-  }
-
-  // -----------------------
-  // -- PLOTTING starts here
-  // -----------------------
-
-
-  // -- hitmaps
-  TCanvas *c = new TCanvas("c", "c", 1000, 1000);
-  gStyle->SetOptStat(0);
-  gStyle->SetPadBorderMode(0);
-  gStyle->SetPadBorderSize(0);
-  gStyle->SetPadTopMargin(0);
-  gStyle->SetPadBottomMargin(0);
-  gStyle->SetPadLeftMargin(0);
-  gStyle->SetPadRightMargin(0);
-  c->Divide(2, 1);
-  c->cd(1);
-  gPad->SetBottomMargin(0.0);
-  gPad->SetLeftMargin(0.0);
-  gPad->SetRightMargin(0.0);
-  gPad->SetTopMargin(0.0);
-  TPad *p = (TPad*)c->GetPad(1);
-  p->Divide(6,8);
-  for (int i = 0; i < vLayer1.size(); ++i) {    
-    p->cd(i+1);
-    gPad->SetLogz(1);
-    gPad->SetBottomMargin(0.0);
-    gPad->SetLeftMargin(0.0);
-    gPad->SetRightMargin(0.0);
-    gPad->SetTopMargin(0.0);
-    cout << "vLayer1[i] = " << vLayer1[i] << " " << mHitmaps[vLayer1[i]] << endl;
-    if (mHitmaps[vLayer1[i]]) {
-      mHitmaps[vLayer1[i]]->Draw("col");
-    }
-  }
-
-  c->cd(2);
-  gPad->SetBottomMargin(0.0);
-  gPad->SetLeftMargin(0.0);
-  gPad->SetRightMargin(0.0);
-  gPad->SetTopMargin(0.0);
-  p = (TPad*)c->GetPad(2);
-  p->Divide(6,10);
-  for (int i = 0; i < vLayer2.size(); ++i) {
-    p->cd(i+1);
-    gPad->SetLogz(1);
-    gPad->SetBottomMargin(0.0);
-    gPad->SetLeftMargin(0.0);
-    gPad->SetRightMargin(0.0);
-    gPad->SetTopMargin(0.0);
-    cout << "vLayer2[i] = " << vLayer2[i] << " " << mHitmaps[vLayer2[i]] << endl;
-    if (mHitmaps[vLayer2[i]]) {
-      mHitmaps[vLayer2[i]]->Draw("col");
-    }
-  }
-  replaceAll(barefilename, ".root", "");
-  c->SaveAs(("vtxHitmaps-" + to_string(run) + ".pdf").c_str());
-  delete c;
-
-  // -- toTs
-  c = new TCanvas("c", "c", 1000, 1000);
-  c->Divide(2, 1);
-  c->cd(1);
-  gPad->SetBottomMargin(0.0);
-  gPad->SetLeftMargin(0.0);
-  gPad->SetRightMargin(0.0);
-  gPad->SetTopMargin(0.0);
-  p = (TPad*)c->GetPad(1);
-  p->Divide(6,8);
-  for (int i = 0; i < vLayer1.size(); ++i) {    
-    p->cd(i+1);
-    gPad->SetBottomMargin(0.0);
-    gPad->SetLeftMargin(0.0);
-    gPad->SetRightMargin(0.0);
-    gPad->SetTopMargin(0.0);
-    cout << "vLayer1[i] = " << vLayer1[i] << " " << mToTs[vLayer1[i]] << endl;
-    if (mToTs[vLayer1[i]]) {
-      mToTs[vLayer1[i]]->Draw();
-    }
-  }
-  c->cd(2);
-  p = (TPad*)c->GetPad(2);
-  p->Divide(6,10);
-  for (int i = 0; i < vLayer2.size(); ++i) {    
-    p->cd(i+1);
-    gPad->SetBottomMargin(0.0);
-    gPad->SetLeftMargin(0.0);
-    gPad->SetRightMargin(0.0);
-    gPad->SetTopMargin(0.0);
-    cout << "vLayer2[i] = " << vLayer2[i] << " " << mToTs[vLayer2[i]] << endl;
-    if (mToTs[vLayer2[i]]) {
-      mToTs[vLayer2[i]]->Draw();
-    }
-  }
-  replaceAll(barefilename, ".root", "");
-  c->SaveAs(("vtxHitToTs-" + to_string(run) + ".pdf").c_str());
-  delete c;
-
-  // -- time correlations
-  c = new TCanvas("c", "c", 1000, 1000);
-  c->Divide(4,4);
-  int i(1);
-  // -- first plot for "global" correlations
-  for (auto sTimeCorrelation : mTimeCorrelations) {
-    if (sTimeCorrelation.first.find("Lad") != string::npos) continue;
-    c->cd(i);
-    gPad->SetLogz(1);
-    sTimeCorrelation.second->Draw("col");
-    i++;  
-  }
-  // -- now plot for "ladder" correlations
-  i += 2;
-  for (auto sTimeCorrelation : mTimeCorrelations) {
-    if (sTimeCorrelation.first.find("Lad") == string::npos) continue;
-    c->cd(i);
-    gPad->SetLogz(1);
-    sTimeCorrelation.second->Draw("col");
-    i++;  
-  }
-  replaceAll(barefilename, ".root", "");
-  c->SaveAs(("vtxTimeCorrelations-" + to_string(run) + ".pdf").c_str());
-  delete c;
 
   mkCombinedPDF(run);
 
@@ -364,3 +119,254 @@ void mkCombinedPDF(int run) {
 
   system(("pdflatex summary-" + to_string(run) + ".tex").c_str());
 }
+
+
+// ----------------------------------------------------------------------
+void mkVtxPlots(int run, string barefilename) {
+  vector<int> vLayer1, vLayer2;
+    vLayer1 = {1,2,3,4,5,6,
+              33, 34, 35, 36, 37, 38,
+              65, 66, 67, 68, 69, 70,
+              97, 98, 99, 100, 101, 102,
+              129, 130, 131, 132, 133, 134,
+              161, 162, 163, 164, 165, 166,
+              193, 194, 195, 196, 197, 198,
+              225, 226, 227, 228, 229, 230};
+    vLayer2 = {1025, 1026, 1027, 1028, 1029, 1030,
+              1057, 1058, 1059, 1060, 1061, 1062,
+              1089, 1090, 1091, 1092, 1093, 1094,
+              1121, 1122, 1123, 1124, 1125, 1126,
+              1153, 1154, 1155, 1156, 1157, 1158,
+              1185, 1186, 1187, 1188, 1189, 1190,
+              1217, 1218, 1219, 1220, 1221, 1222,
+              1249, 1250, 1251, 1252, 1253, 1254,
+              1281, 1282, 1283, 1284, 1285, 1286,
+              1313, 1314, 1315, 1316, 1317, 1318};
+
+    int station(0), layer(0), phi(0), z(0);
+    for (auto ichip: vLayer1) {
+      chipIDSpecBook(ichip, station, layer, phi, z);
+      cout << "layer 1 chip " << ichip << " station " << station << " layer " << layer << " phi " << phi << " z " << z << endl;
+    }
+    for (auto ichip: vLayer2) {
+      chipIDSpecBook(ichip, station, layer, phi, z);
+      cout << "layer 2 chip " << ichip << " station " << station << " layer " << layer << " phi " << phi << " z " << z << endl;
+    }
+
+    map<unsigned int, vector<double> > mdet{};
+    
+    vector<string> allLadders;
+    for (int iLadder = 1; iLadder <= 8; ++iLadder) {
+      allLadders.push_back(string("pixel/hitmaps/station_0/layer_1/ladder_") + (iLadder < 10 ? "0" : "") + to_string(iLadder));
+    }
+    for (int iLadder = 1; iLadder <= 10; ++iLadder) {
+      allLadders.push_back(string("pixel/hitmaps/station_0/layer_2/ladder_") + (iLadder < 10 ? "0" : "") + to_string(iLadder));
+    }
+    
+    map<int, TH2*> mHitmaps;
+    string name1("hitmap_perChip_");
+    // -- read in all hitmaps
+    for (auto sLadder : allLadders) {
+      gFile->cd(sLadder.c_str());
+      TIter next(gDirectory->GetListOfKeys());
+      TKey *key(0);
+      while (key = (TKey*)next()) {
+        string kname = key->GetName();
+        if (kname.find(name1) != string::npos) {
+          TH2 *h = (TH2*)key->ReadObj();
+          string hname(h->GetName());
+          replaceAll(hname, "hitmap_perChip_", "");
+          int ichip = ::stoi(hname);  
+          cout << "hitmap chip " << ichip << " " << hname << endl;
+          h->Rebin2D(4,10);
+          mHitmaps[ichip] = h;
+        }
+      }
+    }
+
+    // -- read in all tots
+    map<int, TH1*> mToTs;
+    string name2("hitToT_perChip_");
+    // Replace "hitmap" with "hitToA" in all ladder paths
+    for (auto& ladder : allLadders) {
+      replaceAll(ladder, "hitmaps", "timing");
+    }
+
+    for (auto sLadder : allLadders) {
+      gFile->cd(sLadder.c_str());
+      TIter next(gDirectory->GetListOfKeys());
+      TKey *key(0);
+      while (key = (TKey*)next()) {
+        string kname = key->GetName();
+        if (kname.find(name2) != string::npos) {
+          TH1 *h = (TH1*)key->ReadObj();
+          string hname(h->GetName());
+          replaceAll(hname, "hitToT_perChip_", "");
+          int ichip = ::stoi(hname);  
+          cout << "toa chip " << ichip << " " << hname << endl;
+          mToTs[ichip] = h;
+        }
+      }
+    }
+
+    // -- read in all relevant time correlations
+    map<string, TH2*> mTimeCorrelations;
+    vector<string> allTimeCorrelations;
+    allTimeCorrelations = {
+      "localTimeL1TopVsL1Bot",
+      "localTimeL1TopVsL2Bot",
+      "localTimeL1TopVsL2Top",
+      "localTimeL2TopVsL2Bot",
+      "localTimeL1BotVsL2Bot",
+      "localTimeL1BotVsL2Top",
+      "localTimeL1Lad1VsL2Lad1",
+      "localTimeL1Lad2VsL2Lad23",
+      "localTimeL1Lad3VsL2Lad34",
+      "localTimeL1Lad4VsL2Lad5",
+      "localTimeL1Lad5VsL2Lad6",
+      "localTimeL1Lad6VsL2Lad78",
+      "localTimeL1Lad7VsL2Lad89",
+      "localTimeL1Lad8VsL2Lad10"
+    };
+    gFile->cd("timecorrelations/pixel");
+    TIter next(gDirectory->GetListOfKeys());
+    TKey *key(0);
+    while (key = (TKey*)next()) {
+      string kname = key->GetName();
+      if (find(allTimeCorrelations.begin(), allTimeCorrelations.end(), kname) != allTimeCorrelations.end()) {
+        TH2 *h = (TH2*)key->ReadObj();
+        cout << "time correlation " << kname << endl;
+        h->Rebin2D(32,32);
+        mTimeCorrelations[kname] = h;
+      }
+    }
+
+
+    for (auto ichip : mHitmaps) {
+      cout << ichip.first << " " << ichip.second << endl;
+    }
+
+    // -----------------------
+    // -- PLOTTING starts here
+    // -----------------------
+
+
+    // -- hitmaps
+    TCanvas *c = new TCanvas("c", "c", 1000, 1000);
+    gStyle->SetOptStat(0);
+    gStyle->SetPadBorderMode(0);
+    gStyle->SetPadBorderSize(0);
+    gStyle->SetPadTopMargin(0);
+    gStyle->SetPadBottomMargin(0);
+    gStyle->SetPadLeftMargin(0);
+    gStyle->SetPadRightMargin(0);
+    c->Divide(2, 1);
+    c->cd(1);
+    gPad->SetBottomMargin(0.0);
+    gPad->SetLeftMargin(0.0);
+    gPad->SetRightMargin(0.0);
+    gPad->SetTopMargin(0.0);
+    TPad *p = (TPad*)c->GetPad(1);
+    p->Divide(6,8);
+    for (int i = 0; i < vLayer1.size(); ++i) {    
+      p->cd(i+1);
+      gPad->SetLogz(1);
+      gPad->SetBottomMargin(0.0);
+      gPad->SetLeftMargin(0.0);
+      gPad->SetRightMargin(0.0);
+      gPad->SetTopMargin(0.0);
+      cout << "vLayer1[i] = " << vLayer1[i] << " " << mHitmaps[vLayer1[i]] << endl;
+      if (mHitmaps[vLayer1[i]]) {
+        mHitmaps[vLayer1[i]]->Draw("col");
+      }
+    }
+
+    c->cd(2);
+    gPad->SetBottomMargin(0.0);
+    gPad->SetLeftMargin(0.0);
+    gPad->SetRightMargin(0.0);
+    gPad->SetTopMargin(0.0);
+    p = (TPad*)c->GetPad(2);
+    p->Divide(6,10);
+    for (int i = 0; i < vLayer2.size(); ++i) {
+      p->cd(i+1);
+      gPad->SetLogz(1);
+      gPad->SetBottomMargin(0.0);
+      gPad->SetLeftMargin(0.0);
+      gPad->SetRightMargin(0.0);
+      gPad->SetTopMargin(0.0);
+      cout << "vLayer2[i] = " << vLayer2[i] << " " << mHitmaps[vLayer2[i]] << endl;
+      if (mHitmaps[vLayer2[i]]) {
+        mHitmaps[vLayer2[i]]->Draw("col");
+      }
+    }
+    replaceAll(barefilename, ".root", "");
+    c->SaveAs(("vtxHitmaps-" + to_string(run) + ".pdf").c_str());
+    delete c;
+
+    // -- toTs
+    c = new TCanvas("c", "c", 1000, 1000);
+    c->Divide(2, 1);
+    c->cd(1);
+    gPad->SetBottomMargin(0.0);
+    gPad->SetLeftMargin(0.0);
+    gPad->SetRightMargin(0.0);
+    gPad->SetTopMargin(0.0);
+    p = (TPad*)c->GetPad(1);
+    p->Divide(6,8);
+    for (int i = 0; i < vLayer1.size(); ++i) {    
+      p->cd(i+1);
+      gPad->SetBottomMargin(0.0);
+      gPad->SetLeftMargin(0.0);
+      gPad->SetRightMargin(0.0);
+      gPad->SetTopMargin(0.0);
+      cout << "vLayer1[i] = " << vLayer1[i] << " " << mToTs[vLayer1[i]] << endl;
+      if (mToTs[vLayer1[i]]) {
+        mToTs[vLayer1[i]]->Draw();
+      }
+    }
+    c->cd(2);
+    p = (TPad*)c->GetPad(2);
+    p->Divide(6,10);
+    for (int i = 0; i < vLayer2.size(); ++i) {    
+      p->cd(i+1);
+      gPad->SetBottomMargin(0.0);
+      gPad->SetLeftMargin(0.0);
+      gPad->SetRightMargin(0.0);
+      gPad->SetTopMargin(0.0);
+      cout << "vLayer2[i] = " << vLayer2[i] << " " << mToTs[vLayer2[i]] << endl;
+      if (mToTs[vLayer2[i]]) {
+        mToTs[vLayer2[i]]->Draw();
+      }
+    }
+    replaceAll(barefilename, ".root", "");
+    c->SaveAs(("vtxHitToTs-" + to_string(run) + ".pdf").c_str());
+    delete c;
+
+    // -- time correlations
+    c = new TCanvas("c", "c", 1000, 1000);
+    c->Divide(4,4);
+    int i(1);
+    // -- first plot for "global" correlations
+    for (auto sTimeCorrelation : mTimeCorrelations) {
+      if (sTimeCorrelation.first.find("Lad") != string::npos) continue;
+      c->cd(i);
+      gPad->SetLogz(1);
+      sTimeCorrelation.second->Draw("col");
+      i++;  
+    }
+    // -- now plot for "ladder" correlations
+    i += 2;
+    for (auto sTimeCorrelation : mTimeCorrelations) {
+      if (sTimeCorrelation.first.find("Lad") == string::npos) continue;
+      c->cd(i);
+      gPad->SetLogz(1);
+      sTimeCorrelation.second->Draw("col");
+      i++;  
+    }
+    replaceAll(barefilename, ".root", "");
+    c->SaveAs(("vtxTimeCorrelations-" + to_string(run) + ".pdf").c_str());
+    delete c;
+}
+
+
