@@ -118,6 +118,13 @@ if ($opt_i) {
      print(&prefix("processRuns"), "cmd0: $cmd0\n");
      system($cmd0);
 
+    system("rm -f $BASEDIR/githashes");
+    system("cd $BASEDIR/minalyzer/ && git --no-pager log -n 1 > $BASEDIR/githashes");
+    system("cd $BASEDIR/mu3e/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
+    system("cd $BASEDIR/mu3e/modules/mu3eUtil/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
+    system("cd $BASEDIR/mu3e/pdf_summary/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
+    system("cd $BASEDIR/mu3e/anacomba/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
+
      my $cmd = "cd $BASEDIR && tar zcvf slurm/$VERSION.tar.gz --exclude .git --exclude minalyzer/json_output --exclude mu3e/_build --exclude minalyzer/root_output_files minalyzer mu3e";
      print(&prefix("processRuns"), "cmd: $cmd\n");
      system($cmd);
