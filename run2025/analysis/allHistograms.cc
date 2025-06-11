@@ -144,11 +144,11 @@ void mkVtxPlots(int run, string barefilename) {
     int station(0), layer(0), phi(0), z(0);
     for (auto ichip: vLayer1) {
       chipIDSpecBook(ichip, station, layer, phi, z);
-      cout << "layer 1 chip " << ichip << " station " << station << " layer " << layer << " phi " << phi << " z " << z << endl;
+      // cout << "layer 1 chip " << ichip << " station " << station << " layer " << layer << " phi " << phi << " z " << z << endl;
     }
     for (auto ichip: vLayer2) {
       chipIDSpecBook(ichip, station, layer, phi, z);
-      cout << "layer 2 chip " << ichip << " station " << station << " layer " << layer << " phi " << phi << " z " << z << endl;
+      // cout << "layer 2 chip " << ichip << " station " << station << " layer " << layer << " phi " << phi << " z " << z << endl;
     }
 
     map<unsigned int, vector<double> > mdet{};
@@ -175,7 +175,7 @@ void mkVtxPlots(int run, string barefilename) {
           string hname(h->GetName());
           replaceAll(hname, "hitmap_perChip_", "");
           int ichip = ::stoi(hname);  
-          cout << "hitmap chip " << ichip << " " << hname << endl;
+          // cout << "hitmap chip " << ichip << " " << hname << endl;
           h->Rebin2D(4,10);
           mHitmaps[ichip] = h;
         }
@@ -201,7 +201,7 @@ void mkVtxPlots(int run, string barefilename) {
           string hname(h->GetName());
           replaceAll(hname, "hitToT_perChip_", "");
           int ichip = ::stoi(hname);  
-          cout << "toa chip " << ichip << " " << hname << endl;
+          // cout << "toa chip " << ichip << " " << hname << endl;
           mToTs[ichip] = h;
         }
       }
@@ -233,15 +233,10 @@ void mkVtxPlots(int run, string barefilename) {
       string kname = key->GetName();
       if (find(allTimeCorrelations.begin(), allTimeCorrelations.end(), kname) != allTimeCorrelations.end()) {
         TH2 *h = (TH2*)key->ReadObj();
-        cout << "time correlation " << kname << endl;
+        // cout << "time correlation " << kname << endl;
         h->Rebin2D(64,64);
         mTimeCorrelations[kname] = h;
       }
-    }
-
-
-    for (auto ichip : mHitmaps) {
-      cout << ichip.first << " " << ichip.second << endl;
     }
 
     // -----------------------
@@ -273,7 +268,7 @@ void mkVtxPlots(int run, string barefilename) {
       gPad->SetLeftMargin(0.0);
       gPad->SetRightMargin(0.0);
       gPad->SetTopMargin(0.0);
-      cout << "vLayer1[i] = " << vLayer1[i] << " " << mHitmaps[vLayer1[i]] << endl;
+      // cout << "vLayer1[i] = " << vLayer1[i] << " " << mHitmaps[vLayer1[i]] << endl;
       if (mHitmaps[vLayer1[i]]) {
         mHitmaps[vLayer1[i]]->Draw("col");
       }
@@ -293,7 +288,7 @@ void mkVtxPlots(int run, string barefilename) {
       gPad->SetLeftMargin(0.0);
       gPad->SetRightMargin(0.0);
       gPad->SetTopMargin(0.0);
-      cout << "vLayer2[i] = " << vLayer2[i] << " " << mHitmaps[vLayer2[i]] << endl;
+      // cout << "vLayer2[i] = " << vLayer2[i] << " " << mHitmaps[vLayer2[i]] << endl;
       if (mHitmaps[vLayer2[i]]) {
         mHitmaps[vLayer2[i]]->Draw("col");
       }
@@ -318,7 +313,7 @@ void mkVtxPlots(int run, string barefilename) {
       gPad->SetLeftMargin(0.0);
       gPad->SetRightMargin(0.0);
       gPad->SetTopMargin(0.0);
-      cout << "vLayer1[i] = " << vLayer1[i] << " " << mToTs[vLayer1[i]] << endl;
+      // cout << "vLayer1[i] = " << vLayer1[i] << " " << mToTs[vLayer1[i]] << endl;
       if (mToTs[vLayer1[i]]) {
         mToTs[vLayer1[i]]->Draw();
       }
@@ -332,7 +327,7 @@ void mkVtxPlots(int run, string barefilename) {
       gPad->SetLeftMargin(0.0);
       gPad->SetRightMargin(0.0);
       gPad->SetTopMargin(0.0);
-      cout << "vLayer2[i] = " << vLayer2[i] << " " << mToTs[vLayer2[i]] << endl;
+      // cout << "vLayer2[i] = " << vLayer2[i] << " " << mToTs[vLayer2[i]] << endl;
       if (mToTs[vLayer2[i]]) {
         mToTs[vLayer2[i]]->Draw();
       }
@@ -385,7 +380,7 @@ void mkTilePlots(int run, string barefilename) {
   TH1 *h1 = (TH1*)gDirectory->Get("ASICID");
   for (int ibin = 1; ibin <= h1->GetNbinsX(); ++ibin) {
     if (h1->GetBinContent(ibin) > 0) {
-      cout << "ibin " << ibin << " " << h1->GetBinContent(ibin) << endl;
+      //  cout << "ibin " << ibin << " " << h1->GetBinContent(ibin) << endl;
       vASICID.push_back(ibin);
     }
   }
@@ -395,10 +390,10 @@ void mkTilePlots(int run, string barefilename) {
   int i(1);
   for (auto kname : vASICID) {
     string hname = "Energy_ASIC_" + to_string(kname);
-    cout << "kname " << kname << " " << hname << endl;
+    // cout << "kname " << kname << " " << hname << endl;
     TH1 *h = (TH1*)gDirectory->Get(hname.c_str());
     if (h) {
-      h->Rebin(20);
+      h->Rebin(16);
       c->cd(i);
       setFilledHist(h);
       h->Draw("hist");
