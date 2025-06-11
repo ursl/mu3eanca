@@ -35,7 +35,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
-#         2025/06/11 move to allHistograms
+#         2025/06/11 move to allHistograms. Add SUBDIRECTORY for analysis of archived runs.
 #         2025/06/10 add -i for initialization
 #         2025/06/07 invoke pixelHistograms and curl-upload to RDB
 #         2025/06/06 new option "prompt" to run minalyzer on raw and then produce the pixelqualitylm payload
@@ -259,7 +259,18 @@ sub runMinalyzer() {
     system("mkdir -p $dir/log");
     my $srun = sprintf("run%05d", $run);
     my $cmd0 = "rm -f log/dqm_$srun.log";
-    my $cmd1 = "_build/analyzer/minalyzer --mt $DATADIR/$srun.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=$BASEGT  >& log/dqm_$srun.log ";
+    my $DATASUBDIR = "$DATADIR/raw";
+    if ($run < 1000) {
+        $DATASUBDIR = "$DATADIR/raw/000";
+    } elsif ($run < 2000) {
+        $DATASUBDIR = "$DATADIR/raw/001";
+    } elsif ($run < 3000) {
+        $DATASUBDIR = "$DATADIR/raw/002";
+    } else {
+        $DATASUBDIR = "$DATADIR/raw";
+    } 
+
+    my $cmd1 = "_build/analyzer/minalyzer --mt $DATASUBDIR/$srun.mid.lz4 -- --cdb.dbconn=$CDB --cdb.gt=$BASEGT  >& log/dqm_$srun.log ";
     if ($opt_d) {
         print(&prefix("runMinalyzer"), "->$cmd1<-\n");
         print(&prefix("runMinalyzer"), "cd $dir && $cmd0 && $cmd1 && cd - \n");
@@ -528,7 +539,18 @@ sub submitJobsRaw() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
 
-    my $file = sprintf("$DATADIR/raw/run%05d.mid.lz4", $run);
+    my $DATASUBDIR = "$DATADIR/raw";
+    if ($run < 1000) {
+        $DATASUBDIR = "$DATADIR/raw/000";
+    } elsif ($run < 2000) {
+        $DATASUBDIR = "$DATADIR/raw/001";
+    } elsif ($run < 3000) {
+        $DATASUBDIR = "$DATADIR/raw/002";
+    } else {
+        $DATASUBDIR = "$DATADIR/raw";
+    } 
+
+    my $file = sprintf("$DATASUBDIR/run%05d.mid.lz4", $run);
     my $cmdString = "";
     my $envString = "";
 
@@ -562,7 +584,7 @@ sub submitJobsRaw() {
 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/mlzr";
-    $envString .= "%DATADIR $DATADIR/raw";
+    $envString .= "%DATADIR $DATASUBDIR";
     $envString .= "%MIDASFILE $srunfile";
     $envString .= "%RUN $run";
 
