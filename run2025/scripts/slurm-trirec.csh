@@ -84,11 +84,11 @@ pwd
 echo "ls -l `pwd`"
 ls -l `pwd`
 
-echo "cp ./$ROOTFILE $DATADIR/raw/ROOTFILE"
-cp ./$ROOTFILE $DATADIR/raw/$ROOTFILE
-setenv BLA  `ls -l $DATADIR/raw/$ROOTFILE`
+echo "cp ./$ROOTFILE $STORAGE1/$RUN/$ROOTFILE"
+cp ./$ROOTFILE $STORAGE1/$RUN/$ROOTFILE
+setenv BLA  `ls -l $STORAGE1/$RUN/$ROOTFILE`
 echo "slurm check that rootfile was copied ->$BLA<-"
-ls -l $DATADIR/raw/$ROOTFILE
+ls -l $STORAGE1/$RUN/$ROOTFILE
 
 date
 
