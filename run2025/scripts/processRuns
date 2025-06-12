@@ -263,6 +263,8 @@ foreach my $run (@goodRuns) {
         &submitJobsRaw($run, $nEvents);
     } elsif ($opt_m eq "pdfsummary") {
         &runPDFSummary($run);
+    } elsif ($opt_m eq "trirec") {
+        &submitJobsRawTrirec($run, $nEvents);
     } elsif ($opt_m eq "prompt") {
         &submitJobsRaw($run, $nEvents);
         &runPixelFillQualityLM($run);      
