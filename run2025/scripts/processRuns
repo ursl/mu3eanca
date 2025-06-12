@@ -790,17 +790,11 @@ sub submitJobsRawTrirec() {
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-trirec.csh ";
 
     my $srunfile = sprintf("run%05d.mid.lz4", $run);
-    my $sortedfile = $srunfile;
-    $sortedfile =~ s/\.mid\.lz4/-sorted\.root/;
-    my $rootfile = $srunfile;
-    $rootfile =~ s/\.mid\.lz4/-trirec\.root/;
-
+ 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/trirec";
     $envString .= "%DATADIR $DATASUBDIR";
     $envString .= "%MIDASFILE $srunfile";
-    $envString .= "%SORTEDFILE $sortedfile";
-    $envString .= "%ROOTFILE $rootfile";
     $envString .= "%RUN $run";
 
     # map ($slurmID => logfile)
@@ -816,6 +810,9 @@ sub submitJobsRawTrirec() {
 
         $gtString = "%GT $GT";
 
+        $rootString = "%ROOTFILE trirec-run$job.root";
+        $sortString = "%SORTEDFILE sorted-run$job.root";
+
         $skipevts = $ijob * $nevts;
         if ($ijob < $NJOBS - 1) {
             $anlString  = "%ANLZR \"-s$skipevts -n$nevts\" '";
@@ -823,7 +820,7 @@ sub submitJobsRawTrirec() {
             $anlString  = "%ANLZR \"-s$skipevts\" '";
         }
 
-        $cmdString = $cmdIniString . "-r $envString$gtString$anlString " . "$job";
+        $cmdString = $cmdIniString . "-r $envString$gtString$anlString$rootString$sortString " . "$job";
 
         print(&prefix("submitJobsRawTrirec"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/trirec $gtString $anlString\n");
         print(&prefix("submitJobsRawTrirec"), "SLURM: $cmdString\n");
