@@ -35,6 +35,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/06/12 bug fix for too small runs!
 #         2025/06/11 move to allHistograms. Add SUBDIRECTORY for analysis of archived runs.
 #         2025/06/10 add -i for initialization
 #         2025/06/07 invoke pixelHistograms and curl-upload to RDB
@@ -131,6 +132,11 @@ if ($opt_i) {
     print(&prefix("processRuns"), "git hashes: $BASEDIR/mu3e/anacomba\n");
     system("cd $BASEDIR/anacomba/ && git --no-pager log -n 1 >> $BASEDIR/githashes");
     system("cd $BASEDIR && cat githashes");
+
+    my $cmd1 = "cd $BASEDIR/mu3e/run && ../_build/mu3eSim/mu3eSim --run 1 -n 1 --conf sim_beam.json --output mu3e_alignment.root";
+    print(&prefix("processRuns"), "cmd1: $cmd1\n");
+    system($cmd1);
+
 
      my $cmd = "cd $BASEDIR && tar zcvf slurm/$VERSION.tar.gz --exclude .git --exclude minalyzer/json_output --exclude mu3e/_build --exclude minalyzer/root_output_files minalyzer mu3e";
      print(&prefix("processRuns"), "cmd: $cmd\n");
