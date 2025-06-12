@@ -113,8 +113,11 @@ if ($ENV{"HOST"} =~ "merlin") {
 # -- initialization after git cloning mu3e, minalyzer, anacombo and running relinkBin
 if ($opt_i) {
      print(&prefix("processRuns"), "Initializing setup for VERSION ->$VERSION<- \n");
-     system("mkdir -p slurm/jobs/mlzr/old");
-     system("mkdir -p slurm/storage1/mlzr/old");
+     my @olddirs = ("mlzr", "trirec");
+     foreach my $olddir (@olddirs) {
+        system("mkdir -p slurm/jobs/$olddir/old");
+        system("mkdir -p slurm/storage1/$olddir/old");
+     }
      my $cmd0 = "rm -f slurm/$VERSION.tar.gz";
      print(&prefix("processRuns"), "cmd0: $cmd0\n");
      system($cmd0);
