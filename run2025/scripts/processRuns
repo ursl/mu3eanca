@@ -141,7 +141,7 @@ if ($opt_i) {
     system($cmd1);
 
 
-     my $cmd = "cd $BASEDIR && tar zcvf slurm/$VERSION.tar.gz --exclude .git --exclude minalyzer/json_output --exclude mu3e/_build --exclude minalyzer/root_output_files minalyzer mu3e";
+     my $cmd = "cd $BASEDIR && tar zcvf slurm/$VERSION.tar.gz --exclude .git --exclude minalyzer/json_output  --exclude minalyzer/root_output_files minalyzer mu3e ";
      print(&prefix("processRuns"), "cmd: $cmd\n");
      system($cmd);
      exit(0);
@@ -787,11 +787,17 @@ sub submitJobsRawTrirec() {
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-trirec.csh ";
 
     my $srunfile = sprintf("run%05d.mid.lz4", $run);
+    my $sortedfile = $srunfile;
+    $sortedfile =~ s/\.mid\.lz4/-sorted\.root/;
+    my $rootfile = $srunfile;
+    $rootfile =~ s/\.mid\.lz4/-trirec\.root/;
 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/mlzr";
     $envString .= "%DATADIR $DATASUBDIR";
     $envString .= "%MIDASFILE $srunfile";
+    $envString .= "%SORTEDFILE $sortedfile";
+    $envString .= "%ROOTFILE $rootfile";
     $envString .= "%RUN $run";
 
     # map ($slurmID => logfile)
