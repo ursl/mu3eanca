@@ -615,10 +615,13 @@
                 // Reset form
                 form.reset();
 
-                // Reload the detconfigs summary after a short delay
+                // Close the modal after a short delay to show the success message
                 setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('uploadModal'));
+                    modal.hide();
+                    // Reload the detconfigs summary
                     loadDetconfigsSummary();
-                }, 1000);
+                }, 1500);
 
             } catch (error) {
                 console.error('Error uploading files:', error);
