@@ -6,9 +6,11 @@
 
 setenv JOB
 setenv RUN
-setenv PCRDATADIR
+setenv DATADIR
 setenv MIDASFILE
+setenv SORTEDFILE
 setenv ROOTFILE
+setenv GT
 setenv ANLZR
 setenv STORAGE1
 
@@ -16,9 +18,9 @@ setenv STORAGE1
 #does not work: source /psi/home/langenegger/mu3e/setup.csh
 #
 
-echo "=================================================="
-echo "====> SLURM mdc2023 proCalRec/trirec wrapper <===="
-echo "=================================================="
+echo "===================================================="
+echo "====> SLURM RUN2025 processRuns/trirec wrapper <===="
+echo "===================================================="
 date
 
 # ----------------------------------------------------------------------
@@ -31,8 +33,8 @@ limit coredumpsize 0
 printenv
 
 pwd
-echo "--> check visibility of /psi/home/langenegger/data/mdc2023"
-ls -l /psi/home/langenegger/data/mdc2023
+echo "--> check visibility of /data/experiment/mu3e/code/offline"
+ls -l /data/experiment/mu3e/code/offline
 
 echo "--> End of env testing"
 
@@ -48,24 +50,31 @@ tar zxf ./$JOB.tar.gz
 cd mu3e/run
 
 # ----------------------------------------------------------------------
-# -- Run trirec
+# -- Run sort and trirec
 # ----------------------------------------------------------------------
-echo "--> Run trirec"
+echo "--> Run sort and trirec"
 echo "pwd"
 pwd
 echo "ls -l"
 ls -l
-echo "ls -l $PCRDATADIR/$MIDASFILE"
-ls -l $PCRDATADIR/$MIDASFILE
+echo "ls -l $DATADIR/$MIDASFILE"
+ls -l $DATADIR/$MIDASFILE
 echo "ls -l ../mu3eTrirec/trirec.conf"
 ls -l ../mu3eTrirec/trirec.conf
-echo "ls -l test.sim0.root"
-ls -l test.sim0.root
+echo "ls -l mu3e_alignment.root"
+ls -l mu3e_alignment.root
+
+echo "../_build/mu3eSim/sort/mu3eSort --alignment.file=mu3e_alignment.root $DATADIR/$MIDASFILE --output ./$SORTEDFILE"
+../_build/mu3eSim/sort/mu3eSort --alignment.file=mu3e_alignment.root $DATADIR/$MIDASFILE --output ./$SORTEDFILE
+
+ls -l ./$SORTEDFILE
 
 date
 
-echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR --input test.sim0.root --input-mid $PCRDATADIR/$MIDASFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
-../_build/mu3eTrirec/mu3eTrirec $ANLZR --input test.sim0.root --input-mid $PCRDATADIR/$MIDASFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
+echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR  ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
+../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
+
+ls -l ./$ROOTFILE
 
 date
 ls -rtl
@@ -75,11 +84,11 @@ pwd
 echo "ls -l `pwd`"
 ls -l `pwd`
 
-echo "cp ./$ROOTFILE $STORAGE1/$RUN/$ROOTFILE"
-cp ./$ROOTFILE $STORAGE1/$RUN/$ROOTFILE
-setenv BLA  `ls -l $STORAGE1/$RUN/$ROOTFILE`
+echo "cp ./$ROOTFILE $DATADIR/raw/ROOTFILE"
+cp ./$ROOTFILE $DATADIR/raw/$ROOTFILE
+setenv BLA  `ls -l $DATADIR/raw/$ROOTFILE`
 echo "slurm check that rootfile was copied ->$BLA<-"
-ls -l $STORAGE1/$RUN/$ROOTFILE
+ls -l $DATADIR/raw/$ROOTFILE
 
 date
 
