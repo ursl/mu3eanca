@@ -4,8 +4,8 @@
 #include <iostream>
 #include <algorithm>  // for std::sort
 #include <vector>     // for std::vector
-#include <string.h>
 #include <string>     // for std::string
+#include <string.h>   // for strcmp
 
 using namespace std;
 
