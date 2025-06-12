@@ -793,7 +793,7 @@ sub submitJobsRawTrirec() {
     $rootfile =~ s/\.mid\.lz4/-trirec\.root/;
 
     # -- encode the configuration of the SLURM job
-    $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/mlzr";
+    $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/trirec";
     $envString .= "%DATADIR $DATASUBDIR";
     $envString .= "%MIDASFILE $srunfile";
     $envString .= "%SORTEDFILE $sortedfile";
