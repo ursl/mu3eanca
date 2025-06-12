@@ -896,15 +896,29 @@ sub submitJobsRawTrirec() {
     print(&prefix("submitJobsRawTrirec"), "all slurm jobs finished\n");
 
     $output = "$BASEDIR/slurm/storage1/trirec";
-    # my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
-    my @resultFiles = ("dqm_histos_");
+
+    $pcrFile = "$DATADIR/trirec/mu3e_trirec_$run.root";
+    system("/bin/rm -f $pcrFile");
+    my $mergeString = "hadd $pcrFile";
+    foreach $rf (@mergeFiles)  {
+        $mergeString .= " $output/$run/$rf ";
+    }
+ 
+    my $result = `$mergeString`;
+    print("$result\n");
+    print(&prefix("submitJobsRawTrirec"), "merged root file: $pcrFile\n");
+    return $pcrFile;
+
+
+
+    my @resultFiles = ("sorted", "trirec");
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
         my $mergedFile = "$ROF/merged-$file$srun.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
-            $mergeString .= " $output/$run/root_output_files_$rf/$file$srun.root ";
+            $mergeString .= " $output/$run/$rf/$file$srun.root ";
         }
 
         if ($opt_d) {
