@@ -815,7 +815,7 @@ sub submitJobsRawTrirec() {
 
         $skipevts = $ijob * $nevts;
         if ($ijob < $NJOBS - 1) {
-            $anlString  = "%ANLZR \"-s$skipevts -e$nevts\" '";
+            $anlString  = "%ANLZR \"-s$skipevts -n$nevts\" '";
         } else {
             $anlString  = "%ANLZR \"-s$skipevts\" '";
         }
