@@ -406,6 +406,40 @@ router.get("/findAll/detconfigsSummary", async (req, res) => {
   }
 });
 
+// --------------------------------------------------------------
+// -- Delete all documents in detconfigs collection for a given tag
+router.delete("/deleteTag", async (req, res) => {
+  const tag = req.query.tag;
+  
+  if (!tag) {
+    return res.status(400).json({ success: false, message: 'Tag parameter is required' });
+  }
+  
+  try {
+    let detconfigsCollection = await db.collection("detconfigs");
+    const result = await detconfigsCollection.deleteMany({ tag });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: `No documents found with tag: ${tag}` 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Successfully deleted ${result.deletedCount} documents for tag: ${tag}`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error("Error deleting tag:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error deleting tag: ' + error.message 
+    });
+  }
+});
+
 // Serve cdb.html for GET /cdb
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
