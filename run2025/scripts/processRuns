@@ -79,6 +79,8 @@ my $DATADIR  = "$HOME/mu3e/data/run2025";
 my $CDB      = "$HOME/mu3e/cdb";
 # -- ROOT output directory
 my $ROF      = "$BASEDIR/mlzr/root_output_files/";
+# -- ROOT output directory for trirec
+my $ROFTRIREC = "$BASEDIR/trirec/root_output_files/";
 # -- Maximum number of runs to process
 my $MAXRUN   = -1;
 # -- GT for updating payloads and tag insertion
@@ -96,11 +98,12 @@ if ($ENV{"HOST"} =~ "merlin") {
     ($filename, $directories) = fileparse($ENV{"PWD"});
     $VERSION = $filename;
     print(&prefix("processRuns"), "VERSION: $VERSION\n");
-    $BASEDIR  = "/data/experiment/mu3e/code/offline/$VERSION";
-    $MU3EANCA = "/psi/home/langenegger/mu3e/mu3eanca";
-    $CDB      = "$HOME/mu3e/cdb";
-    $DATADIR  = "/data/experiment/mu3e/data/2025";
-    $ROF      = "$DATADIR/mlzr/$VERSION";
+    $BASEDIR   = "/data/experiment/mu3e/code/offline/$VERSION";
+    $MU3EANCA  = "/psi/home/langenegger/mu3e/mu3eanca";
+    $CDB       = "$HOME/mu3e/cdb";
+    $DATADIR   = "/data/experiment/mu3e/data/2025";
+    $ROF       = "$DATADIR/mlzr/$VERSION";
+    $ROFTRIREC = "$DATADIR/trirec/$VERSION";
     $WATCHFILE = "$BASEDIR/processedRuns";
 
     if (-d $ROF) {
@@ -914,7 +917,7 @@ sub submitJobsRawTrirec() {
     my @resultFiles = ("sorted", "trirec");
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
-        my $mergedFile = "$ROF/merged-$file$srun.root";
+        my $mergedFile = "$ROFTRIREC/merged-$file$srun.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
