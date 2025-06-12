@@ -9,7 +9,14 @@ import path from "path";
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-const upload = multer(); // Multer for handling file uploads
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB per file (MongoDB limit is 16MB)
+        files: 1000 // Allow up to 1000 files per upload
+    }
+});
 
 // Multer setup to handle file uploads
 const singleUpload = multer({ dest: 'uploads/' });
@@ -148,7 +155,17 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 // --------------------------------------------------------------
 // -- Upload multiple files to MongoDB
 router.post('/uploadMany', upload.array('file'), async (req, res) => {
+    console.log("Upload request received:", {
+        files: req.files ? req.files.length : 0,
+        tag: req.body.tag,
+        bodyKeys: Object.keys(req.body)
+    });
+
     if (!req.files || !req.body.tag) {
+        console.log("Missing required fields:", {
+            hasFiles: !!req.files,
+            hasTag: !!req.body.tag
+        });
         return res.status(400).send('Files and tag are required');
     }
     
@@ -159,12 +176,27 @@ router.post('/uploadMany', upload.array('file'), async (req, res) => {
             tag: req.body.tag,
             filename: file.originalname,
             content: file.buffer,
+            uploadDate: new Date(),
+            size: file.size
         }));
         
+        console.log(`Attempting to insert ${fileDocs.length} files for tag ${req.body.tag}`);
         const result = await filesCollection.insertMany(fileDocs);
-        res.status(200).send(`Files uploaded successfully with IDs: ${result.insertedIds}`);
+        console.log(`Successfully uploaded ${result.insertedCount} files`);
+        
+        res.status(200).json({
+            success: true,
+            message: `Files uploaded successfully`,
+            count: result.insertedCount,
+            ids: result.insertedIds
+        });
     } catch (err) {
-        res.status(500).send('Error uploading files: ' + err.message);
+        console.error('Error in uploadMany:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Error uploading files: ' + err.message,
+            error: err.toString()
+        });
     }
 });
 
