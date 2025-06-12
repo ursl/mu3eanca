@@ -200,10 +200,25 @@ if ($opt_w) {
             }
             if ($nEvents < $MINEVENTS) {
                 print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
-            } else {
+                next;
+            } 
+            
+            if ($opt_m eq "nada") {
+                print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
+                next;
+            } elsif ($opt_m eq "minalyzer") {
+                &runMinalyzer($run);
+            } elsif ($opt_m eq "calibration") {
+                &runPixelFillQualityLM($run);
+            } elsif ($opt_m eq "raw") {
+                &submitJobsRaw($run, $nEvents);
+            } elsif ($opt_m eq "prompt") {
                 &submitJobsRaw($run, $nEvents);
                 &runPixelFillQualityLM($run); 
                 &runPDFSummary($run);
+            } else {
+                print(&prefix("processRuns"), "Unknown option $opt_m\n");
+                exit(1);
             }
             # -- update $WATCHFILE
             open(OUT, ">>$WATCHFILE") || die "processRuns: Cannot open $WATCHFILE\n";
@@ -245,9 +260,11 @@ foreach my $run (@goodRuns) {
         &submitJobsRaw($run, $nEvents);
         &runPixelFillQualityLM($run);      
         &runPDFSummary($run);
+    } elsif ($opt_m eq "nada") {
+        print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
+        sleep(10);
     } else {
         print(&prefix("processRuns"), "Unknown option $opt_m\n");
-        print(&prefix("processRuns"), "Usage: rerunDQM -m <min|dqm> -e <2025April>\n");
         exit(1);
     }
 }
@@ -298,6 +315,17 @@ sub runPDFSummary() {
     print(&prefix("runPDFSummary"), "->$cmd3<-\n");
     system("cd $dir && $cmd3 && cd -");
 }
+
+
+# ----------------------------------------------------------------------
+sub runAnaComba() {
+    ($run) = @_;
+    my $dir = "$BASEDIR/anacomba";
+    my $srun = sprintf("%05d", $run);
+    my $cmd = "_build/anacomba/anacomba -j $CDB -g $BASEGT -r $run";
+    print(&prefix("runAnaComba"), "Running anacomba for run $run in directory $dir, ->$cmd<-\n");
+}
+
 
 
 # ----------------------------------------------------------------------
@@ -464,6 +492,7 @@ sub checkForNewRun() {
     $result =~ s/\n//g;
     $result =~ s/\s//g;
     my @runNumbers = split(/,/, $result);
+    my @newruns = ();
     foreach $irun (@runNumbers) {
         if (grep(/^$irun$/, @processedRuns) ) {
             # print "Found $irun in processedRuns\n";
