@@ -897,20 +897,6 @@ sub submitJobsRawTrirec() {
 
     $output = "$BASEDIR/slurm/storage1/trirec";
 
-    $pcrFile = "$DATADIR/trirec/mu3e_trirec_$run.root";
-    system("/bin/rm -f $pcrFile");
-    my $mergeString = "hadd $pcrFile";
-    foreach $rf (@mergeFiles)  {
-        $mergeString .= " $output/$run/$rf ";
-    }
- 
-    my $result = `$mergeString`;
-    print("$result\n");
-    print(&prefix("submitJobsRawTrirec"), "merged root file: $pcrFile\n");
-    return $pcrFile;
-
-
-
     my @resultFiles = ("sorted", "trirec");
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
