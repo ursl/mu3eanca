@@ -918,9 +918,9 @@ sub submitJobsRawTrirec() {
         system("/bin/rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
-            $mergeString .= " $output/$run/$rf/$file$srun.root ";
+            $mergeString .= " $output/$run/$file-run$rf.root ";
         }
-
+        print(&prefix("submitJobsRawTrirec"), "mergeString: $mergeString\n");
         if ($opt_d) {
             print(&prefix("submitJobsRawTrirec DBX"), $mergeString);
         } else {
