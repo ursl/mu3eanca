@@ -820,7 +820,7 @@ sub submitJobsRawTrirec() {
             $anlString  = "%ANLZR \"-s$skipevts\" '";
         }
 
-        $cmdString = $cmdIniString . "-r $envString$gtString$anlString$rootString$sortString " . "$job";
+        $cmdString = $cmdIniString . "-r $envString$gtString$rootString$sortString$anlString " . "$job";
 
         print(&prefix("submitJobsRawTrirec"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/trirec $gtString $anlString\n");
         print(&prefix("submitJobsRawTrirec"), "SLURM: $cmdString\n");
