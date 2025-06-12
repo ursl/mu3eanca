@@ -181,7 +181,6 @@ my @goodRuns = ();
 # ----------------------------------------------------------------------
 # -- main loop and decision point is here
 # ----------------------------------------------------------------------
-
 if ($opt_w) {
     print(&prefix("processRuns"), "Watch mode\n");
     while (1) {
@@ -200,26 +199,26 @@ if ($opt_w) {
             }
             if ($nEvents < $MINEVENTS) {
                 print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
-                next;
-            } 
-            
-            if ($opt_m eq "nada") {
-                print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
-                next;
-            } elsif ($opt_m eq "minalyzer") {
-                &runMinalyzer($run);
-            } elsif ($opt_m eq "calibration") {
-                &runPixelFillQualityLM($run);
-            } elsif ($opt_m eq "raw") {
-                &submitJobsRaw($run, $nEvents);
-            } elsif ($opt_m eq "prompt") {
-                &submitJobsRaw($run, $nEvents);
-                &runPixelFillQualityLM($run); 
-                &runPDFSummary($run);
             } else {
-                print(&prefix("processRuns"), "Unknown option $opt_m\n");
-                exit(1);
+                if ($opt_m eq "minalyzer") {
+                    &runMinalyzer($run);
+                } elsif ($opt_m eq "calibration") {
+                    &runPixelFillQualityLM($run);
+                } elsif ($opt_m eq "raw") {
+                    &submitJobsRaw($run, $nEvents);
+                } elsif ($opt_m eq "prompt") {
+                    &submitJobsRaw($run, $nEvents);
+                    &runPixelFillQualityLM($run); 
+                    &runPDFSummary($run);
+                } elsif ($opt_m eq "nada") {
+                    print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
+                    sleep(10);
+                } else {
+                    print(&prefix("processRuns"), "Unknown option $opt_m\n");
+                    exit(1);
+                }
             }
+
             # -- update $WATCHFILE
             open(OUT, ">>$WATCHFILE") || die "processRuns: Cannot open $WATCHFILE\n";
             print OUT "$run\n";
@@ -495,26 +494,18 @@ sub checkForNewRun() {
     my @newruns = ();
     foreach $irun (@runNumbers) {
         if (grep(/^$irun$/, @processedRuns) ) {
-             print "Found $irun in processedRuns\n";
+             # print "Found $irun in processedRuns\n";
         } else {
             push(@newruns, $irun);
         }
-    }
-    print(&prefix("checkForNewRun"), "New runs: ");
-    if ($opt_d) {
-        foreach $irun (@newruns) {
-            print(" $irun");
-        }
-        print("\n");
-    } else {
-        print(" $#newruns runs  (use -d to see full list)\n");
     }
  
     $result = "nada";
     if ($#newruns > -1) {
         $result = shift(@newruns);
     }
-    # print("checkForNewRun() return $result\n");
+
+    print(&prefix("checkForNewRun"), " $#newruns runs, returning $result\n");
  
     return $result;
 }
