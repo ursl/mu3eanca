@@ -495,7 +495,7 @@ sub checkForNewRun() {
     my @newruns = ();
     foreach $irun (@runNumbers) {
         if (grep(/^$irun$/, @processedRuns) ) {
-            # print "Found $irun in processedRuns\n";
+             print "Found $irun in processedRuns\n";
         } else {
             push(@newruns, $irun);
         }
