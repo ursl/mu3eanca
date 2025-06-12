@@ -90,6 +90,13 @@ setenv BLA  `ls -l $STORAGE1/$RUN/$ROOTFILE`
 echo "slurm check that rootfile was copied ->$BLA<-"
 ls -l $STORAGE1/$RUN/$ROOTFILE
 
+echo "cp ./$SORTEDFILE $STORAGE1/$RUN/$SORTEDFILE"
+cp ./$SORTEDFILE $STORAGE1/$RUN/$SORTEDFILE
+setenv BLA  `ls -l $STORAGE1/$RUN/$SORTEDFILE`
+echo "slurm check that sortedfile was copied ->$BLA<-"
+ls -l $STORAGE1/$RUN/$SORTEDFILE
+
+
 date
 
 # BATCH END
