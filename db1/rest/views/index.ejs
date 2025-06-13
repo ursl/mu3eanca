@@ -471,8 +471,9 @@ function significantFilter() {
                                             const pdfResources = result.Resources.filter(r => r.type === 'application/pdf');
                                             const nonPdfResources = result.Resources.filter(r => r.type !== 'application/pdf');
                                             
-                                            // Group PDF resources by description and get latest version of each type
-                                            const resourcesByType = pdfResources
+                                            // Group resources by description and get latest version of each type
+                                            const resourcesByType = result.Resources
+                                                .filter(r => r.type === 'application/pdf')
                                                 .reduce((acc, resource) => {
                                                     const desc = resource.description || 'No description';
                                                     if (!acc[desc] || new Date(resource.uploadDate) > new Date(acc[desc].uploadDate)) {
@@ -494,7 +495,7 @@ function significantFilter() {
                                             </a><% if (index < latestResources.length - 1) { %>, <% } %>
                                         <% }); %>
                                         <% if (nonPdfResources.length > 0) { %>
-                                            <span style="color: #666; font-style: italic;">(more)</span>
+                                            <span style="color: #666; font-style: italic;"> (more)</span>
                                         <% } %>
                                     <% } %>
                                 </td>
