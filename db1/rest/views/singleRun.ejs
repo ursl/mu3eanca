@@ -232,7 +232,7 @@
         </table>
         
         <% if (data.hasOwnProperty('Resources') && data.Resources.length > 0) { %>
-            <h2>PDF Resources</h2>
+            <h2>Resources</h2>
             <div style="margin-bottom: 20px;">
                 <input type="file" id="pdfUpload" style="display: none;" onchange="handleFileUpload(this.files[0])" />
                 <button onclick="document.getElementById('pdfUpload').click()" 
@@ -245,6 +245,7 @@
                 <thead>
                     <tr>
                         <th style="background-color: #00703c; color: white; padding: 12px 8px; text-align: left;">Filename</th>
+                        <th style="background-color: #00703c; color: white; padding: 12px 8px; text-align: left;">Type</th>
                         <th style="background-color: #00703c; color: white; padding: 12px 8px; text-align: left;">Upload Date</th>
                         <th style="background-color: #00703c; color: white; padding: 12px 8px; text-align: left;">Description</th>
                         <th style="background-color: #00703c; color: white; padding: 12px 8px; text-align: left;">Actions</th>
@@ -254,7 +255,6 @@
                     <% 
                         // Sort resources by uploadDate, most recent first
                         const sortedResources = [...data.Resources]
-                            .filter(r => r.type === 'pdf')
                             .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
                     %>
                     <% sortedResources.forEach(function(resource, index) { %>
@@ -265,6 +265,9 @@
                                    style="color: #00703c; text-decoration: none;">
                                     📄 <%= resource.filename %>
                                 </a>
+                            </td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">
+                                <%= resource.type || 'Unknown' %>
                             </td>
                             <td style="padding: 8px; border: 1px solid #ddd;">
                                 <%= new Date(resource.uploadDate).toLocaleString() %>
@@ -282,6 +285,17 @@
                     <% }); %>
                 </tbody>
             </table>
+        <% } else { %>
+            <h2>Resources</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="file" id="pdfUpload" style="display: none;" onchange="handleFileUpload(this.files[0])" />
+                <button onclick="document.getElementById('pdfUpload').click()" 
+                        style="background-color: #00703c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                    Upload Resource
+                </button>
+                <span id="uploadStatus" style="margin-left: 10px;"></span>
+            </div>
+            <p>No resources uploaded yet.</p>
         <% } %>
 
 
