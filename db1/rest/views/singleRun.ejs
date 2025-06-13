@@ -234,10 +234,10 @@
         <% if (data.hasOwnProperty('Resources') && data.Resources.length > 0) { %>
             <h2>PDF Resources</h2>
             <div style="margin-bottom: 20px;">
-                <input type="file" id="pdfUpload" accept=".pdf" style="display: none;" onchange="handleFileUpload(this.files[0])" />
+                <input type="file" id="pdfUpload" style="display: none;" onchange="handleFileUpload(this.files[0])" />
                 <button onclick="document.getElementById('pdfUpload').click()" 
                         style="background-color: #00703c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
-                    Upload PDF
+                    Upload Resource
                 </button>
                 <span id="uploadStatus" style="margin-left: 10px;"></span>
             </div>
@@ -790,19 +790,14 @@
      // Add file upload handling functions
      async function handleFileUpload(file) {
          if (!file) return;
-         
-         if (file.type !== 'application/pdf') {
-             alert('Please select a PDF file');
-             return;
-         }
 
          const statusElement = document.getElementById('uploadStatus');
          statusElement.textContent = 'Uploading...';
          statusElement.style.color = '#00703c';
 
          const formData = new FormData();
-         formData.append('pdf', file);
-         formData.append('description', prompt('Please enter a description for this PDF:', '') || 'No description');
+         formData.append('pdf', file);  // Keep 'pdf' as the field name for backend compatibility
+         formData.append('description', prompt('Please enter a description for this resource:', '') || 'No description');
 
          try {
              const response = await fetch(`/rdb/addResource/<%= data.BOR["Run number"] %>`, {

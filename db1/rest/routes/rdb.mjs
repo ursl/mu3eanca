@@ -13,17 +13,11 @@ const bucket = new GridFSBucket(db, {
     bucketName: 'uploads'
 });
 
-// Configure multer for PDF uploads - store in memory
+// Configure multer for file uploads - store in memory
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
         fileSize: 100 * 1024 * 1024  // 100MB limit
-    },
-    fileFilter: function (req, file, cb) {
-        if (file.mimetype !== 'application/pdf') {
-            return cb(new Error('Only PDF files are allowed'));
-        }
-        cb(null, true);
     }
 });
 
@@ -366,12 +360,12 @@ router.put("/addAttribute/:id", async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
-// -- Add a PDF resource to a run record
-// curl -X POST -F "pdf=@/path/to/file.pdf" http://localhost:5050/rdb/addResource/780
+// -- Add a resource to a run record
+// curl -X POST -F "pdf=@/path/to/file" http://localhost:5050/rdb/addResource/780
 router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).send('No PDF file uploaded');
+            return res.status(400).send('No file uploaded');
         }
 
         const runno = parseInt(req.params.id);
@@ -387,8 +381,8 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
         const uploadStream = bucket.openUploadStream(req.file.originalname, {
             metadata: {
                 runNumber: runno,
-                type: 'pdf',
-                description: req.body.description || 'PDF resource',
+                type: req.file.mimetype,
+                description: req.body.description || 'Resource',
                 contentType: req.file.mimetype
             }
         });
@@ -405,11 +399,11 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
 
         // Create resource reference
         const resourceEntry = {
-            type: 'pdf',
+            type: req.file.mimetype,
             fileId: uploadStream.id,
             filename: req.file.originalname,
             uploadDate: new Date().toISOString(),
-            description: req.body.description || 'PDF resource'
+            description: req.body.description || 'Resource'
         };
 
         // Update runrecord document
@@ -433,7 +427,7 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
         
         const addComment = {
             date: datetime,
-            comment: `Added PDF resource: ${req.file.originalname}`
+            comment: `Added resource: ${req.file.originalname} (${req.file.mimetype})`
         };
         
         if (updateData.hasOwnProperty("History")) {
@@ -447,7 +441,7 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
         await runrecordsCollection.updateOne(query, nval);
         
         res.status(200).json({
-            message: 'PDF resource added successfully',
+            message: 'Resource added successfully',
             resource: {
                 type: resourceEntry.type,
                 filename: resourceEntry.filename,
@@ -457,13 +451,13 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error adding PDF resource:', error);
-        res.status(500).send('Error adding PDF resource: ' + error.message);
+        console.error('Error adding resource:', error);
+        res.status(500).send('Error adding resource: ' + error.message);
     }
 });
 
 // ----------------------------------------------------------------------
-// -- Serve a PDF resource
+// -- Serve a resource
 // GET /rdb/resource/:runNumber/:index
 router.get("/resource/:runNumber/:index", async (req, res) => {
     try {
@@ -479,21 +473,21 @@ router.get("/resource/:runNumber/:index", async (req, res) => {
         }
 
         const resource = result.Resources[index];
-        if (resource.type !== 'pdf' || !resource.fileId) {
-            return res.status(400).send('Not a valid PDF resource');
+        if (!resource.fileId) {
+            return res.status(400).send('Not a valid resource');
         }
 
         // Get file metadata from GridFS
         const files = await bucket.find({ _id: new ObjectId(resource.fileId) }).toArray();
         if (files.length === 0) {
-            return res.status(404).send('PDF file not found');
+            return res.status(404).send('File not found');
         }
 
         const file = files[0];
 
         // Set appropriate headers
         res.writeHead(200, {
-            'Content-Type': 'application/pdf',
+            'Content-Type': file.metadata.contentType || 'application/octet-stream',
             'Content-Length': file.length,
             'Content-Disposition': `inline; filename="${file.filename}"`,
             'Cache-Control': 'public, max-age=31536000' // Cache for 1 year
@@ -504,13 +498,13 @@ router.get("/resource/:runNumber/:index", async (req, res) => {
         downloadStream.pipe(res);
 
     } catch (error) {
-        console.error('Error serving PDF resource:', error);
-        res.status(500).send('Error serving PDF resource: ' + error.message);
+        console.error('Error serving resource:', error);
+        res.status(500).send('Error serving resource: ' + error.message);
     }
 });
 
 // ----------------------------------------------------------------------
-// -- Delete a PDF resource
+// -- Delete a resource
 // DELETE /rdb/resource/:runNumber/:index
 router.delete("/resource/:runNumber/:index", async (req, res) => {
     try {
@@ -526,8 +520,8 @@ router.delete("/resource/:runNumber/:index", async (req, res) => {
         }
 
         const resource = result.Resources[index];
-        if (resource.type !== 'pdf' || !resource.fileId) {
-            return res.status(400).send('Not a valid PDF resource');
+        if (!resource.fileId) {
+            return res.status(400).send('Not a valid resource');
         }
 
         // Delete from GridFS
@@ -549,7 +543,7 @@ router.delete("/resource/:runNumber/:index", async (req, res) => {
         
         const addComment = {
             date: datetime,
-            comment: `Removed PDF resource: ${resource.filename}`
+            comment: `Removed resource: ${resource.filename} (${resource.type})`
         };
         
         if (updateData.hasOwnProperty("History")) {
@@ -563,12 +557,12 @@ router.delete("/resource/:runNumber/:index", async (req, res) => {
         await runrecordsCollection.updateOne(query, nval);
 
         res.status(200).json({
-            message: 'PDF resource deleted successfully'
+            message: 'Resource deleted successfully'
         });
 
     } catch (error) {
-        console.error('Error deleting PDF resource:', error);
-        res.status(500).send('Error deleting PDF resource: ' + error.message);
+        console.error('Error deleting resource:', error);
+        res.status(500).send('Error deleting resource: ' + error.message);
     }
 });
 
