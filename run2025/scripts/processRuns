@@ -801,9 +801,9 @@ sub submitJobsRawTrirec() {
     my %mSlurmIds;
     my @mergeFiles;
     my $lnevts = 50*$nevts; 
-    $lcevts = 50*$lcevts;
-    my $NJOBS = int($lcevts/$lnevts) + 1;
-    print(&prefix("submitJobsRawTrirec"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts\n");
+    my $mcevts = 50*$lcevts;
+    my $NJOBS = int($mcevts/$lnevts) + 1;
+    print(&prefix("submitJobsRawTrirec"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts, lnevts = $lnevts, mcevts = $mcevts\n");
     # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
         # FIXME DO NOT FORGET
