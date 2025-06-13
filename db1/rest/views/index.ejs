@@ -487,13 +487,9 @@ function significantFilter() {
                                             <% const resourceIndex = result.Resources.indexOf(resource); %>
                                             <a href="/rdb/resource/<%= result.BOR["Run number"] %>/<%= resourceIndex %>" 
                                                target="_blank" 
-                                               title="<%= resource.filename %>">
-                                                <%= resource.description || 'No description' %>
-                                            </a><% if (index < latestResources.length - 1) { %>, <% } %>
+                                               title="<%= resource.filename %>"><%= resource.description || 'No description' %></a><% if (index < latestResources.length - 1) { %>, <% } %>
                                         <% }); %>
-                                        <% if (nonPdfResources.length > 0) { %>
-                                            <span style="color: #666; font-style: italic;"> (more)</span>
-                                        <% } %>
+                                        <% if (nonPdfResources.length > 0) { %> <span style="color: #666; font-style: italic;">(more)</span><% } %>
                                     <% } %>
                                 </td>
                             </tr>
