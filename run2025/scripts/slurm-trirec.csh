@@ -64,8 +64,8 @@ ls -l ../mu3eTrirec/trirec.conf
 echo "ls -l mu3e_alignment.root"
 ls -l mu3e_alignment.root
 
-echo "../_build/mu3eSim/sort/mu3eSort --alignment.file=mu3e_alignment.root $DATADIR/$MIDASFILE --output ./$SORTEDFILE"
-../_build/mu3eSim/sort/mu3eSort --alignment.file=mu3e_alignment.root $DATADIR/$MIDASFILE --output ./$SORTEDFILE
+echo "../_build/mu3eSim/sort/mu3eSort $ANLZR --alignment.file=mu3e_alignment.root $DATADIR/$MIDASFILE --output ./$SORTEDFILE"
+../_build/mu3eSim/sort/mu3eSort $ANLZR --alignment.file=mu3e_alignment.root $DATADIR/$MIDASFILE --output ./$SORTEDFILE
 
 ls -l ./$SORTEDFILE
 
