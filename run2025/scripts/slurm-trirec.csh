@@ -73,8 +73,8 @@ date
 
 # echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR  ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
 # ../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
-echo "../_build/mu3eTrirec/mu3eTrirec  ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
-../_build/mu3eTrirec/mu3eTrirec ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
+echo "../_build/mu3eTrirec/mu3eTrirec  ./$SORTEDFILE --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=$GT --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
+../_build/mu3eTrirec/mu3eTrirec ./$SORTEDFILE --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=$GT --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
 
 ls -l ./$ROOTFILE
 
