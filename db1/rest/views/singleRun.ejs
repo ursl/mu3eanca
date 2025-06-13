@@ -233,6 +233,14 @@
         
         <% if (data.hasOwnProperty('Resources') && data.Resources.length > 0) { %>
             <h2>PDF Resources</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="file" id="pdfUpload" accept=".pdf" style="display: none;" onchange="handleFileUpload(this.files[0])" />
+                <button onclick="document.getElementById('pdfUpload').click()" 
+                        style="background-color: #00703c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                    Upload PDF
+                </button>
+                <span id="uploadStatus" style="margin-left: 10px;"></span>
+            </div>
             <table id="resources" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                 <thead>
                     <tr>
@@ -776,6 +784,45 @@
              }
          } catch (error) {
              alert('Error deleting resource: ' + error.message);
+         }
+     }
+
+     // Add file upload handling functions
+     async function handleFileUpload(file) {
+         if (!file) return;
+         
+         if (file.type !== 'application/pdf') {
+             alert('Please select a PDF file');
+             return;
+         }
+
+         const statusElement = document.getElementById('uploadStatus');
+         statusElement.textContent = 'Uploading...';
+         statusElement.style.color = '#00703c';
+
+         const formData = new FormData();
+         formData.append('pdf', file);
+         formData.append('description', prompt('Please enter a description for this PDF:', '') || 'No description');
+
+         try {
+             const response = await fetch(`/rdb/addResource/<%= data.BOR["Run number"] %>`, {
+                 method: 'POST',
+                 body: formData
+             });
+
+             if (response.ok) {
+                 const result = await response.json();
+                 statusElement.textContent = 'Upload successful!';
+                 statusElement.style.color = '#00703c';
+                 // Reload the page to show the new resource
+                 setTimeout(() => window.location.reload(), 1000);
+             } else {
+                 const error = await response.text();
+                 throw new Error(error);
+             }
+         } catch (error) {
+             statusElement.textContent = 'Upload failed: ' + error.message;
+             statusElement.style.color = '#dc3545';
          }
      }
     </script>
