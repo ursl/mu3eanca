@@ -467,13 +467,11 @@ function significantFilter() {
                                 <td>
                                     <% if (result.Resources && result.Resources.length > 0) { %>
                                         <% 
-                                            // Count PDF and non-PDF resources
-                                            const pdfResources = result.Resources.filter(r => r.type === 'application/pdf');
-                                            const nonPdfResources = result.Resources.filter(r => r.type !== 'application/pdf');
-                                            
-                                            // Group resources by description and get latest version of each type
-                                            const resourcesByType = result.Resources
-                                                .filter(r => r.type === 'application/pdf')
+                                            // Flexible PDF check: type contains 'pdf' (case-insensitive)
+                                            const pdfResources = result.Resources.filter(r => r.type && r.type.toLowerCase().includes('pdf'));
+                                            const nonPdfResources = result.Resources.filter(r => !(r.type && r.type.toLowerCase().includes('pdf')));
+                                            // Group PDF resources by description and get latest version of each type
+                                            const resourcesByType = pdfResources
                                                 .reduce((acc, resource) => {
                                                     const desc = resource.description || 'No description';
                                                     if (!acc[desc] || new Date(resource.uploadDate) > new Date(acc[desc].uploadDate)) {
@@ -481,7 +479,6 @@ function significantFilter() {
                                                     }
                                                     return acc;
                                                 }, {});
-                                            
                                             // Convert to array and sort by description
                                             const latestResources = Object.values(resourcesByType)
                                                 .sort((a, b) => (a.description || '').localeCompare(b.description || ''));
