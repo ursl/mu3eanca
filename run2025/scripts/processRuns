@@ -800,7 +800,9 @@ sub submitJobsRawTrirec() {
     # map ($slurmID => logfile)
     my %mSlurmIds;
     my @mergeFiles;
-    my $NJOBS = int($lcevts/$nevts) + 1;
+    my $lnevts = 50*$nevts; 
+    $lcevts = 50*$lcevts;
+    my $NJOBS = int($lcevts/$lnevts) + 1;
     print(&prefix("submitJobsRawTrirec"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts\n");
     # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
@@ -813,9 +815,9 @@ sub submitJobsRawTrirec() {
         $rootString = "%ROOTFILE trirec-run$job.root";
         $sortString = "%SORTEDFILE sorted-run$job.root";
 
-        $skipevts = $ijob * $nevts;
+        $skipevts = $ijob * $lnevts;
         if ($ijob < $NJOBS - 1) {
-            $anlString  = "%ANLZR \"-s$skipevts -n$nevts\" '";
+            $anlString  = "%ANLZR \"-s$skipevts -n$lnevts\" '";
         } else {
             $anlString  = "%ANLZR \"-s$skipevts\" '";
         }
