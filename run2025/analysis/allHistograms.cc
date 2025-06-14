@@ -367,6 +367,12 @@ void mkVtxPlots(int run, string barefilename) {
 // ----------------------------------------------------------------------
 void mkTilePlots(int run, string barefilename) {
   TCanvas *c = new TCanvas("c", "c", 800, 1000);
+  gStyle->SetPadBorderMode(1);
+  gStyle->SetPadBorderSize(1);
+  gStyle->SetPadTopMargin(0.1);
+  gStyle->SetPadBottomMargin(0.1);
+  gStyle->SetPadLeftMargin(0.1);
+  gStyle->SetPadRightMargin(0.1);
   c->cd();
   shrinkPad(0.1,0.1,0.1,0.1);
   gFile->cd("tile");
@@ -410,6 +416,13 @@ void mkTilePlots(int run, string barefilename) {
 // ----------------------------------------------------------------------
 void mkFiberPlots(int run, string barefilename) {
   gFile->cd("fibre");
+  gStyle->SetPadBorderMode(1);
+  gStyle->SetPadBorderSize(1);
+  gStyle->SetPadTopMargin(0.1);
+  gStyle->SetPadBottomMargin(0.1);
+  gStyle->SetPadLeftMargin(0.1);
+  gStyle->SetPadRightMargin(0.1);
+
   TCanvas *c = new TCanvas("c", "c", 800, 400);
   c->Divide(4,2);
   TH1 *h1; 
