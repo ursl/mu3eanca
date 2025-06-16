@@ -243,15 +243,67 @@
     }
 
     /* Column widths - applied to both header and body */
-    .table-header th:nth-child(1), .table-body td:nth-child(1) { width: 5%; }  /* Run */
-    .table-header th:nth-child(2), .table-body td:nth-child(2) { width: 13%; }  /* Start time */
-    .table-header th:nth-child(3), .table-body td:nth-child(3) { width: 13%; }  /* End time */
-    .table-header th:nth-child(4), .table-body td:nth-child(4) { width: 2%; }   /* Sig */
-    .table-header th:nth-child(5), .table-body td:nth-child(5) { width: 5%; }  /* Class */
-    .table-header th:nth-child(6), .table-body td:nth-child(6) { width: 5%; }  /* Events */
-    .table-header th:nth-child(7), .table-body td:nth-child(7) { width: 12%; }  /* Shift crew */
-    .table-header th:nth-child(8), .table-body td:nth-child(8) { width: 35%; }  /* Comments */
-    .table-header th:nth-child(9), .table-body td:nth-child(9) { width: 10%; }  /* PDF */
+    .table-header th:nth-child(1), .table-body td:nth-child(1) { width: 3%; }  /* Select */
+    .table-header th:nth-child(2), .table-body td:nth-child(2) { width: 5%; }  /* Run */
+    .table-header th:nth-child(3), .table-body td:nth-child(3) { width: 13%; }  /* Start time */
+    .table-header th:nth-child(4), .table-body td:nth-child(4) { width: 13%; }  /* End time */
+    .table-header th:nth-child(5), .table-body td:nth-child(5) { width: 2%; }   /* Sig */
+    .table-header th:nth-child(6), .table-body td:nth-child(6) { width: 5%; }  /* Class */
+    .table-header th:nth-child(7), .table-body td:nth-child(7) { width: 5%; }  /* Events */
+    .table-header th:nth-child(8), .table-body td:nth-child(8) { width: 12%; }  /* Shift crew */
+    .table-header th:nth-child(9), .table-body td:nth-child(9) { width: 35%; }  /* Comments */
+    .table-header th:nth-child(10), .table-body td:nth-child(10) { width: 10%; }  /* PDF */
+
+    /* Bulk action styles */
+    .bulk-actions {
+        background: #f8f9fa;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        display: none;
+    }
+
+    .bulk-actions.visible {
+        display: block;
+    }
+
+    .bulk-actions .action-group {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .bulk-actions .action-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .bulk-actions select,
+    .bulk-actions input[type="text"] {
+        padding: 6px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .bulk-actions .button {
+        margin-left: 10px;
+    }
+
+    .bulk-actions .status {
+        margin-left: 15px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .bulk-actions .status.success {
+        color: #2e7d32;
+    }
+
+    .bulk-actions .status.error {
+        color: #c62828;
+    }
 </style>
 
 <script>
@@ -330,6 +382,93 @@ function significantFilter() {
     isOnlySignificant = checkbox.checked;
     applyFilters();
 }
+
+let selectedRuns = new Set();
+
+function toggleAllRuns(checkbox) {
+    const runCheckboxes = document.querySelectorAll('.run-select');
+    runCheckboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+        const runNumber = cb.getAttribute('data-run');
+        if (checkbox.checked) {
+            selectedRuns.add(runNumber);
+        } else {
+            selectedRuns.delete(runNumber);
+        }
+    });
+    updateBulkActionsVisibility();
+}
+
+function toggleRun(checkbox) {
+    const runNumber = checkbox.getAttribute('data-run');
+    if (checkbox.checked) {
+        selectedRuns.add(runNumber);
+    } else {
+        selectedRuns.delete(runNumber);
+    }
+    updateBulkActionsVisibility();
+}
+
+function updateBulkActionsVisibility() {
+    const bulkActions = document.querySelector('.bulk-actions');
+    if (selectedRuns.size > 0) {
+        bulkActions.classList.add('visible');
+    } else {
+        bulkActions.classList.remove('visible');
+    }
+}
+
+async function performBulkAction(action) {
+    const runs = Array.from(selectedRuns);
+    if (runs.length === 0) return;
+
+    const statusElement = document.querySelector('.bulk-actions .status');
+    statusElement.textContent = 'Processing...';
+    statusElement.className = 'status';
+
+    try {
+        let endpoint = '';
+        let payload = { runs };
+
+        switch (action) {
+            case 'significant':
+                const significant = document.getElementById('bulkSignificant').value;
+                endpoint = '/rdb/bulk/significant';
+                payload.value = significant === 'true';
+                break;
+            case 'comments':
+                const comments = document.getElementById('bulkComments').value;
+                endpoint = '/rdb/bulk/comments';
+                payload.comments = comments;
+                break;
+            case 'class':
+                const runClass = document.getElementById('bulkClass').value;
+                endpoint = '/rdb/bulk/class';
+                payload.class = runClass;
+                break;
+        }
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('Server error');
+
+        const result = await response.json();
+        statusElement.textContent = `Successfully updated ${result.updated} runs`;
+        statusElement.className = 'status success';
+
+        // Refresh the page after 1.5 seconds to show updated data
+        setTimeout(() => window.location.reload(), 1500);
+    } catch (error) {
+        statusElement.textContent = `Error: ${error.message}`;
+        statusElement.className = 'status error';
+    }
+}
 </script>
 </head>
 
@@ -405,10 +544,39 @@ function significantFilter() {
     </div>
 
     <div class="content-section">
+        <div class="bulk-actions">
+            <div class="action-group">
+                <label>Set Significant:</label>
+                <select id="bulkSignificant">
+                    <option value="true">Significant</option>
+                    <option value="false">Not Significant</option>
+                </select>
+                <button class="button" onclick="performBulkAction('significant')">Apply</button>
+            </div>
+            <div class="action-group">
+                <label>Add Comments:</label>
+                <input type="text" id="bulkComments" placeholder="Enter comments to add" style="width: 300px;">
+                <button class="button" onclick="performBulkAction('comments')">Apply</button>
+            </div>
+            <div class="action-group">
+                <label>Set Class:</label>
+                <select id="bulkClass">
+                    <option value="Beam">Beam</option>
+                    <option value="Test">Test</option>
+                    <option value="Calibration">Calibration</option>
+                    <option value="Source">Source</option>
+                    <option value="Junk">Junk</option>
+                </select>
+                <button class="button" onclick="performBulkAction('class')">Apply</button>
+            </div>
+            <div class="status"></div>
+        </div>
+
         <div class="table-container">
             <div class="table-header">
                 <table>
                     <tr>
+                        <th><input type="checkbox" onchange="toggleAllRuns(this)"></th>
                         <th>Run</th>
                         <th>Start time</th>
                         <th>End time</th>
@@ -426,6 +594,7 @@ function significantFilter() {
                     <tbody>
                         <% data.map((result) => { %>
                             <tr>
+                                <td><input type="checkbox" class="run-select" data-run="<%= result.BOR["Run number"] %>" onchange="toggleRun(this)"></td>
                                 <td><a href="/rdb/run/<%= result.BOR["Run number"] %>"><%= result.BOR["Run number"] %></a></td>
                                 <td><%= result.BOR["Start time"] %></td>
                                 <td><%= result.EOR["Stop time"] %></td>

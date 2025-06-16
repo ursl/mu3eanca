@@ -659,4 +659,161 @@ router.put("/removeResources/:id", async (req, res) => {
     }
 });
 
+// ----------------------------------------------------------------------
+// -- Bulk update significant status for multiple runs
+router.post("/bulk/significant", async (req, res) => {
+    try {
+        const { runs, value } = req.body;
+        if (!Array.isArray(runs) || typeof value !== 'boolean') {
+            return res.status(400).json({ error: 'Invalid request parameters' });
+        }
+
+        const collection = await db.collection("runrecords");
+        let updated = 0;
+
+        for (const runNumber of runs) {
+            const query = { "BOR.Run number": parseInt(runNumber) };
+            const run = await collection.findOne(query);
+            
+            if (run) {
+                // Get current date for history
+                const currentdate = new Date();
+                const datetime = currentdate.getFullYear() + "/" 
+                    + (currentdate.getMonth()+1).toString().padStart(2, '0') + "/" 
+                    + currentdate.getDate().toString().padStart(2, '0') + " "
+                    + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                    + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                    + currentdate.getSeconds().toString().padStart(2, '0');
+
+                // Create or update RunInfo
+                const runInfo = {
+                    date: datetime,
+                    Significant: value.toString(),
+                    Comments: run.Attributes && run.Attributes.length > 0 
+                        ? run.Attributes[run.Attributes.length - 1].RunInfo?.Comments || "unset"
+                        : "unset"
+                };
+
+                // Update document
+                const update = {
+                    $push: {
+                        Attributes: {
+                            RunInfo: runInfo
+                        }
+                    }
+                };
+
+                const result = await collection.updateOne(query, update);
+                if (result.modifiedCount > 0) {
+                    updated++;
+                }
+            }
+        }
+
+        res.json({ updated });
+    } catch (error) {
+        console.error('Error in bulk significant update:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ----------------------------------------------------------------------
+// -- Bulk update comments for multiple runs
+router.post("/bulk/comments", async (req, res) => {
+    try {
+        const { runs, comments } = req.body;
+        if (!Array.isArray(runs) || typeof comments !== 'string') {
+            return res.status(400).json({ error: 'Invalid request parameters' });
+        }
+
+        const collection = await db.collection("runrecords");
+        let updated = 0;
+
+        for (const runNumber of runs) {
+            const query = { "BOR.Run number": parseInt(runNumber) };
+            const run = await collection.findOne(query);
+            
+            if (run) {
+                // Get current date for history
+                const currentdate = new Date();
+                const datetime = currentdate.getFullYear() + "/" 
+                    + (currentdate.getMonth()+1).toString().padStart(2, '0') + "/" 
+                    + currentdate.getDate().toString().padStart(2, '0') + " "
+                    + currentdate.getHours().toString().padStart(2, '0') + ":"  
+                    + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
+                    + currentdate.getSeconds().toString().padStart(2, '0');
+
+                // Get current significant status
+                const currentSignificant = run.Attributes && run.Attributes.length > 0
+                    ? run.Attributes[run.Attributes.length - 1].RunInfo?.Significant || "unset"
+                    : "unset";
+
+                // Create or update RunInfo
+                const runInfo = {
+                    date: datetime,
+                    Significant: currentSignificant,
+                    Comments: comments
+                };
+
+                // Update document
+                const update = {
+                    $push: {
+                        Attributes: {
+                            RunInfo: runInfo
+                        }
+                    }
+                };
+
+                const result = await collection.updateOne(query, update);
+                if (result.modifiedCount > 0) {
+                    updated++;
+                }
+            }
+        }
+
+        res.json({ updated });
+    } catch (error) {
+        console.error('Error in bulk comments update:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ----------------------------------------------------------------------
+// -- Bulk update class for multiple runs
+router.post("/bulk/class", async (req, res) => {
+    try {
+        const { runs, class: runClass } = req.body;
+        if (!Array.isArray(runs) || typeof runClass !== 'string') {
+            return res.status(400).json({ error: 'Invalid request parameters' });
+        }
+
+        const validClasses = ['Beam', 'Test', 'Calibration', 'Source', 'Junk'];
+        if (!validClasses.includes(runClass)) {
+            return res.status(400).json({ error: 'Invalid run class' });
+        }
+
+        const collection = await db.collection("runrecords");
+        let updated = 0;
+
+        for (const runNumber of runs) {
+            const query = { "BOR.Run number": parseInt(runNumber) };
+            const update = {
+                $set: {
+                    "BOR.Run Class": runClass
+                }
+            };
+
+            const result = await collection.updateOne(query, update);
+            if (result.modifiedCount > 0) {
+                updated++;
+            }
+        }
+
+        res.json({ updated });
+    } catch (error) {
+        console.error('Error in bulk class update:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;
