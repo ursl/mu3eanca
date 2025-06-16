@@ -685,13 +685,27 @@ router.post("/bulk/significant", async (req, res) => {
                     + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
                     + currentdate.getSeconds().toString().padStart(2, '0');
 
-                // Create or update RunInfo
+                // Get the last RunInfo record or create a new one with default values
+                const lastRunInfo = run.Attributes && run.Attributes.length > 0 
+                    ? run.Attributes[run.Attributes.length - 1].RunInfo || {}
+                    : {};
+
+                // Create new RunInfo preserving all fields
                 const runInfo = {
                     date: datetime,
                     Significant: value.toString(),
-                    Comments: run.Attributes && run.Attributes.length > 0 
-                        ? run.Attributes[run.Attributes.length - 1].RunInfo?.Comments || "unset"
-                        : "unset"
+                    Comments: lastRunInfo.Comments || "unset",
+                    Class: lastRunInfo.Class || "unset",
+                    Quality: lastRunInfo.Quality || "unset",
+                    Status: lastRunInfo.Status || "unset",
+                    Type: lastRunInfo.Type || "unset",
+                    Beam: lastRunInfo.Beam || "unset",
+                    Target: lastRunInfo.Target || "unset",
+                    Trigger: lastRunInfo.Trigger || "unset",
+                    DAQ: lastRunInfo.DAQ || "unset",
+                    Detector: lastRunInfo.Detector || "unset",
+                    Environment: lastRunInfo.Environment || "unset",
+                    Other: lastRunInfo.Other || "unset"
                 };
 
                 // Update document
@@ -743,16 +757,27 @@ router.post("/bulk/comments", async (req, res) => {
                     + currentdate.getMinutes().toString().padStart(2, '0') + ":" 
                     + currentdate.getSeconds().toString().padStart(2, '0');
 
-                // Get current significant status
-                const currentSignificant = run.Attributes && run.Attributes.length > 0
-                    ? run.Attributes[run.Attributes.length - 1].RunInfo?.Significant || "unset"
-                    : "unset";
+                // Get the last RunInfo record or create a new one with default values
+                const lastRunInfo = run.Attributes && run.Attributes.length > 0 
+                    ? run.Attributes[run.Attributes.length - 1].RunInfo || {}
+                    : {};
 
-                // Create or update RunInfo
+                // Create new RunInfo preserving all fields
                 const runInfo = {
                     date: datetime,
-                    Significant: currentSignificant,
-                    Comments: comments
+                    Significant: lastRunInfo.Significant || "unset",
+                    Comments: comments,
+                    Class: lastRunInfo.Class || "unset",
+                    Quality: lastRunInfo.Quality || "unset",
+                    Status: lastRunInfo.Status || "unset",
+                    Type: lastRunInfo.Type || "unset",
+                    Beam: lastRunInfo.Beam || "unset",
+                    Target: lastRunInfo.Target || "unset",
+                    Trigger: lastRunInfo.Trigger || "unset",
+                    DAQ: lastRunInfo.DAQ || "unset",
+                    Detector: lastRunInfo.Detector || "unset",
+                    Environment: lastRunInfo.Environment || "unset",
+                    Other: lastRunInfo.Other || "unset"
                 };
 
                 // Update document
