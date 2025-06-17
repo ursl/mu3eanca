@@ -90,6 +90,7 @@ void plotBasics(string filename, TFile *results, map<string, TH1*> &mHistos) {
   TTree *tSegs = (TTree*)f->Get("segs");
   if (!tSegs) {
     cout << "ERROR: Could not find 'segs' tree in file" << endl;
+    f->Close();
     return;
   }
 
@@ -97,6 +98,7 @@ void plotBasics(string filename, TFile *results, map<string, TH1*> &mHistos) {
   TTree *tFrames = (TTree*)f->Get("frames");
   if (!tFrames) {
     cout << "ERROR: Could not find 'frames' tree in file" << endl;
+    f->Close();
     return;
   }
  
