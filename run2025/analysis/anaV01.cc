@@ -80,7 +80,9 @@ void plotBasics(string filename, TFile *results, map<string, TH1*> &mHistos) {
   sRun = sRun.substr(0, sRun.rfind("-trirec"));
   replaceAll(sRun, "run", "");
   int run = atoi(sRun.c_str());
+  sRun = "run" + sRun;
   cout << "sRun " << sRun << " filename " << filename << " run " << run << endl;
+
 
   mHistos[sRun + "_frameId"] = new TH1D(string(sRun + "_frameId").c_str(), string(sRun + "_frameId").c_str(), 1000, 0, 1.e11);
   mHistos[sRun + "_runId"] = new TH1D(string(sRun + "_runId").c_str(), string(sRun + "_runId").c_str(), 1000, 0, 1.e11);
