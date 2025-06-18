@@ -29,10 +29,12 @@ using namespace std;
 
 
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
-void mkCombinedPDF(int run);
+void mkCombinedPDF(int run, string rof);
 void mkVtxPlots(int run, string barefilename);
 void mkTilePlots(int run, string barefilename);
 void mkFiberPlots(int run, string barefilename);
+string getCurrentDateTime();
+
 
 
 
@@ -71,7 +73,7 @@ int main(int argc, char* argv[]) {
   mkFiberPlots(run, barefilename);
 
 
-  mkCombinedPDF(run);
+  mkCombinedPDF(run, filename);
 
 
 
@@ -99,12 +101,16 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 
 
 // ----------------------------------------------------------------------
-void mkCombinedPDF(int run) {
+void mkCombinedPDF(int run, string rof) {
   ifstream ifs("template.tex");
   string line;
   vector<string> vLines;
+  string date = getCurrentDateTime();
+
   while (getline(ifs, line)) {
     replaceAll(line, "RUNNUMBER", to_string(run));
+    replaceAll(line, "ROF", rof);
+    replaceAll(line, "DATE", date);
     vLines.push_back(line);
   }
   ifs.close();
@@ -116,6 +122,19 @@ void mkCombinedPDF(int run) {
   ofs.close();
 
   system(("pdflatex summary-" + to_string(run) + ".tex").c_str());
+}
+
+
+
+// ----------------------------------------------------------------------
+string getCurrentDateTime() {
+  auto now = chrono::system_clock::now();
+  auto time_t = chrono::system_clock::to_time_t(now);
+  auto tm = *localtime(&time_t);
+  
+  ostringstream oss;
+  oss << put_time(&tm, "%Y-%m-%d_%H-%M-%S");
+  return oss.str();
 }
 
 
@@ -294,7 +313,7 @@ void mkVtxPlots(int run, string barefilename) {
       }
     }
     replaceAll(barefilename, ".root", "");
-    c->SaveAs(("vtxHitmaps-" + to_string(run) + ".pdf").c_str());
+    c->SaveAs(("out/vtxHitmaps-" + to_string(run) + ".pdf").c_str());
     delete c;
 
     // -- toTs
@@ -333,7 +352,7 @@ void mkVtxPlots(int run, string barefilename) {
       }
     }
     replaceAll(barefilename, ".root", "");
-    c->SaveAs(("vtxHitToTs-" + to_string(run) + ".pdf").c_str());
+    c->SaveAs(("out/vtxHitToTs-" + to_string(run) + ".pdf").c_str());
     delete c;
 
     // -- time correlations
@@ -358,7 +377,7 @@ void mkVtxPlots(int run, string barefilename) {
       i++;  
     }
     replaceAll(barefilename, ".root", "");
-    c->SaveAs(("vtxTimeCorrelations-" + to_string(run) + ".pdf").c_str());
+    c->SaveAs(("out/vtxTimeCorrelations-" + to_string(run) + ".pdf").c_str());
     delete c;
 }
 
@@ -380,7 +399,7 @@ void mkTilePlots(int run, string barefilename) {
   TH2 *h = (TH2*)gDirectory->Get("Zphi_TileHitmap_DS");
   h->Draw("colz");
   replaceAll(barefilename, ".root", "");
-  c->SaveAs(("tileHitmapZphi-" + to_string(run) + ".pdf").c_str());
+  c->SaveAs(("out/tileHitmapZphi-" + to_string(run) + ".pdf").c_str());
   delete c;
 
   vector<int> vASICID;
@@ -409,7 +428,7 @@ void mkTilePlots(int run, string barefilename) {
     }
   }
   replaceAll(barefilename, ".root", "");
-  c->SaveAs(("tileASICEnergy-" + to_string(run) + ".pdf").c_str());
+  c->SaveAs(("out/tileASICEnergy-" + to_string(run) + ".pdf").c_str());
   delete c;
 
 }
@@ -459,7 +478,7 @@ void mkFiberPlots(int run, string barefilename) {
   h1 = (TH1*)gDirectory->Get("totalTS_all_50ps");
   h1->Draw("hist");
 
-  c->SaveAs(("fibers-" + to_string(run) + ".pdf").c_str());
+  c->SaveAs(("out/fibers-" + to_string(run) + ".pdf").c_str());
   delete c;
 
 

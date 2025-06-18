@@ -279,6 +279,8 @@ foreach my $run (@goodRuns) {
         &runPDFSummary($run);
     } elsif ($opt_m eq "trirec") {
         &submitJobsRawTrirec($run, $nEvents);
+    } elsif ($opt_m eq "sort") {
+        &submitJobsRawSort($run, $nEvents);
     } elsif ($opt_m eq "prompt") {
         &submitJobsRaw($run, $nEvents);
         &runPixelFillQualityLM($run);      
@@ -460,6 +462,23 @@ sub setGoodRuns() {
 
 
 # ----------------------------------------------------------------------
+sub getDataSubdir {
+    ($run) = @_;
+    my $DATASUBDIR = "$DATADIR/raw";
+    if ($run < 1000) {
+        $DATASUBDIR = "$DATADIR/raw/000";
+    } elsif ($run < 2000) {
+        $DATASUBDIR = "$DATADIR/raw/001";
+    } elsif ($run < 3000) {
+        $DATASUBDIR = "$DATADIR/raw/002";
+    } else {
+        $DATASUBDIR = "$DATADIR/raw";
+    } 
+    return $DATASUBDIR;
+}
+
+
+# ----------------------------------------------------------------------
 sub countEvents() {
     ($run) = @_;
     my $url = "http://pc11740/rdb/run/$run";
@@ -588,16 +607,7 @@ sub submitJobsRaw() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
 
-    my $DATASUBDIR = "$DATADIR/raw";
-    if ($run < 1000) {
-        $DATASUBDIR = "$DATADIR/raw/000";
-    } elsif ($run < 2000) {
-        $DATASUBDIR = "$DATADIR/raw/001";
-    } elsif ($run < 3000) {
-        $DATASUBDIR = "$DATADIR/raw/002";
-    } else {
-        $DATASUBDIR = "$DATADIR/raw";
-    } 
+    my $DATASUBDIR = getDataSubdir($run);
 
     my $file = sprintf("$DATASUBDIR/run%05d.mid.lz4", $run);
     my $cmdString = "";
@@ -761,16 +771,7 @@ sub submitJobsRawTrirec() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
 
-    my $DATASUBDIR = "$DATADIR/raw";
-    if ($run < 1000) {
-        $DATASUBDIR = "$DATADIR/raw/000";
-    } elsif ($run < 2000) {
-        $DATASUBDIR = "$DATADIR/raw/001";
-    } elsif ($run < 3000) {
-        $DATASUBDIR = "$DATADIR/raw/002";
-    } else {
-        $DATASUBDIR = "$DATADIR/raw";
-    } 
+    my $DATASUBDIR = getDataSubdir($run);
 
     my $file = sprintf("$DATASUBDIR/run%05d.mid.lz4", $run);
     my $cmdString = "";
@@ -868,6 +869,168 @@ sub submitJobsRawTrirec() {
     my $njobs = keys %mSlurmIds;
     if ($njobs < 1) {
         print(&prefix("submitJobsRawTrirec"), "ERROR no slurm job finished, something went wrong?!\n");
+        return $pcrFile;
+    }
+
+    my $slurmids = "(";
+    my $cnt = 0;
+    foreach $ele (keys %mSlurmIds) {
+        $slurmids .= $ele;
+        $cnt++;
+        if ($cnt < $njobs) {$slurmids .= ", ";}
+    }
+    $slurmids .= ")";
+    print(&prefix("submitJobsRawTrirec"), "slurmids = $slurmids, sleep 30 second before looking at logfiles\n");
+    sleep(30);
+
+    # -- monitor jobs
+    while ($njobs > 0) {
+        if ($njobs > 20) {
+            sleep(60);
+        } elsif ($njobs > 10) {
+            sleep(30);
+        } else {
+            sleep(10);
+        }
+        foreach $sjob (keys %mSlurmIds) {
+            $result = `/bin/squeue -j $sjob`;
+            my @lines = grep /\S/, split /\n/, $result;
+            my $le = @lines;
+            my $tail = "no file yet\n";
+            if (-e "$BASEDIR/slurm/jobs/trirec/$run/$mSlurmIds{$sjob}") {
+                $tail = `/bin/tail -1 $BASEDIR/slurm/jobs/trirec/$run/$mSlurmIds{$sjob}`;
+            }
+            print("    [$sjob:$mSlurmIds{$sjob}] $tail");
+            if ($tail =~ /This is the end, my friend/) {
+                delete($mSlurmIds{$sjob});
+                my $bla = $mSlurmIds{$sjob};
+            }
+            $njobs = keys %mSlurmIds;
+        }
+    }
+
+    print(&prefix("submitJobsRawTrirec"), "all slurm jobs finished\n");
+
+    $output = "$BASEDIR/slurm/storage1/trirec";
+
+    my @resultFiles = ("sorted", "trirec");
+    foreach $file (@resultFiles) {
+        my $srun = sprintf("%05d", $run);
+        my $mergedFile = "$ROFTRIREC/run$srun-$file.root";
+        system("/bin/rm -f $mergedFile");
+        my $mergeString = "hadd $mergedFile";
+        foreach $rf (@mergeFiles)  {
+            $mergeString .= " $output/$run/$file-run$rf.root ";
+        }
+        print(&prefix("submitJobsRawTrirec"), "mergeString: $mergeString\n");
+        if ($opt_d) {
+            print(&prefix("submitJobsRawTrirec DBX"), $mergeString);
+        } else {
+            print(&prefix("submitJobsRawTrirec"), $mergeString);
+            my $result = `$mergeString`;
+            print("$result\n");
+            print(&prefix("submitJobsRawTrirec"), "merged root file: $mergedFile\n");
+        }
+    }
+    return $mergedFile;
+}
+
+
+# ----------------------------------------------------------------------
+# -- this does no splitting!
+sub submitJobsRawSort() {
+    ($run, $lcevts) = @_;
+    my $pcrFile = "nada";
+
+    my $DATASUBDIR = getDataSubdir($run);
+
+    my $file = sprintf("$DATASUBDIR/run%05d.mid.lz4", $run);
+    my $cmdString = "";
+    my $envString = "";
+
+    # -- adapt in case of mu3e reservations
+    # my $queue = "-p 'mu3e --reservation=mu3e'";
+    # my $queue = "-p mu3e";
+    my $queue = "-p hourly";
+
+    # -- rundir
+    my $rundir = "$BASEDIR/slurm/jobs/trirec/$run";
+    if (-d $rundir) {
+        # -- remove possibly pre-existing job directory
+        system("/bin/rm -rf $BASEDIR/slurm/jobs/trirec/old/$run");
+        system("/bin/mv $rundir $BASEDIR/slurm/jobs/trirec/old");
+    }
+    mkdir($rundir);
+    # -- rootdir
+    my $rootdir = "$BASEDIR/slurm/storage1/trirec/$run";
+    if (-d $rootdir) {
+        # -- remove possibly pre-existing job directory
+        system("/bin/rm -rf $BASEDIR/slurm/storage1/trirec/old/$run");
+        system("/bin/mv $rootdir $BASEDIR/slurm/storage1/trirec/old");
+    }
+    mkdir($rootdir);
+    print(&prefix("submitJobsRawSort"), "submitJobsRawSort rundir = $rundir, rootdir = $rootdir, file = $file\n");
+
+    my $cmdIniString = "cd $rundir && ";
+    $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-trirec.csh ";
+
+    my $srunfile = sprintf("run%05d.mid.lz4", $run);
+ 
+    # -- encode the configuration of the SLURM job
+    $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/trirec";
+    $envString .= "%DATADIR $DATASUBDIR";
+    $envString .= "%MIDASFILE $srunfile";
+    $envString .= "%RUN $run";
+
+    # map ($slurmID => logfile)
+    my %mSlurmIds;
+    my @mergeFiles;
+    my $NJOBS = 1;
+    print(&prefix("submitJobsRawSort"), "NJOB: $NJOBS\n");
+    # -- submit job
+    for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
+        # FIXME DO NOT FORGET
+        # last if ($ijob == 2);
+        $job =  "$run" . "_$ijob";
+
+        $gtString = "%GT $GT";
+
+        $rootString = "%ROOTFILE trirec-run$job.root";
+        $sortString = "%SORTEDFILE sorted-run$job.root ' " ;
+
+        $cmdString = $cmdIniString . "-r $envString$gtString$rootString$sortString " . "$job";
+
+        print(&prefix("submitJobsRawSort"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/trirec $gtString $anlString\n");
+        print(&prefix("submitJobsRawSort"), "SLURM: $cmdString\n");
+        if ($opt_d) {
+            print(&prefix("submitJobsRawSort"), "DBX: $cmdString\n");
+        } else {
+            $line = `$cmdString`;
+            # -- to see $line, uncomment the next line:
+            # print($line);
+
+            my @lines = grep /\S/, split /\n/, $line;
+
+            my $slurmid = 0, $slurmout = "nada";
+            foreach $ln (@lines) {
+                if ($ln =~ /Submitted ->([0-9]*)<- with name \.*/) {
+                    $slurmid = $1;
+                }
+                if ($ln =~ /batch submission: (\w*)/) {
+                    $slurmout = $1;
+                }
+            }
+            if ($slurmid > 0) {
+                print(&prefix("submitJobsRawSort"), "SLURM job $slurmid -> $slurmout\n");
+                $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
+                push(@mergeFiles, $job);
+            }
+        }
+    }
+
+    my $njobs = keys %mSlurmIds;
+    if ($njobs < 1) {
+        print(&prefix("submitJobsRawSort"), "ERROR no slurm job finished, something went wrong?!\n");
         return $pcrFile;
     }
 
