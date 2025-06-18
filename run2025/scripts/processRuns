@@ -970,7 +970,7 @@ sub submitJobsRawSort() {
 
         $cmdString = $cmdIniString . "-r $envString$gtString$rootString$sortString " . "$job";
 
-        print(&prefix("submitJobsRawSort"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/trirec $gtString $anlString\n");
+        print(&prefix("submitJobsRawSort"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/sort $gtString $anlString\n");
         print(&prefix("submitJobsRawSort"), "SLURM: $cmdString\n");
         if ($opt_d) {
             print(&prefix("submitJobsRawSort"), "DBX: $cmdString\n");
@@ -1029,8 +1029,8 @@ sub submitJobsRawSort() {
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
             my $tail = "no file yet\n";
-            if (-e "$BASEDIR/slurm/jobs/trirec/$run/$mSlurmIds{$sjob}") {
-                $tail = `/bin/tail -1 $BASEDIR/slurm/jobs/trirec/$run/$mSlurmIds{$sjob}`;
+            if (-e "$BASEDIR/slurm/jobs/sort/$run/$mSlurmIds{$sjob}") {
+                $tail = `/bin/tail -1 $BASEDIR/slurm/jobs/sort/$run/$mSlurmIds{$sjob}`;
             }
             print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
@@ -1041,24 +1041,24 @@ sub submitJobsRawSort() {
         }
     }
 
-    print(&prefix("submitJobsRawTrirec"), "all slurm jobs finished\n");
+    print(&prefix("submitJobsRawSort"), "all slurm jobs finished\n");
 
-    $output = "$BASEDIR/slurm/storage1/trirec";
+    $output = "$BASEDIR/slurm/storage1/sort";
 
     my @resultFiles = ("sorted");
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
-        my $mergedFile = "$ROFTRIREC/run$srun-$file.root";
+        my $mergedFile = "$ROFSORT/run$srun-$file.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "cp $output/$run/$file-run$job.root $mergedFile";
-        print(&prefix("submitJobsRawTrirec"), "mergeString: $mergeString\n");
+        print(&prefix("submitJobsRawSort"), "mergeString: $mergeString\n");
         if ($opt_d) {
-            print(&prefix("submitJobsRawTrirec DBX"), $mergeString);
+            print(&prefix("submitJobsRawSort DBX"), $mergeString);
         } else {
-            print(&prefix("submitJobsRawTrirec"), $mergeString);
+            print(&prefix("submitJobsRawSort"), $mergeString);
             my $result = `$mergeString`;
             print("$result\n");
-            print(&prefix("submitJobsRawTrirec"), "merged root file: $mergedFile\n");
+            print(&prefix("submitJobsRawSort"), "merged root file: $mergedFile\n");
         }
     }
     return $mergedFile;
