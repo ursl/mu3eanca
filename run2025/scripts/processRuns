@@ -231,6 +231,7 @@ if ($opt_w) {
                 } elsif ($opt_m eq "prompt") {
                     &submitJobsRaw($run, $nEvents);
                     &runPixelFillQualityLM($run); 
+                    &copyDQMFilesToOnline($run);
                     #&runPDFSummary($run);
                 } elsif ($opt_m eq "nada") {
                     print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
@@ -601,6 +602,15 @@ sub checkForNewRunOld() {
     return $result;
 }
 
+
+# ----------------------------------------------------------------------
+sub copyDQMFilesToOnline() {
+    ($run) = @_;
+    my $mergedFile = "$ROF/merged-dqm_histos_$run.root";
+    my $srun = sprintf("%05d", $run);
+    my $cmdString = "scp $mergedFile mu3e@129.129.143.120:/home/mu3e/online/prompt/dqm_histos_$srun.root";
+    system($cmdString);
+}
 
 # ----------------------------------------------------------------------
 sub submitJobsRaw() {
@@ -1080,10 +1090,7 @@ sub submitJobsRawSort() {
         my $srun = sprintf("%05d", $run);
         my $mergedFile = "$ROFTRIREC/run$srun-$file.root";
         system("/bin/rm -f $mergedFile");
-        my $mergeString = "hadd $mergedFile";
-        foreach $rf (@mergeFiles)  {
-            $mergeString .= " $output/$run/$file-run$rf.root ";
-        }
+        my $mergeString = "cp $output/$run/$file-run$job.root $mergedFile";
         print(&prefix("submitJobsRawTrirec"), "mergeString: $mergeString\n");
         if ($opt_d) {
             print(&prefix("submitJobsRawTrirec DBX"), $mergeString);
