@@ -7,7 +7,7 @@
 setenv JOB
 setenv RUN
 setenv DATADIR
-setenv MIDASFILE
+setenv SORTEDDIR
 setenv SORTEDFILE
 setenv ROOTFILE
 setenv GT
@@ -61,15 +61,8 @@ echo "ls -l $DATADIR/$MIDASFILE"
 ls -l $DATADIR/$MIDASFILE
 echo "ls -l ../mu3eTrirec/trirec.conf"
 ls -l ../mu3eTrirec/trirec.conf
-echo "ls -l mu3e_alignment.root"
-ls -l mu3e_alignment.root
 
-echo "../_build/mu3eSim/sort/mu3eSort $ANLZR --alignment.file=mu3e_alignment.root $DATADIR/$MIDASFILE --output ./$SORTEDFILE"
-../_build/mu3eSim/sort/mu3eSort $ANLZR --alignment.file=mu3e_alignment.root $DATADIR/$MIDASFILE --output ./$SORTEDFILE
-
-ls -l ./$SORTEDFILE
-
-date
+cp $SORTEDDIR/$SORTEDFILE .
 
 # echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR  ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
 # ../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE

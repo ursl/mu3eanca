@@ -477,6 +477,8 @@ sub getDataSubdir {
         $DATASUBDIR = "$DATADIR/raw/001";
     } elsif ($run < 3000) {
         $DATASUBDIR = "$DATADIR/raw/002";
+    } elsif ($run < 4000) {
+        $DATASUBDIR = "$DATADIR/raw/003";
     } else {
         $DATASUBDIR = "$DATADIR/raw";
     } 
@@ -744,7 +746,7 @@ sub submitJobsRawTrirec() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
 
-    my $DATASUBDIR = getDataSubdir($run);
+    my $DATASUBDIR = "$DATADIR/trirec/$VERSION";
 
     my $file = sprintf("$DATASUBDIR/run%05d.mid.lz4", $run);
     my $cmdString = "";
@@ -776,12 +778,12 @@ sub submitJobsRawTrirec() {
     my $cmdIniString = "cd $rundir && ";
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-trirec.csh ";
 
-    my $srunfile = sprintf("run%05d.mid.lz4", $run);
+    my $srunfile = sprintf("run%05d-sorted.root", $run);
  
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/trirec";
-    $envString .= "%DATADIR $DATASUBDIR";
-    $envString .= "%MIDASFILE $srunfile";
+    $envString .= "%SORTEDDIR $DATASUBDIR";
+    $envString .= "%SORTEDFILE $srunfile";
     $envString .= "%RUN $run";
 
     # map ($slurmID => logfile)
