@@ -133,7 +133,7 @@ string getCurrentDateTime() {
   auto tm = *localtime(&time_t);
   
   ostringstream oss;
-  oss << put_time(&tm, "%Y-%m-%d_%H-%M-%S");
+  oss << put_time(&tm, "%Y-%m-%d %H:%M:%S");
   return oss.str();
 }
 
