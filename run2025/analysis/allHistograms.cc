@@ -375,9 +375,10 @@ void mkTilePlots(int run, string barefilename) {
   gStyle->SetPadRightMargin(0.1);
   c->cd();
   shrinkPad(0.1,0.1,0.1,0.1);
+  gPad->SetLogz(1);
   gFile->cd("tile");
   TH2 *h = (TH2*)gDirectory->Get("Zphi_TileHitmap_DS");
-  h->Draw("col");
+  h->Draw("colz");
   replaceAll(barefilename, ".root", "");
   c->SaveAs(("tileHitmapZphi-" + to_string(run) + ".pdf").c_str());
   delete c;
@@ -387,7 +388,7 @@ void mkTilePlots(int run, string barefilename) {
   for (int ibin = 1; ibin <= h1->GetNbinsX(); ++ibin) {
     if (h1->GetBinContent(ibin) > 0) {
       //  cout << "ibin " << ibin << " " << h1->GetBinContent(ibin) << endl;
-      vASICID.push_back(ibin);
+      vASICID.push_back(ibin-1);
     }
   }
 
@@ -401,6 +402,7 @@ void mkTilePlots(int run, string barefilename) {
     if (h) {
       h->Rebin(16);
       c->cd(i);
+      gPad->SetLogy(1);
       setFilledHist(h);
       h->Draw("hist");
       i++;
