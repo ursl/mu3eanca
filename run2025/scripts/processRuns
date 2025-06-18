@@ -234,6 +234,7 @@ if ($opt_w) {
                     &submitJobsRawMinalyzer($run, $nEvents);
                     &runPixelFillQualityLM($run); 
                     &copyDQMFilesToOnline($run);
+                    &submitJobsRawSort($run);
                     #&runPDFSummary($run);
                 } elsif ($opt_m eq "nada") {
                     print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
@@ -283,11 +284,12 @@ foreach my $run (@goodRuns) {
     } elsif ($opt_m eq "trirec") {
         &submitJobsRawTrirec($run, $nEvents);
     } elsif ($opt_m eq "sort") {
-        &submitJobsRawSort($run, $nEvents);
+        &submitJobsRawSort($run);
     } elsif ($opt_m eq "prompt") {
         &submitJobsRawMinalyzer($run, $nEvents);
         &runPixelFillQualityLM($run);      
         &copyDQMFilesToOnline($run);
+        &submitJobsRawSort($run);
         #&runPDFSummary($run);
     } elsif ($opt_m eq "nada") {
         print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
@@ -910,7 +912,7 @@ sub submitJobsRawTrirec() {
 # ----------------------------------------------------------------------
 # -- this does no splitting!
 sub submitJobsRawSort() {
-    ($run, $lcevts) = @_;
+    ($run) = @_;
     my $pcrFile = "nada";
 
     my $DATASUBDIR = getDataSubdir($run);
