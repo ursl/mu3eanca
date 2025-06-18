@@ -118,7 +118,7 @@ if ($ENV{"HOST"} =~ "merlin") {
 # -- initialization after git cloning mu3e, minalyzer, anacombo and running relinkBin
 if ($opt_i) {
      print(&prefix("processRuns"), "Initializing setup for VERSION ->$VERSION<- \n");
-     my @olddirs = ("mlzr", "trirec");
+     my @olddirs = ("mlzr", "trirec", "sort");
      foreach my $olddir (@olddirs) {
         system("mkdir -p slurm/jobs/$olddir/old");
         system("mkdir -p slurm/storage1/$olddir/old");
@@ -924,30 +924,30 @@ sub submitJobsRawSort() {
     my $queue = "-p hourly";
 
     # -- rundir
-    my $rundir = "$BASEDIR/slurm/jobs/trirec/$run";
+    my $rundir = "$BASEDIR/slurm/jobs/sort/$run";
     if (-d $rundir) {
         # -- remove possibly pre-existing job directory
-        system("/bin/rm -rf $BASEDIR/slurm/jobs/trirec/old/$run");
-        system("/bin/mv $rundir $BASEDIR/slurm/jobs/trirec/old");
+        system("/bin/rm -rf $BASEDIR/slurm/jobs/sort/old/$run");
+        system("/bin/mv $rundir $BASEDIR/slurm/jobs/sort/old");
     }
     mkdir($rundir);
     # -- rootdir
-    my $rootdir = "$BASEDIR/slurm/storage1/trirec/$run";
+    my $rootdir = "$BASEDIR/slurm/storage1/sort/$run";
     if (-d $rootdir) {
         # -- remove possibly pre-existing job directory
-        system("/bin/rm -rf $BASEDIR/slurm/storage1/trirec/old/$run");
-        system("/bin/mv $rootdir $BASEDIR/slurm/storage1/trirec/old");
+        system("/bin/rm -rf $BASEDIR/slurm/storage1/sort/old/$run");
+        system("/bin/mv $rootdir $BASEDIR/slurm/storage1/sort/old");
     }
     mkdir($rootdir);
     print(&prefix("submitJobsRawSort"), "submitJobsRawSort rundir = $rundir, rootdir = $rootdir, file = $file\n");
 
     my $cmdIniString = "cd $rundir && ";
-    $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-trirec.csh ";
+    $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-sort.csh ";
 
     my $srunfile = sprintf("run%05d.mid.lz4", $run);
  
     # -- encode the configuration of the SLURM job
-    $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/trirec";
+    $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/sort";
     $envString .= "%DATADIR $DATASUBDIR";
     $envString .= "%MIDASFILE $srunfile";
     $envString .= "%RUN $run";
