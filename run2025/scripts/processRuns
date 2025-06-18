@@ -106,6 +106,7 @@ if ($ENV{"HOST"} =~ "merlin") {
     $DATADIR   = "/data/experiment/mu3e/data/2025";
     $ROF       = "$DATADIR/mlzr/$VERSION";
     $ROFTRIREC = "$DATADIR/trirec/$VERSION";
+    $ROFSORT   = "$DATADIR/trirec/$VERSION";
     $WATCHFILE = "$BASEDIR/processedRuns";
 
     if (-d $ROF) {
