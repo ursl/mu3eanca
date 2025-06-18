@@ -285,6 +285,7 @@ foreach my $run (@goodRuns) {
     } elsif ($opt_m eq "prompt") {
         &submitJobsRaw($run, $nEvents);
         &runPixelFillQualityLM($run);      
+        &copyDQMFilesToOnline($run);
         #&runPDFSummary($run);
     } elsif ($opt_m eq "nada") {
         print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
