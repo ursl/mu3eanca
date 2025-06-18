@@ -111,6 +111,7 @@ void mkCombinedPDF(int run, string rof) {
     replaceAll(line, "RUNNUMBER", to_string(run));
     replaceAll(line, "ROF", rof);
     replaceAll(line, "DATE", date);
+    replaceAll(line, "_", "\\_");
     vLines.push_back(line);
   }
   ifs.close();
