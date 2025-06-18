@@ -57,8 +57,8 @@ echo "pwd"
 pwd
 echo "ls -l"
 ls -l
-echo "ls -l $DATADIR/$MIDASFILE"
-ls -l $DATADIR/$MIDASFILE
+echo "ls -l $SORTEDDIR/$SORTEDFILE"
+ls -l $SORTEDDIR/$SORTEDFILE
 echo "ls -l ../mu3eTrirec/trirec.conf"
 ls -l ../mu3eTrirec/trirec.conf
 
