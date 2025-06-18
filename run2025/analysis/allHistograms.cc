@@ -374,7 +374,7 @@ void mkTilePlots(int run, string barefilename) {
   gStyle->SetPadLeftMargin(0.1);
   gStyle->SetPadRightMargin(0.1);
   c->cd();
-  shrinkPad(0.1,0.1,0.1,0.1);
+  shrinkPad(0.1,0.1,0.15,0.1);
   gPad->SetLogz(1);
   gFile->cd("tile");
   TH2 *h = (TH2*)gDirectory->Get("Zphi_TileHitmap_DS");
