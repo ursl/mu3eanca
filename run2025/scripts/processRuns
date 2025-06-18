@@ -35,6 +35,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/06/18 add separate mu3eSort without splitting, rename submitJobsRaw, remove countEventsOld
 #         2025/06/14 print runs to be processed if -r given
 #         2025/06/12 bug fix for too small runs!
 #         2025/06/11 move to allHistograms. Add SUBDIRECTORY for analysis of archived runs.
@@ -225,11 +226,11 @@ if ($opt_w) {
                 } elsif ($opt_m eq "calibration") {
                     &runPixelFillQualityLM($run);
                 } elsif ($opt_m eq "raw") {
-                    &submitJobsRaw($run, $nEvents);
+                    &submitJobsRawMinalyzer($run, $nEvents);
                 } elsif ($opt_m eq "trirec") {
                     &submitJobsRawTrirec($run, $nEvents);
                 } elsif ($opt_m eq "prompt") {
-                    &submitJobsRaw($run, $nEvents);
+                    &submitJobsRawMinalyzer($run, $nEvents);
                     &runPixelFillQualityLM($run); 
                     &copyDQMFilesToOnline($run);
                     #&runPDFSummary($run);
@@ -275,7 +276,7 @@ foreach my $run (@goodRuns) {
     } elsif ($opt_m eq "calibration") {
         &runPixelFillQualityLM($run);
     } elsif ($opt_m eq "raw") {
-        &submitJobsRaw($run, $nEvents);
+        &submitJobsRawMinalyzer($run, $nEvents);
     } elsif ($opt_m eq "pdfsummary") {
         &runPDFSummary($run);
     } elsif ($opt_m eq "trirec") {
@@ -283,7 +284,7 @@ foreach my $run (@goodRuns) {
     } elsif ($opt_m eq "sort") {
         &submitJobsRawSort($run, $nEvents);
     } elsif ($opt_m eq "prompt") {
-        &submitJobsRaw($run, $nEvents);
+        &submitJobsRawMinalyzer($run, $nEvents);
         &runPixelFillQualityLM($run);      
         &copyDQMFilesToOnline($run);
         #&runPDFSummary($run);
@@ -403,9 +404,9 @@ sub runPixelFillQualityLM() {
         if (-e $mergedFile) {
             my $filesize = -s $mergedFile;
             if ($filesize < 1048576) {  # 1 MB = 1048576 bytes
-                print(&prefix("submitJobsRaw"), "WARNING: Merged file $mergedFile is smaller than 1 MB (size: " . sprintf("%.2f", $filesize/1048576) . " MB)\n");
+                print(&prefix("runPixelFillQualityLM"), "WARNING: Merged file $mergedFile is smaller than 1 MB (size: " . sprintf("%.2f", $filesize/1048576) . " MB)\n");
             } else {
-                print(&prefix("submitJobsRaw"), "Merged file size: " . sprintf("%.2f", $filesize/1048576) . " MB\n");
+                print(&prefix("runPixelFillQualityLM"), "Merged file size: " . sprintf("%.2f", $filesize/1048576) . " MB\n");
                 my $cmd3 = "curl -X POST -F \"pdf=\@/psi/home/langenegger/mu3e/mu3eanca/run2025/analysis/summary-$run.pdf\" -F \"description=ov\" http://pc11740:5050/rdb/addResource/$run";
                 print(&prefix("runPixelFillQualityLM"), "->$cmd3<-\n");
                 system("cd $dir && $cmd3 && cd -");
@@ -561,48 +562,6 @@ sub checkForNewRun() {
 }
 
 
-# ----------------------------------------------------------------------
-sub checkForNewRunOld() {
-    my @midFiles  = glob("$DATADIR/raw/*.mid.lz4");
-    my @newruns = ();
- 
-    print(&prefix("checkForNewRun"), "contents of processedRuns: ");
-    if ($opt_d) {
-        foreach $irun (@processedRuns) {
-            print(" $irun");
-        }
-    } else {
-        print(" $#processedRuns runs (use -d to see full list)");
-    }
-    print("\n");
- 
-    foreach $file (@midFiles) {
-        my($barefile, $directories) = fileparse($file);
-        $barefile =~ /run([0-9]*).mid.lz4/;
-        $run = int($1);
-        
-        if (grep( /^$run$/, @processedRuns ) ) {
-            # print "Found $run in processedRuns\n";
-        } else {
-            push(@newruns, $run);
-        }
-    }
-    print(&prefix("checkForNewRun"), "New runs: ");
- 
-    foreach $irun (@newruns) {
-        print(" $irun");
-    }
-    print("\n");
- 
-    $result = "nada";
-    if ($#newruns > -1) {
-        $result = shift(@newruns);
-    }
-    # print("checkForNewRun() return $result\n");
- 
-    return $result;
-}
-
 
 # ----------------------------------------------------------------------
 sub copyDQMFilesToOnline() {
@@ -614,7 +573,7 @@ sub copyDQMFilesToOnline() {
 }
 
 # ----------------------------------------------------------------------
-sub submitJobsRaw() {
+sub submitJobsRawMinalyzer() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
 
@@ -645,7 +604,7 @@ sub submitJobsRaw() {
         system("/bin/mv $rootdir $BASEDIR/slurm/storage1/mlzr/old");
     }
     mkdir($rootdir);
-    print(&prefix("submitJobsRaw"), "submitJobsRaw rundir = $rundir, rootdir = $rootdir, file = $file\n");
+    print(&prefix("submitJobsRawMinalyzer"), "submitJobsRawMinalyzer rundir = $rundir, rootdir = $rootdir, file = $file\n");
 
     my $cmdIniString = "cd $rundir && ";
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-analyzer.csh ";
@@ -662,7 +621,7 @@ sub submitJobsRaw() {
     my %mSlurmIds;
     my @mergeFiles;
     my $NJOBS = int($lcevts/$nevts) + 1;
-    print(&prefix("submitJobsRaw"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts\n");
+    print(&prefix("submitJobsRawMinalyzer"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts\n");
     # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
         # FIXME DO NOT FORGET
@@ -680,10 +639,10 @@ sub submitJobsRaw() {
 
         $cmdString = $cmdIniString . "-r $envString$gtString$anlString " . "$job";
 
-        print(&prefix("submitJobsRaw"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/mlzr $gtString $anlString\n");
-        print(&prefix("submitJobsRaw"), "SLURM: $cmdString\n");
+        print(&prefix("submitJobsRawMinalyzer"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/mlzr $gtString $anlString\n");
+        print(&prefix("submitJobsRawMinalyzer"), "SLURM: $cmdString\n");
         if ($opt_d) {
-            print(&prefix("submitJobsRaw"), "DBX: $cmdString\n");
+            print(&prefix("submitJobsRawMinalyzer"), "DBX: $cmdString\n");
         } else {
             $line = `$cmdString`;
             # -- to see $line, uncomment the next line:
@@ -701,7 +660,7 @@ sub submitJobsRaw() {
                 }
             }
             if ($slurmid > 0) {
-                print(&prefix("submitJobsRaw"), "SLURM job $slurmid -> $slurmout\n");
+                print(&prefix("submitJobsRawMinalyzer"), "SLURM job $slurmid -> $slurmout\n");
                 $mSlurmIds{$slurmid} =  "tmp-$job/$slurmout.slurm.log";
                 push(@mergeFiles, $job);
             }
@@ -710,7 +669,7 @@ sub submitJobsRaw() {
 
     my $njobs = keys %mSlurmIds;
     if ($njobs < 1) {
-        print(&prefix("submitJobsRaw"), "ERROR no slurm job finished, something went wrong?!\n");
+        print(&prefix("submitJobsRawMinalyzer"), "ERROR no slurm job finished, something went wrong?!\n");
         return $pcrFile;
     }
 
@@ -722,7 +681,7 @@ sub submitJobsRaw() {
         if ($cnt < $njobs) {$slurmids .= ", ";}
     }
     $slurmids .= ")";
-    print(&prefix("submitJobsRaw"), "slurmids = $slurmids, sleep 30 second before looking at logfiles\n");
+    print(&prefix("submitJobsRawMinalyzer"), "slurmids = $slurmids, sleep 30 second before looking at logfiles\n");
     sleep(30);
 
     # -- monitor jobs
@@ -751,7 +710,7 @@ sub submitJobsRaw() {
         }
     }
 
-    print(&prefix("submitJobsRaw"), "all slurm jobs finished\n");
+    print(&prefix("submitJobsRawMinalyzer"), "all slurm jobs finished\n");
 
     $output = "$BASEDIR/slurm/storage1/mlzr";
     # my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
@@ -766,12 +725,12 @@ sub submitJobsRaw() {
         }
 
         if ($opt_d) {
-            print(&prefix("submitJobsRaw DBX"), $mergeString);
+            print(&prefix("submitJobsRawMinalyzer DBX"), $mergeString);
         } else {
-            print(&prefix("submitJobsRaw"), $mergeString);
+            print(&prefix("submitJobsRawMinalyzer"), $mergeString);
             my $result = `$mergeString`;
             print("$result\n");
-            print(&prefix("submitJobsRaw"), "merged root file: $mergedFile\n");
+            print(&prefix("submitJobsRawMinalyzer"), "merged root file: $mergedFile\n");
         }
     }
     return $mergedFile;
