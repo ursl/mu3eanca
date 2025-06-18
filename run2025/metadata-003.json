@@ -1,6 +1,6 @@
 {
     "principalInvestigator": "urs.langenegger@psi.ch",
-    "creationLocation": "/data/experiment/mu3e/data/2025/raw/003",
+    "creationLocation": "piE5",
     "dataFormat": "mid.lz4",
     "sourceFolder": "/data/experiment/mu3e/data/2025/raw/003",
     "owner": "mu3e collaboration",
