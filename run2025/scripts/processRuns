@@ -789,8 +789,8 @@ sub submitJobsRawTrirec() {
     # map ($slurmID => logfile)
     my %mSlurmIds;
     my @mergeFiles;
-    my $lnevts = 5*$nevts; 
-    my $mcevts = 50*$lcevts;
+    my $lnevts = $nevts; 
+    my $mcevts = $lcevts;
     my $NJOBS = int($mcevts/$lnevts) + 1;
     print(&prefix("submitJobsRawTrirec"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts, lnevts = $lnevts, mcevts = $mcevts\n");
     # -- submit jobs
