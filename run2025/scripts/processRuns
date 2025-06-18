@@ -1045,7 +1045,7 @@ sub submitJobsRawSort() {
 
     $output = "$BASEDIR/slurm/storage1/trirec";
 
-    my @resultFiles = ("sorted", "trirec");
+    my @resultFiles = ("sorted");
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
         my $mergedFile = "$ROFTRIREC/run$srun-$file.root";
