@@ -66,7 +66,7 @@ cp $SORTEDDIR/$SORTEDFILE .
 
 # echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR  ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
 # ../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
-echo "../_build/mu3eTrirec/mu3eTrirec  ./$SORTEDFILE --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=$GT --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
+echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=$GT --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
 ../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=$GT --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
 
 ls -l ./$ROOTFILE
@@ -84,13 +84,6 @@ cp ./$ROOTFILE $STORAGE1/$RUN/$ROOTFILE
 setenv BLA  `ls -l $STORAGE1/$RUN/$ROOTFILE`
 echo "slurm check that rootfile was copied ->$BLA<-"
 ls -l $STORAGE1/$RUN/$ROOTFILE
-
-echo "cp ./$SORTEDFILE $STORAGE1/$RUN/$SORTEDFILE"
-cp ./$SORTEDFILE $STORAGE1/$RUN/$SORTEDFILE
-setenv BLA  `ls -l $STORAGE1/$RUN/$SORTEDFILE`
-echo "slurm check that sortedfile was copied ->$BLA<-"
-ls -l $STORAGE1/$RUN/$SORTEDFILE
-
 
 date
 

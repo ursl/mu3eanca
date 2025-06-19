@@ -806,9 +806,9 @@ sub submitJobsRawTrirec() {
 
         $skipevts = $ijob * $lnevts;
         if ($ijob < $NJOBS - 1) {
-            $anlString  = "%ANLZR \"-s$skipevts -n$lnevts\" '";
+            $anlString  = "%ANLZR \"-s $skipevts -n $lnevts\" '";
         } else {
-            $anlString  = "%ANLZR \"-s$skipevts\" '";
+            $anlString  = "%ANLZR \"-s $skipevts\" '";
         }
 
         $cmdString = $cmdIniString . "-r $envString$gtString$rootString$sortString$anlString " . "$job";
@@ -888,7 +888,7 @@ sub submitJobsRawTrirec() {
 
     $output = "$BASEDIR/slurm/storage1/trirec";
 
-    my @resultFiles = ("sorted", "trirec");
+    my @resultFiles = ("trirec");
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
         my $mergedFile = "$ROFTRIREC/run$srun-$file.root";
