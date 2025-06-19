@@ -779,7 +779,11 @@ sub submitJobsRawTrirec() {
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-trirec.csh ";
 
     my $srunfile = sprintf("run%05d-sorted.root", $run);
- 
+    my $cntCmd = "root -l -b -e 'TFile *f1 = TFile::Open(\"$DATASUBDIR/$srunfile\"); cout << mu3e->GetEntries() << endl;exit(0);'";
+    my $cnt = `$cntCmd`;
+    $cnt =~ s/root \[0\]//g;
+    $cnt =~ s/\n//g;
+
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/trirec";
     $envString .= "%SORTEDDIR $DATASUBDIR";
@@ -789,8 +793,8 @@ sub submitJobsRawTrirec() {
     # map ($slurmID => logfile)
     my %mSlurmIds;
     my @mergeFiles;
-    my $lnevts = $nevts; 
-    my $mcevts = $lcevts;
+    my $lnevts = $cnt; 
+    my $mcevts = $cnt;
     my $NJOBS = int($mcevts/$lnevts) + 1;
     print(&prefix("submitJobsRawTrirec"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts, lnevts = $lnevts, mcevts = $mcevts\n");
     # -- submit jobs
