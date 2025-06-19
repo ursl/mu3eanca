@@ -235,6 +235,7 @@ if ($opt_w) {
                     &runPixelFillQualityLM($run); 
                     &copyDQMFilesToOnline($run);
                     &submitJobsRawSort($run);
+                    &submitJobsRawTrirec($run);
                     #&runPDFSummary($run);
                 } elsif ($opt_m eq "nada") {
                     print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
@@ -290,6 +291,7 @@ foreach my $run (@goodRuns) {
         &runPixelFillQualityLM($run);      
         &copyDQMFilesToOnline($run);
         &submitJobsRawSort($run);
+        &submitJobsRawTrirec($run);
         #&runPDFSummary($run);
     } elsif ($opt_m eq "nada") {
         print(&prefix("processRuns"), "Skipping run $run, as no action requested\n");
@@ -743,7 +745,7 @@ sub submitJobsRawMinalyzer() {
 
 # ----------------------------------------------------------------------
 sub submitJobsRawTrirec() {
-    ($run, $lcevts) = @_;
+    ($run) = @_;
     my $pcrFile = "nada";
 
     my $DATASUBDIR = "$DATADIR/trirec/$VERSION";
