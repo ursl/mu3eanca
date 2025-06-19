@@ -747,15 +747,25 @@ sub submitJobsRawTrirec() {
     my $pcrFile = "nada";
 
     my $DATASUBDIR = "$DATADIR/trirec/$VERSION";
+    my $srunfile = sprintf("run%05d-sorted.root", $run);
 
-    my $file = sprintf("$DATASUBDIR/run%05d.mid.lz4", $run);
+    # -- check that sort file exists
+    if (! -e "$DATASUBDIR/$srunfile") {
+        print(&prefix("submitJobsRawTrirec"), "ERROR: sort file $DATASUBDIR/$srunfile does not exist\n");
+        return $pcrFile;
+    }
+
     my $cmdString = "";
     my $envString = "";
+
+
 
     # -- adapt in case of mu3e reservations
     # my $queue = "-p 'mu3e --reservation=mu3e'";
     # my $queue = "-p mu3e";
     my $queue = "-p hourly";
+
+
 
     # -- rundir
     my $rundir = "$BASEDIR/slurm/jobs/trirec/$run";
@@ -773,12 +783,11 @@ sub submitJobsRawTrirec() {
         system("/bin/mv $rootdir $BASEDIR/slurm/storage1/trirec/old");
     }
     mkdir($rootdir);
-    print(&prefix("submitJobsRawTrirec"), "submitJobsRawTrirec rundir = $rundir, rootdir = $rootdir, file = $file\n");
+    print(&prefix("submitJobsRawTrirec"), "submitJobsRawTrirec rundir = $rundir, rootdir = $rootdir\n");
 
     my $cmdIniString = "cd $rundir && ";
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-trirec.csh ";
 
-    my $srunfile = sprintf("run%05d-sorted.root", $run);
     my $cntCmd = "root -l -b -e 'TFile *f1 = TFile::Open(\"$DATASUBDIR/$srunfile\"); cout << mu3e->GetEntries() << endl;exit(0);'";
     my $cnt = `$cntCmd`;
     $cnt =~ s/root \[0\]//g;
