@@ -71,17 +71,6 @@ echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --trirec.twolayer.mod
 
 ls -l ./$ROOTFILE
 
-# -- Check if rootfile is larger than 1 MB
-set filesize = `stat -c%s ./$ROOTFILE`
-set min_size = 1048576  # 1 MB in bytes
-if ($filesize < $min_size) then
-    echo "ERROR: Rootfile ./$ROOTFILE is too small: $filesize bytes (minimum: $min_size bytes) RE-RUN!!!"
-    echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=$GT --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
-    ../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=$GT --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
-else
-    echo "Rootfile size check passed: $filesize bytes"
-endif
-
 date
 ls -rtl
 echo "slurm check size of rootfile produced"
