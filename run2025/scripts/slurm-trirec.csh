@@ -72,7 +72,7 @@ echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --trirec.twolayer.mod
 ls -l ./$ROOTFILE
 
 # -- Check if rootfile is larger than 1 MB
-set filesize = `stat -f%z ./$ROOTFILE`
+set filesize = `stat -c%s ./$ROOTFILE`
 set min_size = 1048576  # 1 MB in bytes
 if ($filesize < $min_size) then
     echo "ERROR: Rootfile ./$ROOTFILE is too small: $filesize bytes (minimum: $min_size bytes) RE-RUN!!!"
