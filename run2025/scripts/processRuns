@@ -237,7 +237,7 @@ if ($opt_w) {
                     &submitJobsRawMinalyzer($run, $nEvents);
                     &runPixelFillQualityLM($run); 
                     &copyDQMFilesToOnline($run);
-                    &submitJobsRawSort($run);
+                    #no &submitJobsRawSort($run);
                     #NO! &submitJobsRawTrirec($run);
                     #&runPDFSummary($run);
                 } elsif ($opt_m eq "nada") {
@@ -293,7 +293,7 @@ foreach my $run (@goodRuns) {
         &submitJobsRawMinalyzer($run, $nEvents);
         &runPixelFillQualityLM($run);      
         &copyDQMFilesToOnline($run);
-        &submitJobsRawSort($run);
+        #no&submitJobsRawSort($run);
         #NO! &submitJobsRawTrirec($run);
         #&runPDFSummary($run);
     } elsif ($opt_m eq "nada") {
