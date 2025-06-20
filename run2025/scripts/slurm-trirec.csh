@@ -64,10 +64,8 @@ ls -l ../mu3eTrirec/trirec.conf
 
 cp $SORTEDDIR/$SORTEDFILE .
 
-# echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR  ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
-# ../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
-echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --print-config=. --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=$GT --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE"
-../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --print-config=. --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=$GT --conf ../mu3eTrirec/trirec.conf --output ./$ROOTFILE
+echo "../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --print-config=.  --cdb.dbconn=rest --cdb.globalTag=$GT --conf ./trirec_twolayer.conf --output ./$ROOTFILE"
+../_build/mu3eTrirec/mu3eTrirec $ANLZR ./$SORTEDFILE --print-config=.  --cdb.dbconn=rest --cdb.globalTag=$GT --conf ./trirec_twolayer.conf --output ./$ROOTFILE
 
 ls -l ./$ROOTFILE
 
