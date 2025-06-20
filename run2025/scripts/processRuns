@@ -205,12 +205,13 @@ if ($opt_w) {
             if ($opt_m eq "trirec") {
                 # -- do nothing
             } else {
-                my $trCmd = "scp ursl\@129.129.143.120:/home/mu3e/online/runs/run0$run.mid.lz4 /data/experiment/mu3e/data/2025/raw"; 
+                #my $trCmd = "scp ursl\@129.129.143.120:/home/mu3e/online/runs/run0$run.mid.lz4 /data/experiment/mu3e/data/2025/raw"; 
+                my $trCmd = "cp /data/experiment/mu3e/data/2025/lazy/run0$run.mid.lz4 /data/experiment/mu3e/data/2025/raw/"; 
                 print(&prefix("processRuns"), "trCmd: $trCmd\n");
                 system($trCmd);
-                my $jsCmd = "scp ursl\@129.129.143.120:/home/mu3e/online/runs/run0$run.json /data/experiment/mu3e/data/2025/raw"; 
-                print(&prefix("processRuns"), "jsCmd: $jsCmd\n");
-                system($jsCmd);
+                #my $jsCmd = "scp ursl\@129.129.143.120:/home/mu3e/online/runs/run0$run.json /data/experiment/mu3e/data/2025/raw"; 
+                #print(&prefix("processRuns"), "jsCmd: $jsCmd\n");
+                #system($jsCmd);
             }
             if ($nEvents == 0) {
                 print(&prefix("processRuns"), "Run $run has no events, waiting 100 seconds\n");
