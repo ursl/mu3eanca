@@ -202,11 +202,9 @@ if ($opt_w) {
         my $run = &checkForNewRun();
         if ($run ne "nada") {
             my $nEvents = &countEvents($run);
-            if ($opt_m eq "trirec") {
-                # -- do nothing
-            } else {
+            if ($opt_m eq "prompt") {
                 #my $trCmd = "scp ursl\@129.129.143.120:/home/mu3e/online/runs/run0$run.mid.lz4 /data/experiment/mu3e/data/2025/raw"; 
-                my $trCmd = "cp /data/experiment/mu3e/data/2025/lazy/run0$run.mid.lz4 /data/experiment/mu3e/data/2025/raw/"; 
+                my $trCmd = "cp -p /data/experiment/mu3e/data/2025/lazy/run0$run.mid.lz4 /data/experiment/mu3e/data/2025/raw/"; 
                 print(&prefix("processRuns"), "trCmd: $trCmd\n");
                 system($trCmd);
                 #my $jsCmd = "scp ursl\@129.129.143.120:/home/mu3e/online/runs/run0$run.json /data/experiment/mu3e/data/2025/raw"; 
@@ -233,6 +231,9 @@ if ($opt_w) {
                 } elsif ($opt_m eq "raw") {
                     &submitJobsRawMinalyzer($run, $nEvents);
                 } elsif ($opt_m eq "trirec") {
+                    &submitJobsRawTrirec($run, $nEvents);
+                } elsif ($opt_m eq "sortreco") {
+                    &submitJobsRawSort($run);
                     &submitJobsRawTrirec($run, $nEvents);
                 } elsif ($opt_m eq "prompt") {
                     &submitJobsRawMinalyzer($run, $nEvents);
@@ -288,8 +289,9 @@ foreach my $run (@goodRuns) {
         &runPDFSummary($run);
     } elsif ($opt_m eq "trirec") {
         &submitJobsRawTrirec($run, $nEvents);
-    } elsif ($opt_m eq "sort") {
+    } elsif ($opt_m eq "sortreco") {
         &submitJobsRawSort($run);
+        &submitJobsRawTrirec($run, $nEvents);
     } elsif ($opt_m eq "prompt") {
         &submitJobsRawMinalyzer($run, $nEvents);
         &runPixelFillQualityLM($run);      
