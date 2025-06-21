@@ -33,6 +33,7 @@ void mkCombinedPDF(int run, string rof);
 void mkVtxPlots(int run, string barefilename);
 void mkTilePlots(int run, string barefilename);
 void mkFiberPlots(int run, string barefilename);
+void mkDAQPlots(int run, string barefilename);
 string getCurrentDateTime();
 
 
@@ -71,7 +72,7 @@ int main(int argc, char* argv[]) {
   mkVtxPlots(run, barefilename);
   mkTilePlots(run, barefilename);
   mkFiberPlots(run, barefilename);
-
+  mkDAQPlots(run, barefilename);
 
   mkCombinedPDF(run, filename);
 
@@ -486,4 +487,42 @@ void mkFiberPlots(int run, string barefilename) {
 } 
 
 
+// ----------------------------------------------------------------------
+void mkDAQPlots(int run, string barefilename) {
+  gFile->cd("/DAQfills/overflow");
+  gStyle->SetPadBorderMode(1);
+  gStyle->SetPadBorderSize(1);
+  gStyle->SetPadTopMargin(0.1);
+  gStyle->SetPadBottomMargin(0.1);
+  gStyle->SetPadLeftMargin(0.1);
+  gStyle->SetPadRightMargin(0.1);
 
+  TCanvas *c = new TCanvas("c", "c", 800, 800);
+  c->Divide(2,2);
+  TH1 *h1; 
+  TH2 *h2;
+  c->cd(1);
+  gPad->SetLogz(1);
+  shrinkPad(0.1,0.1,0.15,0.1);
+  h2 = (TH2*)gDirectory->Get("timestampWhenSorterOverflowed");
+  h2->Draw("colz");
+
+  c->cd(2);
+  gPad->SetLogz(1);
+  shrinkPad(0.1,0.1,0.15,0.1);
+  h2 = (TH2*)gDirectory->Get("timestampWhenAllHitsDiscarded");
+  h2->Draw("colz");
+
+  c->cd(3);
+  gPad->SetLogz(1);
+  shrinkPad(0.1,0.1,0.15,0.1);
+  h2 = (TH2*)gDirectory->Get("timestampWhenBothOverflowBitsHigh");
+  h2->Draw("colz");
+
+  c->SaveAs(("out/daqOverflowPlots-" + to_string(run) + ".pdf").c_str());
+
+  delete c;
+
+
+
+}
