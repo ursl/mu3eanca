@@ -1,0 +1,40 @@
+# --------------------------------------------------- 
+# HELPFILE for interactions with the PetaByte archive
+# --------------------------------------------------- 
+
+# Manual
+https://www.scicatproject.org/documentation/Ingestor/ingestManual.html#sec-6
+
+# -- Location
+merlin-l-001>pwd
+/data/project/general/pioneer/backup-run2025/PetaByteArchive
+
+
+# -- environment
+module load datacatalog
+setenv SCICAT_TOKEN nWWD5s22IvkZUrUw3HM1VLdJ18mou3KqrrBLiExqPAlR72J8y2T3BcRjXK4BirSA
+
+
+# -- ingest
+cd mu3e/mu3eanca/run2025
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-000.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-001.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-002.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-003.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-004.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-005.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-006.json
+
+
+# -- list datasets web interface
+https://discovery.psi.ch/datasets
+
+# -- list datasets command line version (requires merlin password)
+merlin-l-001>datasetRetriever -token $SCICAT_TOKEN .
+
+# -- list datasets
+merlin-l-002>datasetRetriever -token $SCICAT_TOKEN .
+
+# -- retrieve
+merlin-l-002>datasetRetriever -dataset 20.500.11935/ed647bd8-4efe-4757-b5a0-b8d286beebcc -retrieve -token $SCICAT_TOKEN .
+
