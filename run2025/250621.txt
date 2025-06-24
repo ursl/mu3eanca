@@ -1,0 +1,2115 @@
+
+# -------------
+# -- git hashes
+# -------------
+
+# -- minalyzer
+commit 369a3ed40b27c258de659b3c7bedeb10aa844e46
+Author: Mark Grimes <mark.grimes@bristol.ac.uk>
+Date:   Sat Jun 21 12:51:32 2025 +0100
+
+    Add fpgaId to febdata. Should have been added in the last commit.
+
+# -- mu3e
+commit b6c9592ca83d65172725aacd72800f0e9f257df7
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Sat Jun 21 10:30:42 2025 +0200
+
+    update watson
+
+# -- mu3eUtil
+commit 4add92db6ecad71ff399c95d0754d16ecb5a185f
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Fri Jun 20 22:19:53 2025 +0200
+
+    [tools] conf_rec - add max num of hits/segs confs
+
+
+# ----------------------
+# -- Provenance tracking
+# ----------------------
+
+# -- mu3eSort
+../_build/mu3eTrirec/mu3eTrirec -s 4000000 -n 2000000 ./run04886-sorted.root --print-config=.  --cdb.dbconn=rest --cdb.globalTag=datav6.1=2025Beam --conf ./trirec_twolayer.conf --output ./trirec-run4886_2.root
+I [conf_parser.cpp:21,read_conf_internal] filename = '/scratch/langenegger/4886_2/mu3e/run/./trirec_twolayer.conf'
+I [config.hpp:137,load] cdb.dbconn = 'unset' <= 'rest'
+I [config.hpp:137,load] cdb.globalTag = 'mcidealv6.1' <= 'datav6.1=2025Beam'
+I [config.hpp:137,load] trirec.twolayer.mode = 0 <= 1
+I [config.hpp:137,load] trirec.seg4_z01_max = 30.000000 <= 50.000000
+I [config.hpp:137,load] trirec.seg4_z12_max = 60.000000 <= 150.000000
+I [config.hpp:137,load] trirec.triplet_rt_min = 30.000000 <= 20.000000
+I [config.hpp:137,load] trirec.seg3_chi2_max = 100.000000 <= 150.000000
+I [config.hpp:137,load] trirec.seg4_chi2_max = 32.000000 <= 150.000000
+I [config.hpp:137,load] trirec.hits_dt_max = 1000.000000 <= 200.000000
+I [config.hpp:137,load] trirec.seg4_n_max = -1 <= 20
+I [config.hpp:137,load] trirec.alg.si_makeClusters = 1 <= 0
+{
+    "cmds": "",
+    "versions": "",
+    "display": {
+        "mode": "",
+        "scale": "2",
+        "viewXY": {
+            "w": "800",
+            "h": "800"
+        },
+        "viewRZ": {
+            "w": "800",
+            "h": "800"
+        }
+    },
+    "alignment": {
+        "file": "",
+        "sensors": "alignment\/sensors",
+        "fibres": "alignment\/fibres",
+        "mppcs": "alignment\/mppcs",
+        "tiles": "alignment\/tiles"
+    },
+    "cdb": {
+        "dbconn": "rest",
+        "globalTag": "datav6.1=2025Beam",
+        "cfg": "unset",
+        "cal": "unset"
+    },
+    "detector": {
+        "world": {
+            "length": "3200",
+            "width": "3200",
+            "height": "1500"
+        },
+        "magnet": {
+            "length": "3000",
+            "radius": {
+                "inner": "500",
+                "outer": "550"
+            },
+            "field": {
+                "strength": "-1",
+                "configuration": "6",
+                "configuration_options": "",
+                "map": "\/data\/experiment\/mu3e\/code\/offline\/250621\/mu3e\/run\/.\/cryogenics.bin",
+                "transportFieldStrength": "0",
+                "compensationCoilScale": "0.90000000000000002"
+            }
+        },
+        "phase": "1",
+        "phase_options": "",
+        "target": {
+            "shape": "0",
+            "shape_options": "",
+            "thickness1": "0.074999999999999997",
+            "thickness2": "0.085000000000000006",
+            "length": "50",
+            "radius": "19",
+            "offset": {
+                "x": "0",
+                "y": "0",
+                "z": "0"
+            },
+            "material": "Mylar",
+            "MottScattering": {
+                "placeBall": "0",
+                "ballRadius": "5",
+                "ballZOffset": "-30"
+            }
+        },
+        "pixels": {
+            "small": {
+                "length": "20.66",
+                "width": "23.18",
+                "thickness": "0.050000000000000003",
+                "deadWidth": "3",
+                "inactiveFrameSize": "0.089999999999999997",
+                "pixelSize": "0.080000000000000002",
+                "nLayers": "2",
+                "nZSensors": "6",
+                "zSpacing": "0.040000000000000001"
+            },
+            "large": {
+                "length": "20.66",
+                "width": "23.18",
+                "thickness": "0.050000000000000003",
+                "deadWidth": "3",
+                "inactiveFrameSize": "0.089999999999999997",
+                "pixelSize": "0.080000000000000002",
+                "nLayers": "2",
+                "nZSensors3": "17",
+                "nZSensors4": "18",
+                "zSpacing": "0.040000000000000001"
+            },
+            "nPhiSensors": {
+                "layer1": "8",
+                "layer2": "10",
+                "layer3": "24",
+                "layer4": "28"
+            },
+            "kapton": {
+                "thickness": "0.025000000000000001",
+                "fpOverlengthInner": "1",
+                "extLengthInner": "10.65",
+                "fpOverlengthOuter": "3.7999999999999998",
+                "extLengthOuter": "2"
+            },
+            "mylarCondom": {
+                "thickness_inner": "0.002",
+                "thickness_outer": "0.002"
+            },
+            "conductor": {
+                "thickness": "0.014999999999999999",
+                "width": "5"
+            }
+        },
+        "fibres": {
+            "square": "0",
+            "diameter": "0.25",
+            "length": "287.75",
+            "alCoating": "0",
+            "refractiveIndex": "1.5900000000000001",
+            "deadWidth": "0.0050000000000000001",
+            "nLayers": "3",
+            "maxFibresPerLayer": "126",
+            "ribbons": {
+                "n": "12",
+                "pitch": "0.17999999999999999",
+                "geometry": "0",
+                "geometry_options": "",
+                "rOffset": "0",
+                "stagger": "12.5"
+            },
+            "mppcs": {
+                "width": "32",
+                "height": "1.6000000000000001",
+                "thickness": "0.29999999999999999",
+                "epoxy": {
+                    "thickness": "0.10000000000000001"
+                },
+                "pcb": {
+                    "thickness": "1"
+                }
+            }
+        },
+        "tiles": {
+            "nPhi": "56",
+            "nZ": "52",
+            "nModules": "7",
+            "stationLength": "342.31999999999999",
+            "stationActiveLength": "335.12",
+            "tile": {
+                "height": "5",
+                "gapPhi": "0.20000000000000001",
+                "gapZ": "0.20000000000000001",
+                "matrixGapPhi": "0.16500000000000001",
+                "matrixGapZ": "0.14999999999999999"
+            },
+            "radius": {
+                "inner": "47",
+                "outer": "62.5",
+                "matrixInner": "57.328000000000003",
+                "supportInner": "49.286999999999999",
+                "endringInner": "49"
+            },
+            "sipms": {
+                "thickness": "1.45",
+                "width": "3.3999999999999999",
+                "PCBthickness": "0.69999999999999996"
+            },
+            "mutrig": {
+                "thickness": "1.5",
+                "width": "15"
+            },
+            "tmb": {
+                "thickness": "0.80000000000000004",
+                "width": "44.600000000000001"
+            },
+            "support": {
+                "width": "46.5",
+                "height": "7.3099999999999996",
+                "endring": "3.5",
+                "pipeID": "2",
+                "pipeOD": "2.5",
+                "pipePitch": "13"
+            }
+        },
+        "beampipe": {
+            "radius": {
+                "outer": "33",
+                "inner": "30"
+            },
+            "endpoint_us": "93.129999999999995",
+            "endpoint_ds": "109.13",
+            "window": {
+                "thickness": "0.035000000000000003",
+                "z": "6"
+            },
+            "collimator1": {
+                "z": "-406.13",
+                "r": "22",
+                "t": "20"
+            },
+            "degrader1": {
+                "zOffset": "0",
+                "thickness": "0.59999999999999998"
+            }
+        }
+    },
+    "digi": {
+        "tsBinSize": "8",
+        "frameLength": "64",
+        "generators": [
+            {
+                "type": "beam",
+                "type_options": "",
+                "particle": "mu+",
+                "particle_options": "",
+                "polarization": "1",
+                "rate": "246600000",
+                "ratePerFrame": "0"
+            }
+        ],
+        "muon": {
+            "polarization": "1",
+            "decay": {
+                "signalBF": "0",
+                "overlapMode": "s",
+                "signal": {
+                    "skimType": "0",
+                    "br": "1",
+                    "set": "0"
+                },
+                "internal": {
+                    "type": "0",
+                    "type_options": "",
+                    "weighted": "0",
+                    "cuts": {
+                        "cosTheta": "0.80000000000000004",
+                        "eMin": "10",
+                        "eVis": "0",
+                        "mass": "90"
+                    }
+                },
+                "radiative": {
+                    "cuts": {
+                        "eGamma": "5"
+                    }
+                },
+                "secondaryElectron": {
+                    "cuts": {
+                        "p": "10",
+                        "pt": "10"
+                    },
+                    "exponent": "0.14000000000000001"
+                },
+                "bhabha": {
+                    "cuts": {
+                        "eMin": "10"
+                    }
+                },
+                "photonGun": {
+                    "particle": "gamma",
+                    "eMin": "0",
+                    "eMax": "55",
+                    "pos": {
+                        "x": "0",
+                        "y": "0",
+                        "z": "0"
+                    }
+                },
+                "familon": {
+                    "famMass": "0",
+                    "famCoupling": "0"
+                },
+                "extMicheldecay": {
+                    "runFirst": "2000",
+                    "runLast": "1999"
+                },
+                "darkPhoton": {
+                    "file": "MG5\/unweighted_events_inv_pol_10MeV.lhe",
+                    "mass": "10",
+                    "lifetime": "0.026700000000000002"
+                },
+                "bhabhaPlusMichel": {
+                    "netMomentum": "13"
+                }
+            }
+        },
+        "beam_pencil": {
+            "size": {
+                "x": "0.10000000000000001",
+                "y": "0.10000000000000001"
+            },
+            "divergence": {
+                "x": "0",
+                "y": "0"
+            },
+            "pos": {
+                "x": "0",
+                "y": "0"
+            },
+            "direction": {
+                "x": "0",
+                "y": "0"
+            },
+            "momentum": {
+                "spread": "0.01",
+                "mean": "50"
+            },
+            "matrix": [
+                "1",
+                "0",
+                "1",
+                "0",
+                "0",
+                "0",
+                "0",
+                "0",
+                "0",
+                "1"
+            ]
+        },
+        "beam": {
+            "size": {
+                "x": "7.7999999999999998",
+                "y": "9.0999999999999996"
+            },
+            "divergence": {
+                "x": "85",
+                "y": "30"
+            },
+            "pos": {
+                "x": "0.080000000000000002",
+                "y": "-0.45000000000000001"
+            },
+            "direction": {
+                "x": "-2.7999999999999998",
+                "y": "-0.40000000000000002"
+            },
+            "momentum": {
+                "spread": "0.77000000000000002",
+                "mean": "27.859999999999999"
+            },
+            "matrix": [
+                "1",
+                "-0.0064999999999999997",
+                "0.99997886999999996",
+                "0.71399999999999997",
+                "0.50885175000000005",
+                "0.48090945000000002",
+                "-0.22020000000000001",
+                "-0.00143133",
+                "-0.59335258999999996",
+                "0.77423679999999995"
+            ],
+            "beam_profile_mode": "0",
+            "beam_profile_mode_options": "",
+            "beam_profile_file": "\/data\/experiment\/mu3e\/code\/offline\/250621\/mu3e\/run\/.\/beam_profile.txt"
+        },
+        "cosmic": {
+            "xmin": "-200",
+            "xmax": "200",
+            "zmin": "-1000",
+            "zmax": "1000"
+        },
+        "write": {
+            "truth": "1",
+            "truth_options": "",
+            "target": "1",
+            "pixels": "2",
+            "pixels_options": "",
+            "fibres": "3",
+            "fibres_options": "",
+            "tiles": "3",
+            "tiles_options": "",
+            "kaptonFlaps": "1",
+            "kaptonFlaps_options": "",
+            "scoring": "0"
+        },
+        "tracker": {
+            "numLinks": {
+                "inner": "3",
+                "outer": "1"
+            },
+            "efficiency": "1",
+            "noiseRate": {
+                "inner": "0",
+                "outer": "0"
+            },
+            "threshold": "0.0050000000000000001",
+            "timeRes": "0",
+            "clusterSimulation": "0",
+            "readoutSimulation": "0",
+            "maxHitsFrame": {
+                "inner": "0",
+                "outer": "0"
+            }
+        },
+        "fibres": {
+            "timeRes": "0.75",
+            "decaytime": "2.7999999999999998",
+            "crosstalk": "0.02",
+            "pileUp": "2.5",
+            "threshold": "1",
+            "parametrisation": {
+                "mode": "3",
+                "mode_options": "",
+                "attenuation": {
+                    "square": {
+                        "direct": "0",
+                        "directConst": "0",
+                        "slow": "0.0039420000000000002",
+                        "slowConst": "6.21"
+                    },
+                    "round": {
+                        "direct": "0",
+                        "directConst": "0",
+                        "slow": "0.004254",
+                        "slowConst": "6.4699999999999998",
+                        "D0": "0.01026",
+                        "D1": "0.012930000000000001",
+                        "D2": "0.0053899999999999998"
+                    },
+                    "sigma": {
+                        "A0": "0",
+                        "C0": "3.9740000000000002",
+                        "A1": "0",
+                        "C1": "1e-10",
+                        "A2": "0.0080000000000000002",
+                        "C2": "0.248",
+                        "A3": "0",
+                        "C3": "1e-10"
+                    }
+                },
+                "pathlength": {
+                    "lower": "1",
+                    "upper": "1.1299999999999999",
+                    "decrease": "0.83999999999999997",
+                    "begin": {
+                        "A": "1",
+                        "B": "0"
+                    },
+                    "end": {
+                        "A": "1.2",
+                        "B": "0"
+                    }
+                },
+                "eff_or": "1",
+                "eff_and": "0.80000000000000004"
+            },
+            "photonDistribution": "1",
+            "photonDistribution_options": "",
+            "nphotons": "5",
+            "photonsForTiming": "1",
+            "yield": "8000",
+            "yieldScale": "1",
+            "capture": "0.053999999999999999",
+            "attenuationLength": "1395",
+            "mppcs": {
+                "threshold": "0.5",
+                "dark": {
+                    "rate": "0",
+                    "exponential": "10"
+                },
+                "pde": "0.40000000000000002",
+                "pileUp": "40",
+                "crosstalk": "0.040000000000000001",
+                "pixelcrosstalk": "0.02",
+                "sptr": "0.085000000000000006",
+                "arrays": {
+                    "mode": "1",
+                    "mode_options": "",
+                    "offset": "0",
+                    "offsetNoise": "0.01",
+                    "cells": {
+                        "n": "128",
+                        "width": "0.23000000000000001",
+                        "pitch": "0.02"
+                    }
+                },
+                "waveform": {
+                    "file": "180fC_inputbias_4_dac_pole_50_p.csv"
+                }
+            },
+            "daq": {
+                "delay": "1",
+                "jitter": "0.29999999999999999"
+            }
+        },
+        "tiles": {
+            "timeRes": "0.059999999999999998",
+            "STICjitter": "0.029999999999999999",
+            "energyRes": "0.12",
+            "deadtime": "150",
+            "deadtimeTDC": "40",
+            "promptTime": "0.10000000000000001",
+            "eThresh": "0.10000000000000001"
+        },
+        "mutrig": {
+            "tsFineBinSize": "0.050000000000000003",
+            "tsFineBits": "8"
+        },
+        "trajectory": {
+            "momentumCutOff": "5"
+        },
+        "hits": {
+            "momentumCutOff": "0"
+        },
+        "scatteringModel": "1",
+        "scatteringModel_options": "",
+        "rosim": {
+            "ro": {
+                "nsperts": "4",
+                "tsbits": "11",
+                "framelength": "32"
+            },
+            "lvdslinks": {
+                "read": "true",
+                "writePSLL": "false",
+                "writePSLM": "true"
+            },
+            "sorter": {
+                "run": "1",
+                "numts": "2048",
+                "slotsperts": "15",
+                "tspercycle": "2",
+                "timewindowsize": "1280",
+                "timewindowstartoffset": "2016",
+                "readtofifodelay": "5",
+                "startingcredits": "127",
+                "blocksize": "16",
+                "fifolimit": "120",
+                "maxhitsts": "48",
+                "writePSSH": "1",
+                "cyclesPerPSSH": "4"
+            }
+        },
+        "sort": {
+            "depth": "80",
+            "noisePerFrame": "0",
+            "efficiency": "1"
+        },
+        "sipm": {
+            "det": "all",
+            "ReadoutFrameLength": "50",
+            "NumberOfFrames": "100",
+            "SamplingRateTile": "5",
+            "PhotonsPerEnergyTile": "1600",
+            "LightPulseRiseTimeTile": "0.40000000000000002",
+            "LightPulseDecayTimeTile": "2.5",
+            "UseDBparametersTile1": "BC420\/7.5x8.5x5mm\/",
+            "UseDBparametersTile2": "BC420\/7.5x8.5x5mm\/",
+            "SiPMParameterFileTile": "ParametersMPPC400.txt",
+            "SamplingRateFibre": "5",
+            "PhotonsPerEnergyFibre": "1600",
+            "LightPulseRiseTimeFibre": "0.69999999999999996",
+            "LightPulseDecayTimeFibre": "2.7999999999999998",
+            "SiPMParameterFileFibre": "ParametersMPPC400fib.txt"
+        }
+    },
+    "eft": {
+        "kuno": {
+            "name": "",
+            "pol": "1",
+            "C": [
+                "1",
+                "1",
+                "0",
+                "0",
+                "0.0078980000000000005",
+                "0.0078980000000000005",
+                "0.088870000000000005",
+                "0.088870000000000005",
+                "0",
+                "0",
+                "0",
+                "0"
+            ]
+        },
+        "config1": "0",
+        "config2": "0",
+        "configs": [
+            {
+                "name": "EFT_dipoleRL",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0.0019745494746140073",
+                    "0.0019745494746140073",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_dipoleR",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0.0039490989492280146",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_dipoleL",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0.0039490989492280146",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionRRLL",
+                "pol": "1",
+                "C": [
+                    "0.25",
+                    "0.25",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionRR",
+                "pol": "1",
+                "C": [
+                    "0.5",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionLL",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0.5",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionRLLR",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0.5",
+                    "0.5",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionRL",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "1",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionLR",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0",
+                    "1",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            }
+        ]
+    },
+    "farm": {
+        "cuda": {
+            "nStreams": "16",
+            "nBlocks": "0",
+            "nThreads": "256"
+        },
+        "nTS": "1",
+        "hists": {
+            "mode": "1",
+            "file": "hists.farm.root"
+        },
+        "phi01_max": "0.600000024",
+        "z01_max": "20",
+        "phi12_max": "1.20000005",
+        "dzr12_max": "0.5",
+        "r_min": "30",
+        "r_max": "inf",
+        "time_max": "400",
+        "triplet_chi2_max": "100",
+        "track_chi2_max": "32",
+        "track_zpca_rt_max": "22",
+        "track_zpca_z_max": "55",
+        "vertex_px_max": "40",
+        "vertex_py_max": "40",
+        "vertex_pz_max": "10",
+        "vertex_dm_max": "10",
+        "vertex_d_max": "20"
+    },
+    "pixal": {
+        "trirec_paths": "",
+        "par": "-1",
+        "run_pede": "true",
+        "fix_detector": "true",
+        "hierarchy_level": "4",
+        "fix_global_scaling": "false",
+        "root_files": "",
+        "more_options": "",
+        "output_path": "-1",
+        "pede_path": "-1",
+        "steering_file": "-1",
+        "pede_dump_file": "-1",
+        "constraints_file": "-1",
+        "binary_file": "-1",
+        "measurements_file": "-1",
+        "sensors_tree_in": "-1",
+        "sensors_tree_out": "-1",
+        "est_al_error": "0",
+        "magnetic_field": "1",
+        "pede_chi2_cuts": {
+            "first": "0",
+            "second": "0"
+        },
+        "rec_chi2_cut": "20",
+        "nhit_cut_lo": "0",
+        "nhit_cut_up": "100",
+        "num_threads": "2",
+        "solution_method": "-1",
+        "solution_method_params": {
+            "number_of_iterations": "-1",
+            "convergence_limit": "-1"
+        },
+        "result_verbosity": "0",
+        "remove_dat": "false",
+        "exclude_chi2_ndf": "20",
+        "correction_failsafe": "1",
+        "exclude_non_alignables": "false",
+        "outlier_downweighting": "-1",
+        "fake_measurements": "false",
+        "measurement_weight": "1",
+        "endring_sigma": "-1",
+        "single_layers": "",
+        "single_ids": "",
+        "align_all_sensors": {
+            "offsets": "-1",
+            "rotations": "-1",
+            "surface": "-1",
+            "temperature": "-1"
+        },
+        "alignable_parameters": {
+            "single": "",
+            "layers": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+            ]
+        },
+        "align_parts": {
+            "central": "0",
+            "layers": [
+                "",
+                "",
+                "",
+                ""
+            ]
+        },
+        "alignable_presigmas": {
+            "all": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            },
+            "single": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            },
+            "layers": ""
+        },
+        "hierarchy_alignment": "true",
+        "hierarchy_presigmas": {
+            "central": "false",
+            "recurl_up": "false",
+            "recurl_down": "false",
+            "layers": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            },
+            "ladders": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            },
+            "modules": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            }
+        }
+    },
+    "trirec": {
+        "hits_n_max": "256",
+        "triplet_rt_min": "20",
+        "triplet_rt_max": "inf",
+        "seg4_z01_max": "50",
+        "seg4_z12_max": "150",
+        "seg4_phi01_max": "0.800000012",
+        "seg4_phi12_max": "1.79999995",
+        "seg4_dphi3_max": "0.0500000007",
+        "seg4_dz3_max": "5",
+        "seg4_n_max": "20",
+        "seg6_dphi4_max": "0.349999994",
+        "seg6_dz4_max": "100",
+        "seg6_dphi5_max": "0.0350000001",
+        "seg6_dz5_max": "3",
+        "L8o_dz4_max": "100",
+        "L8o_dphi4_max": "0.349999994",
+        "L8i_dz4_max": "10",
+        "L8i_dphi4_max": "0.200000003",
+        "seg3_chi2_max": "150",
+        "seg4_chi2_max": "150",
+        "seg6_chi2_max": "48",
+        "seg8_chi2_max": "48",
+        "hits_dt_max": "200",
+        "rec_version": "5",
+        "rec_fb": "1",
+        "rec_tl": "1",
+        "rec_vertex_xy": "0",
+        "alg": {
+            "merge_mode": "1",
+            "collapse_mode": "0",
+            "resolve_mode": "1",
+            "resolve_ordering": "1",
+            "resolve_n_min": "3",
+            "resolve_n_max": "0",
+            "resolve_k_max": "0",
+            "resolve_timeout_ms": "100",
+            "ll_path_timeout_ms": "100",
+            "si_makeClusters": "0"
+        },
+        "root": {
+            "ex": "0",
+            "status": "1",
+            "segs3": "0",
+            "segs4": "0",
+            "segs4_": "0",
+            "segs6": "0",
+            "segs8": "0",
+            "segs8_": "0",
+            "frames_skip_empty": "0"
+        },
+        "fb": {
+            "cluster_dt_max": "80",
+            "cluster_recl_dt": "-4.5",
+            "link_method": "2",
+            "link_nh_min": "2",
+            "link_nh_max": "128",
+            "link_d_max": "0.5",
+            "link_sides_tolerance": "0",
+            "link_col_tolerance": "3",
+            "merge_sides": "false"
+        },
+        "twolayer": {
+            "mode": "1"
+        },
+        "vertex": {
+            "target_r": "19",
+            "target_half_length": "50",
+            "target_region": "25",
+            "n_tracks_max": "64",
+            "circle_intersection_margin": "20",
+            "p_min": "0",
+            "p_max": "10000",
+            "E_tot_min": "0",
+            "p_mag_max": "1000000",
+            "targetdist_max": "1000000",
+            "chi2_max": "10000000",
+            "posprodcut": "1",
+            "negprodcut": "-1",
+            "delta_p_min": "0"
+        }
+    },
+    "vertex": {
+        "skim_fail": "false",
+        "runtime": {
+            "input_tree": "frames"
+        },
+        "cuts": {
+            "sigcode": "90",
+            "posprodcut": "0.98999999999999999",
+            "posnegprodcut": "-0.98999999999999999",
+            "deltapcut": "1",
+            "p_min": "10",
+            "p_max": "65",
+            "deltamax": "2",
+            "steps": "1000",
+            "tolerance": "0.001",
+            "comb_max": "10000"
+        },
+        "root": {
+            "timing": "0",
+            "chi2": "35",
+            "pm": "10",
+            "nhit": "6",
+            "targetdist": "1",
+            "t_cuts": ""
+        },
+        "timing": {
+            "randomize": "0"
+        }
+    }
+}
+I [cdb.h:17,cdbInit] initialize CDB
+Mu3eConditions::Mu3eConditions(datav6.1=2025Beam, REST)
+Mu3eConditions::Mu3eConditions> creating basic classes
+Mu3eConditions::registerCalibration> name ->pixelalignment_<- with tag ->pixelalignment_mcidealv6.1=2025CosmicsVtxOnly<- ...  done
+Mu3eConditions::registerCalibration> name ->fibrealignment_<- with tag ->fibrealignment_mcidealv6.1<- ...  done
+Mu3eConditions::registerCalibration> name ->mppcalignment_<- with tag ->mppcalignment_mcidealv6.1<- ...  done
+Mu3eConditions::registerCalibration> name ->tilealignment_<- with tag ->tilealignment_mcidealv6.1<- ...  done
+Mu3eConditions::registerCalibration> name ->detsetupv1_<- with tag ->detsetupv1_mcidealv6.1=2025CosmicsVtxOnly<- ...  done
+Mu3eConditions::registerCalibration> name ->detconfv1_<- with tag ->detconfv1_mcidealv5.4=2025CosmicsVtxOnly<- ...  done
+calDetConfV1::calculate() with fHash ->tag_detconfv1_mcidealv5.4=2025CosmicsVtxOnly_iov_1<-header: deadface
+calDetSetupV1::calculate() with fHash ->tag_detsetupv1_mcidealv6.1=2025CosmicsVtxOnly_iov_1<-header: deadface
+calFibreAlignment::calculate() with fHash ->tag_fibrealignment_mcidealv6.1_iov_1<-  header: deadface inserted 4524 constants
+calMppcAlignment::calculate() with fHash ->tag_mppcalignment_mcidealv6.1_iov_1<- header: deadface inserted 24 constants
+calPixelAlignment::calculate() with fHash ->tag_pixelalignment_mcidealv6.1=2025CosmicsVtxOnly_iov_1<-header: deadface inserted 108 constants
+calTileAlignment::calculate() with fHash ->tag_tilealignment_mcidealv6.1_iov_1<- header: deadface inserted 5824 constants
+#### ./run04886-sorted.root ####
+I [conf_parser.cpp:21,read_conf_internal] filename = '[].json'
+I [SiDet.cpp:337,readSensors] use CDB alignment 'pixelalignment_'
+I [SiDet.cpp:286,init] init global variables
+I [SiDet.cpp:303,init]   layer 0 : 8 ladders, r = 23.1
+I [SiDet.cpp:303,init]   layer 1 : 10 ladders, r = 29.6
+I [FbDet.cpp:440,readFibres] use CDB alignment 'fibrealignment_'
+I [FbDet.cpp:494,readMppcs] use CDB alignment 'mppcalignment_'
+I [FbDet.cpp:198,FbDet] array readout: 12 mppcs per side
+I [TlDet.cpp:41,readTiles] use CDB alignment 'tilealignment_'
+I [config.hpp:137,load] cmds.[0] = '' <= '../_build/mu3eSim/sort/mu3eSort --alignment.file=mu3e_alignment.root /data/experiment/mu3e/data/2025/raw/004/run04886.mid.lz4 --output ./sorted-run4886_0.root'
+I [config.hpp:137,load] alignment.file = './run04886-sorted.root' <= 'mu3e_alignment.root'
+
+
+
+
+# -- mu3eTrirec
+../_build/mu3eTrirec/mu3eTrirec -s 4000000 -n 2000000 ./run04886-sorted.root --print-config=.  --cdb.dbconn=rest --cdb.globalTag=datav6.1=2025Beam --conf ./trirec_twolayer.conf --output ./trirec-run4886_2.root
+I [conf_parser.cpp:21,read_conf_internal] filename = '/scratch/langenegger/4886_2/mu3e/run/./trirec_twolayer.conf'
+I [config.hpp:137,load] cdb.dbconn = 'unset' <= 'rest'
+I [config.hpp:137,load] cdb.globalTag = 'mcidealv6.1' <= 'datav6.1=2025Beam'
+I [config.hpp:137,load] trirec.twolayer.mode = 0 <= 1
+I [config.hpp:137,load] trirec.seg4_z01_max = 30.000000 <= 50.000000
+I [config.hpp:137,load] trirec.seg4_z12_max = 60.000000 <= 150.000000
+I [config.hpp:137,load] trirec.triplet_rt_min = 30.000000 <= 20.000000
+I [config.hpp:137,load] trirec.seg3_chi2_max = 100.000000 <= 150.000000
+I [config.hpp:137,load] trirec.seg4_chi2_max = 32.000000 <= 150.000000
+I [config.hpp:137,load] trirec.hits_dt_max = 1000.000000 <= 200.000000
+I [config.hpp:137,load] trirec.seg4_n_max = -1 <= 20
+I [config.hpp:137,load] trirec.alg.si_makeClusters = 1 <= 0
+{
+    "cmds": "",
+    "versions": "",
+    "display": {
+        "mode": "",
+        "scale": "2",
+        "viewXY": {
+            "w": "800",
+            "h": "800"
+        },
+        "viewRZ": {
+            "w": "800",
+            "h": "800"
+        }
+    },
+    "alignment": {
+        "file": "",
+        "sensors": "alignment\/sensors",
+        "fibres": "alignment\/fibres",
+        "mppcs": "alignment\/mppcs",
+        "tiles": "alignment\/tiles"
+    },
+    "cdb": {
+        "dbconn": "rest",
+        "globalTag": "datav6.1=2025Beam",
+        "cfg": "unset",
+        "cal": "unset"
+    },
+    "detector": {
+        "world": {
+            "length": "3200",
+            "width": "3200",
+            "height": "1500"
+        },
+        "magnet": {
+            "length": "3000",
+            "radius": {
+                "inner": "500",
+                "outer": "550"
+            },
+            "field": {
+                "strength": "-1",
+                "configuration": "6",
+                "configuration_options": "",
+                "map": "\/data\/experiment\/mu3e\/code\/offline\/250621\/mu3e\/run\/.\/cryogenics.bin",
+                "transportFieldStrength": "0",
+                "compensationCoilScale": "0.90000000000000002"
+            }
+        },
+        "phase": "1",
+        "phase_options": "",
+        "target": {
+            "shape": "0",
+            "shape_options": "",
+            "thickness1": "0.074999999999999997",
+            "thickness2": "0.085000000000000006",
+            "length": "50",
+            "radius": "19",
+            "offset": {
+                "x": "0",
+                "y": "0",
+                "z": "0"
+            },
+            "material": "Mylar",
+            "MottScattering": {
+                "placeBall": "0",
+                "ballRadius": "5",
+                "ballZOffset": "-30"
+            }
+        },
+        "pixels": {
+            "small": {
+                "length": "20.66",
+                "width": "23.18",
+                "thickness": "0.050000000000000003",
+                "deadWidth": "3",
+                "inactiveFrameSize": "0.089999999999999997",
+                "pixelSize": "0.080000000000000002",
+                "nLayers": "2",
+                "nZSensors": "6",
+                "zSpacing": "0.040000000000000001"
+            },
+            "large": {
+                "length": "20.66",
+                "width": "23.18",
+                "thickness": "0.050000000000000003",
+                "deadWidth": "3",
+                "inactiveFrameSize": "0.089999999999999997",
+                "pixelSize": "0.080000000000000002",
+                "nLayers": "2",
+                "nZSensors3": "17",
+                "nZSensors4": "18",
+                "zSpacing": "0.040000000000000001"
+            },
+            "nPhiSensors": {
+                "layer1": "8",
+                "layer2": "10",
+                "layer3": "24",
+                "layer4": "28"
+            },
+            "kapton": {
+                "thickness": "0.025000000000000001",
+                "fpOverlengthInner": "1",
+                "extLengthInner": "10.65",
+                "fpOverlengthOuter": "3.7999999999999998",
+                "extLengthOuter": "2"
+            },
+            "mylarCondom": {
+                "thickness_inner": "0.002",
+                "thickness_outer": "0.002"
+            },
+            "conductor": {
+                "thickness": "0.014999999999999999",
+                "width": "5"
+            }
+        },
+        "fibres": {
+            "square": "0",
+            "diameter": "0.25",
+            "length": "287.75",
+            "alCoating": "0",
+            "refractiveIndex": "1.5900000000000001",
+            "deadWidth": "0.0050000000000000001",
+            "nLayers": "3",
+            "maxFibresPerLayer": "126",
+            "ribbons": {
+                "n": "12",
+                "pitch": "0.17999999999999999",
+                "geometry": "0",
+                "geometry_options": "",
+                "rOffset": "0",
+                "stagger": "12.5"
+            },
+            "mppcs": {
+                "width": "32",
+                "height": "1.6000000000000001",
+                "thickness": "0.29999999999999999",
+                "epoxy": {
+                    "thickness": "0.10000000000000001"
+                },
+                "pcb": {
+                    "thickness": "1"
+                }
+            }
+        },
+        "tiles": {
+            "nPhi": "56",
+            "nZ": "52",
+            "nModules": "7",
+            "stationLength": "342.31999999999999",
+            "stationActiveLength": "335.12",
+            "tile": {
+                "height": "5",
+                "gapPhi": "0.20000000000000001",
+                "gapZ": "0.20000000000000001",
+                "matrixGapPhi": "0.16500000000000001",
+                "matrixGapZ": "0.14999999999999999"
+            },
+            "radius": {
+                "inner": "47",
+                "outer": "62.5",
+                "matrixInner": "57.328000000000003",
+                "supportInner": "49.286999999999999",
+                "endringInner": "49"
+            },
+            "sipms": {
+                "thickness": "1.45",
+                "width": "3.3999999999999999",
+                "PCBthickness": "0.69999999999999996"
+            },
+            "mutrig": {
+                "thickness": "1.5",
+                "width": "15"
+            },
+            "tmb": {
+                "thickness": "0.80000000000000004",
+                "width": "44.600000000000001"
+            },
+            "support": {
+                "width": "46.5",
+                "height": "7.3099999999999996",
+                "endring": "3.5",
+                "pipeID": "2",
+                "pipeOD": "2.5",
+                "pipePitch": "13"
+            }
+        },
+        "beampipe": {
+            "radius": {
+                "outer": "33",
+                "inner": "30"
+            },
+            "endpoint_us": "93.129999999999995",
+            "endpoint_ds": "109.13",
+            "window": {
+                "thickness": "0.035000000000000003",
+                "z": "6"
+            },
+            "collimator1": {
+                "z": "-406.13",
+                "r": "22",
+                "t": "20"
+            },
+            "degrader1": {
+                "zOffset": "0",
+                "thickness": "0.59999999999999998"
+            }
+        }
+    },
+    "digi": {
+        "tsBinSize": "8",
+        "frameLength": "64",
+        "generators": [
+            {
+                "type": "beam",
+                "type_options": "",
+                "particle": "mu+",
+                "particle_options": "",
+                "polarization": "1",
+                "rate": "246600000",
+                "ratePerFrame": "0"
+            }
+        ],
+        "muon": {
+            "polarization": "1",
+            "decay": {
+                "signalBF": "0",
+                "overlapMode": "s",
+                "signal": {
+                    "skimType": "0",
+                    "br": "1",
+                    "set": "0"
+                },
+                "internal": {
+                    "type": "0",
+                    "type_options": "",
+                    "weighted": "0",
+                    "cuts": {
+                        "cosTheta": "0.80000000000000004",
+                        "eMin": "10",
+                        "eVis": "0",
+                        "mass": "90"
+                    }
+                },
+                "radiative": {
+                    "cuts": {
+                        "eGamma": "5"
+                    }
+                },
+                "secondaryElectron": {
+                    "cuts": {
+                        "p": "10",
+                        "pt": "10"
+                    },
+                    "exponent": "0.14000000000000001"
+                },
+                "bhabha": {
+                    "cuts": {
+                        "eMin": "10"
+                    }
+                },
+                "photonGun": {
+                    "particle": "gamma",
+                    "eMin": "0",
+                    "eMax": "55",
+                    "pos": {
+                        "x": "0",
+                        "y": "0",
+                        "z": "0"
+                    }
+                },
+                "familon": {
+                    "famMass": "0",
+                    "famCoupling": "0"
+                },
+                "extMicheldecay": {
+                    "runFirst": "2000",
+                    "runLast": "1999"
+                },
+                "darkPhoton": {
+                    "file": "MG5\/unweighted_events_inv_pol_10MeV.lhe",
+                    "mass": "10",
+                    "lifetime": "0.026700000000000002"
+                },
+                "bhabhaPlusMichel": {
+                    "netMomentum": "13"
+                }
+            }
+        },
+        "beam_pencil": {
+            "size": {
+                "x": "0.10000000000000001",
+                "y": "0.10000000000000001"
+            },
+            "divergence": {
+                "x": "0",
+                "y": "0"
+            },
+            "pos": {
+                "x": "0",
+                "y": "0"
+            },
+            "direction": {
+                "x": "0",
+                "y": "0"
+            },
+            "momentum": {
+                "spread": "0.01",
+                "mean": "50"
+            },
+            "matrix": [
+                "1",
+                "0",
+                "1",
+                "0",
+                "0",
+                "0",
+                "0",
+                "0",
+                "0",
+                "1"
+            ]
+        },
+        "beam": {
+            "size": {
+                "x": "7.7999999999999998",
+                "y": "9.0999999999999996"
+            },
+            "divergence": {
+                "x": "85",
+                "y": "30"
+            },
+            "pos": {
+                "x": "0.080000000000000002",
+                "y": "-0.45000000000000001"
+            },
+            "direction": {
+                "x": "-2.7999999999999998",
+                "y": "-0.40000000000000002"
+            },
+            "momentum": {
+                "spread": "0.77000000000000002",
+                "mean": "27.859999999999999"
+            },
+            "matrix": [
+                "1",
+                "-0.0064999999999999997",
+                "0.99997886999999996",
+                "0.71399999999999997",
+                "0.50885175000000005",
+                "0.48090945000000002",
+                "-0.22020000000000001",
+                "-0.00143133",
+                "-0.59335258999999996",
+                "0.77423679999999995"
+            ],
+            "beam_profile_mode": "0",
+            "beam_profile_mode_options": "",
+            "beam_profile_file": "\/data\/experiment\/mu3e\/code\/offline\/250621\/mu3e\/run\/.\/beam_profile.txt"
+        },
+        "cosmic": {
+            "xmin": "-200",
+            "xmax": "200",
+            "zmin": "-1000",
+            "zmax": "1000"
+        },
+        "write": {
+            "truth": "1",
+            "truth_options": "",
+            "target": "1",
+            "pixels": "2",
+            "pixels_options": "",
+            "fibres": "3",
+            "fibres_options": "",
+            "tiles": "3",
+            "tiles_options": "",
+            "kaptonFlaps": "1",
+            "kaptonFlaps_options": "",
+            "scoring": "0"
+        },
+        "tracker": {
+            "numLinks": {
+                "inner": "3",
+                "outer": "1"
+            },
+            "efficiency": "1",
+            "noiseRate": {
+                "inner": "0",
+                "outer": "0"
+            },
+            "threshold": "0.0050000000000000001",
+            "timeRes": "0",
+            "clusterSimulation": "0",
+            "readoutSimulation": "0",
+            "maxHitsFrame": {
+                "inner": "0",
+                "outer": "0"
+            }
+        },
+        "fibres": {
+            "timeRes": "0.75",
+            "decaytime": "2.7999999999999998",
+            "crosstalk": "0.02",
+            "pileUp": "2.5",
+            "threshold": "1",
+            "parametrisation": {
+                "mode": "3",
+                "mode_options": "",
+                "attenuation": {
+                    "square": {
+                        "direct": "0",
+                        "directConst": "0",
+                        "slow": "0.0039420000000000002",
+                        "slowConst": "6.21"
+                    },
+                    "round": {
+                        "direct": "0",
+                        "directConst": "0",
+                        "slow": "0.004254",
+                        "slowConst": "6.4699999999999998",
+                        "D0": "0.01026",
+                        "D1": "0.012930000000000001",
+                        "D2": "0.0053899999999999998"
+                    },
+                    "sigma": {
+                        "A0": "0",
+                        "C0": "3.9740000000000002",
+                        "A1": "0",
+                        "C1": "1e-10",
+                        "A2": "0.0080000000000000002",
+                        "C2": "0.248",
+                        "A3": "0",
+                        "C3": "1e-10"
+                    }
+                },
+                "pathlength": {
+                    "lower": "1",
+                    "upper": "1.1299999999999999",
+                    "decrease": "0.83999999999999997",
+                    "begin": {
+                        "A": "1",
+                        "B": "0"
+                    },
+                    "end": {
+                        "A": "1.2",
+                        "B": "0"
+                    }
+                },
+                "eff_or": "1",
+                "eff_and": "0.80000000000000004"
+            },
+            "photonDistribution": "1",
+            "photonDistribution_options": "",
+            "nphotons": "5",
+            "photonsForTiming": "1",
+            "yield": "8000",
+            "yieldScale": "1",
+            "capture": "0.053999999999999999",
+            "attenuationLength": "1395",
+            "mppcs": {
+                "threshold": "0.5",
+                "dark": {
+                    "rate": "0",
+                    "exponential": "10"
+                },
+                "pde": "0.40000000000000002",
+                "pileUp": "40",
+                "crosstalk": "0.040000000000000001",
+                "pixelcrosstalk": "0.02",
+                "sptr": "0.085000000000000006",
+                "arrays": {
+                    "mode": "1",
+                    "mode_options": "",
+                    "offset": "0",
+                    "offsetNoise": "0.01",
+                    "cells": {
+                        "n": "128",
+                        "width": "0.23000000000000001",
+                        "pitch": "0.02"
+                    }
+                },
+                "waveform": {
+                    "file": "180fC_inputbias_4_dac_pole_50_p.csv"
+                }
+            },
+            "daq": {
+                "delay": "1",
+                "jitter": "0.29999999999999999"
+            }
+        },
+        "tiles": {
+            "timeRes": "0.059999999999999998",
+            "STICjitter": "0.029999999999999999",
+            "energyRes": "0.12",
+            "deadtime": "150",
+            "deadtimeTDC": "40",
+            "promptTime": "0.10000000000000001",
+            "eThresh": "0.10000000000000001"
+        },
+        "mutrig": {
+            "tsFineBinSize": "0.050000000000000003",
+            "tsFineBits": "8"
+        },
+        "trajectory": {
+            "momentumCutOff": "5"
+        },
+        "hits": {
+            "momentumCutOff": "0"
+        },
+        "scatteringModel": "1",
+        "scatteringModel_options": "",
+        "rosim": {
+            "ro": {
+                "nsperts": "4",
+                "tsbits": "11",
+                "framelength": "32"
+            },
+            "lvdslinks": {
+                "read": "true",
+                "writePSLL": "false",
+                "writePSLM": "true"
+            },
+            "sorter": {
+                "run": "1",
+                "numts": "2048",
+                "slotsperts": "15",
+                "tspercycle": "2",
+                "timewindowsize": "1280",
+                "timewindowstartoffset": "2016",
+                "readtofifodelay": "5",
+                "startingcredits": "127",
+                "blocksize": "16",
+                "fifolimit": "120",
+                "maxhitsts": "48",
+                "writePSSH": "1",
+                "cyclesPerPSSH": "4"
+            }
+        },
+        "sort": {
+            "depth": "80",
+            "noisePerFrame": "0",
+            "efficiency": "1"
+        },
+        "sipm": {
+            "det": "all",
+            "ReadoutFrameLength": "50",
+            "NumberOfFrames": "100",
+            "SamplingRateTile": "5",
+            "PhotonsPerEnergyTile": "1600",
+            "LightPulseRiseTimeTile": "0.40000000000000002",
+            "LightPulseDecayTimeTile": "2.5",
+            "UseDBparametersTile1": "BC420\/7.5x8.5x5mm\/",
+            "UseDBparametersTile2": "BC420\/7.5x8.5x5mm\/",
+            "SiPMParameterFileTile": "ParametersMPPC400.txt",
+            "SamplingRateFibre": "5",
+            "PhotonsPerEnergyFibre": "1600",
+            "LightPulseRiseTimeFibre": "0.69999999999999996",
+            "LightPulseDecayTimeFibre": "2.7999999999999998",
+            "SiPMParameterFileFibre": "ParametersMPPC400fib.txt"
+        }
+    },
+    "eft": {
+        "kuno": {
+            "name": "",
+            "pol": "1",
+            "C": [
+                "1",
+                "1",
+                "0",
+                "0",
+                "0.0078980000000000005",
+                "0.0078980000000000005",
+                "0.088870000000000005",
+                "0.088870000000000005",
+                "0",
+                "0",
+                "0",
+                "0"
+            ]
+        },
+        "config1": "0",
+        "config2": "0",
+        "configs": [
+            {
+                "name": "EFT_dipoleRL",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0.0019745494746140073",
+                    "0.0019745494746140073",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_dipoleR",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0.0039490989492280146",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_dipoleL",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0.0039490989492280146",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionRRLL",
+                "pol": "1",
+                "C": [
+                    "0.25",
+                    "0.25",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionRR",
+                "pol": "1",
+                "C": [
+                    "0.5",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionLL",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0.5",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionRLLR",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0.5",
+                    "0.5",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionRL",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "1",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            },
+            {
+                "name": "EFT_4fermionLR",
+                "pol": "1",
+                "C": [
+                    "0",
+                    "0",
+                    "0",
+                    "1",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0",
+                    "0"
+                ]
+            }
+        ]
+    },
+    "farm": {
+        "cuda": {
+            "nStreams": "16",
+            "nBlocks": "0",
+            "nThreads": "256"
+        },
+        "nTS": "1",
+        "hists": {
+            "mode": "1",
+            "file": "hists.farm.root"
+        },
+        "phi01_max": "0.600000024",
+        "z01_max": "20",
+        "phi12_max": "1.20000005",
+        "dzr12_max": "0.5",
+        "r_min": "30",
+        "r_max": "inf",
+        "time_max": "400",
+        "triplet_chi2_max": "100",
+        "track_chi2_max": "32",
+        "track_zpca_rt_max": "22",
+        "track_zpca_z_max": "55",
+        "vertex_px_max": "40",
+        "vertex_py_max": "40",
+        "vertex_pz_max": "10",
+        "vertex_dm_max": "10",
+        "vertex_d_max": "20"
+    },
+    "pixal": {
+        "trirec_paths": "",
+        "par": "-1",
+        "run_pede": "true",
+        "fix_detector": "true",
+        "hierarchy_level": "4",
+        "fix_global_scaling": "false",
+        "root_files": "",
+        "more_options": "",
+        "output_path": "-1",
+        "pede_path": "-1",
+        "steering_file": "-1",
+        "pede_dump_file": "-1",
+        "constraints_file": "-1",
+        "binary_file": "-1",
+        "measurements_file": "-1",
+        "sensors_tree_in": "-1",
+        "sensors_tree_out": "-1",
+        "est_al_error": "0",
+        "magnetic_field": "1",
+        "pede_chi2_cuts": {
+            "first": "0",
+            "second": "0"
+        },
+        "rec_chi2_cut": "20",
+        "nhit_cut_lo": "0",
+        "nhit_cut_up": "100",
+        "num_threads": "2",
+        "solution_method": "-1",
+        "solution_method_params": {
+            "number_of_iterations": "-1",
+            "convergence_limit": "-1"
+        },
+        "result_verbosity": "0",
+        "remove_dat": "false",
+        "exclude_chi2_ndf": "20",
+        "correction_failsafe": "1",
+        "exclude_non_alignables": "false",
+        "outlier_downweighting": "-1",
+        "fake_measurements": "false",
+        "measurement_weight": "1",
+        "endring_sigma": "-1",
+        "single_layers": "",
+        "single_ids": "",
+        "align_all_sensors": {
+            "offsets": "-1",
+            "rotations": "-1",
+            "surface": "-1",
+            "temperature": "-1"
+        },
+        "alignable_parameters": {
+            "single": "",
+            "layers": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+            ]
+        },
+        "align_parts": {
+            "central": "0",
+            "layers": [
+                "",
+                "",
+                "",
+                ""
+            ]
+        },
+        "alignable_presigmas": {
+            "all": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            },
+            "single": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            },
+            "layers": ""
+        },
+        "hierarchy_alignment": "true",
+        "hierarchy_presigmas": {
+            "central": "false",
+            "recurl_up": "false",
+            "recurl_down": "false",
+            "layers": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            },
+            "ladders": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            },
+            "modules": {
+                "offset": "-1",
+                "rotation": "-1",
+                "surface": "-1",
+                "temperature": "-1"
+            }
+        }
+    },
+    "trirec": {
+        "hits_n_max": "256",
+        "triplet_rt_min": "20",
+        "triplet_rt_max": "inf",
+        "seg4_z01_max": "50",
+        "seg4_z12_max": "150",
+        "seg4_phi01_max": "0.800000012",
+        "seg4_phi12_max": "1.79999995",
+        "seg4_dphi3_max": "0.0500000007",
+        "seg4_dz3_max": "5",
+        "seg4_n_max": "20",
+        "seg6_dphi4_max": "0.349999994",
+        "seg6_dz4_max": "100",
+        "seg6_dphi5_max": "0.0350000001",
+        "seg6_dz5_max": "3",
+        "L8o_dz4_max": "100",
+        "L8o_dphi4_max": "0.349999994",
+        "L8i_dz4_max": "10",
+        "L8i_dphi4_max": "0.200000003",
+        "seg3_chi2_max": "150",
+        "seg4_chi2_max": "150",
+        "seg6_chi2_max": "48",
+        "seg8_chi2_max": "48",
+        "hits_dt_max": "200",
+        "rec_version": "5",
+        "rec_fb": "1",
+        "rec_tl": "1",
+        "rec_vertex_xy": "0",
+        "alg": {
+            "merge_mode": "1",
+            "collapse_mode": "0",
+            "resolve_mode": "1",
+            "resolve_ordering": "1",
+            "resolve_n_min": "3",
+            "resolve_n_max": "0",
+            "resolve_k_max": "0",
+            "resolve_timeout_ms": "100",
+            "ll_path_timeout_ms": "100",
+            "si_makeClusters": "0"
+        },
+        "root": {
+            "ex": "0",
+            "status": "1",
+            "segs3": "0",
+            "segs4": "0",
+            "segs4_": "0",
+            "segs6": "0",
+            "segs8": "0",
+            "segs8_": "0",
+            "frames_skip_empty": "0"
+        },
+        "fb": {
+            "cluster_dt_max": "80",
+            "cluster_recl_dt": "-4.5",
+            "link_method": "2",
+            "link_nh_min": "2",
+            "link_nh_max": "128",
+            "link_d_max": "0.5",
+            "link_sides_tolerance": "0",
+            "link_col_tolerance": "3",
+            "merge_sides": "false"
+        },
+        "twolayer": {
+            "mode": "1"
+        },
+        "vertex": {
+            "target_r": "19",
+            "target_half_length": "50",
+            "target_region": "25",
+            "n_tracks_max": "64",
+            "circle_intersection_margin": "20",
+            "p_min": "0",
+            "p_max": "10000",
+            "E_tot_min": "0",
+            "p_mag_max": "1000000",
+            "targetdist_max": "1000000",
+            "chi2_max": "10000000",
+            "posprodcut": "1",
+            "negprodcut": "-1",
+            "delta_p_min": "0"
+        }
+    },
+    "vertex": {
+        "skim_fail": "false",
+        "runtime": {
+            "input_tree": "frames"
+        },
+        "cuts": {
+            "sigcode": "90",
+            "posprodcut": "0.98999999999999999",
+            "posnegprodcut": "-0.98999999999999999",
+            "deltapcut": "1",
+            "p_min": "10",
+            "p_max": "65",
+            "deltamax": "2",
+            "steps": "1000",
+            "tolerance": "0.001",
+            "comb_max": "10000"
+        },
+        "root": {
+            "timing": "0",
+            "chi2": "35",
+            "pm": "10",
+            "nhit": "6",
+            "targetdist": "1",
+            "t_cuts": ""
+        },
+        "timing": {
+            "randomize": "0"
+        }
+    }
+}
+I [cdb.h:17,cdbInit] initialize CDB
+Mu3eConditions::Mu3eConditions(datav6.1=2025Beam, REST)
+Mu3eConditions::Mu3eConditions> creating basic classes
+Mu3eConditions::registerCalibration> name ->pixelalignment_<- with tag ->pixelalignment_mcidealv6.1=2025CosmicsVtxOnly<- ...  done
+Mu3eConditions::registerCalibration> name ->fibrealignment_<- with tag ->fibrealignment_mcidealv6.1<- ...  done
+Mu3eConditions::registerCalibration> name ->mppcalignment_<- with tag ->mppcalignment_mcidealv6.1<- ...  done
+Mu3eConditions::registerCalibration> name ->tilealignment_<- with tag ->tilealignment_mcidealv6.1<- ...  done
+Mu3eConditions::registerCalibration> name ->detsetupv1_<- with tag ->detsetupv1_mcidealv6.1=2025CosmicsVtxOnly<- ...  done
+Mu3eConditions::registerCalibration> name ->detconfv1_<- with tag ->detconfv1_mcidealv5.4=2025CosmicsVtxOnly<- ...  done
+calDetConfV1::calculate() with fHash ->tag_detconfv1_mcidealv5.4=2025CosmicsVtxOnly_iov_1<-header: deadface
+calDetSetupV1::calculate() with fHash ->tag_detsetupv1_mcidealv6.1=2025CosmicsVtxOnly_iov_1<-header: deadface
+calFibreAlignment::calculate() with fHash ->tag_fibrealignment_mcidealv6.1_iov_1<-  header: deadface inserted 4524 constants
+calMppcAlignment::calculate() with fHash ->tag_mppcalignment_mcidealv6.1_iov_1<- header: deadface inserted 24 constants
+calPixelAlignment::calculate() with fHash ->tag_pixelalignment_mcidealv6.1=2025CosmicsVtxOnly_iov_1<-header: deadface inserted 108 constants
+calTileAlignment::calculate() with fHash ->tag_tilealignment_mcidealv6.1_iov_1<- header: deadface inserted 5824 constants
+#### ./run04886-sorted.root ####
+I [conf_parser.cpp:21,read_conf_internal] filename = '[].json'
+I [SiDet.cpp:337,readSensors] use CDB alignment 'pixelalignment_'
+I [SiDet.cpp:286,init] init global variables
+I [SiDet.cpp:303,init]   layer 0 : 8 ladders, r = 23.1
+I [SiDet.cpp:303,init]   layer 1 : 10 ladders, r = 29.6
+I [FbDet.cpp:440,readFibres] use CDB alignment 'fibrealignment_'
+I [FbDet.cpp:494,readMppcs] use CDB alignment 'mppcalignment_'
+I [FbDet.cpp:198,FbDet] array readout: 12 mppcs per side
+I [TlDet.cpp:41,readTiles] use CDB alignment 'tilealignment_'
+I [config.hpp:137,load] cmds.[0] = '' <= '../_build/mu3eSim/sort/mu3eSort --alignment.file=mu3e_alignment.root /data/experiment/mu3e/data/2025/raw/004/run04886.mid.lz4 --output ./sorted-run4886_0.root'
+I [config.hpp:137,load] alignment.file = './run04886-sorted.root' <= 'mu3e_alignment.root'
