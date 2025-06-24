@@ -35,7 +35,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
-#         2025/06/24 add check against hitting the time limit in batch jobs
+#         2025/06/24 add check against hitting the time limit in batch jobs. "sort" to run locally.
 #         2025/06/18 add separate mu3eSort without splitting, rename submitJobsRaw, remove countEventsOld
 #         2025/06/14 print runs to be processed if -r given
 #         2025/06/12 bug fix for too small runs!
@@ -293,6 +293,8 @@ foreach my $run (@goodRuns) {
     } elsif ($opt_m eq "sortreco") {
         &submitJobsRawSort($run);
         &submitJobsRawTrirec($run, $nEvents);
+    } elsif ($opt_m eq "sort") {
+        &runSort($run);
     } elsif ($opt_m eq "prompt") {
         &submitJobsRawMinalyzer($run, $nEvents);
         &runPixelFillQualityLM($run);      
@@ -366,6 +368,21 @@ sub runAnaComba() {
     print(&prefix("runAnaComba"), "Running anacomba for run $run in directory $dir, ->$cmd<-\n");
 }
 
+
+# ----------------------------------------------------------------------
+sub runSort() {
+    ($run) = @_;
+    my $dir = "$BASEDIR/mu3e/run";
+    my $DATASUBDIR = &getDataSubdir($run);
+    my $srun = sprintf("%05d", $run);
+    my $cmd = "_build/mu3eSort/mu3eSort --alignment.file=mu3e_alignment.root $DATASUBDIR/run0$run.mid.lz4 --output ./sorted-run$run.root";
+    print(&prefix("runSort"), "Running sort for run $run in directory $dir, ->$cmd<-\n");
+    if ($opt_d) {
+        print(&prefix("runSort"), "->$cmd<-\n");
+    } else {
+        system("cd $dir && $cmd && cd - ");
+    }
+}
 
 
 # ----------------------------------------------------------------------
