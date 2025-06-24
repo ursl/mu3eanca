@@ -4,9 +4,9 @@
 # getFiles
 # ========
 #
-# Usage: ./getFiles -r user@remote:/path -p trirec-runXXXX.root -r 6234,6235,6236
+# Usage: ./getFiles -s user@remote:/path -p trirec-runXXXX.root -r 6234,6235,6236
 #
-# Options: -r user@remote:/path remote directory (with login) for data
+# Options: -s user@remote:/path source directory on remote machine (with login) for data
 #          -p pattern pattern to match
 #          -r runlist runlist to get files from
 #
@@ -15,10 +15,13 @@
 # Send all questions, wishes and complaints to the 
 #
 
-getopts('r:p:r:');
+use Getopt::Std;
 
-if ($opt_r eq "") {
-    $opt_r = "langenegger\@merlin-l-001:/data/experiment/mu3e/data/2025/trirec/250621";
+
+getopts('r:p:s:');
+
+if ($opt_s eq "") {
+    $opt_s = "langenegger\@merlin-l-001:/data/experiment/mu3e/data/2025/trirec/250621";
 }
 
 if ($opt_p eq "") {   
@@ -26,7 +29,7 @@ if ($opt_p eq "") {
 }
 
 if ($opt_r eq "") {
-    $opt_r = "6234";
+    $opt_r = "6111";
 }
 
 @runlist = split(/,/, $opt_r);
@@ -36,8 +39,8 @@ foreach $run (@runlist) {
   my $file = $opt_p;
   my $srun = sprintf("%05d", $run);
   $file =~ s/XXXXX/$srun/;
-  $cmd = "scp $opt_r/$file .";
-  print $cmd;
+  $cmd = "scp $opt_s/$file .";
+  print "$cmd\n";
 #  $result = `$cmd`;
 #  print $result;
 }
