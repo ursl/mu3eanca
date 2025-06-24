@@ -29,8 +29,10 @@ Date:   Fri Jun 20 22:19:53 2025 +0200
 # -- Provenance tracking
 # ----------------------
 
+(Note: search for "# -- mu3eTriRec" for the provenance tracking in mu3eTriRec)
+
 # -- mu3eSort
-../_build/mu3eTrirec/mu3eTrirec -s 4000000 -n 2000000 ./run04886-sorted.root --print-config=.  --cdb.dbconn=rest --cdb.globalTag=datav6.1=2025Beam --conf ./trirec_twolayer.conf --output ./trirec-run4886_2.root
+../_build/mu3eTrirec/mu3eTrirec  ./run04886-sorted.root --print-config=.  --cdb.dbconn=rest --cdb.globalTag=datav6.1=2025Beam --conf ./trirec_twolayer.conf --output ./trirec-run4886_2.root
 I [conf_parser.cpp:21,read_conf_internal] filename = '/scratch/langenegger/4886_2/mu3e/run/./trirec_twolayer.conf'
 I [config.hpp:137,load] cdb.dbconn = 'unset' <= 'rest'
 I [config.hpp:137,load] cdb.globalTag = 'mcidealv6.1' <= 'datav6.1=2025Beam'
@@ -1074,7 +1076,7 @@ I [config.hpp:137,load] alignment.file = './run04886-sorted.root' <= 'mu3e_align
 
 
 # -- mu3eTrirec
-../_build/mu3eTrirec/mu3eTrirec -s 4000000 -n 2000000 ./run04886-sorted.root --print-config=.  --cdb.dbconn=rest --cdb.globalTag=datav6.1=2025Beam --conf ./trirec_twolayer.conf --output ./trirec-run4886_2.root
+../_build/mu3eTrirec/mu3eTrirec ./run04886-sorted.root --print-config=.  --cdb.dbconn=rest --cdb.globalTag=datav6.1=2025Beam --conf ./trirec_twolayer.conf --output ./trirec-run4886_2.root
 I [conf_parser.cpp:21,read_conf_internal] filename = '/scratch/langenegger/4886_2/mu3e/run/./trirec_twolayer.conf'
 I [config.hpp:137,load] cdb.dbconn = 'unset' <= 'rest'
 I [config.hpp:137,load] cdb.globalTag = 'mcidealv6.1' <= 'datav6.1=2025Beam'
