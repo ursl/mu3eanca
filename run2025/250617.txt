@@ -1,0 +1,43 @@
+# -------------
+# -- git hashes
+# -------------
+
+# -- minalyzer
+commit 3f0b3d922cba9ccf5cddf4253aab71731874de53
+Author: Mark Grimes <mark.grimes@bristol.ac.uk>
+Date:   Tue Jun 17 14:08:24 2025 +0100
+
+    Add last commit to git-blame-ignore-revs
+
+# -- mu3e
+commit 3308d77a3dcfd15a814cf0b2d40527d4b1a6ad0d
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Tue Jun 17 11:48:35 2025 +0200
+
+    update mu3eUtil
+
+# -- mu3eUtil
+commit 9177311ff42ca8d4c67f3e1cd7c93d876e813e45
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Tue Jun 17 15:38:07 2025 +0200
+
+    [tools] data_mid - less output
+
+# --------------------------------------------------------------------------------
+# -- Provenance tracking (was not yet activated, so very limited information here)
+# --------------------------------------------------------------------------------
+
+
+# -- mu3eSort
+../_build/mu3eSim/sort/mu3eSort --alignment.file=mu3e_alignment.root /data/experiment/mu3e/data/2025/raw/run04699.mid.lz4 --output ./sorted-run4699_0.root'
+
+# -- mu3eTrirec
+../_build/mu3eTrirec/mu3eTrirec -s 0 ./run04699-sorted.root --trirec.twolayer.mode=1 --cdb.dbconn=rest --cdb.globalTag=datav6.1=2025Beam --conf ../mu3eTrirec/trirec.conf --output ./trirec-run4699_0.root
+I [conf_parser.cpp:21,read_conf_internal] filename = '/scratch/langenegger/4699_0/mu3e/run/../mu3eTrirec/trirec.conf'
+I [config.hpp:134,load] trirec.twolayer.mode = 0 <= 1
+I [config.hpp:134,load] trirec.root.ex = 0 <= 1
+I [config.hpp:134,load] trirec.root.segs4 = 0 <= 1
+I [config.hpp:134,load] trirec.root.segs6 = 0 <= 1
+I [config.hpp:134,load] trirec.root.segs8 = 0 <= 1
+
+
