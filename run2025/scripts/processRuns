@@ -35,6 +35,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/06/24 add check against hitting the time limit in batch jobs
 #         2025/06/18 add separate mu3eSort without splitting, rename submitJobsRaw, remove countEventsOld
 #         2025/06/14 print runs to be processed if -r given
 #         2025/06/12 bug fix for too small runs!
@@ -593,7 +594,6 @@ sub checkForNewRun() {
 }
 
 
-
 # ----------------------------------------------------------------------
 sub copyDQMFilesToOnline() {
     ($run) = @_;
@@ -602,6 +602,7 @@ sub copyDQMFilesToOnline() {
     my $cmdString = "scp $mergedFile mu3e\@129.129.143.120:/home/mu3e/online/prompt/dqm_histos_$srun.root";
     system($cmdString);
 }
+
 
 # ----------------------------------------------------------------------
 sub submitJobsRawMinalyzer() {
@@ -726,6 +727,13 @@ sub submitJobsRawMinalyzer() {
         }
         foreach $sjob (keys %mSlurmIds) {
             $result = `/bin/squeue -j $sjob`;
+            if ($result =~ /Invalid job id specified/) {
+                print(&prefix("submitJobsRawMinalyzer"), "SLURM job $sjob not found, probably hit time limit\n");
+                delete($mSlurmIds{$sjob});
+                $njobs = keys %mSlurmIds;
+                next;
+            }
+
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
             my $tail = "no file yet\n";
@@ -766,6 +774,7 @@ sub submitJobsRawMinalyzer() {
     }
     return $mergedFile;
 }
+
 
 # ----------------------------------------------------------------------
 sub submitJobsRawTrirec() {
@@ -908,6 +917,13 @@ sub submitJobsRawTrirec() {
         }
         foreach $sjob (keys %mSlurmIds) {
             $result = `/bin/squeue -j $sjob`;
+            if ($result =~ /Invalid job id specified/) {
+                print(&prefix("submitJobsRawTrirec"), "SLURM job $sjob not found, probably hit time limit\n");
+                delete($mSlurmIds{$sjob});
+                $njobs = keys %mSlurmIds;
+                next;
+            }
+
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
             my $tail = "no file yet\n";
@@ -1070,6 +1086,12 @@ sub submitJobsRawSort() {
         }
         foreach $sjob (keys %mSlurmIds) {
             $result = `/bin/squeue -j $sjob`;
+            if ($result =~ /Invalid job id specified/) {
+                print(&prefix("submitJobsRawSort"), "SLURM job $sjob not found, probably hit time limit\n");
+                delete($mSlurmIds{$sjob});
+                $njobs = keys %mSlurmIds;
+                next;
+            }
             my @lines = grep /\S/, split /\n/, $result;
             my $le = @lines;
             my $tail = "no file yet\n";
@@ -1079,7 +1101,6 @@ sub submitJobsRawSort() {
             print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
                 delete($mSlurmIds{$sjob});
-                my $bla = $mSlurmIds{$sjob};
             }
             $njobs = keys %mSlurmIds;
         }
