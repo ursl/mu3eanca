@@ -375,7 +375,7 @@ sub runSort() {
     my $dir = "$BASEDIR/mu3e/run";
     my $DATASUBDIR = &getDataSubdir($run);
     my $srun = sprintf("%05d", $run);
-    my $cmd = "../_build/mu3eSort/mu3eSort --alignment.file=mu3e_alignment.root $DATASUBDIR/run0$run.mid.lz4 --output ./sorted-run$run.root";
+    my $cmd = "../_build/mu3eSim/sort/mu3eSort --alignment.file=mu3e_alignment.root $DATASUBDIR/run0$run.mid.lz4 --output ./sorted-run$run.root";
     print(&prefix("runSort"), "Running sort for run $run in directory $dir, ->$cmd<-\n");
     if ($opt_d) {
         print(&prefix("runSort"), "->$cmd<-\n");
