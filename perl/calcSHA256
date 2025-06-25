@@ -35,6 +35,10 @@ if (@ARGV == 0) {
     die "Usage: $0 <file1> <file2> ...\n";
 }
 
+# -- Sort the files
+@ARGV = sort @ARGV;
+
+
 # -- Process each file provided as argument
 foreach my $file (@ARGV) {
     # -- Check if file exists
