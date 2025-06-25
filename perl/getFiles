@@ -11,6 +11,7 @@
 #          -r runlist runlist to get files from
 #
 # History 2025/06/24 first shot
+#         2025/06/25 allow also no leading '0'
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -38,11 +39,14 @@ if ($opt_r eq "") {
 foreach $run (@runlist) {
   my $file = $opt_p;
   my $srun = sprintf("%05d", $run);
-  $file =~ s/XXXXX/$srun/;
+  if ($opt_p =~ /XXXXX/) {
+    $file =~ s/XXXXX/$srun/;
+  } elsif ($opt_p =~ /XXXX/) {
+    $file =~ s/XXXX/$run/;
+  }
   $cmd = "scp $opt_s/$file .";
   print "$cmd\n";
-#  $result = `$cmd`;
-#  print $result;
+  system($cmd);
 }
 
 
