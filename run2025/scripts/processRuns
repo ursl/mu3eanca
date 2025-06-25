@@ -35,6 +35,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/06/25 getDataSubdir() now completely calculated, no more if statements
 #         2025/06/24 add check against hitting the time limit in batch jobs. "sort" to run locally.
 #         2025/06/18 add separate mu3eSort without splitting, rename submitJobsRaw, remove countEventsOld
 #         2025/06/14 print runs to be processed if -r given
@@ -497,19 +498,10 @@ sub setGoodRuns() {
 sub getDataSubdir {
     ($run) = @_;
     my $DATASUBDIR = "$DATADIR/raw";
-    if ($run < 1000) {
-        $DATASUBDIR = "$DATADIR/raw/000";
-    } elsif ($run < 2000) {
-        $DATASUBDIR = "$DATADIR/raw/001";
-    } elsif ($run < 3000) {
-        $DATASUBDIR = "$DATADIR/raw/002";
-    } elsif ($run < 4000) {
-        $DATASUBDIR = "$DATADIR/raw/003";
-    } elsif ($run < 5000) {
-        $DATASUBDIR = "$DATADIR/raw/004";
-    } else {
-        $DATASUBDIR = "$DATADIR/raw";
-    } 
+    my $block = $run / 1000;
+    my $blockdir = sprintf("%03d", $block);
+    $DATASUBDIR = "$DATADIR/raw/$blockdir";
+    print(&prefix("getDataSubdir"), "run $run, DATASUBDIR = $DATASUBDIR\n");
     return $DATASUBDIR;
 }
 
