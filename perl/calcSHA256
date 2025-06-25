@@ -1,0 +1,62 @@
+#!/usr/bin/env perl
+
+# ----------------------------------------------------------------------
+# calcSHA256
+# ==========
+#
+# Usage: ./calcSHA256 file1 file2 file3 ...
+#
+# Description: Calculate SHA256 hashes for all files provided as command line
+#              arguments and append the results to a file named DIRECTORY.sha256
+#              where DIRECTORY is the current working directory name.
+#
+# Output: Creates/updates DIRECTORY.sha256 file with format:
+#         <sha256_hash>  <filename>
+#
+# History 2025/01/27 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+
+use strict;
+use warnings;
+use File::Basename;
+use Cwd;
+
+# -- Get the current working directory name
+my $pwd = getcwd();
+my $dir_name = basename($pwd);
+
+# -- Create the output filename
+my $output_file = "$dir_name.sha256";
+
+# -- Check if files were provided as arguments
+if (@ARGV == 0) {
+    die "Usage: $0 <file1> <file2> ...\n";
+}
+
+# -- Process each file provided as argument
+foreach my $file (@ARGV) {
+    # -- Check if file exists
+    unless (-f $file) {
+        warn "Warning: File '$file' does not exist or is not a regular file. Skipping.\n";
+        next;
+    }
+    
+    # -- Run sha256sum command and capture output
+    my $sha256_output = `sha256sum "$file"`;
+    chomp($sha256_output);
+    
+    if ($? == 0) {
+        # -- Append to output file
+        open(my $fh, '>>', $output_file) or die "Cannot open '$output_file' for appending: $!\n";
+        print $fh "$sha256_output\n";
+        close($fh);
+        
+        print "Processed: $file\n";
+    } else {
+        warn "Warning: Failed to calculate SHA256 for '$file'\n";
+    }
+}
+
+print "\nResults appended to: $output_file\n"; 
