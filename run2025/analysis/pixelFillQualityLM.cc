@@ -62,6 +62,17 @@ void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links);
 void determineNoisyPixels(TH2 *h, vector<int> &pixels); // icol,irow,iqual
 
 
+//string DATADIR("/Users/ursl/data/mu3e/run2025");
+string DATADIR("/data/experiment/mu3e/data/2025/raw");
+
+// ----------------------------------------------------------------------
+string getDataSubdir(int runnumber) {
+  int block = runnumber / 1000;
+  string blockdir = Form("%03d", block);
+  return Form("%s/raw/%s", DATADIR.c_str(), blockdir.c_str());
+}
+
+
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
 
@@ -79,14 +90,14 @@ int main(int argc, char* argv[]) {
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(JSONDIR), filename("nada.root");
   string gt("mcidealv6.1");
-  string odfilename("nada.json");
+  string odbfilename("nada.json");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-c"))      {check = 1;}
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-o"))      {odfilename = argv[++i];}
+    if (!strcmp(argv[i], "-o"))      {odbfilename = argv[++i];}
     if (!strcmp(argv[i], "-p"))      {printMode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
@@ -242,15 +253,22 @@ int main(int argc, char* argv[]) {
 
   int ckdivend(0), ckdivend2(0);
 
-  if (odfilename != "nada.json") {
-    ifstream INS(odfilename.c_str());
+  // -- try to assemble ODB filename
+  string dataSubdir = getDataSubdir(run);
+  cout << "dataSubdir = " << dataSubdir << endl;
+  if (odbfilename == "nada.json") {
+    odbfilename = Form("%s/run%05d.odb", dataSubdir.c_str(), run);
+    cout << "trying to open odfilename = " << odbfilename << endl;
+  }
+  if (odbfilename != "nada.json") {
+    ifstream INS(odbfilename.c_str());
     if (INS.fail()) {
-      cout << "Error failed to open ->" << odfilename << "<-" << endl;
+      cout << "Error failed to open ->" << odbfilename << "<-" << endl;
       ckdivend2 = ckdivend2Default;
       ckdivend = ckdivendDefault;
       cout << "using default ckdivend2 = " << ckdivend2 << " and ckdivend = " << ckdivend << endl;
     } else {
-      cout << "reading ckdivend2 and ckdivend from ->" << odfilename << "<-" << endl;
+      cout << "reading ckdivend2 and ckdivend from ->" << odbfilename << "<-" << endl;
       std::stringstream buffer;
       buffer << INS.rdbuf();
       INS.close();
