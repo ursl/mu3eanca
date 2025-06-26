@@ -19,7 +19,7 @@
 
 use Getopt::Std;
 
-getopts('c:r:p:');
+getopts('c:dr:p:');
 
 if ($opt_c eq "") {
   $opt_c = "echo";
@@ -54,7 +54,9 @@ foreach $file (@matching_files) {
   $lcmd =~ s/XXX/$file/g;
   print "$lcmd\n";
   # -- run command
-  system($lcmd);
+  if (!$opt_d) {
+    system($lcmd);
+  }
 }
 
 
