@@ -6,6 +6,9 @@
 #include <string.h>
 #include <chrono>
 
+#include <fstream>
+
+#include "cdbUtil.hh"
 #include "Mu3eConditions.hh"
 #include "calPixelAlignment.hh"
 #include "calPixelQuality.hh"
@@ -13,7 +16,6 @@
 #include "calPixelQualityM.hh"
 #include "calPixelQualityLM.hh"
 
-#include "util.hh"
 
 #include "cdbJSON.hh"
 #include "base64.hh"
@@ -36,7 +38,10 @@ using namespace std;
 // Examples:
 // ---------
 // cd mu3eanca/run2025/analysis
-// bin/pixelFillQualityLM -j /Users/ursl/data/mu3e/cdb/ -g datav6.1=2025CosmicsVtxOnly -f /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.root
+// bin/pixelFillQualityLM \
+// -j /Users/ursl/data/mu3e/cdb/ -g datav6.1=2025CosmicsVtxOnly \
+// -f /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.root \
+// -o /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.json
 // ----------------------------------------------------------------------
 
 #define JSONDIR "/Users/ursl/data/mu3e/cdb"
@@ -69,22 +74,47 @@ int main(int argc, char* argv[]) {
     {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}, {2, 6}, {2, 7}, {2, 8}, {2, 9}, {2, 10}
   };
  
-
-
   // -- command line arguments
-  int verbose(0), mode(1), printMode(0);
+  int verbose(0), mode(1), printMode(0), check(0);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(JSONDIR), filename("nada.root");
   string gt("mcidealv6.1");
+  string odfilename("nada.json");
   for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "-c"))      {check = 1;}
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-o"))      {odfilename = argv[++i];}
     if (!strcmp(argv[i], "-p"))      {printMode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
+  if (check) {
+    cout << "check mode" << endl;
+    // --
+    ifstream INS(filename);
+    if (INS.fail()) {
+      cout << "Error failed to open ->" << filename << "<-" << endl;
+      return 1;
+    }
+    
+    std::stringstream buffer;
+    buffer << INS.rdbuf();
+    INS.close();
+    
+    string lBuffer = buffer.str();
+
+    // -- get the first one   
+    string bla = jsonGetValue(lBuffer, {"Equipment", "PixelsCentral", "Settings", "CONFDACS", "ckdivend2"});
+    cout << "bla = " << bla << endl;
+
+    return 0;
+  }
+
+
+
   // -- this is just to get the list of all chipIDs
   cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
   Mu3eConditions* pDC = Mu3eConditions::instance("mcidealv6.1", pDB);
@@ -200,6 +230,41 @@ int main(int argc, char* argv[]) {
   run = ::stoi(sbla);
   cout << "run = " << run << endl;
   
+  // -------------------------
+  // -- ckdivend2 and ckdivend
+  // -------------------------
+  int ckdivendDefault(0), ckdivend2Default(31);
+  if (run < 3098) {
+    ckdivend2Default = 15;
+  } else {
+    ckdivend2Default = 31;
+  }
+
+  int ckdivend(0), ckdivend2(0);
+
+  if (odfilename != "nada.json") {
+    ifstream INS(odfilename.c_str());
+    if (INS.fail()) {
+      cout << "Error failed to open ->" << odfilename << "<-" << endl;
+      ckdivend2 = ckdivend2Default;
+      ckdivend = ckdivendDefault;
+      cout << "using default ckdivend2 = " << ckdivend2 << " and ckdivend = " << ckdivend << endl;
+    } else {
+      cout << "reading ckdivend2 and ckdivend from ->" << odfilename << "<-" << endl;
+      std::stringstream buffer;
+      buffer << INS.rdbuf();
+      INS.close();
+      string lBuffer = buffer.str();
+
+      ckdivend2 = ::stoi(jsonGetValue(lBuffer, {"Equipment", "PixelsCentral", "Settings", "CONFDACS", "ckdivend2/key", "ckdivend2"}));
+      ckdivend = ::stoi(jsonGetValue(lBuffer, {"Equipment", "PixelsCentral", "Settings", "CONFDACS", "ckdivend/key", "ckdivend"}));
+      cout << "XXXXX ckdivend2 = " << ckdivend2 << " and ckdivend = " << ckdivend << endl;
+    }
+  } else {
+    ckdivend2 = ckdivend2Default;
+    ckdivend = ckdivendDefault;
+    cout << "XXXXX using default ckdivend2 = " << ckdivend2 << " and ckdivend = " << ckdivend << endl;
+  }
 
   string hash = string("tag_pixelqualitylm_") + gt + string("_iov_") + to_string(run);
   
