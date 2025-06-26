@@ -452,28 +452,52 @@ string jsonGetVector(const string& jstring, const vector<string>& keys) {
 
 
 // ----------------------------------------------------------------------
-vector<string> jsonGetVectorVector(const string& jstring, const string& key) {
+vector<string> jsonGetVectorOfValues(const string& jstring, const vector<string>& keys) {
   vector<string> result;
+  const bool DBX(true);
+  
+  if (DBX) {
+    cout << "jstring.size() = " << jstring.size() << endl;
+    cout << "jsonGetVectorVector keys = ";
+    for (auto it: keys) cout << it << ",";
+    cout << endl;
+  }
+  
   string::size_type s0(0);
-  while (string::npos != s0) {
-    s0 = jstring.find(key);
-    s0 = jstring.find(":", s0);
-    string::size_type s1 = jstring.find("[", s0);
-    string::size_type s2 = jstring.find("]", s0);
-    string sresult("parseError");
-    if (string::npos != s1 && string::npos != s2) {
-      sresult = jstring.substr(s1+1, s2-s1-1);
-      s0 = s2;
+  // -- loop over entire string
+  while (string::npos != s0 && s0 != jstring.size()) {
+    // -- find all keys of the vector   
+    for (unsigned int i = 0; i < keys.size(); ++i) {
+      string key = string("\"") + keys[i] + string("\"");
+      if (DBX) cout << "key = " << key << " s0 = " << s0 << endl;
+      s0 = jstring.find(key, s0);
+      if (DBX) cout << "  found it at s0 = " << s0 << endl;
+      if (string::npos == s0) break;
+      s0 = jstring.find(":", s0+key.length());
+      if (DBX) cout << "past a : at s0 = " << s0 << endl;
+    }
+    if (DBX) cout << "s0 = " << s0 << endl;
+    if (string::npos == s0) break;
+    s0 = jstring.find(":", s0)+1;
+    if (string::npos == s0) break;
+    string::size_type s1 = jstring.find(",", s0 + 2);
+    string::size_type s2 = jstring.find("}", s0 + 2);
+    string sresult;
+    if (string::npos != s1) {
+      sresult = jstring.substr(s0, s1-s0);
+      s0 = s1;
     } else {
-      cout << "jsonGetVectorVector> parse error" << endl;
-      s0 = string::npos;
+      sresult = jstring.substr(s0, s2-s0);
+      s0 = s2;
     }
     ltrim(sresult);
     rtrim(sresult);
     replaceAll(sresult, "\"", "");
-    replaceAll(sresult, " ", "");
+    if (DBX) cout << "found result ->" << sresult << "<-, s0 = " << s0 << endl;
     result.push_back(sresult);
+
   }
+  
   return result;
 }
 

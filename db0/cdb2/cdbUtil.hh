@@ -45,8 +45,8 @@ std::string jsonGetVector(const std::string& jstring, const std::string& key);
 std::string jsonGetVector(const std::string& jstring, const std::vector<std::string>& key);
 // -- get vector indexed by single key
 std::vector<std::string> jsonGetValueVector(const std::string& jstring, const std::string& key);
-// -- get vector indexed by a vector keys
-std::vector<std::string> jsonGetVectorVector(const std::string& jstring, const std::string& key);
+// -- get vector indexed by a vector keys   // FIXME THIS IS NOT YET READY FOR USE!
+std::vector<std::string> jsonGetVectorOfValues(const std::string& jstring, const std::vector<std::string>& keys);
 
 // ======================================================================
 // BLOB utilities
