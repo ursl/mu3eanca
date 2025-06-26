@@ -39,9 +39,15 @@ if ($opt_r eq "") {
 @matching_files = ();
 
 foreach $run (@runlist) {
-    # -- Use glob to find files matching pattern and run number
-    @files = glob("*${run}*${opt_p}*");
-    push(@matching_files, @files);
+    # -- First glob to find files containing the run number
+    @files = glob("*${run}*");
+    
+    # -- Then apply regex pattern matching to filter files
+    foreach $file (@files) {
+        if ($file =~ /$opt_p/) {
+            push(@matching_files, $file);
+        }
+    }
 }
 
 # -- Remove duplicates and sort
