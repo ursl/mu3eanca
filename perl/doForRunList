@@ -1,0 +1,60 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# doForRunList
+# ============
+#
+# Usage: ./doForRunList -c "command" -p mid.lz4 -r 6234,6235,6236
+#
+# Options: -c command to be run on all files matching a runnumber
+#          -p pattern pattern to match
+#          -r runlist runlist to get files from
+#
+# History 2025/06/26 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+# 
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+
+getopts('c:r:p:');
+
+if ($opt_c eq "") {
+  $opt_c = "echo";
+}
+
+if ($opt_p eq "") {
+  $opt_p = "mid.lz4";
+}
+
+if ($opt_r eq "") {
+  $opt_r = "6234,6235,6236";
+}
+
+@runlist = split(/,/, $opt_r);
+
+# -- Create array with all files matching both pattern and run numbers
+@matching_files = ();
+
+foreach $run (@runlist) {
+    # -- Use glob to find files matching pattern and run number
+    @files = glob("*${run}*${opt_p}*");
+    push(@matching_files, @files);
+}
+
+# -- Remove duplicates and sort
+@matching_files = sort(keys(%{{map{$_ => 1} @matching_files}}));
+
+# -- now do command on each file
+foreach $file (@matching_files) {
+  $lcmd = "$opt_c";
+  # -- replace XXX with the filename
+  $lcmd =~ s/XXX/$file/g;
+  print "$lcmd\n";
+  # -- run command
+  system($lcmd);
+}
+
+
