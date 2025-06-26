@@ -12,9 +12,13 @@ using namespace std;
 runRecord::runRecord() :
     fBORRunNumber(-1),
     fBORStartTime("unset"),
-    fBORSubsystems(-9999),
-    fBORBeam(-9999.9),
     fBORShiftCrew("unset"),
+    fBORRunClass("unset"),
+    fBORMu3eMagnet(-9999.9),
+    fBORPixelReadout(false),
+    fBORSciFiReadout(false),
+    fBORSciTileReadout(false),
+    fBORBeamBlockerOpen(false),
     fEORStopTime("unset"),
     fEOREvents(0),
     fEORFileSize(0),
@@ -24,8 +28,8 @@ runRecord::runRecord() :
 
 // ----------------------------------------------------------------------
 runRecord::~runRecord() {
-  fDQ.clear();
-  fRI.clear();
+  fvDQ.clear();
+  fvRI.clear();
 }
 
 // ----------------------------------------------------------------------
@@ -38,31 +42,31 @@ void runRecord::corrupted(string jsonString) {
 
 // ---------------------------------------------------------------------- 
 bool runRecord::isSignificant() const {
-  if (fRunInfoIdx > -1) return fRI[fRunInfoIdx].significant == "true";
+  if (fRunInfoIdx > -1) return fvRI[fRunInfoIdx].significant == "true";
   return false;
 }
 
 // ----------------------------------------------------------------------
 std::string runRecord::getRunInfoClass() const {
-  if (fRunInfoIdx > -1) return fRI[fRunInfoIdx].Class;
+  if (fRunInfoIdx > -1) return fvRI[fRunInfoIdx].Class;
   return "unset";
 } 
 
 // ----------------------------------------------------------------------
 std::string runRecord::getRunInfoComments() const {
-  if (fRunInfoIdx > -1) return fRI[fRunInfoIdx].comments;
+  if (fRunInfoIdx > -1) return fvRI[fRunInfoIdx].comments;
   return "unset";
 } 
 
 // ----------------------------------------------------------------------
 RunInfo runRecord::getRunInfo() const {
-  if (fRunInfoIdx > -1) return fRI[fRunInfoIdx];
+  if (fRunInfoIdx > -1) return fvRI[fRunInfoIdx];
   return RunInfo();
 }
 
 // ----------------------------------------------------------------------
 DataQuality runRecord::getDQ() const {
-  if (fDataQualityIdx > -1) return fDQ[fDataQualityIdx];
+  if (fDataQualityIdx > -1) return fvDQ[fDataQualityIdx];
   return DataQuality();
 }
 
@@ -79,11 +83,10 @@ string runRecord::printSummary() const {
       // << ", shift: " << fBORShiftCrew
        << " (" << fEORComments << ")"
        << " nevts: " << fEOREvents
-       << " beam: " << fBORBeam
        << " DQ: " << fDataQualityIdx
        << " runInfo: " << fRunInfoIdx;
-  if (fDataQualityIdx > -1) sstr << " class: " << fRI[fDataQualityIdx].Class;
-  if (fRunInfoIdx > -1) sstr << " significant: " << fRI[fRunInfoIdx].significant;
+  if (fDataQualityIdx > -1) sstr << " class: " << fvRI[fDataQualityIdx].Class;
+  if (fRunInfoIdx > -1) sstr << " significant: " << fvRI[fRunInfoIdx].significant;
   return sstr.str();
 }
 
@@ -101,7 +104,7 @@ string runRecord::jsonInterpreted() const {
   std::stringstream sstr;
     
   stringstream ssB;
-  ssB << scientific << setprecision(6) << fBORBeam;
+  ssB << scientific << setprecision(6) << fBORMu3eMagnet;
   stringstream ssF;
   ssF << scientific << setprecision(10) << fEORFileSize;
   stringstream ssD;
@@ -110,8 +113,12 @@ string runRecord::jsonInterpreted() const {
   sstr << "{ \"BOR\" : {"
        << "\"Run number\" : " << fBORRunNumber << ", "
        << "\"Start time\" : \"" << fBORStartTime << "\", "
-       << "\"Subsystems\" : " << fBORSubsystems << ", "
-       << "\"Beam\" : " << ssB.str() << ", "
+       << "\"Run Class\" : \"" << fBORRunClass << "\", "
+       << "\"Mu3e Magnet\" : " << ssB.str() << ", "
+       << "\"Pixel readout\" : " << fBORPixelReadout << ", "
+       << "\"SciFi readout\" : " << fBORSciFiReadout << ", "
+       << "\"SciTile readout\" : " << fBORSciTileReadout << ", "
+       << "\"Beam Blocker Open\" : " << fBORBeamBlockerOpen << ", "
        << "\"Shift crew\" : \"" << fBORShiftCrew << "\""
        << "}, "
        << "\"EOR\" : {"
@@ -125,13 +132,13 @@ string runRecord::jsonInterpreted() const {
          sstr << ", \"Attributes\": [";
          if (fDataQualityIdx > -1) {
            for (int i = 0; i <= fDataQualityIdx; i++) {
-              sstr << fDQ[i].json();
+              sstr << fvDQ[i].json();
               if (i < fDataQualityIdx) sstr << ",";
            }
          }
          if (fRunInfoIdx > -1) {
            for (int i = 0; i <= fRunInfoIdx; i++) {
-              sstr << fRI[i].json();
+              sstr << fvRI[i].json();
               if (i < fRunInfoIdx) sstr << ",";
            }
          }
@@ -225,14 +232,14 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
     if (verbose > 2) cout << " before DQ" << endl;
     while (pos != string::npos) {
       ++fDataQualityIdx;
-      fDQ.push_back(DataQuality());
-      pos = fDQ[fDataQualityIdx].parse(curlReadBuffer, pos);
+      fvDQ.push_back(DataQuality());
+      pos = fvDQ[fDataQualityIdx].parse(curlReadBuffer, pos);
       // -- DataQuality is only filled validly if the returned pos is valid
       if (pos == string::npos) {
         --fDataQualityIdx;
-        fDQ.pop_back();
+        fvDQ.pop_back();
       }
-      if (verbose > 2) cout << " DQ " << fDataQualityIdx << " " << fDQ[fDataQualityIdx].print() << endl;
+      if (verbose > 2) cout << " DQ " << fDataQualityIdx << " " << fvDQ[fDataQualityIdx].print() << endl;
     }
   }
  
@@ -244,14 +251,14 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
     if (verbose > 2) cout << " before RI" << endl;
     while (pos != string::npos) {
       ++fRunInfoIdx;
-      fRI.push_back(RunInfo());
-      pos = fRI[fRunInfoIdx].parse(curlReadBuffer, pos);
+      fvRI.push_back(RunInfo());
+      pos = fvRI[fRunInfoIdx].parse(curlReadBuffer, pos);
       // -- RunInfo is only filled validly if the returned pos is valid
       if (pos == string::npos) {
         --fRunInfoIdx;
-        fRI.pop_back();
+        fvRI.pop_back();
       }
-      if (verbose > 2) cout << " RI " << fRunInfoIdx << " " << fRI[fRunInfoIdx].print() << endl;
+      if (verbose > 2) cout << " RI " << fRunInfoIdx << " " << fvRI[fRunInfoIdx].print() << endl;
     }
   }
 }

@@ -5,6 +5,7 @@
 #include <vector>
 #include "DataQuality.hh"
 #include "RunInfo.hh"
+#include "Resource.hh"
 
 class runRecord {
 public:
@@ -35,9 +36,13 @@ public:
 
   long unsigned int fBORRunNumber;
   std::string       fBORStartTime;
-  int               fBORSubsystems;
-  double            fBORBeam;
   std::string       fBORShiftCrew;
+  std::string       fBORRunClass;
+  float             fBORMu3eMagnet;
+  bool              fBORPixelReadout;
+  bool              fBORSciFiReadout;
+  bool              fBORSciTileReadout;
+  bool              fBORBeamBlockerOpen;
   
   std::string       fEORStopTime;
   long unsigned int fEOREvents;
@@ -47,8 +52,9 @@ public:
   
   std::string       fConfigurationKey;
 
-  std::vector<DataQuality>       fDQ;
-  std::vector<RunInfo>           fRI;
+  std::vector<DataQuality> fvDQ;
+  std::vector<RunInfo>     fvRI;
+  std::vector<Resource>    fvResources;
 
   std::string       fJSONString;
 private:
