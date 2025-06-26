@@ -254,7 +254,7 @@ int main(int argc, char* argv[]) {
   vector<int> deadlinks, deadcolumns, noisyPixels;
   ofstream ofs;
   ofs.open(Form("csv/pixelqualitylm-run%d.csv", run));
-  ofs << "#chipID,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0=no error, 1=noisy, 2=dead, 9=chip off" << endl;
+  ofs << "#chipID,ckdivend,ckdivend2linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0=no error, 1=noisy, 2=dead, 9=chip off" << endl;
   for (auto it: mHitmaps){
     bool turnedOn = mChipIDOK.find(it.first) != mChipIDOK.end();
     if (turnedOn) {
@@ -271,6 +271,8 @@ int main(int argc, char* argv[]) {
     if (deadlinks.size() > 0) {
       cout << "chipID = " << it.first << " has broken links: ";
       ofs << it.first << ",";
+      // -- ckdivend and ckdivend2
+      ofs << 1 << "," << 31 << ",";
       for (auto itL : deadlinks) {
         ofs << itL << ",";
         cout << itL << " ";
