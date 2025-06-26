@@ -69,7 +69,7 @@ string DATADIR("/data/experiment/mu3e/data/2025/raw");
 string getDataSubdir(int runnumber) {
   int block = runnumber / 1000;
   string blockdir = Form("%03d", block);
-  return Form("%s/raw/%s", DATADIR.c_str(), blockdir.c_str());
+  return Form("%s/%s", DATADIR.c_str(), blockdir.c_str());
 }
 
 
