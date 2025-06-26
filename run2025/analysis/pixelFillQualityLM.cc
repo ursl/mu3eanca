@@ -396,7 +396,8 @@ int main(int argc, char* argv[]) {
   cpq->readCsv(Form("csv/pixelqualitylm-run%d.csv", run));
   createPayload(hash, cpq, "./payloads");
 
-  cout << "WRITING CSV for validation" << endl;
+  cout << "READ CSV: " << Form("csv/pixelqualitylm-run%d.csv", run) << endl;
+  cout << "WRITING CSV for validation: " << Form("csv/validatepixelqualitylm-run%d.csv", run) << endl;
   cpq->writeCsv(Form("csv/validatepixelqualitylm-run%d.csv", run));
 
   cout << "This is the end, my friend" << endl;
