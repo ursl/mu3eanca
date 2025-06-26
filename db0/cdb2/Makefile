@@ -94,6 +94,14 @@ endif
 
 
 
+# -- targets
+all: prep lib/libCDB.so bin
+
+bin: $(addprefix bin/,$(BINARIES))
+
+lib/libCDB.so: $(addprefix obj/,$(FILES))
+	$(CXX) $(SOFLAGS) $^ -o $@ $(GLIBS)
+
 # -- Default rules
 $(addprefix obj/,%.o) : %.cc %.hh
 	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
@@ -101,18 +109,8 @@ $(addprefix obj/,%.o) : %.cc %.hh
 $(addprefix obj/,%.o) : %.cc
 	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
 
-$(addprefix bin/,%) : $(addprefix obj/,%.o)
+bin/% : obj/%.o lib/libCDB.so
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
-
-
-# -- targets
-all: prep lib bin
-
-bin: $(addprefix bin/,$(BINARIES) )
-
-lib: $(addprefix obj/,$(FILES) )
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(FILES)) -o lib/libCDB.so $(GLIBS)
-
 
 clean:
 	rm -f obj/*.o lib/*.so bin/*
