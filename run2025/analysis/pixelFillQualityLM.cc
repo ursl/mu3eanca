@@ -52,7 +52,7 @@ struct pixhit {
 // ----------------------------------------------------------------------
 void createPayload(string, calAbs *, string);
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
-void determineBrokenLinks(TH2 *h, vector<int> &links, bool turnedOn);
+bool determineBrokenLinks(TH2 *h, vector<int> &links);
 void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links);
 void determineNoisyPixels(TH2 *h, vector<int> &pixels); // icol,irow,iqual
 
@@ -247,29 +247,22 @@ int main(int argc, char* argv[]) {
   cout << "mHitmaps.size() = " << mHitmaps.size() << endl;
 
   // -- do analysis
-  TCanvas *c0 = new TCanvas("c0", "c0", 800, 600);
-  c0->Divide(3,5);
-  int ipad(1);
-  gStyle->SetOptStat(0);
   vector<int> deadlinks, deadcolumns, noisyPixels;
   ofstream ofs;
   ofs.open(Form("csv/pixelqualitylm-run%d.csv", run));
-  ofs << "#chipID,ckdivend,ckdivend2linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0=no error, 1=noisy, 2=dead, 9=chip off" << endl;
+  ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
   for (auto it: mHitmaps){
-    bool turnedOn = mChipIDOK.find(it.first) != mChipIDOK.end();
-    if (turnedOn) {
-      cout << "chipID = " << it.first << " is turned on" << endl;
-    } else {
-      cout << "chipID = " << it.first << " is NOT turned on" << endl;
-    }
+    // -- debug with first 12 only FIXME
+    //if (it.first > 38) break;
     // -- clear all vectors for this new chipID
     deadlinks.clear();
     deadcolumns.clear();
     noisyPixels.clear();
     // -- determine broken links
-    determineBrokenLinks(mHitmaps[it.first], deadlinks, turnedOn);
+    bool turnedOn = determineBrokenLinks(mHitmaps[it.first], deadlinks);
+    cout << "chipID = " << it.first << " turnedOn = " << turnedOn << endl;
     if (deadlinks.size() > 0) {
-      cout << "chipID = " << it.first << " has broken links: ";
+      cout << "chipID = " << it.first << " with link quality: ";
       ofs << it.first << ",";
       // -- ckdivend and ckdivend2
       ofs << 1 << "," << 31 << ",";
@@ -312,29 +305,16 @@ int main(int argc, char* argv[]) {
     }
     
     ofs << endl;
-    if (turnedOn) {
-      c0->cd(ipad++);
-      shrinkPad(0.1, 0.17);
-      mHitmaps[it.first]->Draw("colz");
-      mHitmaps[it.first]->SetTitle(Form("Run %d, LAY/LDR/CHP %d/%d/%d (%d)",  run, 
-        get<0>(mChipIDOK[it.first]), get<1>(mChipIDOK[it.first]), get<2>(mChipIDOK[it.first]), it.first));
-      mHitmaps[it.first]->GetXaxis()->SetTitle("col");
-      mHitmaps[it.first]->GetYaxis()->SetTitle("row");
-    }
   }
-  c0->SaveAs(Form("out/run%d_hitmaps.pdf", run));
   ofs.close();
 
+  cout << "READING CSV" << endl;
   calPixelQualityLM *cpq = new calPixelQualityLM();
   cpq->readCsv(Form("csv/pixelqualitylm-run%d.csv", run));
-  string blob = cpq->makeBLOB();
   createPayload(hash, cpq, "./payloads");
 
+  cout << "WRITING CSV" << endl;
   cpq->writeCsv(Form("csv/validatepixelqualitylm-run%d.csv", run));
-
-  for (auto it: mHitmaps) {
-    // TODO: check that non-zero entries and that it.first is not in mChipIDOK
-  }
 
   cout << "This is the end, my friend" << endl;
   return 0;
@@ -344,7 +324,6 @@ int main(int argc, char* argv[]) {
 void createPayload(string hash, calAbs *a, string jsondir) {
 
   string sblob = a->makeBLOB();
-  
   payload pl;
   pl.fHash = hash;
   pl.fComment = "pixelqualitylm";
@@ -375,8 +354,8 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 }
 
 // ----------------------------------------------------------------------
-void determineBrokenLinks(TH2 *h, vector<int> &links, bool turnedOn) {
-  bool DBX(false);
+bool determineBrokenLinks(TH2 *h, vector<int> &links) {
+  bool DBX(true);
   double fractionHits(0.1);
   double nLinkA = h->Integral(1, 88, 1, 250);
   double nLinkB = h->Integral(89, 172, 1, 250);
@@ -388,37 +367,62 @@ void determineBrokenLinks(TH2 *h, vector<int> &links, bool turnedOn) {
   replaceAll(schip, "hitmap_perChip_", "");
   int chipID = ::stoi(schip);
 
+  // -- hand-curated list to avoid getting lost in algorithmic nightmares
+  vector<int> vBadChips = {102};
+
+  if (find(vBadChips.begin(), vBadChips.end(), chipID) != vBadChips.end()) {  
+    links.push_back(3);
+    links.push_back(3);
+    links.push_back(3);
+    links.push_back(3);
+    return true;
+  }
+
   if (DBX)
     cout << "histogram " << h->GetName() << " nLinkA = " << nLinkA
          << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC
          << " nLinkAverage = " << nLinkAverage << " cutMinHits = " << cutMinHits
          << endl;
-  if (!turnedOn) {
+
+  if (nLinkA < 1 && nLinkB < 1 && nLinkC < 1) {
     links.push_back(9);
     links.push_back(9);
     links.push_back(9);
     links.push_back(9);
+    return false;
+  }
+
+  if (nLinkA < cutMinHits) {
+    if (nLinkA < 1) {
+      links.push_back(9);
+    } else {
+      links.push_back(2);
+    }
   } else {
-    
-    if (nLinkA < cutMinHits) {
-      links.push_back(2);
-    } else {
-      links.push_back(0);
-    }
-    if (nLinkB < cutMinHits) {
-      links.push_back(2);
-    } else {
-      links.push_back(0);
-    }
-    if (nLinkC < cutMinHits) {
-      links.push_back(2);
-    } else {
-      links.push_back(0);
-    }
-    // -- add dummy MUX link
     links.push_back(0);
   }
-  
+  if (nLinkB < cutMinHits) {
+    if (nLinkB < 1) {
+      links.push_back(9);
+    } else {
+      links.push_back(2);
+    }
+  } else {
+    links.push_back(0);
+  }
+  if (nLinkC < cutMinHits) {
+    if (nLinkC < 1) {
+      links.push_back(9);
+    } else {
+      links.push_back(2);
+    }
+  } else {
+    links.push_back(0);
+  }
+  // -- add dummy MUX link
+  links.push_back(0);
+
+  return true;
 }
 
 // ----------------------------------------------------------------------
