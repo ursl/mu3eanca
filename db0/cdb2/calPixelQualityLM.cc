@@ -135,17 +135,20 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelQuality::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << " (note: 0 = good, 1 = noisy, 9 = not turned on)" << endl;
+  cout << "   header: " << hex << header << dec << " (note: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off)" << endl;
 
   while (ibuffer != buffer.end()) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
+    // -- ckdivend and ckdivend2
+    unsigned int ckdivend = blob2UnsignedInt(getData(ibuffer));
+    unsigned int ckdivend2 = blob2UnsignedInt(getData(ibuffer));
     // -- get link words
     unsigned int linkA = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkB = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkC = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkM = blob2UnsignedInt(getData(ibuffer));
-    cout << "   chipID: " << chipID;
+    cout << "   chipID: " << chipID << " ckdivend/ckdivend2: " << ckdivend << "/" << ckdivend2;
     cout << " link status A/B/C/M: " << linkA  << "/" << linkB << "/" << linkC  << "/" << linkM << endl;
     // -- get number of column entries
     int ncol = blob2Int(getData(ibuffer));
@@ -174,6 +177,7 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
+// FIXME: this is not used anywhere probably wrong
 map<unsigned int, vector<double> > calPixelQualityLM::decodeBLOB(string spl) {
   map<unsigned int, vector<double> > vmap;
 
@@ -187,6 +191,9 @@ map<unsigned int, vector<double> > calPixelQualityLM::decodeBLOB(string spl) {
   while (ibuffer != buffer.end()) {
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
+    // -- ckdivend and ckdivend2
+    unsigned int ckdivend = blob2UnsignedInt(getData(ibuffer));
+    unsigned int ckdivend2 = blob2UnsignedInt(getData(ibuffer));
     // -- get link words
     unsigned int linkA = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkB = blob2UnsignedInt(getData(ibuffer));
@@ -262,9 +269,12 @@ string calPixelQualityLM::makeBLOB(const map<unsigned int, vector<double>>& m) {
   s << dumpArray(uint2Blob(header));
 
   // -- format of m
-  // chipID => linkA, linkB, linkC, linkM, ncol [, icol], npix [, icol, irow, iqual]
+  // chipID => ckdivend, ckdivend2, linkA, linkB, linkC, linkM, ncol [, icol], npix [, icol, irow, iqual]
   for (auto it: m) {
     s << dumpArray(uint2Blob(it.first));
+    // -- ckdivend and ckdivend2
+    s << dumpArray(uint2Blob(31));
+    s << dumpArray(uint2Blob(31));
     // -- link words (dummy for now)
     s << dumpArray(uint2Blob(0));
     s << dumpArray(uint2Blob(0));
@@ -291,7 +301,6 @@ string calPixelQualityLM::makeBLOB(const map<unsigned int, vector<double>>& m) {
 
 // ----------------------------------------------------------------------
 void calPixelQualityLM::readCsv(string filename) {
-  bool DBX(false);
   cout << "calPixelQualityLM::readCsv> reset fMapConstants" << endl;
   fMapConstants.clear();
 
@@ -322,26 +331,21 @@ void calPixelQualityLM::readCsv(string filename) {
     a.linkB = stoi(tokens[4]);
     a.linkC = stoi(tokens[5]);
     a.linkM = stoi(tokens[6]);
-    if (DBX) cout << "chipID = " << a.id << " linkA/B/C/M = " << a.linkA << "/" << a.linkB << "/" << a.linkC << "/" << a.linkM << endl;
     // -- initialize column map
-    int ncol = stoi(tokens[5]);
-    if (DBX) cout << "ncol = " << ncol << endl;
+    int ncol = stoi(tokens[7]);
     a.mcol.clear();
     for (unsigned ipix = 0; ipix < ncol; ++ipix) {
-      int icol           = stoi(tokens[6 + ipix]);
+      int icol           = stoi(tokens[8 + ipix]);
       a.mcol[icol] = static_cast<char>(9); // -- 9 = chip off
-      if (DBX) cout << " icol = " << icol << " set to 9" << endl;
     }
     // -- initialize pixel map
-    int npix = stoi(tokens[6 + ncol]);
-    if (DBX) cout << "npix = " << npix << endl;
+    int npix = stoi(tokens[8 + ncol]);
     a.mpixel.clear();
     for (unsigned ipix = 0; ipix < npix; ++ipix) {
-      int icol           = stoi(tokens[7 + ncol + ipix*3]);
-      int irow           = stoi(tokens[7 + ncol + ipix*3 + 1]);
-      int iqual          = stoi(tokens[7 + ncol + ipix*3 + 2]);
+      int icol           = stoi(tokens[9 + ncol + ipix*3]);
+      int irow           = stoi(tokens[9 + ncol + ipix*3 + 1]);
+      int iqual          = stoi(tokens[9 + ncol + ipix*3 + 2]);
       a.mpixel[icol*250 + irow] = static_cast<char>(iqual);
-      if (DBX) cout << " icol/irow/iqual = " << icol << "/" << irow << "/" << iqual << " set to " << static_cast<int>(iqual) << endl;
     }
     fMapConstants.insert(make_pair(a.id, a));
   }
@@ -353,11 +357,12 @@ void calPixelQualityLM::readCsv(string filename) {
 // ----------------------------------------------------------------------
 void calPixelQualityLM::writeCsv(string filename) {
   ofstream OUTS(filename);
-  OUTS << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0=no error, 1=noisy, 2=dead, 9=chip off" << endl;
+  OUTS << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
 
  
   for (auto it: fMapConstants) {
-    OUTS << it.first << "," << it.second.ckdivend << "," << it.second.ckdivend2 << "," << it.second.linkA << "," << it.second.linkB << "," << it.second.linkC << "," 
+    OUTS << it.first << "," << it.second.ckdivend << "," << it.second.ckdivend2 << "," 
+         << it.second.linkA << "," << it.second.linkB << "," << it.second.linkC << "," 
          << it.second.linkM << ",";
     OUTS << it.second.mcol.size();
     for (auto itC: it.second.mcol) {
