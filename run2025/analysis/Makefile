@@ -55,7 +55,7 @@ endif
 
 CXXFLAGS      = -std=c++1z -g -O0 -Wall -fPIC -pipe
 LD            = $(CXX)
-LDFLAGS       = -g #?? -Wl -rpath$(ROOTSYS)
+LDFLAGS       = -g -pthread #?? -Wl -rpath$(ROOTSYS)
 SOFLAGS       = -g -shared  #?? -Wl -rpath
 
 CXXFLAGS     += $(ROOTCFLAGS)

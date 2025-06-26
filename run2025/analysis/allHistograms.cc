@@ -194,11 +194,14 @@ void mkVtxPlots(int run, string barefilename) {
         if (kname.find(name1) != string::npos) {
           TH2 *h = (TH2*)key->ReadObj();
           string hname(h->GetName());
+          cout << "hname " << hname << endl;
           replaceAll(hname, "hitmap_perChip_", "");
           int ichip = ::stoi(hname);  
-          // cout << "hitmap chip " << ichip << " " << hname << endl;
+          cout << "hitmap chip " << ichip << " " << hname << endl;
           h->Rebin2D(4,10);
           mHitmaps[ichip] = h;
+          mHitmaps[ichip]->SetTitle(Form("Chip %d (0x%x)", ichip, ichip));
+          mHitmaps[ichip]->SetTitleSize(0.2);
         }
       }
     }
@@ -274,6 +277,7 @@ void mkVtxPlots(int run, string barefilename) {
     gStyle->SetPadBottomMargin(0);
     gStyle->SetPadLeftMargin(0);
     gStyle->SetPadRightMargin(0);
+    gStyle->SetTitleSize(0.3);
     c->Divide(2, 1);
     c->cd(1);
     gPad->SetBottomMargin(0.0);
@@ -292,6 +296,7 @@ void mkVtxPlots(int run, string barefilename) {
       // cout << "vLayer1[i] = " << vLayer1[i] << " " << mHitmaps[vLayer1[i]] << endl;
       if (mHitmaps[vLayer1[i]]) {
         mHitmaps[vLayer1[i]]->Draw("col");
+        mHitmaps[vLayer1[i]]->SetTitleSize(0.3);
       }
     }
 
