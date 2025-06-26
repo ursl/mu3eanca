@@ -391,12 +391,12 @@ int main(int argc, char* argv[]) {
   }
   ofs.close();
 
-  cout << "READING CSV" << endl;
+  cout << "READING CSV: " << Form("csv/pixelqualitylm-run%d.csv", run) << endl;
   calPixelQualityLM *cpq = new calPixelQualityLM();
   cpq->readCsv(Form("csv/pixelqualitylm-run%d.csv", run));
   createPayload(hash, cpq, "./payloads");
 
-  cout << "WRITING CSV" << endl;
+  cout << "WRITING CSV for validation" << endl;
   cpq->writeCsv(Form("csv/validatepixelqualitylm-run%d.csv", run));
 
   cout << "This is the end, my friend" << endl;
