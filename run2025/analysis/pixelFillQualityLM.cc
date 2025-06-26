@@ -348,7 +348,7 @@ int main(int argc, char* argv[]) {
       cout << "chipID = " << it.first << " with link quality: ";
       ofs << it.first << ",";
       // -- ckdivend and ckdivend2
-      ofs << 1 << "," << 31 << ",";
+      ofs << ckdivend2 << "," << ckdivend << ",";
       for (auto itL : deadlinks) {
         ofs << itL << ",";
         cout << itL << " ";
