@@ -44,11 +44,12 @@ public:
 
 private:
   std::string fPixelQualityTag{"pixelqualitylm_"};
-  std::string fSchema{"ui_id,ui_linkA,ui_linkB,ui_linkC,ui_linkM,i_ncol[,i_col],i_npix[,i_col,i_row,ui_qual]"};
+  std::string fSchema{"ui_id,ui_ckdivend,ui_ckdivend2,ui_linkA,ui_linkB,ui_linkC,ui_linkM,i_ncol[,i_col],i_npix[,i_col,i_row,ui_qual]"};
 
   // -- local and private
   struct constants {
     uint32_t id;
+    uint32_t ckdivend, ckdivend2;
     uint32_t linkA, linkB, linkC, linkM;
     std::map<int, char> mcol;
     std::map<int, char> mpixel;

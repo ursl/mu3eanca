@@ -61,7 +61,9 @@ void calPixelQualityLM::calculate(string hash) {
   while (ibuffer != buffer.end()) {
     constants a;
     a.id = blob2UnsignedInt(getData(ibuffer));
-  
+    a.ckdivend = blob2UnsignedInt(getData(ibuffer));
+    a.ckdivend2 = blob2UnsignedInt(getData(ibuffer));
+
     a.linkA = blob2UnsignedInt(getData(ibuffer));
     a.linkB = blob2UnsignedInt(getData(ibuffer));
     a.linkC = blob2UnsignedInt(getData(ibuffer));
@@ -219,6 +221,9 @@ string calPixelQualityLM::makeBLOB() {
     s << dumpArray(uint2Blob(it.first));
     constants a = it.second;
 
+    s << dumpArray(uint2Blob(a.ckdivend)); // -- ckdivend
+    s << dumpArray(uint2Blob(a.ckdivend2)); // -- ckdivend2
+
     s << dumpArray(uint2Blob(a.linkA)); // -- linkA
     s << dumpArray(uint2Blob(a.linkB)); // -- linkB
     s << dumpArray(uint2Blob(a.linkC)); // -- linkC
@@ -311,10 +316,12 @@ void calPixelQualityLM::readCsv(string filename) {
     vector<string> tokens = split(vline[it], ',');
     // -- chipID
     a.id = stoi(tokens[0]);
-    a.linkA = stoi(tokens[1]);
-    a.linkB = stoi(tokens[2]);
-    a.linkC = stoi(tokens[3]);
-    a.linkM = stoi(tokens[4]);
+    a.ckdivend = stoi(tokens[1]);
+    a.ckdivend2 = stoi(tokens[2]);
+    a.linkA = stoi(tokens[3]);
+    a.linkB = stoi(tokens[4]);
+    a.linkC = stoi(tokens[5]);
+    a.linkM = stoi(tokens[6]);
     if (DBX) cout << "chipID = " << a.id << " linkA/B/C/M = " << a.linkA << "/" << a.linkB << "/" << a.linkC << "/" << a.linkM << endl;
     // -- initialize column map
     int ncol = stoi(tokens[5]);
@@ -346,11 +353,11 @@ void calPixelQualityLM::readCsv(string filename) {
 // ----------------------------------------------------------------------
 void calPixelQualityLM::writeCsv(string filename) {
   ofstream OUTS(filename);
-  OUTS << "#chipID,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0=no error, 1=noisy, 2=dead, 9=chip off" << endl;
+  OUTS << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0=no error, 1=noisy, 2=dead, 9=chip off" << endl;
 
  
   for (auto it: fMapConstants) {
-    OUTS << it.first << "," << it.second.linkA << "," << it.second.linkB << "," << it.second.linkC << "," 
+    OUTS << it.first << "," << it.second.ckdivend << "," << it.second.ckdivend2 << "," << it.second.linkA << "," << it.second.linkB << "," << it.second.linkC << "," 
          << it.second.linkM << ",";
     OUTS << it.second.mcol.size();
     for (auto itC: it.second.mcol) {
