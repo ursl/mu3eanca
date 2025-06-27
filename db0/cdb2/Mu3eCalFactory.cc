@@ -6,6 +6,7 @@
 #include "calTileAlignment.hh"
 #include "calDetConfV1.hh"
 #include "calDetSetupV1.hh"
+#include "calPixelQualityLM.hh"
 #include <algorithm>
 #include <chrono>
 
@@ -82,6 +83,8 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
     a = new calDetConfV1(db, tag);
   } else if (!name.compare("detsetupv1_"))  {
     a = new calDetSetupV1(db, tag);
+  } else if (!name.compare("pixelqualitylm_"))  {
+    a = new calPixelQualityLM(db, tag);
   } else {
     cout << "ERROR: " << name
          << " is an unknown class. Nothing registered in Mu3Conditions"
@@ -114,6 +117,8 @@ calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
     a = new calDetConfV1();
   } else if (!hash.compare("detsetupv1_"))  {
     a = new calDetSetupV1();
+  } else if (!hash.compare("pixelqualitylm_"))  {
+    a = new calPixelQualityLM();
   } else {
     cout << "ERROR: " << hash
          << " indicates an unknown class. Nothing known in Mu3CalFactory"
