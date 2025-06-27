@@ -71,20 +71,23 @@ void calPixelQualityLM::calculate(string hash) {
 
     // -- get number of column entries
     ncol = blob2Int(getData(ibuffer));
-    for (int i = 0; i < npix; ++i) {
-      int icol            = blob2Int(getData(ibuffer));
-      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      a.mcol.insert({ icol, static_cast<char>(iqual) });
+    if (ncol > 0) { 
+      for (int i = 0; i < ncol; ++i) {
+        int icol            = blob2Int(getData(ibuffer));
+        a.mcol.insert({ icol, static_cast<char>(9) });
+      }
     }
 
     // -- get number of pixel entries
     npix = blob2Int(getData(ibuffer));
-    for (int i = 0; i < npix; ++i) {
-      int icol            = blob2Int(getData(ibuffer));
-      int irow            = blob2Int(getData(ibuffer));
-      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      int idx = icol*250 + irow;
-      a.mpixel.insert({ idx, static_cast<char>(iqual) });
+    if (npix > 0) { 
+      for (int i = 0; i < npix; ++i) {
+        int icol            = blob2Int(getData(ibuffer));
+        int irow            = blob2Int(getData(ibuffer));
+        unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
+        int idx = icol*250 + irow;
+        a.mpixel.insert({ idx, static_cast<char>(iqual) });
+      }
     }
     // cout << "inserting " << a.id << " with size = " << sizeof(a) << endl;
     fMapConstants.insert(make_pair(a.id, a));
