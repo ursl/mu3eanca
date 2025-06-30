@@ -31,7 +31,8 @@ int main(int argc, char *argv[]) {
   cout << "start time: " << ts0.AsString("lc") << endl;
 
   pixelHistograms ph(filename);
-  
+  ph.plotHistograms();
+
   TTimeStamp ts1;
   cout << "end time:   " << ts1.AsString("lc") << ", this is the end, my friend." << endl;
 
