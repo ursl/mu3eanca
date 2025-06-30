@@ -6,6 +6,7 @@
 
 #include <TH2D.h>
 #include <TH1D.h>
+#include <TFile.h>
 
 #include "mu3e/cdb/calPixelQualityLM.hh"
 
@@ -35,6 +36,7 @@ public:
 private:
   int fVerbose, fRun;
   std::string fFilename;
+  TFile *fFile;
   std::vector<int> fLayer1, fLayer2, fAllChips;
   calPixelQualityLM* fCalPixelQualityLM;
 
