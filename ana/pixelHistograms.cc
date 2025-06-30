@@ -20,6 +20,18 @@ pixelHistograms::pixelHistograms() {
   fRun = 0;
   cout << "pixelHistograms::pixelHistograms() ctor" << endl;
 
+  init(0); 
+
+}
+
+// ----------------------------------------------------------------------
+pixelHistograms::pixelHistograms(std::string filename) {
+  fFilename = filename;
+  init(1);
+}
+
+// ----------------------------------------------------------------------
+void pixelHistograms::init(int mode) {
   fLayer1 = {1,2,3,4,5,6,
             33, 34, 35, 36, 37, 38,
             65, 66, 67, 68, 69, 70,
@@ -42,31 +54,37 @@ pixelHistograms::pixelHistograms() {
   fAllChips = fLayer1;
   fAllChips.insert(fAllChips.end(), fLayer2.begin(), fLayer2.end());
 
+  if (0 == mode) {
+    bookHist("hitmap", "chipmap");
+    bookHist("rawtot", "chipToT");
+    bookHist("hittot", "chipToT");
 
+    // -- distributions for rejected pixel hits
+    bookHist("rj_hm", "chipmap");
+    bookHist("rj_ht", "chipToT");
 
-  bookHist("hitmap", "chipmap");
-  bookHist("rawtot", "chipToT");
-  bookHist("hittot", "chipToT");
+    // -- debugging stuff
+    bookHist("loToT_hm", "chipmap");
+    bookHist("loToT_ht", "chipToT");
 
-  // -- distributions for rejected pixel hits
-  bookHist("rj_hm", "chipmap");
-  bookHist("rj_ht", "chipToT");
+    fTH1D["badChipIDs"] = new TH1D("badChipIDs", "badChipIDs", 200, 0, 1000000);
+  } else if (1 == mode) {
+    readHist("hitmap", "chipmap");
+    readHist("rawtot", "chipToT");
+    readHist("hittot", "chipToT");
 
-  // -- debugging stuff
-  bookHist("loToT_hm", "chipmap");
-  bookHist("loToT_ht", "chipToT");
+    // -- distributions for rejected pixel hits
+    readHist("rj_hm", "chipmap");
+    readHist("rj_ht", "chipToT");
 
-  fTH1D["badChipIDs"] = new TH1D("badChipIDs", "badChipIDs", 200, 0, 1000000);
-
-  for (auto ih: fTH2D) {
-    cout << "pixelHistograms::pixelHistograms() fTH2D[" << ih.first << "] = " << ih.second << endl;
+    // -- debugging stuff
+    readHist("loToT_hm", "chipmap");
+    readHist("loToT_ht", "chipToT");
+  } else {
+    cout << "pixelHistograms::init() mode = " << mode << " not implemented" << endl;
   }
-  for (auto ih: fTH1D) {
-    cout << "pixelHistograms::pixelHistograms() fTH1D[" << ih.first << "] = " << ih.second << endl;
-  }
-
-
 }
+
 
 // ----------------------------------------------------------------------
 pixelHistograms::~pixelHistograms() {
@@ -94,6 +112,18 @@ void pixelHistograms::bookHist(string hname, string hType) {
     } else if (string::npos != hType.find("chipToT")) {
       fTH1D[name] = new TH1D(name.c_str(), name.c_str(), 32, 0, 32);
     } 
+  }
+}
+
+// ---------------------------------------------------------------------- 
+void pixelHistograms::readHist(string hname, string hType) {
+  for (auto iChip: fAllChips) {
+    string name = Form("pixelHistograms/C%d_%s", iChip, hname.c_str());
+    if (string::npos != hType.find("chipmap")) {  
+      fTH2D[name] = (TH2D*)gFile->Get(name.c_str());
+    } else if (string::npos != hType.find("chipToT")) {
+      fTH1D[name] = (TH1D*)gFile->Get(name.c_str());
+    }
   }
 }
 
