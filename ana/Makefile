@@ -32,7 +32,7 @@ CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
 CXXFLAGS     += $(ROOTCFLAGS)
 
 LD            = $(CXX)
-LDFLAGS       = $(CXXFLAGS) $(ROOTLDFLAGS) -dynamiclib -shared
+LDFLAGS       = $(CXXFLAGS) $(ROOTLDFLAGS)
 SOFLAGS       = $(CXXFLAGS) $(ROOTLDFLAGS) -dynamiclib -shared
 
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
