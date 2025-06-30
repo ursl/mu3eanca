@@ -7,7 +7,11 @@
 
 # -- create a link to an external dependency (https://github.com/ursl/util)
 #    no submodule because of constant changes in util
-UTIL = ../util
+UTIL = /Users/ursl/mu3e/mu3eanca/util
+
+ifneq (,$(findstring merlin,$(LHOST)))
+	UTIL = /psi/home/langenegger/mu3e/mu3eanca/util
+endif
 
 ROOTCINT      = rootcling
 ROOTCFLAGS    = $(shell root-config --cflags)
@@ -25,19 +29,25 @@ else
 endif
 
 CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
-LD            = $(CXX)
-LDFLAGS       = -g #?? -Wl -rpath$(ROOTSYS)
-SOFLAGS       = -shared  #?? -Wl -rpath
-
 CXXFLAGS     += $(ROOTCFLAGS)
-GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA -lTMVAGui
+
+LD            = $(CXX)
+LDFLAGS       = $(CXXFLAGS) $(ROOTLDFLAGS) -dynamiclib -shared
+SOFLAGS       = $(CXXFLAGS) $(ROOTLDFLAGS) -dynamiclib -shared
+
+GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
+GLIBS         += -lMinuit #-lRooFitCore -lRooFit
+
+
+
+
 EXTHEADERS    = -I..
 
 
 # -- Files
 #CSTUFF =
 READER = skimMu3e.o hitDataNoise.o hitDataPixel.o hitDataBase.o plotHitDataPixel.o \
-         trBase.o trGen.o trRec.o plotResults.o # plotClass.o
+         trBase.o trGen.o trRec.o plotResults.o pixelHistograms.o # plotClass.o
 
 DICT = ${READER:.o=Dict.o}
 DICTHEADERS = ${READER:.o=Dict.h}
@@ -74,10 +84,11 @@ all: vars prep lib bin
 lib: prep $(addprefix obj/,$(CSTUFF) $(READER)  $(DICT))
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(DICT)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit $(UTIL)/lib/libAnaUtil.so
 
-bin: lib obj/runSkimMu3e.o obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o obj/anaNoiseMaskFiles.o obj/test1.o
+bin: lib obj/runPixelHistograms.o obj/runSkimMu3e.o obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o obj/anaNoiseMaskFiles.o obj/test1.o
 	$(LD) $(LDFLAGS) -o bin/runSkimMu3e obj/runSkimMu3e.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runHitDataAna obj/runHitDataAna.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runTreeReader obj/runTreeReader.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
+	$(LD) $(LDFLAGS) -o bin/runPixelHistograms obj/runPixelHistograms.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/runPlot obj/runPlot.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/anaNoiseMaskFiles obj/anaNoiseMaskFiles.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
 	$(LD) $(LDFLAGS) -o bin/test1 obj/test1.o $(GLIBS)  $(UTIL)/lib/libAnaUtil.so
@@ -85,7 +96,7 @@ bin: lib obj/runSkimMu3e.o obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.
 # -- preparatory setup
 prep:
 	mkdir -p obj bin lib
-	cd lib && ln -f -s ../$(UTIL)/lib/libAnaUtil.so && cd -
+	cd lib && ln -f -s $(UTIL)/lib/libAnaUtil.so && cd -
 
 # -- clean up
 clean:
