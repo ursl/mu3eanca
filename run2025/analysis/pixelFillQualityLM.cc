@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
 
   int ckdivend(0), ckdivend2(0);
 
-  // -- try to assemble ODB filename
+  // -- try to assemble ODB filename. The logic here is flawed, but this is not relevant atm
   string dataSubdir = getDataSubdir(run);
   cout << "dataSubdir = " << dataSubdir << endl;
   if (odbfilename == "nada.json") {
