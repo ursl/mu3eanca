@@ -71,10 +71,20 @@ int main(int argc, const char* argv[]) {
     {"mcidealv6.1=2025CosmicsVtxOnly", {"pixelalignment_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
     {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} },
     {"datav6.1=2025CosmicsVtxOnly", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
-    {"datav6.2=2025Beam", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "fibrealignment_mcidealv6.1", "tilealignment_mcidealv6.1", "mppcalignment_mcidealv6.1", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly"} }
+    {"datav6.2=2025Beam", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "fibrealignment_mcidealv6.1", "tilealignment_mcidealv6.1", "mppcalignment_mcidealv6.1", "pixelqualitylm_", "detsetupv1_mcidealv6.1"} }
   };    
   
   
+  // -- complete the tags by replacing trailing _ with the _GT
+  for (auto &it: iniGlobalTags) {
+    for (unsigned int i = 0; i < it.second.size(); i++) { 
+      if (it.second[i].back() == '_') {
+        it.second[i] = it.second[i] + it.first;
+      }
+    }
+  } 
+  
+
   // -- command line arguments
   string jsondir("");
   string mode("all");
@@ -123,7 +133,8 @@ int main(int argc, const char* argv[]) {
   string jdir  = jsondir + "/globaltags";
   
   for (auto igt : iniGlobalTags) {
-    if (string::npos == igt.first.find(mode)) continue;
+    if (igt.first != mode) continue;
+    
     vector<string> arrayBuilder;
     for (auto it : igt.second) {
       string tag = ('_' == it.back()? it + igt.first: it);
@@ -145,16 +156,18 @@ int main(int argc, const char* argv[]) {
     JS.close();
   }
   
-  
   // ----------------------------------------------------------------------
   // -- tags/iovs
   // ----------------------------------------------------------------------
   jdir  = jsondir + "/tags";
   vector<int> vIni{1};
   for (auto igt : iniGlobalTags) {
-    if (string::npos == igt.first.find(mode)) continue;
+    //if (string::npos == igt.first.find(mode)) continue;
+    if (igt.first != mode) continue;
+ 
     for (auto it : igt.second) {
-      string tag = ('_' == it.back()? it + igt.first: it);
+      // string tag = ('_' == it.back()? it + igt.first: it);
+      string tag = it;
       vector<int> arrayBuilder;
       for (auto it : vIni) arrayBuilder.push_back(it);
       
@@ -182,21 +195,30 @@ int main(int argc, const char* argv[]) {
   
   string spl(""), hash(""), result("");
   
-  map<string, int> mPayloadCount;
-
   string filename("");
   for (auto igt: iniGlobalTags) {
     // string it = igt.first;
     // if (string::npos == it.find(mode)) continue;
-    if (string::npos == igt.first.find(mode)) continue;
+    //cout << "DBX: " << igt.first << " " << " with tags: " << endl;
+    //for (auto it: igt.second) {
+    //  cout << "  " << it << endl;
+    //}
+    //if (string::npos == igt.first.find(mode)) continue;
+    if (igt.first != mode) continue;
+
     for (auto it : igt.second) {
-      string tag = ('_' == it.back()? it + igt.first: it);
+      string tag = it;
       string tagLess = tag.substr(tag.rfind('_') + 1);
       
-      cout << "cdbInitDB> tag = " << tag << " tagLess = " << tagLess << " it = " << it << endl; 
-      // -- skip if this payload has already been written 
-      mPayloadCount[tag]++;
-      if (mPayloadCount[tag] > 1) continue;
+      //cout << "cdbInitDB> tag = " << tag << " tagLess = " << tagLess << " it = " << it << endl; 
+      bool exactFind(false);
+      for (auto it2: igt.second) {
+        if (it2 == tag) {
+          exactFind = true;
+          break;
+        }
+      }
+      if (!exactFind) continue;
 
       stringstream sstr;
       sstr << "    { \"payload\" : \"" << tag << " tagless = " << tagLess << " it = " << it; 
@@ -322,9 +344,8 @@ int main(int argc, const char* argv[]) {
       if (string::npos != tag.find("pixelqualitylm_")) {
         calPixelQualityLM *cpq = new calPixelQualityLM();
         filename = string(LOCALDIR) + "/ascii/pixelqualitylm-" + tagLess + ".csv";
-        cout << "cdbInitDB> reading " << filename << endl;
+        //cout << "cdbInitDB> reading " << filename << endl;
         cpq->readCsv(filename);
-        cout << "cdbInitDB> readCsv done" << endl;
         string blob = cpq->makeBLOB();
 
         hash = string("tag_pixelqualitylm_" + tagLess + "_iov_1");
