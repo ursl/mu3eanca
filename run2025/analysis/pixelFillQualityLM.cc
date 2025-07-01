@@ -159,23 +159,29 @@ int main(int argc, char* argv[]) {
     }
   }
   if (4 == printMode) {
+    int station(0), layer(0), phi(0), z(0);
+
     // -- create turned on CSV for all chipIDs
     ofstream ofs;
     ofs.open(Form("csv/deadlinks-allpixels.csv"));
-    ofs << "#chipID,linkA,linkB,linkC,linkM,ncol[,icol] NB: linkX: 0 = no error, 1 = dead" << endl;
+    ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
     
     cout << "print all chipIDs" << endl;
-    int station(0), layer(0), phi(0), z(0);
     calAbs* cal = pDC->getCalibration("pixelalignment_");
     calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(cal);
     uint32_t i = 0;
     cpa->resetIterator();
     while(cpa->getNextID(i)) {
-      ofs << cpa->id(i) << ",0,0,0,0,0" << endl;
+      uint32_t chipID = cpa->id(i);
+      chipIDSpecBook(chipID, station, layer, phi, z);
+      if (layer < 3) {
+        cout << "chipID = " << cpa->id(i) << " station/layer/phi/z = " << station << "/" << layer << "/" << phi << "/" << z << endl;
+        ofs << cpa->id(i) << "," << 31 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << endl;
+      }
     }  
     ofs.close();
 
-    string hash = string("tag_pixelqualitylm_") + gt + string("_iov_0");
+    string hash = string("tag_pixelqualitylm_") + gt + string("_iov_1");
     calPixelQualityLM *cpq = new calPixelQualityLM();
     cpq->readCsv(Form("csv/deadlinks-allpixels.csv"));
     string blob = cpq->makeBLOB();
