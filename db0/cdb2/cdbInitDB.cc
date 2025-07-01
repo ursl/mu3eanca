@@ -35,6 +35,8 @@ using namespace std;
 // "mcidealv6.1" MC for tag v6.1
 // 
 // "datav6.1=2025CosmicsVtxOnly"  data for tag v6.1
+// "datav6.2=2025Beam"  data for tags AFTER v6.1, with more than just the VTX
+//                      removed legacy detconf
 // "qc2024v1.0"  pixel sensor chipIds for first vertex module (aka half-shell)
 //
 // -j JSONDIR  output directory with subdirectories globaltags, tags, payloads, runrecords
@@ -45,7 +47,7 @@ using namespace std;
 // --------------
 //
 // -- NOTE: This executable is called during "make install"!
-//          The JSON CDB will be installed in /install/cdb
+//          The JSON CDB will be installed in mu3e/install/cdb
 //
 // -- create all global tags with everything or with a single tag only
 // merlin> _build/conddb/test/cdbInitDB -j ~/data/cdb -m all
@@ -69,7 +71,7 @@ int main(int argc, const char* argv[]) {
     {"mcidealv6.1=2025CosmicsVtxOnly", {"pixelalignment_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
     {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} },
     {"datav6.1=2025CosmicsVtxOnly", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
-    {"datav6.2=2025Beam", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} }
+    {"datav6.2=2025Beam", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "fibrealignment_mcidealv6.1", "tilealignment_mcidealv6.1", "mppcalignment_mcidealv6.1", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly"} }
   };    
   
   
