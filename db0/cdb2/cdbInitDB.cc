@@ -68,7 +68,7 @@ int main(int argc, const char* argv[]) {
     {"mcidealv6.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detsetupv1_", "detconfv1_mcidealv5.1", } },
     {"mcidealv6.1=2025CosmicsVtxOnly", {"pixelalignment_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
     {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} },
-    {"datav6.1=2025CosmicsVtxOnly", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} }
+    {"datav6.1=2025CosmicsVtxOnly", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
     {"datav6.2=2025Beam", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} }
   };    
   
