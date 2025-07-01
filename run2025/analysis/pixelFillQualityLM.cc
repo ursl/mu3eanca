@@ -39,7 +39,7 @@ using namespace std;
 // ---------
 // cd mu3eanca/run2025/analysis
 // bin/pixelFillQualityLM \
-// -j /Users/ursl/data/mu3e/cdb/ -g datav6.1=2025CosmicsVtxOnly \
+// -j /Users/ursl/data/mu3e/cdb/ -g datav6.2=2025Beam \
 // -f /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.root \
 // -o /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.json
 // ----------------------------------------------------------------------
@@ -59,7 +59,7 @@ void createPayload(string, calAbs *, string);
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 bool determineBrokenLinks(TH2 *h, vector<int> &links);
 void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links);
-void determineNoisyPixels(TH2 *h, vector<int> &pixels); // icol,irow,iqual
+void determineNoisyPixels(TH2 *h, vector<int> &pixels, vector<int> &colums, vector<int> &links); // icol,irow,iqual
 
 
 //string DATADIR("/Users/ursl/data/mu3e/run2025");
@@ -317,6 +317,10 @@ int main(int argc, char* argv[]) {
               replaceAll(name, "hitmap_perChip_", "");
               chipID = ::stoi(name); 
               cout << "   .. chipID = " << chipID << " from name = " << name << endl;
+              if (0 == chipID) {
+                cout << "  XXXXXXXXX  skipping illegal chipID = " << chipID << " from name = " << name << " is 0, skipping" << endl;
+                continue;
+              }
               vchipid.push_back(chipID);
               TH2F *h = (TH2F*)key->ReadObj();
               mHitmaps.insert(make_pair(chipID, h));
@@ -372,7 +376,7 @@ int main(int argc, char* argv[]) {
       ofs << 0 << ",";
     }
     // -- determine noisy pixels
-    determineNoisyPixels(mHitmaps[it.first], noisyPixels);
+    determineNoisyPixels(mHitmaps[it.first], noisyPixels, deadcolumns, deadlinks);
     if (noisyPixels.size() > 0) {
       cout << "chipID = " << it.first << " has noisy pixels: ";
       ofs << noisyPixels.size()/3 << ",";
@@ -396,10 +400,11 @@ int main(int argc, char* argv[]) {
   cpq->readCsv(Form("csv/pixelqualitylm-run%d.csv", run));
   createPayload(hash, cpq, "./payloads");
 
-  cout << "READ CSV: " << Form("csv/pixelqualitylm-run%d.csv", run) << endl;
-  cout << "WRITING CSV for validation: " << Form("csv/validatepixelqualitylm-run%d.csv", run) << endl;
-  cpq->writeCsv(Form("csv/validatepixelqualitylm-run%d.csv", run));
-
+  if (0) {
+    cout << "READ CSV: " << Form("csv/pixelqualitylm-run%d.csv", run) << endl;
+    cout << "WRITING CSV for validation: " << Form("csv/validatepixelqualitylm-run%d.csv", run) << endl;
+    cpq->writeCsv(Form("csv/validatepixelqualitylm-run%d.csv", run));
+  }
   cout << "This is the end, my friend" << endl;
   return 0;
 }
@@ -439,7 +444,7 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 
 // ----------------------------------------------------------------------
 bool determineBrokenLinks(TH2 *h, vector<int> &links) {
-  bool DBX(true);
+  bool DBX(false);
   double fractionHits(0.1);
   double nLinkA = h->Integral(1, 88, 1, 250);
   double nLinkB = h->Integral(89, 172, 1, 250);
@@ -511,7 +516,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
 
 // ----------------------------------------------------------------------
 void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links) {
-  bool DBX(true);
+  bool DBX(false);
   double minHits(1);
   double meanHits = h->Integral(1, 256, 1, 250)/h->GetNbinsX();
   if (meanHits < 10) {
@@ -554,8 +559,8 @@ void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links) {
 }
 
 // ----------------------------------------------------------------------
-void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels) {
-  bool DBX(true);
+void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels, vector<int> &colums, vector<int> &links) {
+  bool DBX(false);
 
   int chipCnt = h->GetSumOfWeights();
   int npix(0);
@@ -564,20 +569,23 @@ void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels) {
       if (h->GetBinContent(ix,iy) > 0) ++npix;
     }
   }
-  if (DBX) cout << "chipID = " << h->GetName() << " nhits =  " << chipCnt << " for npix = " << npix << endl;
+  if (DBX) cout << "chipID = " << h->GetName() << " chipCnt =  " << chipCnt << " for npix = " << npix << endl;
   if (npix > 0) {
-    double NSIGMA(10.0);
+    double NSIGMA(7.0);
     double meanHits  = static_cast<double>(chipCnt)/npix;
-    // -- this is WRONG!
+    // -- this is WRONG and biased by noisy pixels
     double meanHitsE = TMath::Sqrt(meanHits);
     double noiseThr  = meanHits + NSIGMA*meanHitsE;
+    double noiseThr2  = meanHits - NSIGMA*meanHitsE;
+    if (noiseThr2 < 0.) noiseThr2 = 1.;
     if (meanHits > 0.) {
       if (DBX) cout << "meanHits = " << meanHits << " +/- " << meanHitsE << " noise threshold = " << noiseThr << endl;
     }
     int nNoisyPix(0);
+    int nDeadPix(0);
     for (int ix = 1; ix <= h->GetNbinsX(); ++ix) {
       for (int iy = 1; iy <= h->GetNbinsY(); ++iy) {
-        float nhits = h->GetBinContent(ix,iy);
+        double nhits = h->GetBinContent(ix,iy);
         if (nhits > noiseThr) {
           ++nNoisyPix;
           noisyPixels.push_back(ix-1);
@@ -587,9 +595,32 @@ void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels) {
             cout << "  noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << endl;
           }
         }
+        if (nhits < noiseThr2) {
+          // -- check if pixel is in dead column
+          if (find(colums.begin(), colums.end(), ix-1) != colums.end()) {
+            continue;
+          }
+          // -- check if pixel is in dead link
+          if (links[0] > 0 && ix < 89) {
+            continue;
+          }
+          if (links[1] > 0 && (ix >= 89 && ix < 173)) { 
+            continue;
+          }
+          if (links[2] > 0 && ix >= 173) {
+            continue;
+          }
+          ++nDeadPix;
+          noisyPixels.push_back(ix-1);
+          noisyPixels.push_back(iy-1);
+          noisyPixels.push_back(9);  
+          if (DBX) {
+            cout << "  dead pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << endl;
+          }
+        }
       }
     }
-    if (DBX) cout << "  -> nNoisyPixel = " << nNoisyPix << endl;
+    if (DBX) cout << "  -> nNoisyPixel = " << nNoisyPix << " nDeadPix = " << nDeadPix << endl;
   }
 }
 
