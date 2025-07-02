@@ -1,0 +1,94 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# purgeIOV
+# ============
+#
+# Usage: ./purgIOV -p payloadDirectory -f tagfile
+#
+# Options: -f tagfile with IOV
+#          -p directory with payloads
+#
+# History 2025/07/02 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+# 
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+
+getopts('f:p:');
+
+if ($opt_f eq "") {
+  $opt_f = "/Users/ursl/data/mu3e/cdb/tags/pixelqualitylm_datav6.2=2025Beam";
+}
+
+if ($opt_p eq "") {
+  $opt_p = "/Users/ursl/data/mu3e/cdb/payloads";
+}
+
+# -- read the tagfile
+
+
+# -- read the tagfile
+open(TAGFILE, "<", $opt_f) or die "Cannot open tagfile $opt_f: $!";
+
+# -- read the entire file content
+my $json_content = "";
+while(<TAGFILE>) {
+    $json_content .= $_;
+}
+close(TAGFILE);
+
+# -- parse the JSON to extract run numbers from iovs array
+my @runnumbers = ();
+my $tag = "";
+if ($json_content =~ /"tag"\s*:\s*"([^"]+)"/) {
+    $tag = $1;
+}
+if ($json_content =~ /"iovs"\s*:\s*\[(.*?)\]/) {
+    my $iovs_string = $1;
+    # -- split by comma and clean up whitespace
+    @runnumbers = map { s/^\s+|\s+$//g; $_ } split(/,/, $iovs_string);
+}
+
+
+# -- read the payload directory
+opendir(DIR, $opt_p) or die "Cannot open payload directory $opt_p: $!";
+my @files = readdir(DIR);
+closedir(DIR);
+
+# -- filter files to only include those matching the tag
+@files = grep { /^tag_${tag}_/ } @files;
+
+# -- remove run numbers that don't have corresponding files
+@runnumbers = grep {
+    my $run = $_;
+    my $found = 0;
+    foreach my $file (@files) {
+        if ($file =~ /_iov_${run}$/) {
+            $found = 1;
+            last;
+        }
+    }
+    $found;
+} @runnumbers;
+
+# -- write the new run numbers back to a new file
+my $new_filename = $opt_f . ".new";
+open(NEWFILE, ">", $new_filename) or die "Cannot create new file $new_filename: $!";
+
+# -- create the JSON content with filtered run numbers
+my $json_output = "{\"tag\" : \"$tag\", \"iovs\" : [";
+$json_output .= join(", ", @runnumbers);
+$json_output .= "]}\n";
+
+print NEWFILE $json_output;
+close(NEWFILE);
+
+print "Wrote " . scalar(@runnumbers) . " run numbers to $new_filename\n";
+
+
+
+
