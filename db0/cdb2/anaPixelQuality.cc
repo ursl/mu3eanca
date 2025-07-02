@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     pPQ->resetIterator();
     cout << " Link status: ";  
     while (pPQ->getNextID(chipid)) {
-      cout << linkStatus(pPQ, chipid) << " ";
+      cout << chipid << ": " << linkStatus(pPQ, chipid) << " ";
     }
     cout << endl;
   }
