@@ -33,6 +33,9 @@ using namespace std;
 //
 // ----------------------------------------------------------------------
 
+
+unsigned int linkStatus(calPixelQualityLM *pPQ, unsigned int chipid);
+
 // -- main function
 int main(int argc, char *argv[]) {
 
@@ -72,6 +75,8 @@ int main(int argc, char *argv[]) {
     if (string::npos != it.find("pixelqualitylm_")) {
       foundPQ = true;
       vIoV = pDC->getIOVs(it);
+      for (auto itIoV: vIoV)  cout << itIoV << " ";
+      cout << endl;
     }
   }
   if (!foundPQ) {
@@ -79,11 +84,39 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  for (auto it: vIoV) {
-    cout << it << endl;
+  calPixelQualityLM *pPQ = (calPixelQualityLM*)pDC->createClass("pixelqualitylm_");
+  if (pPQ) {
+    cout << "pixelqualitylm_ found" << endl;
+    pPQ->setVerbosity(verbose);
+  } else {
+    cout << "pixelqualitylm_ not found" << endl;
+    return 0;
+  }
+
+  // -- Do something for each run
+  for (auto itIoV: vIoV) {
+    cout << "--------------------------------" << endl;
+    cout << "run " << itIoV << endl;
+    pDC->setRunNumber(itIoV);
+    uint32_t chipid(0);
+    pPQ->resetIterator();
+    cout << " Link status: ";  
+    while (pPQ->getNextID(chipid)) {
+      cout << linkStatus(pPQ, chipid) << " ";
+    }
+    cout << endl;
   }
 
 
-
   return 0;
+}
+
+
+// ----------------------------------------------------------------------
+unsigned int linkStatus(calPixelQualityLM *pPQ, unsigned int chipid) {
+  unsigned int result(0);
+  if (pPQ->getLinkStatus(chipid, 0) == 0) result |= 1;
+  if (pPQ->getLinkStatus(chipid, 1) == 0) result |= 2;
+  if (pPQ->getLinkStatus(chipid, 2) == 0) result |= 4;
+  return result;
 }
