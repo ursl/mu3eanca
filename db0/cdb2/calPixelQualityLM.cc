@@ -379,3 +379,18 @@ void calPixelQualityLM::writeCsv(string filename) {
   }
   OUTS.close();
 }
+
+// ----------------------------------------------------------------------
+int calPixelQualityLM::getLinkStatus(unsigned int chipid, int ilink) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return -1; // -- chip not found
+  }
+  
+  switch (ilink) {
+    case 0: return static_cast<int>(fMapConstants[chipid].linkA);
+    case 1: return static_cast<int>(fMapConstants[chipid].linkB);
+    case 2: return static_cast<int>(fMapConstants[chipid].linkC);
+    case 3: return static_cast<int>(fMapConstants[chipid].linkM);
+    default: return -1; // -- invalid link number
+  }
+}
