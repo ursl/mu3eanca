@@ -7,10 +7,14 @@
 # Usage: ./doForRunList -c "command" -p mid.lz4 -r 6234,6235,6236
 #
 # Options: -c command to be run on all files matching a runnumber
-#          -p pattern pattern to match
+#          -p pattern pattern to match. If this is missing, the loop is only controlled via -r!!
 #          -r runlist runlist to get files from
 #
+# Examples: ~/mu3e/mu3eanca/perl/doForRunList -p root -c "ls -l XXX" -r "6301,6300,6299"
+#
 # History 2025/06/26 first shot
+#         2025/07/03 Allow running without -p 
+#
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 # 
@@ -25,10 +29,6 @@ if ($opt_c eq "") {
   $opt_c = "echo";
 }
 
-if ($opt_p eq "") {
-  $opt_p = "mid.lz4";
-}
-
 if ($opt_r eq "") {
   $opt_r = "6234,6235,6236";
 }
@@ -36,33 +36,42 @@ if ($opt_r eq "") {
 @runlist = split(/,/, $opt_r);
 
 # -- Create array with all files matching both pattern and run numbers
-@matching_files = ();
+if ($opt_p ne "") {
+  @matching_files = ();
 
-foreach $run (@runlist) {
-    # -- First glob to find files containing the run number
-    @files = glob("*${run}*");
-    
-    # -- Then apply regex pattern matching to filter files
-    foreach $file (@files) {
-        if ($file =~ /$opt_p/) {
-            push(@matching_files, $file);
-        }
+  foreach $run (@runlist) {
+      # -- First glob to find files containing the run number
+      @files = glob("*${run}*");
+      
+      # -- Then apply regex pattern matching to filter files
+      foreach $file (@files) {
+          if ($file =~ /$opt_p/) {
+              push(@matching_files, $file);
+          }
+      }
+  }
+
+  # -- Remove duplicates and sort
+  @matching_files = sort(keys(%{{map{$_ => 1} @matching_files}}));
+
+  # -- now do command on each file
+  foreach $file (@matching_files) {
+    $lcmd = "$opt_c";
+    # -- replace XXX with the filename
+    $lcmd =~ s/XXX/$file/g;
+    print "$lcmd\n";
+    # -- run command
+    if (!$opt_d) {
+      system($lcmd);
     }
-}
-
-# -- Remove duplicates and sort
-@matching_files = sort(keys(%{{map{$_ => 1} @matching_files}}));
-
-# -- now do command on each file
-foreach $file (@matching_files) {
-  $lcmd = "$opt_c";
-  # -- replace XXX with the filename
-  $lcmd =~ s/XXX/$file/g;
-  print "$lcmd\n";
-  # -- run command
-  if (!$opt_d) {
-    system($lcmd);
+  }
+} else {
+  foreach $run (@runlist) {
+    $lcmd = "$opt_c";
+    $lcmd =~ s/XXX/$run/g;
+    print "$lcmd\n";
+    if (!$opt_d) {
+      system($lcmd);
+    }
   }
 }
-
-
