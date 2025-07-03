@@ -23,7 +23,7 @@ public:
   void bookHist(std::string hname, std::string hType);
   void readHist(std::string hname, std::string hType);
   void saveHistograms();
-  void plotHistograms();
+  void plotHistograms(std::string hname, std::string htype);
 
   void  setCalPixelQualityLM(calPixelQualityLM* calPixelQualityLM) {fCalPixelQualityLM = calPixelQualityLM;}
   void  setRun(int run) {fRun = run;}

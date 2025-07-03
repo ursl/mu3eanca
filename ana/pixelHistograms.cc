@@ -64,9 +64,6 @@ void pixelHistograms::init(int mode) {
     bookHist("rj_hm", "chipmap");
     bookHist("rj_ht", "chipToT");
 
-    // -- debugging stuff
-    bookHist("loToT_hm", "chipmap");
-    bookHist("loToT_ht", "chipToT");
 
     fTH1D["badChipIDs"] = new TH1D("badChipIDs", "badChipIDs", 200, 0, 1000000);
   } else if (1 == mode) {
@@ -78,10 +75,6 @@ void pixelHistograms::init(int mode) {
     // -- distributions for rejected pixel hits
     readHist("rj_hm", "chipmap");
     readHist("rj_ht", "chipToT");
-
-    // -- debugging stuff
-    readHist("loToT_hm", "chipmap");
-    readHist("loToT_ht", "chipToT");
 
   } else {
     cout << "pixelHistograms::init() mode = " << mode << " not implemented" << endl;
@@ -97,9 +90,9 @@ pixelHistograms::~pixelHistograms() {
     fFile->Close();
     delete fFile;
   } else {
-
-    plotHistograms();
-
+    plotHistograms("hitmap", "chipmap");
+    plotHistograms("hittot", "chipToT");
+  
     if (fTH1D["badChipIDs"]) {
       cout << "Total bad chipIDs = " << fTH1D["badChipIDs"]->GetEntries() << endl;
     }
@@ -226,7 +219,7 @@ bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsi
               << " hitToA = " << hitToA << " hitToT = " << hitToT 
               << endl;
 
-  vector<string> histnames = {"hitmap", "hittot", "rawtot", "loToT_hm", "loToT_ht"};
+  vector<string> histnames = {"hitmap", "hittot", "rawtot"};
   for (auto hist: histnames) {
     string hname = Form("C%d_%s", chipid, hist.c_str());
     // cout << "pixelHistograms::pixel() hname = " << hname << " hist = " << hist << endl;
@@ -236,14 +229,6 @@ bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsi
       fTH1D[hname]->Fill(hitToT);
     } else if (string::npos != hist.find("rawtot")) {
       fTH1D[hname]->Fill(rawtot);
-    } else if (string::npos != hist.find("loToT_hm")) {
-      if (isLowToT) {
-        fTH2D[hname]->Fill(col, row);
-      }
-    } else if (string::npos != hist.find("loToT_ht")) {
-      if (isLowToT) {
-        fTH1D[hname]->Fill(hitToT);
-      }
     }
   }
 
@@ -252,7 +237,13 @@ bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsi
 
 
 // ---------------------------------------------------------------------- 
-void pixelHistograms::plotHistograms() {
+void pixelHistograms::plotHistograms(string hname, string htype) {  
+  string opt = "col";
+  if (string::npos != htype.find("chipmap")) {
+    opt = "col";
+  } else if (string::npos != htype.find("chipToT")) {
+    opt = "hist";
+  }
 
  // -- hitmaps
     TCanvas *c = new TCanvas("c", "c", 800, 1000);
@@ -283,9 +274,15 @@ void pixelHistograms::plotHistograms() {
       // cout << "fLayer1[i] = " << fLayer1[i] << " " << fTH2D[fLayer1[i]] << endl;
 
       string hname = Form("C%d_hitmap", fLayer1[i]);
-      cout << "pixelHistograms::plotHistograms() " << hname << " = " << fTH2D[hname] << endl;
-      fTH2D[hname]->Draw("col");
-      fTH2D[hname]->SetTitleSize(0.3);
+      TH1 *h;
+      if (string::npos != htype.find("chipmap")) {  
+        h = fTH2D[hname];
+      } else if (string::npos != htype.find("chipToT")) {
+        h = fTH1D[hname];
+      }
+      cout << "pixelHistograms::plotHistograms() " << hname << " = " << h << endl;
+      h->Draw(opt.c_str());
+      h->SetTitleSize(0.3);
     }
 
     c->cd(2);
@@ -304,7 +301,13 @@ void pixelHistograms::plotHistograms() {
       gPad->SetTopMargin(0.0);
       // cout << "fLayer2[i] = " << fLayer2[i] << " " << fTH2D[fLayer2[i]] << endl;
       string hname = Form("C%d_hitmap", fLayer2[i]);
-      fTH2D[hname]->Draw("col");
+      TH1 *h;
+      if (string::npos != htype.find("chipmap")) {  
+        h = fTH2D[hname];
+      } else if (string::npos != htype.find("chipToT")) {
+        h = fTH1D[hname];
+      }
+      h->Draw(opt.c_str());
     }
     c->SaveAs(("out/pixelHitmaps-" + to_string(fRun) + ".pdf").c_str());
     delete c;
