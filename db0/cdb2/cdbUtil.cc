@@ -453,6 +453,7 @@ string jsonGetVector(const string& jstring, const vector<string>& keys) {
 
 // ----------------------------------------------------------------------
 vector<string> jsonGetVectorOfValues(const string& jstring, const vector<string>& keys) {
+  // FIXME THIS IS NOT YET READY FOR USE!
   vector<string> result;
   const bool DBX(true);
   
