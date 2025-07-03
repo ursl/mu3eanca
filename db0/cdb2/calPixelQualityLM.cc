@@ -74,7 +74,8 @@ void calPixelQualityLM::calculate(string hash) {
     if (ncol > 0) { 
       for (int i = 0; i < ncol; ++i) {
         int icol            = blob2Int(getData(ibuffer));
-        a.mcol.insert({ icol, static_cast<char>(9) });
+        unsigned int iqual  = blob2UnsignedInt(getData(ibuffer));
+        a.mcol.insert({ icol, static_cast<char>(iqual) });
       }
     }
 
@@ -99,6 +100,15 @@ void calPixelQualityLM::calculate(string hash) {
 
 
 // ----------------------------------------------------------------------
+int calPixelQualityLM::getColStatus(unsigned int chipid, int icol) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return -1; // -- chip not found
+  }
+  return static_cast<int>(fMapConstants[chipid].mcol[icol]);
+}
+
+
+// ----------------------------------------------------------------------
 int calPixelQualityLM::getStatus(unsigned int chipid, int icol, int irow) {
   // -- first check dead links  
   if (fMapConstants[chipid].linkA > 0 && icol < 89) {
@@ -110,12 +120,12 @@ int calPixelQualityLM::getStatus(unsigned int chipid, int icol, int irow) {
   if (fMapConstants[chipid].linkC > 0 && icol >= 173) {
     return static_cast<int>(fMapConstants[chipid].linkC);
   }
-  // -- now check dead columns
+  // -- now check  column status
   if (fMapConstants[chipid].mcol.find(icol) != fMapConstants[chipid].mcol.end()) {
     return static_cast<int>(fMapConstants[chipid].mcol[icol]);
   } 
 
-  // -- finally check dead pixels
+  // -- finally check pixel status
   if (fMapConstants[chipid].mpixel.find(icol*250+irow) == fMapConstants[chipid].mpixel.end()) {
     return 0;
   } else {
@@ -156,10 +166,11 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
     // -- get number of column entries
     int ncol = blob2Int(getData(ibuffer));
     if (ncol > 0) { 
-      cout << "            dead columns: ";
+      cout << "            column status (col/qual): ";
       for (int i = 0; i < ncol; ++i) {
-        int icol = blob2Int(getData(ibuffer));
-        cout << icol << (i < ncol-1? ", ":"");
+        int icol           = blob2Int(getData(ibuffer));
+        unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
+        cout << icol << "/" << iqual << (i < ncol-1? ", ":"");
       }
       cout << endl;
     }
@@ -244,7 +255,9 @@ string calPixelQualityLM::makeBLOB() {
     s << dumpArray(int2Blob(ncol));
     for (auto it: a.mcol) {
       int icol = it.first;
+      unsigned int iqual = static_cast<unsigned int>(it.second);
       s << dumpArray(int2Blob(icol));
+      s << dumpArray(uint2Blob(iqual));
     }
 
     // -- get number of pixel entries
@@ -272,7 +285,7 @@ string calPixelQualityLM::makeBLOB(const map<unsigned int, vector<double>>& m) {
   s << dumpArray(uint2Blob(header));
 
   // -- format of m
-  // chipID => ckdivend, ckdivend2, linkA, linkB, linkC, linkM, ncol [, icol], npix [, icol, irow, iqual]
+  // chipID => ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual]
   for (auto it: m) {
     s << dumpArray(uint2Blob(it.first));
     // -- ckdivend and ckdivend2
@@ -339,7 +352,8 @@ void calPixelQualityLM::readCsv(string filename) {
     a.mcol.clear();
     for (unsigned ipix = 0; ipix < ncol; ++ipix) {
       int icol           = stoi(tokens[8 + ipix]);
-      a.mcol[icol] = static_cast<char>(9); // -- 9 = chip off
+      unsigned int iqual = stoi(tokens[9 + ipix]);
+      a.mcol[icol] = static_cast<char>(iqual);
     }
     // -- initialize pixel map
     int npix = stoi(tokens[8 + ncol]);
@@ -360,7 +374,7 @@ void calPixelQualityLM::readCsv(string filename) {
 // ----------------------------------------------------------------------
 void calPixelQualityLM::writeCsv(string filename) {
   ofstream OUTS(filename);
-  OUTS << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
+  OUTS << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,qual],npix[,icol,irow,qual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
 
  
   for (auto it: fMapConstants) {
@@ -370,6 +384,7 @@ void calPixelQualityLM::writeCsv(string filename) {
     OUTS << it.second.mcol.size();
     for (auto itC: it.second.mcol) {
       OUTS << "," << itC.first;
+      OUTS << "," << static_cast<int>(itC.second);
     }
     OUTS << "," << it.second.mpixel.size();
     for (auto itP: it.second.mpixel) {

@@ -34,7 +34,8 @@ public:
   void writeCsv(std::string filename);
 
 
-  int         getStatus(unsigned int chipid, int icol, int irow)  override;
+  int         getStatus(unsigned int chipid, int icol, int irow) override;
+  int         getColStatus(unsigned int chipid, int icol);
   int         getLinkStatus(unsigned int chipid, int ilink);
 
   bool        getNextID(uint32_t &ID);
@@ -46,7 +47,7 @@ public:
 
 private:
   std::string fPixelQualityTag{"pixelqualitylm_"};
-  std::string fSchema{"ui_id,ui_ckdivend,ui_ckdivend2,ui_linkA,ui_linkB,ui_linkC,ui_linkM,i_ncol[,i_col],i_npix[,i_col,i_row,ui_qual]"};
+  std::string fSchema{"ui_id,ui_ckdivend,ui_ckdivend2,ui_linkA,ui_linkB,ui_linkC,ui_linkM,i_ncol[,i_col,ui_qual],i_npix[,i_col,i_row,ui_qual]"};
 
   // -- local and private
   struct constants {
