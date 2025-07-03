@@ -37,7 +37,7 @@ using namespace std;
 // Determine (placeholder/offline) DQM information for pixelQualityLM
 //
 // Notes: 
-// (1) Dead/problematic  links are determined based on average (per-link) hits
+// (1) Dead/problematic links are determined based on average (per-link) hits
 // (2) Dead/problematic columns are determined based on average (per-column) hits 
 // (3) Noisy pixels are determined on hit counts being larger than 10*sigma of the average (per-pixel) hits. 
 // (4) If more than 40 of the pixels in a column are noisy, the entire column is flagged as suspect.
@@ -351,10 +351,10 @@ int main(int argc, char* argv[]) {
   vector<int> deadlinks, deadcolumns, noisyPixels;
   ofstream ofs;
   ofs.open(Form("csv/pixelqualitylm-run%d.csv", run));
-  ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
+  ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
   for (auto it: mHitmaps){
     // -- debug with first 12 only FIXME
-    //if (it.first > 38) break;
+    //if (it.first != 1315) continue;
     // -- clear all vectors for this new chipID
     deadlinks.clear();
     deadcolumns.clear();
@@ -383,8 +383,8 @@ int main(int argc, char* argv[]) {
 
     // -- write out dead columns only after potential correction in noisy pixel determination
     if (deadcolumns.size() > 0) {
-      cout << "chipID = " << it.first << " has dead/bad columns: ";
-      ofs << deadcolumns.size() << ",";
+      cout << "chipID = " << it.first << " has " << deadcolumns.size()/2 << " dead/bad columns: ";
+      ofs << deadcolumns.size()/2 << ",";
       for (auto itC = deadcolumns.begin(); itC != deadcolumns.end(); ++itC) {
         cout << *itC << " ";
         ofs << *itC << ",";
@@ -410,6 +410,7 @@ int main(int argc, char* argv[]) {
     }
     
     ofs << endl;
+    //break;
   }
   ofs.close();
 
@@ -464,9 +465,11 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   bool DBX(false);
   double fractionHits(0.1);
-  double nLinkA = h->Integral(1, 88, 1, 250);
-  double nLinkB = h->Integral(89, 172, 1, 250);
-  double nLinkC = h->Integral(173, 256, 1, 250);
+  // -- remove 5 pixels from one edge to avoid edge noise in the A/C links which would make B "suspect"
+  double edge(8.);
+  double nLinkA = h->Integral(1+edge, 88, 1, 250);
+  double nLinkB = h->Integral(89+edge, 172, 1, 250);
+  double nLinkC = h->Integral(173, 256-edge, 1, 250);
   double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
   double cutMinHits = (nLinkAverage < 10? 1: fractionHits*nLinkAverage);
 
@@ -561,8 +564,8 @@ void determineDeadColumns(TH2 *h, vector<int> &columns, vector<int> &links) {
       if (linkC > 0 && ix >= 173) {
         continue;
       }
-      auto it = std::lower_bound(columns.begin(), columns.end(), ix-1);
-      columns.insert(it, ix-1);
+      columns.push_back(ix-1);
+      columns.push_back(9); 
       if (DBX) {
         cout << "determineDeadColumns> ix = " << ix << " pushed! nHits = " << nHits
              << " minHits = " << minHits << " deadlinks = ";
@@ -591,8 +594,8 @@ void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels, vector<int> &columns
   }
   if (DBX) cout << "chipID = " << h->GetName() << " chipCnt =  " << chipCnt << " for npix = " << npix << endl;
   if (npix > 0) {
-    // -- noise threshold to be 7 x sigma above the mean hit number per pixel
-    double NSIGMA(7.0);
+    // -- noise threshold to be 10 x sigma above the mean hit number per pixel
+    double NSIGMA(10.0);
     // -- if more than SUSPECTFRACTION of the pixel in a column are noisy, flag the entire column as suspect
     double SUSPECTMAXIMUM(40);
     double meanHits  = static_cast<double>(chipCnt)/npix;
@@ -654,8 +657,11 @@ void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels, vector<int> &columns
           noisyPixels.pop_back();
           noisyPixels.pop_back();
         }
-        auto it = std::lower_bound(columns.begin(), columns.end(), ix-1);
-        columns.insert(it, ix-1);
+
+        // -- possibly out of order!
+        columns.push_back(ix-1);
+        columns.push_back(3);
+
         if (DBX) {
           cout << "  -> colNoisyPixels > SUSPECTMAXIMUM -> removing " << colNoisyPixels << " noisy pixels, deadcolumn: " << endl;
           for (auto it00: columns) {
