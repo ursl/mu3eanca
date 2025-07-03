@@ -166,7 +166,7 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
     // -- get number of column entries
     int ncol = blob2Int(getData(ibuffer));
     if (ncol > 0) { 
-      cout << "            column status (col/qual): ";
+      cout << "            column status " << ncol << " (col/qual): ";
       for (int i = 0; i < ncol; ++i) {
         int icol           = blob2Int(getData(ibuffer));
         unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
@@ -177,7 +177,7 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
     if (npix > 0) { 
-      cout << "            defective pixels (col/row/qual): " ;
+      cout << "            defective pixels " << npix << " (col/row/qual): " ;
       for (int i = 0; i < npix; ++i) {
         int icol           = blob2Int(getData(ibuffer));
         int irow           = blob2Int(getData(ibuffer));
@@ -351,17 +351,17 @@ void calPixelQualityLM::readCsv(string filename) {
     int ncol = stoi(tokens[7]);
     a.mcol.clear();
     for (unsigned ipix = 0; ipix < ncol; ++ipix) {
-      int icol           = stoi(tokens[8 + ipix]);
-      unsigned int iqual = stoi(tokens[9 + ipix]);
+      int icol           = stoi(tokens[8 + 2*ipix]);
+      unsigned int iqual = stoi(tokens[8 + 2*ipix + 1]);
       a.mcol[icol] = static_cast<char>(iqual);
     }
     // -- initialize pixel map
-    int npix = stoi(tokens[8 + ncol]);
+    int npix = stoi(tokens[8 + 2*ncol]);
     a.mpixel.clear();
     for (unsigned ipix = 0; ipix < npix; ++ipix) {
-      int icol           = stoi(tokens[9 + ncol + ipix*3]);
-      int irow           = stoi(tokens[9 + ncol + ipix*3 + 1]);
-      int iqual          = stoi(tokens[9 + ncol + ipix*3 + 2]);
+      int icol           = stoi(tokens[9 + 2*ncol + ipix*3]);
+      int irow           = stoi(tokens[9 + 2*ncol + ipix*3 + 1]);
+      int iqual          = stoi(tokens[9 + 2*ncol + ipix*3 + 2]);
       a.mpixel[icol*250 + irow] = static_cast<char>(iqual);
     }
     fMapConstants.insert(make_pair(a.id, a));
@@ -374,7 +374,7 @@ void calPixelQualityLM::readCsv(string filename) {
 // ----------------------------------------------------------------------
 void calPixelQualityLM::writeCsv(string filename) {
   ofstream OUTS(filename);
-  OUTS << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,qual],npix[,icol,irow,qual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
+  OUTS << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
 
  
   for (auto it: fMapConstants) {
