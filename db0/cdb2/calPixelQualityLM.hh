@@ -38,6 +38,8 @@ public:
   int         getColStatus(unsigned int chipid, int icol);
   int         getLinkStatus(unsigned int chipid, int ilink);
 
+  int         getNpixWithStatus(unsigned int chipid, int status);
+
   bool        getNextID(uint32_t &ID);
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
 

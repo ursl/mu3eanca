@@ -107,7 +107,39 @@ int calPixelQualityLM::getColStatus(unsigned int chipid, int icol) {
   return static_cast<int>(fMapConstants[chipid].mcol[icol]);
 }
 
+// ----------------------------------------------------------------------
+int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, int status) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return -1; // -- chip not found
+  }
+  int n(0);
+  for (auto it: fMapConstants[chipid].mpixel) {
+    if (0 == status) {
+      // -- count all pixels with bad status
+      if (it.second != 0) n++;
+    } else {
+      if (it.second == status) n++;
+    }
+  }
+  // -- check column status
+  for (auto it: fMapConstants[chipid].mcol) {
+    if (0 == status) {
+      // -- count all columns with bad status
+      if (it.second != 0) n += 250;
+    } else {
+      if (it.second == status) n += 250; // -- all pixels in this column are defective
+    }
+  }
 
+  if (0 == status) {
+    n = 256*250 - n;
+    //cout << "chipID = " << chipid << " has " << n << " pixels with good status" << endl;
+  } else {
+    //cout << "chipID = " << chipid << " has " << n << " pixels with status " << status << endl;
+  }
+
+  return n;
+}
 // ----------------------------------------------------------------------
 int calPixelQualityLM::getStatus(unsigned int chipid, int icol, int irow) {
   // -- first check dead links  
