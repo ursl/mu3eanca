@@ -382,7 +382,7 @@ int main(int argc, char* argv[]) {
     //if (it.first != 1315) continue;
     // -- check if chipID is in the list of valid chipIDs
     if (find(gChipIDs.begin(), gChipIDs.end(), it.first) == gChipIDs.end()) {
-      cout << "chipID = " << it.first << " is not in the list of valid chipIDs" << endl;
+      cout << "XXXXXXXXXchipID = " << it.first << " is not in the list of valid chipIDs" << endl;
       continue;
     }
     // -- clear all vectors for this new chipID
