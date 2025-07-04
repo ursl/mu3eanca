@@ -1,3 +1,4 @@
+#include <Rtypes.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,8 +9,10 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TCanvas.h>
+#include <TLatex.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TLine.h>
 #include <string.h>
 #include <unordered_map>
 #include <sstream>
@@ -145,6 +148,7 @@ int main(int argc, char *argv[]) {
     if (string::npos != it.find("pixelqualitylm_")) {
       foundPQ = true;
       vIoV = pDC->getIOVs(it);
+      cout << "Tag " << it << " has " << vIoV.size() << " IOVs: ";
       for (auto itIoV: vIoV)  cout << itIoV << " ";
       cout << endl;
     }
@@ -197,16 +201,14 @@ int main(int argc, char *argv[]) {
   hLinkStatus->SetZTitle("Working links");  
   hLinkStatus->SetMaximum(6); // simplest way to get reasonable color scheme
 
-  TH1D *hNoisyPixelVsRun = new TH1D("hNoisyPixelVsRun", "Noisy pixels per run", nRuns, minRun, maxRun);
+  TH1D *hNoisyPixelVsRun = new TH1D("hNoisyPixelVsRun", "Total number of noisy pixels per run", nRuns, minRun, maxRun);
   hNoisyPixelVsRun->SetXTitle("Run");
   hNoisyPixelVsRun->SetYTitle("Noisy pixels");
 
   // -- this is only for debugging (e.g. if some illegal chipIDs sneaked in)
-  TH1D *hGoodPixelVsRun = new TH1D("hGoodPixelVsRun", "Good pixels per run", nRuns, minRun, maxRun);
+  TH1D *hGoodPixelVsRun = new TH1D("hGoodPixelVsRun", "Total number of good pixels per run", nRuns, minRun, maxRun);
   hGoodPixelVsRun->SetXTitle("Run");
   hGoodPixelVsRun->SetYTitle("Good pixels");
-
-
 
   for (auto itIoV: vIoV) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
@@ -377,11 +379,20 @@ void plotHistograms(string filename) {
 
   TH1D *hGoodPixelVsRun = (TH1D*)pFile->Get("hGoodPixelVsRun");
   setRunLabelsX(hGoodPixelVsRun);
-  hGoodPixelVsRun->SetMinimum(0.5);
+  hGoodPixelVsRun->SetMinimum(1.e5);
   hGoodPixelVsRun->SetStats(0);
   hGoodPixelVsRun->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
   hGoodPixelVsRun->Draw("hist");
+  TLine *l1 = new TLine(0., 108*64000., hGoodPixelVsRun->GetXaxis()->GetBinCenter(hGoodPixelVsRun->GetNbinsX()), 108*64000.);
+  l1->SetLineColor(kBlack);
+  l1->SetLineStyle(kDashed);
+  l1->Draw();
+  TLatex *t1 = new TLatex();
+  t1->SetTextColor(kBlack);
+  t1->SetTextSize(0.02);
+  t1->DrawLatexNDC(0.2, 0.82, "N_{pix}^{VTX} = 108*64000");
+
   c1->SaveAs("hGoodPixelVsRun.pdf");
 
   // -- close the file  
