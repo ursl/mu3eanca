@@ -113,7 +113,9 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
     return -1; // -- chip not found
   }
+  // -- n counts the defective pixels. If status == 0 (Good) was requested, then it is inverted at the end.
   int n(0);
+  // -- check pixel status
   for (auto it: fMapConstants[chipid].mpixel) {
     if (fVerbose > 4) cout << "calPixelQualityLM::getNpixWithStatus> pixel = " << it.first << " status = " << static_cast<int>(it.second) << endl;
     if (0 == status) {
@@ -133,6 +135,32 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
       if (it.second == status) n += 250; // -- all pixels in this column are defective
     }
   }
+
+  // -- check link status
+  for (int ilink = 0; ilink < 3; ++ilink) {
+    if (0 == status) {
+      if (fMapConstants[chipid].linkA != 0) {
+        n += 250*89;
+      }
+      if (fMapConstants[chipid].linkB != 0) {
+        n += 250*84;
+      }
+      if (fMapConstants[chipid].linkC != 0) {
+        n += 250*83;
+      }
+    } else {
+      if (fMapConstants[chipid].linkA == status) {
+        n += 250*89;
+      }
+      if (fMapConstants[chipid].linkB == status) {
+        n += 250*84;
+      }
+      if (fMapConstants[chipid].linkC == status) {
+        n += 250*83;
+      }
+    }
+  }
+
 
   if (0 == status) {
     n = 256*250 - n;
