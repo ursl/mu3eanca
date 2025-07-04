@@ -80,6 +80,31 @@ string getDataSubdir(int runnumber) {
   return Form("%s/%s", DATADIR.c_str(), blockdir.c_str());
 }
 
+// ----------------------------------------------------------------------
+// -- VALID chipIDs for layer 1 and layer 2
+// -- without this, the payloads will have too many chips 
+// ----------------------------------------------------------------------
+vector<int> gChipIDs = {1,2,3,4,5,6,
+          33, 34, 35, 36, 37, 38,
+          65, 66, 67, 68, 69, 70,
+          97, 98, 99, 100, 101, 102,
+          129, 130, 131, 132, 133, 134,
+          161, 162, 163, 164, 165, 166,
+          193, 194, 195, 196, 197, 198,
+          225, 226, 227, 228, 229, 230,
+          // -- layer 2
+          1025, 1026, 1027, 1028, 1029, 1030,
+          1057, 1058, 1059, 1060, 1061, 1062,
+          1089, 1090, 1091, 1092, 1093, 1094,
+          1121, 1122, 1123, 1124, 1125, 1126,
+          1153, 1154, 1155, 1156, 1157, 1158,
+          1185, 1186, 1187, 1188, 1189, 1190,
+          1217, 1218, 1219, 1220, 1221, 1222,
+          1249, 1250, 1251, 1252, 1253, 1254,
+          1281, 1282, 1283, 1284, 1285, 1286,
+          1313, 1314, 1315, 1316, 1317, 1318
+          };
+
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
@@ -355,6 +380,11 @@ int main(int argc, char* argv[]) {
   for (auto it: mHitmaps){
     // -- debug with first 12 only FIXME
     //if (it.first != 1315) continue;
+    // -- check if chipID is in the list of valid chipIDs
+    if (find(gChipIDs.begin(), gChipIDs.end(), it.first) == gChipIDs.end()) {
+      cout << "chipID = " << it.first << " is not in the list of valid chipIDs" << endl;
+      continue;
+    }
     // -- clear all vectors for this new chipID
     deadlinks.clear();
     deadcolumns.clear();
