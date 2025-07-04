@@ -30,7 +30,7 @@ public:
   void printBLOB(std::string s, int verbosity = 1) override;
 
 
-  int         getStatus(unsigned int chipid, int icol, int irow)  override;
+  int         getStatus(unsigned int chipid, int icol, int irow);
 
   bool        getNextID(uint32_t &ID);
   void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);

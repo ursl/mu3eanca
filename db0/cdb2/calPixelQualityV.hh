@@ -28,7 +28,7 @@ public:
   std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
   void printBLOB(std::string, int verbosity = 1) override;
 
-  int         getStatus(unsigned int chipid, int icol, int irow)  override;
+  int         getStatus(unsigned int chipid, int icol, int irow);
 
   bool        getNextID(uint32_t &ID);
   void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);

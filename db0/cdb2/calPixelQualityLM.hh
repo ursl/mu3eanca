@@ -12,7 +12,6 @@
 // ----------------------------------------------------------------------
 class calPixelQualityLM : public calAbs {
 public:
-
   calPixelQualityLM() = default;
   calPixelQualityLM(cdbAbs *db);
   calPixelQualityLM(cdbAbs *db, std::string tag);
@@ -33,12 +32,20 @@ public:
   void readCsv(std::string filename); 
   void writeCsv(std::string filename);
 
+  enum Status {
+    ChipNotFound = -1,
+    Good = 0,
+    Noisy = 1,
+    Suspect = 2,
+    DeclaredBad = 3,
+    TurnedOff = 9
+  };
 
-  int         getStatus(unsigned int chipid, int icol, int irow) override;
-  int         getColStatus(unsigned int chipid, int icol);
-  int         getLinkStatus(unsigned int chipid, int ilink);
+  Status getStatus(unsigned int chipid, int icol, int irow);
+  Status getColStatus(unsigned int chipid, int icol);
+  Status getLinkStatus(unsigned int chipid, int ilink);
 
-  int         getNpixWithStatus(unsigned int chipid, int status);
+  int         getNpixWithStatus(unsigned int chipid, Status status);
 
   bool        getNextID(uint32_t &ID);
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}

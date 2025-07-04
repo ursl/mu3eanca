@@ -45,7 +45,7 @@ calPixelQualityLM::~calPixelQualityLM() {
 
 // ----------------------------------------------------------------------
 void calPixelQualityLM::calculate(string hash) {
-  cout << "calPixelQualityLM::calculate() with "
+  if (fVerbose > 0) cout << "calPixelQualityLM::calculate() with "
        << "fHash ->" << hash << "<-"
        << endl;
   fMapConstants.clear();
@@ -55,7 +55,7 @@ void calPixelQualityLM::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calPixelQualityLM header: " << hex << header << dec << endl;
+  if (fVerbose > 0) cout << "calPixelQualityLM header: " << hex << header << dec << endl;
 
   int npix(0), ncol(0);
   while (ibuffer != buffer.end()) {
@@ -100,15 +100,15 @@ void calPixelQualityLM::calculate(string hash) {
 
 
 // ----------------------------------------------------------------------
-int calPixelQualityLM::getColStatus(unsigned int chipid, int icol) {
+calPixelQualityLM::Status calPixelQualityLM::getColStatus(unsigned int chipid, int icol) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
-    return -1; // -- chip not found
+    return Status::ChipNotFound; // -- chip not found
   }
-  return static_cast<int>(fMapConstants[chipid].mcol[icol]);
+  return static_cast<Status>(fMapConstants[chipid].mcol[icol]);
 }
 
 // ----------------------------------------------------------------------
-int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, int status) {
+int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
     return -1; // -- chip not found
   }
@@ -140,28 +140,29 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, int status) {
 
   return n;
 }
+
 // ----------------------------------------------------------------------
-int calPixelQualityLM::getStatus(unsigned int chipid, int icol, int irow) {
+calPixelQualityLM::Status calPixelQualityLM::getStatus(unsigned int chipid, int icol, int irow) {
   // -- first check dead links  
   if (fMapConstants[chipid].linkA > 0 && icol < 89) {
-    return static_cast<int>(fMapConstants[chipid].linkA);
+    return static_cast<Status>(fMapConstants[chipid].linkA);
   } 
   if (fMapConstants[chipid].linkB > 0 && icol >= 89 && icol < 173) {
-    return static_cast<int>(fMapConstants[chipid].linkB);
+    return static_cast<Status>(fMapConstants[chipid].linkB);
   }
   if (fMapConstants[chipid].linkC > 0 && icol >= 173) {
-    return static_cast<int>(fMapConstants[chipid].linkC);
+    return static_cast<Status>(fMapConstants[chipid].linkC);
   }
   // -- now check  column status
   if (fMapConstants[chipid].mcol.find(icol) != fMapConstants[chipid].mcol.end()) {
-    return static_cast<int>(fMapConstants[chipid].mcol[icol]);
+    return static_cast<Status>(fMapConstants[chipid].mcol[icol]);
   } 
 
   // -- finally check pixel status
   if (fMapConstants[chipid].mpixel.find(icol*250+irow) == fMapConstants[chipid].mpixel.end()) {
-    return 0;
+    return Status::Good;
   } else {
-    return static_cast<int>(fMapConstants[chipid].mpixel[icol*250+irow]);
+    return static_cast<Status>(fMapConstants[chipid].mpixel[icol*250+irow]);
   }
 }
 
@@ -428,16 +429,16 @@ void calPixelQualityLM::writeCsv(string filename) {
 }
 
 // ----------------------------------------------------------------------
-int calPixelQualityLM::getLinkStatus(unsigned int chipid, int ilink) {
+calPixelQualityLM::Status calPixelQualityLM::getLinkStatus(unsigned int chipid, int ilink) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
-    return -1; // -- chip not found
+    return Status::ChipNotFound; // -- chip not found
   }
   
   switch (ilink) {
-    case 0: return static_cast<int>(fMapConstants[chipid].linkA);
-    case 1: return static_cast<int>(fMapConstants[chipid].linkB);
-    case 2: return static_cast<int>(fMapConstants[chipid].linkC);
-    case 3: return static_cast<int>(fMapConstants[chipid].linkM);
-    default: return -1; // -- invalid link number
+    case 0: return static_cast<Status>(fMapConstants[chipid].linkA);
+    case 1: return static_cast<Status>(fMapConstants[chipid].linkB);
+    case 2: return static_cast<Status>(fMapConstants[chipid].linkC);
+    case 3: return static_cast<Status>(fMapConstants[chipid].linkM);
+    default: return Status::ChipNotFound; // -- invalid link number
   }
 }

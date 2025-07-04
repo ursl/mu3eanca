@@ -85,8 +85,11 @@ void calPixelQuality::calculate(string hash) {
 
 
 // ----------------------------------------------------------------------
-int calPixelQuality::getStatus(unsigned int chipid, int icol, int irow) {
-  return static_cast<int>(fMapConstants[chipid].matrix[icol][irow]);
+calPixelQuality::Status calPixelQuality::getStatus(unsigned int chipid, int icol, int irow) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return Status::ChipNotFound; // -- chip not found
+  }
+  return static_cast<Status>(fMapConstants[chipid].matrix[icol][irow]);
 }
 
 

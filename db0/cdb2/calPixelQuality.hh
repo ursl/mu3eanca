@@ -11,6 +11,14 @@
 // ----------------------------------------------------------------------
 class calPixelQuality : public calAbs {
 public:
+  enum Status {
+    ChipNotFound = -1,
+    Good = 0,
+    Noisy = 1,
+    Suspect = 2,
+    DeclaredBad = 3,
+    TurnedOff = 9
+  };
 
   calPixelQuality() = default;
   calPixelQuality(cdbAbs *db);
@@ -30,7 +38,7 @@ public:
   void writeCsv(std::string filename);
   void readCsv(std::string filename);
 
-  int         getStatus(unsigned int chipid, int icol, int irow) override;
+  virtual Status getStatus(unsigned int chipid, int icol, int irow);
 
   bool        getNextID(uint32_t &ID);
   void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);

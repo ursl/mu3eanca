@@ -66,9 +66,6 @@ public:
   // -- payload string parsing/extraction
   std::string getValue(std::string key);
 
-  // -- accessors for various derived classes
-  virtual int         getStatus(unsigned int id, int icol, int irow) {return -9999;}
-
 protected:
   cdbAbs                            *fDB;
   std::string                        fTag{"unset"}, fHash{"unset"}, fError{"unset"};
