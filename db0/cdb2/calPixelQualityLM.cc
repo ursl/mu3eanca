@@ -137,27 +137,25 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
   }
 
   // -- check link status
-  for (int ilink = 0; ilink < 3; ++ilink) {
-    if (0 == status) {
-      if (fMapConstants[chipid].linkA != 0) {
-        n += 250*89;
-      }
-      if (fMapConstants[chipid].linkB != 0) {
-        n += 250*84;
-      }
-      if (fMapConstants[chipid].linkC != 0) {
-        n += 250*83;
-      }
-    } else {
-      if (fMapConstants[chipid].linkA == status) {
-        n += 250*89;
-      }
-      if (fMapConstants[chipid].linkB == status) {
-        n += 250*84;
-      }
-      if (fMapConstants[chipid].linkC == status) {
-        n += 250*83;
-      }
+  if (0 == status) {
+    if (fMapConstants[chipid].linkA != 0) {
+      n += 250*89;
+    }
+    if (fMapConstants[chipid].linkB != 0) {
+      n += 250*84;
+    }
+    if (fMapConstants[chipid].linkC != 0) {
+      n += 250*83;
+    }
+  } else {
+    if (fMapConstants[chipid].linkA == status) {
+      n += 250*89;
+    }
+    if (fMapConstants[chipid].linkB == status) {
+      n += 250*84;
+    }
+    if (fMapConstants[chipid].linkC == status) {
+      n += 250*83;
     }
   }
 
