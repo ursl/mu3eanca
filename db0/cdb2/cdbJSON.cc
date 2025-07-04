@@ -241,7 +241,7 @@ payload cdbJSON::getPayload(string hash) {
   buffer << INS.rdbuf();
   INS.close();
   
-  cout << "cdbJSON::getPayload() Read " << filename << endl;
+  if (fVerbose > 0) cout << "cdbJSON::getPayload() Read " << filename << endl;
   
   string jstring = buffer.str();
   pl.fHash       = jsonGetString(jstring, "hash");
