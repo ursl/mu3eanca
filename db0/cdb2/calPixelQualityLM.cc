@@ -109,11 +109,13 @@ calPixelQualityLM::Status calPixelQualityLM::getColStatus(unsigned int chipid, i
 
 // ----------------------------------------------------------------------
 int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
+  if (fVerbose > 0) cout << "calPixelQualityLM::getNpixWithStatus> chipid = " << chipid << " status = " << status << endl;
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
     return -1; // -- chip not found
   }
   int n(0);
   for (auto it: fMapConstants[chipid].mpixel) {
+    if (fVerbose > 4) cout << "calPixelQualityLM::getNpixWithStatus> pixel = " << it.first << " status = " << static_cast<int>(it.second) << endl;
     if (0 == status) {
       // -- count all pixels with bad status
       if (it.second != 0) n++;
@@ -123,7 +125,8 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
   }
   // -- check column status
   for (auto it: fMapConstants[chipid].mcol) {
-    if (0 == status) {
+    if (fVerbose > 4) cout << "calPixelQualityLM::getNpixWithStatus> column = " << it.first << " status = " << static_cast<int>(it.second)  << endl;
+    if (0 == status){
       // -- count all columns with bad status
       if (it.second != 0) n += 250;
     } else {
@@ -133,6 +136,7 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
 
   if (0 == status) {
     n = 256*250 - n;
+    if (fVerbose > 0) cout << "calPixelQualityLM::getNpixWithStatus> chipID = " << chipid << " has " << n << " pixels with good status" << endl;
     //cout << "chipID = " << chipid << " has " << n << " pixels with good status" << endl;
   } else {
     //cout << "chipID = " << chipid << " has " << n << " pixels with status " << status << endl;
