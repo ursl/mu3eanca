@@ -410,15 +410,20 @@ sub runPixelFillQualityLM() {
         print(&prefix("runPixelFillQualityLM"), "->$cmd0 && $cmd1<-\n");
         system("cd $dir && $cmd0 && $cmd1 && cd - ");
     }
-    # insertIovTag -j ~/data/mu3e/cdb -t pixelqualitylm_datav6.1=2025CosmicsVtxOnly -i 472
+
     if ($opt_u) {
         my $cmd2 = "$MU3EANCA/run2025/scripts/insertIovTag -j $CDB -t pixelqualitylm_$GT -i $run";
         print(&prefix("runPixelFillQualityLM"), "cmd2: $cmd2\n");
         my $payloadname = "tag_pixelqualitylm_" . $GT . "_iov_$run";
         my $cmd3 = "/bin/cp payloads/$payloadname $CDB/payloads/";
         print(&prefix("runPixelFillQualityLM"), "cmd3: $cmd3\n");           
-        system("cd $dir && $cmd2 && $cmd3 && cd - ");
+        #FIXME system("cd $dir && $cmd2 && $cmd3 && cd - ");
+        system("cd $dir && $cmd3 && cd - ");
     }
+
+    # FIXME
+    print(&prefix("runPixelFillQualityLM"), "FIXME: STOPPING HERE, NOT RDB UPLOADING\n");
+    return;
 
     my $cmd2 = "bin/allHistograms -f $ROF/merged-dqm_histos_$srun.root  >& log/allHistograms_$srun.log ";
     if ($opt_d) {
