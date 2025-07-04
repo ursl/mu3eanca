@@ -34,6 +34,8 @@ using namespace std;
 // -f first    runnumber
 // -l last     runnumber
 // -p          plot only (i.e. no reading of all the payloads)
+// -r FILENAME runlist file
+// -R r1,r2    comma-separated list of runs
 //
 // ----------------------------------------------------------------------
 
@@ -58,8 +60,8 @@ int main(int argc, char *argv[]) {
   int first(0), last(0);
   int verbose(0);
   int plot(0);
-  string sruns("");
-
+  string srunfile("");
+  string srunlist("");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-db"))    {db = argv[++i];}
     if (!strcmp(argv[i], "-f"))     {first = atoi(argv[++i]);}
@@ -67,26 +69,57 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-l"))     {last = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-o"))     {filename = argv[++i];}
     if (!strcmp(argv[i], "-p"))     {plot = 1;}
-    if (!strcmp(argv[i], "-r"))     {sruns = argv[++i];}
+    if (!strcmp(argv[i], "-r"))     {srunfile = argv[++i];}
+    if (!strcmp(argv[i], "-R"))     {srunlist = argv[++i];}
     if (!strcmp(argv[i], "-v"))     {verbose = 1;}
   }
   
   // -- fill vRuns from sruns
   vector<int> vRuns;
-  if (sruns != "") {
-    stringstream ss(sruns);
-    string token;
+  if (srunfile != "") {
+    std::ifstream infile(srunfile);
+    if (!infile) {
+        std::cerr << "Could not open file: " << srunfile << std::endl;
+        // handle error as needed
+    }
+    std::string line, content;
+    while (std::getline(infile, line)) {
+        content += line;
+    }
+    infile.close();
+
+    // Remove curly braces
+    size_t start = content.find('{');
+    size_t end = content.find('}');
+    if (start != std::string::npos && end != std::string::npos && end > start) {
+        content = content.substr(start + 1, end - start - 1);
+    }
+
+    std::stringstream ss(content);
+    std::string token;
     while (std::getline(ss, token, ',')) {
         // Remove leading/trailing whitespace
         token.erase(0, token.find_first_not_of(" \t"));
         token.erase(token.find_last_not_of(" \t") + 1);
-        
-        // Convert to int and add to vector (assuming vRuns is vector<int>)
+
         if (!token.empty()) {
-            vRuns.push_back(std::stoi(token));
+          int run = std::stoi(token); 
+          if (run >= first && run <= last) {
+            vRuns.push_back(run);
+          }
         }
     }
+  }
 
+  if (srunlist != "") {
+    stringstream ss(srunlist);
+    string token;
+    while (std::getline(ss, token, ',')) {
+      vRuns.push_back(std::stoi(token));
+    }
+  }
+
+  if (vRuns.size() > 0) {
     cout << "Runs: ";
     for (auto it: vRuns) cout << it << " ";
     cout << endl;
@@ -149,7 +182,7 @@ int main(int argc, char *argv[]) {
   // -- get the number of runs
   int minRun(vIoV[0]);
   int maxRun(vIoV[vIoV.size()-1]);
-  int nRuns(maxRun - minRun + 1);
+   int nRuns(maxRun - minRun + 1);
 
   // -- in terms of run index
   minRun = 0; 
@@ -162,16 +195,16 @@ int main(int argc, char *argv[]) {
   hLinkStatus->SetXTitle("Chip index");
   hLinkStatus->SetYTitle("Run ");
   hLinkStatus->SetZTitle("Working links");  
-  hLinkStatus->SetStats(0);
-  hLinkStatus->SetOption("colz");
-  hLinkStatus->SetMaximum(6);
+  hLinkStatus->SetMaximum(6); // simplest way to get reasonable color scheme
 
   TH1D *hNoisyPixelVsRun = new TH1D("hNoisyPixelVsRun", "Noisy pixels per run", nRuns, minRun, maxRun);
   hNoisyPixelVsRun->SetXTitle("Run");
   hNoisyPixelVsRun->SetYTitle("Noisy pixels");
-  hNoisyPixelVsRun->SetStats(0);
-  hNoisyPixelVsRun->GetXaxis()->SetNdivisions(0);
-  hNoisyPixelVsRun->SetOption("hist");
+
+  TH1D *hGoodPixelVsRun = new TH1D("hGoodPixelVsRun", "Good pixels per run", nRuns, minRun, maxRun);
+  hGoodPixelVsRun->SetXTitle("Run");
+  hGoodPixelVsRun->SetYTitle("Good pixels");
+
 
 
   for (auto itIoV: vIoV) {
@@ -179,19 +212,21 @@ int main(int argc, char *argv[]) {
       continue;
     }
     cout << "--------------------------------" << endl;
-    cout << "run " << itIoV << endl;
     pDC->setRunNumber(itIoV);
     uint32_t chipid(0);
     pPQ->resetIterator();
     int nNoisyPixels(0);
+    int nGoodPixels(0);
     cout << " Working links: ";  
     while (pPQ->getNextID(chipid)) {
       //cout << chipid << "(" << chipIndex(chipid) << "): " << linkStatus(pPQ, chipid) << " ";
       hLinkStatus->Fill(chipIndex(chipid), runIndex(itIoV, vIoV), linkStatus(pPQ, chipid));
-      nNoisyPixels += pPQ->getNpixWithStatus(chipid, 9);
+      nNoisyPixels += pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy);
+      nGoodPixels += pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Good);
     }
-    cout << "Run " << itIoV << " has " << nNoisyPixels << " noisy pixels" << endl;
+    cout << "Run " << itIoV << " has " << nNoisyPixels << " noisy pixels and " << nGoodPixels << " good pixels" << endl;
     hNoisyPixelVsRun->Fill(runIndex(itIoV, vIoV), nNoisyPixels);
+    hGoodPixelVsRun->Fill(runIndex(itIoV, vIoV), nGoodPixels);
   }
    // -- save the histograms 
   pFile->Write();
@@ -278,13 +313,32 @@ void plotHistograms(string filename) {
 
   TH2D *hLinkStatus = (TH2D*)pFile->Get("hLinkStatus");
   setRunLabelsY(hLinkStatus);
+  hLinkStatus->SetStats(0);
   hLinkStatus->Draw("colz");
   c1->SaveAs("hLinkStatus.pdf");
 
+  c1->Clear();
+  c1->SetRightMargin(0.1);
+  c1->SetBottomMargin(0.15);
+
+
   TH1D *hNoisyPixelVsRun = (TH1D*)pFile->Get("hNoisyPixelVsRun");
   setRunLabelsX(hNoisyPixelVsRun);
-  hNoisyPixelVsRun->Draw();
+  hNoisyPixelVsRun->SetMinimum(0.5);
+  hNoisyPixelVsRun->SetStats(0);
+  hNoisyPixelVsRun->GetXaxis()->SetTitleOffset(1.3);
+  c1->SetLogy(1);
+  hNoisyPixelVsRun->Draw("hist");
   c1->SaveAs("hNoisyPixelVsRun.pdf");
+
+  TH1D *hGoodPixelVsRun = (TH1D*)pFile->Get("hGoodPixelVsRun");
+  setRunLabelsX(hGoodPixelVsRun);
+  hGoodPixelVsRun->SetMinimum(0.5);
+  hGoodPixelVsRun->SetStats(0);
+  hGoodPixelVsRun->GetXaxis()->SetTitleOffset(1.3);
+  c1->SetLogy(1);
+  hGoodPixelVsRun->Draw("hist");
+  c1->SaveAs("hGoodPixelVsRun.pdf");
 
   // -- close the file  
   pFile->Close();
@@ -315,7 +369,7 @@ void setRunLabelsX(TH1D *h) {
   int empty(0);
   if (nRuns > 100) empty = 10;
   if (nRuns > 500) empty = 50;
-  h->GetXaxis()->SetNdivisions(0);
+  h->GetXaxis()->SetNdivisions(2, false);
 
   for (int i = 1; i < h->GetNbinsX(); i++) {
     if (i % empty == 1) {
