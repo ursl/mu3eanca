@@ -201,6 +201,7 @@ int main(int argc, char *argv[]) {
   hNoisyPixelVsRun->SetXTitle("Run");
   hNoisyPixelVsRun->SetYTitle("Noisy pixels");
 
+  // -- this is only for debugging (e.g. if some illegal chipIDs sneaked in)
   TH1D *hGoodPixelVsRun = new TH1D("hGoodPixelVsRun", "Good pixels per run", nRuns, minRun, maxRun);
   hGoodPixelVsRun->SetXTitle("Run");
   hGoodPixelVsRun->SetYTitle("Good pixels");
@@ -211,20 +212,27 @@ int main(int argc, char *argv[]) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
       continue;
     }
-    cout << "--------------------------------" << endl;
     pDC->setRunNumber(itIoV);
     uint32_t chipid(0);
     pPQ->resetIterator();
     int nNoisyPixels(0);
     int nGoodPixels(0);
-    cout << " Working links: ";  
+    int nChips(0);
+    //cout << " Working links: ";  
     while (pPQ->getNextID(chipid)) {
-      //cout << chipid << "(" << chipIndex(chipid) << "): " << linkStatus(pPQ, chipid) << " ";
       hLinkStatus->Fill(chipIndex(chipid), runIndex(itIoV, vIoV), linkStatus(pPQ, chipid));
-      nNoisyPixels += pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy);
-      nGoodPixels += pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Good);
+      int chipNoisy = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy); 
+      int chipGood = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Good);
+      nNoisyPixels += chipNoisy;
+      nGoodPixels += chipGood;
+      ++nChips;
+      //cout << "Chip " << chipid << " has " << chipNoisy << " noisy pixels and " << chipGood << " good pixels" << endl;
     }
-    cout << "Run " << itIoV << " has " << nNoisyPixels << " noisy pixels and " << nGoodPixels << " good pixels" << endl;
+    cout << "Run " << itIoV << " has " 
+         << nChips << " chips, "
+         << nNoisyPixels << " noisy pixels and " 
+         << nGoodPixels << " good pixels" 
+         << endl;
     hNoisyPixelVsRun->Fill(runIndex(itIoV, vIoV), nNoisyPixels);
     hGoodPixelVsRun->Fill(runIndex(itIoV, vIoV), nGoodPixels);
   }
@@ -291,6 +299,42 @@ int chipIndex(unsigned int chipid) {
   return chipID_to_index[chipid];
 }
 
+
+// ----------------------------------------------------------------------
+// -- map chip index to chipID
+int indexChip(int index) {
+  static int first(1); 
+  static std::unordered_map<int, int> index_to_chipID;
+  if (first) {
+    vector<int> vChipIDs = {1,2,3,4,5,6,
+              33, 34, 35, 36, 37, 38,
+              65, 66, 67, 68, 69, 70,
+              97, 98, 99, 100, 101, 102,
+              129, 130, 131, 132, 133, 134,
+              161, 162, 163, 164, 165, 166,
+              193, 194, 195, 196, 197, 198,
+              225, 226, 227, 228, 229, 230,
+              // -- layer 2
+              1025, 1026, 1027, 1028, 1029, 1030,
+              1057, 1058, 1059, 1060, 1061, 1062,
+              1089, 1090, 1091, 1092, 1093, 1094,
+              1121, 1122, 1123, 1124, 1125, 1126,
+              1153, 1154, 1155, 1156, 1157, 1158,
+              1185, 1186, 1187, 1188, 1189, 1190,
+              1217, 1218, 1219, 1220, 1221, 1222,
+              1249, 1250, 1251, 1252, 1253, 1254,
+              1281, 1282, 1283, 1284, 1285, 1286,
+              1313, 1314, 1315, 1316, 1317, 1318
+              };
+
+    for (size_t i = 0; i < vChipIDs.size(); ++i) {
+      index_to_chipID[i] = vChipIDs[i];
+    }
+    first = 0;
+  }
+  return index_to_chipID[index];
+}
+
 // ----------------------------------------------------------------------
 // -- number of working links in chip
 int linkStatus(calPixelQualityLM *pPQ, unsigned int chipid) {
@@ -348,6 +392,9 @@ void plotHistograms(string filename) {
 // -- set the run labels
 void setRunLabelsY(TH2D *h) {
   int nRuns(h->GetNbinsY());
+  h->GetYaxis()->SetNdivisions(2, false);
+  h->GetYaxis()->SetTickLength(0.0);
+
   int empty(0);
   if (nRuns > 100) empty = 10;
   if (nRuns > 500) empty = 50;
@@ -359,6 +406,8 @@ void setRunLabelsY(TH2D *h) {
       h->GetYaxis()->SetBinLabel(i, "");
     }
   }
+
+
 }
 
 
@@ -370,6 +419,7 @@ void setRunLabelsX(TH1D *h) {
   if (nRuns > 100) empty = 10;
   if (nRuns > 500) empty = 50;
   h->GetXaxis()->SetNdivisions(2, false);
+  h->GetXaxis()->SetTickLength(0.0);
 
   for (int i = 1; i < h->GetNbinsX(); i++) {
     if (i % empty == 1) {
