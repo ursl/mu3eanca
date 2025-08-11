@@ -49,7 +49,7 @@ OTHERLIBS     = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so
 
 # -- Files
 #CSTUFF =
-READER = trBase.o trGen.o trRec.o plotResults.o pixelHistograms.o # plotClass.o
+READER = trBase.o trGen.o trRec.o plotResults.o  # plotClass.o
 
 DICT = ${READER:.o=Dict.o}
 DICTHEADERS = ${READER:.o=Dict.h}
