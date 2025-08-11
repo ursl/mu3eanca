@@ -8,6 +8,7 @@
 # -- create a link to an external dependency (https://github.com/ursl/util)
 #    no submodule because of constant changes in util
 UTIL = /Users/ursl/mu3e/mu3eanca/util
+CDB  := ../db0/cdb2
 
 ifneq (,$(findstring merlin,$(LHOST)))
 	UTIL = /psi/home/langenegger/mu3e/mu3eanca/util
@@ -41,13 +42,14 @@ GLIBS         += -lMinuit #-lRooFitCore -lRooFit
 
 
 
-EXTHEADERS    = -I..
+EXTHEADERS    = -I.. -I$(CDB)
+
+OTHERLIBS     = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so
 
 
 # -- Files
 #CSTUFF =
-READER = skimMu3e.o hitDataNoise.o hitDataPixel.o hitDataBase.o plotHitDataPixel.o \
-         trBase.o trGen.o trRec.o plotResults.o pixelHistograms.o # plotClass.o
+READER = trBase.o trGen.o trRec.o plotResults.o pixelHistograms.o # plotClass.o
 
 DICT = ${READER:.o=Dict.o}
 DICTHEADERS = ${READER:.o=Dict.h}
@@ -82,21 +84,16 @@ $(addprefix lib/,%.pcm) :
 all: vars prep lib bin
 
 lib: prep $(addprefix obj/,$(CSTUFF) $(READER)  $(DICT))
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(DICT)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit $(UTIL)/lib/libAnaUtil.so
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(DICT)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit $(OTHERLIBS)
 
-bin: lib obj/runPixelHistograms.o obj/runSkimMu3e.o obj/runHitDataAna.o obj/runTreeReader.o  obj/runPlot.o obj/anaNoiseMaskFiles.o obj/test1.o
-	$(LD) $(LDFLAGS) -o bin/runSkimMu3e obj/runSkimMu3e.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
-	$(LD) $(LDFLAGS) -o bin/runHitDataAna obj/runHitDataAna.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
-	$(LD) $(LDFLAGS) -o bin/runTreeReader obj/runTreeReader.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
-	$(LD) $(LDFLAGS) -o bin/runPixelHistograms obj/runPixelHistograms.o $(GLIBS) lib/libAnaClasses.so $(UTIL)/lib/libAnaUtil.so
-	$(LD) $(LDFLAGS) -o bin/runPlot obj/runPlot.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
-	$(LD) $(LDFLAGS) -o bin/anaNoiseMaskFiles obj/anaNoiseMaskFiles.o $(GLIBS) lib/libAnaClasses.so  $(UTIL)/lib/libAnaUtil.so
-	$(LD) $(LDFLAGS) -o bin/test1 obj/test1.o $(GLIBS)  $(UTIL)/lib/libAnaUtil.so
+bin: lib  obj/runTreeReader.o  obj/test1.o
+	$(LD) $(LDFLAGS) -o bin/runTreeReader obj/runTreeReader.o $(GLIBS) lib/libAnaClasses.so $(OTHERLIBS)
+	$(LD) $(LDFLAGS) -o bin/test1 obj/test1.o $(GLIBS)  $(OTHERLIBS)
 
 # -- preparatory setup
 prep:
 	mkdir -p obj bin lib
-	cd lib && ln -f -s $(UTIL)/lib/libAnaUtil.so && cd -
+	cd lib && ln -f -s $(UTIL)/lib/libAnaUtil.so && ln -f -s $(CDB)/lib/libAnaCdb.so && cd -
 
 # -- clean up
 clean:
