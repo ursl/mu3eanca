@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
   // -- get the number of runs
   int minRun(vIoV[0]);
   int maxRun(vIoV[vIoV.size()-1]);
-   int nRuns(maxRun - minRun + 1);
+  int nRuns(maxRun - minRun + 1);
 
   // -- in terms of run index
   minRun = 0; 
@@ -201,6 +201,7 @@ int main(int argc, char *argv[]) {
   hLinkStatus->SetZTitle("Working links");  
   hLinkStatus->SetMaximum(6); // simplest way to get reasonable color scheme
 
+  // -- Number of noisy pixels per run
   TH1D *hNoisyPixelVsRun = new TH1D("hNoisyPixelVsRun", "Total number of noisy pixels per run", nRuns, minRun, maxRun);
   hNoisyPixelVsRun->SetXTitle("Run");
   hNoisyPixelVsRun->SetYTitle("Noisy pixels");
@@ -210,6 +211,13 @@ int main(int argc, char *argv[]) {
   hGoodPixelVsRun->SetXTitle("Run");
   hGoodPixelVsRun->SetYTitle("Good pixels");
 
+  // -- Size of JSON payload
+  TH1D *hPayloadSize = new TH1D("hPayloadSize", "Size of JSON payload", nRuns, minRun, maxRun);
+  hPayloadSize->SetXTitle("Run");
+  hPayloadSize->SetYTitle("Size of JSON payload [kB]");
+
+
+  
   for (auto itIoV: vIoV) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
       continue;
@@ -237,6 +245,9 @@ int main(int argc, char *argv[]) {
          << endl;
     hNoisyPixelVsRun->Fill(runIndex(itIoV, vIoV), nNoisyPixels);
     hGoodPixelVsRun->Fill(runIndex(itIoV, vIoV), nGoodPixels);
+    // -- get the size of the JSON payload via size of BLOB
+    string sblob = pPQ->makeBLOB();
+    hPayloadSize->Fill(runIndex(itIoV, vIoV), sblob.size()/1024.);
   }
    // -- save the histograms 
   pFile->Write();
@@ -394,6 +405,16 @@ void plotHistograms(string filename) {
   t1->DrawLatexNDC(0.2, 0.82, "N_{pix}^{VTX} = 108*64000");
 
   c1->SaveAs("hGoodPixelVsRun.pdf");
+
+
+  TH1D *hPayloadSize = (TH1D*)pFile->Get("hPayloadSize");
+  setRunLabelsX(hPayloadSize);
+  hPayloadSize->SetMinimum(0.5);
+  hPayloadSize->SetStats(0);
+  hPayloadSize->GetXaxis()->SetTitleOffset(1.3);
+  c1->SetLogy(1);
+  hPayloadSize->Draw("hist");
+  c1->SaveAs("hPayloadSize.pdf");
 
   // -- close the file  
   pFile->Close();
