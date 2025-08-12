@@ -2,6 +2,7 @@
 
 #include <_types/_uint32_t.h>
 #include <iostream>
+#include <sys/stat.h>
 
 #include <TDirectory.h>
 #include <TFile.h>
@@ -165,8 +166,8 @@ TH1D* pixelHistograms::getTH1D(std::string hname) {
 
 // ---------------------------------------------------------------------- 
 //this is not implemented yet, but for now you can find raw 5-bit tot in bits 31-27 of debug_si_data
-bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsigned long debug_si_data) {
-  uint32_t rawtot = (debug_si_data >> 27) & 0x1F;
+bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, int tot) {
+  uint32_t rawtot = tot; //(tot >> 27) & 0x1F;
   uint32_t chipid = ((pixelid >> 16) & 0xFFFF);
   uint32_t col = int((pixelid >> 8) & 0xFF);
   uint32_t row = int((pixelid >> 0) & 0xFF);
@@ -181,7 +182,7 @@ bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsi
 
   uint32_t localTime = time % (1 << 11);  // local pixel time is first 11 bits of the global time
   uint32_t hitToA=localTime * 8/*ns*/ * (ckdivend + 1);
-  uint32_t hitToT = ( ( (0x1F+1) + rawtot -  ( (localTime * (ckdivend+1) / (ckdivend2+1) ) & 0x1F) ) & 0x1F);//  * 8 * (ckdivend2+1) ;
+  uint32_t hitToT = tot; //( ( (0x1F+1) + rawtot -  ( (localTime * (ckdivend+1) / (ckdivend2+1) ) & 0x1F) ) & 0x1F);//  * 8 * (ckdivend2+1) ;
 
   bool isEdgePixel = false;
   if (col <= 11 || col >= 245 || row <= 11 || row >= 239) {
@@ -309,6 +310,13 @@ void pixelHistograms::plotHistograms(string hname, string htype) {
       }
       h->Draw(opt.c_str());
     }
+    
+    // Check if "out" directory exists, create if it doesn't
+    struct stat st = {0};
+    if (stat("out", &st) == -1) {
+        gSystem->mkdir("out", true);
+    }
+    
     c->SaveAs(("out/pixelHitmaps-" + to_string(fRun) + ".pdf").c_str());
     delete c;
 }

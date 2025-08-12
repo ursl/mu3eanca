@@ -26,9 +26,11 @@ public:
   void plotHistograms(std::string hname, std::string htype);
 
   void  setCalPixelQualityLM(calPixelQualityLM* calPixelQualityLM) {fCalPixelQualityLM = calPixelQualityLM;}
+  calPixelQualityLM* getCalPixelQualityLM() {return fCalPixelQualityLM;}
+
   void  setRun(int run) {fRun = run;}
   
-  bool  goodPixel(uint32_t pixelid, uint32_t time, double ns, unsigned long debug_si_data);
+  bool  goodPixel(uint32_t pixelid, uint32_t time, double ns, int tot);
 
   TH2D* getTH2D(std::string hname);
   TH1D* getTH1D(std::string hname);
