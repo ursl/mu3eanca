@@ -22,14 +22,16 @@ public:
   void init(int mode);
   void bookHist(std::string hname, std::string hType);
   void readHist(std::string hname, std::string hType);
-  void saveHistograms();
+  void plotAllHistograms();
+  void saveHistograms(std::string filename);
   void plotHistograms(std::string hname, std::string htype);
 
   void  setCalPixelQualityLM(calPixelQualityLM* calPixelQualityLM) {fCalPixelQualityLM = calPixelQualityLM;}
   calPixelQualityLM* getCalPixelQualityLM() {return fCalPixelQualityLM;}
 
   void  setRun(int run) {fRun = run;}
-  
+  void  setOutDir(std::string outdir) {fOutDir = outdir;}
+  void  setVerbose(int verbose) {fVerbose = verbose;}
   bool  goodPixel(uint32_t pixelid, uint32_t time, double ns, int tot);
 
   TH2D* getTH2D(std::string hname);
@@ -37,7 +39,7 @@ public:
 
 private:
   int fVerbose, fRun;
-  std::string fFilename;
+  std::string fFilename, fOutDir;
   TFile *fFile;
   std::vector<int> fLayer1, fLayer2, fAllChips;
   calPixelQualityLM* fCalPixelQualityLM;

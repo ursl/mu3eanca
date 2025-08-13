@@ -20,7 +20,7 @@ pixelHistograms::pixelHistograms() {
   fVerbose = 0;
   fRun = 0;
   cout << "pixelHistograms::pixelHistograms() ctor" << endl;
-
+  fFile = 0;
   init(0); 
 
 }
@@ -91,20 +91,20 @@ pixelHistograms::~pixelHistograms() {
     fFile->Close();
     delete fFile;
   } else {
-    plotHistograms("hitmap", "chipmap");
-    plotHistograms("hittot", "chipToT");
-  
-    if (fTH1D["badChipIDs"]) {
-      cout << "Total bad chipIDs = " << fTH1D["badChipIDs"]->GetEntries() << endl;
-    }
-    for (auto it = fTH2D.begin(); it != fTH2D.end(); ++it) {
-      delete it->second;
-    }
-    for (auto it = fTH1D.begin(); it != fTH1D.end(); ++it) {
-      delete it->second;
-    }
+    
   }
 }
+
+// ----------------------------------------------------------------------
+void pixelHistograms::plotAllHistograms() {
+  plotHistograms("hitmap", "chipmap");
+  plotHistograms("hittot", "chipToT");
+
+  if (fTH1D["badChipIDs"]) {
+    cout << "Total bad chipIDs = " << fTH1D["badChipIDs"]->GetEntries() << endl;
+  }
+}
+
 
 
 // ---------------------------------------------------------------------- 
@@ -140,10 +140,12 @@ void pixelHistograms::readHist(string hname, string hType) {
 
 
 // ---------------------------------------------------------------------- 
-void pixelHistograms::saveHistograms() {
-  gFile->cd();
-  gFile->mkdir("pixelHistograms");
-  gFile->cd("pixelHistograms");
+void pixelHistograms::saveHistograms(std::string filename) {
+  TDirectory *dir = gDirectory;
+  TFile *file = TFile::Open(filename.c_str(), "RECREATE");
+  file->cd();
+  file->mkdir("pixelHistograms");
+  file->cd("pixelHistograms");
   for (auto ih: fTH2D) {
     ih.second->SetDirectory(gDirectory);
     ih.second->Write();
@@ -152,6 +154,9 @@ void pixelHistograms::saveHistograms() {
     ih.second->SetDirectory(gDirectory);
     ih.second->Write();
   }
+  file->Close();
+  delete file;
+  gDirectory = dir;
 }
 
 // ---------------------------------------------------------------------- 
@@ -313,10 +318,11 @@ void pixelHistograms::plotHistograms(string hname, string htype) {
     
     // Check if "out" directory exists, create if it doesn't
     struct stat st = {0};
-    if (stat("out", &st) == -1) {
-        gSystem->mkdir("out", true);
+    if (stat(fOutDir.c_str(), &st) == -1) {
+        gSystem->mkdir(fOutDir.c_str(), true);
     }
     
-    c->SaveAs(("out/pixelHitmaps-" + to_string(fRun) + ".pdf").c_str());
+    c->SaveAs((fOutDir + "/pixelHitmaps-" + to_string(fRun) + ".pdf").c_str());
+    c->SaveAs((fOutDir + "/pixelHitmaps-" + to_string(fRun) + ".png").c_str());
     delete c;
 }
