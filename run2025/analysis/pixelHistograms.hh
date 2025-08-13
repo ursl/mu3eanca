@@ -32,7 +32,7 @@ public:
   void  setRun(int run) {fRun = run;}
   void  setOutDir(std::string outdir) {fOutDir = outdir;}
   void  setVerbose(int verbose) {fVerbose = verbose;}
-  bool  goodPixel(uint32_t pixelid, uint32_t time, double ns, int tot);
+  bool  goodPixel(uint32_t pixelid, uint32_t time, double ns, unsigned long debug_si_data);
 
   TH2D* getTH2D(std::string hname);
   TH1D* getTH1D(std::string hname);
