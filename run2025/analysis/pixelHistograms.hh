@@ -7,6 +7,7 @@
 #include <TH2D.h>
 #include <TH1D.h>
 #include <TFile.h>
+#include <TProfile2D.h>
 
 #include "mu3e/cdb/calPixelQualityLM.hh"
 
@@ -15,12 +16,8 @@
 // ----------------------------------------------------------------------
 class pixelHistograms {
 public:
-  pixelHistograms();
-  pixelHistograms(std::string filename);
-  ~pixelHistograms();
+  static pixelHistograms* instance(std::string filename = "unset");
 
-  void init(int mode);
-  void bookHist(std::string hname, std::string hType);
   void readHist(std::string hname, std::string hType);
   void plotAllHistograms();
   void saveHistograms(std::string filename);
@@ -37,7 +34,16 @@ public:
   TH2D* getTH2D(std::string hname);
   TH1D* getTH1D(std::string hname);
 
+protected:
+  pixelHistograms(std::string filename);
+  ~pixelHistograms();
+
+  void init(int mode);
+  void bookHist(std::string hname, std::string hType);
+
+
 private:
+  static pixelHistograms* fInstance;
   int fVerbose, fRun;
   std::string fFilename, fOutDir;
   TFile *fFile;
@@ -46,6 +52,7 @@ private:
 
   std::map<std::string, TH2D*> fTH2D;
   std::map<std::string, TH1D*> fTH1D;
+  std::map<std::string, TProfile2D*> fTProfile2D;
 };
 
 
