@@ -87,6 +87,17 @@ void pixelHistograms::init(int mode) {
     bookHist("rj_hittot", "chipToT");
 
     fTH1D["badChipIDs"] = new TH1D("badChipIDs", "badChipIDs", 200, 0, 1000000);
+
+    // -- special histograms for mu3eTrirec
+    fphitToT = new TH1D("phitToT", "phitToT", 32, 0, 32);
+
+    // -- hit tree
+    fHitsTree = new TTree("hits", "hits");
+    fHitsTree->Branch("run", &fRun, "run/I");
+    fHitsTree->Branch("frameID", &fFrameID);
+    fHitsTree->Branch("hits", &fHits);
+    
+
   } else if (1 == mode) {
     fFile = TFile::Open(fFilename.c_str());
     // -- Parse run number from filename - look for digits before ".root"
@@ -201,6 +212,13 @@ void pixelHistograms::saveHistograms(std::string filename) {
     ih.second->SetDirectory(gDirectory);
     ih.second->Write();
   }
+
+  fphitToT->SetDirectory(gDirectory);
+  fphitToT->Write();
+
+  fHitsTree->SetDirectory(gDirectory);
+  fHitsTree->Write();
+
   file->Close();
   delete file;
   gDirectory = dir;
@@ -218,12 +236,26 @@ TH1D* pixelHistograms::getTH1D(std::string hname) {
 
 // ---------------------------------------------------------------------- 
 //this is not implemented yet, but for now you can find raw 5-bit tot in bits 31-27 of debug_si_data
-bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsigned long debug_si_data) {
+// old: bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsigned long debug_si_data) {
+bool pixelHistograms::goodPixel(uint32_t frameID, pixelHit &hitIn) {
+  // -- if the frameID has changed, write the previous frame data to the tree and clear the hits
+  if (frameID != fFrameID) {
+    fFrameID = frameID;
+    fHitsTree->Fill();
+    fHits.clear();
+  }
+
   // -- rawtot should simply be between 0 .. 31. You need ckdivend and ckdivend2 to get something meaningful
-  uint32_t rawtot = (debug_si_data >> 27) & 0x1F;
-  uint32_t chipid = ((pixelid >> 16) & 0xFFFF);
-  uint32_t col = int((pixelid >> 8) & 0xFF);
-  uint32_t row = int((pixelid >> 0) & 0xFF);
+  uint32_t chipid = ((hitIn.fPixelID >> 16) & 0xFFFF);
+  uint32_t col = int((hitIn.fPixelID >> 8) & 0xFF);
+  uint32_t row = int((hitIn.fPixelID >> 0) & 0xFF);
+
+  pixelHit hit = hitIn;
+  hit.fChipID = chipid;
+  hit.fCol = col;
+  hit.fRow = row;
+
+  hit.fStatus = 0;
 
   // -- FIXME!!!!
   int run = 6000;
@@ -234,9 +266,16 @@ bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsi
     ckdivend2 = 31;
   }
 
+  uint32_t rawtot = (hit.fDebugSiData >> 27) & 0x1F;
   uint32_t localTime = time % (1 << 11);  // local pixel time is first 11 bits of the global time
   uint32_t hitToA=localTime * 8/*ns*/ * (ckdivend + 1);
   uint32_t hitToT = ( ( (0x1F+1) + rawtot -  ( (localTime * (ckdivend+1) / (ckdivend2+1) ) & 0x1F) ) & 0x1F);//  * 8 * (ckdivend2+1) ;
+
+  hit.fBitToT = hitToT;
+  hit.fRawtot = rawtot;
+
+  
+  fHits.push_back(hit);
 
   bool isEdgePixel = false;
   if (col <= 11 || col >= 245 || row <= 11 || row >= 239) {
@@ -250,6 +289,7 @@ bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsi
 
   if (chipid > 12000) {
     fTH1D["badChipIDs"]->Fill(chipid);
+    hit.fStatus = 3;
     return false;
   }
 
@@ -286,6 +326,7 @@ bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsi
       hname = Form("C%d_rj_hittot_chipToT", chipid);
       fTH1D[hname]->Fill(hitToT);
  
+      hit.fStatus = 3;
       return false;
     }
   }
@@ -302,7 +343,7 @@ bool pixelHistograms::goodPixel(uint32_t pixelid, uint32_t time, double ns, unsi
   fTH1D[hname]->Fill(hitToT);
   hname = Form("C%d_ok_hittot_chipprof2d", chipid);
   fTProfile2D[hname]->Fill(col, row, hitToT);
-          
+  hit.fStatus = 4;
   return true;
 }
 
