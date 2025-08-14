@@ -30,13 +30,14 @@ pixelHistograms* pixelHistograms::instance(std::string filename) {
 pixelHistograms::pixelHistograms(std::string filename) : fFilename(filename) {
   if (fFilename == "unset") {
     cout << "pixelHistograms::pixelHistograms() ctor" << endl;
+    fFile = 0;
+    init(0); 
     return;
   } else {
     fVerbose = 0;
     fRun = 0;
     cout << "pixelHistograms::pixelHistograms(" << fFilename << ") ctor" << endl;
-    fFile = 0;
-    init(0); 
+    init(1); 
   }
 
 }
