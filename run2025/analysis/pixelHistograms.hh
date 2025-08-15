@@ -14,25 +14,29 @@
 
 #include <map>
 
-class pixelHit {
-public:
-  int fPixelID; // input
-  int fHitToT;  // input
-  unsigned long fDebugSiData; // input
-  int fChipID, fCol, fRow, fTime, fNs, fRawToT, fBitToT; // calculated
-  int fStatus; // 0 = good, 1 = edge, 2 = low, 3 = rj, 4 = ok
+struct pixelHit {
+  // -- input
+  int fPixelID; 
+  int fHitToT;  
+  unsigned long fDebugSiData;
+  int fChipID, fCol, fRow, fTime, fTimeNs;
+
+  // -- calculated locally
+  int fRawToT, fBitToT; 
+  int fStatus; // 0 = good, 1 = rj, 2 = invalid
+  int fStatusBits; // 0 = edge, 1 = low
+ 
 };
-
-
+  
 
 // ----------------------------------------------------------------------
 class pixelHistograms {
 public:
-  static pixelHistograms* instance(std::string filename = "unset");
+  static pixelHistograms* instance(int mode = -1, std::string filename = "pixelHistograms");
 
   void readHist(std::string hname, std::string hType);
   void plotAllHistograms();
-  void saveHistograms(std::string filename);
+  void saveHistograms();
   void plotHistograms(std::string hname, std::string htype);
 
   void  setCalPixelQualityLM(calPixelQualityLM* calPixelQualityLM) {fCalPixelQualityLM = calPixelQualityLM;}
@@ -47,23 +51,22 @@ public:
   TH2D* getTH2D(std::string hname);
   TH1D* getTH1D(std::string hname);
 
-
-    // -- special histograms for mu3eTrirec
-    TH1D *fphitToT;
-    pixelHit fPixelHit;
+  // -- special histograms for mu3eTrirec
+  TH1D *fphitToT;
 
 protected:
-  pixelHistograms(std::string filename);
-  ~pixelHistograms();
+  pixelHistograms(int mode, std::string filename);
+  ~pixelHistograms(); 
 
-  void init(int mode);
+  void init(int mode, std::string filename);
   void bookHist(std::string hname, std::string hType);
-
+  void clearHitsTreeVariables();
+  void fillAnotherHit(pixelHit &hit);
+  void fillAnotherFrame(uint32_t frameID);
 
 private:
   static pixelHistograms* fInstance;
   int fVerbose, fRun;
-  uint32_t fFrameID; // keep a record to know when to write the previous frame
   std::string fFilename, fOutDir;
   TFile *fFile;
   std::vector<int> fLayer1, fLayer2, fAllChips;
@@ -73,10 +76,25 @@ private:
   std::map<std::string, TH1D*> fTH1D;
   std::map<std::string, TProfile2D*> fTProfile2D;
 
-
+  TDirectory *fDirectory;
   TTree *fHitsTree;
-  int fFrameID;
-  std::vector<pixelHit> fHits;
+  uint32_t fFrameID; // keep a record to know when to write the previous frame
+
+  int fHitsN;
+  static const int NHITMAX = 10000;
+  int fHitPixelID[NHITMAX];
+  int fHitToT[NHITMAX];
+  unsigned long fHitDebugSiData[NHITMAX];
+  int fHitChipID[NHITMAX];
+  int fHitCol[NHITMAX];
+  int fHitRow[NHITMAX];
+  int fHitTime[NHITMAX];
+  int fHitTimeNs[NHITMAX];
+  int fHitRawToT[NHITMAX];
+  int fHitBitToT[NHITMAX];
+  int fHitStatus[NHITMAX];
+  int fHitStatusBits[NHITMAX];
+
 };
 
 
