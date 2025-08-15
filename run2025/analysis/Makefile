@@ -67,12 +67,12 @@ OTHERLIBS 	  = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so $(LIBCURL)
 
 # -- Files
 #CSTUFF =
-LFILES = pixelHistograms.o
+LFILES = pixelHistograms.o 
 BINARIES = allHistograms pixelFillQualityLM runPixelHistograms
 
-DICT = ${LFILES :.o=Dict.o}
-DICTHEADERS = ${LFILES :.o=Dict.h}
-DICTSOURCES = ${LFILES :.o=Dict.cc}
+DICT = ${LFILES:.o=Dict.o}
+DICTHEADERS = ${LFILES:.o=Dict.h}
+DICTSOURCES = ${LFILES:.o=Dict.cc}
 
 # -- Default rules
 $(addprefix obj/,%.o) : %.cc
@@ -95,6 +95,8 @@ $(addprefix obj/,%.o) : %.cc
 	$(ROOTCINT) -f $@ -c $(EXTHEADERS) $<
 	mv $(subst Dict.cc,Dict_rdict.pcm,$@) lib
 
+
+
 $(addprefix bin/,%) : $(addprefix obj/,%.o)
 	$(LD) $(LDFLAGS) -o $@  $<  lib/libRun2025Analysis.so $(GLIBS) $(OTHERLIBS)
  
@@ -107,7 +109,7 @@ $(addprefix lib/,%.pcm) :
 all: vars prep lib bin
 
 lib: prep $(addprefix obj/,$(CSTUFF) $(LFILES)  $(DICT))
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(LFILES) $(DICT)) -o lib/libRun2025Analysis.so  $(GLIBS) -lMinuit $(OTHERLIBS)
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(LFILES) $(CSTUFF) $(DICT)) -o lib/libRun2025Analysis.so  $(GLIBS) -lMinuit $(OTHERLIBS)
 
 bin: lib $(addprefix bin/,$(BINARIES) )
 
