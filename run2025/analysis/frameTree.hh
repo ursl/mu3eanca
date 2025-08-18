@@ -1,5 +1,5 @@
-#ifndef PIXELHISTOGRAMS_H
-#define PIXELHISTOGRAMS_H
+#ifndef FRAME_TREE_H
+#define FRAME_TREE_H
 
 #include <string>
 #include <vector>
@@ -15,24 +15,25 @@
 // ----------------------------------------------------------------------
 class frameTree {
 public:
-  static frameTree* instance(int mode = -1, std::string filename = "frameTree");
-
-  void  setRun(int run) {fRun = run;}
-  void  setOutDir(std::string outdir) {fOutDir = outdir;}
-  void  setVerbose(int verbose) {fVerbose = verbose;}
-
-protected:
   frameTree(int mode, std::string filename);
   ~frameTree(); 
 
-  void init(int mode, std::string filename);
+  void  setRun(int run) {fRun = run;}
+  void  setFrameID(uint32_t frameID) {fFrameID = frameID;}
+  void  setRunAndFrameID(int run, uint32_t frameID) {fRun = run; fFrameID = frameID;} 
+  void  setOutDir(std::string outdir) {fOutDir = outdir;}
+  void  setVerbose(int verbose) {fVerbose = verbose;}
+
   void clearHitsTreeVariables();
-  void fillAnotherHit(pixelHit &hit);
-  void fillAnotherFrame(uint32_t frameID);
+  void fillPixelHit(pixelHit &hit);
+  void fillFrame();
   void saveTree();
 
+protected:
+
+  void init(int mode, std::string filename);
+
 private:
-  static frameTree* fInstance;
   int fVerbose, fRun, fRun0;
   std::string fFilename, fOutDir;
   TFile *fFile;

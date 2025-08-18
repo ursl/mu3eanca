@@ -15,16 +15,6 @@
 
 using namespace std;
 
-frameTree* frameTree::fInstance = 0;
-
-// ----------------------------------------------------------------------
-frameTree* frameTree::instance(int mode, std::string filename) {
-  if (0 == fInstance) {
-    fInstance = new frameTree(mode, filename);
-  }
-  return fInstance;
-}
-
 // ----------------------------------------------------------------------
 frameTree::frameTree(int mode, std::string filename) : fFilename(filename) {
   if (mode >= 0) {
@@ -91,7 +81,7 @@ frameTree::~frameTree() {
 }
 
 // ---------------------------------------------------------------------- 
-void frameTree::fillAnotherHit(pixelHit &hit) {
+void frameTree::fillPixelHit(pixelHit &hit) {
   fHitPixelID[fHitsN] = hit.fPixelID;
   fHitToT[fHitsN] = hit.fHitToT;
   fHitDebugSiData[fHitsN] = hit.fDebugSiData;
@@ -108,11 +98,10 @@ void frameTree::fillAnotherHit(pixelHit &hit) {
 }
 
 // ---------------------------------------------------------------------- 
-void frameTree::fillAnotherFrame(uint32_t frameID) {
-  if (0) cout << "frameTree::fillAnotherFrame() fHitsN = " << fHitsN 
-              << " frameID = " << frameID 
+void frameTree::fillFrame() {
+  if (0) cout << "frameTree::fillFrame() fHitsN = " << fHitsN 
+              << " frameID = " << fFrameID 
               << endl;
-  fFrameID = frameID;
   fHitsTree->Fill();
   clearHitsTreeVariables();
 }
