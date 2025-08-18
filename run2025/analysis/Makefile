@@ -67,7 +67,7 @@ OTHERLIBS 	  = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so $(LIBCURL)
 
 # -- Files
 #CSTUFF =
-LFILES = pixelHistograms.o 
+LFILES = frameTree.o  pixelHistograms.o 
 BINARIES = allHistograms pixelFillQualityLM runPixelHistograms
 
 DICT = ${LFILES:.o=Dict.o}
