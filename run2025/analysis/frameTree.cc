@@ -15,73 +15,85 @@
 
 using namespace std;
 
-// ----------------------------------------------------------------------
-frameTree::frameTree(int mode, std::string filename) : fFilename(filename) {
-  if (mode >= 0) {
-    cout << "frameTree::frameTree() ctor" << endl;
-    init(mode, filename); 
-    return;
-  } else {
-    cout << "frameTree::frameTree(" << fFilename << ") ctor" << endl;
-    init(mode, filename); 
-  }
+frameTree* frameTree::fInstance = 0;
 
+// ----------------------------------------------------------------------
+frameTree::frameTree(std::string filename) : fFilename(filename) {
+  cout << "frameTree::frameTree(" << fFilename << ") ctor" << endl;
+  init(filename); 
 }
 
 // ----------------------------------------------------------------------
-void frameTree::init(int mode, std::string filename) {
-  cout << "frameTree::init() mode = " << mode << endl;
-  if (mode > 0) {
-    fRun0 = mode;
-    TDirectory *dir = gDirectory;
-    fFile = TFile::Open((filename + "_run" + to_string(fRun0) + ".root").c_str(), "RECREATE");
-    fFile->cd();
-    fDirectory = gDirectory;
-    fDirectory->ls();
- 
-    // -- hit tree very brute force and simple-minded    
-    fHitsTree = new TTree("frameTree", "frameTree");
-    fHitsTree->Branch("run", &fRun, "run/I");
-    fHitsTree->Branch("frameID", &fFrameID);
-    // -- pixel hits
-    fHitsTree->Branch("hitN", &fHitsN, "hitN/I");
-    fHitsTree->Branch("hitPixelID", fHitPixelID, "hitPixelID[hitN]/I");
-    fHitsTree->Branch("hitToT", fHitToT, "hitToT[hitN]/I");
-    fHitsTree->Branch("hitDebugSiData", fHitDebugSiData, "hitDebugSiData[hitN]/l");
-    fHitsTree->Branch("hitChipID", fHitChipID, "hitChipID[hitN]/I");
-    fHitsTree->Branch("hitCol", fHitCol, "hitCol[hitN]/I");
-    fHitsTree->Branch("hitRow", fHitRow, "hitRow[hitN]/I");
-    fHitsTree->Branch("hitTime", fHitTime, "hitTime[hitN]/I");
-    fHitsTree->Branch("hitTimeNs", fHitTimeNs, "hitTimeNs[hitN]/I");
-    fHitsTree->Branch("hitRawToT", fHitRawToT, "hitRawToT[hitN]/I");
-    fHitsTree->Branch("hitBitToT", fHitBitToT, "hitBitToT[hitN]/I");
-    fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/I");
-    fHitsTree->Branch("hitStatusBits", fHitStatusBits, "hitStatusBits[hitN]/I");
-
-    // -- initialize the hit tree variables
-    fHitsN = -1;
-    clearHitsTreeVariables();
-
-    gDirectory = dir;
-    gDirectory->ls();
+frameTree* frameTree::instance(std::string filename) {
+  if (0 == fInstance) {
+    fInstance = new frameTree(filename);
   }
+  return fInstance;
+}
+
+// ----------------------------------------------------------------------
+void frameTree::init(std::string filename) {
+  cout << "frameTree::init() filename = " << filename << endl;
+  TDirectory *dir = gDirectory;
+  fFile = TFile::Open(filename.c_str(), "RECREATE");
+  fFile->cd();
+  fDirectory = gDirectory;
+  fDirectory->ls();
+
+  // -- hit tree very brute force and simple-minded    
+  fHitsTree = new TTree("frameTree", "frameTree");
+  fHitsTree->Branch("run", &fRun, "run/I");
+  fHitsTree->Branch("frameID", &fFrameID);
+  // -- pixel hits
+  fHitsTree->Branch("hitN", &fHitsN, "hitN/I");
+  fHitsTree->Branch("hitPixelID", fHitPixelID, "hitPixelID[hitN]/I");
+  fHitsTree->Branch("hitToT", fHitToT, "hitToT[hitN]/I");
+  fHitsTree->Branch("hitDebugSiData", fHitDebugSiData, "hitDebugSiData[hitN]/l");
+  fHitsTree->Branch("hitChipID", fHitChipID, "hitChipID[hitN]/I");
+  fHitsTree->Branch("hitCol", fHitCol, "hitCol[hitN]/I");
+  fHitsTree->Branch("hitRow", fHitRow, "hitRow[hitN]/I");
+  fHitsTree->Branch("hitTime", fHitTime, "hitTime[hitN]/I");
+  fHitsTree->Branch("hitTimeNs", fHitTimeNs, "hitTimeNs[hitN]/I");
+  fHitsTree->Branch("hitRawToT", fHitRawToT, "hitRawToT[hitN]/I");
+  fHitsTree->Branch("hitBitToT", fHitBitToT, "hitBitToT[hitN]/I");
+  fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/I");
+  fHitsTree->Branch("hitStatusBits", fHitStatusBits, "hitStatusBits[hitN]/I");
+
+  // -- initialize the hit tree variables
+  fHitsN = -1;
+  clearHitsTreeVariables();
+
+  gDirectory = dir;
+  gDirectory->ls();
 }
 
 
 // ----------------------------------------------------------------------
 frameTree::~frameTree() {
   cout << "frameTree::~frameTree() dtor" << endl;
-
   if (fFile) {
     fFile->Close();
     delete fFile;
-  } else {
-    
-  }
+  } 
 }
 
 // ---------------------------------------------------------------------- 
 void frameTree::fillPixelHit(pixelHit &hit) {
+  cout << "frameTree::fillPixelHit() fHitsN = " << fHitsN 
+       << " fPixelID = " << hit.fPixelID 
+       << " fHitToT = " << hit.fHitToT 
+       << " fDebugSiData = " << hit.fDebugSiData 
+       << " fChipID = " << hit.fChipID 
+       << " fCol = " << hit.fCol 
+       << " fRow = " << hit.fRow 
+       << " fTime = " << hit.fTime 
+       << " fTimeNs = " << hit.fTimeNs 
+       << " fRawToT = " << hit.fRawToT 
+       << " fBitToT = " << hit.fBitToT 
+       << " fStatus = " << hit.fStatus 
+       << " fStatusBits = " << hit.fStatusBits 
+       << endl;
+
   fHitPixelID[fHitsN] = hit.fPixelID;
   fHitToT[fHitsN] = hit.fHitToT;
   fHitDebugSiData[fHitsN] = hit.fDebugSiData;
@@ -128,20 +140,37 @@ void frameTree::clearHitsTreeVariables() {
 
 // ---------------------------------------------------------------------- 
 void frameTree::saveTree() {
+  cout << "frameTree::saveTree() fDirectory->GetName() = " << fDirectory->GetName() << endl;
+  fFile->cd();
+  cout << "frameTree::saveTree() fDirectory->ls(): " << endl;
+  fDirectory->ls();
+  fFile->cd(fDirectory->GetName());
+  cout << "frameTree::saveTree() fDirectory->ls(): " << endl;
+  fDirectory->ls();
+  fFile->cd();
+  cout << "frameTree::saveTree() fDirectory->ls(): " << endl;
+  fDirectory->ls();
   fHitsTree->SetDirectory(fDirectory);
   fHitsTree->Write();
+}
+
+// ---------------------------------------------------------------------- 
+void frameTree::closeFile() {
 
   fFile->Close();
   delete fFile;
 
-  if (fRun0 != fRun) {
-    // Rename the output file from mode-based name to actual run number
-    string oldName = fFilename + "_run" + to_string(fRun0) + ".root";
-    string newName = fFilename + "_run" + to_string(fRun) + ".root";
-    
-    // Use system call to rename the file
-    string renameCmd = "mv " + oldName + " " + newName;
-    cout << "Renaming output file: " << renameCmd << endl;
-    system(renameCmd.c_str());
+  // Rename the output file from mode-based name to actual run number
+  string oldName = fFilename;
+  // Replace .root with _run$(fRun).root in filename
+  size_t dotPos = fFilename.find(".root");
+  if (dotPos != string::npos) {
+    string newFilename = fFilename.substr(0, dotPos) + "_run" + to_string(fRun) + ".root";
+    fFilename = newFilename;
+    cout << "Updated filename: " << fFilename << endl;
   }
+  // Use system call to rename the file
+  string renameCmd = "mv " + oldName + " " + fFilename;
+  cout << "Renaming output file: " << renameCmd << endl;
+  system(renameCmd.c_str());
 }

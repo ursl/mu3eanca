@@ -16,32 +16,55 @@
 
 using namespace std;
 
-pixelHistograms* pixelHistograms::fInstance = 0;
 
 // ----------------------------------------------------------------------
-pixelHistograms* pixelHistograms::instance(int mode, std::string filename) {
-  if (0 == fInstance) {
-    fInstance = new pixelHistograms(mode, filename);
-  }
-  return fInstance;
+pixelHistograms::pixelHistograms(TFile *file) {
+  cout << "pixelHistograms::pixelHistograms() ctor" << endl;
+  init(file); 
 }
 
+
 // ----------------------------------------------------------------------
-pixelHistograms::pixelHistograms(int mode, std::string filename) : fFilename(filename) {
-  if (mode >= 0) {
-    cout << "pixelHistograms::pixelHistograms() ctor" << endl;
-    init(mode, filename); 
+pixelHistograms::pixelHistograms(std::string filename, std::string outdir) : fOutDir(outdir) {
+  cout << "pixelHistograms::pixelHistograms() ctor" << endl;
+
+  fOutDir = outdir;
+
+  fFile = TFile::Open(filename.c_str());
+  if (!fFile) {
+    cout << "pixelHistograms::pixelHistograms() ctor: failed to open file " << filename << endl;
     return;
-  } else {
-    cout << "pixelHistograms::pixelHistograms(" << fFilename << ") ctor" << endl;
-    init(mode, filename); 
   }
+
+  // -- Parse run number from filename - look for digits before ".root"
+  size_t dotPos = filename.find(".root");
+  if (dotPos != string::npos) {
+    // Find the last sequence of digits before ".root"
+    size_t startPos = dotPos;
+    while (startPos > 0 && isdigit(filename[startPos - 1])) {
+      startPos--;
+    }
+    if (startPos < dotPos) {
+      fRun = stoi(filename.substr(startPos, dotPos - startPos));
+      cout << "pixelHistograms::init() fRun = " << fRun << endl;
+    }
+  }
+  readHist("all_hitmap", "chipmap");
+  readHist("all_hittot", "chipToT");
+  readHist("all_hittot", "chipprof2d");
+  // -- distributions for rejected pixel hits
+  readHist("rj_hitmap", "chipmap");
+  readHist("rj_hittot", "chipToT");
+
+
+  plotAllHistograms();
 
 }
 
 // ----------------------------------------------------------------------
-void pixelHistograms::init(int mode, std::string filename) {
-  cout << "pixelHistograms::init() mode = " << mode << endl;
+void pixelHistograms::init(TFile *file) {
+  fFile = file;
+  cout << "pixelHistograms::init() file = " << file << endl;
   fLayer1 = {1,2,3,4,5,6,
             33, 34, 35, 36, 37, 38,
             65, 66, 67, 68, 69, 70,
@@ -64,121 +87,46 @@ void pixelHistograms::init(int mode, std::string filename) {
   fAllChips = fLayer1;
   fAllChips.insert(fAllChips.end(), fLayer2.begin(), fLayer2.end());
   cout << "pixelHistograms::init() fAllChips.size() = " << fAllChips.size() << endl;
-  if (mode > 0) {
-    fRun0 = mode;
-    TDirectory *dir = gDirectory;
-    fFile = TFile::Open((filename + "_run" + to_string(fRun0) + ".root").c_str(), "RECREATE");
-    fFile->cd();
-    fFile->mkdir("pixelHistograms");
-    gDirectory->ls();
-    fFile->cd("pixelHistograms");
-    fDirectory = gDirectory;
-    fDirectory->ls();
- 
-    // -- all pixel hits
-    bookHist("all_hitmap", "chipmap");
-    bookHist("all_hittot", "chipToT");
-    bookHist("all_hittot", "chipprof2d");
 
-    // -- distributions for various special selections
-    bookHist("edge_hitmap", "chipmap");
-    bookHist("edge_hittot", "chipToT");
-    bookHist("low_hitmap",  "chipmap");
+  TDirectory *dir = gDirectory;
+  fFile->cd();
+  fFile->mkdir("pixelHistograms");
+  gDirectory->ls();
+  fFile->cd("pixelHistograms");
+  fDirectory = gDirectory;
+  fDirectory->ls();
 
-    // -- good pixel hits
-    bookHist("ok_hitmap", "chipmap");
-    bookHist("ok_hittot", "chipToT");
-    bookHist("ok_hittot", "chipprof2d");
+  // -- all pixel hits
+  bookHist("all_hitmap", "chipmap");
+  bookHist("all_hittot", "chipToT");
+  bookHist("all_hittot", "chipprof2d");
 
-    // -- rejected pixel hits
-    bookHist("rj_hitmap", "chipmap");
-    bookHist("rj_hittot", "chipToT");
+  // -- distributions for various special selections
+  bookHist("edge_hitmap", "chipmap");
+  bookHist("edge_hittot", "chipToT");
+  bookHist("low_hitmap",  "chipmap");
 
-    fTH1D["badChipIDs"] = new TH1D("badChipIDs", "badChipIDs", 200, 0, 1000000);
+  // -- good pixel hits
+  bookHist("ok_hitmap", "chipmap");
+  bookHist("ok_hittot", "chipToT");
+  bookHist("ok_hittot", "chipprof2d");
 
-    // -- special histograms for mu3eTrirec
-    fphitToT = new TH1D("phitToT", "phitToT", 32, 0, 32);
-    fpSiHitsSize = new TH1D("fpSiHitsSize", "fpSiHitsSize", 1000, 0, 1000);
-    fpMppcHitsSize = new TH1D("fpMppcHitsSize", "fpMppcHitsSize", 1000, 0, 1000);
-    fpTlHitsSize = new TH1D("fpTlHitsSize", "fpTlHitsSize", 1000, 0, 1000);
+  // -- rejected pixel hits
+  bookHist("rj_hitmap", "chipmap");
+  bookHist("rj_hittot", "chipToT");
 
-    // -- hit tree very brute force and simple-minded    
-    fHitsTree = new TTree("hits", "hits");
-    fHitsTree->Branch("run", &fRun, "run/I");
-    fHitsTree->Branch("frameID", &fFrameID);
-    // -- pixel hits
-    fHitsTree->Branch("hitN", &fHitsN, "hitN/I");
-    fHitsTree->Branch("hitPixelID", fHitPixelID, "hitPixelID[hitN]/I");
-    fHitsTree->Branch("hitToT", fHitToT, "hitToT[hitN]/I");
-    fHitsTree->Branch("hitDebugSiData", fHitDebugSiData, "hitDebugSiData[hitN]/l");
-    fHitsTree->Branch("hitChipID", fHitChipID, "hitChipID[hitN]/I");
-    fHitsTree->Branch("hitCol", fHitCol, "hitCol[hitN]/I");
-    fHitsTree->Branch("hitRow", fHitRow, "hitRow[hitN]/I");
-    fHitsTree->Branch("hitTime", fHitTime, "hitTime[hitN]/I");
-    fHitsTree->Branch("hitTimeNs", fHitTimeNs, "hitTimeNs[hitN]/I");
-    fHitsTree->Branch("hitRawToT", fHitRawToT, "hitRawToT[hitN]/I");
-    fHitsTree->Branch("hitBitToT", fHitBitToT, "hitBitToT[hitN]/I");
-    fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/I");
-    fHitsTree->Branch("hitStatusBits", fHitStatusBits, "hitStatusBits[hitN]/I");
+  fTH1D["badChipIDs"] = new TH1D("badChipIDs", "badChipIDs", 200, 0, 1000000);
 
-    // -- initialize the hit tree variables
-    fHitsN = -1;
-    clearHitsTreeVariables();
+  gDirectory = dir;
+  gDirectory->ls();
 
-    gDirectory = dir;
-    gDirectory->ls();
-  } else if (0 == mode) {
-    fFile = TFile::Open(filename.c_str());
-    // -- Parse run number from filename - look for digits before ".root"
-    size_t dotPos = filename.find(".root");
-    if (dotPos != string::npos) {
-      // Find the last sequence of digits before ".root"
-      size_t startPos = dotPos;
-      while (startPos > 0 && isdigit(filename[startPos - 1])) {
-        startPos--;
-      }
-      if (startPos < dotPos) {
-        fRun = stoi(filename.substr(startPos, dotPos - startPos));
-        cout << "pixelHistograms::init() fRun = " << fRun << endl;
-      }
-    }
-    readHist("all_hitmap", "chipmap");
-    readHist("all_hittot", "chipToT");
-    readHist("all_hittot", "chipprof2d");
-    // -- distributions for rejected pixel hits
-    readHist("rj_hitmap", "chipmap");
-    readHist("rj_hittot", "chipToT");
-
-  } else {
-    cout << "pixelHistograms::init() mode = " << mode << " not implemented" << endl;
-  }
 }
 
 
 // ----------------------------------------------------------------------
 pixelHistograms::~pixelHistograms() {
   cout << "pixelHistograms::~pixelHistograms() dtor" << endl;
-
-  if (fFile) {
-    fFile->Close();
-    delete fFile;
-  } else {
-    
-  }
 }
-
-// ----------------------------------------------------------------------
-void pixelHistograms::plotAllHistograms() {
-  plotHistograms("all_hitmap", "chipmap");
-  plotHistograms("all_hittot", "chipToT");
-
-  plotHistograms("all_hittot", "chipprof2d");
-  if (fTH1D["badChipIDs"]) {
-    cout << "Total bad chipIDs = " << fTH1D["badChipIDs"]->GetEntries() << endl;
-  }
-}
-
-
 
 // ---------------------------------------------------------------------- 
 void pixelHistograms::bookHist(string hname, string hType) {
@@ -195,32 +143,6 @@ void pixelHistograms::bookHist(string hname, string hType) {
   }
 }
 
-
-// ---------------------------------------------------------------------- 
-void pixelHistograms::readHist(string hname, string hType) {
-  string dir = "pixelHistograms";
-  int cnt = 0;
-  cout << "pixelHistograms::readHist() hname = " << hname << " hType = " << hType; 
-  for (auto iChip: fAllChips) {
-    string name = Form("C%d_%s_%s", iChip, hname.c_str(), hType.c_str());
-    cnt++;
-    if (hType == "chipmap") {  
-      fTH2D[name] = (TH2D*)fFile->Get(Form("%s/%s", dir.c_str(), name.c_str()));
-      //cout << "pixelHistograms::readHist() " << name << " = " << fTH2D[name] << endl;
-    } else if (hType == "chipToT") {
-      fTH1D[name] = (TH1D*)fFile->Get(Form("%s/%s", dir.c_str(), name.c_str()));
-      //cout << "pixelHistograms::readHist() " << name << " = " << fTH1D[name] << endl;
-    } else if (hType == "chipprof2d") {
-      fTProfile2D[name] = (TProfile2D*)fFile->Get(Form("%s/%s", dir.c_str(), name.c_str()));
-      //cout << "pixelHistograms::readHist() " << name << " = " << fTProfile2D[name] << endl;
-    }
-  }
-
-  cout << ", read " << cnt << " histograms" << endl; 
-  fTH1D["badChipIDs"] = (TH1D*)fFile->Get(Form("%s/badChipIDs", dir.c_str()));
-  //cout << "pixelHistograms::readHist() badChipIDs = " << fTH1D["badChipIDs"] << endl;
-}
-
 // ---------------------------------------------------------------------- 
 TH2D* pixelHistograms::getTH2D(std::string hname) {
   return fTH2D[hname];
@@ -232,9 +154,7 @@ TH1D* pixelHistograms::getTH1D(std::string hname) {
 }
 
 // ---------------------------------------------------------------------- 
-bool pixelHistograms::goodPixel(uint32_t frameID, pixelHit &hitIn) {
-  // -- if the frameID has changed, write the previous frame data to the tree and clear the hits
-  if (frameID != fFrameID) fillAnotherFrame(frameID);
+bool pixelHistograms::goodPixel(pixelHit &hitIn) {
 
   // -- rawtot should simply be between 0 .. 31. You need ckdivend and ckdivend2 to get something meaningful
   uint32_t chipid = ((hitIn.fPixelID >> 16) & 0xFFFF);
@@ -284,12 +204,8 @@ bool pixelHistograms::goodPixel(uint32_t frameID, pixelHit &hitIn) {
     hit.fStatusBits |= 2;
   }
 
-  fillAnotherHit(hit);
-
-
-  if (chipid > 12000) {
+    if (chipid > 12000) {
     fTH1D["badChipIDs"]->Fill(chipid);
-    fHitStatus[fHitsN-1] = 2;
     return false;
   }
 
@@ -327,7 +243,6 @@ bool pixelHistograms::goodPixel(uint32_t frameID, pixelHit &hitIn) {
       hname = Form("C%d_rj_hittot_chipToT", chipid);
       fTH1D[hname]->Fill(hitToT);
  
-      fHitStatus[fHitsN-1] = 1;
       return false; 
     }
   }
@@ -344,60 +259,14 @@ bool pixelHistograms::goodPixel(uint32_t frameID, pixelHit &hitIn) {
   fTH1D[hname]->Fill(hitToT);
   hname = Form("C%d_ok_hittot_chipprof2d", chipid);
   fTProfile2D[hname]->Fill(col, row, hitToT);
-  fHitStatus[fHitsN-1] = 0;
   return true;
-}
-
-// ---------------------------------------------------------------------- 
-void pixelHistograms::fillAnotherHit(pixelHit &hit) {
-  fHitPixelID[fHitsN] = hit.fPixelID;
-  fHitToT[fHitsN] = hit.fHitToT;
-  fHitDebugSiData[fHitsN] = hit.fDebugSiData;
-  fHitChipID[fHitsN] = hit.fChipID;
-  fHitCol[fHitsN] = hit.fCol;
-  fHitRow[fHitsN] = hit.fRow;
-  fHitTime[fHitsN] = hit.fTime;
-  fHitTimeNs[fHitsN] = hit.fTimeNs;
-  fHitRawToT[fHitsN] = hit.fRawToT;
-  fHitBitToT[fHitsN] = hit.fBitToT;
-  fHitStatus[fHitsN] = hit.fStatus;
-  fHitStatusBits[fHitsN] = hit.fStatusBits;
-  fHitsN++;
-}
-
-// ---------------------------------------------------------------------- 
-void pixelHistograms::fillAnotherFrame(uint32_t frameID) {
-  if (0) cout << "pixelHistograms::fillAnotherFrame() fHitsN = " << fHitsN 
-              << " frameID = " << frameID 
-              << endl;
-  fFrameID = frameID;
-  fHitsTree->Fill();
-  clearHitsTreeVariables();
-}
-
-// ---------------------------------------------------------------------- 
-void pixelHistograms::clearHitsTreeVariables() {
-  if (fHitsN < 0) fHitsN = NHITMAX;
-  for (int i = 0; i < fHitsN; ++i) {
-    fHitPixelID[i] = 0;
-    fHitToT[i] = 0;
-    fHitDebugSiData[i] = 0;
-    fHitChipID[i] = 0;
-    fHitCol[i] = 0;
-    fHitRow[i] = 0;
-    fHitTime[i] = 0;
-    fHitTimeNs[i] = 0;
-    fHitRawToT[i] = 0;
-    fHitBitToT[i] = 0;
-    fHitStatus[i] = 0;
-    fHitStatusBits[i] = 0;
-  }
-  fHitsN = 0;
 }
 
 // ---------------------------------------------------------------------- 
 void pixelHistograms::saveHistograms() {
   fDirectory->cd();
+  cout << "pixelHistograms::saveHistograms() fDirectory->ls(): " << endl;
+  fDirectory->ls();
   for (auto ih: fTH2D) {
     ih.second->SetDirectory(fDirectory);
     ih.second->Write();
@@ -411,31 +280,6 @@ void pixelHistograms::saveHistograms() {
     ih.second->Write();
   }
 
-  fphitToT->SetDirectory(fDirectory);
-  fphitToT->Write();
-  fpSiHitsSize->SetDirectory(fDirectory);
-  fpSiHitsSize->Write();
-  fpMppcHitsSize->SetDirectory(fDirectory);
-  fpMppcHitsSize->Write();
-  fpTlHitsSize->SetDirectory(fDirectory);
-  fpTlHitsSize->Write();
-
-  fHitsTree->SetDirectory(fDirectory);
-  fHitsTree->Write();
-
-  fFile->Close();
-  delete fFile;
-
-  if (fRun0 != fRun) {
-    // Rename the output file from mode-based name to actual run number
-    string oldName = fFilename + "_run" + to_string(fRun0) + ".root";
-    string newName = fFilename + "_run" + to_string(fRun) + ".root";
-    
-    // Use system call to rename the file
-    string renameCmd = "mv " + oldName + " " + newName;
-    cout << "Renaming output file: " << renameCmd << endl;
-    system(renameCmd.c_str());
-  }
 }
 
 
@@ -544,4 +388,41 @@ void pixelHistograms::plotHistograms(string histname, string htype) {
     c->SaveAs((fOutDir + "/pixelHistograms-" + histname + "-" + htype + "-" + to_string(fRun) + ".pdf").c_str());
     c->SaveAs((fOutDir + "/pixelHistograms-" + histname + "-" + htype + "-" + to_string(fRun) + ".png").c_str());
     delete c;
+}
+
+// ----------------------------------------------------------------------
+void pixelHistograms::plotAllHistograms() {
+  plotHistograms("all_hitmap", "chipmap");
+  plotHistograms("all_hittot", "chipToT");
+
+  plotHistograms("all_hittot", "chipprof2d");
+  if (fTH1D["badChipIDs"]) {
+    cout << "Total bad chipIDs = " << fTH1D["badChipIDs"]->GetEntries() << endl;
+  }
+}
+
+
+// ---------------------------------------------------------------------- 
+void pixelHistograms::readHist(string hname, string hType) {
+  string dir = "pixelHistograms";
+  int cnt = 0;
+  cout << "pixelHistograms::readHist() hname = " << hname << " hType = " << hType; 
+  for (auto iChip: fAllChips) {
+    string name = Form("C%d_%s_%s", iChip, hname.c_str(), hType.c_str());
+    cnt++;
+    if (hType == "chipmap") {  
+      fTH2D[name] = (TH2D*)fFile->Get(Form("%s/%s", dir.c_str(), name.c_str()));
+      //cout << "pixelHistograms::readHist() " << name << " = " << fTH2D[name] << endl;
+    } else if (hType == "chipToT") {
+      fTH1D[name] = (TH1D*)fFile->Get(Form("%s/%s", dir.c_str(), name.c_str()));
+      //cout << "pixelHistograms::readHist() " << name << " = " << fTH1D[name] << endl;
+    } else if (hType == "chipprof2d") {
+      fTProfile2D[name] = (TProfile2D*)fFile->Get(Form("%s/%s", dir.c_str(), name.c_str()));
+      //cout << "pixelHistograms::readHist() " << name << " = " << fTProfile2D[name] << endl;
+    }
+  }
+
+  cout << ", read " << cnt << " histograms" << endl; 
+  fTH1D["badChipIDs"] = (TH1D*)fFile->Get(Form("%s/badChipIDs", dir.c_str()));
+  //cout << "pixelHistograms::readHist() badChipIDs = " << fTH1D["badChipIDs"] << endl;
 }

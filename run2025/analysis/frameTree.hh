@@ -15,8 +15,7 @@
 // ----------------------------------------------------------------------
 class frameTree {
 public:
-  frameTree(int mode, std::string filename);
-  ~frameTree(); 
+  static frameTree* instance(std::string filename = "frameTree");
 
   void  setRun(int run) {fRun = run;}
   void  setFrameID(uint32_t frameID) {fFrameID = frameID;}
@@ -24,16 +23,23 @@ public:
   void  setOutDir(std::string outdir) {fOutDir = outdir;}
   void  setVerbose(int verbose) {fVerbose = verbose;}
 
+  TDirectory* getDirectory() {return fDirectory;}
+  TFile* getFile() {return fFile;}
+
   void clearHitsTreeVariables();
   void fillPixelHit(pixelHit &hit);
   void fillFrame();
   void saveTree();
+  void closeFile();
 
 protected:
+  frameTree(std::string filename);
+  ~frameTree(); 
 
-  void init(int mode, std::string filename);
+  void init(std::string filename);
 
 private:
+  static frameTree* fInstance;
   int fVerbose, fRun, fRun0;
   std::string fFilename, fOutDir;
   TFile *fFile;
