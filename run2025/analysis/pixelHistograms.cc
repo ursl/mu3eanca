@@ -65,8 +65,9 @@ void pixelHistograms::init(int mode, std::string filename) {
   fAllChips.insert(fAllChips.end(), fLayer2.begin(), fLayer2.end());
   cout << "pixelHistograms::init() fAllChips.size() = " << fAllChips.size() << endl;
   if (mode > 0) {
+    fRun0 = mode;
     TDirectory *dir = gDirectory;
-    fFile = TFile::Open((filename + "_run" + to_string(mode) + ".root").c_str(), "RECREATE");
+    fFile = TFile::Open((filename + "_run" + to_string(fRun0) + ".root").c_str(), "RECREATE");
     fFile->cd();
     fFile->mkdir("pixelHistograms");
     gDirectory->ls();
@@ -97,6 +98,9 @@ void pixelHistograms::init(int mode, std::string filename) {
 
     // -- special histograms for mu3eTrirec
     fphitToT = new TH1D("phitToT", "phitToT", 32, 0, 32);
+    fpSiHitsSize = new TH1D("fpSiHitsSize", "fpSiHitsSize", 1000, 0, 1000);
+    fpMppcHitsSize = new TH1D("fpMppcHitsSize", "fpMppcHitsSize", 1000, 0, 1000);
+    fpTlHitsSize = new TH1D("fpTlHitsSize", "fpTlHitsSize", 1000, 0, 1000);
 
     // -- hit tree very brute force and simple-minded    
     fHitsTree = new TTree("hits", "hits");
@@ -217,33 +221,6 @@ void pixelHistograms::readHist(string hname, string hType) {
   //cout << "pixelHistograms::readHist() badChipIDs = " << fTH1D["badChipIDs"] << endl;
 }
 
-
-// ---------------------------------------------------------------------- 
-void pixelHistograms::saveHistograms() {
-  fDirectory->cd();
-  for (auto ih: fTH2D) {
-    ih.second->SetDirectory(fDirectory);
-    ih.second->Write();
-  }
-  for (auto ih: fTH1D) {
-    ih.second->SetDirectory(fDirectory);
-    ih.second->Write();
-  }
-  for (auto ih: fTProfile2D) {
-    ih.second->SetDirectory(fDirectory);
-    ih.second->Write();
-  }
-
-  fphitToT->SetDirectory(fDirectory);
-  fphitToT->Write();
-
-  fHitsTree->SetDirectory(fDirectory);
-  fHitsTree->Write();
-
-  fFile->Close();
-  delete fFile;
-}
-
 // ---------------------------------------------------------------------- 
 TH2D* pixelHistograms::getTH2D(std::string hname) {
   return fTH2D[hname];
@@ -289,7 +266,6 @@ bool pixelHistograms::goodPixel(uint32_t frameID, pixelHit &hitIn) {
   uint32_t localTime = hit.fTimeNs % (1 << 11);  // local pixel time is first 11 bits of the global time
   uint32_t hitToA=localTime * 8/*ns*/ * (ckdivend + 1);
   uint32_t hitToT = ( ( (0x1F+1) + rawtot -  ( (localTime * (ckdivend+1) / (ckdivend2+1) ) & 0x1F) ) & 0x1F);//  * 8 * (ckdivend2+1) ;
-  cout << "hallo" << endl;
   hit.fBitToT = hitToT;
   hit.fRawToT = rawtot;
 
@@ -391,9 +367,9 @@ void pixelHistograms::fillAnotherHit(pixelHit &hit) {
 
 // ---------------------------------------------------------------------- 
 void pixelHistograms::fillAnotherFrame(uint32_t frameID) {
-  cout << "pixelHistograms::fillAnotherFrame() fHitsN = " << fHitsN 
-       << " frameID = " << frameID 
-       << endl;
+  if (0) cout << "pixelHistograms::fillAnotherFrame() fHitsN = " << fHitsN 
+              << " frameID = " << frameID 
+              << endl;
   fFrameID = frameID;
   fHitsTree->Fill();
   clearHitsTreeVariables();
@@ -418,6 +394,51 @@ void pixelHistograms::clearHitsTreeVariables() {
   }
   fHitsN = 0;
 }
+
+// ---------------------------------------------------------------------- 
+void pixelHistograms::saveHistograms() {
+  fDirectory->cd();
+  for (auto ih: fTH2D) {
+    ih.second->SetDirectory(fDirectory);
+    ih.second->Write();
+  }
+  for (auto ih: fTH1D) {
+    ih.second->SetDirectory(fDirectory);
+    ih.second->Write();
+  }
+  for (auto ih: fTProfile2D) {
+    ih.second->SetDirectory(fDirectory);
+    ih.second->Write();
+  }
+
+  fphitToT->SetDirectory(fDirectory);
+  fphitToT->Write();
+  fpSiHitsSize->SetDirectory(fDirectory);
+  fpSiHitsSize->Write();
+  fpMppcHitsSize->SetDirectory(fDirectory);
+  fpMppcHitsSize->Write();
+  fpTlHitsSize->SetDirectory(fDirectory);
+  fpTlHitsSize->Write();
+
+  fHitsTree->SetDirectory(fDirectory);
+  fHitsTree->Write();
+
+  fFile->Close();
+  delete fFile;
+
+  if (fRun0 != fRun) {
+    // Rename the output file from mode-based name to actual run number
+    string oldName = fFilename + "_run" + to_string(fRun0) + ".root";
+    string newName = fFilename + "_run" + to_string(fRun) + ".root";
+    
+    // Use system call to rename the file
+    string renameCmd = "mv " + oldName + " " + newName;
+    cout << "Renaming output file: " << renameCmd << endl;
+    system(renameCmd.c_str());
+  }
+}
+
+
 // ---------------------------------------------------------------------- 
 void pixelHistograms::plotHistograms(string histname, string htype) {  
   cout << "pixelHistograms::plotHistograms() histname = " << histname << " htype = " << htype << endl;

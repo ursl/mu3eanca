@@ -52,7 +52,7 @@ public:
   TH1D* getTH1D(std::string hname);
 
   // -- special histograms for mu3eTrirec
-  TH1D *fphitToT;
+  TH1D *fphitToT, *fpSiHitsSize, *fpMppcHitsSize, *fpTlHitsSize;
 
 protected:
   pixelHistograms(int mode, std::string filename);
@@ -66,7 +66,7 @@ protected:
 
 private:
   static pixelHistograms* fInstance;
-  int fVerbose, fRun;
+  int fVerbose, fRun, fRun0;
   std::string fFilename, fOutDir;
   TFile *fFile;
   std::vector<int> fLayer1, fLayer2, fAllChips;
