@@ -189,7 +189,7 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
   hit.fBitToT = hitToT;
   hit.fRawToT = rawtot;
 
-  cout << "pixelHistograms::goodPixel() hitTot = " << hitToT << " hitTot() = " << hit.hitToT() << endl;
+  //cout << "pixelHistograms::goodPixel() hitTot = " << hitToT << " hitTot() = " << hit.hitToT() << endl;
 
   hit.fStatus = 0;
   hit.fStatusBits = 0;
@@ -273,7 +273,7 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
 void pixelHistograms::saveHistograms() {
   fDirectory->cd();
   cout << "pixelHistograms::saveHistograms() fDirectory->ls(): " << endl;
-  fDirectory->ls();
+  //fDirectory->ls();
   for (auto ih: fTH2D) {
     ih.second->SetDirectory(fDirectory);
     ih.second->Write();
