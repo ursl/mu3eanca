@@ -33,7 +33,8 @@ public:
   void  setCalPixelQualityLM(calPixelQualityLM* calPixelQualityLM) {fCalPixelQualityLM = calPixelQualityLM;}
   calPixelQualityLM* getCalPixelQualityLM() {return fCalPixelQualityLM;}
 
-  bool goodPixel(pixelHit &hitIn);
+  // -- return 0 if the pixel is good, 1 if it is rejected, 2 if it is a special pixel
+  int goodPixel(pixelHit &hitIn);
 
   TH2D* getTH2D(std::string hname);
   TH1D* getTH1D(std::string hname);

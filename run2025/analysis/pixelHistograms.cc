@@ -154,8 +154,8 @@ TH1D* pixelHistograms::getTH1D(std::string hname) {
 }
 
 // ---------------------------------------------------------------------- 
-bool pixelHistograms::goodPixel(pixelHit &hitIn) {
-
+int pixelHistograms::goodPixel(pixelHit &hitIn) {
+  int result(0);
   // -- rawtot should simply be between 0 .. 31. You need ckdivend and ckdivend2 to get something meaningful
   uint32_t chipid = ((hitIn.fPixelID >> 16) & 0xFFFF);
   uint32_t col = int((hitIn.fPixelID >> 8) & 0xFF);
@@ -189,6 +189,8 @@ bool pixelHistograms::goodPixel(pixelHit &hitIn) {
   hit.fBitToT = hitToT;
   hit.fRawToT = rawtot;
 
+  cout << "pixelHistograms::goodPixel() hitTot = " << hitToT << " hitTot() = " << hit.hitToT() << endl;
+
   hit.fStatus = 0;
   hit.fStatusBits = 0;
 
@@ -206,13 +208,17 @@ bool pixelHistograms::goodPixel(pixelHit &hitIn) {
 
     if (chipid > 12000) {
     fTH1D["badChipIDs"]->Fill(chipid);
-    return false;
+    result |= (1 << 16);
   }
 
 
   string hname("");
-  if (fCalPixelQualityLM) {
+  if (result < 99 && fCalPixelQualityLM) {
     int status = fCalPixelQualityLM->getStatus(chipid, col, row);
+
+    if (status > 0 && status < 9) {
+      result |= (0x1 << status);
+    }
 
     hname = Form("C%d_all_hitmap_chipmap", chipid);
     fTH2D[hname]->Fill(col, row);
@@ -233,7 +239,7 @@ bool pixelHistograms::goodPixel(pixelHit &hitIn) {
       fTH2D[hname]->Fill(col, row);
     } 
 
-    if (status > 0 /*|| isEdgePixel || isLowToT*/) {
+    if (isEdgePixel || isLowToT) {
       if (0) cout << "pixelHistograms::goodPixel() chipid = " << chipid << " col = " << col << " row = " << row << " has status " << status 
                   << "hitTot = " << hitToT 
                   << endl;
@@ -243,7 +249,7 @@ bool pixelHistograms::goodPixel(pixelHit &hitIn) {
       hname = Form("C%d_rj_hittot_chipToT", chipid);
       fTH1D[hname]->Fill(hitToT);
  
-      return false; 
+      result |= (0x1 << 10); 
     }
   }
 
@@ -252,14 +258,15 @@ bool pixelHistograms::goodPixel(pixelHit &hitIn) {
               << " hitToA = " << hitToA << " hitToT = " << hitToT 
               << endl;
 
-
-  hname = Form("C%d_ok_hitmap_chipmap", chipid);
-  fTH2D[hname]->Fill(col, row);
-  hname = Form("C%d_ok_hittot_chipToT", chipid);
-  fTH1D[hname]->Fill(hitToT);
-  hname = Form("C%d_ok_hittot_chipprof2d", chipid);
-  fTProfile2D[hname]->Fill(col, row, hitToT);
-  return true;
+  if (0 == result) {
+    hname = Form("C%d_ok_hitmap_chipmap", chipid);
+    fTH2D[hname]->Fill(col, row);
+    hname = Form("C%d_ok_hittot_chipToT", chipid);
+    fTH1D[hname]->Fill(hitToT);
+    hname = Form("C%d_ok_hittot_chipprof2d", chipid);
+    fTProfile2D[hname]->Fill(col, row, hitToT);
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------- 
@@ -278,7 +285,7 @@ void pixelHistograms::saveHistograms() {
   for (auto ih: fTProfile2D) {
     ih.second->SetDirectory(fDirectory);
     ih.second->Write();
-  }
+  } 
 
 }
 
