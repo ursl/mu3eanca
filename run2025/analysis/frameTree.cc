@@ -79,7 +79,7 @@ frameTree::~frameTree() {
 
 // ---------------------------------------------------------------------- 
 void frameTree::fillPixelHit(pixelHit &hit) {
-  cout << "frameTree::fillPixelHit() fHitsN = " << fHitsN 
+  if (0) cout << "frameTree::fillPixelHit() fHitsN = " << fHitsN 
        << " fPixelID = " << hit.fPixelID 
        << " fHitToT = " << hit.fHitToT 
        << " fDebugSiData = " << hit.fDebugSiData 
