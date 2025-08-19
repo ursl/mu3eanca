@@ -31,7 +31,7 @@
 #
 #             merlin-l-002>wpd
 #             /data/experiment/mu3e/code/offline/250528-v6.1pre
-#             merlin-l-002>tar zcvf slurm/250606-mlzr.tar.gz --exclude .git --exclude minalyzer/json_output --exclude mu3e/_build minalyzer mu3e
+#             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -i 
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
