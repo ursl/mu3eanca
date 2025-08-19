@@ -812,7 +812,7 @@ router.post("/bulk/class", async (req, res) => {
             return res.status(400).json({ error: 'Invalid request parameters' });
         }
 
-        const validClasses = ['Beam', 'Test', 'Calibration', 'Source', 'Junk'];
+        const validClasses = ['Beam', 'Test', 'Calibration', 'Source', 'Junk', 'Cosmic'];
         if (!validClasses.includes(runClass)) {
             return res.status(400).json({ error: 'Invalid run class' });
         }
