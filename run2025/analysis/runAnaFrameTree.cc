@@ -170,14 +170,14 @@ int main(int argc, char *argv[]) {
   }
 
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
-  anaFrameTree *a = NULL;
-  if (string::npos != treeName.find("frames")) {
-    cout << "instantiating trRec with tree " << treeName << endl;
-    a = new anaFrameTree(chain);
-  } 
-  if (a) {
-    a->Loop();
-  }
+  anaFrameTree *a = new anaFrameTree(chain);
+  a->setVerbose(verbose);
+  a->setOutputDir(dirName);
+  a->openHistFile(histfile);
+  a->bookHistograms();
+  a->loop(nevents, start);
+  a->closeHistFile();
+  a->endAnalysis();
 
   delete a; 
   return 0;
