@@ -171,17 +171,4 @@ void frameTree::closeFile() {
   fFile->Close();
   delete fFile;
 
-  // Rename the output file from mode-based name to actual run number
-  string oldName = fFilename;
-  // Replace .root with _run$(fRun).root in filename
-  size_t dotPos = fFilename.find(".root");
-  if (dotPos != string::npos) {
-    string newFilename = fFilename.substr(0, dotPos) + "_run" + to_string(fRun) + ".root";
-    fFilename = newFilename;
-    cout << "Updated filename: " << fFilename << endl;
-  }
-  // Use system call to rename the file
-  string renameCmd = "mv " + oldName + " " + fFilename;
-  cout << "Renaming output file: " << renameCmd << endl;
-  system(renameCmd.c_str());
 }
