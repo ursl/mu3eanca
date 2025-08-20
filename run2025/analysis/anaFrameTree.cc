@@ -44,7 +44,6 @@ void anaFrameTree::openHistFile(std::string histfile) {
   fpHistFile->cd();
 }
 
-
 // ---------------------------------------------------------------------- 
 void anaFrameTree::closeHistFile() {
   if (fVerbose > 0) cout << "==> anaFrameTree: Closing histograms file" << endl;
@@ -55,14 +54,16 @@ void anaFrameTree::closeHistFile() {
 // ---------------------------------------------------------------------- 
 void anaFrameTree::bookHistograms() {
   if (fVerbose > 0) cout << "==> anaFrameTree: Booking histograms" << endl;
+
+
 }
-
-
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::endAnalysis() {
   if (fVerbose > 0) cout << "==> anaFrameTree: Ending analysis" << endl;
 }
+
+
 // ---------------------------------------------------------------------- 
 void anaFrameTree::loop(int nevents, int start) {
   int maxEvents(0);
@@ -158,10 +159,14 @@ void anaFrameTree::Init() {
     fpChain->SetBranchAddress("hitRow", hitRow, &b_hitRow);
     fpChain->SetBranchAddress("hitTime", hitTime, &b_hitTime);
     fpChain->SetBranchAddress("hitTimeNs", hitTimeNs, &b_hitTimeNs);
+    fpChain->SetBranchAddress("hitX", hitX, &b_hitX);
+    fpChain->SetBranchAddress("hitY", hitY, &b_hitY);
+    fpChain->SetBranchAddress("hitZ", hitZ, &b_hitZ);
     fpChain->SetBranchAddress("hitRawToT", hitRawToT, &b_hitRawToT);
     fpChain->SetBranchAddress("hitBitToT", hitBitToT, &b_hitBitToT);
     fpChain->SetBranchAddress("hitStatus", hitStatus, &b_hitStatus);
     fpChain->SetBranchAddress("hitStatusBits", hitStatusBits, &b_hitStatusBits);
+    fpChain->SetBranchAddress("hitValidHit", hitValidHit, &b_hitValidHit);
     Notify();
 }
   

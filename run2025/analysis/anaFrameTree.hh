@@ -51,10 +51,14 @@ private:
     Int_t           hitRow[10000];   //[hitN]
     Int_t           hitTime[10000];   //[hitN]
     Int_t           hitTimeNs[10000];   //[hitN]
+    Float_t         hitX[10000];   //[hitN]
+    Float_t         hitY[10000];   //[hitN]
+    Float_t         hitZ[10000];   //[hitN]
     Int_t           hitRawToT[10000];   //[hitN]
     Int_t           hitBitToT[10000];   //[hitN]
     Int_t           hitStatus[10000];   //[hitN]
     Int_t           hitStatusBits[10000];   //[hitN]
+    Bool_t          hitValidHit[10000];   //[hitN]
 
     // List of branches
     TBranch        *b_run;   //!
@@ -68,10 +72,14 @@ private:
     TBranch        *b_hitRow;   //!
     TBranch        *b_hitTime;   //!
     TBranch        *b_hitTimeNs;   //!
+    TBranch        *b_hitX;   //!
+    TBranch        *b_hitY;   //!
+    TBranch        *b_hitZ;   //!
     TBranch        *b_hitRawToT;   //!
     TBranch        *b_hitBitToT;   //!
     TBranch        *b_hitStatus;   //!
     TBranch        *b_hitStatusBits;   //!
+    TBranch        *b_hitValidHit;   //!
 
 };
 

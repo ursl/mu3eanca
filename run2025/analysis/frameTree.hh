@@ -59,10 +59,14 @@ private:
   int fHitRow[NHITMAX];
   int fHitTime[NHITMAX];
   int fHitTimeNs[NHITMAX];
+  Float_t fHitX[NHITMAX];
+  Float_t fHitY[NHITMAX];
+  Float_t fHitZ[NHITMAX];
   int fHitRawToT[NHITMAX];
   int fHitBitToT[NHITMAX];
   int fHitStatus[NHITMAX];
   int fHitStatusBits[NHITMAX];
+  Bool_t fHitValidHit[NHITMAX];
 
 };
 

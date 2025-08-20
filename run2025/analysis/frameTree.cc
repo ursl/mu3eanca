@@ -38,7 +38,7 @@ void frameTree::init(std::string filename) {
   fFile = TFile::Open(filename.c_str(), "RECREATE");
   fFile->cd();
   fDirectory = gDirectory;
-  fDirectory->ls();
+  // fDirectory->ls();
 
   // -- hit tree very brute force and simple-minded    
   fHitsTree = new TTree("frameTree", "frameTree");
@@ -54,17 +54,20 @@ void frameTree::init(std::string filename) {
   fHitsTree->Branch("hitRow", fHitRow, "hitRow[hitN]/I");
   fHitsTree->Branch("hitTime", fHitTime, "hitTime[hitN]/I");
   fHitsTree->Branch("hitTimeNs", fHitTimeNs, "hitTimeNs[hitN]/I");
+  fHitsTree->Branch("hitX", fHitX, "hitX[hitN]/F");
+  fHitsTree->Branch("hitY", fHitY, "hitY[hitN]/F");
+  fHitsTree->Branch("hitZ", fHitZ, "hitZ[hitN]/F");
   fHitsTree->Branch("hitRawToT", fHitRawToT, "hitRawToT[hitN]/I");
   fHitsTree->Branch("hitBitToT", fHitBitToT, "hitBitToT[hitN]/I");
   fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/I");
   fHitsTree->Branch("hitStatusBits", fHitStatusBits, "hitStatusBits[hitN]/I");
-
+  fHitsTree->Branch("hitValidHit", fHitValidHit, "hitValidHit[hitN]/O");
   // -- initialize the hit tree variables
   fHitsN = -1;
   clearHitsTreeVariables();
 
   gDirectory = dir;
-  gDirectory->ls();
+  //  gDirectory->ls();
 }
 
 
@@ -102,10 +105,14 @@ void frameTree::fillPixelHit(pixelHit &hit) {
   fHitRow[fHitsN] = hit.fRow;
   fHitTime[fHitsN] = hit.fTime;
   fHitTimeNs[fHitsN] = hit.fTimeNs;
+  fHitX[fHitsN] = hit.fX;
+  fHitY[fHitsN] = hit.fY;
+  fHitZ[fHitsN] = hit.fZ;
   fHitRawToT[fHitsN] = hit.fRawToT;
   fHitBitToT[fHitsN] = hit.fBitToT;
   fHitStatus[fHitsN] = hit.fStatus;
   fHitStatusBits[fHitsN] = hit.fStatusBits;
+  fHitValidHit[fHitsN] = hit.fValidHit;
   fHitsN++;
 }
 
@@ -134,6 +141,10 @@ void frameTree::clearHitsTreeVariables() {
     fHitBitToT[i] = 0;
     fHitStatus[i] = 0;
     fHitStatusBits[i] = 0;
+    fHitValidHit[i] = false;
+    fHitX[i] = 0;
+    fHitY[i] = 0;
+    fHitZ[i] = 0;
   }
   fHitsN = 0;
 }
@@ -143,13 +154,13 @@ void frameTree::saveTree() {
   cout << "frameTree::saveTree() fDirectory->GetName() = " << fDirectory->GetName() << endl;
   fFile->cd();
   cout << "frameTree::saveTree() fDirectory->ls(): " << endl;
-  fDirectory->ls();
+  //fDirectory->ls();
   fFile->cd(fDirectory->GetName());
   cout << "frameTree::saveTree() fDirectory->ls(): " << endl;
-  fDirectory->ls();
+  //fDirectory->ls();
   fFile->cd();
   cout << "frameTree::saveTree() fDirectory->ls(): " << endl;
-  fDirectory->ls();
+  //fDirectory->ls();
   fHitsTree->SetDirectory(fDirectory);
   fHitsTree->Write();
 }
