@@ -35,6 +35,7 @@ public:
 
   // -- return 0 if the pixel is good, 1 if it is rejected, 2 if it is a special pixel
   int goodPixel(pixelHit &hitIn);
+  int pixelQuality(pixelHit &hitIn);
 
   TH2D* getTH2D(std::string hname);
   TH1D* getTH1D(std::string hname);
@@ -56,6 +57,8 @@ private:
   std::map<std::string, TH1D*> fTH1D;
   std::map<std::string, TProfile2D*> fTProfile2D;
 
+  TH1D* fHistLayer1, *fHistLayer2;
+  
   int fRun;
 
   // -- hit tree variables

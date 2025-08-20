@@ -84,6 +84,20 @@ void pixelHistograms::init(TFile *file) {
             1281, 1282, 1283, 1284, 1285, 1286,
             1313, 1314, 1315, 1316, 1317, 1318};
 
+  fHistLayer1 = new TH1D("layer1", "layer1", fLayer1.size(), 0, fLayer1.size());
+  fHistLayer2 = new TH1D("layer2", "layer2", fLayer2.size(), 0, fLayer2.size());
+
+  int cnt(1);
+  for (auto iChip: fLayer1) {
+    fHistLayer1->SetBinContent(cnt, iChip);
+    ++cnt;
+  }
+  cnt = 1;
+  for (auto iChip: fLayer2) {
+    fHistLayer2->SetBinContent(cnt, iChip);
+    ++cnt;
+  }
+
   fAllChips = fLayer1;
   fAllChips.insert(fAllChips.end(), fLayer2.begin(), fLayer2.end());
   cout << "pixelHistograms::init() fAllChips.size() = " << fAllChips.size() << endl;
@@ -151,6 +165,18 @@ TH2D* pixelHistograms::getTH2D(std::string hname) {
 // ---------------------------------------------------------------------- 
 TH1D* pixelHistograms::getTH1D(std::string hname) {
   return fTH1D[hname];
+}
+
+// ---------------------------------------------------------------------- 
+int pixelHistograms::pixelQuality(pixelHit &hitIn) {
+  int result(0);
+  // -- rawtot should simply be between 0 .. 31. You need ckdivend and ckdivend2 to get something meaningful
+  uint32_t chipid = ((hitIn.fPixelID >> 16) & 0xFFFF);
+  uint32_t col = int((hitIn.fPixelID >> 8) & 0xFF);
+  uint32_t row = int((hitIn.fPixelID >> 0) & 0xFF);
+  result = fCalPixelQualityLM->getStatus(chipid, col, row);
+
+  return result;
 }
 
 // ---------------------------------------------------------------------- 
@@ -287,6 +313,10 @@ void pixelHistograms::saveHistograms() {
     ih.second->Write();
   } 
 
+  fHistLayer1->SetDirectory(fDirectory);
+  fHistLayer1->Write();
+  fHistLayer2->SetDirectory(fDirectory);
+  fHistLayer2->Write();
 }
 
 
