@@ -7,11 +7,13 @@ struct pixelHit {
   int fHitToT;  
   unsigned long fDebugSiData;
   int fChipID, fCol, fRow, fTime, fTimeNs;
-
+  float fX, fY, fZ;
+  
   // -- not calculated in trirec
   uint32_t fRawToT, fBitToT; 
-  int fStatus; // 0 = good, 1 = rj, 2 = invalid
-  int fStatusBits; // 0 = edge, 1 = low
+  int fStatus; // directly from pixelQualityLM
+  int fStatusBits; // from pixelHistograms
+  bool fValidHit;
  
   
   uint32_t calcToT(int ckdivend2 = 31) {
