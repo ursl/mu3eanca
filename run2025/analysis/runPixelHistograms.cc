@@ -30,8 +30,7 @@ int main(int argc, char *argv[]) {
   TTimeStamp ts0;
   cout << "start time: " << ts0.AsString("lc") << endl;
 
-  pixelHistograms *ph = pixelHistograms::instance(filename);
-  ph->setOutDir("output");
+  pixelHistograms *ph = new pixelHistograms(filename, "output");
   ph->plotHistograms("all_hitmap", "chipmap");
   ph->plotHistograms("all_hittot", "chipToT");
   ph->plotHistograms("all_hittot", "chipprof2d");
