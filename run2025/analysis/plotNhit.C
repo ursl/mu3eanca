@@ -41,7 +41,7 @@ void plotNhitVsFrameNumber(string filename = "results/frameTree_run6286.default.
   hh->GetXaxis()->SetTitleFont(42);
 
   // -- set the y-axis title
-  hh->GetYaxis()->SetTitle("Hit multiplicity");
+  hh->GetYaxis()->SetTitle("Number of hits");
   hh->GetYaxis()->SetTitleOffset(1.2);
   hh->GetYaxis()->SetTitleSize(0.04);
   hh->GetYaxis()->SetTitleFont(42);
