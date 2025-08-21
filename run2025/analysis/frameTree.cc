@@ -65,11 +65,13 @@ void frameTree::init(std::string filename) {
 
   // -- track tree
   fHitsTree->Branch("trkN", &fTrkN, "trkN/I");
-  fHitsTree->Branch("trkMomentum", trkMomentum, "trkMomentum[trkN]/F");
-  fHitsTree->Branch("trkChi2", trkChi2, "trkChi2[trkN]/F");
-  fHitsTree->Branch("trkType", trkType, "trkType[trkN]/I");
-  fHitsTree->Branch("trkPhi", trkPhi, "trkPhi[trkN]/F");
-  fHitsTree->Branch("trkLambda", trkLambda, "trkLambda[trkN]/F");
+  fHitsTree->Branch("trkMomentum", fTrkMomentum, "trkMomentum[trkN]/F");
+  fHitsTree->Branch("trkChi2", fTrkChi2, "trkChi2[trkN]/F");
+  fHitsTree->Branch("trkType", fTrkType, "trkType[trkN]/I");
+  fHitsTree->Branch("trkPhi", fTrkPhi, "trkPhi[trkN]/F");
+  fHitsTree->Branch("trkLambda", fTrkLambda, "trkLambda[trkN]/F");
+  fHitsTree->Branch("trkNhits", fTrkNhits, "trkNhits[trkN]/I");
+  //  fHitsTree->Branch("trkHitIndices", fTrkHitIndices, "trkHitIndices[trkN]/I");
 
   // -- initialize the hit tree variables
   fHitsN = -1;
@@ -133,6 +135,22 @@ void frameTree::fillPixelHit(pixelHit &hit) {
 }
 
 // ---------------------------------------------------------------------- 
+void frameTree::fillTrack(track &trk) {
+  if (fTrkN == NTRKMAX) {
+    cout << "frameTree::fillTrack() fTrkN == NTRKMAX  ...  NOT FILLING TRACKS ANYMORE" << endl;
+    return;
+  }
+
+  fTrkMomentum[fTrkN] = trk.fTrkMomentum;
+  fTrkChi2[fTrkN] = trk.fTrkChi2;
+  fTrkType[fTrkN] = trk.fTrkType;
+  fTrkPhi[fTrkN] = trk.fTrkPhi;
+  fTrkLambda[fTrkN] = trk.fTrkLambda;
+  fTrkNhits[fTrkN] = trk.fTrkNhits;
+  fTrkN++;
+}
+
+// ---------------------------------------------------------------------- 
 void frameTree::fillFrame() {
   if (0) cout << "frameTree::fillFrame() fHitsN = " << fHitsN 
               << " frameID = " << fFrameID 
@@ -169,11 +187,13 @@ void frameTree::clearHitsTreeVariables() {
 void frameTree::clearTrackTreeVariables() {
   if (fTrkN < 0) fTrkN = NTRKMAX;
   for (int i = 0; i < fTrkN; ++i) {
-    trkMomentum[i] = 0;
-    trkChi2[i] = 0;
-    trkType[i] = 0;
-    trkPhi[i] = 0;
-    trkLambda[i] = 0;
+    fTrkMomentum[i] = 0;
+    fTrkChi2[i] = 0;
+    fTrkType[i] = 0;
+    fTrkPhi[i] = 0;
+    fTrkLambda[i] = 0;
+    fTrkNhits[i] = 0;
+    //  fHitIndices[i] = 0;
   }
   fTrkN = 0;
 }

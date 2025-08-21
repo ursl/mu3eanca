@@ -11,6 +11,7 @@
 #include <map>
 
 #include "pixelHit.hh"
+#include "track.hh"
 
 // ----------------------------------------------------------------------
 class frameTree {
@@ -29,6 +30,7 @@ public:
   void clearHitsTreeVariables();
   void clearTrackTreeVariables();
   void fillPixelHit(pixelHit &hit);
+  void fillTrack(track &trk);
   void fillFrame();
   void saveTree();
   void closeFile();
@@ -71,12 +73,14 @@ private:
 
   // -- track tree variables
   int fTrkN;
-  float trkMomentum[NTRKMAX];
-  float trkChi2[NTRKMAX];
-  int   trkType[NTRKMAX];
-  float trkPhi[NTRKMAX];
-  float trkLambda[NTRKMAX];  
-
+  float fTrkMomentum[NTRKMAX];
+  float fTrkChi2[NTRKMAX];
+  int   fTrkType[NTRKMAX];
+  float fTrkPhi[NTRKMAX];
+  float fTrkLambda[NTRKMAX];  
+  int fTrkNhits[NTRKMAX];
+  //  int fHitIndices[NTRKMAX][TRKNHITMAX];
+  // FIXME still need array PER TRK (i.e. 2D array) for hit pointing
   };
 
 
