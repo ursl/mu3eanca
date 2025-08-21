@@ -1,13 +1,13 @@
 #! /bin/tcsh
 
 # -- 1e6 beam run
-./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6244.root >&! output/runAnaFrameTree_run6244.log &;
+./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6244.root >&! results/runAnaFrameTree_run6244.log &;
 
 # -- 1e5 beam runs
-./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6285.root >&! output/runAnaFrameTree_run6285.log &;
-./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6286.root >&! output/runAnaFrameTree_run6286.log &;
-./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6287.root >&! output/runAnaFrameTree_run6287.log &;
+./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6285.root >&! results/runAnaFrameTree_run6285.log &;
+./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6286.root >&! results/runAnaFrameTree_run6286.log &;
+./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6287.root >&! results/runAnaFrameTree_run6287.log &;
 
 # -- noise runs, no beam
-./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6292.root >&! output/runAnaFrameTree_run6292.log &;
-./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6295.root >&! output/runAnaFrameTree_run6295.log &;
+./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6292.root >&! results/runAnaFrameTree_run6292.log &;
+./bin/runAnaFrameTree -f /Users/ursl/mu3e/mu3eanca/run2025/analysis/output/frameTree_run6295.root >&! results/runAnaFrameTree_run6295.log &;
