@@ -1,0 +1,13 @@
+#! /bin/tcsh
+
+# -- 1e6 beam run
+../_build/mu3eTrirec/mu3eTrirec --cdb.globalTag=datav6.2=2025Beam --cdb.dbconn=/Users/ursl/data/mu3e/cdb --conf trirec_twolayer_beam.conf /Users/ursl/data/mu3e/run2025/sort/run06244-sorted.root --output output/mu3eTrirec_run6244.root >&! output/mu3eTrirec_run6244.log &;
+
+# -- 1e5 beam runs
+../_build/mu3eTrirec/mu3eTrirec --cdb.globalTag=datav6.2=2025Beam --cdb.dbconn=/Users/ursl/data/mu3e/cdb --conf trirec_twolayer_beam.conf /Users/ursl/data/mu3e/run2025/sort/run06285-sorted.root --output output/mu3eTrirec_run6285.root >&! output/mu3eTrirec_run6285.log &;
+../_build/mu3eTrirec/mu3eTrirec --cdb.globalTag=datav6.2=2025Beam --cdb.dbconn=/Users/ursl/data/mu3e/cdb --conf trirec_twolayer_beam.conf /Users/ursl/data/mu3e/run2025/sort/run06286-sorted.root --output output/mu3eTrirec_run6286.root >&! output/mu3eTrirec_run6286.log &;
+../_build/mu3eTrirec/mu3eTrirec --cdb.globalTag=datav6.2=2025Beam --cdb.dbconn=/Users/ursl/data/mu3e/cdb --conf trirec_twolayer_beam.conf /Users/ursl/data/mu3e/run2025/sort/run06287-sorted.root --output output/mu3eTrirec_run6287.root >&! output/mu3eTrirec_run6287.log &;
+
+# -- noise runs, no beam
+../_build/mu3eTrirec/mu3eTrirec --cdb.globalTag=datav6.2=2025Beam --cdb.dbconn=/Users/ursl/data/mu3e/cdb --conf trirec_twolayer_beam.conf /Users/ursl/data/mu3e/run2025/sort/run06292-sorted.root --output output/mu3eTrirec_run6292.root >&! output/mu3eTrirec_run6292.log &;
+../_build/mu3eTrirec/mu3eTrirec --cdb.globalTag=datav6.2=2025Beam --cdb.dbconn=/Users/ursl/data/mu3e/cdb --conf trirec_twolayer_beam.conf /Users/ursl/data/mu3e/run2025/sort/run06295-sorted.root --output output/mu3eTrirec_run6295.root >&! output/mu3eTrirec_run6295.log &;
