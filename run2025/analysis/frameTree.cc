@@ -62,9 +62,20 @@ void frameTree::init(std::string filename) {
   fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/I");
   fHitsTree->Branch("hitStatusBits", fHitStatusBits, "hitStatusBits[hitN]/I");
   fHitsTree->Branch("hitValidHit", fHitValidHit, "hitValidHit[hitN]/O");
+
+  // -- track tree
+  fHitsTree->Branch("trkN", &fTrkN, "trkN/I");
+  fHitsTree->Branch("trkMomentum", trkMomentum, "trkMomentum[trkN]/F");
+  fHitsTree->Branch("trkChi2", trkChi2, "trkChi2[trkN]/F");
+  fHitsTree->Branch("trkType", trkType, "trkType[trkN]/I");
+  fHitsTree->Branch("trkPhi", trkPhi, "trkPhi[trkN]/F");
+  fHitsTree->Branch("trkLambda", trkLambda, "trkLambda[trkN]/F");
+
   // -- initialize the hit tree variables
   fHitsN = -1;
   clearHitsTreeVariables();
+  fTrkN = -1;
+  clearTrackTreeVariables();
 
   gDirectory = dir;
   //  gDirectory->ls();
@@ -152,6 +163,19 @@ void frameTree::clearHitsTreeVariables() {
     fHitZ[i] = 0;
   }
   fHitsN = 0;
+}
+
+// ---------------------------------------------------------------------- 
+void frameTree::clearTrackTreeVariables() {
+  if (fTrkN < 0) fTrkN = NTRKMAX;
+  for (int i = 0; i < fTrkN; ++i) {
+    trkMomentum[i] = 0;
+    trkChi2[i] = 0;
+    trkType[i] = 0;
+    trkPhi[i] = 0;
+    trkLambda[i] = 0;
+  }
+  fTrkN = 0;
 }
 
 // ---------------------------------------------------------------------- 

@@ -27,6 +27,7 @@ public:
   TFile* getFile() {return fFile;}
 
   void clearHitsTreeVariables();
+  void clearTrackTreeVariables();
   void fillPixelHit(pixelHit &hit);
   void fillFrame();
   void saveTree();
@@ -50,7 +51,7 @@ private:
 
   // -- hit tree variables
   int fHitsN;
-  static const int NHITMAX = 10000;
+  static const int NHITMAX = 10000, NTRKMAX = 1000;
   int fHitPixelID[NHITMAX];
   int fHitToT[NHITMAX];
   unsigned long fHitDebugSiData[NHITMAX];
@@ -68,7 +69,15 @@ private:
   int fHitStatusBits[NHITMAX];
   Bool_t fHitValidHit[NHITMAX];
 
-};
+  // -- track tree variables
+  int fTrkN;
+  float trkMomentum[NTRKMAX];
+  float trkChi2[NTRKMAX];
+  int   trkType[NTRKMAX];
+  float trkPhi[NTRKMAX];
+  float trkLambda[NTRKMAX];  
+
+  };
 
 
 #endif
