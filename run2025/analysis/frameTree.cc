@@ -97,6 +97,11 @@ void frameTree::fillPixelHit(pixelHit &hit) {
        << " fStatusBits = " << hit.fStatusBits 
        << endl;
 
+  if (fHitsN == NHITMAX) {
+    cout << "frameTree::fillPixelHit() fHitsN == NHITMAX  ...  NOT FILLING HITS ANYMORE" << endl;
+    return;
+  }
+
   fHitPixelID[fHitsN] = hit.fPixelID;
   fHitToT[fHitsN] = hit.fHitToT;
   fHitDebugSiData[fHitsN] = hit.fDebugSiData;
