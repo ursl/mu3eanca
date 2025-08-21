@@ -32,7 +32,7 @@ anaFrameTree::anaFrameTree(TChain *chain) : fpChain(0), fNentries(0) {
     161, 162, 163, 164, 165, 166,
     193, 194, 195, 196, 197, 198,
     225, 226, 227, 228, 229, 230};
-fLayer2 = {1025, 1026, 1027, 1028, 1029, 1030,
+  fLayer2 = {1025, 1026, 1027, 1028, 1029, 1030,
     1057, 1058, 1059, 1060, 1061, 1062,
     1089, 1090, 1091, 1092, 1093, 1094,
     1121, 1122, 1123, 1124, 1125, 1126,
@@ -81,6 +81,7 @@ void anaFrameTree::closeHistFile() {
     h.second->SetDirectory(fpHistFile);
     h.second->Write();
   }
+  
   fpHistFile->mkdir("vtx");
   fpHistFile->cd("vtx");
   TDirectory *vtxDir = gDirectory;
@@ -89,6 +90,10 @@ void anaFrameTree::closeHistFile() {
     h.second->Write();
   }
   for (auto &h: fVtx2DProfile) {
+    h.second->SetDirectory(vtxDir);
+    h.second->Write();
+  }
+  for (auto &h: fVtx1D) {
     h.second->SetDirectory(vtxDir);
     h.second->Write();
   }
@@ -118,11 +123,18 @@ void anaFrameTree::bookHistograms() {
   fHistograms["badToT"] = new TH1D("badToT", "badToT", 32, 0, 32);
 
   bookVtx2D("nonburstGood");
+  bookVtx2D("nonburstBad");
   bookVtx2D("burstGood");
   bookVtx2D("burstBad");
-  bookVtx2DProfile("burstGoodToT");
-  bookVtx2DProfile("burstBadToT");
-  bookVtx2DProfile("nonburstGoodToT");
+  bookVtx1D("burstGoodBitToT", 32, 0, 32);
+  bookVtx1D("burstBadBitToT", 32, 0, 32);
+  bookVtx1D("nonburstGoodBitToT", 32, 0, 32);
+  bookVtx1D("nonburstBadBitToT", 32, 0, 32);
+
+  bookVtx2DProfile("burstGoodBitToT");
+  bookVtx2DProfile("burstBadBitToT");
+  bookVtx2DProfile("nonburstGoodBitToT");
+  bookVtx2DProfile("nonburstBadBitToT");
 }
 
 // ---------------------------------------------------------------------- 
@@ -142,6 +154,16 @@ void anaFrameTree::bookVtx2DProfile(string batch) {
   for (auto &chip: fAllChips) {
     string name = Form("vtx2DProfile_%s_%d", batch.c_str(), chip);
     fVtx2DProfile[name] = new TProfile2D(name.c_str(), name.c_str(), 256, 0, 256, 250, 0, 250);
+  }
+}
+
+// ---------------------------------------------------------------------- 
+void anaFrameTree::bookVtx1D(string batch, int nbins, int lo, int hi) {
+  cout << "==> anaFrameTree: Booking vtx1D histograms for batch -> " << batch << "<-" << endl;
+
+  for (auto &chip: fAllChips) {
+    string name = Form("vtx1D_%s_%d", batch.c_str(), chip);
+    fVtx1D[name] = new TH1D(name.c_str(), name.c_str(), nbins, lo, hi);
   }
 }
 
@@ -235,30 +257,38 @@ void anaFrameTree::loop(int nevents, int start) {
       fHistogramsProfile["nGoodHitVsFrameNumber"]->Fill(jentry, goodHitN);
       fHistogramsProfile["nBadHitVsFrameNumber"]->Fill(jentry, badHitN);
       fHistogramsProfile["nInvalidHitVsFrameNumber"]->Fill(jentry, invalidHitN);
-      if (badHitN > 8) {
-        for (int ihit = 0; ihit < hitN; ++ihit) {
-          if (hitValidHit[ihit]) {
-            if (hitStatus[ihit] == 0) {
-              fVtx2D[Form("vtx2D_burstGood_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit]);
-              fVtx2DProfile[Form("vtx2DProfile_burstGoodToT_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit], hitToT[ihit]);
-            } else {
-              fVtx2D[Form("vtx2D_burstBad_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit]);
-              fVtx2DProfile[Form("vtx2DProfile_burstBadToT_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit], hitToT[ihit]);
+
+      // -- vtx histograms
+      for (int ihit = 0; ihit < hitN; ++ihit) {
+          if (badHitN > 8) {
+            if (hitValidHit[ihit]) {
+              if (hitStatus[ihit] == 0) {
+                fVtx1D[Form("vtx1D_burstGoodBitToT_%d", hitChipID[ihit])]->Fill(hitBitToT[ihit]);
+                fVtx2D[Form("vtx2D_burstGood_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit]);
+                fVtx2DProfile[Form("vtx2DProfile_burstGoodBitToT_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit], hitBitToT[ihit]);
+              } else {
+                fVtx1D[Form("vtx1D_burstBadBitToT_%d", hitChipID[ihit])]->Fill(hitBitToT[ihit]);
+                fVtx2D[Form("vtx2D_burstBad_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit]);
+                fVtx2DProfile[Form("vtx2DProfile_burstBadBitToT_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit], hitBitToT[ihit]);
+              }
+            }
+          } else {
+            if (hitValidHit[ihit]) {
+              if (hitStatus[ihit] == 0) {
+                fVtx1D[Form("vtx1D_nonburstGoodBitToT_%d", hitChipID[ihit])]->Fill(hitBitToT[ihit]);
+                fVtx2D[Form("vtx2D_nonburstGood_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit]);
+                fVtx2DProfile[Form("vtx2DProfile_nonburstGoodBitToT_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit], hitBitToT[ihit]);
+              } else {
+                fVtx1D[Form("vtx1D_nonburstBadBitToT_%d", hitChipID[ihit])]->Fill(hitBitToT[ihit]);
+                fVtx2D[Form("vtx2D_nonburstBad_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit]);
+                fVtx2DProfile[Form("vtx2DProfile_nonburstBadBitToT_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit], hitBitToT[ihit]);
+              }
             }
           }
-        }
-      } else {
-        for (int ihit = 0; ihit < hitN; ++ihit) {
-          if (hitValidHit[ihit] && hitStatus[ihit] == 0) {
-            fVtx2D[Form("vtx2D_nonburstGood_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit]);
-            fVtx2DProfile[Form("vtx2DProfile_nonburstGoodToT_%d", hitChipID[ihit])]->Fill(hitCol[ihit], hitRow[ihit], hitToT[ihit]);
-          }
-        }
       }
-    } 
-   
+  }
 }
-  
+
 // ---------------------------------------------------------------------- 
 Int_t anaFrameTree::GetEntry(Long64_t entry) {
   // Read contents of entry.

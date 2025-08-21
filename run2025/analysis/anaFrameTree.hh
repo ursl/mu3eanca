@@ -21,6 +21,7 @@ public:
     virtual void     endAnalysis();
     virtual void     bookHistograms();
     virtual void     bookVtx2D(std::string batch="vtx");
+    virtual void     bookVtx1D(std::string batch="vtx", int nbins = 32, int lo = 0, int hi = 32);
     virtual void     bookVtx2DProfile(std::string batch="vtx");
 
     virtual void     setVerbose(int verbose) { fVerbose = verbose; }
@@ -36,7 +37,7 @@ private:
 
     std::vector<int> fLayer1, fLayer2, fAllChips;
 
-    std::map<std::string, TH1D*> fHistograms;
+    std::map<std::string, TH1D*> fHistograms, fVtx1D;
     std::map<std::string, TH2D*> fHistograms2D, fVtx2D;
     std::map<std::string, TProfile*> fHistogramsProfile;
     std::map<std::string, TProfile2D*> fVtx2DProfile;
