@@ -5,6 +5,10 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <string>
+#include <TH1D.h>
+#include <TH2D.h>
+#include <TProfile.h>
+#include <TProfile2D.h>
 
 // Header file for the classes stored in the TTree if any.
 
@@ -16,6 +20,8 @@ public:
     virtual void     startAnalysis();
     virtual void     endAnalysis();
     virtual void     bookHistograms();
+    virtual void     bookVtx2D(std::string batch="vtx");
+    virtual void     bookVtx2DProfile(std::string batch="vtx");
 
     virtual void     setVerbose(int verbose) { fVerbose = verbose; }
     virtual void     setOutputDir(std::string outputDir) { fOutputDir = outputDir; }
@@ -28,8 +34,15 @@ private:
     std::string fHistFileName;
     TFile *fpHistFile;
 
+    std::vector<int> fLayer1, fLayer2, fAllChips;
 
-    // -- boilerplate function from MakeClass()
+    std::map<std::string, TH1D*> fHistograms;
+    std::map<std::string, TH2D*> fHistograms2D, fVtx2D;
+    std::map<std::string, TProfile*> fHistogramsProfile;
+    std::map<std::string, TProfile2D*> fVtx2DProfile;
+
+
+    // -- boilerplate functions from MakeClass()
     virtual Int_t    GetEntry(Long64_t entry);
     virtual Long64_t LoadTree(Long64_t entry);
     virtual void     Init();
