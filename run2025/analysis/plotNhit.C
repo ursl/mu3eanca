@@ -1,3 +1,4 @@
+#include <TH1.h>
 #include <string>
 #include <TFile.h>
 #include <TH1D.h>
@@ -16,6 +17,49 @@ string runType(int irun) {
   return "unknown";
 }
 
+vector<int> gLayer1 = {1,2,3,4,5,6,
+  33, 34, 35, 36, 37, 38,
+  65, 66, 67, 68, 69, 70,
+  97, 98, 99, 100, 101, 102,
+  129, 130, 131, 132, 133, 134,
+  161, 162, 163, 164, 165, 166,
+  193, 194, 195, 196, 197, 198,
+  225, 226, 227, 228, 229, 230};
+
+  vector<int> gLayer2 = {1025, 1026, 1027, 1028, 1029, 1030,
+  1057, 1058, 1059, 1060, 1061, 1062,
+  1089, 1090, 1091, 1092, 1093, 1094,
+  1121, 1122, 1123, 1124, 1125, 1126,
+  1153, 1154, 1155, 1156, 1157, 1158,
+  1185, 1186, 1187, 1188, 1189, 1190,
+  1217, 1218, 1219, 1220, 1221, 1222,
+  1249, 1250, 1251, 1252, 1253, 1254,
+  1281, 1282, 1283, 1284, 1285, 1286,
+  1313, 1314, 1315, 1316, 1317, 1318};
+
+
+// ---------------------------------------------------------------------
+void plotVtxLayer(string filename = "results/frameTree_run6286.default.root", string batch = "vtx2D_burstGood", int layer = 1, string opt = "hist") {
+  TFile *f = new TFile(filename.c_str());
+  vector<int> layer2Plot; 
+  c0.Clear();
+  gStyle->SetOptStat(0);
+  if (layer == 1) {
+    layer2Plot = gLayer2;
+    c0.Divide(6,8);
+  } else {
+    layer2Plot = gLayer1;
+    c0.Divide(6,10);
+  }
+
+  for (int i = 0; i < layer2Plot.size(); ++i) {
+    c0.cd(i+1);
+    TH1 *h = (TH1*)f->Get(Form("vtx/%s_%d", batch.c_str(), layer2Plot[i]));
+    h->Draw(opt.c_str());
+  }
+
+  c0.SaveAs(Form("vtx_layer%d_%s.pdf", layer, batch.c_str()));
+}
 
 
 // ---------------------------------------------------------------------
