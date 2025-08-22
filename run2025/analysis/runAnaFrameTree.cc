@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   // -- Determine filename for output histograms and 'final' small/reduced tree
   TString meta = fileName.c_str();
-  if(histfile == "") {
+  if (histfile == "") {
     TString  barefile(fileName.c_str()), chainFile, meta;
     if (file == 0) {
       // -- input from chain
