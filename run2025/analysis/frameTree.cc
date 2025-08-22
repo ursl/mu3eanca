@@ -70,8 +70,11 @@ void frameTree::init(std::string filename) {
   fHitsTree->Branch("trkType", fTrkType, "trkType[trkN]/I");
   fHitsTree->Branch("trkPhi", fTrkPhi, "trkPhi[trkN]/F");
   fHitsTree->Branch("trkLambda", fTrkLambda, "trkLambda[trkN]/F");
+  fHitsTree->Branch("trkK", fTrkK, "trkK[trkN]/F");
+  fHitsTree->Branch("trkKerr2", fTrkKerr2, "trkKerr2[trkN]/F");
+  fHitsTree->Branch("trkDoca", fTrkDoca, "trkDoca[trkN]/F");
   fHitsTree->Branch("trkNhits", fTrkNhits, "trkNhits[trkN]/I");
-  //  fHitsTree->Branch("trkHitIndices", fTrkHitIndices, "trkHitIndices[trkN]/I");
+  fHitsTree->Branch("trkHitIndices", fTrkHitIndices, "trkHitIndices[trkN][20]/I");
 
   // -- initialize the hit tree variables
   fHitsN = -1;
@@ -146,7 +149,13 @@ void frameTree::fillTrack(track &trk) {
   fTrkType[fTrkN] = trk.fTrkType;
   fTrkPhi[fTrkN] = trk.fTrkPhi;
   fTrkLambda[fTrkN] = trk.fTrkLambda;
+  fTrkK[fTrkN] = trk.fTrkK;
+  fTrkKerr2[fTrkN] = trk.fTrkKerr2;
+  fTrkDoca[fTrkN] = trk.fTrkDoca;
   fTrkNhits[fTrkN] = trk.fTrkNhits;
+  for (int i = 0; i < fTrkNhits[fTrkN]; ++i) {
+    fTrkHitIndices[fTrkN][i] = trk.fTrkHitIndices[i];
+  }
   fTrkN++;
 }
 
@@ -156,7 +165,9 @@ void frameTree::fillFrame() {
               << " frameID = " << fFrameID 
               << endl;
   fHitsTree->Fill();
+  
   clearHitsTreeVariables();
+  clearTrackTreeVariables();
 }
 
 // ---------------------------------------------------------------------- 
@@ -192,8 +203,14 @@ void frameTree::clearTrackTreeVariables() {
     fTrkType[i] = 0;
     fTrkPhi[i] = 0;
     fTrkLambda[i] = 0;
+    fTrkK[i] = 0;
+    fTrkKerr2[i] = 0;
+    fTrkDoca[i] = 0;
+    fTrkSegmentN[i] = 0;
     fTrkNhits[i] = 0;
-    //  fHitIndices[i] = 0;
+    for (int j = 0; j < TRKHITMAX; ++j) {
+      fTrkHitIndices[i][j] = -1;
+    }
   }
   fTrkN = 0;
 }
@@ -216,8 +233,16 @@ void frameTree::saveTree() {
 
 // ---------------------------------------------------------------------- 
 void frameTree::closeFile() {
-
   fFile->Close();
   delete fFile;
+}
 
+// ---------------------------------------------------------------------- 
+int frameTree::findHitIndex(uint32_t pixelID) {
+  for (int i = 0; i < fHitsN; ++i) {
+    if (fHitPixelID[i] == pixelID) {
+      return i;
+    }
+  }
+  return -1;
 }

@@ -35,7 +35,9 @@ public:
   void saveTree();
   void closeFile();
 
-protected:
+  int findHitIndex(uint32_t pixelID);
+
+  protected:
   frameTree(std::string filename);
   ~frameTree(); 
 
@@ -53,7 +55,7 @@ private:
 
   // -- hit tree variables
   int fHitsN;
-  static const int NHITMAX = 10000, NTRKMAX = 1000;
+  static const int NHITMAX = 10000, NTRKMAX = 1000, NTRKHITMAX = 20;
   int fHitPixelID[NHITMAX];
   int fHitToT[NHITMAX];
   unsigned long fHitDebugSiData[NHITMAX];
@@ -78,10 +80,13 @@ private:
   int   fTrkType[NTRKMAX];
   float fTrkPhi[NTRKMAX];
   float fTrkLambda[NTRKMAX];  
-  int fTrkNhits[NTRKMAX];
-  //  int fHitIndices[NTRKMAX][TRKNHITMAX];
-  // FIXME still need array PER TRK (i.e. 2D array) for hit pointing
-  };
+  float fTrkK[NTRKMAX];
+  float fTrkKerr2[NTRKMAX];
+  float fTrkDoca[NTRKMAX];
+  int   fTrkSegmentN[NTRKMAX];
+  int   fTrkNhits[NTRKMAX];
+  int   fTrkHitIndices[NTRKMAX][NTRKHITMAX];
+};
 
 
 #endif
