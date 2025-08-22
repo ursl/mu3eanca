@@ -29,6 +29,8 @@ public:
     virtual void     openHistFile(std::string histfile);
     virtual void     closeHistFile();
 
+    virtual void     printTracks();
+
 private:
     int fVerbose;
     std::string fOutputDir = ".";
@@ -74,6 +76,20 @@ private:
     Int_t           hitStatusBits[10000];   //[hitN]
     Bool_t          hitValidHit[10000];   //[hitN]
 
+    // Track variables
+    Int_t           fTrkN;
+    Float_t         fTrkMomentum[1000];   //[fTrkN]
+    Float_t         fTrkChi2[1000];   //[fTrkN]
+    Int_t           fTrkType[1000];   //[fTrkN]
+    Float_t         fTrkPhi[1000];   //[fTrkN]
+    Float_t         fTrkLambda[1000];   //[fTrkN]
+    Float_t         fTrkK[1000];   //[fTrkN]
+    Float_t         fTrkKerr2[1000];   //[fTrkN]
+    Float_t         fTrkDoca[1000];   //[fTrkN]
+    Int_t           fTrkSegmentN[1000];   //[fTrkN]
+    Int_t           fTrkNhits[1000];   //[fTrkN]
+    Int_t           fTrkHitIndices[1000][20];   //[fTrkN][20]
+
     // List of branches
     TBranch        *b_run;   //!
     TBranch        *b_frameID;   //!
@@ -95,6 +111,18 @@ private:
     TBranch        *b_hitStatusBits;   //!
     TBranch        *b_hitValidHit;   //!
 
+    TBranch        *b_trkN;   //!
+    TBranch        *b_trkMomentum;   //!
+    TBranch        *b_trkChi2;   //!
+    TBranch        *b_trkType;   //!
+    TBranch        *b_trkPhi;   //!
+    TBranch        *b_trkLambda;   //!
+    TBranch        *b_trkK;   //!
+    TBranch        *b_trkKerr2;   //!
+    TBranch        *b_trkDoca;   //!
+    TBranch        *b_trkSegmentN;   //!
+    TBranch        *b_trkNhits;   //!
+    TBranch        *b_trkHitIndices;   //!
 };
 
 #endif

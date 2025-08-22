@@ -84,6 +84,7 @@ private:
   float fTrkKerr2[NTRKMAX];
   float fTrkDoca[NTRKMAX];
   int   fTrkSegmentN[NTRKMAX];
+  int   fTrkHitOverflow[NTRKMAX];
   int   fTrkNhits[NTRKMAX];
   int   fTrkHitIndices[NTRKMAX][NTRKHITMAX];
 };

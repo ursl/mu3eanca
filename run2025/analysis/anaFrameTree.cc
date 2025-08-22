@@ -81,7 +81,7 @@ void anaFrameTree::closeHistFile() {
     h.second->SetDirectory(fpHistFile);
     h.second->Write();
   }
-  
+
   fpHistFile->mkdir("vtx");
   fpHistFile->cd("vtx");
   TDirectory *vtxDir = gDirectory;
@@ -286,8 +286,26 @@ void anaFrameTree::loop(int nevents, int start) {
             }
           }
       }
-  }
+
+      printTracks();  
+    }
 }
+
+// ---------------------------------------------------------------------- 
+void anaFrameTree::printTracks() {
+  if (fTrkN > 0) cout << "==> anaFrameTree: " << frameID << " Printing tracks fTrkN = " << fTrkN << endl;
+  for (int i = 0; i < fTrkN; ++i) {
+    cout << "==> anaFrameTree: Track " << i << " type: " << fTrkType[i]
+    << " has " << fTrkNhits[i] << " hits: "
+    << " r = " << 1./fTrkK[i] << ", lam = " << fTrkLambda[i] << ": ";
+    for (int j = 0; j < fTrkNhits[i]; ++j) {
+      cout << fTrkHitIndices[i][j] << " ";
+    }
+    cout << endl;
+  } 
+
+}
+
 
 // ---------------------------------------------------------------------- 
 Int_t anaFrameTree::GetEntry(Long64_t entry) {
@@ -343,7 +361,22 @@ void anaFrameTree::Init() {
     fpChain->SetBranchAddress("hitStatus", hitStatus, &b_hitStatus);
     fpChain->SetBranchAddress("hitStatusBits", hitStatusBits, &b_hitStatusBits);
     fpChain->SetBranchAddress("hitValidHit", hitValidHit, &b_hitValidHit);
-    Notify();
+     
+     // Track branches
+     fpChain->SetBranchAddress("trkN", &fTrkN, &b_trkN);
+     fpChain->SetBranchAddress("trkMomentum", fTrkMomentum, &b_trkMomentum);
+     fpChain->SetBranchAddress("trkChi2", fTrkChi2, &b_trkChi2);
+     fpChain->SetBranchAddress("trkType", fTrkType, &b_trkType);
+     fpChain->SetBranchAddress("trkPhi", fTrkPhi, &b_trkPhi);
+     fpChain->SetBranchAddress("trkLambda", fTrkLambda, &b_trkLambda);
+     fpChain->SetBranchAddress("trkK", fTrkK, &b_trkK);
+     fpChain->SetBranchAddress("trkKerr2", fTrkKerr2, &b_trkKerr2);
+     fpChain->SetBranchAddress("trkDoca", fTrkDoca, &b_trkDoca);
+     fpChain->SetBranchAddress("trkSegmentN", fTrkSegmentN, &b_trkSegmentN);
+     fpChain->SetBranchAddress("trkNhits", fTrkNhits, &b_trkNhits);
+     fpChain->SetBranchAddress("trkHitIndices", fTrkHitIndices, &b_trkHitIndices);
+     
+     Notify();
 
 }
   

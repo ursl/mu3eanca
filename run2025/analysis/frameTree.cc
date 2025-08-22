@@ -165,7 +165,9 @@ void frameTree::fillFrame() {
               << " frameID = " << fFrameID 
               << endl;
   fHitsTree->Fill();
-  
+  if (fTrkN > 0) cout << "frameTree::fillFrame() fHitsN = " << fHitsN 
+       << " fTrkN = " << fTrkN 
+       << endl;
   clearHitsTreeVariables();
   clearTrackTreeVariables();
 }
@@ -207,6 +209,7 @@ void frameTree::clearTrackTreeVariables() {
     fTrkKerr2[i] = 0;
     fTrkDoca[i] = 0;
     fTrkSegmentN[i] = 0;
+    fTrkHitOverflow[i] = 0;
     fTrkNhits[i] = 0;
     for (int j = 0; j < TRKHITMAX; ++j) {
       fTrkHitIndices[i][j] = -1;
