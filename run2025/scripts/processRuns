@@ -224,7 +224,7 @@ if ($opt_w) {
                     $nEvents = &countEvents($run);
                 }
             }
-            if ($nEvents < $MINEVENTS) {
+            if ($opt_m ne "cosmic" && $nEvents < $MINEVENTS) {
                 print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
             } else {
                 if ($opt_m eq "minalyzer") {
@@ -284,7 +284,7 @@ foreach my $run (@goodRuns) {
     }
 
     my $nEvents = &countEvents($run);
-    if ($nEvents < $MINEVENTS) {
+    if ($opt_m ne "cosmic" && $nEvents < $MINEVENTS) {
         print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
         next;
     }
