@@ -9,6 +9,7 @@
 #include <TH2D.h>
 #include <TProfile.h>
 #include <TProfile2D.h>
+// mu3e pixel ID decoding (based on mu3e::id::sensor structure)
 
 // Header file for the classes stored in the TTree if any.
 
@@ -29,7 +30,9 @@ public:
     virtual void     openHistFile(std::string histfile);
     virtual void     closeHistFile();
 
-    virtual void     printTracks();
+    int              getChipTopology(int pixelID, int &layer, int &ladder, int &chip);
+    bool             isTrackHit(int hitIndex);
+    virtual void     printFrame();
 
 private:
     int fVerbose;

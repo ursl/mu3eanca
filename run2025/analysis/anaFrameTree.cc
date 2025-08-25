@@ -286,24 +286,67 @@ void anaFrameTree::loop(int nevents, int start) {
             }
           }
       }
-
-      printTracks();  
+      printFrame();  
     }
 }
 
 // ---------------------------------------------------------------------- 
-void anaFrameTree::printTracks() {
-  if (fTrkN > 0) cout << "==> anaFrameTree: " << frameID << " Printing tracks fTrkN = " << fTrkN << endl;
-  for (int i = 0; i < fTrkN; ++i) {
-    cout << "==> anaFrameTree: Track " << i << " type: " << fTrkType[i]
-    << " has " << fTrkNhits[i] << " hits: "
-    << " r = " << 1./fTrkK[i] << ", lam = " << fTrkLambda[i] << ": ";
-    for (int j = 0; j < fTrkNhits[i]; ++j) {
-      cout << fTrkHitIndices[i][j] << " ";
-    }
-    cout << endl;
-  } 
+int anaFrameTree::getChipTopology(int pixelID, int &layer, int &ladder, int &chip) {
+  // Extract sensor ID from bits 16-31 (upper 16 bits)
+  uint32_t sensorId = (pixelID >> 16) & 0xFFFF;
+  
+  // Extract individual components from sensor ID using mu3e::id::sensor logic:
+  // |  15  | 14---12 | 11-10 | 9----5 | 4--0 |
+  // | NULL | station | layer | ladder | chip |
+  int station = (sensorId >> 12) & 0x7;
+  layer = (sensorId >> 10) & 0x3;
+  ladder = (sensorId >> 5) & 0x1F;
+  chip = (sensorId >> 0) & 0x1F;
+  
+  return 0;
+}
 
+// ---------------------------------------------------------------------- 
+bool anaFrameTree::isTrackHit(int hitIndex) {
+  for (int i = 0; i < fTrkN; ++i) {
+    for (int j = 0; j < fTrkNhits[i]; ++j) {
+      if (fTrkHitIndices[i][j] == hitIndex) return true;
+    }
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------- 
+void anaFrameTree::printFrame() {
+  if (fTrkN == 0) return;
+
+  int layer, ladder, chip;
+  if (hitN > 0 || fTrkN > 0) {
+    cout << "----------------------------------------" << endl;
+    cout << "==> anaFrameTree: " << frameID << " run = " << run << " hitN = " << hitN << " fTrkN = " << fTrkN 
+         << (fTrkN > 0 ? "   ***************************" : "") 
+         << endl;
+    for (int i = 0; i < hitN; ++i) {
+      getChipTopology(hitPixelID[i], layer, ladder, chip);
+      cout << "==> anaFrameTree: Hit " << Form("%3d", i)
+           << " chip: " << Form("%4d LYR%1d LDR%1d CHP%4d", hitChipID[i], layer, ladder, chip)
+           << " col: " << Form("%3d", hitCol[i])
+           << " row: " << Form("%3d", hitRow[i])
+           << " toT: " << Form("%3d", hitBitToT[i])
+           << (isTrackHit(i) ? " *" : "")
+           << endl;
+    }
+
+    for (int i = 0; i < fTrkN; ++i) {
+      cout << "==> anaFrameTree: Track " << i << " type: " << fTrkType[i]
+      << " has " << fTrkNhits[i] << " hits: "
+      << " r = " << 1./fTrkK[i] << ", lam = " << fTrkLambda[i] << ": ";
+      for (int j = 0; j < fTrkNhits[i]; ++j) {
+        cout << fTrkHitIndices[i][j] << " ";
+      }
+      cout << endl;
+    } 
+  }
 }
 
 
