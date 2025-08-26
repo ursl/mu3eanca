@@ -339,8 +339,10 @@ void mkVtxPlots(int run, string barefilename) {
       gPad->SetLeftMargin(0.0);
       gPad->SetRightMargin(0.0);
       gPad->SetTopMargin(0.0);
+      gPad->SetLogy(1);
       // cout << "vLayer1[i] = " << vLayer1[i] << " " << mToTs[vLayer1[i]] << endl;
       if (mToTs[vLayer1[i]]) {
+        mToTs[vLayer1[i]]->SetMinimum(0.5);
         mToTs[vLayer1[i]]->Draw();
       }
     }
@@ -353,8 +355,10 @@ void mkVtxPlots(int run, string barefilename) {
       gPad->SetLeftMargin(0.0);
       gPad->SetRightMargin(0.0);
       gPad->SetTopMargin(0.0);
+      gPad->SetLogy(1);
       // cout << "vLayer2[i] = " << vLayer2[i] << " " << mToTs[vLayer2[i]] << endl;
       if (mToTs[vLayer2[i]]) {
+        mToTs[vLayer2[i]]->SetMinimum(0.5);
         mToTs[vLayer2[i]]->Draw();
       }
     }
