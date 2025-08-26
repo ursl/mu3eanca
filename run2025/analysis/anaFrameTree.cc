@@ -9,6 +9,7 @@
 #include <TSystem.h>
 #include <TFile.h>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -333,16 +334,20 @@ void anaFrameTree::printFrame() {
            << " col: " << Form("%3d", hitCol[i])
            << " row: " << Form("%3d", hitRow[i])
            << " toT: " << Form("%3d", hitBitToT[i])
+           << " ns: " << Form("%3d", hitTimeNs[i])
            << (isTrackHit(i) ? " *" : "")
            << endl;
     }
 
     for (int i = 0; i < fTrkN; ++i) {
-      cout << "==> anaFrameTree: Track " << i << " type: " << fTrkType[i]
-      << " has " << fTrkNhits[i] << " hits: "
-      << " r = " << 1./fTrkK[i] << ", lam = " << fTrkLambda[i] << ": ";
+      cout << " trk " << Form("%2d", i) << " (" << Form("%+3d", fTrkType[i])
+      << ") r = " << Form("%+9.6f", 1./fTrkK[i]) << ", lam = " << Form("%+7.4f", fTrkLambda[i]) 
+      << " chi2 = " << Form("%+7.3f", fTrkChi2[i])
+      << " p = " << Form("%+8.3f", fTrkMomentum[i])
+      << ": ";
       for (int j = 0; j < fTrkNhits[i]; ++j) {
-        cout << fTrkHitIndices[i][j] << " ";
+        getChipTopology(hitPixelID[fTrkHitIndices[i][j]], layer, ladder, chip);
+        cout << Form("%4d c/r=%3d/%3d", hitChipID[fTrkHitIndices[i][j]], hitCol[fTrkHitIndices[i][j]], hitRow[fTrkHitIndices[i][j]]) << " ";
       }
       cout << endl;
     } 
