@@ -435,8 +435,8 @@ sub runPixelFillQualityLM() {
     }
 
     # FIXME
-    print(&prefix("runPixelFillQualityLM"), "FIXME: STOPPING HERE, NOT RDB UPLOADING\n");
-    return;
+    #print(&prefix("runPixelFillQualityLM"), "FIXME: STOPPING HERE, NOT RDB UPLOADING\n");
+    #return;
 
     my $cmd2 = "bin/allHistograms -f $ROF/merged-dqm_histos_$srun.root  >& log/allHistograms_$srun.log ";
     if ($opt_d) {
@@ -451,7 +451,7 @@ sub runPixelFillQualityLM() {
         my $mergedFile = "$ROF/merged-dqm_histos_$srun.root";
         if (-e $mergedFile) {
             my $filesize = -s $mergedFile;
-            if ($filesize < 1048576) {  # 1 MB = 1048576 bytes
+            if ($opt_m ne "cosmic" && $filesize < 1048576) {  # 1 MB = 1048576 bytes
                 print(&prefix("runPixelFillQualityLM"), "WARNING: Merged file $mergedFile is smaller than 1 MB (size: " . sprintf("%.2f", $filesize/1048576) . " MB)\n");
             } else {
                 print(&prefix("runPixelFillQualityLM"), "Merged file size: " . sprintf("%.2f", $filesize/1048576) . " MB\n");
