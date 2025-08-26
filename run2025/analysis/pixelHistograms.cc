@@ -1,7 +1,6 @@
 #include "pixelHistograms.hh"
 
 #include <TProfile2D.h>
-#include <_types/_uint32_t.h>
 #include <iostream>
 #include <sys/stat.h>
 
