@@ -306,7 +306,7 @@ foreach my $run (@goodRuns) {
         &runPixelFillQualityLM($run);      
         &copyDQMFilesToOnline($run);
         &submitJobsRawSort($run);
-        &submitJobsRawTrirec($run, $nEvents);
+        #&submitJobsRawTrirec($run, $nEvents);
     } elsif ($opt_m eq "sort") {
         &runSort($run);
     } elsif ($opt_m eq "prompt") {
