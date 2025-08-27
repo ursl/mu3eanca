@@ -9,9 +9,7 @@
 #include <TH2D.h>
 #include <TProfile.h>
 #include <TProfile2D.h>
-// mu3e pixel ID decoding (based on mu3e::id::sensor structure)
-
-// Header file for the classes stored in the TTree if any.
+#include <iomanip>
 
 class anaFrameTree {
 public:
@@ -68,11 +66,12 @@ private:
     Int_t           hitChipID[10000];   //[hitN]
     Int_t           hitCol[10000];   //[hitN]
     Int_t           hitRow[10000];   //[hitN]
-    Int_t           hitTime[10000];   //[hitN]
-    Int_t           hitTimeNs[10000];   //[hitN]
-    Float_t         hitX[10000];   //[hitN]
-    Float_t         hitY[10000];   //[hitN]
-    Float_t         hitZ[10000];   //[hitN]
+    Int_t           hitTimeInt[10000];   //[hitN]
+    double          hitTime[10000];   //[hitN]
+    double          hitTimeNs[10000];   //[hitN]
+    double          hitX[10000];   //[hitN]
+    double          hitY[10000];   //[hitN]
+    double          hitZ[10000];   //[hitN]
     Int_t           hitRawToT[10000];   //[hitN]
     Int_t           hitBitToT[10000];   //[hitN]
     Int_t           hitStatus[10000];   //[hitN]
@@ -81,14 +80,20 @@ private:
 
     // Track variables
     Int_t           fTrkN;
-    Float_t         fTrkMomentum[1000];   //[fTrkN]
-    Float_t         fTrkChi2[1000];   //[fTrkN]
+    double          fTrkMomentum[1000];   //[fTrkN]
+    double          fTrkChi2[1000];   //[fTrkN]
     Int_t           fTrkType[1000];   //[fTrkN]
-    Float_t         fTrkPhi[1000];   //[fTrkN]
-    Float_t         fTrkLambda[1000];   //[fTrkN]
-    Float_t         fTrkK[1000];   //[fTrkN]
-    Float_t         fTrkKerr2[1000];   //[fTrkN]
-    Float_t         fTrkDoca[1000];   //[fTrkN]
+    double          fTrkPhi[1000];   //[fTrkN]
+    double          fTrkLambda[1000];   //[fTrkN]
+    double          fTrkK[1000];   //[fTrkN]
+    double          fTrkKerr2[1000];   //[fTrkN]
+    double          fTrkT0[1000];   //[fTrkN]
+    double          fTrkT0Err[1000];   //[fTrkN]
+    double          fTrkT0RMS[1000];   //[fTrkN]
+    double          fTrkT0Si[1000];   //[fTrkN]
+    double          fTrkT0SiErr[1000];   //[fTrkN]
+    double          fTrkT0SiRMS[1000];   //[fTrkN]
+    double          fTrkDoca[1000];   //[fTrkN]
     Int_t           fTrkSegmentN[1000];   //[fTrkN]
     Int_t           fTrkNhits[1000];   //[fTrkN]
     Int_t           fTrkHitIndices[1000][20];   //[fTrkN][20]
@@ -103,6 +108,7 @@ private:
     TBranch        *b_hitChipID;   //!
     TBranch        *b_hitCol;   //!
     TBranch        *b_hitRow;   //!
+    TBranch        *b_hitTimeInt;   //!
     TBranch        *b_hitTime;   //!
     TBranch        *b_hitTimeNs;   //!
     TBranch        *b_hitX;   //!
@@ -122,6 +128,10 @@ private:
     TBranch        *b_trkLambda;   //!
     TBranch        *b_trkK;   //!
     TBranch        *b_trkKerr2;   //!
+    TBranch        *b_trkT0;   //!
+    TBranch        *b_trkT0Err;   //!
+    TBranch        *b_trkT0RMS;   //!
+    TBranch        *b_trkT0Si;   //!
     TBranch        *b_trkDoca;   //!
     TBranch        *b_trkSegmentN;   //!
     TBranch        *b_trkNhits;   //!
