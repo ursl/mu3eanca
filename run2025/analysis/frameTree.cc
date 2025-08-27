@@ -51,11 +51,12 @@ void frameTree::init(std::string filename) {
   fHitsTree->Branch("hitChipID", fHitChipID, "hitChipID[hitN]/I");
   fHitsTree->Branch("hitCol", fHitCol, "hitCol[hitN]/I");
   fHitsTree->Branch("hitRow", fHitRow, "hitRow[hitN]/I");
-  fHitsTree->Branch("hitTime", fHitTime, "hitTime[hitN]/I");
-  fHitsTree->Branch("hitTimeNs", fHitTimeNs, "hitTimeNs[hitN]/I");
-  fHitsTree->Branch("hitX", fHitX, "hitX[hitN]/F");
-  fHitsTree->Branch("hitY", fHitY, "hitY[hitN]/F");
-  fHitsTree->Branch("hitZ", fHitZ, "hitZ[hitN]/F");
+  fHitsTree->Branch("hitTimeInt", fHitTimeInt, "hitTimeInt[hitN]/I");
+  fHitsTree->Branch("hitTime", fHitTime, "hitTime[hitN]/D");
+  fHitsTree->Branch("hitTimeNs", fHitTimeNs, "hitTimeNs[hitN]/D");
+  fHitsTree->Branch("hitX", fHitX, "hitX[hitN]/D");
+  fHitsTree->Branch("hitY", fHitY, "hitY[hitN]/D");
+  fHitsTree->Branch("hitZ", fHitZ, "hitZ[hitN]/D");
   fHitsTree->Branch("hitRawToT", fHitRawToT, "hitRawToT[hitN]/I");
   fHitsTree->Branch("hitBitToT", fHitBitToT, "hitBitToT[hitN]/I");
   fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/I");
@@ -64,14 +65,22 @@ void frameTree::init(std::string filename) {
 
   // -- track tree
   fHitsTree->Branch("trkN", &fTrkN, "trkN/I");
-  fHitsTree->Branch("trkMomentum", fTrkMomentum, "trkMomentum[trkN]/F");
-  fHitsTree->Branch("trkChi2", fTrkChi2, "trkChi2[trkN]/F");
+  fHitsTree->Branch("trkMomentum", fTrkMomentum, "trkMomentum[trkN]/D");
+  fHitsTree->Branch("trkChi2", fTrkChi2, "trkChi2[trkN]/D");
   fHitsTree->Branch("trkType", fTrkType, "trkType[trkN]/I");
-  fHitsTree->Branch("trkPhi", fTrkPhi, "trkPhi[trkN]/F");
-  fHitsTree->Branch("trkLambda", fTrkLambda, "trkLambda[trkN]/F");
-  fHitsTree->Branch("trkK", fTrkK, "trkK[trkN]/F");
-  fHitsTree->Branch("trkKerr2", fTrkKerr2, "trkKerr2[trkN]/F");
-  fHitsTree->Branch("trkDoca", fTrkDoca, "trkDoca[trkN]/F");
+  fHitsTree->Branch("trkPhi", fTrkPhi, "trkPhi[trkN]/D");
+  fHitsTree->Branch("trkLambda", fTrkLambda, "trkLambda[trkN]/D");
+  fHitsTree->Branch("trkK", fTrkK, "trkK[trkN]/D");
+  fHitsTree->Branch("trkKerr2", fTrkKerr2, "trkKerr2[trkN]/D");
+  fHitsTree->Branch("trkT0", fTrkT0, "trkT0[trkN]/D");
+  fHitsTree->Branch("trkT0Err", fTrkT0Err, "trkT0Err[trkN]/D");
+  fHitsTree->Branch("trkT0RMS", fTrkT0RMS, "trkT0RMS[trkN]/D");  
+  fHitsTree->Branch("trkT0Si", fTrkT0Si, "trkT0Si[trkN]/D");
+  fHitsTree->Branch("trkT0SiErr", fTrkT0SiErr, "trkT0SiErr[trkN]/D");
+  fHitsTree->Branch("trkT0SiRMS", fTrkT0SiRMS, "trkT0SiRMS[trkN]/D");
+  fHitsTree->Branch("trkDoca", fTrkDoca, "trkDoca[trkN]/D");
+  fHitsTree->Branch("trkSegmentN", fTrkSegmentN, "trkSegmentN[trkN]/I");
+  fHitsTree->Branch("trkHitOverflow", fTrkHitOverflow, "trkHitOverflow[trkN]/I");
   fHitsTree->Branch("trkNhits", fTrkNhits, "trkNhits[trkN]/I");
   fHitsTree->Branch("trkHitIndices", fTrkHitIndices, "trkHitIndices[trkN][20]/I");
 
@@ -123,6 +132,7 @@ void frameTree::fillPixelHit(pixelHit &hit) {
   fHitChipID[fHitsN] = hit.fChipID;
   fHitCol[fHitsN] = hit.fCol;
   fHitRow[fHitsN] = hit.fRow;
+  fHitTimeInt[fHitsN] = hit.fTimeInt;
   fHitTime[fHitsN] = hit.fTime;
   fHitTimeNs[fHitsN] = hit.fTimeNs;
   fHitX[fHitsN] = hit.fX;
@@ -150,6 +160,16 @@ void frameTree::fillTrack(track &trk) {
   fTrkLambda[fTrkN] = trk.fTrkLambda;
   fTrkK[fTrkN] = trk.fTrkK;
   fTrkKerr2[fTrkN] = trk.fTrkKerr2;
+  fTrkT0[fTrkN] = trk.fTrkT0;
+  fTrkT0Err[fTrkN] = trk.fTrkT0Err;
+  fTrkT0RMS[fTrkN] = trk.fTrkT0RMS;
+  fTrkT0Si[fTrkN] = trk.fTrkT0Si;
+  fTrkT0SiErr[fTrkN] = trk.fTrkT0SiErr;
+  fTrkT0SiRMS[fTrkN] = trk.fTrkT0SiRMS;
+  if (1) std::cout << "frameTree::fillTrack() sit0 = " << fTrkT0Si[fTrkN] 
+                   << "  sit0err = " << fTrkT0SiErr[fTrkN] 
+                   << "  sit0rms = " << fTrkT0SiRMS[fTrkN] 
+                   << std::endl;
   fTrkDoca[fTrkN] = trk.fTrkDoca;
   fTrkNhits[fTrkN] = trk.fTrkNhits;
   for (int i = 0; i < fTrkNhits[fTrkN]; ++i) {
@@ -181,6 +201,7 @@ void frameTree::clearHitsTreeVariables() {
     fHitChipID[i] = 0;
     fHitCol[i] = 0;
     fHitRow[i] = 0;
+    fHitTimeInt[i] = 0;
     fHitTime[i] = 0;
     fHitTimeNs[i] = 0;
     fHitRawToT[i] = 0;
@@ -206,6 +227,12 @@ void frameTree::clearTrackTreeVariables() {
     fTrkLambda[i] = 0;
     fTrkK[i] = 0;
     fTrkKerr2[i] = 0;
+    fTrkT0[i] = 0;
+    fTrkT0Err[i] = 0;
+    fTrkT0RMS[i] = 0;
+    fTrkT0Si[i] = 0;
+    fTrkT0SiErr[i] = 0;
+    fTrkT0SiRMS[i] = 0;
     fTrkDoca[i] = 0;
     fTrkSegmentN[i] = 0;
     fTrkHitOverflow[i] = 0;

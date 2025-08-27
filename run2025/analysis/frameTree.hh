@@ -62,11 +62,12 @@ private:
   int fHitChipID[NHITMAX];
   int fHitCol[NHITMAX];
   int fHitRow[NHITMAX];
-  int fHitTime[NHITMAX];
-  int fHitTimeNs[NHITMAX];
-  Float_t fHitX[NHITMAX];
-  Float_t fHitY[NHITMAX];
-  Float_t fHitZ[NHITMAX];
+  int fHitTimeInt[NHITMAX];
+  double fHitTime[NHITMAX];
+  double fHitTimeNs[NHITMAX];
+  double fHitX[NHITMAX];
+  double fHitY[NHITMAX];
+  double fHitZ[NHITMAX];
   int fHitRawToT[NHITMAX];
   int fHitBitToT[NHITMAX];
   int fHitStatus[NHITMAX];
@@ -75,14 +76,20 @@ private:
 
   // -- track tree variables
   int fTrkN;
-  float fTrkMomentum[NTRKMAX];
-  float fTrkChi2[NTRKMAX];
+  double fTrkMomentum[NTRKMAX];
+  double fTrkChi2[NTRKMAX];
   int   fTrkType[NTRKMAX];
-  float fTrkPhi[NTRKMAX];
-  float fTrkLambda[NTRKMAX];  
-  float fTrkK[NTRKMAX];
-  float fTrkKerr2[NTRKMAX];
-  float fTrkDoca[NTRKMAX];
+  double fTrkPhi[NTRKMAX];
+  double fTrkLambda[NTRKMAX];  
+  double fTrkK[NTRKMAX];
+  double fTrkKerr2[NTRKMAX];
+  double fTrkT0[NTRKMAX];
+  double fTrkT0Err[NTRKMAX];
+  double fTrkT0RMS[NTRKMAX];
+  double fTrkT0Si[NTRKMAX];
+  double fTrkT0SiErr[NTRKMAX];
+  double fTrkT0SiRMS[NTRKMAX];
+  double fTrkDoca[NTRKMAX];
   int   fTrkSegmentN[NTRKMAX];
   int   fTrkHitOverflow[NTRKMAX];
   int   fTrkNhits[NTRKMAX];
