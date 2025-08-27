@@ -177,10 +177,15 @@ int main(int argc, const char* argv[]) {
       sstr << jsFormat(arrayBuilder);
       sstr << " }" << endl;
       
-      // -- JSON
-      JS.open(jdir + "/" + tag);
+      // -- JSON - do NOT overwrite already existing tags 
+      string tagFile = jdir + "/" + tag;
+      if (fileExists(tagFile)) {
+        cout << "->cdbInitDB> tag " << tag << " already exists, skipping" << endl;
+        continue;
+      }
+      JS.open(tagFile);
       if (JS.fail()) {
-        cout << "Error failed to open " << jdir << "/" << tag << endl;
+        cout << "Error failed to open " << tagFile << endl;
       }
       JS << sstr.str();
       cout << sstr.str();
@@ -234,6 +239,10 @@ int main(int argc, const char* argv[]) {
         if (string::npos == result.find("Error")) {
           spl = cpa->makeBLOB();
           hash = string("tag_pixelalignment_" + tagLess + "_iov_1");
+          if (fileExists(jdir + "/" + hash)) {
+            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
+            continue;
+          }
           pl.fHash = hash;
           pl.fComment = tagLess + " pixel initialization";
           pl.fSchema  = cpa->getSchema();
@@ -253,6 +262,10 @@ int main(int argc, const char* argv[]) {
         if (string::npos == result.find("Error")) {
           spl = cfa->makeBLOB();
           hash = string("tag_fibrealignment_" + tagLess + "_iov_1");
+          if (fileExists(jdir + "/" + hash)) {
+            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
+            continue;
+          }
           pl.fHash = hash;
           pl.fComment = tagLess + " fibre detector initialization";
           pl.fSchema  = cfa->getSchema();
@@ -272,6 +285,10 @@ int main(int argc, const char* argv[]) {
         if (string::npos == result.find("Error")) {
           spl = cta->makeBLOB();
           hash = string("tag_tilealignment_" + tagLess + "_iov_1");
+          if (fileExists(jdir + "/" + hash)) {
+            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
+            continue;
+          }
           pl.fHash = hash;
           pl.fComment = tagLess + " tile detector initialization";
           pl.fSchema  = cta->getSchema();
@@ -291,6 +308,10 @@ int main(int argc, const char* argv[]) {
         if (string::npos == result.find("Error")) {
           spl = cma->makeBLOB();
           hash = string("tag_mppcalignment_" + tagLess + "_iov_1");
+          if (fileExists(jdir + "/" + hash)) {
+            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
+            continue;
+          }
           pl.fHash = hash;
           pl.fComment = tagLess + " MPPC detector initialization";
           pl.fSchema  = cma->getSchema();
@@ -310,6 +331,10 @@ int main(int argc, const char* argv[]) {
         if (string::npos == result.find("Error")) {
           spl = cdc->makeBLOB();
           hash = string("tag_detconfv1_" + tagLess + "_iov_1");
+          if (fileExists(jdir + "/" + hash)) {
+            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
+            continue;
+          }
           pl.fHash = hash;
           pl.fComment = tagLess + " detector conf";
           pl.fSchema  = cdc->getSchema();
@@ -329,6 +354,10 @@ int main(int argc, const char* argv[]) {
         if (string::npos == result.find("Error")) {
           spl = cdc->makeBLOB();
           hash = string("tag_detsetupv1_" + tagLess + "_iov_1");
+          if (fileExists(jdir + "/" + hash)) {
+            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
+            continue;
+          }
           pl.fHash = hash;
           pl.fComment = tagLess + " detector setup";
           pl.fSchema  = cdc->getSchema();
@@ -350,6 +379,10 @@ int main(int argc, const char* argv[]) {
         string blob = cpq->makeBLOB();
 
         hash = string("tag_pixelqualitylm_" + tagLess + "_iov_1");
+        if (fileExists(jdir + "/" + hash)) {
+          cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
+          continue;
+        }
         pl.fHash = hash;
         pl.fComment = tagLess + " pixelqualitylm initialization";
         pl.fBLOB = blob;
@@ -366,6 +399,10 @@ int main(int argc, const char* argv[]) {
         if (string::npos == result.find("Error")) {
           spl = ccm->makeBLOB();
           hash = "tag_pixelcablingmap_" + tagLess + "_iov_1";
+          if (fileExists(jdir + "/" + hash)) {
+            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
+            continue;
+          }
           pl.fHash = hash;
           pl.fComment = tagLess + "pixel cabling map initialization";
           pl.fSchema  = ccm->getSchema();
