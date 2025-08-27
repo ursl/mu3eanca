@@ -334,7 +334,8 @@ void anaFrameTree::printFrame() {
            << " col: " << Form("%3d", hitCol[i])
            << " row: " << Form("%3d", hitRow[i])
            << " toT: " << Form("%3d", hitBitToT[i])
-           << " ns: " << Form("%3d", hitTimeNs[i])
+           << " time: " << hitTime[i]
+           << " ns: " << hitTimeNs[i]
            << (isTrackHit(i) ? " *" : "")
            << endl;
     }
@@ -344,6 +345,7 @@ void anaFrameTree::printFrame() {
       << ") r = " << Form("%+9.6f", 1./fTrkK[i]) << ", lam = " << Form("%+7.4f", fTrkLambda[i]) 
       << " chi2 = " << Form("%+7.3f", fTrkChi2[i])
       << " p = " << Form("%+8.3f", fTrkMomentum[i])
+      << " t0si = " << Form("%+8.3f", fTrkT0Si[i])
       << ": ";
       for (int j = 0; j < fTrkNhits[i]; ++j) {
         getChipTopology(hitPixelID[fTrkHitIndices[i][j]], layer, ladder, chip);
@@ -399,6 +401,7 @@ void anaFrameTree::Init() {
     fpChain->SetBranchAddress("hitChipID", hitChipID, &b_hitChipID);
     fpChain->SetBranchAddress("hitCol", hitCol, &b_hitCol);
     fpChain->SetBranchAddress("hitRow", hitRow, &b_hitRow);
+    fpChain->SetBranchAddress("hitTimeInt", hitTimeInt, &b_hitTimeInt);
     fpChain->SetBranchAddress("hitTime", hitTime, &b_hitTime);
     fpChain->SetBranchAddress("hitTimeNs", hitTimeNs, &b_hitTimeNs);
     fpChain->SetBranchAddress("hitX", hitX, &b_hitX);
@@ -419,6 +422,10 @@ void anaFrameTree::Init() {
      fpChain->SetBranchAddress("trkLambda", fTrkLambda, &b_trkLambda);
      fpChain->SetBranchAddress("trkK", fTrkK, &b_trkK);
      fpChain->SetBranchAddress("trkKerr2", fTrkKerr2, &b_trkKerr2);
+     fpChain->SetBranchAddress("trkT0", fTrkT0, &b_trkT0);
+     fpChain->SetBranchAddress("trkT0Err", fTrkT0Err, &b_trkT0Err);
+     fpChain->SetBranchAddress("trkT0RMS", fTrkT0RMS, &b_trkT0RMS);
+     fpChain->SetBranchAddress("trkT0Si", fTrkT0Si, &b_trkT0Si);
      fpChain->SetBranchAddress("trkDoca", fTrkDoca, &b_trkDoca);
      fpChain->SetBranchAddress("trkSegmentN", fTrkSegmentN, &b_trkSegmentN);
      fpChain->SetBranchAddress("trkNhits", fTrkNhits, &b_trkNhits);
