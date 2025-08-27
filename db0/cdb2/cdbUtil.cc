@@ -198,6 +198,24 @@ void rmPath(string &sInput) {
 
 
 // ----------------------------------------------------------------------
+bool fileExists(const string& filename) {
+  // Method 1: Using POSIX access() function (lightweight, POSIX standard)
+  if (access(filename.c_str(), F_OK) == 0) {
+    return true;
+  }
+  
+  // Method 2: Fallback using ifstream (C++ standard, more portable)
+  ifstream file(filename.c_str());
+  if (file.good()) {
+    file.close();
+    return true;
+  }
+  
+  return false;
+}
+
+
+// ----------------------------------------------------------------------
 vector<string> split(const string &s, char delim) {
   vector<string> elems;
   split(s, delim, elems);

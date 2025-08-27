@@ -27,6 +27,8 @@ std::string timeStamp(int format = 0);
 // ======================================================================
 std::string jsFormat(std::vector<std::string>);
 std::string jsFormat(std::vector<int>);
+// -- check if file exists
+bool fileExists(const std::string& filename);
 // -- get string (enclosed by double quotation marks) indexed by a single key
 std::string jsonGetString(const std::string& jstring, const std::string& key);
 // -- get string (enclosed by double quotation marks) indexed by a vector of keys
