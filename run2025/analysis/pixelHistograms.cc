@@ -183,8 +183,8 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
   int result(0);
   // -- rawtot should simply be between 0 .. 31. You need ckdivend and ckdivend2 to get something meaningful
   uint32_t chipid = ((hitIn.fPixelID >> 16) & 0xFFFF);
-  uint32_t col = int((hitIn.fPixelID >> 8) & 0xFF);
-  uint32_t row = int((hitIn.fPixelID >> 0) & 0xFF);
+  uint32_t col    = int((hitIn.fPixelID >> 8) & 0xFF);
+  uint32_t row    = int((hitIn.fPixelID >> 0) & 0xFF);
 
   pixelHit hit = hitIn;
   // -- verify input data
@@ -208,7 +208,7 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
   }
 
   uint32_t rawtot = (hit.fDebugSiData >> 27) & 0x1F;
-  uint32_t localTime = hit.fTimeNs % (1 << 11);  // local pixel time is first 11 bits of the global time
+  uint32_t localTime = hit.fTimeInt % (1 << 11);  // local pixel time is first 11 bits of the global time
   uint32_t hitToA=localTime * 8/*ns*/ * (ckdivend + 1);
   uint32_t hitToT = ( ( (0x1F+1) + rawtot -  ( (localTime * (ckdivend+1) / (ckdivend2+1) ) & 0x1F) ) & 0x1F);//  * 8 * (ckdivend2+1) ;
   hit.fBitToT = hitToT;
