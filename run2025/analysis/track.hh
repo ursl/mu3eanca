@@ -16,13 +16,16 @@ struct track {
     }
   }
 
-  float fTrkMomentum;
-  float fTrkChi2;
+  double fTrkMomentum;
+  double fTrkChi2;
   int   fTrkType;
-  float fTrkPhi;
-  float fTrkLambda;  
-  float fTrkK, fTrkKerr2;
-  float fTrkDoca;
+  double fTrkPhi;
+  double fTrkLambda;  
+  double fTrkK, fTrkKerr2;
+  double fTrkT0, fTrkT0Err, fTrkT0RMS;
+  double fTrkT0Si, fTrkT0SiErr, fTrkT0SiRMS;
+  double fTrkDoca;
+
 
   // -- segment->n :-)
   int   fTrkSegmentN;    
