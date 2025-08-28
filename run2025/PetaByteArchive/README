@@ -12,7 +12,7 @@ merlin-l-001>pwd
 
 # -- environment
 module load datacatalog
-setenv SCICAT_TOKEN nWWD5s22IvkZUrUw3HM1VLdJ18mou3KqrrBLiExqPAlR72J8y2T3BcRjXK4BirSA
+setenv SCICAT_TOKEN [login to discovery.psi.ch and then go to langenegger->Settings]
 
 
 # -- ingest
@@ -24,6 +24,8 @@ datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-003.json
 datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-004.json
 datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-005.json
 datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-006.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-006b.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-007.json
 
 
 # -- list datasets web interface
