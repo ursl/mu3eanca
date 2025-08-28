@@ -15,7 +15,7 @@ module load datacatalog
 setenv SCICAT_TOKEN [login to discovery.psi.ch and then go to langenegger->Settings]
 
 
-# -- ingest
+# -- ingest (= preparing for upload to the PetaByteArchive)
 cd mu3e/mu3eanca/run2025
 datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-000.json
 datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-001.json
