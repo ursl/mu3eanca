@@ -1033,13 +1033,15 @@ sub submitJobsRawSort() {
     $cmdIniString .= "$MU3EANCA/slurm/run $queue -t ../../../../slurm/$tarFile -c $MU3EANCA/run2025/scripts/slurm-sort.csh ";
 
     my $srunfile = sprintf("run%05d.mid.lz4", $run);
- 
+
+    my $anlString = "--conf trirec_twolayer_cosmic.conf";
+
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/sort";
     $envString .= "%DATADIR $DATASUBDIR";
     $envString .= "%MIDASFILE $srunfile";
     $envString .= "%RUN $run";
-    %envString .= "%ANLZR --conf trirec_twolayer_cosmic.conf";
+    $envString .= "%ANLZR $anlString";
 
     # map ($slurmID => logfile)
     my %mSlurmIds;
