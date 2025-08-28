@@ -1039,7 +1039,7 @@ sub submitJobsRawSort() {
     $envString .= "%DATADIR $DATASUBDIR";
     $envString .= "%MIDASFILE $srunfile";
     $envString .= "%RUN $run";
-    %envString .= "%ANLZR --conf trirec_twolayer_cosmic.conf"
+    %envString .= "%ANLZR --conf trirec_twolayer_cosmic.conf";
 
     # map ($slurmID => logfile)
     my %mSlurmIds;
