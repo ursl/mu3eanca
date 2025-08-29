@@ -26,6 +26,7 @@ datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-005.json
 datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-006.json
 datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-006b.json
 datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-007.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-008.json
 
 
 # -- list datasets web interface
@@ -36,6 +37,10 @@ merlin-l-001>datasetRetriever -token $SCICAT_TOKEN .
 
 # -- list datasets
 merlin-l-002>datasetRetriever -token $SCICAT_TOKEN .
+
+# -- before retrieval:
+on discovery.psi.ch select datasets, "add to cart", go to cart, click the "retrieve" button
+cf. https://melanie.gitpages.psi.ch/SciCatPages/#sec-6  -> 6.1 First Step
 
 # -- retrieve
 merlin-l-002>datasetRetriever -dataset 20.500.11935/ed647bd8-4efe-4757-b5a0-b8d286beebcc -retrieve -token $SCICAT_TOKEN .
