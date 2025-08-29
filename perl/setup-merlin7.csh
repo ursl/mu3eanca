@@ -1,6 +1,6 @@
 #!/bin/csh
 
-module load gcc/14.2.0
+module load gcc/14.2.0 cmake/3.26.3
 
 setenv LD_LIBRARY_PATH "/data/user/langenegger/mu3e/util/lib"
 
