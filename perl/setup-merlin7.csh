@@ -2,7 +2,7 @@
 
 #module load gcc/14.2.0 ninja
 
-setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:/data/user/langenegger/mu3e/util/lib"
+setenv LD_LIBRARY_PATH "/data/user/langenegger/mu3e/util/lib"
 
 set SW="/data/project/mu3e/software"
 
