@@ -2,6 +2,10 @@
 
 #module load gcc/14.2.0 ninja
 
+setenv LD_LIBRARY_PATH "$LD_LIBRARY_PATH:/data/user/langenegger/mu3e/util/lib"
+
+
+
 set SW="/data/project/mu3e/software"
 
 setenv Boost_DIR "$SW/boost-1.75.0"
@@ -20,8 +24,6 @@ echo "LZ4_ROOT=$LZ4_ROOT"
 echo "ROOTSYS=$ROOTSYS"
 echo "Geant4_PREFIX=`geant4-config --prefix`"
 
-
-setenv LD_LIBRARY_PATH "$LD_LIBRARY_PATH:/data/user/langenegger/mu3e/util/lib"
 
 # mu3e software
 if (! $?MU3E_TAG) then
