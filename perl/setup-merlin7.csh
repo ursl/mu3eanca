@@ -14,7 +14,7 @@ setenv LD_LIBRARY_PATH "${Boost_DIR}/lib:${LZ4_ROOT}/lib:${LD_LIBRARY_PATH}"
 setenv ROOTSYS "${SW}/root-v6-29-02"
 setenv PATH "${ROOTSYS}/bin:${PATH}"
 setenv LD_LIBRARY_PATH "${ROOTSYS}/lib:${LD_LIBRARY_PATH}"
-source "${SW}/geant4-v11.1.2/bin/geant4.sh"
+source "${SW}/geant4-v11.1.2/bin/geant4.csh" ${SW}/geant4-v11.1.2/bin
 
 echo "Boost_DIR=$Boost_DIR"
 echo "Eigen3_DIR=$Eigen3_DIR"
