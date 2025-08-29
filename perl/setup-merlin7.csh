@@ -4,7 +4,7 @@
 
 setenv LD_LIBRARY_PATH "/data/user/langenegger/mu3e/util/lib"
 
-set SW="/data/project/mu3e/software"
+setenv SW "/data/project/mu3e/software"
 
 setenv Boost_DIR "${SW}/boost-1.75.0"
 setenv Eigen3_DIR "${SW}/eigen-3.4.0"
