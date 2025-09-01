@@ -207,7 +207,8 @@ if ($opt_w) {
             my $nEvents = &countEvents($run);
             if ($opt_m eq "prompt") {
                 #my $trCmd = "scp ursl\@129.129.143.120:/home/mu3e/online/runs/run0$run.mid.lz4 /data/experiment/mu3e/data/2025/raw"; 
-                my $trCmd = "cp -p /data/experiment/mu3e/data/2025/lazy/run0$run.mid.lz4 /data/experiment/mu3e/data/2025/raw/"; 
+                #my $trCmd = "cp -p /data/experiment/mu3e/data/2025/lazy/run0$run.mid.lz4 /data/experiment/mu3e/data/2025/raw/"; 
+                my $trCmd = "cp -p /data/experiment/mu3e/data/2025/lazy/run0$run.mid.lz4 " . getDataSubdir($run) . " "; 
                 print(&prefix("processRuns"), "trCmd: $trCmd\n");
                 system($trCmd);
                 #my $jsCmd = "scp ursl\@129.129.143.120:/home/mu3e/online/runs/run0$run.json /data/experiment/mu3e/data/2025/raw"; 
@@ -241,7 +242,6 @@ if ($opt_w) {
                 } elsif ($opt_m eq "cosmic") {
                     my $trCmd = "cp -p /data/experiment/mu3e/data/2025/lazy/run0$run.mid.lz4 " . getDataSubdir($run) . " "; 
                     print(&prefix("processRuns"), "trCmd: $trCmd\n");
-                    die "STOPPING HERE\n";
                     system($trCmd);
                     &submitJobsRawMinalyzer($run, $nEvents);
                     &runPixelFillQualityLM($run);      
