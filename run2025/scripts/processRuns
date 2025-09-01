@@ -247,7 +247,7 @@ if ($opt_w) {
                     &runPixelFillQualityLM($run);      
                     &copyDQMFilesToOnline($run);
                     &submitJobsRawSort($run);
-                    &submitJobsRawTrirec($run, $nEvents);
+                    #&submitJobsRawTrirec($run, $nEvents);
                 } elsif ($opt_m eq "prompt") {
                     &submitJobsRawMinalyzer($run, $nEvents);
                     &runPixelFillQualityLM($run); 
