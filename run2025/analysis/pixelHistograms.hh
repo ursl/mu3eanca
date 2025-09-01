@@ -19,6 +19,9 @@
   
 
 // ----------------------------------------------------------------------
+// The primary motivation for this class is to HISTOGRAM pixel hits
+// used in trirec, depending on their category and possibly conditions
+// ----------------------------------------------------------------------
 class pixelHistograms {
 public:
   pixelHistograms(TFile *file);
