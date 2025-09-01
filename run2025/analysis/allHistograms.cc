@@ -227,6 +227,8 @@ void mkVtxPlots(int run, string barefilename) {
           int ichip = ::stoi(hname);  
           // cout << "toa chip " << ichip << " " << hname << endl;
           mToTs[ichip] = h;
+          mToTs[ichip]->SetTitle(Form("Chip %d (0x%x)", ichip, ichip));
+          mToTs[ichip]->SetTitleSize(0.2);
         }
       }
     }
