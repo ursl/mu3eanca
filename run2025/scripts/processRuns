@@ -239,6 +239,10 @@ if ($opt_w) {
                     &submitJobsRawSort($run);
                     &submitJobsRawTrirec($run, $nEvents);
                 } elsif ($opt_m eq "cosmic") {
+                    my $trCmd = "cp -p /data/experiment/mu3e/data/2025/lazy/run0$run.mid.lz4 " . getDataSubdir($run) . " "; 
+                    print(&prefix("processRuns"), "trCmd: $trCmd\n");
+                    die "STOPPING HERE\n";
+                    system($trCmd);
                     &submitJobsRawMinalyzer($run, $nEvents);
                     &runPixelFillQualityLM($run);      
                     &copyDQMFilesToOnline($run);
