@@ -132,6 +132,8 @@ private:
     TBranch        *b_trkT0Err;   //!
     TBranch        *b_trkT0RMS;   //!
     TBranch        *b_trkT0Si;   //!
+    TBranch        *b_trkT0SiErr;   //!
+    TBranch        *b_trkT0SiRMS;   //!
     TBranch        *b_trkDoca;   //!
     TBranch        *b_trkSegmentN;   //!
     TBranch        *b_trkNhits;   //!

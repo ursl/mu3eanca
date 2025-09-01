@@ -334,22 +334,21 @@ void anaFrameTree::printFrame() {
            << " col: " << Form("%3d", hitCol[i])
            << " row: " << Form("%3d", hitRow[i])
            << " toT: " << Form("%3d", hitBitToT[i])
-           << " time: " << hitTime[i]
-           << " ns: " << hitTimeNs[i]
+           << Form(" ns = %10.3f", hitTimeNs[i])
            << (isTrackHit(i) ? " *" : "")
            << endl;
     }
 
     for (int i = 0; i < fTrkN; ++i) {
-      cout << " trk " << Form("%2d", i) << " (" << Form("%+3d", fTrkType[i])
-      << ") r = " << Form("%+9.6f", 1./fTrkK[i]) << ", lam = " << Form("%+7.4f", fTrkLambda[i]) 
-      << " chi2 = " << Form("%+7.3f", fTrkChi2[i])
-      << " p = " << Form("%+8.3f", fTrkMomentum[i])
-      << " t0si = " << Form("%+8.3f", fTrkT0Si[i])
+      cout << "trk" << Form("%2d", i) << "(" << Form("%+3d", fTrkType[i])
+      << " p=" << Form("%+8.3f", fTrkMomentum[i])
+      << " chi2=" << Form("%+7.3f", fTrkChi2[i])
+      << " t0si/err/rms=" << Form("%+8.3f/%8.3f/%8.3f", fTrkT0Si[i], fTrkT0SiErr[i], fTrkT0SiRMS[i])
       << ": ";
       for (int j = 0; j < fTrkNhits[i]; ++j) {
-        getChipTopology(hitPixelID[fTrkHitIndices[i][j]], layer, ladder, chip);
-        cout << Form("%4d c/r=%3d/%3d", hitChipID[fTrkHitIndices[i][j]], hitCol[fTrkHitIndices[i][j]], hitRow[fTrkHitIndices[i][j]]) << " ";
+        cout << Form("%3d", fTrkHitIndices[i][j]) << " ";
+        // getChipTopology(hitPixelID[fTrkHitIndices[i][j]], layer, ladder, chip);
+        // cout << Form("%4d c/r=%3d/%3d", hitChipID[fTrkHitIndices[i][j]], hitCol[fTrkHitIndices[i][j]], hitRow[fTrkHitIndices[i][j]]) << " ";
       }
       cout << endl;
     } 
@@ -426,6 +425,8 @@ void anaFrameTree::Init() {
      fpChain->SetBranchAddress("trkT0Err", fTrkT0Err, &b_trkT0Err);
      fpChain->SetBranchAddress("trkT0RMS", fTrkT0RMS, &b_trkT0RMS);
      fpChain->SetBranchAddress("trkT0Si", fTrkT0Si, &b_trkT0Si);
+     fpChain->SetBranchAddress("trkT0SiErr", fTrkT0SiErr, &b_trkT0SiErr);
+     fpChain->SetBranchAddress("trkT0SiRMS", fTrkT0SiRMS, &b_trkT0SiRMS);
      fpChain->SetBranchAddress("trkDoca", fTrkDoca, &b_trkDoca);
      fpChain->SetBranchAddress("trkSegmentN", fTrkSegmentN, &b_trkSegmentN);
      fpChain->SetBranchAddress("trkNhits", fTrkNhits, &b_trkNhits);
