@@ -166,9 +166,10 @@ void frameTree::fillTrack(track &trk) {
   fTrkT0Si[fTrkN] = trk.fTrkT0Si;
   fTrkT0SiErr[fTrkN] = trk.fTrkT0SiErr;
   fTrkT0SiRMS[fTrkN] = trk.fTrkT0SiRMS;
-  if (1) std::cout << "frameTree::fillTrack() sit0 = " << fTrkT0Si[fTrkN] 
+  if (0) std::cout << "frameTree::fillTrack() sit0 = " << fTrkT0Si[fTrkN] 
                    << "  sit0err = " << fTrkT0SiErr[fTrkN] 
                    << "  sit0rms = " << fTrkT0SiRMS[fTrkN] 
+                   << "  Momentum = " << fTrkMomentum[fTrkN]
                    << std::endl;
   fTrkDoca[fTrkN] = trk.fTrkDoca;
   fTrkNhits[fTrkN] = trk.fTrkNhits;
