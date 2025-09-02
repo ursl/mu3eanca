@@ -179,14 +179,17 @@ int pixelHistograms::pixelQuality(pixelHit &hitIn) {
 }
 
 // ---------------------------------------------------------------------- 
+// -- this code is likely at the wrong place. It requires pixelqualityLM, but this is not what we want in anaFrameTree.
 int pixelHistograms::goodPixel(pixelHit &hitIn) {
   int result(0);
+
   // -- rawtot should simply be between 0 .. 31. You need ckdivend and ckdivend2 to get something meaningful
   uint32_t chipid = ((hitIn.fPixelID >> 16) & 0xFFFF);
   uint32_t col    = int((hitIn.fPixelID >> 8) & 0xFF);
   uint32_t row    = int((hitIn.fPixelID >> 0) & 0xFF);
 
   pixelHit hit = hitIn;
+
   // -- verify input data
   if (hit.fChipID != chipid) {
     cout << "pixelHistograms::goodPixel() chipid mismatch: " << hit.fChipID << " != " << chipid << endl;
@@ -214,9 +217,7 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
   hit.fBitToT = hitToT;
   hit.fRawToT = rawtot;
 
-  //cout << "pixelHistograms::goodPixel() hitTot = " << hitToT << " hitTot() = " << hit.hitToT() << endl;
-
-  hit.fStatus = 0;
+  // -- recalculate here?!
   hit.fStatusBits = 0;
 
   bool isEdgePixel = false;
@@ -238,8 +239,11 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
 
 
   string hname("");
-  if (result < 99 && fCalPixelQualityLM) {
-    int status = fCalPixelQualityLM->getStatus(chipid, col, row);
+  if (result < 99 ) {
+    int status = hit.fStatus;
+    if (fCalPixelQualityLM) {
+      status = fCalPixelQualityLM->getStatus(chipid, col, row);
+    }
 
     if (status > 0 && status < 9) {
       result |= (0x1 << status);
@@ -298,7 +302,7 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
 void pixelHistograms::saveHistograms() {
   fDirectory->cd();
   cout << "pixelHistograms::saveHistograms() fDirectory->ls(): " << endl;
-  //fDirectory->ls();
+  fDirectory->ls();
   for (auto ih: fTH2D) {
     ih.second->SetDirectory(fDirectory);
     ih.second->Write();
