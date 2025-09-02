@@ -19,8 +19,8 @@ public:
   static frameTree* instance(std::string filename = "frameTree");
 
   void  setRun(int run) {fRun = run;}
-  void  setFrameID(uint32_t frameID) {fFrameID = frameID;}
-  void  setRunAndFrameID(int run, uint32_t frameID) {fRun = run; fFrameID = frameID;} 
+  void  setFrameID(unsigned long frameID) {fFrameID = frameID;}
+  void  setRunAndFrameID(int run, unsigned long frameID) {fRun = run; fFrameID = frameID;} 
   void  setOutDir(std::string outdir) {fOutDir = outdir;}
   void  setVerbose(int verbose) {fVerbose = verbose;}
 
@@ -51,7 +51,7 @@ private:
 
   TDirectory *fDirectory;
   TTree *fHitsTree;
-  uint32_t fFrameID; // keep a record to know when to write the previous frame
+  unsigned long fFrameID; // keep a record to know when to write the previous frame
 
   // -- hit tree variables
   int fHitsN;
