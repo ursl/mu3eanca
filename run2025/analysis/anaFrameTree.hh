@@ -11,6 +11,8 @@
 #include <TProfile2D.h>
 #include <iomanip>
 
+#include "pixelHistograms.hh"
+
 class anaFrameTree {
 public:
     anaFrameTree(TChain *chain=0);
@@ -37,6 +39,8 @@ private:
     std::string fOutputDir = ".";
     std::string fHistFileName;
     TFile *fpHistFile;
+
+    pixelHistograms *fpPixelHistograms;
 
     std::vector<int> fLayer1, fLayer2, fAllChips;
 

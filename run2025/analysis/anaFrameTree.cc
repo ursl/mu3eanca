@@ -47,11 +47,13 @@ anaFrameTree::anaFrameTree(TChain *chain) : fpChain(0), fNentries(0) {
   fAllChips = fLayer1;
   fAllChips.insert(fAllChips.end(), fLayer2.begin(), fLayer2.end());
   cout << "==> anaFrameTree: fAllChips.size() = " << fAllChips.size() << endl;
+
+  cout << "==> anaFrameTree: instatiate pixelHistograms, " << "  fHistFileName = " << fHistFileName << endl;
 }
   
 // ---------------------------------------------------------------------- 
 anaFrameTree::~anaFrameTree() {
-  
+  delete fpPixelHistograms;
 }
 
 // ---------------------------------------------------------------------- 
@@ -65,6 +67,8 @@ void anaFrameTree::openHistFile(std::string histfile) {
   if (fVerbose > 0) cout << "==> anaFrameTree: Opening histograms file " << fHistFileName << endl;
   fpHistFile = new TFile(fHistFileName.c_str(), "RECREATE");
   fpHistFile->cd();
+
+  fpPixelHistograms = new pixelHistograms(fpHistFile);
 }
 
 // ---------------------------------------------------------------------- 
@@ -99,6 +103,7 @@ void anaFrameTree::closeHistFile() {
     h.second->Write();
   }
   fpHistFile->cd();
+  fpPixelHistograms->saveHistograms();
   fpHistFile->Close();
   fpHistFile = 0;
 }
@@ -239,7 +244,15 @@ void anaFrameTree::loop(int nevents, int start) {
       if (0 == hitN) hc->Fill(9);
 
       int badHitN(0), goodHitN(0), invalidHitN(0);
+      pixelHit pphit;
       for (int ihit = 0; ihit < hitN; ++ihit) {
+        pphit.fPixelID = hitPixelID[ihit];
+        pphit.fChipID = hitChipID[ihit];
+        pphit.fCol = hitCol[ihit];
+        pphit.fRow = hitRow[ihit];
+        pphit.fTimeInt = hitTimeInt[ihit];
+        pphit.fDebugSiData = hitDebugSiData[ihit];
+        int quality = fpPixelHistograms->goodPixel(pphit);
         if (hitValidHit[ihit]) {
           hc->Fill(11);
           if (hitStatus[ihit] == 0) {
@@ -343,6 +356,7 @@ void anaFrameTree::printFrame() {
       cout << "trk" << Form("%2d", i) << "(" << Form("%+3d", fTrkType[i])
       << " p=" << Form("%+8.3f", fTrkMomentum[i])
       << " chi2=" << Form("%+7.3f", fTrkChi2[i])
+      << " angles = " << Form("%+7.3f/%7.3f", fTrkPhi[i], fTrkLambda[i])
       << " t0si/err/rms=" << Form("%+8.3f/%8.3f/%8.3f", fTrkT0Si[i], fTrkT0SiErr[i], fTrkT0SiRMS[i])
       << ": ";
       for (int j = 0; j < fTrkNhits[i]; ++j) {
