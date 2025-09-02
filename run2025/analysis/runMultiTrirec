@@ -1,0 +1,116 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# runMultiTrirec
+# ==============
+#
+# Usage:   
+#    moor>pwd
+#   /Users/ursl/mu3e/software/250806/mu3e/run
+#   moor>~/mu3e/mu3eanca/run2025/analysis/runMultiTrirec -j 6 -i ~/mu3e/mu3eanca/run2025/analysis/runs.txt 
+#
+#
+#
+# History
+#         2025/09/02 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+use File::Basename;
+use File::Copy 'copy';
+
+use Getopt::Std;
+getopts('di:f:j:l:r:t:');
+
+my $BASEDIR  = "/Users/ursl/mu3e/software/250806/mu3e/run";
+my $MU3EANCA = "/Users/ursl/mu3e/mu3eanca";
+my $DATADIR  = "/Users/ursl/mu3e/data/run2025/sort";
+my $EXE      = "/Users/ursl/mu3e/software/250806/mu3e/_build/mu3eTrirec/mu3eTrirec";
+my $OUT      = "$BASEDIR/output";
+my $LOG      = "$BASEDIR/log";
+
+my $CONF   = "trirec_twolayer_cosmic.conf";
+my $GT     = "datav6.2=2025Beam";
+my $DBCONN = "rest";
+$EXE .= " --conf $CONF";
+$EXE .= " --cdb.dbconn=$DBCONN --cdb.globalTag=$GT";
+
+# -- get run lists, from either file or argv
+my @runs = ();
+if (defined($opt_i)) {
+  open(IN, "$opt_i") || die "runMultiTrirec: Cannot open $opt_i\n";
+  while (<IN>) {
+    chomp;
+    $_ =~ s/\s+/,/g;
+    @runLine = split(/,/, $_);
+
+    foreach $addRun (@runLine) {
+      push(@runs, $addRun);
+    }
+  }
+  close(IN);
+} elsif (defined($opt_r)) {
+  @runs = split(/,/, $opt_r);
+} else {
+  die "runMultiTrirec: No runs specified\n";
+}
+
+# -- number of cores to use
+my $nCores = 5;
+if (defined($opt_j)) {
+  $nCores = $opt_j;
+}
+
+my $nrun = 0;
+for $run (@runs) {
+  # -- skip runs not within -f first or -l last
+  if (defined($opt_f) && $run < $opt_f) {
+    next;
+  }
+  if (defined($opt_l) && $run > $opt_l) {
+    next;
+  }
+
+  print "run waiting to be executed: $run ($nrun/$#runs runs processed)\n";
+  my $irun = int($run);
+  my $srun = sprintf("%05d", $irun);
+  $nrun++;
+  my $logfile = "$LOG/run$srun-trirec.log";
+  my $CLEAN = "rm -f $logfile";
+  my $cmd = "$CLEAN && cd $BASEDIR && $EXE $DATADIR/run$srun-sorted.root --output $OUT/mu3eTrirec_run$srun.root >& $logfile &";
+  if ($opt_d) {
+    print $cmd . "\n";
+  } else {
+    system($cmd);
+  }
+
+
+  my $jobsRunning = &checkJobsRunning();
+  my $cnt = 0;
+  while ($jobsRunning >= $nCores) {
+    sleep(10);
+    $jobsRunning = &checkJobsRunning();
+    $cnt++;
+    print "\rrun $run: $jobsRunning jobs running, waiting for " . $cnt*10 . " seconds, ($nrun/$#runs runs processed)";
+  }
+  print "\n";
+
+}
+
+
+# ----------------------------------------------------------------------
+sub checkJobsRunning() {
+  my $jobsRunning = 0;
+  my $cmd = "ps -fu ursl";
+  my $result = `$cmd`;
+  my @lines = grep /\S/, split /\n/, $result;
+  foreach $line (@lines) {
+    if ($line =~ /mu3eTrirec/ && $line !~ /\bgrep\b/ && $line !~ /\bsh -c\b/) {
+      $jobsRunning++;
+    }
+  }
+  return $jobsRunning;
+}
