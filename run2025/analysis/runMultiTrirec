@@ -23,7 +23,7 @@ use File::Basename;
 use File::Copy 'copy';
 
 use Getopt::Std;
-getopts('di:f:j:l:r:t:');
+getopts('c:di:f:j:l:r:');
 
 my $BASEDIR  = "/Users/ursl/mu3e/software/250806/mu3e/run";
 my $MU3EANCA = "/Users/ursl/mu3e/mu3eanca";
@@ -33,6 +33,9 @@ my $OUT      = "$BASEDIR/output";
 my $LOG      = "$BASEDIR/log";
 
 my $CONF   = "trirec_twolayer_cosmic.conf";
+if (defined($opt_c)) {
+  $CONF = $opt_c;
+}
 my $GT     = "datav6.2=2025Beam";
 my $DBCONN = "rest";
 $EXE .= " --conf $CONF";
@@ -83,6 +86,7 @@ for $run (@runs) {
   my $cmd = "$CLEAN && cd $BASEDIR && $EXE $DATADIR/run$srun-sorted.root --output $OUT/mu3eTrirec_run$srun.root >& $logfile &";
   if ($opt_d) {
     print $cmd . "\n";
+    exit(0);
   } else {
     system($cmd);
   }
