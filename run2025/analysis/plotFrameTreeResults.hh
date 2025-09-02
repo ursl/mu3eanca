@@ -21,20 +21,19 @@ public :
 
   virtual ~plotFrameTreeResults();
 
-  // -- Plot
+  // -- main analysis methods, local and overriding
+  void   makeAll(std::string what = "all");
+
+  // -- Plotting functions
   void   plotPixelHistograms(std::string histname, std::string htype);
   void   plotAllPixelHistograms();  
   void   readHist(std::string hname, std::string hType);
-
+  void   plotTrkGraphs(int run = -1);
 
   // -- code for loops
   void   loopFunction1();
 
   void   loopOverTree(TTree *t, int ifunc, int nevts = -1, int nstart = 0);
-
-  // -- main analysis methods, local and overriding
-  void   makeAll(std::string what = "all");
-
 
  private:
   std::map<std::string, TH1D*> fTH1D;

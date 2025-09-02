@@ -38,6 +38,7 @@ plotFrameTreeResults::plotFrameTreeResults(string dir, string files, string cuts
   } else if (string::npos != files.rfind(".root")) {
     fHistFile = plotClass::loadFile(files);
     // -- Parse run number from filename - look for digits before ".root"
+    fRun = -1;
     size_t dotPos = files.find(".root");
     if (dotPos != string::npos) {
       // Find the last sequence of digits before ".root"
@@ -80,6 +81,7 @@ plotFrameTreeResults::plotFrameTreeResults(string dir, string files, string cuts
   gDirectory->ls();
   readHist("all_hitmap", "chipmap");
   readHist("all_hittot", "chipToT");
+  readHist("all_hittot", "chipprof2d");
 }
 
 // ----------------------------------------------------------------------
@@ -90,7 +92,57 @@ plotFrameTreeResults::~plotFrameTreeResults() {
 
 // ----------------------------------------------------------------------
 void plotFrameTreeResults::makeAll(string what) {
-  plotAllPixelHistograms();
+  if (what == "trk") {
+    plotTrkGraphs();
+  } else {
+    plotAllPixelHistograms();
+  }
+}
+
+// ----------------------------------------------------------------------
+void   plotFrameTreeResults::plotTrkGraphs(int run) {
+  cout << "plotFrameTreeResults::plotTrkGraphs() run = " << run << endl;
+  if (run == -1) {
+    run = fRun;
+  }
+  fHistFile->cd("trk");
+  TList *list = gDirectory->GetListOfKeys();
+  TCanvas *c = new TCanvas("c", "c", 1000, 1000);
+  TH2D *h2d = new TH2D("h2d", "h2d", 100, -40, 40, 100, -40, 40);
+  h2d->SetStats(0);
+  h2d->Draw();
+  int cnt(0);
+  for (int i = 0; i < list->GetEntries(); ++i) {
+    TKey *key = (TKey*)list->At(i);
+    TObject *obj = key->ReadObj();
+    string sname = obj->GetName();
+    string srun = sname.substr(4, sname.find("_frame")-4);
+    if (run > 0 && srun != to_string(run)) {
+      continue;
+    }
+    TGraph *gr = (TGraph*)obj;
+    // -- skip upward going (=red)
+    if (gr->GetMarkerColor() == kRed) continue;
+    gr->SetLineColor(gr->GetMarkerColor());
+    gr->SetMarkerStyle(2);
+    gr->SetMarkerSize(2);
+    string hname = gr->GetName();
+    string htitle = gr->GetTitle();
+    cout << "plotFrameTreeResults::plotTrkGraphs() sname = " << sname << " srun = " << srun << " hname = " << hname << " htitle = " << htitle << endl;
+    if (cnt == 0) {
+      gr->Draw("lp");
+    } else {
+      gr->Draw("lp");
+    }
+    cnt++;
+  }
+  string sname = fDirectory + "/trk-" + to_string(run) + ".pdf";
+  if (fRun < 0) {
+    sname = fDirectory + "/trk-all" + ".pdf";
+  }
+  c->SaveAs(sname.c_str());
+  delete c;
+
 }
 
 
