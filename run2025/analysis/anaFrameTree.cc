@@ -102,6 +102,11 @@ void anaFrameTree::closeHistFile() {
     h.second->SetDirectory(vtxDir);
     h.second->Write();
   }
+  fpHistFile->mkdir("trk");
+  fpHistFile->cd("trk");
+  for (auto &g: fTrkGraph) {
+    g->Write();
+  }
   fpHistFile->cd();
   fpPixelHistograms->saveHistograms();
   fpHistFile->Close();
@@ -127,6 +132,9 @@ void anaFrameTree::bookHistograms() {
   fHistograms["burstToT"] = new TH1D("burstToT", "burstToT", 32, 0, 32);
   fHistograms["goodToT"] = new TH1D("goodToT", "goodToT", 32, 0, 32);
   fHistograms["badToT"] = new TH1D("badToT", "badToT", 32, 0, 32);
+
+  fHistograms["trkPhi"] = new TH1D("trkPhi", "trkPhi", 100, -3.14, 3.14);
+  fHistograms["trkLambda"] = new TH1D("trkLambda", "trkLambda", 100, -3.14, 3.14);
 
   bookVtx2D("nonburstGood");
   bookVtx2D("nonburstBad");
@@ -252,7 +260,7 @@ void anaFrameTree::loop(int nevents, int start) {
         pphit.fRow = hitRow[ihit];
         pphit.fTimeInt = hitTimeInt[ihit];
         pphit.fDebugSiData = hitDebugSiData[ihit];
-        int quality = fpPixelHistograms->goodPixel(pphit);
+        pphit.fStatus = hitStatus[ihit];
         if (hitValidHit[ihit]) {
           hc->Fill(11);
           if (hitStatus[ihit] == 0) {
@@ -300,8 +308,39 @@ void anaFrameTree::loop(int nevents, int start) {
             }
           }
       }
+      for (int i = 0; i < fTrkN; ++i) {
+        fHistograms["trkPhi"]->Fill(fTrkPhi[i]);
+        fHistograms["trkLambda"]->Fill(fTrkLambda[i]);
+        addTrkGraph(i);
+      }
+
       printFrame();  
     }
+}
+
+// ---------------------------------------------------------------------- 
+void anaFrameTree::addTrkGraph(int trkIndex) {
+  TGraph *gr = new TGraph();
+  gr->SetName(Form("run_%d_frame_%lu_trk_%d", run, frameID, trkIndex));
+      gr->SetTitle(Form("run_%d_frame_%lu_trk_%d", run, frameID, trkIndex));
+  gr->SetMarkerSize(1);
+  if (fTrkLambda[trkIndex] < 0) {
+    gr->SetMarkerColor(kRed);
+    gr->SetMarkerStyle(24);
+  } else {
+    gr->SetMarkerColor(kBlue);
+    gr->SetMarkerStyle(20);
+  }
+  for (int j = 0; j < fTrkNhits[trkIndex]; ++j) {
+    int layer, ladder, chip;
+    cout << Form("%3d", fTrkHitIndices[trkIndex][j]) << " chip: ";
+    getChipTopology(hitPixelID[fTrkHitIndices[trkIndex][j]], layer, ladder, chip);
+    cout << Form("%4d c/r=%3d/%3d", hitChipID[fTrkHitIndices[trkIndex][j]], hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]) << " ";
+    gr->AddPoint(hitX[fTrkHitIndices[trkIndex][j]], hitY[fTrkHitIndices[trkIndex][j]]);
+  }
+  cout << endl;
+
+  fTrkGraph.push_back(gr);
 }
 
 // ---------------------------------------------------------------------- 

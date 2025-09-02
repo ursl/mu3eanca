@@ -9,6 +9,8 @@
 #include <TH2D.h>
 #include <TProfile.h>
 #include <TProfile2D.h>
+#include <TGraph.h>
+#include <vector>
 #include <iomanip>
 
 #include "pixelHistograms.hh"
@@ -33,6 +35,7 @@ public:
     int              getChipTopology(int pixelID, int &layer, int &ladder, int &chip);
     bool             isTrackHit(int hitIndex);
     virtual void     printFrame();
+    virtual void     addTrkGraph(int trkIndex);
 
 private:
     int fVerbose;
@@ -48,6 +51,7 @@ private:
     std::map<std::string, TH2D*> fHistograms2D, fVtx2D;
     std::map<std::string, TProfile*> fHistogramsProfile;
     std::map<std::string, TProfile2D*> fVtx2DProfile;
+    std::vector<TGraph*> fTrkGraph;
 
 
     // -- boilerplate functions from MakeClass()
@@ -62,7 +66,7 @@ private:
     Long64_t        fNentries;  
 
     Int_t           run;
-    UInt_t          frameID;
+    long unsigned   frameID;
     Int_t           hitN;
     Int_t           hitPixelID[10000];   //[hitN]
     Int_t           hitToT[10000];   //[hitN]
