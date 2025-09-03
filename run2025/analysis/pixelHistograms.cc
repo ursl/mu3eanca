@@ -104,10 +104,10 @@ void pixelHistograms::init(TFile *file) {
   TDirectory *dir = gDirectory;
   fFile->cd();
   fFile->mkdir("pixelHistograms");
-  gDirectory->ls();
+  // gDirectory->ls();
   fFile->cd("pixelHistograms");
   fDirectory = gDirectory;
-  fDirectory->ls();
+  // fDirectory->ls();
 
   // -- all pixel hits
   bookHist("all_hitmap", "chipmap");
@@ -131,7 +131,7 @@ void pixelHistograms::init(TFile *file) {
   fTH1D["badChipIDs"] = new TH1D("badChipIDs", "badChipIDs", 200, 0, 1000000);
 
   gDirectory = dir;
-  gDirectory->ls();
+  // gDirectory->ls();
 
 }
 
@@ -301,8 +301,8 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
 // ---------------------------------------------------------------------- 
 void pixelHistograms::saveHistograms() {
   fDirectory->cd();
-  cout << "pixelHistograms::saveHistograms() fDirectory->ls(): " << endl;
-  fDirectory->ls();
+  // cout << "pixelHistograms::saveHistograms() fDirectory->ls(): " << endl;
+  // fDirectory->ls();
   for (auto ih: fTH2D) {
     ih.second->SetDirectory(fDirectory);
     ih.second->Write();
