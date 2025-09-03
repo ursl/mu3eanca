@@ -133,8 +133,24 @@ void anaFrameTree::bookHistograms() {
   fHistograms["goodToT"] = new TH1D("goodToT", "goodToT", 32, 0, 32);
   fHistograms["badToT"] = new TH1D("badToT", "badToT", 32, 0, 32);
 
-  fHistograms["trkPhi"] = new TH1D("trkPhi", "trkPhi", 100, -3.14, 3.14);
-  fHistograms["trkLambda"] = new TH1D("trkLambda", "trkLambda", 100, -3.14, 3.14);
+  fHistograms["trkPhi"] = new TH1D("trkPhi", "trkPhi", 60, -3.14, 3.14);
+  fHistograms["trkLambda"] = new TH1D("trkLambda", "trkLambda", 60, -3.14, 3.14);
+  fHistograms["trkChi2"] = new TH1D("trkChi2", "trkChi2", 100, 0, 100);
+  fHistograms["trkToT"] = new TH1D("trkToT", "trkToT", 32, 0, 32);
+  fHistograms["trkT0SiRMS"] = new TH1D("trkT0SiRMS", "trkT0SiRMS", 100, 0, 100);
+
+  fHistograms2D["trkLambdaPhi"] = new TH2D("trkLambdaPhi", "trk Lambda vs Phi", 60, -3.14, 3.14, 60, -3.14, 3.14);
+
+  fHistograms2D["l1top"] = new TH2D("l1top", "l1top", 256, 0, 256, 250, 0, 250);
+  fHistograms2D["l1bot"] = new TH2D("l1bot", "l1bot", 256, 0, 256, 250, 0, 250);
+  fHistograms2D["l2top"] = new TH2D("l2top", "l2top", 256, 0, 256, 250, 0, 250);
+  fHistograms2D["l2bot"] = new TH2D("l2bot", "l2bot", 256, 0, 256, 250, 0, 250);
+  for (int i = 1; i <= 6; ++i) {
+    fHistograms2D[Form("l1top_C%d", i)] = new TH2D(Form("l1top_C%d", i), Form("l1top_C%d", i), 256, 0, 256, 250, 0, 250);
+    fHistograms2D[Form("l1bot_C%d", i)] = new TH2D(Form("l1bot_C%d", i), Form("l1bot_C%d", i), 256, 0, 256, 250, 0, 250);
+    fHistograms2D[Form("l2top_C%d", i)] = new TH2D(Form("l2top_C%d", i), Form("l2top_C%d", i), 256, 0, 256, 250, 0, 250);
+    fHistograms2D[Form("l2bot_C%d", i)] = new TH2D(Form("l2bot_C%d", i), Form("l2bot_C%d", i), 256, 0, 256, 250, 0, 250);
+  }
 
   bookVtx2D("nonburstGood");
   bookVtx2D("nonburstBad");
@@ -311,6 +327,9 @@ void anaFrameTree::loop(int nevents, int start) {
       for (int i = 0; i < fTrkN; ++i) {
         fHistograms["trkPhi"]->Fill(fTrkPhi[i]);
         fHistograms["trkLambda"]->Fill(fTrkLambda[i]);
+        fHistograms["trkChi2"]->Fill(fTrkChi2[i]);
+        fHistograms2D["trkLambdaPhi"]->Fill(fTrkPhi[i], fTrkLambda[i]);
+        fHistograms["trkT0SiRMS"]->Fill(fTrkT0SiRMS[i]);
         addTrkGraph(i);
       }
 
@@ -322,7 +341,7 @@ void anaFrameTree::loop(int nevents, int start) {
 void anaFrameTree::addTrkGraph(int trkIndex) {
   TGraph *gr = new TGraph();
   gr->SetName(Form("run_%d_frame_%lu_trk_%d", run, frameID, trkIndex));
-      gr->SetTitle(Form("run_%d_frame_%lu_trk_%d", run, frameID, trkIndex));
+  gr->SetTitle(Form("run_%d_frame_%lu_trk_%d", run, frameID, trkIndex));
   gr->SetMarkerSize(1);
   if (fTrkLambda[trkIndex] < 0) {
     gr->SetMarkerColor(kRed);
@@ -332,11 +351,15 @@ void anaFrameTree::addTrkGraph(int trkIndex) {
     gr->SetMarkerStyle(20);
   }
   for (int j = 0; j < fTrkNhits[trkIndex]; ++j) {
-    int layer, ladder, chip;
+    fHistograms["trkToT"]->Fill(hitBitToT[fTrkHitIndices[trkIndex][j]]);
+    int layer, ladder, chip, station;
     cout << Form("%3d", fTrkHitIndices[trkIndex][j]) << " chip: ";
-    getChipTopology(hitPixelID[fTrkHitIndices[trkIndex][j]], layer, ladder, chip);
+    station = getChipTopology(hitPixelID[fTrkHitIndices[trkIndex][j]], layer, ladder, chip);
     cout << Form("%4d c/r=%3d/%3d", hitChipID[fTrkHitIndices[trkIndex][j]], hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]) << " ";
     gr->AddPoint(hitX[fTrkHitIndices[trkIndex][j]], hitY[fTrkHitIndices[trkIndex][j]]);
+    module m = getModule(layer, hitChipID[fTrkHitIndices[trkIndex][j]]);
+    fHistograms2D[Form("%s", getModuleString(m).c_str())]->Fill(hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]);
+    fHistograms2D[Form("%s_C%d", getModuleString(m).c_str(), chip)]->Fill(hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]);
   }
   cout << endl;
 
@@ -356,7 +379,32 @@ int anaFrameTree::getChipTopology(int pixelID, int &layer, int &ladder, int &chi
   ladder = (sensorId >> 5) & 0x1F;
   chip = (sensorId >> 0) & 0x1F;
   
-  return 0;
+  return station;
+}
+
+// ---------------------------------------------------------------------- 
+anaFrameTree::module anaFrameTree::getModule(int layer, int chip) {
+  if (layer == 0) {
+    if (chip <= 134) {
+      return l1top;
+    } else {
+      return l1bot;
+    }
+  } else {
+    if (chip <= 1158) {
+      return l2top;
+    } else {
+      return l2bot;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------- 
+std::string anaFrameTree::getModuleString(module m) {
+  if (m == l1top) return "l1top";
+  if (m == l1bot) return "l1bot";
+  if (m == l2top) return "l2top";
+  if (m == l2bot) return "l2bot";
 }
 
 // ---------------------------------------------------------------------- 
@@ -373,16 +421,16 @@ bool anaFrameTree::isTrackHit(int hitIndex) {
 void anaFrameTree::printFrame() {
   if (fTrkN == 0) return;
 
-  int layer, ladder, chip;
+  int layer, ladder, chip, station;
   if (hitN > 0 || fTrkN > 0) {
     cout << "----------------------------------------" << endl;
     cout << "==> anaFrameTree: " << frameID << " run = " << run << " hitN = " << hitN << " fTrkN = " << fTrkN 
          << (fTrkN > 0 ? "   ***************************" : "") 
          << endl;
     for (int i = 0; i < hitN; ++i) {
-      getChipTopology(hitPixelID[i], layer, ladder, chip);
+      station = getChipTopology(hitPixelID[i], layer, ladder, chip);
       cout << "==> anaFrameTree: Hit " << Form("%3d", i)
-           << " chip: " << Form("%4d LYR%1d LDR%1d CHP%4d", hitChipID[i], layer, ladder, chip)
+           << " chip: " << Form("%4d ST%1d LYR%1d LDR%1d CHP%4d", hitChipID[i], station, layer, ladder, chip)
            << " col: " << Form("%3d", hitCol[i])
            << " row: " << Form("%3d", hitRow[i])
            << " toT: " << Form("%3d", hitBitToT[i])

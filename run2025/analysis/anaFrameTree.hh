@@ -33,9 +33,16 @@ public:
     virtual void     closeHistFile();
 
     int              getChipTopology(int pixelID, int &layer, int &ladder, int &chip);
+
+    enum module      { l1top, l1bot, l2top, l2bot };
+    module           getModule(int layer, int chip);
+    std::string      getModuleString(module m);
+
     bool             isTrackHit(int hitIndex);
     virtual void     printFrame();
     virtual void     addTrkGraph(int trkIndex);
+
+    int              fLayer, fLadder, fChip, fStation;
 
 private:
     int fVerbose;
