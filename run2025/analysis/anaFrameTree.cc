@@ -73,7 +73,7 @@ void anaFrameTree::openHistFile(std::string histfile) {
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::closeHistFile() {
-  cout << "==> anaFrameTree: Closing histograms file" << endl;
+  cout << "==> anaFrameTree: Closing histograms file " << fHistFileName << endl;
   for (auto &h: fHistograms) {
     h.second->SetDirectory(fpHistFile);
     h.second->Write();
@@ -277,6 +277,9 @@ void anaFrameTree::loop(int nevents, int start) {
         pphit.fTimeInt = hitTimeInt[ihit];
         pphit.fDebugSiData = hitDebugSiData[ihit];
         pphit.fStatus = hitStatus[ihit];
+        // -- fill pixelHistograms
+        int goodpixel = fpPixelHistograms->goodPixel(pphit);
+
         if (hitValidHit[ihit]) {
           hc->Fill(11);
           if (hitStatus[ihit] == 0) {
@@ -325,11 +328,6 @@ void anaFrameTree::loop(int nevents, int start) {
           }
       }
       for (int i = 0; i < fTrkN; ++i) {
-        fHistograms["trkPhi"]->Fill(fTrkPhi[i]);
-        fHistograms["trkLambda"]->Fill(fTrkLambda[i]);
-        fHistograms["trkChi2"]->Fill(fTrkChi2[i]);
-        fHistograms2D["trkLambdaPhi"]->Fill(fTrkPhi[i], fTrkLambda[i]);
-        fHistograms["trkT0SiRMS"]->Fill(fTrkT0SiRMS[i]);
         addTrkGraph(i);
       }
 
@@ -339,6 +337,15 @@ void anaFrameTree::loop(int nevents, int start) {
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::addTrkGraph(int trkIndex) {
+
+  // -- track histograms
+  fHistograms["trkPhi"]->Fill(fTrkPhi[trkIndex]);
+  fHistograms["trkLambda"]->Fill(fTrkLambda[trkIndex]);
+  fHistograms["trkChi2"]->Fill(fTrkChi2[trkIndex]);
+  fHistograms2D["trkLambdaPhi"]->Fill(fTrkPhi[trkIndex], fTrkLambda[trkIndex]);
+  fHistograms["trkT0SiRMS"]->Fill(fTrkT0SiRMS[trkIndex]);
+
+  // -- track graph for overlay
   TGraph *gr = new TGraph();
   gr->SetName(Form("run_%d_frame_%lu_trk_%d", run, frameID, trkIndex));
   gr->SetTitle(Form("run_%d_frame_%lu_trk_%d", run, frameID, trkIndex));
