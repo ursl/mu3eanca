@@ -141,9 +141,27 @@ void   plotFrameTreeResults::plotTrkGraphs(int run) {
     sname = fDirectory + "/trk-all" + ".pdf";
   }
   c->SaveAs(sname.c_str());
-  delete c;
+
+  c->Clear();
+  gStyle->SetOptStat(0);
+  gStyle->SetPadBorderMode(0);
+  gStyle->SetPadBorderSize(0);
+  gStyle->SetPadTopMargin(0);
+  gStyle->SetPadBottomMargin(0);
+  gStyle->SetPadLeftMargin(0);
+  gStyle->SetPadRightMargin(0);
+  gStyle->SetTitleSize(0.3);
+
+  TH1D *h1 = (TH1D*)fHistFile->Get("trkLambda");
+  h1->Draw("hist");
+  c->SaveAs((fDirectory + "/trkLambda.pdf").c_str());
+
+  h1 = (TH1D*)fHistFile->Get("trkPhi");
+  h1->Draw("hist");
+  c->SaveAs((fDirectory + "/trkPhi.pdf").c_str());
 
 }
+
 
 
 // ---------------------------------------------------------------------- 
