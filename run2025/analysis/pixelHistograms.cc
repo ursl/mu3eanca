@@ -299,6 +299,23 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
 }
 
 // ---------------------------------------------------------------------- 
+void pixelHistograms::fillPixelHist(std::string name, int chipid, int col, int row, double val) {
+  string hname = Form("C%d_%s", chipid, name.c_str());
+  if (string::npos != name.find("chipmap")) {
+    if (string::npos != name.find("trk")) {
+    }
+    fTH2D[hname]->Fill(col, row);
+  } else if (string::npos != name.find("chipToT")) {
+    hname = Form("C%d_%s", chipid, name.c_str());
+    fTH1D[hname]->Fill(val);
+  } else if (string::npos != name.find("chipprof2d")) {
+    hname = Form("C%d_%s", chipid, name.c_str());
+    fTProfile2D[hname]->Fill(col, row, val);
+  }
+}
+
+
+// ---------------------------------------------------------------------- 
 void pixelHistograms::saveHistograms() {
   fDirectory->cd();
   // cout << "pixelHistograms::saveHistograms() fDirectory->ls(): " << endl;

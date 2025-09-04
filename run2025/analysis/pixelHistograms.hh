@@ -43,10 +43,16 @@ public:
   TH2D* getTH2D(std::string hname);
   TH1D* getTH1D(std::string hname);
 
+  // -- allow booking from outside this class
+  // -- Possible types: chipmap, chipToT, chipprof2d
+  void bookHist(std::string hname, std::string hType);
+
+  // -- fill from outside of this class
+  void fillPixelHist(std::string name, int chipid, int col, int row, double val);
+
 protected:
   void init(TFile *file);
   void init(std::string filename);
-  void bookHist(std::string hname, std::string hType);
 
 private:
   TFile *fFile;

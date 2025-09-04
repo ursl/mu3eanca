@@ -29,6 +29,7 @@ public :
   void   plotAllPixelHistograms();  
   void   readHist(std::string hname, std::string hType);
   void   plotTrkGraphs(int run = -1);
+  void   plotTrkHitmaps(int run = -1);
 
   // -- code for loops
   void   loopFunction1();

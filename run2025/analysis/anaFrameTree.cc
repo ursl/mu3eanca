@@ -69,6 +69,7 @@ void anaFrameTree::openHistFile(std::string histfile) {
   fpHistFile->cd();
 
   fpPixelHistograms = new pixelHistograms(fpHistFile);
+  fpPixelHistograms->bookHist("trk_hitmap", "chipmap");
 }
 
 // ---------------------------------------------------------------------- 
@@ -135,7 +136,7 @@ void anaFrameTree::bookHistograms() {
 
   fHistograms["trkPhi"] = new TH1D("trkPhi", "trkPhi", 60, -3.14, 3.14);
   fHistograms["trkLambda"] = new TH1D("trkLambda", "trkLambda", 60, -3.14, 3.14);
-  fHistograms["trkChi2"] = new TH1D("trkChi2", "trkChi2", 100, 0, 100);
+  fHistograms["trkChi2"] = new TH1D("trkChi2", "trkChi2", 100, 0, 500);
   fHistograms["trkToT"] = new TH1D("trkToT", "trkToT", 32, 0, 32);
   fHistograms["trkT0SiRMS"] = new TH1D("trkT0SiRMS", "trkT0SiRMS", 100, 0, 100);
 
@@ -300,6 +301,7 @@ void anaFrameTree::loop(int nevents, int start) {
       fHistogramsProfile["nInvalidHitVsFrameNumber"]->Fill(jentry, invalidHitN);
 
       // -- vtx histograms
+      int layer, ladder, chip, station;
       for (int ihit = 0; ihit < hitN; ++ihit) {
           if (badHitN > 8) {
             if (hitValidHit[ihit]) {
@@ -367,6 +369,7 @@ void anaFrameTree::addTrkGraph(int trkIndex) {
     module m = getModule(layer, hitChipID[fTrkHitIndices[trkIndex][j]]);
     fHistograms2D[Form("%s", getModuleString(m).c_str())]->Fill(hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]);
     fHistograms2D[Form("%s_C%d", getModuleString(m).c_str(), chip)]->Fill(hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]);
+    fpPixelHistograms->fillPixelHist("trk_hitmap_chipmap", hitChipID[fTrkHitIndices[trkIndex][j]], hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]], 1.);
   }
   cout << endl;
 

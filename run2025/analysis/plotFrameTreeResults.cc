@@ -82,6 +82,7 @@ plotFrameTreeResults::plotFrameTreeResults(string dir, string files, string cuts
   readHist("all_hitmap", "chipmap");
   readHist("all_hittot", "chipToT");
   readHist("all_hittot", "chipprof2d");
+  readHist("trk_hitmap", "chipmap");
 }
 
 // ----------------------------------------------------------------------
@@ -94,9 +95,46 @@ plotFrameTreeResults::~plotFrameTreeResults() {
 void plotFrameTreeResults::makeAll(string what) {
   if (what == "trk") {
     plotTrkGraphs();
+    plotTrkHitmaps();
   } else {
     plotAllPixelHistograms();
   }
+}
+
+// ----------------------------------------------------------------------
+void   plotFrameTreeResults::plotTrkHitmaps(int run) {
+  cout << "plotFrameTreeResults::plotTrkGraphs() run = " << run << endl;
+  if (run == -1) {
+    run = fRun;
+  }
+
+  TCanvas *c = new TCanvas("c", "c", 400, 1000);
+  c->Divide(1, 4);
+
+  TH2D *h2d; 
+  vector<string> sloop = {"l2top", "l1top", "l1bot", "l2bot"};
+  for (int i = 0; i < 4; ++i) {
+    c->cd(i+1);
+    shrinkPad();
+    h2d = (TH2D*)fHistFile->Get(Form("%s", sloop[i].c_str()));
+    h2d->Draw("colz");
+  }
+  c->SaveAs((fDirectory + "/trkHitmap0.pdf").c_str());
+  delete c;
+
+  c = new TCanvas("c", "c", 1400, 1000);
+  c->Divide(6, 4);
+  for (int il = 0; il < 4; ++il) {
+    for (int ic = 0; ic < 6; ++ic) {
+      c->cd(il*6 + ic + 1);
+      shrinkPad();
+      h2d = (TH2D*)fHistFile->Get(Form("%s_C%d", sloop[il].c_str(), ic+1));
+      h2d->Draw("colz");
+    }
+  }
+  c->SaveAs((fDirectory + "/trkHitmap1.pdf").c_str());
+  delete c;
+
 }
 
 // ----------------------------------------------------------------------
@@ -122,10 +160,16 @@ void   plotFrameTreeResults::plotTrkGraphs(int run) {
     }
     TGraph *gr = (TGraph*)obj;
     // -- skip upward going (=red)
-    if (gr->GetMarkerColor() == kRed) continue;
+    if (gr->GetMarkerColor() == kRed) {
+      gr->SetLineStyle(kDashed);
+      gr->SetMarkerStyle(2);
+      gr->SetMarkerSize(2);
+    } else {
+      gr->SetLineStyle(kDotted);
+      gr->SetMarkerStyle(24);
+      gr->SetMarkerSize(1);
+    }
     gr->SetLineColor(gr->GetMarkerColor());
-    gr->SetMarkerStyle(2);
-    gr->SetMarkerSize(2);
     string hname = gr->GetName();
     string htitle = gr->GetTitle();
     cout << "plotFrameTreeResults::plotTrkGraphs() sname = " << sname << " srun = " << srun << " hname = " << hname << " htitle = " << htitle << endl;
@@ -159,6 +203,11 @@ void   plotFrameTreeResults::plotTrkGraphs(int run) {
   h1 = (TH1D*)fHistFile->Get("trkPhi");
   h1->Draw("hist");
   c->SaveAs((fDirectory + "/trkPhi.pdf").c_str());
+
+  h2d = (TH2D*)fHistFile->Get("trkLambdaPhi");
+  setTitles(h2d, "#phi [rad]", "#lambda [rad]");
+  h2d->Draw("colz");
+  c->SaveAs((fDirectory + "/trkLambdaPhi.pdf").c_str());
 
 }
 
@@ -210,7 +259,7 @@ void plotFrameTreeResults::plotPixelHistograms(string histname, string htype) {
       if (htype == "chipmap") {  
         gPad->SetLogz(1);
         h = fTH2D[hname];
-        //cout << "pixelHistograms::plotHistograms() " << hname << " = " << h << endl;
+        cout << "pixelHistograms::plotHistograms() " << hname << " = " << h << endl;
         h->Draw(opt.c_str());
         h->SetTitleSize(0.3);
       } else if (htype == "chipToT") {
@@ -271,6 +320,8 @@ void plotFrameTreeResults::plotPixelHistograms(string histname, string htype) {
 
 // ----------------------------------------------------------------------
 void plotFrameTreeResults::plotAllPixelHistograms() {
+  plotPixelHistograms("trk_hitmap", "chipmap");
+
   plotPixelHistograms("all_hitmap", "chipmap");
   plotPixelHistograms("all_hittot", "chipToT");
 
@@ -278,7 +329,9 @@ void plotFrameTreeResults::plotAllPixelHistograms() {
   if (fTH1D["badChipIDs"]) {
     cout << "Total bad chipIDs = " << fTH1D["badChipIDs"]->GetEntries() << endl;
   }
+
 }
+
 
 
 // ---------------------------------------------------------------------- 
