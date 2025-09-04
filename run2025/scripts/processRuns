@@ -119,6 +119,29 @@ if ($ENV{"HOST"} =~ "merlin") {
     }
 }
 
+# -- modifications for merlin
+if ($ENV{"HOST"} =~ "merlin7") {
+    $VERSION  = "250528-v6.1pre";
+    ($filename, $directories) = fileparse($ENV{"PWD"});
+    $VERSION = $filename;
+    print(&prefix("processRuns"), "VERSION: $VERSION\n");
+    $BASEDIR   = "/data/project/mu3e/offline/$VERSION";
+    $MU3EANCA  = "/data/user/langenegger/mu3e/mu3eanca";
+    $CDB       = "$HOME/mu3e/cdb";
+    $DATADIR   = "/data/experiment/mu3e/data/2025";
+    $ROF       = "$DATADIR/mlzr/$VERSION";
+    $ROFTRIREC = "$DATADIR/trirec/$VERSION";
+    $ROFSORT   = "$DATADIR/trirec/$VERSION";
+    $WATCHFILE = "$BASEDIR/processedRuns";
+
+    if (-d $ROF) {
+        # -- all is fine
+    } else {
+        mkdir($ROF);
+    }
+}
+
+
 # -- initialization after git cloning mu3e, minalyzer, anacombo and running relinkBin
 if ($opt_i) {
      print(&prefix("processRuns"), "Initializing setup for VERSION ->$VERSION<- \n");
