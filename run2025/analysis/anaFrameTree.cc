@@ -69,6 +69,7 @@ void anaFrameTree::openHistFile(std::string histfile) {
   fpHistFile->cd();
 
   fpPixelHistograms = new pixelHistograms(fpHistFile);
+  fpPixelHistograms->setCalPixelQualityLM(0);
   fpPixelHistograms->bookHist("trk_hitmap", "chipmap");
 }
 
