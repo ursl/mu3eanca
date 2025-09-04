@@ -36,6 +36,8 @@ public:
   void closeFile();
 
   int findHitIndex(uint32_t pixelID);
+  unsigned long getFrameID() {return fFrameID;}
+  int getRun() {return fRun;}
 
   protected:
   frameTree(std::string filename);
