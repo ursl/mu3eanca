@@ -35,6 +35,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/09/05 remove call to countEvents when running "sort" with -e runs -r .... 
 #         2025/08/19 add "cosmic" to do all up to and including sort
 #         2025/06/25 getDataSubdir() now completely calculated, no more if statements
 #         2025/06/24 add check against hitting the time limit in batch jobs. "sort" to run locally.
@@ -128,7 +129,7 @@ if ($ENV{"HOST"} =~ "merlin7") {
     $BASEDIR   = "/data/project/mu3e/offline/$VERSION";
     $MU3EANCA  = "/data/user/langenegger/mu3e/mu3eanca";
     $CDB       = "$HOME/mu3e/cdb";
-    $DATADIR   = "/data/experiment/mu3e/data/2025";
+    $DATADIR   = "/data/project/mu3e/data/2025";
     $ROF       = "$DATADIR/mlzr/$VERSION";
     $ROFTRIREC = "$DATADIR/trirec/$VERSION";
     $ROFSORT   = "$DATADIR/trirec/$VERSION";
@@ -310,7 +311,10 @@ foreach my $run (@goodRuns) {
         next;
     }
 
-    my $nEvents = &countEvents($run);
+    my $nEvents;
+    if ($opt_m ne "sortreco") {
+        $nEvents = &countEvents($run);
+    }
     if ($opt_m ne "cosmic" && $nEvents < $MINEVENTS) {
         print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
         next;
