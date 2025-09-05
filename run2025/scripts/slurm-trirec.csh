@@ -33,9 +33,6 @@ limit coredumpsize 0
 printenv
 
 pwd
-echo "--> check visibility of /data/experiment/mu3e/code/offline"
-ls -l /data/experiment/mu3e/code/offline
-
 echo "--> End of env testing"
 
 # BATCH START
