@@ -340,7 +340,8 @@ foreach my $run (@goodRuns) {
         &submitJobsRawSort($run);
         #&submitJobsRawTrirec($run, $nEvents);
     } elsif ($opt_m eq "sort") {
-        &runSort($run);
+        &submitJobsRawSort($run);
+        #&runSort($run);
     } elsif ($opt_m eq "prompt") {
         &submitJobsRawMinalyzer($run, $nEvents);
         &runPixelFillQualityLM($run);      
