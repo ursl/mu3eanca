@@ -94,19 +94,23 @@ plotFrameTreeResults::~plotFrameTreeResults() {
 // ----------------------------------------------------------------------
 void plotFrameTreeResults::makeAll(string what) {
   if (what == "trk") {
-    plotTrkGraphs();
+    plotTrkGraphs(-1);
     plotTrkHitmaps();
-  } else {
+    return;
+  } else if (what == "pixel") {
     plotAllPixelHistograms();
-  }
+    return;
+  } 
+  // -- plot all
+  plotTrkGraphs(-1);
+  plotTrkHitmaps();
+  plotAllPixelHistograms();
+  
 }
 
 // ----------------------------------------------------------------------
 void   plotFrameTreeResults::plotTrkHitmaps(int run) {
   cout << "plotFrameTreeResults::plotTrkGraphs() run = " << run << endl;
-  if (run == -1) {
-    run = fRun;
-  }
 
   TCanvas *c = new TCanvas("c", "c", 400, 1000);
   c->Divide(1, 4);
@@ -140,13 +144,10 @@ void   plotFrameTreeResults::plotTrkHitmaps(int run) {
 // ----------------------------------------------------------------------
 void   plotFrameTreeResults::plotTrkGraphs(int run) {
   cout << "plotFrameTreeResults::plotTrkGraphs() run = " << run << endl;
-  if (run == -1) {
-    run = fRun;
-  }
   fHistFile->cd("trk");
   TList *list = gDirectory->GetListOfKeys();
   TCanvas *c = new TCanvas("c", "c", 1000, 1000);
-  TH2D *h2d = new TH2D("h2d", "h2d", 100, -40, 40, 100, -40, 40);
+  TH2D *h2d = new TH2D("h2d", "Tracks/hits in transverse plane", 100, -40, 40, 100, -40, 40);
   h2d->SetStats(0);
   h2d->Draw();
   int cnt(0);
@@ -155,7 +156,8 @@ void   plotFrameTreeResults::plotTrkGraphs(int run) {
     TObject *obj = key->ReadObj();
     string sname = obj->GetName();
     string srun = sname.substr(4, sname.find("_frame")-4);
-    if (run > 0 && srun != to_string(run)) {
+    if (run > -1 && srun != to_string(run)) {
+      cout << "plotFrameTreeResults::plotTrkGraphs() skipping run " << srun << " not equal to " << run << endl;
       continue;
     }
     TGraph *gr = (TGraph*)obj;
@@ -181,7 +183,7 @@ void   plotFrameTreeResults::plotTrkGraphs(int run) {
     cnt++;
   }
   string sname = fDirectory + "/trk-" + to_string(run) + ".pdf";
-  if (fRun < 0) {
+  if (run < 0) {
     sname = fDirectory + "/trk-all" + ".pdf";
   }
   c->SaveAs(sname.c_str());
