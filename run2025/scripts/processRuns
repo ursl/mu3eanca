@@ -314,10 +314,11 @@ foreach my $run (@goodRuns) {
     my $nEvents;
     if ($opt_m ne "sort") {
         $nEvents = &countEvents($run);
-    }
-    if ($opt_m ne "cosmic" && $nEvents < $MINEVENTS) {
-        print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
-        next;
+
+        if ($opt_m ne "cosmic" && $nEvents < $MINEVENTS) {
+          print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
+          next;
+        }
     }
     if ($opt_m eq "minalyzer") {
         &runMinalyzer($run);
