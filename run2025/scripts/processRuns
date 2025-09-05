@@ -680,8 +680,8 @@ sub submitJobsRawMinalyzer() {
 
     # -- adapt in case of mu3e reservations
     # my $queue = "-p 'mu3e --reservation=mu3e'";
-    # my $queue = "-p mu3e";
-    my $queue = "-p hourly";
+    my $queue = "-p mu3e";
+    # my $queue = "-p hourly";
 
     # -- rundir
     my $rundir = "$BASEDIR/slurm/jobs/mlzr/$run";
@@ -1043,8 +1043,8 @@ sub submitJobsRawSort() {
 
     # -- adapt in case of mu3e reservations
     # my $queue = "-p 'mu3e --reservation=mu3e'";
-    # my $queue = "-p mu3e";
-    my $queue = "-p hourly";
+    my $queue = "-p mu3e";
+    # my $queue = "-p hourly";
 
     # -- rundir
     my $rundir = "$BASEDIR/slurm/jobs/sort/$run";
