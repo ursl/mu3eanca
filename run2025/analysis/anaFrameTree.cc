@@ -142,6 +142,7 @@ void anaFrameTree::bookHistograms() {
   fHistograms["trkT0SiRMS"] = new TH1D("trkT0SiRMS", "trkT0SiRMS", 100, 0, 100);
 
   fHistograms2D["trkLambdaPhi"] = new TH2D("trkLambdaPhi", "trk Lambda vs Phi", 60, -3.14, 3.14, 60, -3.14, 3.14);
+  fHistograms2D["allHitsXY"] = new TH2D("allHitsXY", "All hits in transverse plane", 100, -40, 40, 100, -40, 40);
 
   fHistograms2D["l1top"] = new TH2D("l1top", "l1top", 256, 0, 256, 250, 0, 250);
   fHistograms2D["l1bot"] = new TH2D("l1bot", "l1bot", 256, 0, 256, 250, 0, 250);
@@ -152,6 +153,9 @@ void anaFrameTree::bookHistograms() {
     fHistograms2D[Form("l1bot_C%d", i)] = new TH2D(Form("l1bot_C%d", i), Form("l1bot_C%d", i), 256, 0, 256, 250, 0, 250);
     fHistograms2D[Form("l2top_C%d", i)] = new TH2D(Form("l2top_C%d", i), Form("l2top_C%d", i), 256, 0, 256, 250, 0, 250);
     fHistograms2D[Form("l2bot_C%d", i)] = new TH2D(Form("l2bot_C%d", i), Form("l2bot_C%d", i), 256, 0, 256, 250, 0, 250);
+
+    fHistograms2D[Form("allHitsXY_C%d", i)] = new TH2D(Form("allHitsXY_C%d", i), Form("All hits in transverse plane for C%d", i), 100, -40, 40, 100, -40, 40);
+
   }
 
   bookVtx2D("nonburstGood");
@@ -304,7 +308,11 @@ void anaFrameTree::loop(int nevents, int start) {
       // -- vtx histograms
       int layer, ladder, chip, station;
       for (int ihit = 0; ihit < hitN; ++ihit) {
-          if (badHitN > 8) {
+        station = getChipTopology(hitPixelID[ihit], layer, ladder, chip);
+        fHistograms2D["allHitsXY"]->Fill(hitX[ihit], hitY[ihit]);
+        fHistograms2D[Form("allHitsXY_C%d", chip)]->Fill(hitX[ihit], hitY[ihit]);
+
+        if (badHitN > 8) {
             if (hitValidHit[ihit]) {
               if (hitStatus[ihit] == 0) {
                 fVtx1D[Form("vtx1D_burstGoodBitToT_%d", hitChipID[ihit])]->Fill(hitBitToT[ihit]);
