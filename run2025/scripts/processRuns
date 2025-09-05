@@ -316,10 +316,10 @@ foreach my $run (@goodRuns) {
     }
 
     my $nEvents;
-    if (!($opt_m =~ /sort/)) {
+    if (!($opt_m =~ /sort/) && !($opt_m =~ /minalyzer/)) {
         $nEvents = &countEvents($run);
 
-        if ($opt_m ne "cosmic" && $nEvents < $MINEVENTS) {
+        if ($opt_m ne "cosmic" && $opt_m ne "minalyzer" && $nEvents < $MINEVENTS) {
           print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
           next;
         }
