@@ -35,7 +35,6 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
-#         2025/09/05 make minalyzer submissible without cntEvents
 #         2025/09/05 remove call to countEvents when running "sort" with -e runs -r .... 
 #         2025/08/19 add "cosmic" to do all up to and including sort
 #         2025/06/25 getDataSubdir() now completely calculated, no more if statements
@@ -313,20 +312,16 @@ foreach my $run (@goodRuns) {
     }
 
     my $nEvents;
-    if (!($opt_m =~ /sort/) && !($opt_m =~ /minalyzer/)) {
+    if (!($opt_m =~ /sort/)) {
         $nEvents = &countEvents($run);
 
-        if ($opt_m ne "cosmic" &&  $opt_m ne "minalyzer") {
-          if ($nEvents < $MINEVENTS) {
-            print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
-            next;
-          }
+        if ($opt_m ne "cosmic" && $nEvents < $MINEVENTS) {
+          print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
+          next;
         }
     }
     if ($opt_m eq "minalyzer") {
-        $nmjobs = 10;
-        # &runMinalyzer($run);
-        &submitJobsRawMinalyzer($run, $nmjobs);
+        &runMinalyzer($run);
     } elsif ($opt_m eq "calibration") {
         &runPixelFillQualityLM($run);
     } elsif ($opt_m eq "raw") {
@@ -674,7 +669,7 @@ sub copyDQMFilesToOnline() {
 
 # ----------------------------------------------------------------------
 sub submitJobsRawMinalyzer() {
-    ($run, $nmjobs) = @_;
+    ($run, $lcevts) = @_;
     my $pcrFile = "nada";
 
     my $DATASUBDIR = getDataSubdir($run);
@@ -720,8 +715,8 @@ sub submitJobsRawMinalyzer() {
     # map ($slurmID => logfile)
     my %mSlurmIds;
     my @mergeFiles;
-    my $NJOBS = $nmjobs;
-    print(&prefix("submitJobsRawMinalyzer"), "NJOBS: $NJOBS because nmjobs = $nmjobs\n");
+    my $NJOBS = int($lcevts/$nevts) + 1;
+    print(&prefix("submitJobsRawMinalyzer"), "NJOBS: $NJOBS because lcevts = $lcevts, nevts = $nevts\n");
     # -- submit jobs
     for ($ijob = 0; $ijob < $NJOBS; $ijob++) {
         # FIXME DO NOT FORGET
