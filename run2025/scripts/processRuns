@@ -35,6 +35,7 @@
 #             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/09/05 add JSON RDB version before trying the RDB on pc11740
 #         2025/09/05 remove call to countEvents when running "sort" with -e runs -r .... 
 #         2025/08/19 add "cosmic" to do all up to and including sort
 #         2025/06/25 getDataSubdir() now completely calculated, no more if statements
@@ -83,6 +84,8 @@ my $BASEGT   = "mcidealv6.1";
 my $DATADIR  = "$HOME/mu3e/data/run2025";
 # -- CDB directory (not the mirror of the master CDB!)
 my $CDB      = "$HOME/mu3e/cdb";
+# -- RDB directory 
+my $RDB      = "$HOME/mu3e/cdb/runrecords";
 # -- ROOT output directory
 my $ROF      = "$BASEDIR/mlzr/root_output_files/";
 # -- ROOT output directory for trirec
@@ -129,6 +132,7 @@ if ($ENV{"HOST"} =~ "merlin7") {
     $BASEDIR   = "/data/project/mu3e/offline/$VERSION";
     $MU3EANCA  = "/data/user/langenegger/mu3e/mu3eanca";
     $CDB       = "$HOME/mu3e/cdb";
+    $RDB       = "/data/project/mu3e/cdb/runrecords";
     $DATADIR   = "/data/project/mu3e/data/2025";
     $ROF       = "$DATADIR/mlzr/$VERSION";
     $ROFTRIREC = "$DATADIR/trirec/$VERSION";
@@ -579,6 +583,16 @@ sub getSortSubdir {
 # ----------------------------------------------------------------------
 sub countEvents() {
     ($run) = @_;
+    # -- check if JSON RDB exists and has runrecord for this run
+    if (-e "$RDB/runRecord_$run.json") {
+        my $result = `cat $RDB/runRecord_$run.json`;
+        if ($result =~ /\"Events\":(\d+)/) {
+            $result = $1;
+        } 
+        return $result;
+    }
+
+    # -- otherwise use the REST API
     my $url = "http://pc11740/rdb/run/$run";
     print(&prefix("countEvents"), "run = $run -> url = $url\n");
     my $result = `curl -s $url`;
