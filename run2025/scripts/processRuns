@@ -312,7 +312,7 @@ foreach my $run (@goodRuns) {
     }
 
     my $nEvents;
-    if ($opt_m ne "sortreco") {
+    if ($opt_m ne "sort") {
         $nEvents = &countEvents($run);
     }
     if ($opt_m ne "cosmic" && $nEvents < $MINEVENTS) {
