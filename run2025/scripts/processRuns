@@ -801,7 +801,7 @@ sub submitJobsRawMinalyzer() {
             my $le = @lines;
             my $tail = "no file yet\n";
             if (-e "$BASEDIR/slurm/jobs/mlzr/$run/$mSlurmIds{$sjob}") {
-                $tail = `/bin/tail -1 $BASEDIR/slurm/jobs/mlzr/$run/$mSlurmIds{$sjob}`;
+                $tail = `tail -1 $BASEDIR/slurm/jobs/mlzr/$run/$mSlurmIds{$sjob}`;
             }
             print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
@@ -991,7 +991,7 @@ sub submitJobsRawTrirec() {
             my $le = @lines;
             my $tail = "no file yet\n";
             if (-e "$BASEDIR/slurm/jobs/trirec/$run/$mSlurmIds{$sjob}") {
-                $tail = `/bin/tail -1 $BASEDIR/slurm/jobs/trirec/$run/$mSlurmIds{$sjob}`;
+                $tail = `tail -1 $BASEDIR/slurm/jobs/trirec/$run/$mSlurmIds{$sjob}`;
             }
             print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
@@ -1162,7 +1162,7 @@ sub submitJobsRawSort() {
             my $le = @lines;
             my $tail = "no file yet\n";
             if (-e "$BASEDIR/slurm/jobs/sort/$run/$mSlurmIds{$sjob}") {
-                $tail = `/bin/tail -1 $BASEDIR/slurm/jobs/sort/$run/$mSlurmIds{$sjob}`;
+                $tail = `tail -1 $BASEDIR/slurm/jobs/sort/$run/$mSlurmIds{$sjob}`;
             }
             print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
