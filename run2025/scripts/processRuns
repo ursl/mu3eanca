@@ -598,7 +598,7 @@ sub countEvents() {
     print(&prefix("countEvents"), "run = $run -> url = $url\n");
     my $result = `curl -s $url`;
     
-    # print(&prefix("countEvents"), "result = $result\n");
+    print(&prefix("countEvents"), "result: ->$result<-\n");
     
     if ($result =~ /\"Events\":(\d+)/) {
         $result = $1;
