@@ -585,13 +585,13 @@ sub getSortSubdir {
 sub countEvents() {
     ($run) = @_;
     # -- check if JSON RDB exists and has runrecord for this run
-    if (-e "$RDB/runRecord_$run.json") {
-        my $result = `cat $RDB/runRecord_$run.json`;
-        if ($result =~ /\"Events\":(\d+)/) {
-            $result = $1;
-        } 
-        return $result;
-    }
+    #if (-e "$RDB/runRecord_$run.json") {
+    #    my $result = `cat $RDB/runRecord_$run.json`;
+    #    if ($result =~ /\"Events\":(\d+)/) {
+    #        $result = $1;
+    #    } 
+    #    return $result;
+    #}
 
     # -- otherwise use the REST API
     my $url = "http://pc11740/rdb/run/$run";
