@@ -536,7 +536,7 @@ sub setGoodRuns() {
             print "Error: No run numbers provided with -r option\n";
             exit(1);
         }
-    } elseif ($opt_e eq "r9k-1") {
+    } elsif ($opt_e eq "r9k-1") {
         @goodRuns = (
          9361,9360,9359,9358,9357,9356,9355,9354,9353,9352,9351,9350,9349,9348,
          9347,9346,9345,9344,9343,9342,9341,9340,9339,9338,9337,9336,9335,9334,
