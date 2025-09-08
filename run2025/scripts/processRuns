@@ -405,7 +405,7 @@ sub runPDFSummary() {
     print(&prefix("runPDFSummary"), "->$cmd2<-\n");
     system("cd $dir && $cmd2 && cd - ");
 
-    my $cmd3 = "curl -X POST -F \"pdf=\@$BASEDIR/pdf_summary/dqm-$VERSION-$srun.pdf\" -F \"description=pr\" http://pc11740:5050/rdb/addResource/$run";
+    my $cmd3 = "curl -X POST -F \"pdf=\@$BASEDIR/pdf_summary/dqm-$VERSION-$srun.pdf\" -F \"description=pr\" http://pc11740.psi.ch:5050/rdb/addResource/$run";
     print(&prefix("runPDFSummary"), "->$cmd3<-\n");
     system("cd $dir && $cmd3 && cd -");
 }
@@ -496,7 +496,7 @@ sub runPixelFillQualityLM() {
                 print(&prefix("runPixelFillQualityLM"), "WARNING: Merged file $mergedFile is smaller than 1 MB (size: " . sprintf("%.2f", $filesize/1048576) . " MB)\n");
             } else {
                 print(&prefix("runPixelFillQualityLM"), "Merged file size: " . sprintf("%.2f", $filesize/1048576) . " MB\n");
-                my $cmd3 = "curl -X POST -F \"pdf=\@/psi/home/langenegger/mu3e/mu3eanca/run2025/analysis/summary-$run.pdf\" -F \"description=ov\" http://pc11740:5050/rdb/addResource/$run";
+                my $cmd3 = "curl -X POST -F \"pdf=\@/psi/home/langenegger/mu3e/mu3eanca/run2025/analysis/summary-$run.pdf\" -F \"description=ov\" http://pc11740.psi.ch:5050/rdb/addResource/$run";
                 print(&prefix("runPixelFillQualityLM"), "->$cmd3<-\n");
                 system("cd $dir && $cmd3 && cd -");
             }
@@ -594,7 +594,7 @@ sub countEvents() {
     #}
 
     # -- otherwise use the REST API
-    my $url = "http://pc11740/rdb/run/$run";
+    my $url = "http://pc11740.psi.ch/rdb/run/$run";
     print(&prefix("countEvents"), "run = $run -> url = $url\n");
     my $result = `curl -s $url`;
     
@@ -644,7 +644,7 @@ sub readProcessedRuns() {
 # ----------------------------------------------------------------------
 sub checkForNewRun() {
 
-    my $url = "http://pc11740/rdb/allRunNumbers";
+    my $url = "http://pc11740.psi.ch/rdb/allRunNumbers";
     print(&prefix("checkForNewRun"), "url = $url\n");
     my $result = `curl -s $url`;
     $result =~ s/\[//g;
