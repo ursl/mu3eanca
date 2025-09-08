@@ -340,7 +340,7 @@ foreach my $run (@goodRuns) {
     } elsif ($opt_m eq "cosmic") {
         &submitJobsRawMinalyzer($run, $nEvents);
         &runPixelFillQualityLM($run);      
-        &copyDQMFilesToOnline($run);
+        #&copyDQMFilesToOnline($run);
         &submitJobsRawSort($run);
         #&submitJobsRawTrirec($run, $nEvents);
     } elsif ($opt_m eq "sort") {
