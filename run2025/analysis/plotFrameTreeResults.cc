@@ -119,24 +119,39 @@ void   plotFrameTreeResults::plotTrkHitmaps(int run) {
   vector<string> sloop = {"l2top", "l1top", "l1bot", "l2bot"};
   for (int i = 0; i < 4; ++i) {
     c->cd(i+1);
-    shrinkPad();
+    shrinkPad(0.1,0.1,0.15,0.1);
     h2d = (TH2D*)fHistFile->Get(Form("%s", sloop[i].c_str()));
     h2d->Draw("colz");
   }
   c->SaveAs((fDirectory + "/trkHitmap0.pdf").c_str());
   delete c;
 
+  // -- plot all hits in hitmaps sliced according to chip position
   c = new TCanvas("c", "c", 1400, 1000);
   c->Divide(6, 4);
   for (int il = 0; il < 4; ++il) {
     for (int ic = 0; ic < 6; ++ic) {
       c->cd(il*6 + ic + 1);
-      shrinkPad();
+      shrinkPad(0.1,0.1,0.15,0.1);
       h2d = (TH2D*)fHistFile->Get(Form("%s_C%d", sloop[il].c_str(), ic+1));
       h2d->Draw("colz");
     }
   }
   c->SaveAs((fDirectory + "/trkHitmap1.pdf").c_str());
+  delete c;
+
+
+  // -- plot all hits in hitmaps sliced according to chip position
+  c = new TCanvas("c", "c", 2100, 300);
+  c->Divide(6, 1);
+  for (int ic = 1; ic <= 6; ++ic) {
+    c->cd(ic);
+    shrinkPad(0.1,0.1,0.15,0.1);
+    h2d = (TH2D*)fHistFile->Get(Form("allHitsXY_C%d", ic));
+    cout << "plotting: " << Form("allHitsXY_C%d", ic) << endl;
+    h2d->Draw("colz");
+  }
+  c->SaveAs((fDirectory + "/trkHitmapXY.pdf").c_str());
   delete c;
 
 }
@@ -145,49 +160,10 @@ void   plotFrameTreeResults::plotTrkHitmaps(int run) {
 void   plotFrameTreeResults::plotTrkGraphs(int run) {
   cout << "plotFrameTreeResults::plotTrkGraphs() run = " << run << endl;
   fHistFile->cd("trk");
-  TList *list = gDirectory->GetListOfKeys();
-  TCanvas *c = new TCanvas("c", "c", 1000, 1000);
-  TH2D *h2d = new TH2D("h2d", "Tracks/hits in transverse plane", 100, -40, 40, 100, -40, 40);
-  h2d->SetStats(0);
-  h2d->Draw();
-  int cnt(0);
-  for (int i = 0; i < list->GetEntries(); ++i) {
-    TKey *key = (TKey*)list->At(i);
-    TObject *obj = key->ReadObj();
-    string sname = obj->GetName();
-    string srun = sname.substr(4, sname.find("_frame")-4);
-    if (run > -1 && srun != to_string(run)) {
-      cout << "plotFrameTreeResults::plotTrkGraphs() skipping run " << srun << " not equal to " << run << endl;
-      continue;
-    }
-    TGraph *gr = (TGraph*)obj;
-    // -- skip upward going (=red)
-    if (gr->GetMarkerColor() == kRed) {
-      gr->SetLineStyle(kDashed);
-      gr->SetMarkerStyle(2);
-      gr->SetMarkerSize(2);
-    } else {
-      gr->SetLineStyle(kDotted);
-      gr->SetMarkerStyle(24);
-      gr->SetMarkerSize(1);
-    }
-    gr->SetLineColor(gr->GetMarkerColor());
-    string hname = gr->GetName();
-    string htitle = gr->GetTitle();
-    cout << "plotFrameTreeResults::plotTrkGraphs() sname = " << sname << " srun = " << srun << " hname = " << hname << " htitle = " << htitle << endl;
-    if (cnt == 0) {
-      gr->Draw("lp");
-    } else {
-      gr->Draw("lp");
-    }
-    cnt++;
-  }
-  string sname = fDirectory + "/trk-" + to_string(run) + ".pdf";
-  if (run < 0) {
-    sname = fDirectory + "/trk-all" + ".pdf";
-  }
-  c->SaveAs(sname.c_str());
+  plotTrkGraphsWithTitleFilter(run, "", 0);
 
+
+  TCanvas *c = new TCanvas("c", "c", 800, 1000);
   c->Clear();
   gStyle->SetOptStat(0);
   gStyle->SetPadBorderMode(0);
@@ -206,6 +182,7 @@ void   plotFrameTreeResults::plotTrkGraphs(int run) {
   h1->Draw("hist");
   c->SaveAs((fDirectory + "/trkPhi.pdf").c_str());
 
+  TH2D *h2d(0);
   h2d = (TH2D*)fHistFile->Get("trkLambdaPhi");
   setTitles(h2d, "#phi [rad]", "#lambda [rad]");
   h2d->Draw("colz");
@@ -213,6 +190,73 @@ void   plotFrameTreeResults::plotTrkGraphs(int run) {
 
 }
 
+// ----------------------------------------------------------------------
+void plotFrameTreeResults::plotTrkGraphsWithTitleFilter(int run, const string& titleFilter, int filterType) {
+  cout << "plotFrameTreeResults::plotTrkGraphsWithTitleFilter() run = " << run << " titleFilter = " << titleFilter << endl;
+  fHistFile->cd("trk");
+  TList *list = gDirectory->GetListOfKeys();
+  TCanvas *c = new TCanvas("c", "c", 1000, 1000);
+  TH2D *h2d = new TH2D("h2d", "Tracks/hits in transverse plane", 100, -40, 40, 100, -40, 40);
+  h2d->SetStats(0);
+  h2d->Draw();
+  int cnt(0);
+  for (int i = 0; i < list->GetEntries(); ++i) {
+    TKey *key = (TKey*)list->At(i);
+    TObject *obj = key->ReadObj();
+    string sname = obj->GetName();
+    string srun = sname.substr(4, sname.find("_frame")-4);
+    if (run > -1 && srun != to_string(run)) {
+      cout << "plotFrameTreeResults::plotTrkGraphsWithTitleFilter() skipping run " << srun << " not equal to " << run << endl;
+      continue;
+    }
+    TGraph *gr = (TGraph*)obj;
+    
+    // Apply title filter if specified
+    string htitle = gr->GetTitle();
+    if (filterType == 0) {
+      // -- skip if title does not contain titleFilter
+      if (!titleFilter.empty() && htitle.find(titleFilter) == string::npos) {
+        cout << "plotFrameTreeResults::plotTrkGraphsWithTitleFilter() skipping graph with title '" << htitle << "' (does not contain '" << titleFilter << "')" << endl;
+        continue;
+      }
+    } else {
+      // -- skip if title contains titleFilter
+      if (!titleFilter.empty() && htitle.find(titleFilter) != string::npos) {
+        cout << "plotFrameTreeResults::plotTrkGraphsWithTitleFilter() skipping graph with title '" << htitle << "' (does not contain '" << titleFilter << "')" << endl;
+        continue;
+      }
+    }    
+
+    if (gr->GetMarkerColor() == kRed) {
+      gr->SetLineStyle(kDashed);
+      gr->SetMarkerStyle(2);
+      gr->SetMarkerSize(2);
+    } else {
+      gr->SetLineStyle(kDotted);
+      gr->SetMarkerStyle(24);
+      gr->SetMarkerSize(1);
+    }
+    gr->SetLineColor(gr->GetMarkerColor());
+    string hname = gr->GetName();
+    cout << "plotFrameTreeResults::plotTrkGraphsWithTitleFilter() sname = " << sname << " srun = " << srun << " hname = " << hname << " htitle = " << htitle << endl;
+    if (cnt == 0) {
+      gr->Draw("lp");
+    } else {
+      gr->Draw("lp");
+    }
+    cnt++;
+  }
+  string sname = fDirectory + "/trk-" + to_string(run);
+  if (run < 0) {
+    sname = fDirectory + "/trk-all";
+  }
+  if (!titleFilter.empty()) {
+    sname += "-" + titleFilter;
+  }
+  sname += ".pdf";
+  c->SaveAs(sname.c_str());
+  delete c;
+}
 
 
 // ---------------------------------------------------------------------- 
