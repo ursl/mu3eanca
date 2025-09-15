@@ -368,6 +368,9 @@ void anaFrameTree::addTrkGraph(int trkIndex) {
     gr->SetMarkerColor(kBlue);
     gr->SetMarkerStyle(20);
   }
+  string noisyHits("unset");
+  string badHits("unset");
+  string lowToTHits("unset");
   for (int j = 0; j < fTrkNhits[trkIndex]; ++j) {
     fHistograms["trkToT"]->Fill(hitBitToT[fTrkHitIndices[trkIndex][j]]);
     int layer, ladder, chip, station;
@@ -379,8 +382,25 @@ void anaFrameTree::addTrkGraph(int trkIndex) {
     fHistograms2D[Form("%s", getModuleString(m).c_str())]->Fill(hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]);
     fHistograms2D[Form("%s_C%d", getModuleString(m).c_str(), chip)]->Fill(hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]);
     fpPixelHistograms->fillPixelHist("trk_hitmap_chipmap", hitChipID[fTrkHitIndices[trkIndex][j]], hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]], 1.);
+
+    if (hitStatus[fTrkHitIndices[trkIndex][j]] == 1) {
+      if ("unset" == noisyHits) noisyHits = ""; else noisyHits += ", ";
+      noisyHits += Form("%3d/%3d/%3d", hitChipID[fTrkHitIndices[trkIndex][j]], hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]);
+    }
+    if (hitStatus[fTrkHitIndices[trkIndex][j]] == 2 || hitStatus[fTrkHitIndices[trkIndex][j]] == 3) {
+      if ("unset" == badHits) badHits = ""; else badHits += ", ";
+      badHits += Form("%3d/%3d/%3d:%1d", hitChipID[fTrkHitIndices[trkIndex][j]], hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]], hitStatus[fTrkHitIndices[trkIndex][j]]);
+    }
+    if (hitBitToT[fTrkHitIndices[trkIndex][j]] < 6) {
+      if ("unset" == lowToTHits) lowToTHits = ""; else lowToTHits += " ";
+      lowToTHits += Form("%3d/%3d/%3d:%2d", hitChipID[fTrkHitIndices[trkIndex][j]], hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]], hitBitToT[fTrkHitIndices[trkIndex][j]]);
+    }
   }
   cout << endl;
+
+  if ("unset" != noisyHits)  gr->SetTitle(Form("%s noisy: (%s)", gr->GetTitle(), noisyHits.c_str()));
+  if ("unset" != badHits)  gr->SetTitle(Form("%s bad: (%s)", gr->GetTitle(), badHits.c_str()));
+  if ("unset" != lowToTHits)  gr->SetTitle(Form("%s lowToT: (%s)", gr->GetTitle(), lowToTHits.c_str()));
 
   fTrkGraph.push_back(gr);
 }
