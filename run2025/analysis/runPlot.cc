@@ -41,6 +41,20 @@ int main(int argc, char *argv[]) {
 
   if (ana == "plotFrameTreeResults") {
     plotFrameTreeResults a(dir, ifiles, setup);
-    a.makeAll(mode);
+    if (mode == "all") {
+      a.makeAll(mode);  
+    } else if (string::npos != mode.find("trkgraphs:")) {
+      string patt = mode.substr(mode.find(":") + 1);
+      string ptype = mode.substr(mode.rfind(":") + 1);
+      int ptypeint = stoi(ptype);
+      a.plotTrkGraphsWithTitleFilter(-1, patt, ptypeint);
+    } else if (string::npos != mode.find("trkhitmaps")) {
+      a.plotTrkHitmaps();
+    } else if (mode == "pixelhistograms") {
+      a.plotAllPixelHistograms();
+    } else {
+      cout << "plotFrameTreeResults::main() mode = " << mode << " not supported" << endl;
+      return 1;
+    }
   } 
 }

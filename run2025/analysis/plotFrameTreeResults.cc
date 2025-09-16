@@ -162,7 +162,6 @@ void   plotFrameTreeResults::plotTrkGraphs(int run) {
   fHistFile->cd("trk");
   plotTrkGraphsWithTitleFilter(run, "", 0);
 
-
   TCanvas *c = new TCanvas("c", "c", 800, 1000);
   c->Clear();
   gStyle->SetOptStat(0);
