@@ -331,6 +331,7 @@ foreach my $run (@goodRuns) {
         # &runMinalyzer($run);
         &submitJobsRawMinalyzer($run, $nEvents);
     } elsif ($opt_m eq "calibration") {
+        &submitJobsRawMinalyzer($run, $nEvents);
         &runPixelFillQualityLM($run);
     } elsif ($opt_m eq "raw") {
         &submitJobsRawMinalyzer($run, $nEvents);
