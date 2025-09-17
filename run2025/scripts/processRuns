@@ -542,7 +542,11 @@ sub setGoodRuns() {
     } elsif ($opt_e eq "cosmics2025") {
         print "meta era: submit all jobs for cosmics 2025 processing based on this job specification\n";
         my @jobargs = @orig_argv;
-        my @batches = ("cr9k-1", "cr9k-2");
+        my @batches = ("cr9k-1", "cr9k-2"
+        "cr8k-1", "cr8k-2", "cr8k-3", "cr8k-4", "cr8k-5", 
+        "cr7k-1", "cr7k-2", "cr7k-3", "cr7k-4", "cr7k-5", 
+        "cr6k-1", "cr6k-2"
+        );
         foreach $batch (@batches) {
             my @args = map { (defined($_) && $_ eq 'cosmics2025') ? $batch : $_ } @jobargs;
             my $cmnd = "$0 @args >&! $batch.log & ";
