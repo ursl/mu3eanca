@@ -1,0 +1,40 @@
+#! /usr/bin/perl
+ 
+# ----------------------------------------------------------------------
+# splitRuns
+# =========
+#
+# Options: 
+#           -n  number per line
+#
+# Usage examples:
+#           splitRun -n 10 9361,9360,9359,9358,9357,9356,9355,9354,9353,9352,9351
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+use File::Basename;
+use Env;
+ 
+my $dir = getcwd;
+ 
+use Getopt::Std;
+getopts('n:');
+ 
+my $nPerLine = 10;
+if (defined($opt_n)) {
+    $nPerLine = $opt_n;
+}
+
+# -- loop over rest of argv
+foreach my $run (@ARGV) {
+    @runs = split(/,/, $run);
+    my $last = $#runs;
+    for (my $i = 0; $i <= $last; $i += $nPerLine) {
+        my $end = $i + $nPerLine - 1;
+        $end = $last if $end > $last;
+        print join(",", @runs[$i..$end]) . ",\n";
+    }
+}
