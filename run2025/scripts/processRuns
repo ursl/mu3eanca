@@ -28,11 +28,12 @@
 #              ./processRuns -m calibration -c ../../db0/cdb2/certification/2025/2025-Cage-v1-significant-tkar-cosmic.runs -g datav6.1=2025CosmicsVtxOnly -u
 #
 #
+#    login001>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250829.tar.gz -m sort -e cosmics2025 -g datav6.2=2025CosmicsNoMagnet
 #
-#             merlin-l-002>wpd
-#             /data/experiment/mu3e/code/offline/250528-v6.1pre
-#             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -i 
-#             merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
+#    merlin-l-002>wpd
+#    /data/experiment/mu3e/code/offline/250528-v6.1pre
+#    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -i 
+#    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
 #         2025/09/17 add "-e cosmics2025" to allow submission of n batches (to SLURM)
@@ -542,7 +543,7 @@ sub setGoodRuns() {
     } elsif ($opt_e eq "cosmics2025") {
         print "meta era: submit all jobs for cosmics 2025 processing based on this job specification\n";
         my @jobargs = @orig_argv;
-        my @batches = ("cr9k-1", "cr9k-2"
+        my @batches = ("cr9k-1", "cr9k-2",
         "cr8k-1", "cr8k-2", "cr8k-3", "cr8k-4", "cr8k-5", 
         "cr7k-1", "cr7k-2", "cr7k-3", "cr7k-4", "cr7k-5", 
         "cr6k-1", "cr6k-2"
