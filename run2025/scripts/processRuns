@@ -551,7 +551,7 @@ sub setGoodRuns() {
         );
         foreach $batch (@batches) {
             my @args = map { (defined($_) && $_ eq 'cosmics2025') ? $batch : $_ } @jobargs;
-            my $cmnd = "$0 @args >&! $batch.log & ";
+            my $cmnd = "$0 @args >&! $opt_m-$batch.log & ";
             print "submitting $batch:  $cmnd \n";
             system('tcsh', '-c', "$cmnd");
         }
