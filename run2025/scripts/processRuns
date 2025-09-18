@@ -36,7 +36,7 @@
 #    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
-#         2025/09/18 add "-s" to NOT skip runs in case of insufficient statistics
+#         2025/09/18 add "-s" to NOT skip runs in case of insufficient statistics. Upload to RDB only with -u. Check whether mergedFile already exists.
 #         2025/09/17 add "-e cosmics2025" to allow submission of n batches (to SLURM)
 #         2025/09/05 add JSON RDB version before trying the RDB on pc11740
 #         2025/09/05 remove call to countEvents when running "sort" with -e runs -r .... 
@@ -506,10 +506,12 @@ sub runPixelFillQualityLM() {
             if ($checkSkip && $filesize < 1048576) {  # 1 MB = 1048576 bytes
                 print(&prefix("runPixelFillQualityLM"), "WARNING: Merged file $mergedFile is smaller than 1 MB (size: " . sprintf("%.2f", $filesize/1048576) . " MB)\n");
             } else {
-                print(&prefix("runPixelFillQualityLM"), "Merged file size: " . sprintf("%.2f", $filesize/1048576) . " MB\n");
-                my $cmd3 = "curl -X POST -F \"pdf=\@$dir/summary-$run.pdf\" -F \"description=ov\" http://pc11740.psi.ch:5050/rdb/addResource/$run";
-                print(&prefix("runPixelFillQualityLM"), "->$cmd3<-\n");
-                system("cd $dir && $cmd3 && cd -");
+                if ($opt_u) {
+                    print(&prefix("runPixelFillQualityLM"), "Merged file size: " . sprintf("%.2f", $filesize/1048576) . " MB\n");
+                    my $cmd3 = "curl -X POST -F \"pdf=\@$dir/summary-$run.pdf\" -F \"description=ov\" http://pc11740.psi.ch:5050/rdb/addResource/$run";
+                    print(&prefix("runPixelFillQualityLM"), "->$cmd3<-\n");
+                    system("cd $dir && $cmd3 && cd -");
+                }
             }
         }
     }
@@ -923,6 +925,16 @@ sub copyDQMFilesToOnline() {
 sub submitJobsRawMinalyzer() {
     ($run, $lcevts) = @_;
     my $pcrFile = "nada";
+    my $srun = sprintf("%05d", $run);
+    my @resultFiles = ("dqm_histos_");
+
+    foreach $file (@resultFiles) {
+      my $mergedFile = "$ROF/merged-$file$srun.root";
+      if (-e $mergedFile) {
+        print(&prefix("submitJobsRawMinalyzer"), "merged file $mergedFile already exists, skipping\n");
+        return $mergedFile;
+      }
+    }
 
     my $DATASUBDIR = getDataSubdir($run);
 
@@ -1068,9 +1080,8 @@ sub submitJobsRawMinalyzer() {
 
     $output = "$BASEDIR/slurm/storage1/mlzr";
     # my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
-    my @resultFiles = ("dqm_histos_");
+    # my @resultFiles = ("dqm_histos_");
     foreach $file (@resultFiles) {
-        my $srun = sprintf("%05d", $run);
         my $mergedFile = "$ROF/merged-$file$srun.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
