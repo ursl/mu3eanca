@@ -36,6 +36,7 @@
 #    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/09/18 add "-s" to NOT skip runs in case of insufficient statistics
 #         2025/09/17 add "-e cosmics2025" to allow submission of n batches (to SLURM)
 #         2025/09/05 add JSON RDB version before trying the RDB on pc11740
 #         2025/09/05 remove call to countEvents when running "sort" with -e runs -r .... 
@@ -70,7 +71,7 @@ my $dir = getcwd;
 my @orig_argv = @ARGV;
 
 use Getopt::Std;
-getopts('c:de:g:im:n:r:t:uw:');
+getopts('c:de:g:im:n:r:st:uw:');
  
 # ----------------------------------------------------------------------
 # -- default values
@@ -215,6 +216,12 @@ if ($opt_g) {
     $GT = "$opt_g";
 }
 
+# -- check whether insufficient event numbers should be reason to skip a run
+my $checkSkip = 1 ;
+if ($opt_s) {
+    $checkSkip = 0;
+}
+
 # -- initialize what has been processed so far
 my @processedRuns;
 if ($opt_w) {
@@ -257,7 +264,7 @@ if ($opt_w) {
                     $nEvents = &countEvents($run);
                 }
             }
-            if ($opt_m ne "cosmic" && $nEvents < $MINEVENTS) {
+            if ($checkSkip && $nEvents < $MINEVENTS) {
                 print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
             } else {
                 if ($opt_m eq "minalyzer") {
@@ -322,7 +329,7 @@ foreach my $run (@goodRuns) {
     my $nEvents = &countEvents($run);
     if (!($opt_m =~ /sort/) && !($opt_m =~ /minalyzer/)) {
 
-        if ($opt_m ne "cosmic" && $opt_m ne "minalyzer" && $nEvents < $MINEVENTS) {
+        if ($checkSkip && $nEvents < $MINEVENTS) {
           print(&prefix("processRuns"), "Skipping run $run, as too few events\n");
           next;
         }
@@ -496,7 +503,7 @@ sub runPixelFillQualityLM() {
         my $mergedFile = "$ROF/merged-dqm_histos_$srun.root";
         if (-e $mergedFile) {
             my $filesize = -s $mergedFile;
-            if ($opt_m ne "cosmic" && $filesize < 1048576) {  # 1 MB = 1048576 bytes
+            if ($checkSkip && $filesize < 1048576) {  # 1 MB = 1048576 bytes
                 print(&prefix("runPixelFillQualityLM"), "WARNING: Merged file $mergedFile is smaller than 1 MB (size: " . sprintf("%.2f", $filesize/1048576) . " MB)\n");
             } else {
                 print(&prefix("runPixelFillQualityLM"), "Merged file size: " . sprintf("%.2f", $filesize/1048576) . " MB\n");
