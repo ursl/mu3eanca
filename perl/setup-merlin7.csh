@@ -38,3 +38,14 @@ if ("$MU3E_TAG" != "-") then
     setenv PATH "${MU3E_PREFIX}/bin:${PATH}"
     setenv LD_LIBRARY_PATH "${MU3E_PREFIX}/lib64:${LD_LIBRARY_PATH}"
 endif
+
+
+setenv MIDASSYS        /data/user/langenegger/midas/250904/midas
+setenv MIDAS_DIR       /data/user/langenegger/midas/250904/midas
+setenv MIDAS_EXPTAB    /data/user/langenegger/midas/exptab
+setenv MIDAS_EXPT_NAME Mu3e
+
+setenv PATH ${PATH}:$MIDASSYS/bin
+setenv LIBPATH $MIDASSYS/lib
+
+setenv PATH ${PATH}:/data/user/langenegger/mu3e/mu3eanca/slurm/
