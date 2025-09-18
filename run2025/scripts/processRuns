@@ -795,12 +795,20 @@ sub setGoodRuns() {
     }
 }
 
+# ----------------------------------------------------------------------
+sub getBlock {
+    ($run) = @_;
+    my $block = $run / 1000;
+    my $blockdir = sprintf("%03d", $block);
+    return $blockdir;
+}
+
 
 # ----------------------------------------------------------------------
 sub getDataSubdir {
     ($run) = @_;
     my $DATASUBDIR = "$DATADIR/raw";
-    my $block = $run / 1000;
+    my $block = &getBlock($run);
     my $blockdir = sprintf("%03d", $block);
     $DATASUBDIR = "$DATADIR/raw/$blockdir";
     print(&prefix("getDataSubdir"), "run $run, DATASUBDIR = $DATASUBDIR\n");
@@ -820,6 +828,12 @@ sub getGitInfo() {
 sub getSortSubdir {
     ($run) = @_;
     my $DATASUBDIR = "$DATADIR/trirec/$VERSION";
+
+    my $block = &getBlock($run);
+    my $blockdir = sprintf("%03d", $block);
+    $DATASUBDIR = "$DATADIR/trirec/$blockdir";
+    print(&prefix("getSortSubdir"), "run $run, DATASUBDIR = $DATASUBDIR\n");
+
     return $DATASUBDIR;
 }
 
@@ -933,7 +947,8 @@ sub submitJobsRawMinalyzer() {
     my @resultFiles = ("dqm_histos_");
 
     foreach $file (@resultFiles) {
-      my $mergedFile = "$ROF/merged-$file$srun.root";
+      my $directory = &getBlock($run);
+      my $mergedFile = "$ROF/$directory/merged-$file$srun.root";
       if (-e $mergedFile) {
         print(&prefix("submitJobsRawMinalyzer"), "merged file $mergedFile already exists, skipping\n");
         return $mergedFile;
@@ -1304,13 +1319,13 @@ sub submitJobsRawSort() {
     my $srun = sprintf("%05d", $run);
     my @resultFiles = ("sorted");
     foreach $file (@resultFiles) {
-        my $mergedFile = "$ROFSORT/run$srun-$file.root";
+        my $directory = &getSortSubdir($run);
+        my $mergedFile = "$directory/run$srun-$file.root";
         if (-e $mergedFile) {
             print(&prefix("submitJobsRawSort"), "merged file $mergedFile already exists, skipping\n");
             return $mergedFile;
         }
     }
-
 
     my $DATASUBDIR = getDataSubdir($run);
 
