@@ -566,6 +566,7 @@ sub setGoodRuns() {
         }
         exit(0);
     } elsif ($opt_e eq "cr9k-1") {
+        # -- 360 runs in cr9k
         @goodRuns = (
         9361,9360,9359,9358,9357,9356,9355,9354,9353,9352,9351,9350,9349,9348,9347,
         9346,9345,9344,9343,9342,9341,9340,9339,9338,9337,9336,9335,9334,9333,9332,
@@ -596,6 +597,7 @@ sub setGoodRuns() {
         9014,9013,9012,9011,9010,9009,9008,9007,9006,9005,9004,9003,9002,9001,9000
         );
     } elsif ($opt_e eq "cr8k-1") {
+        # -- 999 runs in cr8k
         @goodRuns = (
         8999,8998,8997,8996,8995,8994,8993,8992,8991,8990,8989,8988,8987,8986,8985,
         8984,8983,8982,8981,8980,8979,8978,8977,8976,8975,8974,8973,8972,8971,8970,
@@ -678,6 +680,7 @@ sub setGoodRuns() {
         8008,8007,8006,8005,8004,8003,8002,8001,8000
         );
     } elsif ($opt_e eq "cr7k-1") {
+        # -- 888 runs in cr7k
         @goodRuns = (
         7999,7998,7997,7996,7995,7994,7993,7992,7991,7990,7989,7988,7987,7986,7985,
         7984,7983,7982,7981,7980,7979,7978,7977,7976,7975,7974,7973,7972,7971,7970,
@@ -753,6 +756,7 @@ sub setGoodRuns() {
         7079,7078,7077
         );
     } elsif ($opt_e eq "cr6k-1") {
+        # -- 281 runs in cr6k
         @goodRuns = (
         6888,6887,6886,6885,6884,6883,6882,6881,6880,6879,6878,6877,6876,6875,6874,
         6873,6872,6871,6870,6869,6868,6867,6866,6865,6864,6863,6862,6861,6860,6859,
@@ -1297,6 +1301,16 @@ sub submitJobsRawTrirec() {
 sub submitJobsRawSort() {
     ($run) = @_;
     my $pcrFile = "nada";
+    my $srun = sprintf("%05d", $run);
+    my @resultFiles = ("sorted");
+    foreach $file (@resultFiles) {
+        my $mergedFile = "$ROFSORT/run$srun-$file.root";
+        if (-e $mergedFile) {
+            print(&prefix("submitJobsRawSort"), "merged file $mergedFile already exists, skipping\n");
+            return $mergedFile;
+        }
+    }
+
 
     my $DATASUBDIR = getDataSubdir($run);
 
@@ -1439,9 +1453,7 @@ sub submitJobsRawSort() {
 
     $output = "$BASEDIR/slurm/storage1/sort";
 
-    my @resultFiles = ("sorted");
     foreach $file (@resultFiles) {
-        my $srun = sprintf("%05d", $run);
         my $mergedFile = "$ROFSORT/run$srun-$file.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "cp $output/$run/$file-run$job.root $mergedFile";
