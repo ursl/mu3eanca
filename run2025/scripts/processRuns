@@ -1441,15 +1441,13 @@ sub submitJobsRawSort() {
             sleep(10);
         }
         foreach $sjob (keys %mSlurmIds) {
-            $result = `squeue -j $sjob`;
-            print(&prefix("submitJobsRawSort"), "squeue -j $sjob: ->$result<-\n");
-            if ($result =~ /Invalid job id specified/) {
-                print(&prefix("submitJobsRawSort"), "SLURM job $sjob not found, probably hit time limit\n");
+            $result = `squeue -h -j $sjob`;
+            if (!($result =~ /$sjob/)) {
+                print(&prefix("submitJobsRawSort"), "SLURM job $sjob not found, probably killed by batch system\n");
                 delete($mSlurmIds{$sjob});
                 $njobs = keys %mSlurmIds;
                 next;
             }
-            my @lines = grep /\S/, split /\n/, $result;
             my $tail = "no file yet\n";
             if (-e "$BASEDIR/slurm/jobs/sort/$run/$mSlurmIds{$sjob}") {
                 $tail = `tail -1 $BASEDIR/slurm/jobs/sort/$run/$mSlurmIds{$sjob}`;
