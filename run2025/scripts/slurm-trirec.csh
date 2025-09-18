@@ -3,6 +3,8 @@
 #
 #SBATCH -e
 #SBATCH -o
+#SBATCH --mem=4G
+
 
 setenv JOB
 setenv RUN
