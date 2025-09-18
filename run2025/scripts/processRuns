@@ -831,7 +831,7 @@ sub getSortSubdir {
 
     my $block = &getBlock($run);
     my $blockdir = sprintf("%03d", $block);
-    $DATASUBDIR = "$DATADIR/trirec/$blockdir";
+    $DATASUBDIR = "$DATASUBDIR/$blockdir";
     print(&prefix("getSortSubdir"), "run $run, DATASUBDIR = $DATASUBDIR\n");
 
     return $DATASUBDIR;
