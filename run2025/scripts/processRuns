@@ -810,7 +810,7 @@ sub getDataSubdir {
     my $DATASUBDIR = "$DATADIR/raw";
     my $block = &getBlock($run);
     my $blockdir = sprintf("%03d", $block);
-    $DATASUBDIR = "$DATADIR/raw/$blockdir";
+    $DATASUBDIR = "$DATASUBDIR/$blockdir";
     print(&prefix("getDataSubdir"), "run $run, DATASUBDIR = $DATASUBDIR\n");
     return $DATASUBDIR;
 }
@@ -828,7 +828,6 @@ sub getGitInfo() {
 sub getSortSubdir {
     ($run) = @_;
     my $DATASUBDIR = "$DATADIR/trirec/$VERSION";
-
     my $block = &getBlock($run);
     my $blockdir = sprintf("%03d", $block);
     $DATASUBDIR = "$DATASUBDIR/$blockdir";
@@ -1469,7 +1468,8 @@ sub submitJobsRawSort() {
     $output = "$BASEDIR/slurm/storage1/sort";
 
     foreach $file (@resultFiles) {
-        my $mergedFile = "$ROFSORT/run$srun-$file.root";
+        my $directory = &getSortSubdir($run);
+        my $mergedFile = "$ROFSORT/$directory/run$srun-$file.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "cp $output/$run/$file-run$job.root $mergedFile";
         print(&prefix("submitJobsRawSort"), "mergeString: $mergeString\n");
