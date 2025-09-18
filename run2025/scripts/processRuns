@@ -1081,7 +1081,6 @@ sub submitJobsRawMinalyzer() {
             }
 
             my @lines = grep /\S/, split /\n/, $result;
-            my $le = @lines;
             my $tail = "no file yet\n";
             if (-e "$BASEDIR/slurm/jobs/mlzr/$run/$mSlurmIds{$sjob}") {
                 $tail = `tail -1 $BASEDIR/slurm/jobs/mlzr/$run/$mSlurmIds{$sjob}`;
@@ -1270,7 +1269,6 @@ sub submitJobsRawTrirec() {
             }
 
             my @lines = grep /\S/, split /\n/, $result;
-            my $le = @lines;
             my $tail = "no file yet\n";
             if (-e "$BASEDIR/slurm/jobs/trirec/$run/$mSlurmIds{$sjob}") {
                 $tail = `tail -1 $BASEDIR/slurm/jobs/trirec/$run/$mSlurmIds{$sjob}`;
@@ -1444,6 +1442,7 @@ sub submitJobsRawSort() {
         }
         foreach $sjob (keys %mSlurmIds) {
             $result = `squeue -j $sjob`;
+            print(&prefix("submitJobsRawSort"), "squeue -j $sjob: ->$result<-\n");
             if ($result =~ /Invalid job id specified/) {
                 print(&prefix("submitJobsRawSort"), "SLURM job $sjob not found, probably hit time limit\n");
                 delete($mSlurmIds{$sjob});
@@ -1451,7 +1450,6 @@ sub submitJobsRawSort() {
                 next;
             }
             my @lines = grep /\S/, split /\n/, $result;
-            my $le = @lines;
             my $tail = "no file yet\n";
             if (-e "$BASEDIR/slurm/jobs/sort/$run/$mSlurmIds{$sjob}") {
                 $tail = `tail -1 $BASEDIR/slurm/jobs/sort/$run/$mSlurmIds{$sjob}`;
@@ -1459,6 +1457,17 @@ sub submitJobsRawSort() {
             print("    [$sjob:$mSlurmIds{$sjob}] $tail");
             if ($tail =~ /This is the end, my friend/) {
                 delete($mSlurmIds{$sjob});
+                $njobs = keys %mSlurmIds;
+                next;
+            }
+            my $errfile = "$BASEDIR/slurm/storage1/sort/$run/$mSlurmIds{$sjob}";
+            $errfile =~ s/\.log/\.err/;
+            if (-e $errfile && -s $errfile > 0) {
+                $tail = `tail -1 $errfile`;
+                print(&prefix("submitJobsRawSort"), "     $errfile: $tail");
+                delete($mSlurmIds{$sjob});
+                $njobs = keys %mSlurmIds;
+                next;
             }
             $njobs = keys %mSlurmIds;
         }
