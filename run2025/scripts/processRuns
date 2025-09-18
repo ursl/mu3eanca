@@ -407,8 +407,8 @@ sub runPDFSummary() {
     ($run) = @_;
     my $dir = "$BASEDIR/pdf_summary";
     my $srun = sprintf("%05d", $run);
-
-    my $cmd = "_build/Prompt $ROF/merged-dqm_histos_$srun.root";
+    my $block = &getBlock($run);
+    my $cmd = "_build/Prompt $ROF/$block/merged-dqm_histos_$srun.root";
     print(&prefix("runPDFSummary"), "Running PDF summary for run $run in directory $dir, ->$cmd<-\n");
     system("cd $dir && $cmd && cd - ");
 
@@ -460,13 +460,14 @@ sub runPixelFillQualityLM() {
     system("mkdir -p $dir/csv");
     system("mkdir -p $dir/payloads");
     my $srun = sprintf("%05d", $run);
+    my $block = &getBlock($run);
     print(&prefix("runPixelFillQualityLM"), "Processing DQM output for run $run in directory $dir\n");
     my $cmd0 = "rm -f log/dqm_$srun.log";
     my $lgt = ""; 
     if ($GT) {
         $lgt = "-g $GT";
     }
-    my $cmd1 = "bin/pixelFillQualityLM -j $CDB $lgt -f $ROF/merged-dqm_histos_$srun.root  >& log/dqm_$srun.log ";
+    my $cmd1 = "bin/pixelFillQualityLM -j $CDB $lgt -f $ROF/$block/merged-dqm_histos_$srun.root  >& log/dqm_$srun.log ";
     if ($opt_d) {
         print(&prefix("runPixelFillQualityLM"), "Running DQM for run $run in directory $dir\n");
         print(&prefix("runPixelFillQualityLM"), "->$cmd0 && $cmd1 && $cmd2<-\n");
@@ -490,7 +491,7 @@ sub runPixelFillQualityLM() {
     #print(&prefix("runPixelFillQualityLM"), "FIXME: STOPPING HERE, NOT RDB UPLOADING\n");
     #return;
 
-    my $cmd2 = "bin/allHistograms -f $ROF/merged-dqm_histos_$srun.root  >& log/allHistograms_$srun.log ";
+    my $cmd2 = "bin/allHistograms -f $ROF/$block/merged-dqm_histos_$srun.root  >& log/allHistograms_$srun.log ";
     if ($opt_d) {
         print(&prefix("runPixelFillQualityLM"), "Running allHistograms for run $run in directory $dir\n");
         print(&prefix("runPixelFillQualityLM"), "->$cmd2<-\n");
@@ -500,7 +501,7 @@ sub runPixelFillQualityLM() {
         system("cd $dir && $cmd2 && cd -");
         
         # -- Check if merged file exists and is larger than 1 MB
-        my $mergedFile = "$ROF/merged-dqm_histos_$srun.root";
+        my $mergedFile = "$ROF/$block/merged-dqm_histos_$srun.root";
         if (-e $mergedFile) {
             my $filesize = -s $mergedFile;
             if ($checkSkip && $filesize < 1048576) {  # 1 MB = 1048576 bytes
