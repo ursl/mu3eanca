@@ -481,7 +481,7 @@ sub runPixelFillQualityLM() {
         my $cmd2 = "$MU3EANCA/run2025/scripts/insertIovTag -j $CDB -t pixelqualitylm_$GT -i $run";
         print(&prefix("runPixelFillQualityLM"), "cmd2: $cmd2\n");
         my $payloadname = "tag_pixelqualitylm_" . $GT . "_iov_$run";
-        my $cmd3 = "/bin/cp payloads/$payloadname $CDB/payloads/";
+        my $cmd3 = "cp payloads/$payloadname $CDB/payloads/";
         print(&prefix("runPixelFillQualityLM"), "cmd3: $cmd3\n");           
         #FIXME system("cd $dir && $cmd2 && $cmd3 && cd - ");
         system("cd $dir && $cmd3 && cd - ");
@@ -970,16 +970,16 @@ sub submitJobsRawMinalyzer() {
     my $rundir = "$BASEDIR/slurm/jobs/mlzr/$run";
     if (-d $rundir) {
         # -- remove possibly pre-existing job directory
-        system("/bin/rm -rf $BASEDIR/slurm/jobs/mlzr/old/$run");
-        system("/bin/mv $rundir $BASEDIR/slurm/jobs/mlzr/old");
+        system("rm -rf $BASEDIR/slurm/jobs/mlzr/old/$run");
+        system("mv $rundir $BASEDIR/slurm/jobs/mlzr/old");
     }
     mkdir($rundir);
     # -- rootdir
     my $rootdir = "$BASEDIR/slurm/storage1/mlzr/$run";
     if (-d $rootdir) {
         # -- remove possibly pre-existing job directory
-        system("/bin/rm -rf $BASEDIR/slurm/storage1/mlzr/old/$run");
-        system("/bin/mv $rootdir $BASEDIR/slurm/storage1/mlzr/old");
+        system("rm -rf $BASEDIR/slurm/storage1/mlzr/old/$run");
+        system("mv $rootdir $BASEDIR/slurm/storage1/mlzr/old");
     }
     mkdir($rootdir);
     print(&prefix("submitJobsRawMinalyzer"), "submitJobsRawMinalyzer rundir = $rundir, rootdir = $rootdir, file = $file\n");
@@ -1072,7 +1072,7 @@ sub submitJobsRawMinalyzer() {
             sleep(10);
         }
         foreach $sjob (keys %mSlurmIds) {
-            $result = `/bin/squeue -j $sjob`;
+            $result = `squeue -j $sjob`;
             if ($result =~ /Invalid job id specified/) {
                 print(&prefix("submitJobsRawMinalyzer"), "SLURM job $sjob not found, probably hit time limit\n");
                 delete($mSlurmIds{$sjob});
@@ -1102,7 +1102,7 @@ sub submitJobsRawMinalyzer() {
     # my @resultFiles = ("dqm_histos_");
     foreach $file (@resultFiles) {
         my $mergedFile = "$ROF/merged-$file$srun.root";
-        system("/bin/rm -f $mergedFile");
+        system("rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
             $mergeString .= " $output/$run/root_output_files_$rf/$file$srun.root ";
@@ -1151,16 +1151,16 @@ sub submitJobsRawTrirec() {
     my $rundir = "$BASEDIR/slurm/jobs/trirec/$run";
     if (-d $rundir) {
         # -- remove possibly pre-existing job directory
-        system("/bin/rm -rf $BASEDIR/slurm/jobs/trirec/old/$run");
-        system("/bin/mv $rundir $BASEDIR/slurm/jobs/trirec/old");
+        system("rm -rf $BASEDIR/slurm/jobs/trirec/old/$run");
+        system("mv $rundir $BASEDIR/slurm/jobs/trirec/old");
     }
     mkdir($rundir);
     # -- rootdir
     my $rootdir = "$BASEDIR/slurm/storage1/trirec/$run";
     if (-d $rootdir) {
         # -- remove possibly pre-existing job directory
-        system("/bin/rm -rf $BASEDIR/slurm/storage1/trirec/old/$run");
-        system("/bin/mv $rootdir $BASEDIR/slurm/storage1/trirec/old");
+        system("rm -rf $BASEDIR/slurm/storage1/trirec/old/$run");
+        system("mv $rootdir $BASEDIR/slurm/storage1/trirec/old");
     }
     mkdir($rootdir);
     print(&prefix("submitJobsRawTrirec"), "submitJobsRawTrirec rundir = $rundir, rootdir = $rootdir\n");
@@ -1261,7 +1261,7 @@ sub submitJobsRawTrirec() {
             sleep(10);
         }
         foreach $sjob (keys %mSlurmIds) {
-            $result = `/bin/squeue -j $sjob`;
+            $result = `squeue -j $sjob`;
             if ($result =~ /Invalid job id specified/) {
                 print(&prefix("submitJobsRawTrirec"), "SLURM job $sjob not found, probably hit time limit\n");
                 delete($mSlurmIds{$sjob});
@@ -1292,7 +1292,7 @@ sub submitJobsRawTrirec() {
     foreach $file (@resultFiles) {
         my $srun = sprintf("%05d", $run);
         my $mergedFile = "$ROFTRIREC/run$srun-$file.root";
-        system("/bin/rm -f $mergedFile");
+        system("rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
             $mergeString .= " $output/$run/$file-run$rf.root ";
@@ -1342,16 +1342,16 @@ sub submitJobsRawSort() {
     my $rundir = "$BASEDIR/slurm/jobs/sort/$run";
     if (-d $rundir) {
         # -- remove possibly pre-existing job directory
-        system("/bin/rm -rf $BASEDIR/slurm/jobs/sort/old/$run");
-        system("/bin/mv $rundir $BASEDIR/slurm/jobs/sort/old");
+        system("rm -rf $BASEDIR/slurm/jobs/sort/old/$run");
+        system("mv $rundir $BASEDIR/slurm/jobs/sort/old");
     }
     mkdir($rundir);
     # -- rootdir
     my $rootdir = "$BASEDIR/slurm/storage1/sort/$run";
     if (-d $rootdir) {
         # -- remove possibly pre-existing job directory
-        system("/bin/rm -rf $BASEDIR/slurm/storage1/sort/old/$run");
-        system("/bin/mv $rootdir $BASEDIR/slurm/storage1/sort/old");
+        system("rm -rf $BASEDIR/slurm/storage1/sort/old/$run");
+        system("mv $rootdir $BASEDIR/slurm/storage1/sort/old");
     }
     mkdir($rootdir);
     print(&prefix("submitJobsRawSort"), "submitJobsRawSort rundir = $rundir, rootdir = $rootdir, file = $file\n");
@@ -1443,7 +1443,7 @@ sub submitJobsRawSort() {
             sleep(10);
         }
         foreach $sjob (keys %mSlurmIds) {
-            $result = `/bin/squeue -j $sjob`;
+            $result = `squeue -j $sjob`;
             if ($result =~ /Invalid job id specified/) {
                 print(&prefix("submitJobsRawSort"), "SLURM job $sjob not found, probably hit time limit\n");
                 delete($mSlurmIds{$sjob});
@@ -1471,7 +1471,7 @@ sub submitJobsRawSort() {
     foreach $file (@resultFiles) {
         my $directory = &getSortSubdir($run);
         my $mergedFile = "$directory/run$srun-$file.root";
-        system("/bin/rm -f $mergedFile");
+        system("rm -f $mergedFile");
         my $mergeString = "cp $output/$run/$file-run$job.root $mergedFile";
         print(&prefix("submitJobsRawSort"), "mergeString: $mergeString\n");
         if ($opt_d) {
