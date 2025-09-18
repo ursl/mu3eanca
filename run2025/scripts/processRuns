@@ -1469,7 +1469,7 @@ sub submitJobsRawSort() {
 
     foreach $file (@resultFiles) {
         my $directory = &getSortSubdir($run);
-        my $mergedFile = "$ROFSORT/$directory/run$srun-$file.root";
+        my $mergedFile = "$directory/run$srun-$file.root";
         system("/bin/rm -f $mergedFile");
         my $mergeString = "cp $output/$run/$file-run$job.root $mergedFile";
         print(&prefix("submitJobsRawSort"), "mergeString: $mergeString\n");
