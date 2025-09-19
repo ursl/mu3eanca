@@ -29,7 +29,8 @@
 #
 #
 #    login001>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250829.tar.gz -m sort -e cosmics2025 -g datav6.2=2025CosmicsNoMagnet
-#
+#    login001>~/mu3e/mu3eanca/run2025/scripts/processRuns -s -t slurm/250829.tar.gz -m calibration -e cosmics2025 -g datav6.2=2025Data
+
 #    merlin-l-002>wpd
 #    /data/experiment/mu3e/code/offline/250528-v6.1pre
 #    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -i 
@@ -946,8 +947,8 @@ sub submitJobsRawMinalyzer() {
     my $srun = sprintf("%05d", $run);
     my @resultFiles = ("dqm_histos_");
 
+    my $directory = &getBlock($run);
     foreach $file (@resultFiles) {
-      my $directory = &getBlock($run);
       my $mergedFile = "$ROF/$directory/merged-$file$srun.root";
       if (-e $mergedFile) {
         print(&prefix("submitJobsRawMinalyzer"), "merged file $mergedFile already exists, skipping\n");
@@ -1100,7 +1101,7 @@ sub submitJobsRawMinalyzer() {
     # my @resultFiles = ("pixel_histos", "fibre_histos", "tile_histos");
     # my @resultFiles = ("dqm_histos_");
     foreach $file (@resultFiles) {
-        my $mergedFile = "$ROF/merged-$file$srun.root";
+        my $mergedFile = "$ROF/$directory/merged-$file$srun.root";
         system("rm -f $mergedFile");
         my $mergeString = "hadd $mergedFile";
         foreach $rf (@mergeFiles)  {
