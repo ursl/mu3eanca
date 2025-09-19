@@ -68,7 +68,11 @@ int main(int argc, char* argv[]) {
   }
   
   TFile *f = TFile::Open(filename.c_str());
-
+  if (f && f->IsOpen()) {
+  } else {
+    cout << "allHistograms::main() failed to open file " << filename << endl;
+    return 1;
+  }
   mkVtxPlots(run, barefilename);
   mkTilePlots(run, barefilename);
   mkFiberPlots(run, barefilename);
