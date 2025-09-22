@@ -30,7 +30,7 @@ using namespace std;
 
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 void mkCombinedPDF(int run, string rof);
-void mkVtxPlots(int run, string barefilename);
+void mkVtxPlots(int run, string barefilename, bool noRebin);
 void mkTilePlots(int run, string barefilename);
 void mkFiberPlots(int run, string barefilename);
 void mkDAQPlots(int run, string barefilename);
@@ -48,14 +48,15 @@ int main(int argc, char* argv[]) {
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(""), filename("nada.root");
   string gt("intrun");
+  bool noRebin(false);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-n"))      {noRebin = true;}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
-  
   
   int run(-1);
   string barefilename(filename);
@@ -73,15 +74,12 @@ int main(int argc, char* argv[]) {
     cout << "allHistograms::main() failed to open file " << filename << endl;
     return 1;
   }
-  mkVtxPlots(run, barefilename);
+  mkVtxPlots(run, barefilename, noRebin);
   mkTilePlots(run, barefilename);
   mkFiberPlots(run, barefilename);
   mkDAQPlots(run, barefilename);
 
   mkCombinedPDF(run, filename);
-
-
-
 }
 
 
@@ -149,7 +147,7 @@ string getCurrentDateTime() {
 
 
 // ----------------------------------------------------------------------
-void mkVtxPlots(int run, string barefilename) {
+void mkVtxPlots(int run, string barefilename, bool noRebin) {
   vector<int> vLayer1, vLayer2;
     vLayer1 = {1,2,3,4,5,6,
               33, 34, 35, 36, 37, 38,
@@ -206,7 +204,7 @@ void mkVtxPlots(int run, string barefilename) {
           replaceAll(hname, "hitmap_perChip_", "");
           int ichip = ::stoi(hname);  
           cout << "hitmap chip " << ichip << " " << hname << endl;
-          h->Rebin2D(4,10);
+          if (!noRebin) h->Rebin2D(4,10);
           mHitmaps[ichip] = h;
           mHitmaps[ichip]->SetTitle(Form("Chip %d (0x%x)", ichip, ichip));
           mHitmaps[ichip]->SetTitleSize(0.2);
