@@ -67,8 +67,8 @@ OTHERLIBS 	  = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so $(LIBCURL)
 
 # -- Files
 #CSTUFF =
-LFILES = frameTree.o  pixelHistograms.o anaFrameTree.o plotFrameTreeResults.o
-BINARIES = allHistograms pixelFillQualityLM runPixelHistograms runAnaFrameTree runPlot
+LFILES = frameTree.o  pixelHistograms.o anaFrameTree.o plotFrameTreeResults.o 
+BINARIES = allHistograms pixelFillQualityLM runPixelHistograms runAnaFrameTree runPlot movieMakerVtx
 
 DICT = ${LFILES:.o=Dict.o}
 DICTHEADERS = ${LFILES:.o=Dict.h}
@@ -122,7 +122,7 @@ prep:
 
 # -- clean up
 clean:
-	rm -f $(addprefix obj/,$(LFILES ) $(DICT) $(CSTUFF) runHitDataAna.o runTreeLFILES .o runPlot.o runPlotFrameTreeResults.o)
+	rm -f $(addprefix obj/,$(LFILES ) $(DICT) $(CSTUFF) runHitDataAna.o runTreeLFILES .o runPlot.o runPlotFrameTreeResults.o runMovieMakerVtx.o )
 	rm -f $(DICTHEADERS)  $(DICTSOURCES)
 	rm -f bin/*
 	rm -f lib/*
