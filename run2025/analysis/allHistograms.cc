@@ -15,6 +15,8 @@
 #include "TMath.h"
 #include "TKey.h"
 #include "TROOT.h"
+#include "TLatex.h"
+#include "TArrow.h"
 
 using namespace std;
 
@@ -303,7 +305,9 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
       gPad->SetTopMargin(0.0);
       // cout << "vLayer1[i] = " << vLayer1[i] << " " << mHitmaps[vLayer1[i]] << endl;
       if (mHitmaps[vLayer1[i]]) {
-        mHitmaps[vLayer1[i]]->Draw("col");
+        TH2F *h2 = (TH2F*)mHitmaps[vLayer1[i]]->Clone();
+        h2->Rebin2D(4,10);
+        h2->Draw("col");
         mHitmaps[vLayer1[i]]->SetTitleSize(0.3);
       }
     }
@@ -324,7 +328,9 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
       gPad->SetTopMargin(0.0);
       // cout << "vLayer2[i] = " << vLayer2[i] << " " << mHitmaps[vLayer2[i]] << endl;
       if (mHitmaps[vLayer2[i]]) {
-        mHitmaps[vLayer2[i]]->Draw("col");
+        TH2F *h2 = (TH2F*)mHitmaps[vLayer2[i]]->Clone();
+        h2->Rebin2D(4,10);
+        h2->Draw("col");
       }
     }
     replaceAll(barefilename, ".root", "");
@@ -398,6 +404,116 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
     replaceAll(barefilename, ".root", "");
     c->SaveAs(("out/vtxTimeCorrelations-" + to_string(run) + ".pdf").c_str());
     delete c;
+
+  // -- now plot 1D single pixel hit rate 
+  c = new TCanvas("c", "c", 800, 1000);
+  gStyle->SetOptStat(0);
+  gStyle->SetPadTopMargin(0);
+  gStyle->SetPadBottomMargin(0);
+  gStyle->SetPadLeftMargin(0);
+  gStyle->SetPadRightMargin(0);
+  gStyle->SetTitleSize(0.3);
+  c->Divide(2, 1);
+  c->cd(1);
+  gPad->SetBottomMargin(0.0);
+  gPad->SetLeftMargin(0.0);
+  gPad->SetRightMargin(0.0);
+  gPad->SetTopMargin(0.0);
+  p = (TPad*)c->GetPad(1);
+  p->Divide(6,8);
+  TH1 *h1; 
+  TLatex *tl = new TLatex();
+  tl->SetTextSize(0.1);
+  tl->SetTextColor(kBlack);
+
+  TArrow *ar = new TArrow();
+  ar->SetLineWidth(1);
+  ar->SetAngle(50);
+  ar->SetArrowSize(0.02);
+  ar->SetLineColor(kRed);
+  ar->SetFillStyle(0);
+  int NSIGMA = 10;
+  int NBINS = 200;
+  double xmax = 2000;
+
+  for (int i = 0; i < vLayer1.size(); ++i) {    
+    p->cd(i+1);
+    gPad->SetLogy(1);
+    gPad->SetBottomMargin(0.0);
+    gPad->SetLeftMargin(0.0);
+    gPad->SetRightMargin(0.0);
+    gPad->SetTopMargin(0.0);
+    // cout << "vLayer1[i] = " << vLayer1[i] << " " << mHitmaps[vLayer1[i]] << endl;
+    if (mHitmaps[vLayer1[i]]) {
+      h1 = new TH1F(Form("h1_%s", mHitmaps[vLayer1[i]]->GetName()), Form("h1_%s", mHitmaps[vLayer1[i]]->GetName()), NBINS, 0, xmax);
+      h1->SetTitle("");
+      h1->SetMinimum(0.5);
+      for (int ix = 1; ix <= mHitmaps[vLayer1[i]]->GetNbinsX(); ++ix) {
+        for (int iy = 1; iy <= mHitmaps[vLayer1[i]]->GetNbinsY(); ++iy) {
+          if (mHitmaps[vLayer1[i]]->GetBinContent(ix, iy) > 0)  h1->Fill(mHitmaps[vLayer1[i]]->GetBinContent(ix, iy));
+        }
+      }
+      h1->Draw("hist");
+      h1->SetTitleSize(0.3);
+      tl->DrawLatexNDC(0.2, 0.9, Form("%s", mHitmaps[vLayer1[i]]->GetTitle()));
+      int oflw = static_cast<int>(h1->GetBinContent(h1->GetNbinsX()+1));
+      if (oflw > 0) {
+        tl->SetTextColor(kRed);
+      } else {
+        tl->SetTextColor(kBlack);
+      }
+      tl->DrawLatexNDC(0.2, 0.82, Form("overflow: %d/%d", oflw, static_cast<int>(h1->GetEntries())));
+      tl->SetTextColor(kBlack);
+      tl->DrawLatexNDC(0.2, 0.74, Form("mean: %5.2f#pm%5.2f", h1->GetMean(), h1->GetMeanError()));
+      tl->DrawLatexNDC(0.2, 0.66, Form("Thr_{N}: %5.2f", h1->GetMean()+NSIGMA * h1->GetMeanError()));
+      double x = h1->GetMean() + NSIGMA * h1->GetMeanError();
+      if (h1->GetEntries() > 0) ar->DrawArrow(x, h1->GetMaximum(), x, 0.6);
+    }
+  }
+
+  c->cd(2);
+  gPad->SetBottomMargin(0.0);
+  gPad->SetLeftMargin(0.0);
+  gPad->SetRightMargin(0.0);
+  gPad->SetTopMargin(0.0);
+  p = (TPad*)c->GetPad(2);
+  p->Divide(6,10);
+  for (int i = 0; i < vLayer2.size(); ++i) {
+    p->cd(i+1);
+    gPad->SetLogy(1);
+    gPad->SetBottomMargin(0.0);
+    gPad->SetLeftMargin(0.0);
+    gPad->SetRightMargin(0.0);
+    gPad->SetTopMargin(0.0);
+    // cout << "vLayer2[i] = " << vLayer2[i] << " " << mHitmaps[vLayer2[i]] << endl;
+    if (mHitmaps[vLayer2[i]]) {
+      h1 = new TH1F(Form("h1_%s", mHitmaps[vLayer2[i]]->GetName()), Form("h1_%s", mHitmaps[vLayer2[i]]->GetName()), NBINS, 0, xmax);
+      h1->SetTitle("");
+      h1->SetMinimum(0.5);
+      for (int ix = 1; ix <= mHitmaps[vLayer2[i]]->GetNbinsX(); ++ix) {
+        for (int iy = 1; iy <= mHitmaps[vLayer2[i]]->GetNbinsY(); ++iy) {
+          if (mHitmaps[vLayer2[i]]->GetBinContent(ix, iy) > 0) h1->Fill(mHitmaps[vLayer2[i]]->GetBinContent(ix, iy));
+        }
+      }
+      h1->Draw("hist");
+      tl->DrawLatexNDC(0.2, 0.9, Form("%s", mHitmaps[vLayer2[i]]->GetTitle()));
+      int oflw = static_cast<int>(h1->GetBinContent(h1->GetNbinsX()+1));
+      if (oflw > 0) {
+        tl->SetTextColor(kRed);
+      } else {
+        tl->SetTextColor(kBlack);
+      }
+      tl->DrawLatexNDC(0.2, 0.82, Form("overflow: %d/%d", oflw, static_cast<int>(h1->GetEntries())));
+      tl->SetTextColor(kBlack);
+      tl->DrawLatexNDC(0.2, 0.74, Form("mean: %5.2f#pm%5.2f", h1->GetMean(), h1->GetMeanError()));
+      tl->DrawLatexNDC(0.2, 0.66, Form("Thr_{N}: %5.2f", h1->GetMean()+NSIGMA * h1->GetMeanError()));
+      double x = h1->GetMean() + NSIGMA * h1->GetMeanError();
+      if (h1->GetEntries() > 0) ar->DrawArrow(x, h1->GetMaximum(), x, 0.6);
+    }
+  }
+  replaceAll(barefilename, ".root", "");
+  c->SaveAs(("out/vtxHitCounts-" + to_string(run) + ".pdf").c_str());
+
 }
 
 
