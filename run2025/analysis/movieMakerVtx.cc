@@ -15,6 +15,7 @@
 #include "TString.h"
 #include "TRandom.h"
 #include "TUnixSystem.h"
+#include "TStyle.h"
 
 
 #include "util.hh"
@@ -96,7 +97,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (mode == "all" || mode == "hitmap") {
-      gStyle->SetOptStat(0);
+      gStyle->SetOptStat(0); 
       string name1("hitmap_perChip_");
       // -- read in all hitmaps
       for (auto sLadder : allLadders) {
@@ -106,6 +107,7 @@ int main(int argc, char *argv[]) {
         while (key = (TKey*)next()) {
           string kname = key->GetName();
           if (kname.find(name1) != string::npos) {
+            shrinkPad(0.1, 0.17, 0.17);
             TH2 *h = (TH2*)key->ReadObj();
             string hname(h->GetName());
             replaceAll(hname, "hitmap_perChip_", "");
@@ -114,8 +116,9 @@ int main(int argc, char *argv[]) {
             h->SetTitle(Form("Chip %d (0x%x) run %s", ichip, ichip, run.c_str()));
             gPad->SetLogy(0);
             h->Draw("colz");
-            TString s = Form("hitmap%d.gif+50", ichip);
+            TString s = Form("pdf/hitmap%d.gif+50", ichip);
             c1->Print(s);  
+            c1->SaveAs(Form("pdf/hitmap%d-%s.pdf", ichip, run.c_str()));
           }
         }
       }
@@ -141,8 +144,9 @@ int main(int argc, char *argv[]) {
             h->SetMinimum(0.5);
             gPad->SetLogy(1);
             h->Draw("colz");
-            TString s = Form("hitToT%d.gif+50", ichip);
+            TString s = Form("pdf/hitToT%d.gif+50", ichip);
             c1->Print(s);  
+            c1->SaveAs(Form("pdf/hitToT%d-%s.pdf", ichip, run.c_str()));
           }
         }
       }
