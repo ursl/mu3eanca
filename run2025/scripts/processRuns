@@ -37,7 +37,7 @@
 #    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
-#         2025/09/25 more run chunks
+#         2025/09/25 more run chunks and beam2025
 #         2025/09/18 add "-s" to NOT skip runs in case of insufficient statistics. Upload to RDB only with -u. Check whether mergedFile already exists.
 #         2025/09/17 add "-e cosmics2025" to allow submission of n batches (to SLURM)
 #         2025/09/05 add JSON RDB version before trying the RDB on pc11740
@@ -563,6 +563,19 @@ sub setGoodRuns() {
         );
         foreach $batch (@batches) {
             my @args = map { (defined($_) && $_ eq 'cosmics2025') ? $batch : $_ } @jobargs;
+            my $cmnd = "$0 @args >&! $opt_m-$batch.log & ";
+            print "submitting $batch:  $cmnd \n";
+            system('tcsh', '-c', "$cmnd");
+        }
+        exit(0);
+    } elsif ($opt_e eq "beam2025") {
+        print "meta era: submit all jobs for beam 2025 processing based on this job specification\n";
+        my @jobargs = @orig_argv;
+        my @batches = ("beam-0", "beam-1", "beam-2",
+        "beam-3", "beam-4", "beam-5", "beam-6", "beam-7"
+        );
+        foreach $batch (@batches) {
+            my @args = map { (defined($_) && $_ eq 'beam2025') ? $batch : $_ } @jobargs;
             my $cmnd = "$0 @args >&! $opt_m-$batch.log & ";
             print "submitting $batch:  $cmnd \n";
             system('tcsh', '-c', "$cmnd");
