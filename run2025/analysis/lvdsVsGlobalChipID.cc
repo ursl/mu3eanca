@@ -17,6 +17,7 @@
 #include "TUnixSystem.h"
 #include "TStyle.h"
 
+#include <iterator>
 
 #include "util.hh"
 
@@ -26,6 +27,8 @@ using namespace std;
 int main(int argc, char *argv[]) {
 
   // -- simple print of LVDS links and global chipID 
+  // -- after second it generates the code to initialize the map<int, vector<string>> 
+  // -- to map for each global chipID to its three links
 
   // -- Check errors
   std::vector<int> n_links_per_feb = {36, 36, 27, 36, 27, 36, 36, 27, 36, 27};
@@ -42,7 +45,10 @@ int main(int argc, char *argv[]) {
   // -- ODB midas::odb odb_link_mask("/Equipment/LinksCentral/Settings/LVDSLinkMask");
   // -- 9304 
   //  std::vector<uint64_t> link_masks = {0x0000000007f67fff, 0x000000000001f5fe, 0x0000000007fc01f8, 0x0000000ffffd817f, 0x00000000071ffffd, 0x0000000ff003fd7f, 0x000000000003bff8, 0x00000000077f8e00, 0x0000000ffefff1fa, 0x0000000000ffffff, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000};
+  // -- 6288
   std::vector<uint64_t> link_masks =     {0x0000000007f7ffff, 0x0000000007ddf7fe, 0x0000000007fc01f8, 0x0000000ffffd817f, 0x00000000071ffffd, 0x0000000ff003ff7f, 0x000000000003bff8, 0x00000000077f8e00, 0x0000000ffefffffa, 0x0000000007ffffff, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000};
+
+  map<int, vector<string>> theBigMap;
 
   int offset = 0;
   int offset_var = 0;
@@ -96,10 +102,12 @@ int main(int argc, char *argv[]) {
           if (n_not_working_links_per_chip.find(chip_globID) == n_not_working_links_per_chip.end()) {
               n_not_working_links_per_chip[chip_globID] = 0;
           }
+          theBigMap.insert({chip_globID, vector<string>()});
       }
       //Nasty double loop!
       for (int n_link = 0; n_link < n_links; ++ n_link) {
-          cout << "  link: " << n_link << "  " ;
+        int chipCnt(0);
+        cout << "  link: " << n_link << "  " ;
           int chip_confID = static_cast<int>((n_link/3)) +offset;
           if (chip_confID > 53) {//DS inversion
               int ladder_tmp = static_cast<int>(chip_confID/3);
@@ -120,6 +128,9 @@ int main(int argc, char *argv[]) {
               int tmp_in_ladder = tmp_in_direction%3; //within a ladder
               chip_globID = tmp_layer*pow(2,10) + tmp_ladder*pow(2,5) + tmp_in_ladder + 1 +3*tmp_direction;
               cout << "   global chipID: " << chip_globID << endl;
+              string slinkname = Form("lvds/FEB_%02d/Link_%02d", feb_n, n_link);
+              theBigMap[chip_globID].push_back(slinkname);
+
           }
       }
 
@@ -127,5 +138,20 @@ int main(int argc, char *argv[]) {
       offset_link += n_chips*3;
   }
 
+  ofstream OF("linkMap.txt");
+  OF << "  map<int, vector<string>> mLinksChipID = {" << endl;
+  for (auto it = theBigMap.begin(); it != theBigMap.end(); ++it) {
+    OF << "    {" << it->first << ", {";
+    for (unsigned int il = 0; il < it->second.size(); ++il) {
+      OF << "\"" << it->second[il] << "\"" << (il < it->second.size()-1? ", " : "");
+    }
+    if (std::next(it) != theBigMap.end()) {
+      OF << "}}," << endl;
+    } else {
+      OF << "}}" << endl;
+    }    
+  }
+  OF << "  };" << endl;
+  OF.close();
 
 }
