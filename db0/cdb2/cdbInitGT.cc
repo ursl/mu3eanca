@@ -26,34 +26,20 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-// cdbInitDB [-j JSONDIR] [-m MODE]
+// cdbInitGT -g datav6.2=2025DataV0 -j CDBJSONDIR -p payloadDir
 // ---------
-//
-// initialize the JSON filesystem-based CDB for all starting points
-// "mcidealv5.0" old MC
-// "mcidealv5.1" MC after tag v5.1
-// "mcidealv6.1" MC for tag v6.1
-// 
-// "datav6.1=2025CosmicsVtxOnly"  data for tag v6.1
-// "datav6.2=2025Beam"  data for tags AFTER v6.1, with more than just the VTX
-//                      removed legacy detconf
-// "qc2024v1.0"  pixel sensor chipIds for first vertex module (aka half-shell)
-//
-// -j JSONDIR  output directory with subdirectories globaltags, tags, payloads, runrecords
-// -m MODE     "mcidealv5.1", ...
 //
 //
 // Usage examples
 // --------------
 //
-// -- NOTE: This executable is called during "make install"!
-//          The JSON CDB will be installed in mu3e/install/cdb
-//
-// -- create all global tags with everything or with a single tag only
-// merlin> _build/conddb/test/cdbInitDB -j ~/data/cdb -m all
-// moor>   ./bin/cdbInitDB -j ~/data/cdb -m mcidealv5.4
+// -- create a global tag with all tags/payloads 
+// merlin> ./bin/cdbInitGT -g v6.2=2025DataV0 -j ~/data/mu3e/cdb -p ~/data/tmp/cdb/payloads
 //
 // ----------------------------------------------------------------------
+
+
+void writeDetSetupV1(string jsondir, string gt);
 
 // ----------------------------------------------------------------------
 int main(int argc, const char* argv[]) {
@@ -62,21 +48,16 @@ int main(int argc, const char* argv[]) {
   // -- global tags
   // ----------------------------------------------------------------------
   map<string, vector<string>> iniGlobalTags = {
-    {"mcidealv5.0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
-    {"mcidealv5.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_"} },
-    {"mcidealv5.3", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detconfv1_mcidealv5.1"} },
-    {"mcidealv5.4", {"pixelalignment_mcidealv5.3", "fibrealignment_mcidealv5.3", "tilealignment_mcidealv5.3", "mppcalignment_mcidealv5.3", "detconfv1_mcidealv5.1"} },
-    {"mcidealv5.4=2025CosmicsVtxOnly", {"pixelalignment_", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
-    {"mcidealv6.1", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "detsetupv1_", "detconfv1_mcidealv5.1", } },
-    {"mcidealv6.1=2025CosmicsVtxOnly", {"pixelalignment_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
-    {"qc2024v1.0",  {"pixelalignment_", "fibrealignment_mcidealv5.1", "tilealignment_mcidealv5.1", "mppcalignment_mcidealv5.1", "detconfv1_mcidealv5.1"} },
-    {"datav6.1=2025CosmicsVtxOnly", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "pixelqualitylm_", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly", "detconfv1_mcidealv5.4=2025CosmicsVtxOnly"} },
-    {"datav6.2=2025Beam", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "fibrealignment_mcidealv6.1", "tilealignment_mcidealv6.1", "mppcalignment_mcidealv6.1", "pixelqualitylm_", "detsetupv1_mcidealv6.1"} },
-    {"datav6.2=2025CosmicsNoMagnet", {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "fibrealignment_mcidealv6.1", "tilealignment_mcidealv6.1", "mppcalignment_mcidealv6.1", "pixelqualitylm_datav6.2=2025Beam", "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly"} }
-    {"v6.2=2025DataV0", {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", "pixelqualitylm_", "detsetupv1_"} }
+    {"datav6.2=2025V0", {"pixelalignment_", 
+                         "fibrealignment_", 
+                         "tilealignment_", 
+                         "mppcalignment_", 
+                         "pixelqualitylm_", 
+                         "detsetupv1_"
+                        }  
+    }
   };    
-  
-  
+   
   // -- complete the tags by replacing trailing _ with the _GT
   for (auto &it: iniGlobalTags) {
     for (unsigned int i = 0; i < it.second.size(); i++) { 
@@ -89,29 +70,23 @@ int main(int argc, const char* argv[]) {
 
   // -- command line arguments
   string jsondir("");
-  string mode("all");
-  int verbose(0), banner(0);
+  string gt("");
+  string payloaddir("");
+  int verbose(0);
   for (int i = 0; i < argc; i++) {
-    if (!strcmp(argv[i], "-j"))  {jsondir = argv[++i];}
-    if (!strcmp(argv[i], "-m"))  {mode    = argv[++i];}
-    if (!strcmp(argv[i], "-v"))  {verbose = 1;}
-    if (!strcmp(argv[i], "-b"))  {banner = 1;}
+    if (!strcmp(argv[i], "-j"))  {jsondir    = argv[++i];}
+    if (!strcmp(argv[i], "-g"))  {gt         = argv[++i];}
+    if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
+    if (!strcmp(argv[i], "-v"))  {verbose    = 1;}
   }
   
-  if (banner > 0) {
-    cout << "===============" << endl;
-    cout << "== cdbInitDB ==" << endl;
-    cout << "===============" << endl;
-    cout << "== installing in directory " << jsondir << endl;
-  }
-  
-  // -- handle meta-mode
-  if (string::npos != mode.find("all")) {
-    for (auto it: iniGlobalTags) {
-      system(string(string(argv[0]) + " -j " + jsondir + " -m " + it.first).c_str());
-    }
-  }
-  
+  cout << "===============" << endl;
+  cout << "== cdbInitGT ==" << endl;
+  cout << "===============" << endl;
+  cout << "== installing in directory " << jsondir << endl;
+  cout << "== global tag " << gt << endl;
+  cout << "== payload directory " << payloaddir << endl;
+    
   // -- check whether directories for JSONs already exist
   vector<string> testdirs{jsondir,
                           jsondir + "/globaltags",
@@ -135,7 +110,7 @@ int main(int argc, const char* argv[]) {
   string jdir  = jsondir + "/globaltags";
   
   for (auto igt : iniGlobalTags) {
-    if (igt.first != mode) continue;
+    if (igt.first != gt) continue;
     
     vector<string> arrayBuilder;
     for (auto it : igt.second) {
@@ -157,15 +132,15 @@ int main(int argc, const char* argv[]) {
     cout << sstr.str();
     JS.close();
   }
-  
-  // ----------------------------------------------------------------------
-  // -- tags/iovs
-  // ----------------------------------------------------------------------
+
+  // -- write detsetupv1 (basically magnet status) payloads and tags
+  writeDetSetupV1(jsondir, gt);
+
   jdir  = jsondir + "/tags";
   vector<int> vIni{1};
   for (auto igt : iniGlobalTags) {
     //if (string::npos == igt.first.find(mode)) continue;
-    if (igt.first != mode) continue;
+    if (igt.first != gt) continue;
  
     for (auto it : igt.second) {
       // string tag = ('_' == it.back()? it + igt.first: it);
@@ -204,20 +179,16 @@ int main(int argc, const char* argv[]) {
   
   string filename("");
   for (auto igt: iniGlobalTags) {
-    // string it = igt.first;
-    // if (string::npos == it.find(mode)) continue;
-    //cout << "DBX: " << igt.first << " " << " with tags: " << endl;
-    //for (auto it: igt.second) {
-    //  cout << "  " << it << endl;
-    //}
-    //if (string::npos == igt.first.find(mode)) continue;
-    if (igt.first != mode) continue;
+
+    if (igt.first != gt) continue;
 
     for (auto it : igt.second) {
       string tag = it;
       string tagLess = tag.substr(tag.rfind('_') + 1);
-      
-      //cout << "cdbInitDB> tag = " << tag << " tagLess = " << tagLess << " it = " << it << endl; 
+
+      if (string::npos != tag.find("detsetupv1_")) continue;
+
+      cout << "cdbInitDB> tag = " << tag << " tagLess = " << tagLess << " it = " << it << endl; 
       bool exactFind(false);
       for (auto it2: igt.second) {
         if (it2 == tag) {
@@ -437,4 +408,81 @@ int main(int argc, const char* argv[]) {
   JS.close();
   
   return 0;
+}
+
+// ----------------------------------------------------------------------
+void writeDetSetupV1(string jsondir, string gt) {
+  cout << "   ->cdbInitGT> writing local template detsetupv1 payloads" << endl;
+  // -- create (local template) payloads for no field and with field
+  calDetSetupV1 *cdc = new calDetSetupV1();
+  string filename = string(LOCALDIR) + "/ascii/detector-MagnetOff-v6.2.json";
+  string result = cdc->readJSON(filename);
+  if (string::npos == result.find("Error")) {
+    string spl = cdc->makeBLOB();
+    string hash = "detsetupv1_noField";
+    payload pl;
+    if (fileExists(string(LOCALDIR) + "/" + hash)) {
+      cout << "   ->cdbInitGT> payload " << hash << " already exists, skipping" << endl;
+    } else {
+      pl.fHash = hash;
+      pl.fComment = "detector setup with magnet off (no magnet)";
+      pl.fSchema  = cdc->getSchema();
+      pl.fBLOB = spl;
+      cdc->writePayloadToFile(hash, string(LOCALDIR), pl);
+    }
+  }
+
+  filename = string(LOCALDIR) + "/ascii/detector-MagnetOn-v6.2.json";
+  result = cdc->readJSON(filename);
+  if (string::npos == result.find("Error")) {
+    string spl = cdc->makeBLOB();
+    string hash = "detsetupv1_MagnetOn";
+    payload pl;
+    if (fileExists(string(LOCALDIR) + "/" + hash)) {
+      cout << "   ->cdbInitGT> payload " << hash << " already exists, skipping" << endl;
+    } else {
+      pl.fHash = hash;
+      pl.fComment = "detector setup with magnet on";
+      pl.fSchema  = cdc->getSchema();
+      pl.fBLOB = spl;
+      cdc->writePayloadToFile(hash, string(LOCALDIR), pl);
+    }
+  }
+
+  // -- now the payloads
+  vector<pair<int, int>> iovMagnet = { {1, 0}, {2177, 1}, {6302, 0}};
+  vector<int> iovs;
+  for (auto it: iovMagnet) {
+    string templateHash = "detsetupv1_";
+    string hash = "tag_" + templateHash + gt + "_iov_" + to_string(it.first);
+    iovs.push_back(it.first);
+    if (it.second == 1) {
+      templateHash = templateHash + "MagnetOn";
+    } else {
+      templateHash = templateHash + "noField";
+    }
+    cdc->readPayloadFromFile(templateHash, string(LOCALDIR));
+    payload pl = cdc->getPayload(templateHash);
+    pl.fHash = hash;
+    cdc->writePayloadToFile(hash, jsondir + "/payloads", pl);
+    cout << "   ->cdbInitGT> writing IOV " << it.first << " with " << templateHash << endl;
+  }
+
+  // -- and the tag/IOVs
+  string tag = "detsetupv1_" + gt;
+  stringstream sstr;
+  sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
+  sstr << jsFormat(iovs);
+  sstr << " }" << endl;
+  cout << sstr.str();
+  ofstream ONS;
+  ONS.open(jsondir + "/tags/" + tag);
+  if (ONS.fail()) {
+    cout << "Error failed to open " << jsondir + "/tags/" + tag << endl;
+  }
+  ONS << sstr.str();
+  cout << sstr.str();
+  ONS.close();
+
+  delete cdc;
 }
