@@ -9,6 +9,7 @@
 #include <iomanip>
 
 #include <chrono>
+#include <glob.h>
 
 #include "cdbUtil.hh"
 #include "base64.hh"
@@ -40,6 +41,7 @@ using namespace std;
 
 
 void writeDetSetupV1(string jsondir, string gt);
+void writePixelQualityLM(string jsondir, string gt, string payloaddir);
 
 // ----------------------------------------------------------------------
 int main(int argc, const char* argv[]) {
@@ -135,6 +137,8 @@ int main(int argc, const char* argv[]) {
 
   // -- write detsetupv1 (basically magnet status) payloads and tags
   writeDetSetupV1(jsondir, gt);
+  // -- write pixelqualitylm payloads and tags
+  writePixelQualityLM(jsondir, gt, payloaddir);
 
   jdir  = jsondir + "/tags";
   vector<int> vIni{1};
@@ -294,53 +298,7 @@ int main(int argc, const char* argv[]) {
           cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
         }
       }
-
-      // -- detconfv1
-      if (string::npos != tag.find("detconfv1_")) {
-        calDetConfV1 *cdc = new calDetConfV1();
-        filename = string(LOCALDIR) + "/ascii/detector-" + tagLess + ".json";
-        result = cdc->readJSON(filename);
-        if (string::npos == result.find("Error")) {
-          spl = cdc->makeBLOB();
-          hash = string("tag_detconfv1_" + tagLess + "_iov_1");
-          if (fileExists(jdir + "/" + hash)) {
-            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
-            continue;
-          }
-          pl.fHash = hash;
-          pl.fComment = tagLess + " detector conf";
-          pl.fSchema  = cdc->getSchema();
-          pl.fBLOB = spl;
-          if (verbose) cdc->printBLOB(spl);
-          cdc->writePayloadToFile(hash, jdir, pl);
-        } else {
-          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-        }
-      }
-      
-      // -- detsetupv1
-      if (string::npos != tag.find("detsetupv1_")) {
-        calDetSetupV1 *cdc = new calDetSetupV1();
-        filename = string(LOCALDIR) + "/ascii/detector-" + tagLess + ".json";
-        result = cdc->readJSON(filename);
-        if (string::npos == result.find("Error")) {
-          spl = cdc->makeBLOB();
-          hash = string("tag_detsetupv1_" + tagLess + "_iov_1");
-          if (fileExists(jdir + "/" + hash)) {
-            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
-            continue;
-          }
-          pl.fHash = hash;
-          pl.fComment = tagLess + " detector setup";
-          pl.fSchema  = cdc->getSchema();
-          pl.fBLOB = spl;
-          if (verbose) cdc->printBLOB(spl);
-          cdc->writePayloadToFile(hash, jdir, pl);
-        } else {
-          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-        }
-      }
-      
+    
       
       // -- pixelqualitylm: zero problematic pixels for all sensors present in cpa
       if (string::npos != tag.find("pixelqualitylm_")) {
@@ -363,49 +321,8 @@ int main(int argc, const char* argv[]) {
         cpq->writePayloadToFile(hash, jdir, pl);
       }
       
-      // -- pixelcablingmap
-      if (string::npos != tag.find("pixelcablingmap_")) {
-        calPixelCablingMap *ccm = new calPixelCablingMap();
-        filename = "./ascii/pixelcablingmap-" + tagLess + ".json";
-        result = ccm->readJson(filename);
-        if (string::npos == result.find("Error")) {
-          spl = ccm->makeBLOB();
-          hash = "tag_pixelcablingmap_" + tagLess + "_iov_1";
-          if (fileExists(jdir + "/" + hash)) {
-            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
-            continue;
-          }
-          pl.fHash = hash;
-          pl.fComment = tagLess + "pixel cabling map initialization";
-          pl.fSchema  = ccm->getSchema();
-          pl.fBLOB = spl;
-          if (verbose) ccm->printBLOB(spl);
-          ccm->writePayloadToFile(hash, jdir, pl);
-        } else {
-          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-        }
-      }
     }
   }
-  
-  // -- create a runRecord
-  filename = "runRecord_226.json";
-  ifstream INS;
-  INS.open(string(LOCALDIR) + "/ascii/" + filename);
-  std::stringstream buffer;
-  buffer << INS.rdbuf();
-  INS.close();
-  
-  jdir = jsondir + "/runrecords";
-  string orr = jdir + "/" + filename;
-  
-  
-  JS.open(orr);
-  if (JS.fail()) {
-    cout << "cdbInitDB> Error failed to open " << orr <<  endl;
-  }
-  JS << buffer.str();
-  JS.close();
   
   return 0;
 }
@@ -485,4 +402,64 @@ void writeDetSetupV1(string jsondir, string gt) {
   ONS.close();
 
   delete cdc;
+}
+
+// ----------------------------------------------------------------------
+void writePixelQualityLM(string jsondir, string gt, string payloaddir) {
+  cout << "   ->cdbInitGT> writing local template pixelqualitylm payloads" << endl;
+  // -- create (local template) payloads for no problematic pixels
+  calPixelQualityLM *cpq = new calPixelQualityLM();
+  string filename = string(LOCALDIR) + "/ascii/pixelqualitylm-" + gt + ".csv";
+  cpq->readCsv(filename);
+  string spl = cpq->makeBLOB();
+  string hash = "tag_pixelqualitylm_" + gt + "_iov_1";
+  payload pl;
+  if (fileExists(jsondir + "/" + hash)) {
+    cout << "   ->cdbInitGT> payload " << hash << " already exists, skipping" << endl;
+  }
+  pl.fHash = hash;
+  pl.fComment = "pixelqualitylm with no problematic pixels";
+  pl.fSchema  = cpq->getSchema();
+  pl.fBLOB = spl;
+  cpq->writePayloadToFile(hash, jsondir + "/payloads", pl);
+
+  // -- now the other payloads
+  glob_t globbuf;
+  int err = glob((payloaddir + "/tag_pixelqualitylm_*").c_str(), 0, NULL, &globbuf);
+  map<int, string> mRunToHash;
+  if (err == 0)  {
+    for (size_t i = 0; i < globbuf.gl_pathc; i++)  {
+        cout << "   ->cdbInitGT> processing file: " << globbuf.gl_pathv[i] << endl;
+        string hash = globbuf.gl_pathv[i];
+        hash = hash.substr(hash.rfind('/') + 1);
+        string run = hash.substr(hash.rfind('_') + 1);
+        int irun = ::stoi(run);
+        // -- skip run 1 (because that is created above)
+        if (irun == 1) continue;
+        // -- check if the run already exists in the map with the correct hash (containing the gt)
+        if ((mRunToHash.find(irun) != mRunToHash.end()) 
+            && (string::npos != mRunToHash[irun].find(gt))) {
+          cout << "   ->cdbInitGT> run " << irun 
+               << " already exists with " << mRunToHash[irun] 
+               << ", skipping" 
+               << endl;
+          continue;
+        }
+        mRunToHash[::stoi(run)] = hash;
+    }
+    globfree(&globbuf);
+  }
+  for (auto it: mRunToHash) {
+    cout << it.first << " -> " << it.second << " ";
+    cpq->readPayloadFromFile(it.second, payloaddir);
+    payload pl = cpq->getPayload(it.second);
+    string hash = "tag_pixelqualitylm_" + gt + "_iov_" + to_string(it.first);
+    pl.fHash = hash;
+    pl.fComment = "source: " + payloaddir + "/" + it.second;
+    pl.fSchema  = cpq->getSchema();
+    pl.fBLOB = pl.fBLOB;
+    cout << " writing payload " << hash << " for run " << it.first << endl;
+    cpq->writePayloadToFile(hash, jsondir + "/payloads", pl);
+  }
+  delete cpq;
 }
