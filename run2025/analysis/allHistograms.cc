@@ -1,3 +1,4 @@
+#include <Rtypes.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -261,17 +262,24 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
       "localTimeL1Lad7VsL2Lad89",
       "localTimeL1Lad8VsL2Lad10"
     };
-    gFile->cd("timecorrelations/pixel");
-    TIter next(gDirectory->GetListOfKeys());
-    TKey *key(0);
-    while (key = (TKey*)next()) {
-      string kname = key->GetName();
-      if (find(allTimeCorrelations.begin(), allTimeCorrelations.end(), kname) != allTimeCorrelations.end()) {
-        TH2 *h = (TH2*)key->ReadObj();
-        // cout << "time correlation " << kname << endl;
-        h->Rebin2D(64,64);
-        mTimeCorrelations[kname] = h;
+    TDirectory *dir = gFile->GetDirectory("timecorrelations");
+    cout << "GetDirectory: " << dir << endl;
+    if (nullptr != dir) {
+      cout << "reading time correlations from timecorrelations/pixel" << endl;
+      dir->cd("pixel");
+      TIter next(gDirectory->GetListOfKeys());
+      TKey *key(0);
+      while (key = (TKey*)next()) {
+        string kname = key->GetName();
+        if (find(allTimeCorrelations.begin(), allTimeCorrelations.end(), kname) != allTimeCorrelations.end()) {
+          TH2 *h = (TH2*)key->ReadObj();
+          // cout << "time correlation " << kname << endl;
+          h->Rebin2D(64,64);
+          mTimeCorrelations[kname] = h;
+        }
       }
+    } else{
+      cout << "timecorrelations/pixel not found" << endl;
     }
 
 
@@ -386,7 +394,31 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
       {1317, {"lvds/FEB_09/Link_21", "lvds/FEB_09/Link_22", "lvds/FEB_09/Link_23"}},
       {1318, {"lvds/FEB_09/Link_18", "lvds/FEB_09/Link_19", "lvds/FEB_09/Link_20"}}
     };
-  
+    cout << "hallo: " << gFile << endl;
+    gFile->cd();
+    map<int, vector<TH1*>> mLVDSErrors;
+    for (auto itChipLinks: mLinksChipID) {
+      for (unsigned int iLink = 0; iLink < itChipLinks.second.size(); ++iLink) {
+        string itLink = itChipLinks.second[iLink] + "/" + "8b10bErrorsVsMidasEvent";
+        string sidx = to_string(itChipLinks.first);
+        cout << "itLink: " << itLink << endl;
+        TH1D *h = (TH1D*)gFile->Get(itLink.c_str());
+        if (iLink == 0) {      
+          h->SetLineColor(kBlack);
+        }
+        if (iLink == 1) {
+          h->SetLineColor(kBlue);
+        }
+        if (iLink == 2) {
+          h->SetLineColor(kRed);
+        }
+        h->SetMinimum(0.5);
+        h->SetTitle(sidx.c_str());
+        mLVDSErrors[itChipLinks.first].push_back(h);
+      }
+    }
+
+
     // -----------------------
     // -- PLOTTING starts here
     // -----------------------
@@ -420,7 +452,7 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
       // cout << "vLayer1[i] = " << vLayer1[i] << " " << mHitmaps[vLayer1[i]] << endl;
       if (mHitmaps[vLayer1[i]]) {
         TH2F *h2 = (TH2F*)mHitmaps[vLayer1[i]]->Clone();
-        h2->Rebin2D(4,10);
+        //h2->Rebin2D(4,10);
         h2->Draw("col");
         mHitmaps[vLayer1[i]]->SetTitleSize(0.3);
       }
@@ -443,7 +475,7 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
       // cout << "vLayer2[i] = " << vLayer2[i] << " " << mHitmaps[vLayer2[i]] << endl;
       if (mHitmaps[vLayer2[i]]) {
         TH2F *h2 = (TH2F*)mHitmaps[vLayer2[i]]->Clone();
-        h2->Rebin2D(4,10);
+        //h2->Rebin2D(4,10);
         h2->Draw("col");
       }
     }
@@ -494,30 +526,79 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
     c->SaveAs(("out/vtxHitToTs-" + to_string(run) + ".pdf").c_str());
     delete c;
 
-    // -- time correlations
+    // -- LVDS errors
     c = new TCanvas("c", "c", 800, 1000);
-    c->Divide(4,4);
-    int i(1);
-    // -- first plot for "global" correlations
-    for (auto sTimeCorrelation : mTimeCorrelations) {
-      if (sTimeCorrelation.first.find("Lad") != string::npos) continue;
-      c->cd(i);
-      gPad->SetLogz(1);
-      sTimeCorrelation.second->Draw("col");
-      i++;  
+    c->Divide(2, 1);
+    c->cd(1);
+    gPad->SetBottomMargin(0.0);
+    gPad->SetLeftMargin(0.0);
+    gPad->SetRightMargin(0.0);
+    gPad->SetTopMargin(0.0);
+    p = (TPad*)c->GetPad(1);
+    TLatex *tl0 = new TLatex();
+    tl0->SetTextSize(0.048);
+    p->Divide(6,8);
+    for (int i = 0; i < vLayer1.size(); ++i) {    
+      p->cd(i+1);
+      gPad->SetBottomMargin(0.0);
+      gPad->SetLeftMargin(0.0);
+      gPad->SetRightMargin(0.0);
+      gPad->SetTopMargin(0.0);
+      gPad->SetLogy(1);
+      mLVDSErrors[vLayer1[i]][0]->Draw("");
+      mLVDSErrors[vLayer1[i]][1]->Draw("same");
+      mLVDSErrors[vLayer1[i]][2]->Draw("same");
+      tl0->SetTextColor(kBlack); tl0->DrawLatexNDC(0.75, 0.93, "A");
+      tl0->SetTextColor(kBlue);  tl0->DrawLatexNDC(0.80, 0.93, "B");
+      tl0->SetTextColor(kRed);   tl0->DrawLatexNDC(0.85, 0.93, "C");
     }
-    // -- now plot for "ladder" correlations
-    i += 2;
-    for (auto sTimeCorrelation : mTimeCorrelations) {
-      if (sTimeCorrelation.first.find("Lad") == string::npos) continue;
-      c->cd(i);
-      gPad->SetLogz(1);
-      sTimeCorrelation.second->Draw("col");
-      i++;  
+    c->cd(2);
+    p = (TPad*)c->GetPad(2);
+    p->Divide(6,10);
+    for (int i = 0; i < vLayer2.size(); ++i) {    
+      p->cd(i+1);
+      gPad->SetBottomMargin(0.0);
+      gPad->SetLeftMargin(0.0);
+      gPad->SetRightMargin(0.0);
+      gPad->SetTopMargin(0.0);
+      gPad->SetLogy(1);
+      mLVDSErrors[vLayer2[i]][0]->Draw("");
+      mLVDSErrors[vLayer2[i]][1]->Draw("same");
+      mLVDSErrors[vLayer2[i]][2]->Draw("same");
+      tl0->SetTextColor(kBlack); tl0->DrawLatexNDC(0.75, 0.93, "A");
+      tl0->SetTextColor(kBlue);  tl0->DrawLatexNDC(0.80, 0.93, "B");
+      tl0->SetTextColor(kRed);   tl0->DrawLatexNDC(0.85, 0.93, "C");
     }
     replaceAll(barefilename, ".root", "");
-    c->SaveAs(("out/vtxTimeCorrelations-" + to_string(run) + ".pdf").c_str());
+    c->SaveAs(("out/vtxLVDSErrors-" + to_string(run) + ".pdf").c_str());
     delete c;
+
+    // -- time correlations
+    if (mTimeCorrelations.size() > 0) {
+      c = new TCanvas("c", "c", 800, 1000);
+      c->Divide(4,4);
+      int i(1);
+      // -- first plot for "global" correlations
+      for (auto sTimeCorrelation : mTimeCorrelations) {
+        if (sTimeCorrelation.first.find("Lad") != string::npos) continue;
+        c->cd(i);
+        gPad->SetLogz(1);
+        sTimeCorrelation.second->Draw("col");
+        i++;  
+      }
+      // -- now plot for "ladder" correlations
+      i += 2;
+      for (auto sTimeCorrelation : mTimeCorrelations) {
+        if (sTimeCorrelation.first.find("Lad") == string::npos) continue;
+        c->cd(i);
+        gPad->SetLogz(1);
+        sTimeCorrelation.second->Draw("col");
+        i++;  
+      }
+      replaceAll(barefilename, ".root", "");
+      c->SaveAs(("out/vtxTimeCorrelations-" + to_string(run) + ".pdf").c_str());
+      delete c;
+    }
 
   // -- now plot 1D single pixel hit rate 
   c = new TCanvas("c", "c", 800, 1000);
