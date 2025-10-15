@@ -129,8 +129,13 @@ void mkCombinedPDF(int run, string rof) {
   }
   ofs.close();
 
-  string commandLine = "mv summary-" + to_string(run) + ".pdf tex";
-  cout << "->" << commandLine << "<-" << endl;
+  string commandLine = "pdflatex summary-" + to_string(run) + ".tex";
+  cout << "commandLine: " << commandLine << endl;
+  system(commandLine.c_str());
+
+
+  commandLine = "mv summary-" + to_string(run) + ".pdf tex";
+  cout << "commandLine: " << commandLine << endl;
   system(commandLine.c_str());
   commandLine = "mv summary-" + to_string(run) + ".tex tex";
   cout << "commandLine: " << commandLine << endl;
