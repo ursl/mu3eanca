@@ -130,8 +130,8 @@ void mkCombinedPDF(int run, string rof) {
   ofs.close();
 
   system(("pdflatex summary-" + to_string(run) + ".tex").c_str());
-  system(("mv summary-" + to_string(run) + ".pdf tex/").c_str());
-  system(("mv summary-" + to_string(run) + ".tex tex/").c_str());
+  system(("mv summary-" + to_string(run) + ".pdf tex/.").c_str());
+  system(("mv summary-" + to_string(run) + ".tex tex/.").c_str());
   system(("rm summary-" + to_string(run) + ".aux").c_str());
   system(("rm summary-" + to_string(run) + ".log").c_str());
 }
