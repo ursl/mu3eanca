@@ -37,6 +37,7 @@
 #    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/10/15 add "allhist"
 #         2025/09/25 more run chunks and beam2025
 #         2025/09/18 add "-s" to NOT skip runs in case of insufficient statistics. Upload to RDB only with -u. Check whether mergedFile already exists.
 #         2025/09/17 add "-e cosmics2025" to allow submission of n batches (to SLURM)
@@ -341,6 +342,8 @@ foreach my $run (@goodRuns) {
         &submitJobsRawMinalyzer($run, $nEvents);
     } elsif ($opt_m eq "calibration") {
         &submitJobsRawMinalyzer($run, $nEvents);
+        &runPixelFillQualityLM($run);
+    } elsif ($opt_m eq "allhist") {
         &runPixelFillQualityLM($run);
     } elsif ($opt_m eq "raw") {
         &submitJobsRawMinalyzer($run, $nEvents);
