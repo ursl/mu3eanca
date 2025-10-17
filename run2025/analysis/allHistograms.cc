@@ -9,6 +9,7 @@
 #include <chrono>
 
 #include "util.hh"
+#include "mu3ePlotUtils.hh"
 
 #include "TCanvas.h"
 #include "TStyle.h"
@@ -205,8 +206,10 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
     }
     
     map<int, TH2*> mHitmaps;
+    map<string, TH1*> mHists;
     string name1("hitmap_perChip_");
     // -- read in all hitmaps
+    bool first(true);
     for (auto sLadder : allLadders) {
       gFile->cd(sLadder.c_str());
       TIter next(gDirectory->GetListOfKeys());
@@ -215,21 +218,27 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
         string kname = key->GetName();
         if (kname.find(name1) != string::npos) {
           TH2 *h = (TH2*)key->ReadObj();
+          if (first) {
+            first = false; 
+            cout << "hitmap binning: " << h->GetNbinsX() << " " << h->GetNbinsY() << endl;
+          }
           string hname(h->GetName());
-          cout << "hname " << hname << endl;
+          //cout << "hname " << hname << endl;
+          TH1 *h1 = (TH1*)key->ReadObj();
+          mHists[hname] = h1;
           replaceAll(hname, "hitmap_perChip_", "");
           int ichip = ::stoi(hname);  
-          cout << "hitmap chip " << ichip << " " << hname << endl;
-          if (!noRebin) h->Rebin2D(4,10);
+          // cout << "hitmap chip " << ichip << " " << hname << endl;
+          //if (!noRebin) h->Rebin2D(4,10);
           mHitmaps[ichip] = h;
-          mHitmaps[ichip]->SetTitle(Form("Chip %d (0x%x)", ichip, ichip));
-          mHitmaps[ichip]->SetTitleSize(0.2);
+          mHitmaps[ichip]->SetTitle(Form("CHIP %d (0x%x)", ichip, ichip));
+          mHitmaps[ichip]->SetTitleSize(4.0);
+          h1->SetTitle(Form("CHIP %d (0x%x)", ichip, ichip));
         }
       }
     }
 
     // -- read in all tots
-    map<int, TH1*> mToTs;
     string name2("hitToT_perChip_");
     // Replace "hitmap" with "hitToA" in all ladder paths
     for (auto& ladder : allLadders) {
@@ -244,13 +253,11 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
         string kname = key->GetName();
         if (kname.find(name2) != string::npos) {
           TH1 *h = (TH1*)key->ReadObj();
+          mHists[kname] = h;
           string hname(h->GetName());
           replaceAll(hname, "hitToT_perChip_", "");
           int ichip = ::stoi(hname);  
-          // cout << "toa chip " << ichip << " " << hname << endl;
-          mToTs[ichip] = h;
-          mToTs[ichip]->SetTitle(Form("Chip %d (0x%x)", ichip, ichip));
-          mToTs[ichip]->SetTitleSize(0.2);
+          mHists[kname]->SetTitle(Form("CHIP %d (0x%x)", ichip, ichip));                  
         }
       }
     }
@@ -413,7 +420,7 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
       for (unsigned int iLink = 0; iLink < itChipLinks.second.size(); ++iLink) {
         string itLink = itChipLinks.second[iLink] + "/" + "8b10bErrorsVsMidasEvent";
         string sidx = to_string(itChipLinks.first);
-        cout << "itLink: " << itLink << endl;
+        //cout << "itLink: " << itLink << endl;
         TH1D *h = (TH1D*)gFile->Get(itLink.c_str());
         if (iLink == 0) {      
           h->SetLineColor(kBlack);
@@ -426,6 +433,7 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
         }
         h->SetMinimum(0.5);
         h->SetTitle(sidx.c_str());
+        h->SetTitleSize(4.0);
         mLVDSErrors[itChipLinks.first].push_back(h);
       }
     }
@@ -434,109 +442,23 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
     // -----------------------
     // -- PLOTTING starts here
     // -----------------------
+    mu3ePlotUtils plotUtils;
+    plotUtils.fPDFName = "out/vtxHitmaps-" + to_string(run) + ".pdf";
+    plotUtils.setOptionsForHitmaps(!noRebin);
+    plotUtils.plotVertexL1L2(mHists, "hitmap_perChip_%05d");
 
-
-    // -- hitmaps
-    TCanvas *c = new TCanvas("c", "c", 800, 1000);
-    gStyle->SetOptStat(0);
-    gStyle->SetPadBorderMode(0);
-    gStyle->SetPadBorderSize(0);
-    gStyle->SetPadTopMargin(0);
-    gStyle->SetPadBottomMargin(0);
-    gStyle->SetPadLeftMargin(0);
-    gStyle->SetPadRightMargin(0);
-    gStyle->SetTitleSize(0.3);
-    c->Divide(2, 1);
-    c->cd(1);
-    gPad->SetBottomMargin(0.0);
-    gPad->SetLeftMargin(0.0);
-    gPad->SetRightMargin(0.0);
-    gPad->SetTopMargin(0.0);
-    TPad *p = (TPad*)c->GetPad(1);
-    p->Divide(6,8);
-    for (int i = 0; i < vLayer1.size(); ++i) {    
-      p->cd(i+1);
-      gPad->SetLogz(1);
-      gPad->SetBottomMargin(0.0);
-      gPad->SetLeftMargin(0.0);
-      gPad->SetRightMargin(0.0);
-      gPad->SetTopMargin(0.0);
-      // cout << "vLayer1[i] = " << vLayer1[i] << " " << mHitmaps[vLayer1[i]] << endl;
-      if (mHitmaps[vLayer1[i]]) {
-        TH2F *h2 = (TH2F*)mHitmaps[vLayer1[i]]->Clone();
-        //h2->Rebin2D(4,10);
-        h2->Draw("col");
-        mHitmaps[vLayer1[i]]->SetTitleSize(0.3);
-      }
-    }
-
-    c->cd(2);
-    gPad->SetBottomMargin(0.0);
-    gPad->SetLeftMargin(0.0);
-    gPad->SetRightMargin(0.0);
-    gPad->SetTopMargin(0.0);
-    p = (TPad*)c->GetPad(2);
-    p->Divide(6,10);
-    for (int i = 0; i < vLayer2.size(); ++i) {
-      p->cd(i+1);
-      gPad->SetLogz(1);
-      gPad->SetBottomMargin(0.0);
-      gPad->SetLeftMargin(0.0);
-      gPad->SetRightMargin(0.0);
-      gPad->SetTopMargin(0.0);
-      // cout << "vLayer2[i] = " << vLayer2[i] << " " << mHitmaps[vLayer2[i]] << endl;
-      if (mHitmaps[vLayer2[i]]) {
-        TH2F *h2 = (TH2F*)mHitmaps[vLayer2[i]]->Clone();
-        //h2->Rebin2D(4,10);
-        h2->Draw("col");
-      }
-    }
-    replaceAll(barefilename, ".root", "");
-    c->SaveAs(("out/vtxHitmaps-" + to_string(run) + ".pdf").c_str());
-    delete c;
+    // // -- hitmaps
+    TCanvas *c;
+    TPad *p; 
 
     // -- toTs
-    c = new TCanvas("c", "c", 800, 1000);
-    c->Divide(2, 1);
-    c->cd(1);
-    gPad->SetBottomMargin(0.0);
-    gPad->SetLeftMargin(0.0);
-    gPad->SetRightMargin(0.0);
-    gPad->SetTopMargin(0.0);
-    p = (TPad*)c->GetPad(1);
-    p->Divide(6,8);
-    for (int i = 0; i < vLayer1.size(); ++i) {    
-      p->cd(i+1);
-      gPad->SetBottomMargin(0.0);
-      gPad->SetLeftMargin(0.0);
-      gPad->SetRightMargin(0.0);
-      gPad->SetTopMargin(0.0);
-      gPad->SetLogy(1);
-      // cout << "vLayer1[i] = " << vLayer1[i] << " " << mToTs[vLayer1[i]] << endl;
-      if (mToTs[vLayer1[i]]) {
-        mToTs[vLayer1[i]]->SetMinimum(0.5);
-        mToTs[vLayer1[i]]->Draw();
-      }
-    }
-    c->cd(2);
-    p = (TPad*)c->GetPad(2);
-    p->Divide(6,10);
-    for (int i = 0; i < vLayer2.size(); ++i) {    
-      p->cd(i+1);
-      gPad->SetBottomMargin(0.0);
-      gPad->SetLeftMargin(0.0);
-      gPad->SetRightMargin(0.0);
-      gPad->SetTopMargin(0.0);
-      gPad->SetLogy(1);
-      // cout << "vLayer2[i] = " << vLayer2[i] << " " << mToTs[vLayer2[i]] << endl;
-      if (mToTs[vLayer2[i]]) {
-        mToTs[vLayer2[i]]->SetMinimum(0.5);
-        mToTs[vLayer2[i]]->Draw();
-      }
-    }
-    replaceAll(barefilename, ".root", "");
-    c->SaveAs(("out/vtxHitToTs-" + to_string(run) + ".pdf").c_str());
-    delete c;
+    plotUtils.fPDFName = "out/vtxHitToTs-" + to_string(run) + ".pdf";
+    plotUtils.setOptionsForTotDistributions(false);
+    cout << "plotting toTs" << endl;
+    plotUtils.plotVertexL1L2(mHists, "hitToT_perChip_%05d");
+
+    return;
+
 
     // -- LVDS errors
     c = new TCanvas("c", "c", 800, 1000);
@@ -560,9 +482,9 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
       mLVDSErrors[vLayer1[i]][0]->Draw("");
       mLVDSErrors[vLayer1[i]][1]->Draw("same");
       mLVDSErrors[vLayer1[i]][2]->Draw("same");
-      tl0->SetTextColor(kBlack); tl0->DrawLatexNDC(0.75, 0.93, "A");
-      tl0->SetTextColor(kBlue);  tl0->DrawLatexNDC(0.80, 0.93, "B");
-      tl0->SetTextColor(kRed);   tl0->DrawLatexNDC(0.85, 0.93, "C");
+      tl0->SetTextColor(kBlack); tl0->DrawLatexNDC(0.75, 0.93, Form("A: %d", static_cast<int>(mLVDSErrors[vLayer1[i]][0]->Integral(5, mLVDSErrors[vLayer1[i]][0]->GetNbinsX()))));
+      tl0->SetTextColor(kBlue);  tl0->DrawLatexNDC(0.75, 0.88, Form("B: %d", static_cast<int>(mLVDSErrors[vLayer1[i]][1]->Integral(5, mLVDSErrors[vLayer1[i]][1]->GetNbinsX()))));
+      tl0->SetTextColor(kRed);   tl0->DrawLatexNDC(0.75, 0.83, Form("C: %d", static_cast<int>(mLVDSErrors[vLayer1[i]][2]->Integral(5, mLVDSErrors[vLayer1[i]][2]->GetNbinsX()))));
     }
     c->cd(2);
     p = (TPad*)c->GetPad(2);
@@ -577,9 +499,10 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
       mLVDSErrors[vLayer2[i]][0]->Draw("");
       mLVDSErrors[vLayer2[i]][1]->Draw("same");
       mLVDSErrors[vLayer2[i]][2]->Draw("same");
-      tl0->SetTextColor(kBlack); tl0->DrawLatexNDC(0.75, 0.93, "A");
-      tl0->SetTextColor(kBlue);  tl0->DrawLatexNDC(0.80, 0.93, "B");
-      tl0->SetTextColor(kRed);   tl0->DrawLatexNDC(0.85, 0.93, "C");
+
+      tl0->SetTextColor(kBlack); tl0->DrawLatexNDC(0.75, 0.93, Form("A: %d", static_cast<int>(mLVDSErrors[vLayer2[i]][0]->Integral(5, mLVDSErrors[vLayer2[i]][0]->GetNbinsX()))));
+      tl0->SetTextColor(kBlue);  tl0->DrawLatexNDC(0.75, 0.88, Form("B: %d", static_cast<int>(mLVDSErrors[vLayer2[i]][1]->Integral(5, mLVDSErrors[vLayer2[i]][1]->GetNbinsX()))));
+      tl0->SetTextColor(kRed);   tl0->DrawLatexNDC(0.75, 0.83, Form("C: %d", static_cast<int>(mLVDSErrors[vLayer2[i]][2]->Integral(5, mLVDSErrors[vLayer2[i]][2]->GetNbinsX()))));
     }
     replaceAll(barefilename, ".root", "");
     c->SaveAs(("out/vtxLVDSErrors-" + to_string(run) + ".pdf").c_str());
@@ -619,7 +542,7 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
   gStyle->SetPadBottomMargin(0);
   gStyle->SetPadLeftMargin(0);
   gStyle->SetPadRightMargin(0);
-  gStyle->SetTitleSize(0.3);
+  gStyle->SetTitleSize(0.5);
   c->Divide(2, 1);
   c->cd(1);
   gPad->SetBottomMargin(0.0);
@@ -661,7 +584,7 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
         }
       }
       h1->Draw("hist");
-      h1->SetTitleSize(0.3);
+      h1->SetTitleSize(0.5);
       tl->DrawLatexNDC(0.2, 0.9, Form("%s", mHitmaps[vLayer1[i]]->GetTitle()));
       int oflw = static_cast<int>(h1->GetBinContent(h1->GetNbinsX()+1));
       if (oflw > 0) {
@@ -703,6 +626,7 @@ void mkVtxPlots(int run, string barefilename, bool noRebin) {
         }
       }
       h1->Draw("hist");
+      h1->SetTitleSize(0.5);
       tl->DrawLatexNDC(0.2, 0.9, Form("%s", mHitmaps[vLayer2[i]]->GetTitle()));
       int oflw = static_cast<int>(h1->GetBinContent(h1->GetNbinsX()+1));
       if (oflw > 0) {
