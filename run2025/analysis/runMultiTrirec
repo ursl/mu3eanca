@@ -8,6 +8,7 @@
 #    moor>pwd
 #   /Users/ursl/mu3e/software/250806/mu3e/run
 #   moor>~/mu3e/mu3eanca/run2025/analysis/runMultiTrirec -j 6 -i ~/mu3e/mu3eanca/run2025/analysis/runs.txt 
+#   moor>~/mu3e/mu3eanca/run2025/analysis/runMultiTrirec -j 6 -r 6234,6235,6236i -o /path/to/some/outputdirectory 
 #
 #
 #
@@ -23,19 +24,22 @@ use File::Basename;
 use File::Copy 'copy';
 
 use Getopt::Std;
-getopts('c:di:f:j:l:r:');
+getopts('c:di:f:j:l:o:r:');
 
 my $BASEDIR  = "/Users/ursl/mu3e/software/250806/mu3e/run";
-my $MU3EANCA = "/Users/ursl/mu3e/mu3eanca";
 my $DATADIR  = "/Users/ursl/mu3e/data/run2025/sort";
 my $EXE      = "/Users/ursl/mu3e/software/250806/mu3e/_build/mu3eTrirec/mu3eTrirec";
 my $OUT      = "$BASEDIR/output";
-my $LOG      = "$BASEDIR/log";
+my $LOG      = "$OUT/log";
 
 my $CONF   = "trirec_twolayer_cosmic.conf";
 if (defined($opt_c)) {
   $CONF = $opt_c;
 }
+if (defined($opt_o)) {
+  $OUT = $opt_o;
+}
+
 my $GT     = "datav6.2=2025Beam";
 my $DBCONN = "rest";
 $EXE .= " --conf $CONF";
