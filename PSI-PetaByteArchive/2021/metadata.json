@@ -1,0 +1,11 @@
+{
+    "principalInvestigator": "urs.langenegger@psi.ch",
+    "creationLocation": "/data/project/mu3e/data/2021",
+    "dataFormat": "mid.lz4",
+    "sourceFolder": "/data/project/mu3e/data/2021",
+    "owner": "mu3e collaboration",
+    "ownerEmail": "urs.langenegger@psi.ch",
+    "type": "raw",
+    "description": "mu3e 2021 data",
+    "ownerGroup": "a-41514"
+}
