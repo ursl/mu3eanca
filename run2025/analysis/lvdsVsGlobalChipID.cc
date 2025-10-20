@@ -26,6 +26,8 @@ using namespace std;
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
 
+  // -- DECREPIT - use fedLinkMatrixMap instead!
+
   // -- simple print of LVDS links and global chipID 
   // -- after second it generates the code to initialize the map<int, vector<string>> 
   // -- to map for each global chipID to its three links
