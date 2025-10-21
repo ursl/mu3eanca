@@ -36,6 +36,12 @@ struct AsicInfo {
   int vdacThLow{};
   int biasVNOutPix{};
   int biasVPDAC{};
+  int biasVNDcl{};
+  int biasVNLVDS{};
+  int biasVNLVDSDel{};
+  int biasVPDcl{};
+  int biasVPTimerDel{};
+  int vdacBaseline{};
 };
 
 // ----------------------------------------------------------------------
@@ -92,6 +98,12 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
       ai.vdacThLow = 0;
       ai.biasVNOutPix = 0;
       ai.biasVPDAC = 0;
+      ai.biasVNDcl = 0;
+      ai.biasVNLVDS = 0;
+      ai.biasVNLVDSDel = 0;
+      ai.biasVPDcl = 0;
+      ai.biasVPTimerDel = 0;
+      ai.vdacBaseline = 0;
       if (a.contains("dacs") && a["dacs"].is_object()) {
         const auto &dacs = a["dacs"];
         if (dacs.contains("conf") && dacs["conf"].is_object()) {
@@ -104,11 +116,17 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
           ai.vdacBLPix  = vdac.value("BLPix", 0);
           ai.vdacThHigh = vdac.value("ThHigh", 0);
           ai.vdacThLow  = vdac.value("ThLow", 0);
+          ai.vdacBaseline = vdac.value("Baseline", 0);
         }
         if (dacs.contains("bias") && dacs["bias"].is_object()) {
           const auto &bias = dacs["bias"];
           ai.biasVNOutPix = bias.value("VNOutPix", 0);
           ai.biasVPDAC    = bias.value("VPDAC", 0);
+          ai.biasVNDcl    = bias.value("VNDcl", 0);
+          ai.biasVNLVDS   = bias.value("VNLVDS", 0);
+          ai.biasVNLVDSDel= bias.value("VNLVDSDel", 0);
+          ai.biasVPDcl    = bias.value("VPDcl", 0);
+          ai.biasVPTimerDel= bias.value("VPTimerDel", 0);
         }
       }
       out.push_back(std::move(ai));
@@ -356,7 +374,13 @@ void writeJsonSummaryPerFile(const std::vector<AsicInfo>& asics, const std::stri
       {"ThHigh",    a.vdacThHigh},
       {"ThLow",     a.vdacThLow},
       {"VNOutPix",  a.biasVNOutPix},
-      {"VPDAC",     a.biasVPDAC}
+      {"VPDAC",     a.biasVPDAC},
+      {"VNDcl",     a.biasVNDcl},
+      {"VNLVDS",    a.biasVNLVDS},
+      {"VNLVDSDel", a.biasVNLVDSDel},
+      {"VPDcl",     a.biasVPDcl},
+      {"VPTimerDel",a.biasVPTimerDel},
+      {"Baseline",  a.vdacBaseline}
     };
     byGlobal[a.globalId] = std::move(jentry);
   }
@@ -381,7 +405,7 @@ void writeJsonSummaryPerFile(const std::vector<AsicInfo>& asics, const std::stri
   jout["chips"] = std::move(arr);
 
   // Determine output filename
-  std::string outname = std::string("./links-summary-run") + runnum + std::string(".json");
+  std::string outname = std::string("./midasMeta-summary-run") + runnum + std::string(".json");
   std::ofstream ofs(outname);
   if (!ofs) {
     std::cerr << "Error: cannot write to " << outname << std::endl;
