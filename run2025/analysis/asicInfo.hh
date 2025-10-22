@@ -11,6 +11,9 @@ struct AsicInfo {
   long long lvdsErrRate0{};
   long long lvdsErrRate1{};
   long long lvdsErrRate2{};
+  // -- ABC link information (the above resorted with linkMask)
+  int abcLinkMask[3]{0,0,0};
+  int abcLinkMaxLvdsErrRate[3]{0,0,0};
   int ckdivend{};
   int ckdivend2{};
   int vdacBLPix{};
