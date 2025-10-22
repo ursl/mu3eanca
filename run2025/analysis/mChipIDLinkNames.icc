@@ -1,0 +1,110 @@
+  map<int, vector<string>> mChipIDLinkName = {
+    {1,    {"lvds/FEB_00/Link_00", "lvds/FEB_00/Link_01", "lvds/FEB_00/Link_02"}},
+    {2,    {"lvds/FEB_00/Link_04", "lvds/FEB_00/Link_05", "lvds/FEB_00/Link_03"}},
+    {3,    {"lvds/FEB_00/Link_08", "lvds/FEB_00/Link_06", "lvds/FEB_00/Link_07"}},
+    {4,    {"lvds/FEB_05/Link_02", "lvds/FEB_05/Link_00", "lvds/FEB_05/Link_01"}},
+    {5,    {"lvds/FEB_05/Link_04", "lvds/FEB_05/Link_05", "lvds/FEB_05/Link_03"}},
+    {6,    {"lvds/FEB_05/Link_06", "lvds/FEB_05/Link_07", "lvds/FEB_05/Link_08"}},
+    {33,    {"lvds/FEB_00/Link_09", "lvds/FEB_00/Link_10", "lvds/FEB_00/Link_11"}},
+    {34,    {"lvds/FEB_00/Link_13", "lvds/FEB_00/Link_14", "lvds/FEB_00/Link_12"}},
+    {35,    {"lvds/FEB_00/Link_15", "lvds/FEB_00/Link_17", "lvds/FEB_00/Link_16"}},
+    {36,    {"lvds/FEB_05/Link_09", "lvds/FEB_05/Link_11", "lvds/FEB_05/Link_10"}},
+    {37,    {"lvds/FEB_05/Link_13", "lvds/FEB_05/Link_14", "lvds/FEB_05/Link_12"}},
+    {38,    {"lvds/FEB_05/Link_15", "lvds/FEB_05/Link_16", "lvds/FEB_05/Link_17"}},
+    {65,    {"lvds/FEB_00/Link_19", "lvds/FEB_00/Link_18", "lvds/FEB_00/Link_20"}},
+    {66,    {"lvds/FEB_00/Link_22", "lvds/FEB_00/Link_23", "lvds/FEB_00/Link_21"}},
+    {67,    {"lvds/FEB_00/Link_26", "lvds/FEB_00/Link_24", "lvds/FEB_00/Link_25"}},
+    {68,    {"lvds/FEB_05/Link_99", "lvds/FEB_05/Link_99", "lvds/FEB_05/Link_99"}},  // EEE
+    {69,    {"lvds/FEB_05/Link_99", "lvds/FEB_05/Link_99", "lvds/FEB_05/Link_99"}},  // EEE
+    {70,    {"lvds/FEB_05/Link_99", "lvds/FEB_05/Link_99", "lvds/FEB_05/Link_99"}},  // EEE
+    {97,    {"lvds/FEB_00/Link_99", "lvds/FEB_00/Link_99", "lvds/FEB_00/Link_99"}},  // EEE
+    {98,    {"lvds/FEB_00/Link_99", "lvds/FEB_00/Link_99", "lvds/FEB_00/Link_99"}},  // EEE
+    {99,    {"lvds/FEB_00/Link_99", "lvds/FEB_00/Link_99", "lvds/FEB_00/Link_99"}},  // EEE
+    {100,    {"lvds/FEB_05/Link_29", "lvds/FEB_05/Link_28", "lvds/FEB_05/Link_27"}},
+    {101,    {"lvds/FEB_05/Link_31", "lvds/FEB_05/Link_30", "lvds/FEB_05/Link_32"}},
+    {102,    {"lvds/FEB_05/Link_33", "lvds/FEB_05/Link_35", "lvds/FEB_05/Link_34"}},
+    {129,    {"lvds/FEB_01/Link_00", "lvds/FEB_01/Link_01", "lvds/FEB_01/Link_02"}},
+    {130,    {"lvds/FEB_01/Link_04", "lvds/FEB_01/Link_05", "lvds/FEB_01/Link_03"}},
+    {131,    {"lvds/FEB_01/Link_08", "lvds/FEB_01/Link_06", "lvds/FEB_01/Link_07"}},
+    {132,    {"lvds/FEB_06/Link_02", "lvds/FEB_06/Link_00", "lvds/FEB_06/Link_01"}},
+    {133,    {"lvds/FEB_06/Link_04", "lvds/FEB_06/Link_05", "lvds/FEB_06/Link_03"}},
+    {134,    {"lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99"}},  // EEE
+    {161,    {"lvds/FEB_01/Link_09", "lvds/FEB_01/Link_10", "lvds/FEB_01/Link_11"}},
+    {162,    {"lvds/FEB_01/Link_13", "lvds/FEB_01/Link_14", "lvds/FEB_01/Link_12"}},
+    {163,    {"lvds/FEB_01/Link_15", "lvds/FEB_01/Link_17", "lvds/FEB_01/Link_16"}},
+    {164,    {"lvds/FEB_06/Link_09", "lvds/FEB_06/Link_11", "lvds/FEB_06/Link_10"}},
+    {165,    {"lvds/FEB_06/Link_13", "lvds/FEB_06/Link_14", "lvds/FEB_06/Link_12"}},
+    {166,    {"lvds/FEB_06/Link_15", "lvds/FEB_06/Link_16", "lvds/FEB_06/Link_17"}},
+    {193,    {"lvds/FEB_01/Link_19", "lvds/FEB_01/Link_18", "lvds/FEB_01/Link_20"}},
+    {194,    {"lvds/FEB_01/Link_22", "lvds/FEB_01/Link_23", "lvds/FEB_01/Link_21"}},
+    {195,    {"lvds/FEB_01/Link_26", "lvds/FEB_01/Link_24", "lvds/FEB_01/Link_25"}},
+    {196,    {"lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99"}},  // EEE
+    {197,    {"lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99"}},  // EEE
+    {198,    {"lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99"}},  // EEE
+    {225,    {"lvds/FEB_01/Link_99", "lvds/FEB_01/Link_99", "lvds/FEB_01/Link_99"}},  // EEE
+    {226,    {"lvds/FEB_01/Link_99", "lvds/FEB_01/Link_99", "lvds/FEB_01/Link_99"}},  // EEE
+    {227,    {"lvds/FEB_01/Link_99", "lvds/FEB_01/Link_99", "lvds/FEB_01/Link_99"}},  // EEE
+    {228,    {"lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99"}},  // EEE
+    {229,    {"lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99"}},  // EEE
+    {230,    {"lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99", "lvds/FEB_06/Link_99"}},  // EEE
+    {1025,    {"lvds/FEB_02/Link_99", "lvds/FEB_02/Link_99", "lvds/FEB_02/Link_99"}},  // EEE
+    {1026,    {"lvds/FEB_02/Link_04", "lvds/FEB_02/Link_05", "lvds/FEB_02/Link_03"}},
+    {1027,    {"lvds/FEB_02/Link_08", "lvds/FEB_02/Link_06", "lvds/FEB_02/Link_07"}},
+    {1028,    {"lvds/FEB_07/Link_99", "lvds/FEB_07/Link_99", "lvds/FEB_07/Link_99"}},  // EEE
+    {1029,    {"lvds/FEB_07/Link_99", "lvds/FEB_07/Link_99", "lvds/FEB_07/Link_99"}},  // EEE
+    {1030,    {"lvds/FEB_07/Link_99", "lvds/FEB_07/Link_99", "lvds/FEB_07/Link_99"}},  // EEE
+    {1057,    {"lvds/FEB_02/Link_99", "lvds/FEB_02/Link_99", "lvds/FEB_02/Link_99"}},  // EEE
+    {1058,    {"lvds/FEB_02/Link_99", "lvds/FEB_02/Link_99", "lvds/FEB_02/Link_99"}},  // EEE
+    {1059,    {"lvds/FEB_02/Link_99", "lvds/FEB_02/Link_99", "lvds/FEB_02/Link_99"}},  // EEE
+    {1060,    {"lvds/FEB_07/Link_09", "lvds/FEB_07/Link_11", "lvds/FEB_07/Link_10"}},
+    {1061,    {"lvds/FEB_07/Link_99", "lvds/FEB_07/Link_99", "lvds/FEB_07/Link_99"}},  // EEE
+    {1062,    {"lvds/FEB_07/Link_15", "lvds/FEB_07/Link_16", "lvds/FEB_07/Link_17"}},
+    {1089,    {"lvds/FEB_02/Link_19", "lvds/FEB_02/Link_18", "lvds/FEB_02/Link_20"}},
+    {1090,    {"lvds/FEB_02/Link_22", "lvds/FEB_02/Link_23", "lvds/FEB_02/Link_21"}},
+    {1091,    {"lvds/FEB_02/Link_26", "lvds/FEB_02/Link_24", "lvds/FEB_02/Link_25"}},
+    {1092,    {"lvds/FEB_07/Link_20", "lvds/FEB_07/Link_18", "lvds/FEB_07/Link_19"}},
+    {1093,    {"lvds/FEB_07/Link_22", "lvds/FEB_07/Link_23", "lvds/FEB_07/Link_21"}},
+    {1094,    {"lvds/FEB_07/Link_25", "lvds/FEB_07/Link_24", "lvds/FEB_07/Link_26"}},
+    {1121,    {"lvds/FEB_03/Link_00", "lvds/FEB_03/Link_01", "lvds/FEB_03/Link_02"}},
+    {1122,    {"lvds/FEB_03/Link_04", "lvds/FEB_03/Link_05", "lvds/FEB_03/Link_03"}},
+    {1123,    {"lvds/FEB_03/Link_08", "lvds/FEB_03/Link_06", "lvds/FEB_03/Link_07"}},
+    {1124,    {"lvds/FEB_08/Link_02", "lvds/FEB_08/Link_00", "lvds/FEB_08/Link_01"}},
+    {1125,    {"lvds/FEB_08/Link_04", "lvds/FEB_08/Link_05", "lvds/FEB_08/Link_03"}},
+    {1126,    {"lvds/FEB_08/Link_99", "lvds/FEB_08/Link_07", "lvds/FEB_08/Link_99"}},  // EBE
+    {1153,    {"lvds/FEB_03/Link_99", "lvds/FEB_03/Link_99", "lvds/FEB_03/Link_99"}},  // EEE
+    {1154,    {"lvds/FEB_03/Link_99", "lvds/FEB_03/Link_99", "lvds/FEB_03/Link_99"}},  // EEE
+    {1155,    {"lvds/FEB_03/Link_15", "lvds/FEB_03/Link_17", "lvds/FEB_03/Link_16"}},
+    {1156,    {"lvds/FEB_08/Link_09", "lvds/FEB_08/Link_11", "lvds/FEB_08/Link_10"}},
+    {1157,    {"lvds/FEB_08/Link_13", "lvds/FEB_08/Link_14", "lvds/FEB_08/Link_12"}},
+    {1158,    {"lvds/FEB_08/Link_15", "lvds/FEB_08/Link_16", "lvds/FEB_08/Link_17"}},
+    {1185,    {"lvds/FEB_03/Link_19", "lvds/FEB_03/Link_18", "lvds/FEB_03/Link_20"}},
+    {1186,    {"lvds/FEB_03/Link_22", "lvds/FEB_03/Link_23", "lvds/FEB_03/Link_21"}},
+    {1187,    {"lvds/FEB_03/Link_26", "lvds/FEB_03/Link_24", "lvds/FEB_03/Link_25"}},
+    {1188,    {"lvds/FEB_08/Link_20", "lvds/FEB_08/Link_18", "lvds/FEB_08/Link_19"}},
+    {1189,    {"lvds/FEB_08/Link_22", "lvds/FEB_08/Link_23", "lvds/FEB_08/Link_21"}},
+    {1190,    {"lvds/FEB_08/Link_25", "lvds/FEB_08/Link_24", "lvds/FEB_08/Link_26"}},
+    {1217,    {"lvds/FEB_03/Link_27", "lvds/FEB_03/Link_29", "lvds/FEB_03/Link_28"}},
+    {1218,    {"lvds/FEB_03/Link_31", "lvds/FEB_03/Link_30", "lvds/FEB_03/Link_32"}},
+    {1219,    {"lvds/FEB_03/Link_35", "lvds/FEB_03/Link_34", "lvds/FEB_03/Link_33"}},
+    {1220,    {"lvds/FEB_08/Link_29", "lvds/FEB_08/Link_28", "lvds/FEB_08/Link_27"}},
+    {1221,    {"lvds/FEB_08/Link_31", "lvds/FEB_08/Link_30", "lvds/FEB_08/Link_32"}},
+    {1222,    {"lvds/FEB_08/Link_33", "lvds/FEB_08/Link_35", "lvds/FEB_08/Link_34"}},
+    {1249,    {"lvds/FEB_04/Link_00", "lvds/FEB_04/Link_01", "lvds/FEB_04/Link_02"}},
+    {1250,    {"lvds/FEB_04/Link_04", "lvds/FEB_04/Link_05", "lvds/FEB_04/Link_03"}},
+    {1251,    {"lvds/FEB_04/Link_08", "lvds/FEB_04/Link_06", "lvds/FEB_04/Link_07"}},
+    {1252,    {"lvds/FEB_09/Link_02", "lvds/FEB_09/Link_00", "lvds/FEB_09/Link_01"}},
+    {1253,    {"lvds/FEB_09/Link_04", "lvds/FEB_09/Link_05", "lvds/FEB_09/Link_03"}},
+    {1254,    {"lvds/FEB_09/Link_06", "lvds/FEB_09/Link_07", "lvds/FEB_09/Link_08"}},
+    {1281,    {"lvds/FEB_04/Link_09", "lvds/FEB_04/Link_10", "lvds/FEB_04/Link_11"}},
+    {1282,    {"lvds/FEB_04/Link_13", "lvds/FEB_04/Link_14", "lvds/FEB_04/Link_12"}},
+    {1283,    {"lvds/FEB_04/Link_15", "lvds/FEB_04/Link_17", "lvds/FEB_04/Link_16"}},
+    {1284,    {"lvds/FEB_09/Link_09", "lvds/FEB_09/Link_11", "lvds/FEB_09/Link_10"}},
+    {1285,    {"lvds/FEB_09/Link_13", "lvds/FEB_09/Link_14", "lvds/FEB_09/Link_12"}},
+    {1286,    {"lvds/FEB_09/Link_15", "lvds/FEB_09/Link_16", "lvds/FEB_09/Link_17"}},
+    {1313,    {"lvds/FEB_04/Link_19", "lvds/FEB_04/Link_18", "lvds/FEB_04/Link_20"}},
+    {1314,    {"lvds/FEB_04/Link_99", "lvds/FEB_04/Link_99", "lvds/FEB_04/Link_99"}},  // EEE
+    {1315,    {"lvds/FEB_04/Link_26", "lvds/FEB_04/Link_24", "lvds/FEB_04/Link_25"}},
+    {1316,    {"lvds/FEB_09/Link_20", "lvds/FEB_09/Link_18", "lvds/FEB_09/Link_19"}},
+    {1317,    {"lvds/FEB_09/Link_22", "lvds/FEB_09/Link_23", "lvds/FEB_09/Link_21"}},
+    {1318,    {"lvds/FEB_09/Link_25", "lvds/FEB_09/Link_24", "lvds/FEB_09/Link_26"}}
+  };
