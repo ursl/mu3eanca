@@ -559,10 +559,10 @@ sub setGoodRuns() {
     } elsif ($opt_e eq "cosmics2025") {
         print "meta era: submit all jobs for cosmics 2025 processing based on this job specification\n";
         my @jobargs = @orig_argv;
-        my @batches = ("cr9k-1", "cr9k-2",
-        "cr8k-1", "cr8k-2", "cr8k-3", "cr8k-4", "cr8k-5", 
-        "cr7k-1", "cr7k-2", "cr7k-3", "cr7k-4", "cr7k-5", 
-        "cr6k-1", "cr6k-2"
+        my @batches = ("cosmics9k-1", "cosmics9k-2",
+        "cosmics8k-1", "cosmics8k-2", "cosmics8k-3", "cosmics8k-4", "cosmics8k-5", 
+        "cosmics7k-1", "cosmics7k-2", "cosmics7k-3", "cosmics7k-4", "cosmics7k-5", 
+        "cosmics6k-1", "cosmics6k-2"
         );
         foreach $batch (@batches) {
             my @args = map { (defined($_) && $_ eq 'cosmics2025') ? $batch : $_ } @jobargs;
@@ -1317,6 +1317,16 @@ sub submitJobsRawTrirec() {
             $anlString  = "%ANLZR \"-s $skipevts\" '";
         }
 
+        # -- switch between cosmic and beam?!
+        if ($opt_e =~ /cosmics/) {
+            $anlString .= " --conf trirec_twolayer_cosmic.conf ";
+        } elsif ($opt_e =~ /beam/) {
+            $anlString .= " --conf trirec_twolayer_beam.conf ";
+        } else {
+            $anlString = " --conf trirec.conf ";
+        }
+
+
         $cmdString = $cmdIniString . "-r $envString$gtString$rootString$sortString$anlString " . "$job";
 
         print(&prefix("submitJobsRawTrirec"), "SLURM: STORAGE1 $BASEDIR/slurm/storage1/trirec $gtString $anlString\n");
@@ -1473,7 +1483,15 @@ sub submitJobsRawSort() {
 
     my $srunfile = sprintf("run%05d.mid.lz4", $run);
 
-    my $anlString = "--conf trirec_twolayer_cosmic.conf";
+    # -- switch between cosmic and beam?!
+    my $anlString = "";
+    if ($opt_e =~ /cosmics/) {
+        $anlString = " --conf trirec_twolayer_cosmic.conf ";
+    } elsif ($opt_e =~ /beam/) {
+        $anlString = " --conf trirec_twolayer_beam.conf ";
+    } else {
+        $anlString = " --conf trirec.conf ";
+    }
 
     # -- encode the configuration of the SLURM job
     $envString .= "'STORAGE1 $BASEDIR/slurm/storage1/sort";
