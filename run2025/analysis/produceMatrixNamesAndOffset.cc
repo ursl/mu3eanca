@@ -211,7 +211,7 @@ static void printByGlobalId(const std::vector<AsicInfo>& asics, const std::strin
   }
 
   ofstream ofs(filename + ".icc");
-  ofs << "  map<int, vector<string>> mChipIDLinkName = {" << endl;
+  ofs << "  map<int, vector<string>> gMapChipIDLinkName = {" << endl;
   for (auto it = byGlobal.begin(); it != byGlobal.end(); ++it) {
     const int gid = it->first;
     const auto& links = it->second.first;
@@ -291,7 +291,7 @@ static void printLinkOffsetsByGlobalId(const std::vector<AsicInfo>& asics, const
   }
 
   ofstream ofs(filename + ".icc");
-  ofs << "  map<int, vector<int>> mChipIDLinkOffsets = {" << endl;
+  ofs << "  map<int, vector<int>> gMapChipIDLinkOffsets = {" << endl;
   for (auto it = byGlobal.begin(); it != byGlobal.end(); ++it) {
     const int gid = it->first;
     const auto& offsets = it->second;
@@ -379,11 +379,11 @@ int main(int argc, char *argv[]) {
     
     // Print unified links
     std::cout << "  // Unified links (resolved patterns)" << std::endl;
-    printByGlobalId(allAsics, "mChipIDLinkNames");
+    printByGlobalId(allAsics, "gMapChipIDLinkNames");
     
     // Print link offsets
     std::cout << "  // Link offsets (relative to minimum link number)" << std::endl;
-    printLinkOffsetsByGlobalId(allAsics, "mChipIDLinkOffsets");
+    printLinkOffsetsByGlobalId(allAsics, "gMapChipIDLinkOffsets");
     
     return 0;
   } catch (const std::exception &ex) {
