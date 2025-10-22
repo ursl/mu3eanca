@@ -1,4 +1,4 @@
-  map<int, vector<string>> mChipIDLinkName = {
+  map<int, vector<string>> gMapChipIDLinkName = {
     {1,    {"lvds/FEB_00/Link_00", "lvds/FEB_00/Link_01", "lvds/FEB_00/Link_02"}},
     {2,    {"lvds/FEB_00/Link_04", "lvds/FEB_00/Link_05", "lvds/FEB_00/Link_03"}},
     {3,    {"lvds/FEB_00/Link_08", "lvds/FEB_00/Link_06", "lvds/FEB_00/Link_07"}},
