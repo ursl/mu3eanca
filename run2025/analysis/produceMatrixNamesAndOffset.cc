@@ -196,7 +196,9 @@ static void printByGlobalId(const std::vector<AsicInfo>& asics, const std::strin
 
     std::vector<std::string> links; links.reserve(3);
     for (int i = 0; i < 3; ++i) {
-      char ch = (i < (int)pattern.size()) ? pattern[i] : 'E';
+      // Read pattern from right to left: rightmost letter is offset 0
+      int patternIdx = (int)pattern.size() - 1 - i;
+      char ch = (patternIdx >= 0) ? pattern[patternIdx] : 'E';
       int off = letterToOffset(ch);
       if (off >= 0) {
         links.push_back(fmtLink(a.fedID, base + off));
@@ -207,11 +209,14 @@ static void printByGlobalId(const std::vector<AsicInfo>& asics, const std::strin
         links.push_back(os.str());
       }
     }
+    
+    // Reverse the order to match expected output
+    std::reverse(links.begin(), links.end());
     byGlobal[a.globalId] = std::make_pair(std::move(links), pattern);
   }
 
   ofstream ofs(filename + ".icc");
-  ofs << "  map<int, vector<string>> gMapChipIDLinkName = {" << endl;
+  ofs << "  std::map<int, std::vector<std::string>> gMapChipIDLinkName = {" << endl;
   for (auto it = byGlobal.begin(); it != byGlobal.end(); ++it) {
     const int gid = it->first;
     const auto& links = it->second.first;
@@ -259,7 +264,9 @@ static void printLinkOffsetsByGlobalId(const std::vector<AsicInfo>& asics, const
     const int UNRESOLVED_PLACEHOLDER = 999; // Use 999 as placeholder for unresolved links
     
     for (int i = 0; i < 3; ++i) {
-      char ch = (i < (int)pattern.size()) ? pattern[i] : 'E';
+      // Read pattern from right to left: rightmost letter is offset 0
+      int patternIdx = (int)pattern.size() - 1 - i;
+      char ch = (patternIdx >= 0) ? pattern[patternIdx] : 'E';
       int off = letterToOffset(ch);
       if (off >= 0) {
         linkNumbers.push_back(base + off);
@@ -286,12 +293,38 @@ static void printLinkOffsetsByGlobalId(const std::vector<AsicInfo>& asics, const
           offsets.push_back(linkNum - minLink);
         }
       }
+      
+      // If exactly one 9, replace it with the missing offset (0,1,2)
+      int nineCount = 0;
+      for (int off : offsets) if (off == 9) nineCount++;
+      
+      if (nineCount == 1) {
+        // Find which offset (0,1,2) is missing
+        bool hasOffset[3] = {false, false, false};
+        for (int off : offsets) {
+          if (off >= 0 && off <= 2) hasOffset[off] = true;
+        }
+        
+        // Replace the single 9 with the missing offset
+        for (int &off : offsets) {
+          if (off == 9) {
+            for (int k = 0; k < 3; ++k) {
+              if (!hasOffset[k]) {
+                off = k;
+                break;
+              }
+            }
+            break;
+          }
+        }
+      }
+      
       byGlobal[a.globalId] = std::move(offsets);
     }
   }
 
   ofstream ofs(filename + ".icc");
-  ofs << "  map<int, vector<int>> gMapChipIDLinkOffsets = {" << endl;
+  ofs << "  std::map<int, std::vector<int>> gMapChipIDLinkOffsets = {" << endl;
   for (auto it = byGlobal.begin(); it != byGlobal.end(); ++it) {
     const int gid = it->first;
     const auto& offsets = it->second;
