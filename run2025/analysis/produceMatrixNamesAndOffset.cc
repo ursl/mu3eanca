@@ -23,6 +23,57 @@ using namespace std;
 // -- the primary purpose of this is to dump the linkMatrix by reading multiple midas meta JSON files
 // ----------------------------------------------------------------------
 
+// ----------------------------------------------------------------------
+void fixSingleE(AsicInfo &ai) {
+  if (ai.linkMatrix.find('E') != std::string::npos) {
+    ai.linkMatrix = ai.linkMatrix.replace(ai.linkMatrix.find('E'), 1, "A");
+    ai.linkMask = ai.linkMask.replace(ai.linkMask.find('E'), 1, "1");
+    ai.linkMatrix = ai.linkMatrix.replace(ai.linkMatrix.find('E'), 1, "B");
+    ai.linkMask = ai.linkMask.replace(ai.linkMask.find('E'), 1, "1");
+    ai.linkMatrix = ai.linkMatrix.replace(ai.linkMatrix.find('E'), 1, "C");
+    ai.linkMask = ai.linkMask.replace(ai.linkMask.find('E'), 1, "1");
+  }
+  if (ai.linkMatrix.find('E') != std::string::npos) {
+    ai.linkMatrix = ai.linkMatrix.replace(ai.linkMatrix.find('E'), 1, "C");
+  }
+}
+
+// ----------------------------------------------------------------------
+void calcABCInformation(AsicInfo &ai) {
+
+  for (int i = 0; i < 3; ++i) {
+    ai.abcLinkMask[i] = 9;
+    ai.abcLinkOffsets[i] = 9;
+    ai.abcLinkMaxLvdsErrRate[i] = -1;
+  }
+
+  for (int i = 2; i >= 0; --i) {
+    char ch = ai.linkMatrix[i];
+    int off = 2-i;
+    if (ch == 'A') {
+      ai.abcLinkOffsets[0] = off; 
+      ai.abcLinkMask[0] = (int)(ai.linkMask[off] - '0');
+    }
+    if (ch == 'B') {
+      ai.abcLinkOffsets[1] = off; 
+      ai.abcLinkMask[1] = (int)(ai.linkMask[off] - '0');
+    }
+    if (ch == 'C') {
+      ai.abcLinkOffsets[2] = off; 
+      ai.abcLinkMask[2] = (int)(ai.linkMask[off] - '0');
+    }
+
+  }
+
+  fixSingleE(ai);
+
+  cout << "ai.globalId = " << ai.globalId << " linkMatrix = " << ai.linkMatrix 
+  << " linkMask = " << ai.linkMask
+  << " FEBLinkName = " << ai.FEBLinkName
+  << " abcLinkOffsets = " << ai.abcLinkOffsets[0] << ", " << ai.abcLinkOffsets[1] << ", " << ai.abcLinkOffsets[2] 
+  << " abcLinkMask = " << ai.abcLinkMask[0] << ", " << ai.abcLinkMask[1] << ", " << ai.abcLinkMask[2] 
+  << endl;
+}
 
 // ----------------------------------------------------------------------
 std::vector<AsicInfo> parseJSONFile(const std::string& path) {
@@ -56,8 +107,9 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
       // FED index is explicitly provided in the JSON as "index"
       ai.fedID       = section.value("index", static_cast<int>(fedIdx));
       ai.idxInSection= static_cast<int>(idx);
-      ai.confId      = a.value("confId", 0);
+
       ai.globalId    = a.value("globalId", 0);
+      ai.FEBLinkName = a.value("FEBLink", "unset");
       ai.linkMask    = a.value("linkMask", "");
       ai.linkMatrix  = a.value("linkMatrix", "");
       // lvdsErrRates moved into an array [r0, r1, r2]
@@ -109,20 +161,13 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
           ai.biasVPTimerDel= bias.value("VPTimerDel", 0);
         }
       }
+      calcABCInformation(ai);
       out.push_back(std::move(ai));
     }
   }
   return out;
 }
 
-// ----------------------------------------------------------------------
-int letterToOffset(char c) {
-  // Map bit-pattern letters to vector offsets: C->0, B->1, A->2
-  if (c == 'C') return 0;
-  if (c == 'B') return 1;
-  if (c == 'A') return 2;
-  return -1; // 'E' or other
-}
 
 // ----------------------------------------------------------------------
 static std::string fmtLink(int fedIdx, int linkIdx) {
@@ -150,277 +195,27 @@ static std::string extractRunNumber(const std::string &path) {
   return digits;
 }
 
-// ----------------------------------------------------------------------
-static std::vector<std::string> buildLinksForPattern(const AsicInfo &a, const std::string &pattern) {
-  const int base = a.idxInSection * 3;
-  std::vector<std::string> links; links.reserve(3);
-  for (int i = 0; i < 3; ++i) {
-    char ch = (i < (int)pattern.size()) ? pattern[i] : 'E';
-    int off = letterToOffset(ch);
-    if (off >= 0) {
-      links.push_back(fmtLink(a.fedID, base + off));
-    } else {
-      std::ostringstream os;
-      os << "lvds/FEB_" << std::setw(2) << std::setfill('0') << a.fedID
-         << "/Link_" << std::setw(2) << std::setfill('0') << 99;
-      links.push_back(os.str());
-    }
-  }
-  return links;
-}
 
-// ----------------------------------------------------------------------
-static void printByGlobalId(const std::vector<AsicInfo>& asics, const std::string& filename) {
-  // Choose, for each globalId, the entry with the fewest remaining 'E' in linkMatrix
-  auto countEs = [](const std::string &s) {
-    int c = 0; for (char ch : s) if (ch == 'E') ++c; return c;
-  };
-
-  struct BestRec { AsicInfo asic; int eCount; };
-  std::map<int, BestRec> bestByGlobal;
-
-  for (const auto &a : asics) {
-    int eC = countEs(a.linkMatrix);
-    auto it = bestByGlobal.find(a.globalId);
-    if (it == bestByGlobal.end() || eC < it->second.eCount) {
-      bestByGlobal[a.globalId] = BestRec{a, eC};
-    }
-  }
-
-  // Map globalId -> {links, pattern} for printing
-  std::map<int, std::pair<std::vector<std::string>, std::string>> byGlobal;
-  for (const auto &kv : bestByGlobal) {
-    const AsicInfo &a = kv.second.asic;
-    const int base = a.idxInSection * 3;
-    const std::string &pattern = a.linkMatrix;
-
-    std::vector<std::string> links; links.reserve(3);
-    for (int i = 0; i < 3; ++i) {
-      // Read pattern from right to left: rightmost letter is offset 0
-      int patternIdx = (int)pattern.size() - 1 - i;
-      char ch = (patternIdx >= 0) ? pattern[patternIdx] : 'E';
-      int off = letterToOffset(ch);
-      if (off >= 0) {
-        links.push_back(fmtLink(a.fedID, base + off));
-      } else {
-        std::ostringstream os;
-        os << "lvds/FEB_" << std::setw(2) << std::setfill('0') << a.fedID
-           << "/Link_" << std::setw(2) << std::setfill('0') << 99;
-        links.push_back(os.str());
-      }
-    }
-    
-    // Reverse the order to match expected output
-    std::reverse(links.begin(), links.end());
-    byGlobal[a.globalId] = std::make_pair(std::move(links), pattern);
-  }
-
-  ofstream ofs(filename + ".icc");
-  ofs << "  std::map<int, std::vector<std::string>> gMapChipIDLinkName = {" << endl;
-  for (auto it = byGlobal.begin(); it != byGlobal.end(); ++it) {
-    const int gid = it->first;
-    const auto& links = it->second.first;
-    const auto& pattern = it->second.second;
-    ofs << "    {" << gid << ",    {"
-              << "\"" << links[0] << "\"" << ", "
-              << "\"" << links[1] << "\"" << ", "
-              << "\"" << links[2] << "\"" << "}}";
-    if (std::next(it) != byGlobal.end()) ofs << ",";
-    if (pattern.find('E') != std::string::npos) {
-      ofs << "  // " << pattern;
-    }
-    ofs << endl;
-  }
-  ofs << "  };" << endl;
-  ofs.close();
-}
-
-// ----------------------------------------------------------------------
-static void printLinkOffsetsByGlobalId(const std::vector<AsicInfo>& asics, const std::string& filename) {
-  // Choose, for each globalId, the entry with the fewest remaining 'E' in linkMatrix
-  auto countEs = [](const std::string &s) {
-    int c = 0; for (char ch : s) if (ch == 'E') ++c; return c;
-  };
-
-  struct BestRec { AsicInfo asic; int eCount; };
-  std::map<int, BestRec> bestByGlobal;
-
-  for (const auto &a : asics) {
-    int eC = countEs(a.linkMatrix);
-    auto it = bestByGlobal.find(a.globalId);
-    if (it == bestByGlobal.end() || eC < it->second.eCount) {
-      bestByGlobal[a.globalId] = BestRec{a, eC};
-    }
-  }
-
-  // Map globalId -> link offsets for printing
-  std::map<int, std::vector<int>> byGlobal;
-  for (const auto &kv : bestByGlobal) {
-    const AsicInfo &a = kv.second.asic;
-    const int base = a.idxInSection * 3;
-    const std::string &pattern = a.linkMatrix;
-
-    std::vector<int> linkNumbers; linkNumbers.reserve(3);
-    const int UNRESOLVED_PLACEHOLDER = 999; // Use 999 as placeholder for unresolved links
-    
-    for (int i = 0; i < 3; ++i) {
-      // Read pattern from right to left: rightmost letter is offset 0
-      int patternIdx = (int)pattern.size() - 1 - i;
-      char ch = (patternIdx >= 0) ? pattern[patternIdx] : 'E';
-      int off = letterToOffset(ch);
-      if (off >= 0) {
-        linkNumbers.push_back(base + off);
-      } else {
-        linkNumbers.push_back(UNRESOLVED_PLACEHOLDER); // placeholder for unresolved
-      }
-    }
-    
-    // Calculate offsets relative to the minimum link number (excluding placeholders)
-    if (!linkNumbers.empty()) {
-      // Find minimum among non-placeholder values
-      int minLink = 9999; // large number as default
-      for (int linkNum : linkNumbers) {
-        if (linkNum != UNRESOLVED_PLACEHOLDER && linkNum < minLink) {
-          minLink = linkNum;
-        }
-      }
-      
-      std::vector<int> offsets;
-      for (int linkNum : linkNumbers) {
-        if (linkNum == UNRESOLVED_PLACEHOLDER) {
-          offsets.push_back(9); // output 9 for unresolved
-        } else {
-          offsets.push_back(linkNum - minLink);
-        }
-      }
-      
-      // If exactly one 9, replace it with the missing offset (0,1,2)
-      int nineCount = 0;
-      for (int off : offsets) if (off == 9) nineCount++;
-      
-      if (nineCount == 1) {
-        // Find which offset (0,1,2) is missing
-        bool hasOffset[3] = {false, false, false};
-        for (int off : offsets) {
-          if (off >= 0 && off <= 2) hasOffset[off] = true;
-        }
-        
-        // Replace the single 9 with the missing offset
-        for (int &off : offsets) {
-          if (off == 9) {
-            for (int k = 0; k < 3; ++k) {
-              if (!hasOffset[k]) {
-                off = k;
-                break;
-              }
-            }
-            break;
-          }
-        }
-      }
-      
-      byGlobal[a.globalId] = std::move(offsets);
-    }
-  }
-
-  ofstream ofs(filename + ".icc");
-  ofs << "  std::map<int, std::vector<int>> gMapChipIDLinkOffsets = {" << endl;
-  for (auto it = byGlobal.begin(); it != byGlobal.end(); ++it) {
-    const int gid = it->first;
-    const auto& offsets = it->second;
-    ofs << "    {" << gid << ",    {"
-              << offsets[0] << ", " << offsets[1] << ", " << offsets[2] << "}}";
-    if (std::next(it) != byGlobal.end()) ofs << ",";
-    ofs << endl;
-  }
-  ofs << "  };" << endl;
-  ofs.close();
-}
-
-
-
-
-// ----------------------------------------------------------------------
-std::string inferMissingLetters(const std::string& pattern, const std::set<std::string>& knownPatterns) {
-  std::string result = pattern;
-  int eCount = 0; for (char ch : result) if (ch == 'E') ++eCount;
-  
-  if (eCount == 0) return result;
-
-  // Local inference for exactly one 'E': deduce missing among A,B,C
-  if (eCount == 1) {
-    bool hasA = result.find('A') != std::string::npos;
-    bool hasB = result.find('B') != std::string::npos;
-    bool hasC = result.find('C') != std::string::npos;
-    char missing = 'A';
-    if (!hasA && hasB && hasC) missing = 'A';
-    else if (!hasB && hasA && hasC) missing = 'B';
-    else if (!hasC && hasA && hasB) missing = 'C';
-    for (char &ch : result) { if (ch == 'E') { ch = missing; break; } }
-    return result;
-  }
-  
-  // Only fill positions where we have a complete reference (no E's)
-  for (const auto& known : knownPatterns) {
-    if (known.find('E') == std::string::npos) {
-      // Use this complete pattern as reference: copy only non-E letters into E slots
-      for (size_t i = 0; i < std::min(result.length(), known.length()); ++i) {
-        if (result[i] == 'E' && known[i] != 'E') {
-          result[i] = known[i];
-        }
-      }
-      break;
-    }
-  }
-  return result;
-}
 
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
-  try {
-    if (argc < 2) {
-      std::cerr << "Usage: " << argv[0] << " <file1.json> [file2.json] [file3.json] ..." << std::endl;
-      return 2;
-    }
-    
-    // Collect all ASICs from all files
-    std::vector<AsicInfo> allAsics;
-    std::map<int, std::set<std::string>> patternsPerGlobalId;
-    std::vector<std::pair<std::string, std::vector<AsicInfo>>> fileAsics;
-    
-    for (int i = 1; i < argc; ++i) {
-      std::string path = argv[i];
-      std::cout << "Processing file: " << path << std::endl;
-      auto asics = parseJSONFile(path);
-      fileAsics.push_back({path, asics});
-      
-      for (const auto& asic : asics) {
-        allAsics.push_back(asic);
-        patternsPerGlobalId[asic.globalId].insert(asic.linkMatrix);
-      }
-    }
-    
-    // Always attempt inference:
-    // - If exactly one 'E' in a pattern, infer locally
-    // - Otherwise, only fill from complete patterns seen across files
-    for (auto& asic : allAsics) {
-      if (asic.linkMatrix.find('E') != std::string::npos) {
-        std::string inferred = inferMissingLetters(asic.linkMatrix, patternsPerGlobalId[asic.globalId]);
-        asic.linkMatrix = inferred;
-      }
-    }
-    
-    // Print unified links
-    std::cout << "  // Unified links (resolved patterns)" << std::endl;
-    printByGlobalId(allAsics, "gMapChipIDLinkNames");
-    
-    // Print link offsets
-    std::cout << "  // Link offsets (relative to minimum link number)" << std::endl;
-    printLinkOffsetsByGlobalId(allAsics, "gMapChipIDLinkOffsets");
-    
-    return 0;
-  } catch (const std::exception &ex) {
-    std::cerr << "Error: " << ex.what() << std::endl;
-    return 1;
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " <file1.json> [file2.json] [file3.json] ..." << std::endl;
+    return 2;
   }
+  
+  // Collect all ASICs from all files
+  std::vector<AsicInfo> allAsics;
+  std::map<int, std::set<std::string>> patternsPerGlobalId;
+  
+  for (int i = 1; i < argc; ++i) {
+    std::string path = argv[i];
+    std::cout << "Processing file: " << path << std::endl;
+    auto asics = parseJSONFile(path);
+    
+    for (const auto& asic : asics) {
+      allAsics.push_back(asic);
+    }
+  }
+  return 0;
 }
