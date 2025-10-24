@@ -37,6 +37,7 @@
 #    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/10/24 add -q XXX, to be invoked: -q "-p hourly"
 #         2025/10/15 add "allhist"
 #         2025/09/25 more run chunks and beam2025
 #         2025/09/18 add "-s" to NOT skip runs in case of insufficient statistics. Upload to RDB only with -u. Check whether mergedFile already exists.
@@ -74,7 +75,7 @@ my $dir = getcwd;
 my @orig_argv = @ARGV;
 
 use Getopt::Std;
-getopts('c:de:g:im:n:r:st:uw:');
+getopts('c:de:g:im:n:q:r:st:uw:');
  
 # ----------------------------------------------------------------------
 # -- default values
@@ -154,6 +155,17 @@ if ($ENV{"HOST"} =~ "merlin7") {
     }
 }
 
+
+# -- queue
+# my $queue = "-p 'mu3e --reservation=mu3e'";
+#my $queue = "-p mu3e";
+# my $queue = "-p hourly";
+
+my $QUEUE = "-p hourly";
+if ($opt_q) {
+    $QUEUE = $opt_q;
+}
+print(&prefix("processRuns"), "QUEUE: $QUEUE\n");
 
 # -- initialization after git cloning mu3e, minalyzer, anacombo and running relinkBin
 if ($opt_i) {
@@ -1457,8 +1469,8 @@ sub submitJobsRawSort() {
 
     # -- adapt in case of mu3e reservations
     # my $queue = "-p 'mu3e --reservation=mu3e'";
-    my $queue = "-p mu3e";
-    # my $queue = "-p hourly";
+    # my $queue = "-p mu3e";
+    my $queue = "-p hourly";
 
     # -- rundir
     my $rundir = "$BASEDIR/slurm/jobs/sort/$run";
