@@ -169,7 +169,7 @@ if ($opt_i) {
     my @dirs = ("mlzr", "trirec");
     for ($i = 0; $i < 10; $i++) {
         foreach $dir (@dirs) {
-            my $cmd = "mkdir -p $DATADIR/$dir/$VERSION/" . sprintf("%02d", $i);
+            my $cmd = "mkdir -p $DATADIR/$dir/$VERSION/" . sprintf("%03d", $i);
             print(&prefix("processRuns init"), "cmd: $cmd\n");
             system($cmd);
         }
@@ -205,6 +205,8 @@ if ($opt_i) {
 # my $queue = "-p 'mu3e --reservation=mu3e'";
 #my $queue = "-p mu3e";
 # my $queue = "-p hourly";
+# Note: This is tricky for meta submission: 
+# .../processRuns -s -q "'-p mu3e --reservation=mu3e'" -t slurm/v6.3.tar.gz -m sort -e cosmics2025 -g datav6.2=2025CosmicsNoMagnet
 
 my $QUEUE = "-p hourly";
 if ($opt_q) {
