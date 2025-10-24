@@ -147,32 +147,7 @@ if ($ENV{"HOST"} =~ "merlin7") {
     $ROFTRIREC = "$DATADIR/trirec/$VERSION";
     $ROFSORT   = "$DATADIR/trirec/$VERSION";
     $WATCHFILE = "$BASEDIR/processedRuns";
-
-    if (-d $ROF) {
-        # -- all is fine
-    } else {
-        mkdir($ROF);
-    }
-    my @dirs = ("mlzr", "trirec");
-    for ($i = 0; $i < 10; $i++) {
-        foreach $dir (@dirs) {
-            my $cmd = "mkdir -p $DATADIR/$dir/" . sprintf("%02d", $i);
-            print(&prefix("processRuns init"), "cmd: $cmd\n");
-            system($cmd);
-        }
-    }
-    exit(0);
 }
-# -- queue
-# my $queue = "-p 'mu3e --reservation=mu3e'";
-#my $queue = "-p mu3e";
-# my $queue = "-p hourly";
-
-my $QUEUE = "-p hourly";
-if ($opt_q) {
-    $QUEUE = $opt_q;
-}
-print(&prefix("processRuns"), "QUEUE: $QUEUE\n");
 
 # -- initialization after git cloning mu3e, minalyzer, anacombo and running relinkBin
 if ($opt_i) {
@@ -185,6 +160,21 @@ if ($opt_i) {
      my $cmd0 = "rm -f slurm/$VERSION.tar.gz";
      print(&prefix("processRuns"), "cmd0: $cmd0\n");
      system($cmd0);
+
+    if (-d $ROF) {
+        # -- all is fine
+    } else {
+        mkdir($ROF);
+    }
+    my @dirs = ("mlzr", "trirec");
+    for ($i = 0; $i < 10; $i++) {
+        foreach $dir (@dirs) {
+            my $cmd = "mkdir -p $DATADIR/$VERSION/$dir/" . sprintf("%02d", $i);
+            print(&prefix("processRuns init"), "cmd: $cmd\n");
+            system($cmd);
+        }
+    }
+
 
     system("rm -f $BASEDIR/githashes");
     system("touch $BASEDIR/githashes");
@@ -210,6 +200,17 @@ if ($opt_i) {
      system($cmd);
      exit(0);
 }
+
+# -- queue
+# my $queue = "-p 'mu3e --reservation=mu3e'";
+#my $queue = "-p mu3e";
+# my $queue = "-p hourly";
+
+my $QUEUE = "-p hourly";
+if ($opt_q) {
+    $QUEUE = $opt_q;
+}
+print(&prefix("processRuns"), "QUEUE: $QUEUE\n");
 
 # -- tarfile
 #    create it with
