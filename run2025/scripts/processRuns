@@ -169,7 +169,7 @@ if ($opt_i) {
     my @dirs = ("mlzr", "trirec");
     for ($i = 0; $i < 10; $i++) {
         foreach $dir (@dirs) {
-            my $cmd = "mkdir -p $DATADIR/$VERSION/$dir/" . sprintf("%02d", $i);
+            my $cmd = "mkdir -p $DATADIR/$dir/$VERSION/" . sprintf("%02d", $i);
             print(&prefix("processRuns init"), "cmd: $cmd\n");
             system($cmd);
         }
