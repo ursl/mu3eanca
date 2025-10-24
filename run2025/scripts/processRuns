@@ -37,7 +37,7 @@
 #    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
-#         2025/10/24 add -q XXX, to be invoked: -q "-p hourly"
+#         2025/10/24 add -q XXX, to be invoked: -q "-p hourly". Add numerical subdirs in init step
 #         2025/10/15 add "allhist"
 #         2025/09/25 more run chunks and beam2025
 #         2025/09/18 add "-s" to NOT skip runs in case of insufficient statistics. Upload to RDB only with -u. Check whether mergedFile already exists.
@@ -111,7 +111,7 @@ my $WATCHFILE = "$BASEDIR/processedRuns";
 
 
 # -- modifications for merlin
-if ($ENV{"HOST"} =~ "merlin") {
+if ($ENV{"HOST"} =~ "merlin-l-001") {
     $VERSION  = "250528-v6.1pre";
     ($filename, $directories) = fileparse($ENV{"PWD"});
     $VERSION = $filename;
@@ -134,7 +134,7 @@ if ($ENV{"HOST"} =~ "merlin") {
 
 # -- modifications for merlin7
 if ($ENV{"HOST"} =~ "merlin7") {
-    $VERSION  = "250528-v6.1pre";
+    $VERSION  = "v6.3";
     ($filename, $directories) = fileparse($ENV{"PWD"});
     $VERSION = $filename;
     print(&prefix("processRuns"), "VERSION: $VERSION\n");
@@ -153,9 +153,14 @@ if ($ENV{"HOST"} =~ "merlin7") {
     } else {
         mkdir($ROF);
     }
+    my @dirs = ("mlzr", "trirec");
+    for ($i = 0; $i < 10; $i++) {
+        foreach $dir (@dirs) {
+            my $cmd = "mkdir -p $DATADIR/$dir/" . sprintf("%02d", $i);
+            system($cmd);
+        }
+    }
 }
-
-
 # -- queue
 # my $queue = "-p 'mu3e --reservation=mu3e'";
 #my $queue = "-p mu3e";
