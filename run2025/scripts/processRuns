@@ -157,9 +157,11 @@ if ($ENV{"HOST"} =~ "merlin7") {
     for ($i = 0; $i < 10; $i++) {
         foreach $dir (@dirs) {
             my $cmd = "mkdir -p $DATADIR/$dir/" . sprintf("%02d", $i);
+            print(&prefix("processRuns init"), "cmd: $cmd\n");
             system($cmd);
         }
     }
+    exit(0);
 }
 # -- queue
 # my $queue = "-p 'mu3e --reservation=mu3e'";
