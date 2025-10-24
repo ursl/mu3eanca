@@ -1089,7 +1089,7 @@ sub submitJobsRawMinalyzer() {
 
     # -- adapt in case of mu3e reservations
     # my $queue = "-p 'mu3e --reservation=mu3e'";
-    my $queue = "-p mu3e";
+    my $queue = $QUEUE;
     # my $queue = "-p hourly";
 
     # -- rundir
@@ -1268,7 +1268,7 @@ sub submitJobsRawTrirec() {
     # -- adapt in case of mu3e reservations
     # my $queue = "-p 'mu3e --reservation=mu3e'";
     # my $queue = "-p mu3e";
-    my $queue = "-p hourly";
+    my $queue = $QUEUE;
 
 
 
@@ -1467,10 +1467,8 @@ sub submitJobsRawSort() {
     my $cmdString = "";
     my $envString = "";
 
-    # -- adapt in case of mu3e reservations
-    # my $queue = "-p 'mu3e --reservation=mu3e'";
-    # my $queue = "-p mu3e";
-    my $queue = "-p hourly";
+    my $queue = $QUEUE;
+    print(&prefix("submitJobsRawSort"), "DBXDBX queue: $queue\n");
 
     # -- rundir
     my $rundir = "$BASEDIR/slurm/jobs/sort/$run";
