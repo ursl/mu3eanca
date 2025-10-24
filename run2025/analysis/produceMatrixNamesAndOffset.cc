@@ -25,22 +25,31 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 void fixSingleE(AsicInfo &ai) {
-  if (ai.linkMatrix.find('E') != std::string::npos) {
-    ai.linkMatrix = ai.linkMatrix.replace(ai.linkMatrix.find('E'), 1, "A");
-    ai.linkMask = ai.linkMask.replace(ai.linkMask.find('E'), 1, "1");
-    ai.linkMatrix = ai.linkMatrix.replace(ai.linkMatrix.find('E'), 1, "B");
-    ai.linkMask = ai.linkMask.replace(ai.linkMask.find('E'), 1, "1");
-    ai.linkMatrix = ai.linkMatrix.replace(ai.linkMatrix.find('E'), 1, "C");
-    ai.linkMask = ai.linkMask.replace(ai.linkMask.find('E'), 1, "1");
-  }
-  if (ai.linkMatrix.find('E') != std::string::npos) {
-    ai.linkMatrix = ai.linkMatrix.replace(ai.linkMatrix.find('E'), 1, "C");
+  int eCount = std::count(ai.linkMatrix.begin(), ai.linkMatrix.end(), 'E');
+  if (eCount == 1) {
+    char missing = 'A';
+    bool hasA = ai.linkMatrix.find('A') != std::string::npos;
+    bool hasB = ai.linkMatrix.find('B') != std::string::npos;
+    bool hasC = ai.linkMatrix.find('C') != std::string::npos;
+    int ipos = -1;
+    if (!hasA && hasB && hasC) {
+      missing = 'A';
+      ipos = 0;
+    } else if (!hasB && hasA && hasC) {
+      missing = 'B';
+      ipos = 1;
+    } else if (!hasC && hasA && hasB) {
+      missing = 'C';
+      ipos = 2;
+    }
+    ai.abcLinkMask[ipos] = 9;
+    ai.abcLinkOffsets[ipos] = ipos;
+    ai.abcLinkMaxLvdsErrRate[ipos] = -1;
   }
 }
 
 // ----------------------------------------------------------------------
 void calcABCInformation(AsicInfo &ai) {
-
   for (int i = 0; i < 3; ++i) {
     ai.abcLinkMask[i] = 9;
     ai.abcLinkOffsets[i] = 9;
@@ -50,17 +59,18 @@ void calcABCInformation(AsicInfo &ai) {
   for (int i = 2; i >= 0; --i) {
     char ch = ai.linkMatrix[i];
     int off = 2-i;
+    cout << "  ch = " << ch << " off = " << off << " linkMask = " << (int)(ai.linkMask[off] - '0') << endl;
     if (ch == 'A') {
       ai.abcLinkOffsets[0] = off; 
-      ai.abcLinkMask[0] = (int)(ai.linkMask[off] - '0');
+      ai.abcLinkMask[0] = (int)(ai.linkMask[i] - '0');
     }
     if (ch == 'B') {
       ai.abcLinkOffsets[1] = off; 
-      ai.abcLinkMask[1] = (int)(ai.linkMask[off] - '0');
+      ai.abcLinkMask[1] = (int)(ai.linkMask[i] - '0');
     }
     if (ch == 'C') {
       ai.abcLinkOffsets[2] = off; 
-      ai.abcLinkMask[2] = (int)(ai.linkMask[off] - '0');
+      ai.abcLinkMask[2] = (int)(ai.linkMask[i] - '0');
     }
 
   }
