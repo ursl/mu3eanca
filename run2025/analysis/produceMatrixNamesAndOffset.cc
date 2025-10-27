@@ -31,6 +31,7 @@ void fixSingleE(AsicInfo &ai) {
     bool hasA = ai.linkMatrix.find('A') != std::string::npos;
     bool hasB = ai.linkMatrix.find('B') != std::string::npos;
     bool hasC = ai.linkMatrix.find('C') != std::string::npos;
+    size_t epos = 2 - ai.linkMatrix.find('E');
     int ipos = -1;
     if (!hasA && hasB && hasC) {
       missing = 'A';
@@ -43,7 +44,7 @@ void fixSingleE(AsicInfo &ai) {
       ipos = 2;
     }
     ai.abcLinkMask[ipos] = 9;
-    ai.abcLinkOffsets[ipos] = ipos;
+    ai.abcLinkOffsets[ipos] = epos;
     ai.abcLinkMaxLvdsErrRate[ipos] = -1;
   }
 }
@@ -187,6 +188,20 @@ static std::string fmtLink(int fedIdx, int linkIdx) {
   return os.str();
 }
 
+
+// ----------------------------------------------------------------------
+void printLinkMatrixAndOffsets(const std::map<int, AsicInfo> &allAsics) {
+  for (const auto& asic : allAsics) {
+    cout << "  globalId = " << asic.first << " linkMatrix = " 
+         << asic.second.linkMatrix << " linkMask = " << asic.second.linkMask 
+         << " abcLinkOffsets = " << asic.second.abcLinkOffsets[0] << ", " << asic.second.abcLinkOffsets[1] << ", " << asic.second.abcLinkOffsets[2] 
+         << " abcLinkMask = " << asic.second.abcLinkMask[0] << ", " << asic.second.abcLinkMask[1] << ", " << asic.second.abcLinkMask[2] 
+         << " abcLinkNames = " << asic.second.abcLinkNames[0] << ", " << asic.second.abcLinkNames[1] << ", " << asic.second.abcLinkNames[2] 
+         << endl;
+  }
+}
+
+
 // ----------------------------------------------------------------------
 static std::string extractRunNumber(const std::string &path) {
   // Try to find "run" followed by digits in the basename
@@ -215,7 +230,7 @@ int main(int argc, char *argv[]) {
   }
   
   // Collect all ASICs from all files
-  std::vector<AsicInfo> allAsics;
+  std::map<int, AsicInfo> allAsics;
   std::map<int, std::set<std::string>> patternsPerGlobalId;
   
   for (int i = 1; i < argc; ++i) {
@@ -224,8 +239,23 @@ int main(int argc, char *argv[]) {
     auto asics = parseJSONFile(path);
     
     for (const auto& asic : asics) {
-      allAsics.push_back(asic);
+      if (allAsics.find(asic.globalId) == allAsics.end()) {
+        allAsics[asic.globalId] = asic;
+      } else {
+        int eCount0 = std::count(allAsics[asic.globalId].linkMatrix.begin(), allAsics[asic.globalId].linkMatrix.end(), 'E');
+        int eCount1 = std::count(asic.linkMatrix.begin(), asic.linkMatrix.end(), 'E');
+        if (eCount0 > eCount1) {
+          allAsics[asic.globalId] = asic;
+          cout << "  replacing globalId = " << asic.globalId << " linkMatrix = " << asic.linkMatrix << " is better than " << allAsics[asic.globalId].linkMatrix 
+              << " eCount0 = " << eCount0 << " eCount1 = " << eCount1 << " from run " << extractRunNumber(path)
+               << endl;
+        } else {
+          cout << "  keeping   globalId = " << asic.globalId << " linkMatrix = " << asic.linkMatrix << " is better than " << allAsics[asic.globalId].linkMatrix << endl;
+        }
+      }
     }
   }
+
+  printLinkMatrixAndOffsets(allAsics);
   return 0;
 }
