@@ -67,8 +67,8 @@ OTHERLIBS 	  = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so $(LIBCURL)
 
 # -- Files
 #CSTUFF =
-LFILES = frameTree.o  pixelHistograms.o anaFrameTree.o plotFrameTreeResults.o 
-BINARIES = allHistograms pixelFillQualityLM runPixelHistograms runAnaFrameTree runPlot \
+LFILES = frameTree.o  pixelHistograms.o anaFrameTree.o plotFrameTreeResults.o anaMidasMetaTree.o
+BINARIES = allHistograms pixelFillQualityLM runPixelHistograms runAnaFrameTree runAnaMidasMetaTree runPlot \
            movieMakerVtx overlaySingleChip lvdsVsGlobalChipID produceMatrixNamesAndOffset dumpMidasMetaTree
 
 DICT = ${LFILES:.o=Dict.o}
