@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -23,6 +24,15 @@ using namespace std;
 // -- the primary purpose of this is to dump the linkMatrix by reading multiple midas meta JSON files
 // ----------------------------------------------------------------------
 
+
+// ----------------------------------------------------------------------
+static std::string fmtLink(int fedIdx, int linkIdx) {
+  std::ostringstream os;
+  os << "lvds/FEB_" << std::setw(2) << std::setfill('0') << fedIdx
+     << "/Link_" << std::setw(2) << std::setfill('0') << linkIdx;
+  return os.str();
+}
+
 // ----------------------------------------------------------------------
 void fixSingleE(AsicInfo &ai) {
   int eCount = std::count(ai.linkMatrix.begin(), ai.linkMatrix.end(), 'E');
@@ -45,22 +55,22 @@ void fixSingleE(AsicInfo &ai) {
     }
     ai.abcLinkMask[ipos] = 9;
     ai.abcLinkOffsets[ipos] = epos;
-    ai.abcLinkMaxLvdsErrRate[ipos] = -1;
+    ai.abcLinkErrs[ipos] = 0LL;
   }
 }
 
 // ----------------------------------------------------------------------
 void calcABCInformation(AsicInfo &ai) {
   for (int i = 0; i < 3; ++i) {
-    ai.abcLinkMask[i] = 9;
+    ai.abcLinkMask[i] = 0;
     ai.abcLinkOffsets[i] = 9;
-    ai.abcLinkMaxLvdsErrRate[i] = -1;
+    ai.abcLinkErrs[i] = 0LL;
   }
 
   for (int i = 2; i >= 0; --i) {
     char ch = ai.linkMatrix[i];
     int off = 2-i;
-    cout << "  ch = " << ch << " off = " << off << " linkMask = " << (int)(ai.linkMask[off] - '0') << endl;
+    if (0)cout << "  ch = " << ch << " off = " << off << " linkMask = " << (int)(ai.linkMask[off] - '0') << endl;
     if (ch == 'A') {
       ai.abcLinkOffsets[0] = off; 
       ai.abcLinkMask[0] = (int)(ai.linkMask[i] - '0');
@@ -78,12 +88,14 @@ void calcABCInformation(AsicInfo &ai) {
 
   fixSingleE(ai);
 
-  cout << "ai.globalId = " << ai.globalId << " linkMatrix = " << ai.linkMatrix 
-  << " linkMask = " << ai.linkMask
-  << " FEBLinkName = " << ai.FEBLinkName
-  << " abcLinkOffsets = " << ai.abcLinkOffsets[0] << ", " << ai.abcLinkOffsets[1] << ", " << ai.abcLinkOffsets[2] 
-  << " abcLinkMask = " << ai.abcLinkMask[0] << ", " << ai.abcLinkMask[1] << ", " << ai.abcLinkMask[2] 
-  << endl;
+
+
+  if (0) cout << "ai.globalId = " << ai.globalId << " linkMatrix = " << ai.linkMatrix 
+              << " linkMask = " << ai.linkMask
+              << " FEBLinkName = " << ai.FEBLinkName
+              << " abcLinkOffsets = " << ai.abcLinkOffsets[0] << ", " << ai.abcLinkOffsets[1] << ", " << ai.abcLinkOffsets[2] 
+              << " abcLinkMask = " << ai.abcLinkMask[0] << ", " << ai.abcLinkMask[1] << ", " << ai.abcLinkMask[2] 
+              << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -179,26 +191,28 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
   return out;
 }
 
-
 // ----------------------------------------------------------------------
-static std::string fmtLink(int fedIdx, int linkIdx) {
-  std::ostringstream os;
-  os << "lvds/FEB_" << std::setw(2) << std::setfill('0') << fedIdx
-     << "/Link_" << std::setw(2) << std::setfill('0') << linkIdx;
-  return os.str();
-}
+void printLinkMatrix(const std::map<int, AsicInfo> &allAsics) {
+  ofstream OF("gMapChipIDLinkOffsets.icc");
+  OF << "std::map<int, std::vector<int>> gMapChipIDLinkOffsets = {" << endl;
 
-
-// ----------------------------------------------------------------------
-void printLinkMatrixAndOffsets(const std::map<int, AsicInfo> &allAsics) {
-  for (const auto& asic : allAsics) {
+  for (auto it = allAsics.begin(); it != allAsics.end(); ++it) {
+    auto asic = *it;
     cout << "  globalId = " << asic.first << " linkMatrix = " 
          << asic.second.linkMatrix << " linkMask = " << asic.second.linkMask 
          << " abcLinkOffsets = " << asic.second.abcLinkOffsets[0] << ", " << asic.second.abcLinkOffsets[1] << ", " << asic.second.abcLinkOffsets[2] 
          << " abcLinkMask = " << asic.second.abcLinkMask[0] << ", " << asic.second.abcLinkMask[1] << ", " << asic.second.abcLinkMask[2] 
          << " abcLinkNames = " << asic.second.abcLinkNames[0] << ", " << asic.second.abcLinkNames[1] << ", " << asic.second.abcLinkNames[2] 
          << endl;
+
+    OF << "    {" << asic.first << ",    {"
+       << asic.second.abcLinkOffsets[0] << ", " << asic.second.abcLinkOffsets[1] << ", " << asic.second.abcLinkOffsets[2] << "}}";
+    if (std::next(it) != allAsics.end()) OF << ",";
+    OF << endl;
   }
+  OF << "  };" << endl;
+  OF.close();
+
 }
 
 
@@ -224,20 +238,68 @@ static std::string extractRunNumber(const std::string &path) {
 
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <file1.json> [file2.json] [file3.json] ..." << std::endl;
-    return 2;
+  // -- parse command line arguments
+  int globalChipNumber(-1), runNumber(-1);
+  bool print(false);
+  vector<string> jsonFiles;
+  for (int i = 0; i < argc; i++){
+    if (!strcmp(argv[i],"-h")) {
+      cout << "List of arguments:" << endl;
+      cout << "-c global chip number to print (for all runs)" << endl;
+      cout << "-r run number to print (for all chips)" << endl;
+      cout << "-p print the link matrix to icc file" << endl;
+      return 0;
+    }
+    if (!strcmp(argv[i],"-c"))  {globalChipNumber   = atoi(argv[++i]); }     // global chip number to print (for all runs)
+    if (!strcmp(argv[i],"-r"))  {runNumber   = atoi(argv[++i]); }             // run number to print (for all chips)
+    if (!strcmp(argv[i],"-p"))  {print = true; }                               // print the link matrix
+    if (string::npos != string(argv[i]).find(".json"))   {jsonFiles.push_back(string(argv[i])); }     // json file to process
+  }
+
+  if (jsonFiles.empty()) {
+    cout << "Usage: " << argv[0] << " -c globalChipNumber -r runNumber <file1.json> [file2.json] [file3.json] ..." << endl;
+    return 0;
   }
   
-  // Collect all ASICs from all files
-  std::map<int, AsicInfo> allAsics;
-  std::map<int, std::set<std::string>> patternsPerGlobalId;
-  
-  for (int i = 1; i < argc; ++i) {
-    std::string path = argv[i];
-    std::cout << "Processing file: " << path << std::endl;
+  // -- Collect all ASICs from all files
+  map<int, AsicInfo> allAsics;
+  map<int, std::set<std::string>> patternsPerGlobalId;
+  // -- big map of all ASCICs vs runnumber
+  map<int, vector<AsicInfo>> allAsicsByRunNumber;
+
+  for (const auto& path : jsonFiles) {
+    if (print) cout << "Processing file: " << path << endl;
     auto asics = parseJSONFile(path);
-    
+    int irun = atoi(extractRunNumber(path).c_str());
+    allAsicsByRunNumber[irun] = asics;
+
+    // -- printout in case -c or -g is provided
+    if (globalChipNumber > -1) {
+      for (const auto& asic : asics) {
+        if (asic.globalId == globalChipNumber) {
+          cout << "  run = " << extractRunNumber(path) << " globalId = " << asic.globalId 
+               << " linkMatrix = " << asic.linkMatrix 
+               << " linkMask = " << asic.linkMask 
+               << " linkErrs = " << asic.lvdsErrRate0 
+               << ", " << asic.lvdsErrRate1 << ", " << asic.lvdsErrRate2 
+               << endl;
+        }
+      }
+    }
+    if (runNumber > -1) {
+      if (irun == runNumber) {
+        for (const auto& asic : asics) {
+          cout << "  run = " << irun << " globalId = " << asic.globalId 
+                << " linkMatrix = " << asic.linkMatrix 
+                << " linkMask = " << asic.linkMask 
+                << " linkErrs = " << asic.lvdsErrRate0 
+                << ", " << asic.lvdsErrRate1 << ", " << asic.lvdsErrRate2 
+                << endl;
+        }
+
+      }
+    }
+
     for (const auto& asic : asics) {
       if (allAsics.find(asic.globalId) == allAsics.end()) {
         allAsics[asic.globalId] = asic;
@@ -246,16 +308,16 @@ int main(int argc, char *argv[]) {
         int eCount1 = std::count(asic.linkMatrix.begin(), asic.linkMatrix.end(), 'E');
         if (eCount0 > eCount1) {
           allAsics[asic.globalId] = asic;
-          cout << "  replacing globalId = " << asic.globalId << " linkMatrix = " << asic.linkMatrix << " is better than " << allAsics[asic.globalId].linkMatrix 
-              << " eCount0 = " << eCount0 << " eCount1 = " << eCount1 << " from run " << extractRunNumber(path)
-               << endl;
+          if (0) cout << "  replacing globalId = " << asic.globalId << " linkMatrix = " << asic.linkMatrix << " is better than " << allAsics[asic.globalId].linkMatrix 
+                      << " eCount0 = " << eCount0 << " eCount1 = " << eCount1 << " from run " << extractRunNumber(path)
+                      << endl;
         } else {
-          cout << "  keeping   globalId = " << asic.globalId << " linkMatrix = " << asic.linkMatrix << " is better than " << allAsics[asic.globalId].linkMatrix << endl;
+          if (0) cout << "  keeping   globalId = " << asic.globalId << " linkMatrix = " << asic.linkMatrix << " is better than " << allAsics[asic.globalId].linkMatrix << endl;
         }
       }
     }
   }
 
-  printLinkMatrixAndOffsets(allAsics);
+  if (print) printLinkMatrix(allAsics);
   return 0;
 }
