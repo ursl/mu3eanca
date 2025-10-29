@@ -37,6 +37,7 @@
 #    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/10/29 add "--alignment.file=mu3e_alignment.root" 
 #         2025/10/24 add -q XXX, to be invoked: -q "-p hourly". Add numerical subdirs in init step
 #         2025/10/15 add "allhist"
 #         2025/09/25 more run chunks and beam2025
@@ -207,6 +208,7 @@ if ($opt_i) {
 # my $queue = "-p hourly";
 # Note: This is tricky for meta submission: 
 # .../processRuns -s -q "'-p mu3e --reservation=mu3e'" -t slurm/v6.3.tar.gz -m sort -e cosmics2025 -g datav6.2=2025CosmicsNoMagnet
+# FIXME This produces "Unknown option: -" but the jobs are submitted and do run?!
 
 my $QUEUE = "-p hourly";
 if ($opt_q) {
@@ -1506,11 +1508,11 @@ sub submitJobsRawSort() {
     # -- switch between cosmic and beam?!
     my $anlString = "";
     if ($opt_e =~ /cosmics/) {
-        $anlString = " --conf trirec_twolayer_cosmic.conf ";
+        $anlString = " --alignment.file=mu3e_alignment.root --conf trirec_twolayer_cosmic.conf ";
     } elsif ($opt_e =~ /beam/) {
-        $anlString = " --conf trirec_twolayer_beam.conf ";
+        $anlString = " --alignment.file=mu3e_alignment.root --conf trirec_twolayer_beam.conf ";
     } else {
-        $anlString = " --conf trirec.conf ";
+        $anlString = " --alignment.file=mu3e_alignment.root --conf trirec.conf ";
     }
 
     # -- encode the configuration of the SLURM job
