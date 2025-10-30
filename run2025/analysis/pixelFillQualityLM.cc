@@ -9,7 +9,7 @@
 
 #include <fstream>
 
-#include "cdbUtil.hh"
+#include "cdbUtil.hh" 
 #include "Mu3eConditions.hh"
 #include "calPixelAlignment.hh"
 #include "calPixelQuality.hh"
@@ -17,6 +17,9 @@
 #include "calPixelQualityM.hh"
 #include "calPixelQualityLM.hh"
 
+
+#include "gMapChipIDLinkNames.icc"
+#include "gMapChipIDLinkOffsets.icc"
 
 #include "cdbJSON.hh"
 #include "base64.hh"
