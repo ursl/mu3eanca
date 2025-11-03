@@ -1,3 +1,5 @@
+// -- Produced with 
+// ./bin/produceMatrixNamesAndOffset -p ~/data/mu3e/run2025/raw/run06*.mid.lz4.json ~/data/mu3e/run2025/raw/run07*
 std::map<int, std::vector<int>> gMapChipIDLinkOffsets = {
     {1,    {0, 1, 2}},
     {2,    {1, 2, 0}},
