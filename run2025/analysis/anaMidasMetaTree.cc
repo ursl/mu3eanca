@@ -211,6 +211,22 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
     fMapTProfile["biasVPTimerDel"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVPTimerDel);
     fMapH1["vdacBaseline"]->Fill(vdacBaseline);
     fMapTProfile["vdacBaseline"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacBaseline);
+
+    // -- check against duplicate linkMask entries
+    int cnt0, cnt1, cnt2;
+    cnt0 = cnt1 = cnt2 = 0;
+    for (int i = 0; i < 3; ++i) {
+      if (linkMatrix[i] == 0) cnt0++;
+      if (linkMatrix[i] == 1) cnt1++;
+      if (linkMatrix[i] == 2) cnt2++;
+    }
+    if (cnt0 > 1 || cnt1 > 1 || cnt2 > 1) {
+      cout << "XXXXXXXXXXXXXXXXXXXXXXX duplicate linkMatrix = " 
+      << linkMatrix[0] << " " << linkMatrix[1] << " " << linkMatrix[2] 
+      << " globalChipID = " << globalChipID 
+      << " runNumber = " << runNumber 
+      << endl;
+    }
   }
 
   // -- add decorations
