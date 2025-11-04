@@ -212,7 +212,7 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
     fMapH1["vdacBaseline"]->Fill(vdacBaseline);
     fMapTProfile["vdacBaseline"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacBaseline);
 
-    // -- check against duplicate linkMask entries
+    // -- check against duplicate linkMatrix entries
     int cnt0, cnt1, cnt2;
     cnt0 = cnt1 = cnt2 = 0;
     for (int i = 0; i < 3; ++i) {
@@ -227,6 +227,24 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
       << " runNumber = " << runNumber 
       << endl;
     }
+
+    // -- check against 9/'E' without corresponding mask!
+    cnt0 = cnt1 = cnt2 = 0;
+    for (int i = 0; i < 3; ++i) {
+      if (linkMatrix[i] == 4) {
+        if (linkMask[i] == 1) cnt0++;
+      }
+    }
+    if (cnt0 > 0) {
+      cout << "XXXXXXXXXXXXXXXXXXXXXXX 'E' without corresponding mask. matrix = " 
+      << linkMatrix[0] << " " << linkMatrix[1] << " " << linkMatrix[2] 
+      << " cnt = " << cnt0
+      << " mask = " << linkMask[0] << " " << linkMask[1] << " " << linkMask[2]
+      << " globalChipID = " << globalChipID 
+      << " runNumber = " << runNumber 
+      << endl;
+    }
+
   }
 
   // -- add decorations
@@ -237,6 +255,43 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
   }
 }
 
+
+// ----------------------------------------------------------------------
+void anaMidasMetaTree::print(int run, int chipID) {
+  if (!fChain) { std::cerr << "No TTree set\n"; return; }
+  Long64_t nentries = fChain->GetEntries();
+  for (Long64_t jentry = 0; jentry < nentries; ++jentry) {
+    loadTree(jentry);
+    getEntry(jentry);
+    // -- print all chip information for one run
+    if ((run == runNumber) && (chipID < 0)) {
+      cout << "  run =  " << run << " globalId = " << globalChipID;
+      cout << " linkMatrix = " << linkMatrix[0] << linkMatrix[1] << linkMatrix[2];
+      cout << " linkMask = " << linkMask[0] << linkMask[1] << linkMask[2];
+      cout << " abcLinkMask = " << abcLinkMask[0] << abcLinkMask[1] << abcLinkMask[2];
+      cout << " abcLinkErrs = " << abcLinkErrs[0] << "," << abcLinkErrs[1] << "," << abcLinkErrs[2] << endl;
+      continue;
+    }
+    // -- print one chip information for one run
+    if ((run == runNumber) && (chipID == globalChipID)) {
+      cout << "  run =  " << run << " globalId = " << globalChipID;
+      cout << " linkMatrix = " << linkMatrix[0] << linkMatrix[1] << linkMatrix[2];
+      cout << " linkMask = " << linkMask[0] << linkMask[1] << linkMask[2];
+      cout << " abcLinkMask = " << abcLinkMask[0] << abcLinkMask[1] << abcLinkMask[2];
+      cout << " abcLinkErrs = " << abcLinkErrs[0] << "," << abcLinkErrs[1] << "," << abcLinkErrs[2] << endl;
+      continue;
+    }
+    // -- print one chip information for all runs
+    if ((run < 0) && (chipID == globalChipID)) {
+      cout << "  run =  " << runNumber << " globalId = " << globalChipID;
+      cout << " linkMatrix = " << linkMatrix[0] << linkMatrix[1] << linkMatrix[2];
+      cout << " linkMask = " << linkMask[0] << linkMask[1] << linkMask[2];
+      cout << " abcLinkMask = " << abcLinkMask[0] << abcLinkMask[1] << abcLinkMask[2];
+      cout << " abcLinkErrs = " << abcLinkErrs[0] << "," << abcLinkErrs[1] << "," << abcLinkErrs[2] << endl;
+      continue;
+    }
+  }
+}
 
 // ----------------------------------------------------------------------
 void anaMidasMetaTree::makePlots() {

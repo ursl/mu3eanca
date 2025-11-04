@@ -67,17 +67,17 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
       vector<long long> abcerrors{0LL,0LL,0LL};
  
       if (gMapChipIDLinkOffsets[ai.globalId][0] < 9) {
-        abcmask[0] = (ai.linkMask[gMapChipIDLinkOffsets[ai.globalId][0]] - '0');
+        abcmask[0] = (ai.linkMask[2-gMapChipIDLinkOffsets[ai.globalId][0]] - '0');
       } else {
         abcmask[0] = 9;
       }
       if (gMapChipIDLinkOffsets[ai.globalId][1] < 9) {
-        abcmask[1] = (ai.linkMask[gMapChipIDLinkOffsets[ai.globalId][1]] - '0');
+        abcmask[1] = (ai.linkMask[2-gMapChipIDLinkOffsets[ai.globalId][1]] - '0');
       } else {
         abcmask[1] = 9;
       }
       if (gMapChipIDLinkOffsets[ai.globalId][2] < 9) {
-        abcmask[2] = (ai.linkMask[gMapChipIDLinkOffsets[ai.globalId][2]] - '0');
+        abcmask[2] = (ai.linkMask[2-gMapChipIDLinkOffsets[ai.globalId][2]] - '0');
       } else {
         abcmask[2] = 9;
       }
@@ -239,8 +239,14 @@ int main(int argc, char *argv[]) {
   t->Branch("runNumber", &runNumber, "runNumber/I");
   t->Branch("globalChipID", &globalChipID, "globalChipID/I");
   t->Branch("nlinks", &nlinks, "nlinks/I");
+  // -- NOTABENE: linkMask and linkMatrix transcribe EXACTLY the string in the JSON (A=0,B=1,C=2,E=4)
+  // -- i.e. "CAB" -> "201", i.e. the order is from right to left!
   t->Branch("linkMask", linkMask, "linkMask[nlinks]/I");
   t->Branch("linkMatrix", linkMatrix, "linkMatrix[nlinks]/I");
+  // -- NOTABENE: abcLinkMask and abcLinkErrs represent EXACTLY in the order ABC
+  // -- i.e. [0] -> A, [1] -> B, [2] -> C
+  // -- i.e. the ordering is from left to right (as in the chip submatrix or the array enumeration)
+  // -- i.e. opposite ordering to linkMask and linkMatrix
   t->Branch("abcLinkMask", abcLinkMask, "abcLinkMask[nlinks]/I");
   t->Branch("abcLinkErrs", abcLinkErrs, "abcLinkErrs[nlinks]/L");
   

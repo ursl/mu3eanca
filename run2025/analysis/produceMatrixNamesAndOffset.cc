@@ -129,6 +129,7 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
       AsicInfo ai;
       // FED index is explicitly provided in the JSON as "index"
       ai.fedID       = section.value("index", static_cast<int>(fedIdx));
+      ai.FEBName     = section.value("name", "unset");
       ai.idxInSection= static_cast<int>(idx);
 
       ai.globalId    = a.value("globalId", 0);
@@ -193,7 +194,7 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
 
 // ----------------------------------------------------------------------
 void printLinkMatrix(const std::map<int, AsicInfo> &allAsics) {
-  ofstream OF("gMapChipIDLinkOffsets.icc");
+  ofstream OF("gMapChipIDLinkOffsets-tmp.icc");
   OF << "std::map<int, std::vector<int>> gMapChipIDLinkOffsets = {" << endl;
 
   for (auto it = allAsics.begin(); it != allAsics.end(); ++it) {
@@ -202,7 +203,10 @@ void printLinkMatrix(const std::map<int, AsicInfo> &allAsics) {
          << asic.second.linkMatrix << " linkMask = " << asic.second.linkMask 
          << " abcLinkOffsets = " << asic.second.abcLinkOffsets[0] << ", " << asic.second.abcLinkOffsets[1] << ", " << asic.second.abcLinkOffsets[2] 
          << " abcLinkMask = " << asic.second.abcLinkMask[0] << ", " << asic.second.abcLinkMask[1] << ", " << asic.second.abcLinkMask[2] 
-         << " abcLinkNames = " << asic.second.abcLinkNames[0] << ", " << asic.second.abcLinkNames[1] << ", " << asic.second.abcLinkNames[2] 
+         << " febId = " << asic.second.fedID
+         << " febName = " << asic.second.FEBName
+         << " linkName = " << asic.second.FEBLinkName
+//         << " abcLinkNames = " << asic.second.abcLinkNames[0] << ", " << asic.second.abcLinkNames[1] << ", " << asic.second.abcLinkNames[2] 
          << endl;
 
     OF << "    {" << asic.first << ",    {"

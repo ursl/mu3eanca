@@ -23,6 +23,7 @@ public:
   Long64_t loadTree(Long64_t entry);
   void loop(Long64_t maxEntries = -1);
 
+  void print(int run, int globalChipID);
   void bookHistograms();
   void makePlots();
   void endAnalysis();
