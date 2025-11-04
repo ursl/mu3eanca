@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <TProfile2D.h>
+#include <TStyle.h>
 
 using namespace std;
 
@@ -66,6 +67,15 @@ void anaMidasMetaTree::bookHistograms() {
 
   fMapH1["abcErrs"] = new TH1D("abcErrs", "abcErrs", 100, 0, 100);
   fMapH1["abcMask"] = new TH1D("abcMask", "abcMask", 100, 0, 100);
+  fMapH1["abcMatrix"] = new TH1D("abcMatrix", "abcMatrix", 100, 0, 100);
+  fMapH1["abcMatrix"]->SetMinimum(0.5);
+  fMapH1["abcMatrix"]->GetXaxis()->SetBinLabel(1, "LnkErr");
+  fMapH1["abcMatrix"]->GetXaxis()->SetBinLabel(11, "!LnkErr + 2E");
+  fMapH1["abcMatrix"]->GetXaxis()->SetBinLabel(21, "!LnkErr,!msk + 2E");
+  fMapH1["abcMatrix"]->GetXaxis()->SetBinLabel(31, "!LnkErr,msk + 2E");
+  fMapH1["abcMatrix"]->GetXaxis()->SetBinLabel(41, "LnkErr + 1E");
+  fMapH1["abcMatrix"]->GetXaxis()->SetBinLabel(51, "LnkErr,!msk + 1E");
+  fMapH1["abcMatrix"]->GetXaxis()->SetBinLabel(61, "LnkErr,msk + 1E");
 
 }
 
@@ -180,52 +190,44 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
       if (irun%100 == 0) {
         fMapH2["abcLinkErrors2D"]->GetYaxis()->SetBinLabel(irun+1, Form("%d", runNumber));
       }
-      if (4 == abcLinkMask[0]) fMapH1["abcErrs"]->Fill(0.0);
-      if (4 == abcLinkMask[1]) fMapH1["abcErrs"]->Fill(1.0);
-      if (4 == abcLinkMask[2]) fMapH1["abcErrs"]->Fill(2.0);
-  
-      if (0 == abcLinkMask[0]) fMapH1["abcMask"]->Fill(0.0);
-      if (0 == abcLinkMask[1]) fMapH1["abcMask"]->Fill(1.0);
-      if (0 == abcLinkMask[2]) fMapH1["abcMask"]->Fill(2.0);
-  
+
+      fMapH2["abcLinkErrors2D"]->Fill(fPlotUtils.vtxLinkIndex(globalChipID, 0), irun, abcLinkErrs[0]);
+
+      fMapH2["abcLinkErrors2D"]->Fill(fPlotUtils.vtxLinkIndex(globalChipID, 1), irun, abcLinkErrs[1]);
+      fMapH2["abcLinkErrors2D"]->Fill(fPlotUtils.vtxLinkIndex(globalChipID, 2), irun, abcLinkErrs[2]);
+
+      fMapH1["globalChipID"]->Fill(globalChipID);
+      fMapH1["nlinks"]->Fill(nlinks);
+      fMapH1["abcLinkMask"]->Fill(abcLinkMask[0]);
+      fMapH1["abcLinkErrs"]->Fill(abcLinkErrs[0]);
+      fMapH1["lvdsErrRate0"]->Fill(lvdsErrRate0);
+      fMapH1["lvdsErrRate1"]->Fill(lvdsErrRate1);
+      fMapH1["lvdsErrRate2"]->Fill(lvdsErrRate2);
+      fMapH1["ckdivend"]->Fill(ckdivend);
+      fMapH1["ckdivend2"]->Fill(ckdivend2);
+      fMapH1["vdacBLPix"]->Fill(vdacBLPix);
+      fMapTProfile["vdacBLPix"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacBLPix);
+      fMapH1["vdacThHigh"]->Fill(vdacThHigh);
+      fMapTProfile["vdacThHigh"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacThHigh);
+      fMapH1["vdacThLow"]->Fill(vdacThLow);
+      fMapTProfile["vdacThLow"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacThLow);
+      fMapH1["biasVNOutPix"]->Fill(biasVNOutPix);
+      fMapTProfile["biasVNOutPix"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVNOutPix);
+      fMapH1["biasVPDAC"]->Fill(biasVPDAC);
+      fMapTProfile["biasVPDAC"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVPDAC);
+      fMapH1["biasVNDcl"]->Fill(biasVNDcl);
+      fMapTProfile["biasVNDcl"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVNDcl);
+      fMapH1["biasVNLVDS"]->Fill(biasVNLVDS);
+      fMapTProfile["biasVNLVDS"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVNLVDS);
+      fMapH1["biasVNLVDSDel"]->Fill(biasVNLVDSDel);
+      fMapTProfile["biasVNLVDSDel"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVNLVDSDel);
+      fMapH1["biasVPDcl"]->Fill(biasVPDcl);
+      fMapTProfile["biasVPDcl"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVPDcl);
+      fMapH1["biasVPTimerDel"]->Fill(biasVPTimerDel);
+      fMapTProfile["biasVPTimerDel"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVPTimerDel);
+      fMapH1["vdacBaseline"]->Fill(vdacBaseline);
+      fMapTProfile["vdacBaseline"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacBaseline);
     }
-    fMapH2["abcLinkErrors2D"]->Fill(fPlotUtils.vtxLinkIndex(globalChipID, 0), irun, abcLinkErrs[0]);
-
-    fMapH2["abcLinkErrors2D"]->Fill(fPlotUtils.vtxLinkIndex(globalChipID, 1), irun, abcLinkErrs[1]);
-    fMapH2["abcLinkErrors2D"]->Fill(fPlotUtils.vtxLinkIndex(globalChipID, 2), irun, abcLinkErrs[2]);
-
-    fMapH1["globalChipID"]->Fill(globalChipID);
-    fMapH1["nlinks"]->Fill(nlinks);
-    fMapH1["abcLinkMask"]->Fill(abcLinkMask[0]);
-    fMapH1["abcLinkErrs"]->Fill(abcLinkErrs[0]);
-    fMapH1["lvdsErrRate0"]->Fill(lvdsErrRate0);
-    fMapH1["lvdsErrRate1"]->Fill(lvdsErrRate1);
-    fMapH1["lvdsErrRate2"]->Fill(lvdsErrRate2);
-    fMapH1["ckdivend"]->Fill(ckdivend);
-    fMapH1["ckdivend2"]->Fill(ckdivend2);
-    fMapH1["vdacBLPix"]->Fill(vdacBLPix);
-    fMapTProfile["vdacBLPix"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacBLPix);
-    fMapH1["vdacThHigh"]->Fill(vdacThHigh);
-    fMapTProfile["vdacThHigh"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacThHigh);
-    fMapH1["vdacThLow"]->Fill(vdacThLow);
-    fMapTProfile["vdacThLow"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacThLow);
-    fMapH1["biasVNOutPix"]->Fill(biasVNOutPix);
-    fMapTProfile["biasVNOutPix"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVNOutPix);
-    fMapH1["biasVPDAC"]->Fill(biasVPDAC);
-    fMapTProfile["biasVPDAC"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVPDAC);
-    fMapH1["biasVNDcl"]->Fill(biasVNDcl);
-    fMapTProfile["biasVNDcl"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVNDcl);
-    fMapH1["biasVNLVDS"]->Fill(biasVNLVDS);
-    fMapTProfile["biasVNLVDS"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVNLVDS);
-    fMapH1["biasVNLVDSDel"]->Fill(biasVNLVDSDel);
-    fMapTProfile["biasVNLVDSDel"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVNLVDSDel);
-    fMapH1["biasVPDcl"]->Fill(biasVPDcl);
-    fMapTProfile["biasVPDcl"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVPDcl);
-    fMapH1["biasVPTimerDel"]->Fill(biasVPTimerDel);
-    fMapTProfile["biasVPTimerDel"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), biasVPTimerDel);
-    fMapH1["vdacBaseline"]->Fill(vdacBaseline);
-    fMapTProfile["vdacBaseline"]->Fill(fPlotUtils.vtxChipIndex(globalChipID), vdacBaseline);
-
     // -- check against duplicate linkMatrix entries
     int cnt0, cnt1, cnt2;
     cnt0 = cnt1 = cnt2 = 0;
@@ -258,6 +260,63 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
       << " runNumber = " << runNumber 
       << endl;
     }
+    cnt0 = cnt1 = cnt2 = 0;
+    for (int i = 0; i < 3; ++i) {
+      if (4 == abcLinkMatrix[i]) cnt0++;
+      if (0 == abcLinkMask[i]) cnt1++;
+    }
+
+    if (4 == abcLinkMatrix[0]) fMapH1["abcMatrix"]->Fill(0.0);
+    if (4 == abcLinkMatrix[1]) fMapH1["abcMatrix"]->Fill(1.0);
+    if (4 == abcLinkMatrix[2]) fMapH1["abcMatrix"]->Fill(2.0);
+
+    if (2 == cnt0) {
+      if (4 != abcLinkMatrix[0]) fMapH1["abcMatrix"]->Fill(10.0);
+      if (4 != abcLinkMatrix[1]) {
+        fMapH1["abcMatrix"]->Fill(11.0);
+        cout << "ZZZZZZZZZZZZZZZZZZZZZ 'EE' for working B found. matrix = " 
+        << " runNumber = " << runNumber 
+        << " globalChipID = " << setw(4) << globalChipID 
+        << " linkMatrix = " << linkMatrix[0] << " " << linkMatrix[1] << " " << linkMatrix[2]
+        << " linkMask = " << linkMask[0] << " " << linkMask[1] << " " << linkMask[2]
+        << " abcLinkMatrix = " << abcLinkMatrix[0] << abcLinkMatrix[1] << abcLinkMatrix[2]
+        << " abcLinkMask = " << abcLinkMask[0] << abcLinkMask[1] << abcLinkMask[2]
+        << endl;
+      }
+      if (4 != abcLinkMatrix[2]) fMapH1["abcMatrix"]->Fill(12.0);
+
+      // -- check mask status 0 
+      if (4 != abcLinkMatrix[0] && 0 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(20.0);
+      if (4 != abcLinkMatrix[1] && 0 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(21.0);
+      if (4 != abcLinkMatrix[2] && 0 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(22.0);
+
+      // -- check mask status 1 
+      if (4 != abcLinkMatrix[0] && 1 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(30.0);
+      if (4 != abcLinkMatrix[1] && 1 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(31.0);
+      if (4 != abcLinkMatrix[2] && 1 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(32.0);
+    }
+
+    if (2 == cnt0) {
+      if (4 == abcLinkMatrix[0]) fMapH1["abcMatrix"]->Fill(40.0);
+      if (4 == abcLinkMatrix[1]) fMapH1["abcMatrix"]->Fill(41.0);
+      if (4 == abcLinkMatrix[2]) fMapH1["abcMatrix"]->Fill(42.0);
+
+      // -- check mask status 0 
+      if (4 == abcLinkMatrix[0] && 0 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(50.0);
+      if (4 == abcLinkMatrix[1] && 0 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(51.0);
+      if (4 == abcLinkMatrix[2] && 0 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(52.0);
+
+      // -- check mask status 1 
+      if (4 == abcLinkMatrix[0] && 1 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(60.0);
+      if (4 == abcLinkMatrix[1] && 1 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(61.0);
+      if (4 == abcLinkMatrix[2] && 1 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(62.0);
+    }
+
+    if (0 == abcLinkMask[0]) fMapH1["abcMask"]->Fill(0.0);
+    if (0 == abcLinkMask[1]) fMapH1["abcMask"]->Fill(1.0);
+    if (0 == abcLinkMask[2]) fMapH1["abcMask"]->Fill(2.0);
+  
+
 
 
   }
@@ -340,6 +399,15 @@ void anaMidasMetaTree::makePlots() {
   fMapH2["abcLinkErrors2D"]->SetMinimum(1000.);
   fMapH2["abcLinkErrors2D"]->Draw("colz");
   c->SaveAs("abcLinkErrors2D_min1000.pdf");
+
+
+  c->cd();
+  c->SetLogy(1);
+  c->SetRightMargin(0.1);
+  c->SetBottomMargin(0.2);
+  gStyle->SetOptStat(0);
+  fMapH1["abcMatrix"]->Draw("");
+  c->SaveAs("abcMatrix.pdf");
 
   delete c;
   c = nullptr;
