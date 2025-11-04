@@ -63,23 +63,29 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
       ai.linkMatrix  = a.value("linkMatrix", "");
 
       // -- Extract also ABC link information
-      vector<int> abcmask{9,9,9};
+      vector<int> abcmask{9,9,9}, abcmatrix{4,4,4};
       vector<long long> abcerrors{0LL,0LL,0LL};
  
       if (gMapChipIDLinkOffsets[ai.globalId][0] < 9) {
         abcmask[0] = (ai.linkMask[2-gMapChipIDLinkOffsets[ai.globalId][0]] - '0');
+        abcmatrix[0] = (ai.linkMatrix[2-gMapChipIDLinkOffsets[ai.globalId][0]] - 'A') ;
       } else {
         abcmask[0] = 9;
+        abcmatrix[0] = 4;
       }
       if (gMapChipIDLinkOffsets[ai.globalId][1] < 9) {
         abcmask[1] = (ai.linkMask[2-gMapChipIDLinkOffsets[ai.globalId][1]] - '0');
+        abcmatrix[1] = (ai.linkMatrix[2-gMapChipIDLinkOffsets[ai.globalId][1]] - 'A') ;
       } else {
         abcmask[1] = 9;
+        abcmatrix[1] = 4;
       }
       if (gMapChipIDLinkOffsets[ai.globalId][2] < 9) {
         abcmask[2] = (ai.linkMask[2-gMapChipIDLinkOffsets[ai.globalId][2]] - '0');
+        abcmatrix[2] = (ai.linkMatrix[2-gMapChipIDLinkOffsets[ai.globalId][2]] - 'A') ;
       } else {
         abcmask[2] = 9;
+        abcmatrix[2] = 4;
       }
 
       // -- lvdsErrRates moved into an array [r0, r1, r2]
@@ -117,6 +123,9 @@ std::vector<AsicInfo> parseJSONFile(const std::string& path) {
       ai.abcLinkErrs[0] = abcerrors[0];
       ai.abcLinkErrs[1] = abcerrors[1];
       ai.abcLinkErrs[2] = abcerrors[2];
+      ai.abcLinkMatrix[0] = abcmatrix[0];
+      ai.abcLinkMatrix[1] = abcmatrix[1];
+      ai.abcLinkMatrix[2] = abcmatrix[2];
 
       // Extract required configuration values from dacs.conf and selected DACs
       ai.ckdivend  = 0;
@@ -219,6 +228,7 @@ int main(int argc, char *argv[]) {
   int linkMatrix[3];
   int abcLinkMask[3];
   long long abcLinkErrs[3];
+  int abcLinkMatrix[3]; // 4 = E!
   long long lvdsErrRate0;
   long long lvdsErrRate1;
   long long lvdsErrRate2;
@@ -249,7 +259,8 @@ int main(int argc, char *argv[]) {
   // -- i.e. opposite ordering to linkMask and linkMatrix
   t->Branch("abcLinkMask", abcLinkMask, "abcLinkMask[nlinks]/I");
   t->Branch("abcLinkErrs", abcLinkErrs, "abcLinkErrs[nlinks]/L");
-  
+  t->Branch("abcLinkMatrix", abcLinkMatrix, "abcLinkMatrix[nlinks]/I");
+
   t->Branch("lvdsErrRate0", &lvdsErrRate0, "lvdsErrRate0/L");
   t->Branch("lvdsErrRate1", &lvdsErrRate1, "lvdsErrRate1/L");
   t->Branch("lvdsErrRate2", &lvdsErrRate2, "lvdsErrRate2/L");
@@ -296,6 +307,9 @@ int main(int argc, char *argv[]) {
       abcLinkErrs[0] = asic.abcLinkErrs[0];
       abcLinkErrs[1] = asic.abcLinkErrs[1];
       abcLinkErrs[2] = asic.abcLinkErrs[2];
+      abcLinkMatrix[0] = asic.abcLinkMatrix[0];
+      abcLinkMatrix[1] = asic.abcLinkMatrix[1];
+      abcLinkMatrix[2] = asic.abcLinkMatrix[2];
       lvdsErrRate0 = asic.lvdsErrRate0;
       lvdsErrRate1 = asic.lvdsErrRate1;
       lvdsErrRate2 = asic.lvdsErrRate2;

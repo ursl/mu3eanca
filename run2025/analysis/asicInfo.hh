@@ -16,6 +16,7 @@ struct AsicInfo {
   // -- ABC link information (the above resorted with linkMask)
   int         abcLinkMask[3]{0,0,0};
   long long   abcLinkErrs[3]{0LL,0LL,0LL};
+  int         abcLinkMatrix[3]{4,4,4};
   std::string abcLinkNames[3]{"unset", "unset", "unset"};
   int         abcLinkOffsets[3]{9,9,9};
   int ckdivend{};

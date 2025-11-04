@@ -62,6 +62,11 @@ void anaMidasMetaTree::bookHistograms() {
   fMapH2["abcLinkErrors2D"]->SetYTitle("Run Number");
   fMapH2["abcLinkErrors2D"]->SetZTitle("Maximum Link Error Rate / Run");
   fMapH2["abcLinkErrors2D"]->SetStats(0);
+
+
+  fMapH1["abcErrs"] = new TH1D("abcErrs", "abcErrs", 100, 0, 100);
+  fMapH1["abcMask"] = new TH1D("abcMask", "abcMask", 100, 0, 100);
+
 }
 
 // ----------------------------------------------------------------------
@@ -80,6 +85,7 @@ void anaMidasMetaTree::init(TTree* tree) {
   fChain->SetBranchAddress("nlinks", &nlinks, &b_nlinks);
   fChain->SetBranchAddress("abcLinkMask", abcLinkMask, &b_abcLinkMask);
   fChain->SetBranchAddress("abcLinkErrs", abcLinkErrs, &b_abcLinkErrs);
+  fChain->SetBranchAddress("abcLinkMatrix", abcLinkMatrix, &b_abcLinkMatrix);
 
   fChain->SetBranchAddress("lvdsErrRate0", &lvdsErrRate0, &b_lvdsErrRate0);
   fChain->SetBranchAddress("lvdsErrRate1", &lvdsErrRate1, &b_lvdsErrRate1);
@@ -174,6 +180,14 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
       if (irun%100 == 0) {
         fMapH2["abcLinkErrors2D"]->GetYaxis()->SetBinLabel(irun+1, Form("%d", runNumber));
       }
+      if (4 == abcLinkMask[0]) fMapH1["abcErrs"]->Fill(0.0);
+      if (4 == abcLinkMask[1]) fMapH1["abcErrs"]->Fill(1.0);
+      if (4 == abcLinkMask[2]) fMapH1["abcErrs"]->Fill(2.0);
+  
+      if (0 == abcLinkMask[0]) fMapH1["abcMask"]->Fill(0.0);
+      if (0 == abcLinkMask[1]) fMapH1["abcMask"]->Fill(1.0);
+      if (0 == abcLinkMask[2]) fMapH1["abcMask"]->Fill(2.0);
+  
     }
     fMapH2["abcLinkErrors2D"]->Fill(fPlotUtils.vtxLinkIndex(globalChipID, 0), irun, abcLinkErrs[0]);
 
@@ -245,6 +259,7 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
       << endl;
     }
 
+
   }
 
   // -- add decorations
@@ -269,6 +284,7 @@ void anaMidasMetaTree::print(int run, int chipID) {
       cout << " linkMatrix = " << linkMatrix[0] << linkMatrix[1] << linkMatrix[2];
       cout << " linkMask = " << linkMask[0] << linkMask[1] << linkMask[2];
       cout << " abcLinkMask = " << abcLinkMask[0] << abcLinkMask[1] << abcLinkMask[2];
+      cout << " abcLinkMatrix = " << abcLinkMatrix[0] << abcLinkMatrix[1] << abcLinkMatrix[2];
       cout << " abcLinkErrs = " << abcLinkErrs[0] << "," << abcLinkErrs[1] << "," << abcLinkErrs[2] << endl;
       continue;
     }
@@ -278,6 +294,7 @@ void anaMidasMetaTree::print(int run, int chipID) {
       cout << " linkMatrix = " << linkMatrix[0] << linkMatrix[1] << linkMatrix[2];
       cout << " linkMask = " << linkMask[0] << linkMask[1] << linkMask[2];
       cout << " abcLinkMask = " << abcLinkMask[0] << abcLinkMask[1] << abcLinkMask[2];
+      cout << " abcLinkMatrix = " << abcLinkMatrix[0] << abcLinkMatrix[1] << abcLinkMatrix[2];
       cout << " abcLinkErrs = " << abcLinkErrs[0] << "," << abcLinkErrs[1] << "," << abcLinkErrs[2] << endl;
       continue;
     }
@@ -287,6 +304,7 @@ void anaMidasMetaTree::print(int run, int chipID) {
       cout << " linkMatrix = " << linkMatrix[0] << linkMatrix[1] << linkMatrix[2];
       cout << " linkMask = " << linkMask[0] << linkMask[1] << linkMask[2];
       cout << " abcLinkMask = " << abcLinkMask[0] << abcLinkMask[1] << abcLinkMask[2];
+      cout << " abcLinkMatrix = " << abcLinkMatrix[0] << abcLinkMatrix[1] << abcLinkMatrix[2];
       cout << " abcLinkErrs = " << abcLinkErrs[0] << "," << abcLinkErrs[1] << "," << abcLinkErrs[2] << endl;
       continue;
     }

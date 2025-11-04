@@ -37,6 +37,7 @@ public:
   int nlinks{3};
   int abcLinkMask[3]{};
   long long abcLinkErrs[3]{};
+  int abcLinkMatrix[3]{};
 
   long long lvdsErrRate0{};
   long long lvdsErrRate1{};
@@ -67,7 +68,7 @@ public:
 
   TBranch *b_runNumber{nullptr}, *b_globalChipID{nullptr};
   TBranch *b_linkMask{nullptr}, *b_linkMatrix{nullptr};
-  TBranch *b_nlinks{nullptr}, *b_abcLinkMask{nullptr}, *b_abcLinkErrs{nullptr};
+  TBranch *b_nlinks{nullptr}, *b_abcLinkMask{nullptr}, *b_abcLinkErrs{nullptr}, *b_abcLinkMatrix{nullptr};
   TBranch *b_lvdsErrRate0{nullptr}, *b_lvdsErrRate1{nullptr}, *b_lvdsErrRate2{nullptr};
   TBranch *b_ckdivend{nullptr}, *b_ckdivend2{nullptr};
   TBranch *b_vdacBLPix{nullptr}, *b_vdacThHigh{nullptr}, *b_vdacThLow{nullptr};
