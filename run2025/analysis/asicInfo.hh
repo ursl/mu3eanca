@@ -6,6 +6,7 @@ struct AsicInfo {
   int globalId{};
   int fedID{};
   int idxInSection{}; // position within the section (0..)
+  std::string FEBName;
   std::string FEBLinkName;
   std::string linkMask;
   std::string linkMatrix;
