@@ -1,5 +1,3 @@
-#include "calPixelQualityM.hh"
-
 #include "cdbUtil.hh"
 
 #include <iostream>
@@ -196,6 +194,21 @@ calPixelQualityLM::Status calPixelQualityLM::getStatus(unsigned int chipid, int 
   }
 }
 
+// ----------------------------------------------------------------------
+int calPixelQualityLM::getCkdivend(unsigned int chipid) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return -1; // -- chip not found
+  }
+  return fMapConstants[chipid].ckdivend;
+}
+
+// ----------------------------------------------------------------------
+int calPixelQualityLM::getCkdivend2(unsigned int chipid) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return -1; // -- chip not found
+  }
+  return fMapConstants[chipid].ckdivend2;
+}
 
 // ----------------------------------------------------------------------
 void calPixelQualityLM::printPixelQuality(unsigned int chipid, int minimumStatus) {
