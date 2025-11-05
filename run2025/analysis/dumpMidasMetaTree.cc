@@ -314,6 +314,9 @@ int main(int argc, char *argv[]) {
       lvdsErrRate1 = asic.lvdsErrRate1;
       lvdsErrRate2 = asic.lvdsErrRate2;
       cout << "chipID = " << globalChipID 
+           << " linkMatrix = " << linkMatrix[0] << " " << linkMatrix[1] << " " << linkMatrix[2] 
+           << " abcLinkMatrix = " << abcLinkMatrix[0] << " " << abcLinkMatrix[1] << " " << abcLinkMatrix[2] 
+           << " linkMask = " << linkMask[0] << " " << linkMask[1] << " " << linkMask[2] 
            << " abcLinkMask = " << abcLinkMask[0] << " " << abcLinkMask[1] << " " << abcLinkMask[2] 
            << " abcLinkErrs = " << abcLinkErrs[0] << " " << abcLinkErrs[1] << " " << abcLinkErrs[2] 
            << endl;
