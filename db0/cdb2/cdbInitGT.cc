@@ -26,6 +26,14 @@
 
 using namespace std;
 
+// Forward declarations
+void writeDetSetupV1(string jsondir, string gt);
+void writePixelQualityLM(string jsondir, string gt, string payloaddir);
+void writeAlignmentInformation(string jsondir, string gt, string alignmentTag);
+void writeInitialTag(string jsondir, string gt, string initialTag);
+void insertIovTag(const std::string &jsondir, const std::string &tag,
+                  int insertRun /*-i*/, int removeRun /*-r*/, bool clear /*-c*/);
+
 // ----------------------------------------------------------------------
 // cdbInitGT -g datav6.2=2025DataV0 -j CDBJSONDIR -p payloadDir
 // ---------
@@ -40,9 +48,6 @@ using namespace std;
 // ----------------------------------------------------------------------
 
 
-void writeDetSetupV1(string jsondir, string gt);
-void writePixelQualityLM(string jsondir, string gt, string payloaddir);
-
 // ----------------------------------------------------------------------
 int main(int argc, const char* argv[]) {
 
@@ -50,7 +55,7 @@ int main(int argc, const char* argv[]) {
   // -- global tags
   // ----------------------------------------------------------------------
   map<string, vector<string>> iniGlobalTags = {
-    {"datav6.3=2025DataV0", {"pixelalignment_", 
+    {"datav6.3=2025V0", {"pixelalignment_", 
                          "fibrealignment_", 
                          "tilealignment_", 
                          "mppcalignment_", 
@@ -135,195 +140,13 @@ int main(int argc, const char* argv[]) {
     JS.close();
   }
 
+  // -- write alignment information payloads and tags
+  writeAlignmentInformation(jsondir, gt, "datav6.3=2025V0");
   // -- write detsetupv1 (basically magnet status) payloads and tags
   writeDetSetupV1(jsondir, gt);
   // -- write pixelqualitylm payloads and tags
   writePixelQualityLM(jsondir, gt, payloaddir);
 
-  jdir  = jsondir + "/tags";
-  vector<int> vIni{1};
-  for (auto igt : iniGlobalTags) {
-    //if (string::npos == igt.first.find(mode)) continue;
-    if (igt.first != gt) continue;
- 
-    for (auto it : igt.second) {
-      // string tag = ('_' == it.back()? it + igt.first: it);
-      string tag = it;
-      vector<int> arrayBuilder;
-      for (auto it : vIni) arrayBuilder.push_back(it);
-      
-      stringstream sstr;
-      sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
-      sstr << jsFormat(arrayBuilder);
-      sstr << " }" << endl;
-      
-      // -- JSON - do NOT overwrite already existing tags 
-      string tagFile = jdir + "/" + tag;
-      if (fileExists(tagFile)) {
-        cout << "->cdbInitDB> tag " << tag << " already exists, skipping" << endl;
-        continue;
-      }
-      JS.open(tagFile);
-      if (JS.fail()) {
-        cout << "Error failed to open " << tagFile << endl;
-      }
-      JS << sstr.str();
-      cout << sstr.str();
-      JS.close();
-    }
-  }
-  
-  // ----------------------------------------------------------------------
-  // -- payloads
-  // ----------------------------------------------------------------------
-  payload pl;
-  jdir = jsondir + "/payloads";
-  
-  string spl(""), hash(""), result("");
-  
-  string filename("");
-  for (auto igt: iniGlobalTags) {
-
-    if (igt.first != gt) continue;
-
-    for (auto it : igt.second) {
-      string tag = it;
-      string tagLess = tag.substr(tag.rfind('_') + 1);
-
-      if (string::npos != tag.find("detsetupv1_")) continue;
-
-      cout << "cdbInitDB> tag = " << tag << " tagLess = " << tagLess << " it = " << it << endl; 
-      bool exactFind(false);
-      for (auto it2: igt.second) {
-        if (it2 == tag) {
-          exactFind = true;
-          break;
-        }
-      }
-      if (!exactFind) continue;
-
-      stringstream sstr;
-      sstr << "    { \"payload\" : \"" << tag << " tagless = " << tagLess << " it = " << it; 
-      sstr << " } " << endl;
-      cout << sstr.str();
-
-      // -- pixelalignment
-      if (string::npos != tag.find("pixelalignment_")) {
-        calPixelAlignment *cpa = new calPixelAlignment();
-        filename = string(LOCALDIR) + "/ascii/sensors-" + tagLess + ".csv";
-        result = cpa->readCsv(filename);
-        if (string::npos == result.find("Error")) {
-          spl = cpa->makeBLOB();
-          hash = string("tag_pixelalignment_" + tagLess + "_iov_1");
-          if (fileExists(jdir + "/" + hash)) {
-            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
-            continue;
-          }
-          pl.fHash = hash;
-          pl.fComment = tagLess + " pixel initialization";
-          pl.fSchema  = cpa->getSchema();
-          pl.fBLOB = spl;
-          if (verbose) cpa->printBLOB(spl, 10000);
-          cpa->writePayloadToFile(hash, jdir, pl);
-        } else {
-          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-        }
-      }
-      
-      // -- fibrealignment
-      if (string::npos != tag.find("fibrealignment_")) {
-        calFibreAlignment *cfa = new calFibreAlignment();
-        filename = string(LOCALDIR) + "/ascii/fibres-" + tagLess + ".csv";
-        result = cfa->readCsv(filename);
-        if (string::npos == result.find("Error")) {
-          spl = cfa->makeBLOB();
-          hash = string("tag_fibrealignment_" + tagLess + "_iov_1");
-          if (fileExists(jdir + "/" + hash)) {
-            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
-            continue;
-          }
-          pl.fHash = hash;
-          pl.fComment = tagLess + " fibre detector initialization";
-          pl.fSchema  = cfa->getSchema();
-          pl.fBLOB = spl;
-          if (verbose) cfa->printBLOB(spl);
-          cfa->writePayloadToFile(hash, jdir, pl);
-        } else {
-          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-        }
-      }
-      
-      // -- tilealignment
-      if (string::npos != tag.find("tilealignment_")) {
-        calTileAlignment *cta = new calTileAlignment();
-        filename = string(LOCALDIR) + "/ascii/tiles-" + tagLess + ".csv";
-        result = cta->readCsv(filename);
-        if (string::npos == result.find("Error")) {
-          spl = cta->makeBLOB();
-          hash = string("tag_tilealignment_" + tagLess + "_iov_1");
-          if (fileExists(jdir + "/" + hash)) {
-            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
-            continue;
-          }
-          pl.fHash = hash;
-          pl.fComment = tagLess + " tile detector initialization";
-          pl.fSchema  = cta->getSchema();
-          pl.fBLOB = spl;
-          if (verbose) cta->printBLOB(spl);
-          cta->writePayloadToFile(hash, jdir, pl);
-        } else {
-          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-        }
-      }
-      
-      // -- mppcalignment
-      if (string::npos != tag.find("mppcalignment_")) {
-        calMppcAlignment *cma = new calMppcAlignment();
-        filename = string(LOCALDIR) + "/ascii/mppcs-" + tagLess + ".csv";
-        result = cma->readCsv(filename);
-        if (string::npos == result.find("Error")) {
-          spl = cma->makeBLOB();
-          hash = string("tag_mppcalignment_" + tagLess + "_iov_1");
-          if (fileExists(jdir + "/" + hash)) {
-            cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
-            continue;
-          }
-          pl.fHash = hash;
-          pl.fComment = tagLess + " MPPC detector initialization";
-          pl.fSchema  = cma->getSchema();
-          pl.fBLOB = spl;
-          if (verbose) cma->printBLOB(spl);
-          cma->writePayloadToFile(hash, jdir, pl);
-        } else {
-          cout << "cdbInitDB> Error, file " << filename << " not found" << endl;
-        }
-      }
-    
-      
-      // -- pixelqualitylm: zero problematic pixels for all sensors present in cpa
-      if (string::npos != tag.find("pixelqualitylm_")) {
-        calPixelQualityLM *cpq = new calPixelQualityLM();
-        filename = string(LOCALDIR) + "/ascii/pixelqualitylm-" + tagLess + ".csv";
-        //cout << "cdbInitDB> reading " << filename << endl;
-        cpq->readCsv(filename);
-        string blob = cpq->makeBLOB();
-
-        hash = string("tag_pixelqualitylm_" + tagLess + "_iov_1");
-        if (fileExists(jdir + "/" + hash)) {
-          cout << "   ->cdbInitDB> payload " << hash << " already exists, skipping" << endl;
-          continue;
-        }
-        pl.fHash = hash;
-        pl.fComment = tagLess + " pixelqualitylm initialization";
-        pl.fBLOB = blob;
-        pl.fSchema  = cpq->getSchema();
-        if (verbose) cpq->printBLOB(blob);
-        cpq->writePayloadToFile(hash, jdir, pl);
-      }
-      
-    }
-  }
-  
   return 0;
 }
 
@@ -380,6 +203,7 @@ void writeDetSetupV1(string jsondir, string gt) {
     }
     cdc->readPayloadFromFile(templateHash, string(LOCALDIR));
     payload pl = cdc->getPayload(templateHash);
+    pl.fSchema = cdc->getSchema();
     pl.fHash = hash;
     cdc->writePayloadToFile(hash, jsondir + "/payloads", pl);
     cout << "   ->cdbInitGT> writing IOV " << it.first << " with " << templateHash << endl;
@@ -423,6 +247,23 @@ void writePixelQualityLM(string jsondir, string gt, string payloaddir) {
   pl.fBLOB = spl;
   cpq->writePayloadToFile(hash, jsondir + "/payloads", pl);
 
+  // -- and the tag/IOVs
+  string tag = "pixelqualitylm_" + gt;
+  stringstream sstr;
+  sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
+  sstr << jsFormat({1});
+  sstr << " }" << endl;
+  cout << sstr.str();
+  ofstream ONS;
+  ONS.open(jsondir + "/tags/" + tag);
+  if (ONS.fail()) {
+    cout << "Error failed to open " << jsondir + "/tags/" + tag << endl;
+  }
+  ONS << sstr.str();
+  cout << sstr.str();
+  ONS.close();
+
+
   // -- now the other payloads
   glob_t globbuf;
   int err = glob((payloaddir + "/tag_pixelqualitylm_*").c_str(), 0, NULL, &globbuf);
@@ -460,6 +301,202 @@ void writePixelQualityLM(string jsondir, string gt, string payloaddir) {
     pl.fBLOB = pl.fBLOB;
     cout << " writing payload " << hash << " for run " << it.first << endl;
     cpq->writePayloadToFile(hash, jsondir + "/payloads", pl);
+    insertIovTag(jsondir, "pixelqualitylm_" + gt, it.first, 0, false);
   }
   delete cpq;
+}
+
+
+// ----------------------------------------------------------------------
+void writeAlignmentInformation(string jsondir, string gt, string alignmentTag) {
+  cout << "   ->cdbInitGT> writing alignment payloads" << endl;
+  // -- pixel sensor alignment
+  calPixelAlignment *cpa = new calPixelAlignment();
+  string filename = string(LOCALDIR) + "/ascii/sensors-" + alignmentTag + ".csv";
+  cout << "   ->cdbInitGT> reading sensor alignment from " << filename << endl;
+  string result = cpa->readCsv(filename);
+  if (string::npos == result.find("Error")) {
+    string spl = cpa->makeBLOB();
+    string hash = "tag_pixelalignment_" + gt + "_iov_1";
+    payload pl;
+    if (fileExists(jsondir + "/" + hash)) {
+      cout << "   ->cdbInitGT> payload " << hash << " already exists, skipping" << endl;
+    } else {
+      pl.fHash = hash;
+      pl.fComment = "pixel alignment";
+      pl.fSchema  = cpa->getSchema();
+      pl.fBLOB = spl;
+      cpa->writePayloadToFile(hash, jsondir + "/payloads", pl);
+    }
+  }
+  writeInitialTag(jsondir, gt, "pixelalignment_");
+
+
+  // -- tile sensor alignment
+  calTileAlignment *cta = new calTileAlignment();
+  filename = string(LOCALDIR) + "/ascii/tiles-" + alignmentTag + ".csv";
+  cout << "   ->cdbInitGT> reading tile alignment from " << filename << endl;
+  result = cta->readCsv(filename);
+  if (string::npos == result.find("Error")) {
+    string spl = cta->makeBLOB();
+    string hash = "tag_tilealignment_" + gt + "_iov_1";
+    payload pl;
+    if (fileExists(jsondir + "/" + hash)) {
+      cout << "   ->cdbInitGT> payload " << hash << " already exists, skipping" << endl;
+    } else {
+      pl.fHash = hash;
+      pl.fComment = "tile alignment";
+      pl.fSchema  = cta->getSchema();
+      pl.fBLOB = spl;
+      cta->writePayloadToFile(hash, jsondir + "/payloads", pl);
+    }
+  }
+  writeInitialTag(jsondir, gt, "tilealignment_");
+  
+  // -- fiber sensor alignment
+  calFibreAlignment *cfa = new calFibreAlignment();
+  filename = string(LOCALDIR) + "/ascii/fibres-" + alignmentTag + ".csv";
+  cout << "   ->cdbInitGT> reading fibre alignment from " << filename << endl;
+  result = cfa->readCsv(filename);
+  if (string::npos == result.find("Error")) {
+    string spl = cfa->makeBLOB();
+    string hash = "tag_fibrealignment_" + gt + "_iov_1";
+    payload pl;
+    if (fileExists(jsondir + "/" + hash)) {
+      cout << "   ->cdbInitGT> payload " << hash << " already exists, skipping" << endl;
+    } else {
+      pl.fHash = hash;
+      pl.fComment = "fibre alignment";
+      pl.fSchema  = cfa->getSchema();
+      pl.fBLOB = spl;
+      cfa->writePayloadToFile(hash, jsondir + "/payloads", pl);
+    }
+  }
+  writeInitialTag(jsondir, gt, "fibrealignment_");
+  
+  // -- mppc sensor alignment
+  calMppcAlignment *cma = new calMppcAlignment();
+  filename = string(LOCALDIR) + "/ascii/mppcs-" + alignmentTag + ".csv";
+  cout << "   ->cdbInitGT> reading mppc alignment from " << filename << endl;
+  result = cma->readCsv(filename);
+  if (string::npos == result.find("Error")) {
+    string spl = cma->makeBLOB();
+    string hash = "tag_mppcalignment_" + gt + "_iov_1";
+    payload pl;
+    if (fileExists(jsondir + "/" + hash)) {
+      cout << "   ->cdbInitGT> payload " << hash << " already exists, skipping" << endl;
+    } else {
+      pl.fHash = hash;
+      pl.fComment = "mppc alignment";
+      pl.fSchema  = cma->getSchema();
+      pl.fBLOB = spl;
+      cma->writePayloadToFile(hash, jsondir + "/payloads", pl);
+    }
+  }
+  writeInitialTag(jsondir, gt, "mppcalignment_");
+}
+
+
+// ----------------------------------------------------------------------
+void writeInitialTag(string jsondir, string gt, string initialTag) {
+  // -- and the tag/IOVs
+  string tag = initialTag + gt;
+  stringstream sstr;
+  sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
+  sstr << jsFormat({1});
+  sstr << " }" << endl;
+  cout << sstr.str();
+  ofstream ONS;
+  ONS.open(jsondir + "/tags/" + tag);
+  if (ONS.fail()) {
+    cout << "Error failed to open " << jsondir + "/tags/" + tag << endl;
+  }
+  ONS << sstr.str();
+  cout << sstr.str();
+  ONS.close();
+}
+
+// ----------------------------------------------------------------------
+// Translated from  run2025/scripts/insertIovTag into C++
+// Reads jsondir/tags/<tag>, updates the IOV list by inserting (-i) or
+// removing (-r) a run, or clears to single '1' when clear (-c) is true.
+// Writes a .bac backup and rewrites the file in compact JSON.
+void insertIovTag(const std::string &jsondir, const std::string &tag,
+                  int insertRun, int removeRun, bool clear) {
+  const std::string file = jsondir + "/tags/" + tag;
+
+  // Read whole file
+  std::ifstream in(file);
+  if (!in) {
+    std::cerr << "insertIovTag: Cannot open ->" << file << "<-" << std::endl;
+    return;
+  }
+  std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+  in.close();
+
+  // Remove spaces and newlines to simplify parsing
+  content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
+  content.erase(std::remove(content.begin(), content.end(), ' '), content.end());
+
+  // Find the iovs array between '[' and ']'
+  std::vector<int> runs;
+  size_t lbr = content.find("[");
+  size_t rbr = content.find("]", lbr == std::string::npos ? 0 : lbr + 1);
+  if (lbr != std::string::npos && rbr != std::string::npos && rbr > lbr) {
+    std::string arr = content.substr(lbr + 1, rbr - lbr - 1);
+    std::stringstream ss(arr);
+    std::string tok;
+    while (std::getline(ss, tok, ',')) {
+      if (!tok.empty()) {
+        try { runs.push_back(std::stoi(tok)); } catch (...) {}
+      }
+    }
+  }
+
+  // Modify runs per options
+  if (removeRun > 0) {
+    std::vector<int> filtered;
+    filtered.reserve(runs.size());
+    for (int r : runs) if (r != removeRun) filtered.push_back(r);
+    runs.swap(filtered);
+  } else if (insertRun > 0) {
+    // Insert keeping ascending order and unique
+    bool inserted = false;
+    for (auto it = runs.begin(); it != runs.end(); ++it) {
+      if (*it == insertRun) { inserted = true; break; }
+      if (insertRun < *it) { runs.insert(it, insertRun); inserted = true; break; }
+    }
+    if (!inserted) runs.push_back(insertRun);
+  }
+
+  // Backup existing file
+  {
+    std::ifstream src(file, std::ios::binary);
+    std::ofstream dst(file + ".bac", std::ios::binary);
+    if (src && dst) dst << src.rdbuf();
+  }
+
+  // Write back
+  std::ofstream out(file);
+  if (!out) {
+    std::cerr << "insertIovTag: Cannot open " << file << " for output" << std::endl;
+    return;
+  }
+  out << "{\"tag\":\"" << tag << "\", \"iovs\": [";
+  if (clear) {
+    out << 1;
+  } else {
+    for (size_t i = 0; i < runs.size(); ++i) {
+      out << runs[i];
+      if (i + 1 < runs.size()) out << ", ";
+    }
+  }
+  out << "]}\n";
+  out.close();
+
+  // Optional: log
+  std::cout << "insertIovTag: " << tag << ": ";
+  for (size_t i = 0; i < runs.size(); ++i) {
+    std::cout << runs[i] << (i + 1 < runs.size() ? " " : "\n");
+  }
 }
