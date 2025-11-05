@@ -35,7 +35,7 @@ using namespace std;
 // --------------
 //
 // -- create a global tag with all tags/payloads 
-// merlin> ./bin/cdbInitGT -g v6.2=2025DataV0 -j ~/data/mu3e/cdb -p ~/data/tmp/cdb/payloads
+// merlin> ./bin/cdbInitGT -g v6.3=2025DataV0 -j ~/data/mu3e/cdb -p ~/data/tmp/cdb/payloads
 //
 // ----------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ int main(int argc, const char* argv[]) {
   // -- global tags
   // ----------------------------------------------------------------------
   map<string, vector<string>> iniGlobalTags = {
-    {"datav6.2=2025V0", {"pixelalignment_", 
+    {"datav6.3=2025DataV0", {"pixelalignment_", 
                          "fibrealignment_", 
                          "tilealignment_", 
                          "mppcalignment_", 
