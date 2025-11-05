@@ -210,6 +210,55 @@ int calPixelQualityLM::getCkdivend2(unsigned int chipid) {
   return fMapConstants[chipid].ckdivend2;
 }
 
+
+// ----------------------------------------------------------------------
+bool calPixelQualityLM::isLinkBad(unsigned int chipid, int ilink) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return true; // -- chip not found
+  }
+  bool result(false);
+  switch (ilink) {
+    case 0:
+      if (fMapConstants[chipid].linkA > 0) {
+        result = true;
+        break;
+      }
+      break;
+    case 1:
+      if (fMapConstants[chipid].linkB > 0) {
+        result = true;
+        break;
+      }
+      break;
+    case 2:
+      if (fMapConstants[chipid].linkC > 0) {
+        result = true;
+        break;
+      }
+      break;
+    default:
+      result = true; // -- should not happen
+      break;
+  }
+  return result;
+}
+
+
+// ----------------------------------------------------------------------
+bool calPixelQualityLM::isChipDead(unsigned int chipid) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return true; // -- chip not found
+  }
+  int cntDeadLinks(0); 
+  for (int ilink = 0; ilink < 3; ++ilink) { 
+    if (isLinkBad(chipid, ilink)) {
+      cntDeadLinks++;
+    }
+  }
+  return cntDeadLinks == 3;
+}
+
+
 // ----------------------------------------------------------------------
 void calPixelQualityLM::printPixelQuality(unsigned int chipid, int minimumStatus) {
   // FIXME

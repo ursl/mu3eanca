@@ -48,6 +48,10 @@ public:
   Status getColStatus(unsigned int chipid, int icol);
   Status getLinkStatus(unsigned int chipid, int ilink);
 
+  // -- returns true if all three links are masked or have no hits
+  bool isChipDead(unsigned int chipid);
+  bool isLinkBad(unsigned int chipid, int ilink);
+
   int getCkdivend(unsigned int chipid);
   int getCkdivend2(unsigned int chipid);
 
