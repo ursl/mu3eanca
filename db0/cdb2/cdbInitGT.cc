@@ -251,7 +251,7 @@ void writePixelQualityLM(string jsondir, string gt, string payloaddir) {
   string tag = "pixelqualitylm_" + gt;
   stringstream sstr;
   sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
-  sstr << jsFormat({1});
+  sstr << jsFormat({static_cast<int>(1)});
   sstr << " }" << endl;
   cout << sstr.str();
   ofstream ONS;
@@ -403,7 +403,7 @@ void writeInitialTag(string jsondir, string gt, string initialTag) {
   string tag = initialTag + gt;
   stringstream sstr;
   sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
-  sstr << jsFormat({1});
+  sstr << jsFormat({static_cast<int>(1)});
   sstr << " }" << endl;
   cout << sstr.str();
   ofstream ONS;
