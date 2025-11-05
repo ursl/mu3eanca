@@ -9,7 +9,7 @@
 
 #include <fstream>
 
-#include "cdbUtil.hh" 
+//#include "cdbUtil.hh" 
 #include "Mu3eConditions.hh"
 #include "calPixelAlignment.hh"
 #include "calPixelQuality.hh"
@@ -18,7 +18,6 @@
 #include "calPixelQualityLM.hh"
 
 
-#include "gMapChipIDLinkNames.icc"
 #include "gMapChipIDLinkOffsets.icc"
 
 #include "cdbJSON.hh"
@@ -27,10 +26,13 @@
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TFile.h"
+#include "TTree.h"
 #include "TH2F.h"
 #include "TMath.h"
 #include "TKey.h"
 #include "TROOT.h"
+
+#include "anaMidasMetaTree.hh"
 
 using namespace std;
 
@@ -109,6 +111,9 @@ vector<int> gChipIDs = {1,2,3,4,5,6,
           };
 
 
+
+map<int, AsicInfo> gRunInfoMap;
+
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
 
@@ -126,15 +131,15 @@ int main(int argc, char* argv[]) {
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(JSONDIR), filename("nada.root");
   string gt("mcidealv6.1");
-  string odbfilename("nada.json");
+  string rootMetaMidasFilename("nada.root");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-c"))      {check = 1;}
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-o"))      {odbfilename = argv[++i];}
     if (!strcmp(argv[i], "-p"))      {printMode = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-r"))      {rootMetaMidasFilename = argv[++i];}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
@@ -154,13 +159,11 @@ int main(int argc, char* argv[]) {
     string lBuffer = buffer.str();
 
     // -- get the first one   
-    string bla = jsonGetValue(lBuffer, {"Equipment", "PixelsCentral", "Settings", "CONFDACS", "ckdivend2"});
-    cout << "bla = " << bla << endl;
+    // string bla = jsonGetValue(lBuffer, {"Equipment", "PixelsCentral", "Settings", "CONFDACS", "ckdivend2"});
+    //cout << "bla = " << bla << endl;
 
     return 0;
   }
-
-
 
   // -- this is just to get the list of all chipIDs
   cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
@@ -273,7 +276,7 @@ int main(int argc, char* argv[]) {
   if (string::npos != filename.find_last_of("/")) {
     string dir = filename.substr(0, filename.find_last_of("/")+1);
     cout << "dir ->" << dir << "<-" << endl;
-    replaceAll(sbla, dir, "");
+    (sbla, dir, "");
   }
   // -- extract the runnumber. It directly precedes .root
   replaceAll(sbla, ".root", "");
@@ -282,6 +285,27 @@ int main(int argc, char* argv[]) {
   cout << "sbla ->" << sbla << "<-" << endl;
   run = ::stoi(sbla);
   cout << "run = " << run << endl;
+  
+
+  // ----------------------------------------------------------------------
+  // -- read in the meta midas tree
+  // ----------------------------------------------------------------------
+  TFile *fMetaMidas = TFile::Open(rootMetaMidasFilename.c_str());
+  TTree *tMetaMidas = (TTree*)fMetaMidas->Get("midasMetaTree");
+  anaMidasMetaTree *ammt = new anaMidasMetaTree(tMetaMidas);
+
+  gRunInfoMap = ammt->loadRunInfo(run);
+  for (auto it : gRunInfoMap) {
+    cout << "run = " << it.second.confId
+      << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
+      << " linkMask = " << it.second.linkMask[0] << it.second.linkMask[1] << it.second.linkMask[2]
+      << " linkMatrix = " << it.second.linkMatrix[0] << it.second.linkMatrix[1] << it.second.linkMatrix[2]
+      << " abcLinkMask = " << it.second.abcLinkMask[0] << it.second.abcLinkMask[1] << it.second.abcLinkMask[2]
+      << " abcLinkMatrix = " << it.second.abcLinkMatrix[0] << it.second.abcLinkMatrix[1] << it.second.abcLinkMatrix[2]
+      << " abcLinkErrs = " << it.second.abcLinkErrs[0] << ","<< it.second.abcLinkErrs[1] << "," << it.second.abcLinkErrs[2]
+      << " ckdivend = " << it.second.ckdivend << " ckdivend2 = " << it.second.ckdivend2
+      << endl;
+  }
   
   // -------------------------
   // -- ckdivend2 and ckdivend
@@ -292,39 +316,7 @@ int main(int argc, char* argv[]) {
   } else {
     ckdivend2Default = 31;
   }
-
-  int ckdivend(0), ckdivend2(0);
-
-  // -- try to assemble ODB filename. The logic here is flawed, but this is not relevant atm
-  string dataSubdir = getDataSubdir(run);
-  cout << "dataSubdir = " << dataSubdir << endl;
-  if (odbfilename == "nada.json") {
-    odbfilename = Form("%s/run%05d.odb", dataSubdir.c_str(), run);
-    cout << "trying to open odfilename = " << odbfilename << endl;
-  }
-  if (odbfilename != "nada.json") {
-    ifstream INS(odbfilename.c_str());
-    if (INS.fail()) {
-      cout << "Error failed to open ->" << odbfilename << "<-" << endl;
-      ckdivend2 = ckdivend2Default;
-      ckdivend = ckdivendDefault;
-      cout << "using default ckdivend2 = " << ckdivend2 << " and ckdivend = " << ckdivend << endl;
-    } else {
-      cout << "reading ckdivend2 and ckdivend from ->" << odbfilename << "<-" << endl;
-      std::stringstream buffer;
-      buffer << INS.rdbuf();
-      INS.close();
-      string lBuffer = buffer.str();
-
-      ckdivend2 = ::stoi(jsonGetValue(lBuffer, {"Equipment", "PixelsCentral", "Settings", "CONFDACS", "ckdivend2/key", "ckdivend2"}));
-      ckdivend = ::stoi(jsonGetValue(lBuffer, {"Equipment", "PixelsCentral", "Settings", "CONFDACS", "ckdivend/key", "ckdivend"}));
-      cout << "XXXXX ckdivend2 = " << ckdivend2 << " and ckdivend = " << ckdivend << endl;
-    }
-  } else {
-    ckdivend2 = ckdivend2Default;
-    ckdivend = ckdivendDefault;
-    cout << "XXXXX using default ckdivend2 = " << ckdivend2 << " and ckdivend = " << ckdivend << endl;
-  }
+  int ckdivend(gRunInfoMap[1].ckdivend), ckdivend2(gRunInfoMap[1].ckdivend2);
 
   string hash = string("tag_pixelqualitylm_") + gt + string("_iov_") + to_string(run);
   
@@ -379,7 +371,7 @@ int main(int argc, char* argv[]) {
   vector<int> deadlinks, deadcolumns, noisyPixels;
   ofstream ofs;
   ofs.open(Form("csv/pixelqualitylm-run%d.csv", run));
-  ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
+  ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 4 = LVDS errors on link, 5 = LVDS errors from other link, 8 = no hits,9 = masked" << endl;
   for (auto it: mHitmaps){
     // -- debug with first 12 only FIXME
     //if (it.first != 1315) continue;
@@ -399,7 +391,7 @@ int main(int argc, char* argv[]) {
       cout << "chipID = " << it.first << " with link quality: ";
       ofs << it.first << ",";
       // -- ckdivend and ckdivend2
-      ofs << ckdivend2 << "," << ckdivend << ",";
+      ofs << ckdivend << "," << ckdivend2 << ",";
       for (auto itL : deadlinks) {
         ofs << itL << ",";
         cout << itL << " ";
@@ -495,17 +487,25 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 }
 
 // ----------------------------------------------------------------------
+// -- this is completely new and now relies on PCLS data read from midas meta data tree
 bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   bool DBX(false);
-  double fractionHits(0.1);
-  // -- remove 5 pixels from one edge to avoid edge noise in the A/C links which would make B "suspect"
-  double edge(8.);
-  double nLinkA = h->Integral(1+edge, 88, 1, 250);
-  double nLinkB = h->Integral(89+edge, 172, 1, 250);
-  double nLinkC = h->Integral(173, 256-edge, 1, 250);
-  double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
-  double cutMinHits = (nLinkAverage < 10? 1: fractionHits*nLinkAverage);
 
+  // -- determine dead chips
+  double nLinkA = h->Integral(1, 88, 1, 250);
+  double nLinkB = h->Integral(89, 172, 1, 250);
+  double nLinkC = h->Integral(173, 256, 1, 250);
+  double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
+
+  if (nLinkA < 1 && nLinkB < 1 && nLinkC < 1) {
+    links.push_back(8);
+    links.push_back(8);
+    links.push_back(8);
+    links.push_back(8);
+    return false;
+  }
+
+  // -- the histogram still used to provide the chip name
   string schip = h->GetName();
   replaceAll(schip, "hitmap_perChip_", "");
   int chipID = ::stoi(schip);
@@ -521,48 +521,57 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     return true;
   }
 
-  if (DBX)
-    cout << "histogram " << h->GetName() << " nLinkA = " << nLinkA
-         << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC
-         << " nLinkAverage = " << nLinkAverage << " cutMinHits = " << cutMinHits
-         << endl;
+  AsicInfo ai = gRunInfoMap[chipID];
 
-  if (nLinkA < 1 && nLinkB < 1 && nLinkC < 1) {
+  // -- completely disabled chip
+  if (0 == ai.abcLinkMask[0]
+      && 0 == ai.abcLinkMask[1]
+      && 0 == ai.abcLinkMask[2]) {
     links.push_back(9);
     links.push_back(9);
     links.push_back(9);
-    links.push_back(9);
+    links.push_back(0);
     return false;
   }
 
-  if (nLinkA < cutMinHits) {
-    if (nLinkA < 1) {
-      links.push_back(9);
-    } else {
-      links.push_back(2);
+  // -- check individual links
+  int lkStatus[3] = {0, 0, 0};
+  int badChip(-1); // -- if any link is broken and not masked, the chip is bad
+  int nBadLinks(0);
+  for (int i = 0; i < 3; ++i) {
+    if (0 == ai.abcLinkMask[i] || 9 == ai.abcLinkMask[i]) lkStatus[i] = 9;
+    if (ai.abcLinkErrs[i] > 10) lkStatus[i] = 4;
+    if (ai.abcLinkErrs[i] > 10 && 1 == ai.abcLinkMask[i]) {
+      badChip = i;
+      ++nBadLinks;
     }
-  } else {
-    links.push_back(0);
   }
-  if (nLinkB < cutMinHits) {
-    if (nLinkB < 1) {
-      links.push_back(9);
-    } else {
-      links.push_back(2);
+ 
+  if (badChip >= 0) {    
+    for (int i = 0; i < 3; ++i) {
+      if (i != badChip) {
+        lkStatus[i] = 5;
+      } else {
+        lkStatus[i] = 4;
+      }
     }
-  } else {
-    links.push_back(0);
   }
-  if (nLinkC < cutMinHits) {
-    if (nLinkC < 1) {
-      links.push_back(9);
-    } else {
-      links.push_back(2);
-    }
-  } else {
-    links.push_back(0);
+
+  // -- Marius' special case, ignoring EEE case (by looking at LVDS error rate)
+  if (ai.abcLinkMatrix[0] == 4 && ai.abcLinkMatrix[1] == 4 && ai.abcLinkMatrix[2] == 4
+    && ai.abcLinkMask[0] == 1 && ai.abcLinkMask[1] == 1 && ai.abcLinkMask[2] == 1
+  ) {
+   if (ai.abcLinkErrs[0] > 10) lkStatus[0] = 4;
+   if (ai.abcLinkErrs[1] > 10) lkStatus[1] = 4;
+   if (ai.abcLinkErrs[2] > 10) lkStatus[2] = 4;
+   if (badChip >= 0) {
+    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << endl;
+   }
   }
-  // -- add dummy MUX link
+
+  links.push_back(lkStatus[0]);
+  links.push_back(lkStatus[1]);
+  links.push_back(lkStatus[2]);
   links.push_back(0);
 
   return true;
