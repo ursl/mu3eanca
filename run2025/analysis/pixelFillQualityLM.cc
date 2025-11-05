@@ -130,12 +130,14 @@ int main(int argc, char* argv[]) {
   int verbose(0), mode(1), printMode(0), check(0);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(JSONDIR), filename("nada.root");
-  string gt("mcidealv6.1");
+  string gt("datav6.3=2025V0");
+  string igt("datav6.2=2025Beam");
   string rootMetaMidasFilename("nada.root");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-c"))      {check = 1;}
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
+    if (!strcmp(argv[i], "-i"))      {igt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-p"))      {printMode = atoi(argv[++i]);}
@@ -166,8 +168,8 @@ int main(int argc, char* argv[]) {
   }
 
   // -- this is just to get the list of all chipIDs
-  cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
-  Mu3eConditions* pDC = Mu3eConditions::instance("mcidealv6.1", pDB);
+  cdbAbs *pDB = new cdbJSON(igt, jsondir, verbose);
+  Mu3eConditions* pDC = Mu3eConditions::instance(igt, pDB);
   pDC->setRunNumber(1);
   if(!pDC->getDB()) {
       std::cout << "CDB database not found" << std::endl;
