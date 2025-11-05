@@ -162,6 +162,68 @@ Long64_t anaMidasMetaTree::loadTree(Long64_t entry) {
 }
 
 // ----------------------------------------------------------------------
+string convertLinkUShortToTLAT(int linkMask[3], char offset) {
+  string tla = "";
+  for (size_t j = 0; j < 3; ++j) {
+    tla += (char)(linkMask[j] + offset);
+  }
+  return tla;
+}
+
+
+// ----------------------------------------------------------------------
+map<int, AsicInfo> anaMidasMetaTree::loadRunInfo(int run) {
+  Long64_t nentries = fChain->GetEntries();
+  map<int, AsicInfo> runInfo;
+  cout << "anaMidasMetaTree::loop() nentries = " << nentries << endl;
+
+  int oldRunNumber = -1;
+  int irun = -1;
+  for (Long64_t jentry = 0; jentry < nentries; ++jentry) {
+    loadTree(jentry);
+    getEntry(jentry);
+    if (runNumber == run) {
+      AsicInfo ai;
+      ai.confId = run;
+      ai.globalId = globalChipID;
+      ai.fedID = 0;
+      ai.idxInSection = 0;
+      ai.FEBName = "unset";
+      ai.FEBLinkName = "unset";
+      ai.linkMask = convertLinkUShortToTLAT(linkMask, '0');
+      ai.linkMatrix = convertLinkUShortToTLAT(linkMatrix, 'A');
+      ai.abcLinkMask[0] = abcLinkMask[0];
+      ai.abcLinkMask[1] = abcLinkMask[1];
+      ai.abcLinkMask[2] = abcLinkMask[2];
+      ai.abcLinkErrs[0] = abcLinkErrs[0];
+      ai.abcLinkErrs[1] = abcLinkErrs[1];
+      ai.abcLinkErrs[2] = abcLinkErrs[2];
+      ai.abcLinkMatrix[0] = abcLinkMatrix[0];
+      ai.abcLinkMatrix[1] = abcLinkMatrix[1];
+      ai.abcLinkMatrix[2] = abcLinkMatrix[2];
+      ai.lvdsErrRate0 = lvdsErrRate0;
+      ai.lvdsErrRate1 = lvdsErrRate1;
+      ai.lvdsErrRate2 = lvdsErrRate2;
+      ai.ckdivend = ckdivend;
+      ai.ckdivend2 = ckdivend2;
+      ai.vdacBLPix = vdacBLPix;
+      ai.vdacThHigh = vdacThHigh;
+      ai.vdacThLow = vdacThLow;
+      ai.biasVNOutPix = biasVNOutPix;
+      ai.biasVPDAC = biasVPDAC;
+      ai.biasVNDcl = biasVNDcl;
+      ai.biasVNLVDS = biasVNLVDS;
+      ai.biasVNLVDSDel = biasVNLVDSDel;
+      ai.biasVPDcl = biasVPDcl;
+      ai.biasVPTimerDel = biasVPTimerDel;
+      ai.vdacBaseline = vdacBaseline;
+      runInfo[globalChipID] = ai;
+    }
+  }
+  return runInfo;
+}
+
+// ----------------------------------------------------------------------
 void anaMidasMetaTree::loop(Long64_t maxEntries) {
   if (!fChain) { std::cerr << "No TTree set\n"; return; }
   Long64_t nentries = fChain->GetEntries();
@@ -237,7 +299,7 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
       if (linkMatrix[i] == 2) cnt2++;
     }
     if (cnt0 > 1 || cnt1 > 1 || cnt2 > 1) {
-      cout << "XXXXXXXXXXXXXXXXXXXXXXX duplicate linkMatrix = " 
+      if (0) cout << "XXXXXXXXXXXXXXXXXXXXXXX duplicate linkMatrix = " 
       << linkMatrix[0] << " " << linkMatrix[1] << " " << linkMatrix[2] 
       << " globalChipID = " << globalChipID 
       << " runNumber = " << runNumber 
@@ -252,7 +314,7 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
       }
     }
     if (cnt0 > 0) {
-      cout << "XXXXXXXXXXXXXXXXXXXXXXX 'E' without corresponding mask. matrix = " 
+      if (0) cout << "XXXXXXXXXXXXXXXXXXXXXXX 'E' without corresponding mask. matrix = " 
       << linkMatrix[0] << " " << linkMatrix[1] << " " << linkMatrix[2] 
       << " cnt = " << cnt0
       << " mask = " << linkMask[0] << " " << linkMask[1] << " " << linkMask[2]
@@ -260,65 +322,69 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
       << " runNumber = " << runNumber 
       << endl;
     }
-    cnt0 = cnt1 = cnt2 = 0;
-    for (int i = 0; i < 3; ++i) {
-      if (4 == abcLinkMatrix[i]) cnt0++;
-      if (0 == abcLinkMask[i]) cnt1++;
-    }
+    
 
-    if (4 == abcLinkMatrix[0]) fMapH1["abcMatrix"]->Fill(0.0);
-    if (4 == abcLinkMatrix[1]) fMapH1["abcMatrix"]->Fill(1.0);
-    if (4 == abcLinkMatrix[2]) fMapH1["abcMatrix"]->Fill(2.0);
-
-    if (2 == cnt0) {
-      if (4 != abcLinkMatrix[0]) fMapH1["abcMatrix"]->Fill(10.0);
-      if (4 != abcLinkMatrix[1]) {
-        fMapH1["abcMatrix"]->Fill(11.0);
-        cout << "ZZZZZZZZZZZZZZZZZZZZZ 'EE' for working B found. matrix = " 
-        << " runNumber = " << runNumber 
-        << " globalChipID = " << setw(4) << globalChipID 
-        << " linkMatrix = " << linkMatrix[0] << " " << linkMatrix[1] << " " << linkMatrix[2]
-        << " linkMask = " << linkMask[0] << " " << linkMask[1] << " " << linkMask[2]
-        << " abcLinkMatrix = " << abcLinkMatrix[0] << abcLinkMatrix[1] << abcLinkMatrix[2]
-        << " abcLinkMask = " << abcLinkMask[0] << abcLinkMask[1] << abcLinkMask[2]
-        << endl;
+    // -- check abcLinkMatrix status
+    if (35 == globalChipID || 161 == globalChipID || 1126 == globalChipID) {    
+      cout << "globalChipID = " << globalChipID << " abcLinkMatrix = " << abcLinkMatrix[0] << " " << abcLinkMatrix[1] << " " << abcLinkMatrix[2] << endl;
+    } else {
+      cnt0 = cnt1 = cnt2 = 0;
+      for (int i = 0; i < 3; ++i) {
+        if (4 == abcLinkMatrix[i]) cnt0++;
+        if (0 == abcLinkMask[i]) cnt1++;
       }
-      if (4 != abcLinkMatrix[2]) fMapH1["abcMatrix"]->Fill(12.0);
 
-      // -- check mask status 0 
-      if (4 != abcLinkMatrix[0] && 0 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(20.0);
-      if (4 != abcLinkMatrix[1] && 0 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(21.0);
-      if (4 != abcLinkMatrix[2] && 0 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(22.0);
+      if (4 == abcLinkMatrix[0]) fMapH1["abcMatrix"]->Fill(0.0);
+      if (4 == abcLinkMatrix[1]) fMapH1["abcMatrix"]->Fill(1.0);
+      if (4 == abcLinkMatrix[2]) fMapH1["abcMatrix"]->Fill(2.0);
 
-      // -- check mask status 1 
-      if (4 != abcLinkMatrix[0] && 1 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(30.0);
-      if (4 != abcLinkMatrix[1] && 1 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(31.0);
-      if (4 != abcLinkMatrix[2] && 1 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(32.0);
+      if (2 == cnt0) {
+        if (4 != abcLinkMatrix[0]) fMapH1["abcMatrix"]->Fill(10.0);
+        if (4 != abcLinkMatrix[1]) {
+          fMapH1["abcMatrix"]->Fill(11.0);
+          if (1) cout << "ZZZZZZZZZZZZZZZZZZZZZ 'EE' for working B found. matrix = " 
+          << " runNumber = " << runNumber 
+          << " globalChipID = " << setw(4) << globalChipID 
+          << " linkMatrix = " << linkMatrix[0] << " " << linkMatrix[1] << " " << linkMatrix[2]
+          << " linkMask = " << linkMask[0] << " " << linkMask[1] << " " << linkMask[2]
+          << " abcLinkMatrix = " << abcLinkMatrix[0] << abcLinkMatrix[1] << abcLinkMatrix[2]
+          << " abcLinkMask = " << abcLinkMask[0] << abcLinkMask[1] << abcLinkMask[2]
+          << endl;
+        }
+        if (4 != abcLinkMatrix[2]) fMapH1["abcMatrix"]->Fill(12.0);
+
+        // -- check mask status 0 
+        if (4 != abcLinkMatrix[0] && 0 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(20.0);
+        if (4 != abcLinkMatrix[1] && 0 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(21.0);
+        if (4 != abcLinkMatrix[2] && 0 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(22.0);
+
+        // -- check mask status 1 
+        if (4 != abcLinkMatrix[0] && 1 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(30.0);
+        if (4 != abcLinkMatrix[1] && 1 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(31.0);
+        if (4 != abcLinkMatrix[2] && 1 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(32.0);
+      }
+
+      if (2 == cnt0) {
+        if (4 == abcLinkMatrix[0]) fMapH1["abcMatrix"]->Fill(40.0);
+        if (4 == abcLinkMatrix[1]) fMapH1["abcMatrix"]->Fill(41.0);
+        if (4 == abcLinkMatrix[2]) fMapH1["abcMatrix"]->Fill(42.0);
+
+        // -- check mask status 0 
+        if (4 == abcLinkMatrix[0] && 0 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(50.0);
+        if (4 == abcLinkMatrix[1] && 0 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(51.0);
+        if (4 == abcLinkMatrix[2] && 0 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(52.0);
+
+        // -- check mask status 1 
+        if (4 == abcLinkMatrix[0] && 1 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(60.0);
+        if (4 == abcLinkMatrix[1] && 1 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(61.0);
+        if (4 == abcLinkMatrix[2] && 1 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(62.0);
+      }
+
+      if (0 == abcLinkMask[0]) fMapH1["abcMask"]->Fill(0.0);
+      if (0 == abcLinkMask[1]) fMapH1["abcMask"]->Fill(1.0);
+      if (0 == abcLinkMask[2]) fMapH1["abcMask"]->Fill(2.0);
+
     }
-
-    if (2 == cnt0) {
-      if (4 == abcLinkMatrix[0]) fMapH1["abcMatrix"]->Fill(40.0);
-      if (4 == abcLinkMatrix[1]) fMapH1["abcMatrix"]->Fill(41.0);
-      if (4 == abcLinkMatrix[2]) fMapH1["abcMatrix"]->Fill(42.0);
-
-      // -- check mask status 0 
-      if (4 == abcLinkMatrix[0] && 0 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(50.0);
-      if (4 == abcLinkMatrix[1] && 0 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(51.0);
-      if (4 == abcLinkMatrix[2] && 0 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(52.0);
-
-      // -- check mask status 1 
-      if (4 == abcLinkMatrix[0] && 1 == abcLinkMask[0]) fMapH1["abcMatrix"]->Fill(60.0);
-      if (4 == abcLinkMatrix[1] && 1 == abcLinkMask[1]) fMapH1["abcMatrix"]->Fill(61.0);
-      if (4 == abcLinkMatrix[2] && 1 == abcLinkMask[2]) fMapH1["abcMatrix"]->Fill(62.0);
-    }
-
-    if (0 == abcLinkMask[0]) fMapH1["abcMask"]->Fill(0.0);
-    if (0 == abcLinkMask[1]) fMapH1["abcMask"]->Fill(1.0);
-    if (0 == abcLinkMask[2]) fMapH1["abcMask"]->Fill(2.0);
-  
-
-
-
   }
 
   // -- add decorations

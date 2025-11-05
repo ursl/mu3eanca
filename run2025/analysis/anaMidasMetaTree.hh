@@ -11,6 +11,7 @@
 #include <TProfile.h>
 #include <map>
 
+#include "asicInfo.hh"
 #include "mu3ePlotUtils.hh"
 
 class anaMidasMetaTree {
@@ -24,6 +25,7 @@ public:
   void loop(Long64_t maxEntries = -1);
 
   void print(int run, int globalChipID);
+  std::map<int, AsicInfo> loadRunInfo(int runNumber);
   void bookHistograms();
   void makePlots();
   void endAnalysis();
