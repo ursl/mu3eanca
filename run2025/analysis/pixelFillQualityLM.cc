@@ -296,7 +296,9 @@ int main(int argc, char* argv[]) {
   TTree *tMetaMidas = (TTree*)fMetaMidas->Get("midasMetaTree");
   anaMidasMetaTree *ammt = new anaMidasMetaTree(tMetaMidas);
 
+  cout << "loadRunInfo" << endl;
   gRunInfoMap = ammt->loadRunInfo(run);
+  cout << "gRunInfoMap.size() = " << gRunInfoMap.size() << endl;
   for (auto it : gRunInfoMap) {
     cout << "run = " << it.second.confId
       << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
@@ -322,8 +324,18 @@ int main(int argc, char* argv[]) {
 
   string hash = string("tag_pixelqualitylm_") + gt + string("_iov_") + to_string(run);
   
+  cout << "hallo" << endl;
   TFile *f = TFile::Open(filename.c_str());
-  
+  if (f) {
+    if (!f->IsOpen()) {
+      cout << "XXXXXXXXX pixelFillQualityLM failed to open file " << filename << endl;
+      return 0;
+    }
+  } else {
+    cout  << "XXXXXXXXX pixelFillQualityLM not found file " << filename << endl;
+    return 0;
+  }
+
   // -- read in ALL chipids in VTX
   vector<unsigned int> vchipid;
   vector<string> vStations = {"station_0"};
