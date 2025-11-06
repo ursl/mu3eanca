@@ -243,15 +243,40 @@ bool calPixelQualityLM::isLinkBad(unsigned int chipid, int ilink) {
   return result;
 }
 
+// ----------------------------------------------------------------------
+bool calPixelQualityLM::isLinkDead(unsigned int chipid, int ilink) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return true; // -- chip not found
+  }
+  switch (ilink) {
+    case 0:
+      if (fMapConstants[chipid].linkA == 8 || fMapConstants[chipid].linkA == 9) {
+        return true;
+      }
+      return false;
+    case 1:
+      if (fMapConstants[chipid].linkB == 8 || fMapConstants[chipid].linkB == 9) {
+        return true;
+      }
+      return false;
+    case 2:
+      if (fMapConstants[chipid].linkC == 8 || fMapConstants[chipid].linkC == 9) {
+        return true;
+      }
+      return false;
+    default:
+      return true; // -- should not happen
+  }
+}
 
 // ----------------------------------------------------------------------
-bool calPixelQualityLM::isChipDead(unsigned int chipid) {
+bool calPixelQualityLM::isChipDead(unsigned int chipid, int row, int col) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
     return true; // -- chip not found
   }
   int cntDeadLinks(0); 
   for (int ilink = 0; ilink < 3; ++ilink) { 
-    if (isLinkBad(chipid, ilink)) {
+    if (isLinkDead(chipid, ilink)) {
       cntDeadLinks++;
     }
   }
