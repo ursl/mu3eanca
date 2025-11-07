@@ -9,6 +9,7 @@
 #
 #
 # History 2023/03/06 first shot
+#         2025/11/07 add machine dependence
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the
 #
@@ -23,10 +24,18 @@ if (!($dir =~ /run$/)) {
 } else {
     print("in run, proceeding\n");
 }
-
+my $mapsdir = "/data/user/langenegger/maps";
+my $hostname = `hostname`;
+chop($hostname);
+if ($hostname =~ /moor/) {
+    $mapsdir = "/Users/ursl/data/mu3e/maps";
+} elsif ($hostname =~ /merlin7/) {
+    $mapsdir = "/data/user/langenegger/maps";
+}
+print("mapsdir: $mapsdir\n");
 system("rm cryogenics.bin* field.bin* hauge1.bin* sig2.bin* sig.bin*");
-system("ln -s /data/user/langenegger/maps/cryogenics.bin");
-system("ln -s /data/user/langenegger/maps/field.bin");
-system("ln -s /data/user/langenegger/maps/hauge1.bin");
-system("ln -s /data/user/langenegger/maps/sig2.bin");
-system("ln -s /data/user/langenegger/maps/sig.bin");
+system("ln -s $mapsdir/cryogenics.bin");
+system("ln -s $mapsdir/field.bin");
+system("ln -s $mapsdir/hauge1.bin");
+system("ln -s $mapsdir/sig2.bin");
+system("ln -s $mapsdir/sig.bin");
