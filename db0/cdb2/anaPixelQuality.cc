@@ -49,6 +49,8 @@ int chipIndex(unsigned int chipid);
 int runIndex(int runnumber, vector<int> &vIoV);
 int linkStatus(calPixelQualityLM *pPQ, unsigned int chipid);
 
+void jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<int> &vJaksRuns);
+
 void plotHistograms(string filename);
 void setRunLabelsY(TH2D *h);
 void setRunLabelsX(TH1D *h);
@@ -58,7 +60,7 @@ int main(int argc, char *argv[]) {
 
   // -- command line arguments
   string filename("anaPixelQuality.root");
-  string gt("datav6.2=2025Beam");
+  string gt("datav6.3=2025V0");
   string db("/Users/ursl/data/mu3e/cdb");
   int first(0), last(0);
   int verbose(0);
@@ -248,6 +250,8 @@ int main(int argc, char *argv[]) {
     // -- get the size of the JSON payload via size of BLOB
     string sblob = pPQ->makeBLOB();
     hPayloadSize->Fill(runIndex(itIoV, vIoV), sblob.size()/1024.);
+
+
   }
    // -- save the histograms 
   pFile->Write();
@@ -459,5 +463,36 @@ void setRunLabelsX(TH1D *h) {
     } else {
       h->GetXaxis()->SetBinLabel(i, "");
     }
+  }
+}
+
+// ----------------------------------------------------------------------
+// -- print the good run list
+void jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<int> &vJaksRuns) {
+  int status(0), nNoisy(0), nDeadLinks(0), nBadLinks(0);
+  uint32_t chipid(0);
+  pPQ->resetIterator();
+  while (pPQ->getNextID(chipid)) {
+    nNoisy = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy);
+    if (pPQ->isLinkDead(chipid, 0)) {
+      nDeadLinks++;
+    }
+    if (pPQ->isLinkDead(chipid, 1)) {
+      nDeadLinks++;
+    }
+    if (pPQ->isLinkDead(chipid, 2)) {
+      nDeadLinks++;
+    }
+    if (pPQ->getLinkStatus(chipid, 0) == 4 || pPQ->getLinkStatus(chipid, 0) == 5) {
+      nBadLinks++;
+    }
+    if (pPQ->getLinkStatus(chipid, 1) == 4 || pPQ->getLinkStatus(chipid, 1) == 5) {
+      nBadLinks++;
+    }
+    if (pPQ->getLinkStatus(chipid, 2) == 4 || pPQ->getLinkStatus(chipid, 2) == 5) {
+      nBadLinks++;
+    }
+
+
   }
 }
