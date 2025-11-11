@@ -190,11 +190,39 @@ int main(int argc, char *argv[]) {
   if (last > 0) maxRun = last;
   int nRuns(maxRun - minRun + 1);
 
-  if (first > 0 || last > 0) {
+  if (first > 0) {
+    minRun = first;
     // -- in terms of run index
-    nRuns = std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), maxRun)) 
-          - std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), minRun)) + 1;
+    if (find(vIoV.begin(), vIoV.end(), minRun) == vIoV.end()) {
+      cout << "Run " << minRun << " not found in vIoV" << endl;
+      for (auto it: vIoV) {
+        if (it < minRun) {
+        } else {
+          minRun = it;
+          break;
+        }
+      }
+    }
   }
+
+  if (last > 0) {
+    maxRun = last;
+    // -- in terms of run index
+    if (find(vIoV.begin(), vIoV.end(), maxRun) == vIoV.end()) {
+      cout << "Run " << maxRun << " not found in vIoV" << endl;
+      for (auto it: vIoV) {
+        if (it > maxRun) {
+        } else {
+          maxRun = it;
+          break;
+        }
+      }
+    }
+  }
+
+  nRuns = std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), maxRun)) 
+          - std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), minRun));
+
 
   cout << "Number of runs: " << nRuns 
        << " from " << minRun << " to " << maxRun
@@ -290,7 +318,7 @@ int main(int argc, char *argv[]) {
       nNoisyPixels += chipNoisy;
       nGoodPixels += chipGood;
       ++nChips;
-      //cout << "Chip " << chipid << " has " << chipNoisy << " noisy pixels and " << chipGood << " good pixels" << endl;
+      cout << "Chip " << chipid << " has " << chipNoisy << " noisy pixels and " << chipGood << " good pixels" << endl;
     }
     cout << "Run " << itIoV << " has " 
          << nChips << " chips, "
