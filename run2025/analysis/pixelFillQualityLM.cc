@@ -301,6 +301,7 @@ int main(int argc, char* argv[]) {
   for (auto it : gRunInfoMap) {
     cout << "run = " << it.second.confId
       << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
+      << " offsets = " << gMapChipIDLinkOffsets[it.first][0] << gMapChipIDLinkOffsets[it.first][1] << gMapChipIDLinkOffsets[it.first][2]
       << " linkMask = " << it.second.linkMask[0] << it.second.linkMask[1] << it.second.linkMask[2]
       << " linkMatrix = " << it.second.linkMatrix[0] << it.second.linkMatrix[1] << it.second.linkMatrix[2]
       << " abcLinkMask = " << it.second.abcLinkMask[0] << it.second.abcLinkMask[1] << it.second.abcLinkMask[2]
@@ -349,13 +350,13 @@ int main(int argc, char* argv[]) {
         ss << "pixel/hitmaps/" << itS << "/" << itL.first
            << Form("/ladder_%02d", iLdr);
         string s = ss.str();
-        cout << "TDirectory " << s << "<-" << endl;
+        if (0) cout << "TDirectory " << s << "<-" << endl;
         f->cd(s.c_str());
         TIter next(gDirectory->GetListOfKeys());
         TKey *key(0);
         while ((key = (TKey *)next())) {
           if (key) {
-            cout << "found key " << s << endl;
+            if (0) cout << "found key " << s << endl;
             if (gROOT->GetClass(key->GetClassName())->InheritsFrom("TDirectory")) continue;
             if (!gROOT->GetClass(key->GetClassName())->InheritsFrom("TH1")) continue;       
             string name = key->GetName();
@@ -363,7 +364,7 @@ int main(int argc, char* argv[]) {
               unsigned int chipID;
               replaceAll(name, "hitmap_perChip_", "");
               chipID = ::stoi(name); 
-              cout << "   .. chipID = " << chipID << " from name = " << name << endl;
+              if (0) cout << "   .. chipID = " << chipID << " from name = " << name << endl;
               if (0 == chipID) {
                 cout << "  XXXXXXXXX  skipping illegal chipID = " << chipID << " from name = " << name << " is 0, skipping" << endl;
                 continue;
@@ -552,7 +553,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   int badChip(-1); // -- if any link is broken and not masked, the chip is bad
   int nBadLinks(0);
   for (int i = 0; i < 3; ++i) {
-    if (0 == ai.abcLinkMask[i] || 4 == ai.abcLinkMask[i]) lkStatus[i] = 4;
+    if (0 == ai.abcLinkMask[i]) lkStatus[i] = 9;
     if (ai.abcLinkErrs[i] > 10) lkStatus[i] = 4;
     if (ai.abcLinkErrs[i] > 10 && 1 == ai.abcLinkMask[i]) {
       badChip = i;
@@ -561,6 +562,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   }
  
   if (badChip >= 0) {    
+    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << endl;
     for (int i = 0; i < 3; ++i) {
       if (i != badChip) {
         lkStatus[i] = 5;
@@ -571,9 +573,9 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   }
 
   // -- Marius' special case, ignoring EEE case IF LVDS error rate low enough
-  if (ai.abcLinkMatrix[0] == 4 && ai.abcLinkMatrix[1] == 4 && ai.abcLinkMatrix[2] == 4
-    && ai.abcLinkMask[0] == 1 && ai.abcLinkMask[1] == 1 && ai.abcLinkMask[2] == 1
-  ) {
+  // -- "So I would say if all links are EEE then we should not trust the 
+  //     matrix information and only use the lvds errors."
+  if (ai.abcLinkMatrix[0] == 4 && ai.abcLinkMatrix[1] == 4 && ai.abcLinkMatrix[2] == 4) {
    if (ai.abcLinkErrs[0] > 10) lkStatus[0] = 4;
    if (ai.abcLinkErrs[1] > 10) lkStatus[1] = 4;
    if (ai.abcLinkErrs[2] > 10) lkStatus[2] = 4;
