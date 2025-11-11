@@ -52,9 +52,8 @@ using namespace std;
 // ---------
 // cd mu3eanca/run2025/analysis
 // bin/pixelFillQualityLM \
-// -j /Users/ursl/data/mu3e/cdb/ -g datav6.2=2025Beam \
-// -f /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.root \
-// -o /Users/ursl/mu3e/software/250429/minalyzer/root_output_files/dqm_histos_00553.json
+// -g datav6.3=2025V0 -j ~/data/mu3e/cdb/ 
+// -f ~/data/mu3e/run2025/mlzr/merged-dqm_histos_06252.root -r MidasMeta2025Data.root
 // ----------------------------------------------------------------------
 
 #define JSONDIR "/Users/ursl/data/mu3e/cdb"
@@ -553,7 +552,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   int badChip(-1); // -- if any link is broken and not masked, the chip is bad
   int nBadLinks(0);
   for (int i = 0; i < 3; ++i) {
-    if (0 == ai.abcLinkMask[i] || 9 == ai.abcLinkMask[i]) lkStatus[i] = 9;
+    if (0 == ai.abcLinkMask[i] || 4 == ai.abcLinkMask[i]) lkStatus[i] = 4;
     if (ai.abcLinkErrs[i] > 10) lkStatus[i] = 4;
     if (ai.abcLinkErrs[i] > 10 && 1 == ai.abcLinkMask[i]) {
       badChip = i;
@@ -571,7 +570,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     }
   }
 
-  // -- Marius' special case, ignoring EEE case (by looking at LVDS error rate)
+  // -- Marius' special case, ignoring EEE case IF LVDS error rate low enough
   if (ai.abcLinkMatrix[0] == 4 && ai.abcLinkMatrix[1] == 4 && ai.abcLinkMatrix[2] == 4
     && ai.abcLinkMask[0] == 1 && ai.abcLinkMask[1] == 1 && ai.abcLinkMask[2] == 1
   ) {
@@ -668,6 +667,16 @@ void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels, vector<int> &columns
     int colNoisyPixels(0);
     for (int ix = 1; ix <= h->GetNbinsX(); ++ix) {
       colNoisyPixels = 0;
+      // -- skip defective links 
+      if (links[0] > 0 && ix < 89) {
+        continue;
+      }
+      if (links[1] > 0 && (ix >= 89 && ix < 173)) { 
+        continue;
+      }
+      if (links[2] > 0 && ix >= 173) {
+        continue;
+      }
       for (int iy = 1; iy <= h->GetNbinsY(); ++iy) {
 
         double nhits = h->GetBinContent(ix,iy);
