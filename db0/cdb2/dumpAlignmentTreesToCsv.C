@@ -304,7 +304,7 @@ void readBlobSensors(string filename = "sensors.bin") {
 
 
 // ----------------------------------------------------------------------
-void writeTiles(string filename = "tiles.csv", bool modify = false) {
+void writeTiles(string filename = "tiles.csv", int modify = 0) {
   TTree *t = gFile->Get<TTree>("alignment/tiles");
   if (0 == t) {
     cout << "dumpAlignmentToCsv/writeTiles> Error in retrieving tree alignment/tiles" << endl;
@@ -337,6 +337,20 @@ void writeTiles(string filename = "tiles.csv", bool modify = false) {
     ONS << dumpArray(uint2Blob(header));
     if (0) printArray(ONS, uint2Blob(header));
   }
+  vector<int> instIds = { };
+  // https://mattermost.gitlab.rlp.net/mu3e/pl/18ya9yrgpinr5bn9tencb6p1jw
+  // 4096 - 4511 (DS module 0), 6176 - 6591 (DS module 5), 6592 - 7007 (DS module 6)
+  for (int i = 4096; i <= 4511; i++) {
+    instIds.push_back(i);
+  }
+  for (int i = 6176; i <= 6591; i++) {
+    instIds.push_back(i);
+  }
+  for (int i = 6592; i <= 7007; i++) {
+    instIds.push_back(i);
+  }
+  cout << "instIds.size() = " << instIds.size() << endl;
+
 
   char data[8], data1[8], data2[8];
   for (unsigned int i = 0; i < t->GetEntries(); ++i) {
@@ -346,7 +360,7 @@ void writeTiles(string filename = "tiles.csv", bool modify = false) {
                 << " dir x/y/z = " << dirx << "/" << diry << "/" << dirz
                 << endl;
     double mx, my, mz;
-    if (modify) {
+    if (2 == modify) {
       if (0 == i%2) {
         mx = posx + 0.0001;
         my = posy + 0.0001;
@@ -355,6 +369,10 @@ void writeTiles(string filename = "tiles.csv", bool modify = false) {
         mx = posx - 0.0001;
         my = posy - 0.0001;
         mz = posz - 0.0001;
+      }
+    } else if (1 == modify) {
+      if (std::find(instIds.begin(), instIds.end(), id) == instIds.end()) {
+        continue;
       }
     } else {
       mx = posx;
