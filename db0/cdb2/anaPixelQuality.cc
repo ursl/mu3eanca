@@ -44,14 +44,26 @@ using namespace std;
 
 std::unordered_map<int, int> gRunNumberIndex;
 
+// ----------------------------------------------------------------------
+struct runQuality {
+  int runNumber;
+  int nNoisyPixels;
+  int nGoodPixels;
+  int nDeadLinks;
+  int nBadLinks;
+  int nEEE;
+  int nActiveChips;
+  int nStatus5;
+};
+
 
 int chipIndex(unsigned int chipid);
-int runIndex(int runnumber, vector<int> &vIoV);
+int runIndex(int runnumber);
 int linkStatus(calPixelQualityLM *pPQ, unsigned int chipid);
 
-void jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<int> &vJaksRuns);
+struct runQuality jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<int> &vJaksRuns);
 
-void plotHistograms(string filename);
+void plotHistograms(string filename, string suffix);
 void setRunLabelsY(TH2D *h);
 void setRunLabelsX(TH1D *h);
 
@@ -67,6 +79,7 @@ int main(int argc, char *argv[]) {
   int plot(0);
   string srunfile("");
   string srunlist("");
+  string suffix("");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-db"))    {db = argv[++i];}
     if (!strcmp(argv[i], "-f"))     {first = atoi(argv[++i]);}
@@ -76,9 +89,18 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-p"))     {plot = 1;}
     if (!strcmp(argv[i], "-r"))     {srunfile = argv[++i];}
     if (!strcmp(argv[i], "-R"))     {srunlist = argv[++i];}
+    if (!strcmp(argv[i], "-s"))     {suffix = argv[++i];}
     if (!strcmp(argv[i], "-v"))     {verbose = 1;}
   }
   
+  if (suffix != "") {
+    filename = string("anaPixelQuality-") + suffix + ".root";
+    cout << "Suffix: " << suffix << endl;
+    cout << "Filename: " << filename << endl;
+  } else {
+    filename = string("anaPixelQuality.root");
+  }
+
   // -- fill vRuns from sruns
   vector<int> vRuns;
   if (srunfile != "") {
@@ -160,14 +182,42 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
+
+  // -- get the number of runs
+  int minRun(vIoV[0]);
+  if (first > 0) minRun = first;
+  int maxRun(vIoV[vIoV.size()-1]);
+  if (last > 0) maxRun = last;
+  int nRuns(maxRun - minRun + 1);
+
+  if (first > 0 || last > 0) {
+    // -- in terms of run index
+    nRuns = std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), maxRun)) 
+          - std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), minRun)) + 1;
+  }
+
+  cout << "Number of runs: " << nRuns 
+       << " from " << minRun << " to " << maxRun
+       << endl;
+
+
   // -- initialize the run number index
+  int cnt(0);
   for (int i = 0; i < vIoV.size(); i++) {
-    gRunNumberIndex[vIoV[i]] = i;
+    if (first > 0 && vIoV[i] < first) {
+      continue;
+    }
+    if (last > 0 && vIoV[i] > last) {
+      continue;
+    }
+
+    gRunNumberIndex[vIoV[i]] = cnt;
+    ++cnt;
   }
 
   // -- check if we should plot only. This MUST BE after reading the CDB because else the IOVs are not known!
   if (plot) {
-    plotHistograms(filename);
+    plotHistograms(filename, suffix);
     return 0;
   }
 
@@ -185,15 +235,6 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  // -- get the number of runs
-  int minRun(vIoV[0]);
-  int maxRun(vIoV[vIoV.size()-1]);
-  int nRuns(maxRun - minRun + 1);
-
-  // -- in terms of run index
-  minRun = 0; 
-  maxRun = vIoV.size();
-  nRuns = vIoV.size();
 
   // -- Plot stuff for each run
   TFile *pFile = new TFile(filename.c_str(), "RECREATE");
@@ -208,6 +249,10 @@ int main(int argc, char *argv[]) {
   hNoisyPixelVsRun->SetXTitle("Run");
   hNoisyPixelVsRun->SetYTitle("Noisy pixels");
 
+  TH1D *hEEEVsRun = new TH1D("hEEEVsRun", "Number of links with LVDS errors per run", nRuns, minRun, maxRun);
+  hEEEVsRun->SetXTitle("Run");
+  hEEEVsRun->SetYTitle("Links with LVDS errors");
+
   // -- this is only for debugging (e.g. if some illegal chipIDs sneaked in)
   TH1D *hGoodPixelVsRun = new TH1D("hGoodPixelVsRun", "Total number of good pixels per run", nRuns, minRun, maxRun);
   hGoodPixelVsRun->SetXTitle("Run");
@@ -218,10 +263,17 @@ int main(int argc, char *argv[]) {
   hPayloadSize->SetXTitle("Run");
   hPayloadSize->SetYTitle("Size of JSON payload [kB]");
 
+  vector<int> vJaksRuns;
 
   
   for (auto itIoV: vIoV) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
+      continue;
+    }
+    if (first > 0 && itIoV < first) {
+      continue;
+    }
+    if (last > 0 && itIoV > last) {
       continue;
     }
     pDC->setRunNumber(itIoV);
@@ -232,7 +284,7 @@ int main(int argc, char *argv[]) {
     int nChips(0);
     //cout << " Working links: ";  
     while (pPQ->getNextID(chipid)) {
-      hLinkStatus->Fill(chipIndex(chipid), runIndex(itIoV, vIoV), linkStatus(pPQ, chipid));
+      hLinkStatus->Fill(chipIndex(chipid), itIoV, linkStatus(pPQ, chipid));
       int chipNoisy = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy); 
       int chipGood = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Good);
       nNoisyPixels += chipNoisy;
@@ -245,26 +297,42 @@ int main(int argc, char *argv[]) {
          << nNoisyPixels << " noisy pixels and " 
          << nGoodPixels << " good pixels" 
          << endl;
-    hNoisyPixelVsRun->Fill(runIndex(itIoV, vIoV), nNoisyPixels);
-    hGoodPixelVsRun->Fill(runIndex(itIoV, vIoV), nGoodPixels);
+    hNoisyPixelVsRun->Fill(itIoV, nNoisyPixels);
+    hGoodPixelVsRun->Fill(itIoV, nGoodPixels);
     // -- get the size of the JSON payload via size of BLOB
     string sblob = pPQ->makeBLOB();
-    hPayloadSize->Fill(runIndex(itIoV, vIoV), sblob.size()/1024.);
+    hPayloadSize->Fill(itIoV, sblob.size()/1024.);
 
-
+    struct runQuality rn = jakGoodRunList(pPQ, itIoV, vJaksRuns);
+    hEEEVsRun->Fill(itIoV, rn.nEEE);
   }
    // -- save the histograms 
   pFile->Write();
   pFile->Close();
 
-  plotHistograms(filename);
+  plotHistograms(filename, suffix);
 
+
+  cout << "Jak's good run list has " << vJaksRuns.size() << " runs" << endl;
+  ofstream outfile("goodRunList" + suffix + ".txt");
+  outfile << "{";
+  for (size_t i = 0; i < vJaksRuns.size(); ++i) {
+    cout << vJaksRuns[i] << " ";
+    outfile << vJaksRuns[i];
+    if (i < vJaksRuns.size() - 1) {
+      outfile << ",";
+    }
+  }
+  cout << endl;
+  outfile << "}" << endl;
+  outfile.close();
 
   return 0;
 }
 
 // ----------------------------------------------------------------------
-int runIndex(int runnumber, vector<int> &vIoV) {
+int runIndex(int runnumber) {
+  cout << "runIndex(" << runnumber << ") = " << gRunNumberIndex[runnumber] << endl;
   return gRunNumberIndex[runnumber];
 }
 
@@ -364,19 +432,25 @@ int linkStatus(calPixelQualityLM *pPQ, unsigned int chipid) {
 
 // ----------------------------------------------------------------------
 // -- plot the histograms
-void plotHistograms(string filename) {
+void plotHistograms(string filename, string suffix) {
   // -- open the file
   TFile *pFile = new TFile(filename.c_str());
 
+
+  if (suffix != "") {
+    suffix = "-" + suffix;
+  } else {
+    suffix = "";
+  }
   // -- plot the histograms
   TCanvas *c1 = new TCanvas("c1", "c1", 1000, 1000);
   c1->SetRightMargin(0.15);
 
   TH2D *hLinkStatus = (TH2D*)pFile->Get("hLinkStatus");
-  setRunLabelsY(hLinkStatus);
+  // setRunLabelsY(hLinkStatus);
   hLinkStatus->SetStats(0);
   hLinkStatus->Draw("colz");
-  c1->SaveAs("hLinkStatus.pdf");
+  c1->SaveAs(("hLinkStatus" + suffix + ".pdf").c_str());
 
   c1->Clear();
   c1->SetRightMargin(0.1);
@@ -384,16 +458,16 @@ void plotHistograms(string filename) {
 
 
   TH1D *hNoisyPixelVsRun = (TH1D*)pFile->Get("hNoisyPixelVsRun");
-  setRunLabelsX(hNoisyPixelVsRun);
+  //setRunLabelsX(hNoisyPixelVsRun);
   hNoisyPixelVsRun->SetMinimum(0.5);
   hNoisyPixelVsRun->SetStats(0);
   hNoisyPixelVsRun->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
   hNoisyPixelVsRun->Draw("hist");
-  c1->SaveAs("hNoisyPixelVsRun.pdf");
+  c1->SaveAs(("hNoisyPixelVsRun" + suffix + ".pdf").c_str());
 
   TH1D *hGoodPixelVsRun = (TH1D*)pFile->Get("hGoodPixelVsRun");
-  setRunLabelsX(hGoodPixelVsRun);
+  //setRunLabelsX(hGoodPixelVsRun);
   hGoodPixelVsRun->SetMinimum(1.e5);
   hGoodPixelVsRun->SetStats(0);
   hGoodPixelVsRun->GetXaxis()->SetTitleOffset(1.3);
@@ -408,17 +482,28 @@ void plotHistograms(string filename) {
   t1->SetTextSize(0.02);
   t1->DrawLatexNDC(0.2, 0.82, "N_{pix}^{VTX} = 108*64000");
 
-  c1->SaveAs("hGoodPixelVsRun.pdf");
+  c1->SaveAs(("hGoodPixelVsRun" + suffix + ".pdf").c_str());
 
 
   TH1D *hPayloadSize = (TH1D*)pFile->Get("hPayloadSize");
-  setRunLabelsX(hPayloadSize);
+  //setRunLabelsX(hPayloadSize);
   hPayloadSize->SetMinimum(0.5);
   hPayloadSize->SetStats(0);
   hPayloadSize->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
   hPayloadSize->Draw("hist");
-  c1->SaveAs("hPayloadSize.pdf");
+  c1->SaveAs(("hPayloadSize" + suffix + ".pdf").c_str());
+
+
+
+  TH1D *hEEEVsRun = (TH1D*)pFile->Get("hEEEVsRun");
+  //setRunLabelsX(hEEEVsRun);
+  hEEEVsRun->SetMinimum(0.5);
+  hEEEVsRun->SetStats(0);
+  hEEEVsRun->GetXaxis()->SetTitleOffset(1.3);
+  c1->SetLogy(1);
+  hEEEVsRun->Draw("hist");
+  c1->SaveAs(("hEEEVsRun" + suffix + ".pdf").c_str());
 
   // -- close the file  
   pFile->Close();
@@ -437,7 +522,7 @@ void setRunLabelsY(TH2D *h) {
 
   for (int i = 1; i < h->GetNbinsY(); i++) {
     if (i % empty == 1) {
-      h->GetYaxis()->SetBinLabel(i, Form("%d", indexRun(i)));
+      h->GetYaxis()->SetBinLabel(i, Form("%d", i));
     } else {
       h->GetYaxis()->SetBinLabel(i, "");
     }
@@ -459,7 +544,7 @@ void setRunLabelsX(TH1D *h) {
 
   for (int i = 1; i < h->GetNbinsX(); i++) {
     if (i % empty == 1) {
-      h->GetXaxis()->SetBinLabel(i, Form("%d", indexRun(i)));
+      h->GetXaxis()->SetBinLabel(i, Form("%d", i));
     } else {
       h->GetXaxis()->SetBinLabel(i, "");
     }
@@ -468,31 +553,54 @@ void setRunLabelsX(TH1D *h) {
 
 // ----------------------------------------------------------------------
 // -- print the good run list
-void jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<int> &vJaksRuns) {
-  int status(0), nNoisy(0), nDeadLinks(0), nBadLinks(0);
+struct runQuality jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<int> &vJaksRuns) {
   uint32_t chipid(0);
   pPQ->resetIterator();
+  struct runQuality rn = {runnumber, 0, 0, 0, 0, 0, 0, 0};
+  string sStatus("");
   while (pPQ->getNextID(chipid)) {
+    int status(0), nNoisy(0), nDeadLinks(0), nBadLinks(0);
     nNoisy = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy);
-    if (pPQ->isLinkDead(chipid, 0)) {
-      nDeadLinks++;
+    rn.nNoisyPixels += nNoisy;
+    for (int i = 0; i < 3; i++) {
+      if (pPQ->getLinkStatus(chipid, i) == 4 || pPQ->getLinkStatus(chipid, i) == 5) {
+        nBadLinks |= (1 << i);
+      }
+
+      if (pPQ->isLinkDead(chipid, i)) {
+        nDeadLinks++;
+        rn.nDeadLinks++;
+      }
     }
-    if (pPQ->isLinkDead(chipid, 1)) {
-      nDeadLinks++;
-    }
-    if (pPQ->isLinkDead(chipid, 2)) {
-      nDeadLinks++;
-    }
-    if (pPQ->getLinkStatus(chipid, 0) == 4 || pPQ->getLinkStatus(chipid, 0) == 5) {
-      nBadLinks++;
-    }
-    if (pPQ->getLinkStatus(chipid, 1) == 4 || pPQ->getLinkStatus(chipid, 1) == 5) {
-      nBadLinks++;
-    }
-    if (pPQ->getLinkStatus(chipid, 2) == 4 || pPQ->getLinkStatus(chipid, 2) == 5) {
-      nBadLinks++;
+    if (nBadLinks == 7) {
+      //      cout << "Run " << runnumber << " has EEE" << endl;
+      status = 5;
+      sStatus += "/" + to_string(chipid) + "/"+ " EEE,";
+      rn.nEEE++;
     }
 
+    if (nDeadLinks < 3) {
+      rn.nActiveChips++;
+    }
 
+    if (nNoisy > 10) {
+      if (0 == status) {
+        sStatus += "/" + to_string(chipid) + "/" + " Ns: " + to_string(nNoisy) + ",";
+      } else {
+        sStatus +=  " Ns: " + to_string(nNoisy) + ",";
+      }
+      status = 5;
+    }
+    if (5 == status) {
+      rn.nStatus5++;
+    }
   }
+
+  if (rn.nStatus5 < 0.2*rn.nActiveChips) {
+    cout << "******************** Run " << runnumber << " is good, has " << rn.nActiveChips << " active chips and " << rn.nStatus5 << " status 5" << endl;
+    vJaksRuns.push_back(runnumber);
+  } else {
+    cout << "Run " << runnumber << " is bad, has " << rn.nActiveChips << " active chips and nStatus5 = " << rn.nStatus5 << " -> " << sStatus << "<-" << endl;
+  }
+  return rn;
 }
