@@ -354,7 +354,9 @@ if ($opt_r =~ /\,/) {
   2638,2637,2636,2635,2634,2633,2632,2630,2629,2628,2627,2626,2625,2624,
   2623,2622,2621,2177,2137,2136
   );
-} 
+} else {
+  push(@runlist, $opt_r);
+}
 
 # -- Create array with all files matching both pattern and run numbers
 if ($opt_p ne "") {
@@ -395,4 +397,4 @@ if ($opt_p ne "") {
       system($lcmd);
     }
   }
-}
+ }
