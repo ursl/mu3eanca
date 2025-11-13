@@ -5,10 +5,15 @@
     <meta charset="UTF-8">
     <title>Mu3e Run Database</title>
     <style>
-    body {
+    html, body {
         margin: 0;
         padding: 0;
-        min-height: 100vh;
+        height: 100vh;
+        width: 100%;
+        overflow: hidden;
+    }
+    
+    body {
         display: flex;
         flex-direction: column;
     }
@@ -29,14 +34,22 @@
         left: 0;
         right: 0;
         z-index: 1000;
+        max-height: 50vh;
+        overflow-y: auto;
     }
 
     .content-section {
         flex: 1;
         padding: 0 20px;
-        margin-top: 200px;
-        margin-bottom: 20px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        margin-top: 0;
+        margin-bottom: 0;
         position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 100vh;
     }
 
     .filter-section {
@@ -145,16 +158,19 @@
     }
 
     .table-container {
+        flex: 1;
         display: block;
         border: 1px solid #ddd;
         border-radius: 4px;
         background: white;
-        max-height: calc(100vh - 250px);
+        min-height: 0;
         overflow: auto;
+        position: relative;
     }
     .main-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
         table-layout: fixed;
         background: white;
     }
@@ -165,11 +181,30 @@
         font-size: 14px;
     }
     .main-table th {
-        background: #04AA6D;
-        color: white;
+        background: #04AA6D !important;
+        color: white !important;
         position: sticky;
         top: 0;
-        z-index: 2;
+        z-index: 100;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+    }
+    .main-table thead {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        display: table-header-group;
+    }
+    /* Fix border overlap for sticky header */
+    .main-table thead th {
+        border-top: 1px solid #ddd;
+        border-bottom: 2px solid #ddd;
+    }
+    /* Ensure header is always visible */
+    .main-table thead tr {
+        display: table-row;
+    }
+    .main-table tbody tr:first-child td {
+        border-top: 1px solid #ddd;
     }
     .main-table tbody tr:nth-child(even) {
         background-color: #f2f2f2;
@@ -177,7 +212,7 @@
     .main-table tbody tr:hover {
         background-color: #ddd;
     }
-    /* Column widths */
+    /* Column widths - total should be 100% */
     .main-table th:nth-child(1), .main-table td:nth-child(1) { width: 3%; }
     .main-table th:nth-child(2), .main-table td:nth-child(2) { width: 5%; }
     .main-table th:nth-child(3), .main-table td:nth-child(3) { width: 13%; }
@@ -186,7 +221,7 @@
     .main-table th:nth-child(6), .main-table td:nth-child(6) { width: 5%; }
     .main-table th:nth-child(7), .main-table td:nth-child(7) { width: 5%; }
     .main-table th:nth-child(8), .main-table td:nth-child(8) { width: 12%; }
-    .main-table th:nth-child(9), .main-table td:nth-child(9) { width: 35%; }
+    .main-table th:nth-child(9), .main-table td:nth-child(9) { width: 32%; }
     .main-table th:nth-child(10), .main-table td:nth-child(10) { width: 10%; }
 
     /* Collapsible CSV box styles */
@@ -195,6 +230,7 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         background: white;
+        flex-shrink: 0;
     }
 
     .csv-header {
@@ -234,6 +270,81 @@
         transform: rotate(180deg);
     }
 
+    /* Collapsible Data Quality filter section */
+    .dq-filter-box {
+        margin-top: 8px;
+        border: 1px solid #ffc107;
+        border-radius: 4px;
+        background: white;
+    }
+
+    .dq-filter-header {
+        background: #fff3cd;
+        color: #856404;
+        padding: 8px 12px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        user-select: none;
+        border-radius: 4px 4px 0 0;
+        font-weight: bold;
+    }
+
+    .dq-filter-header:hover {
+        background: #ffe69c;
+    }
+
+    .dq-filter-content {
+        padding: 6px;
+        display: none;
+        border-top: 1px solid #ffc107;
+    }
+
+    .dq-filter-content.expanded {
+        display: block;
+    }
+
+    /* Compact styles for Data Quality filter groups */
+    .dq-filter-content .filter-row {
+        gap: 6px;
+        flex-wrap: nowrap;
+    }
+
+    .dq-filter-content .filter-group {
+        padding: 4px 6px;
+        gap: 4px;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .dq-filter-content .filter-group label {
+        font-size: 11px;
+        font-weight: 400;
+    }
+
+    .dq-filter-content .filter-group select {
+        min-width: 60px;
+        padding: 2px 4px;
+        font-size: 11px;
+        width: auto;
+        transition: background-color 0.2s ease;
+    }
+
+    .dq-filter-content .filter-group select.active {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+        font-weight: 500;
+    }
+
+    .dq-toggle-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .dq-toggle-icon.expanded {
+        transform: rotate(180deg);
+    }
+
     /* Bulk action styles */
     .bulk-actions {
         background: #f8f9fa;
@@ -242,6 +353,7 @@
         border: 1px solid #dee2e6;
         border-radius: 4px;
         display: none;
+        flex-shrink: 0;
     }
 
     .bulk-actions.visible {
@@ -292,6 +404,26 @@ let onlySignificant = "yes";
 let isOnlySignificant = true;
 let NMAXRUNS = 1000;
 
+// Function to adjust layout based on header height
+function adjustLayout() {
+    const headerSection = document.querySelector('.header-section');
+    const contentSection = document.querySelector('.content-section');
+    
+    if (headerSection && contentSection) {
+        const headerHeight = headerSection.offsetHeight;
+        const viewportHeight = window.innerHeight;
+        // Set content section height to fill remaining viewport space
+        contentSection.style.height = (viewportHeight - headerHeight) + 'px';
+        contentSection.style.marginTop = headerHeight + 'px';
+    }
+    
+    // Ensure table header is visible - force a repaint
+    const tableHeader = document.querySelector('.main-table thead');
+    if (tableHeader) {
+        tableHeader.style.display = 'table-header-group';
+    }
+}
+
 // Initialize checkbox state on page load
 window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -302,6 +434,22 @@ window.onload = function() {
         onlySignificant = significantParam === null ? "yes" : significantParam;
         isOnlySignificant = checkbox.checked;
     }
+    
+    // Adjust layout after page loads
+    setTimeout(adjustLayout, 100); // Small delay to ensure DOM is fully rendered
+    adjustLayout(); // Also call immediately
+    
+    // Adjust layout on window resize
+    window.addEventListener('resize', adjustLayout);
+    
+    // Watch for header height changes (e.g., when filters expand)
+    const headerSection = document.querySelector('.header-section');
+    if (headerSection) {
+        const resizeObserver = new ResizeObserver(() => {
+            adjustLayout();
+        });
+        resizeObserver.observe(headerSection);
+    }
 
     // Set initial values from URL parameters
     document.getElementById("filterRunLimit").value = urlParams.get('nRun') || '';
@@ -309,6 +457,22 @@ window.onload = function() {
     document.getElementById("filterRunMax").value = urlParams.get('maxRun') || '';
     document.getElementById("filterComment").value = urlParams.get('comment') || '';
     document.getElementById("filterRunClass").value = urlParams.get('runClass') || '';
+    
+    // Set Data Quality filter values from URL parameters
+    const dqFilterIds = ['filterDqMu3e', 'filterDqBeam', 'filterDqVtx', 'filterDqPix', 'filterDqFib', 'filterDqTil', 'filterDqLks'];
+    const dqFilterParams = ['dqMu3e', 'dqBeam', 'dqVtx', 'dqPix', 'dqFib', 'dqTil', 'dqLks'];
+    
+    dqFilterIds.forEach((id, index) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.value = urlParams.get(dqFilterParams[index]) || '';
+            updateDqFilterColor(element);
+            // Add event listener to update color when value changes
+            element.addEventListener('change', function() {
+                updateDqFilterColor(this);
+            });
+        }
+    });
 
     // Add event listener for Enter key on the filter form
     document.getElementById("filterForm").addEventListener("keypress", function(event) {
@@ -328,6 +492,43 @@ window.onload = function() {
             csvContent.classList.toggle('expanded');
             toggleIcon.classList.toggle('expanded');
         });
+    }
+    
+    // Check if any Data Quality filters are active and expand if so
+    const hasActiveDqFilters = urlParams.get('dqMu3e') || urlParams.get('dqBeam') || 
+                                 urlParams.get('dqVtx') || urlParams.get('dqPix') || 
+                                 urlParams.get('dqFib') || urlParams.get('dqTil') || 
+                                 urlParams.get('dqLks');
+    if (hasActiveDqFilters) {
+        const dqContent = document.getElementById('dqFilterContent');
+        const dqToggleIcon = document.querySelector('.dq-toggle-icon');
+        if (dqContent && dqToggleIcon) {
+            dqContent.classList.add('expanded');
+            dqToggleIcon.classList.add('expanded');
+        }
+    }
+}
+
+// Update Data Quality filter select box color based on value
+function updateDqFilterColor(selectElement) {
+    if (selectElement.value && selectElement.value !== '') {
+        selectElement.classList.add('active');
+    } else {
+        selectElement.classList.remove('active');
+    }
+}
+
+// Toggle Data Quality filters visibility
+function toggleDqFilters() {
+    const dqContent = document.getElementById('dqFilterContent');
+    const dqToggleIcon = document.querySelector('.dq-toggle-icon');
+    
+    if (dqContent && dqToggleIcon) {
+        dqContent.classList.toggle('expanded');
+        dqToggleIcon.classList.toggle('expanded');
+        
+        // Adjust layout after toggle to account for header height change
+        setTimeout(adjustLayout, 100);
     }
 }
 
@@ -351,6 +552,24 @@ function applyFilters() {
     if (maxRun) urlParams.set('maxRun', maxRun);
     if (comment) urlParams.set('comment', comment);
     if (runClass) urlParams.set('runClass', runClass);
+
+    // Get Data Quality filter values
+    const dqMu3e = document.getElementById("filterDqMu3e").value;
+    const dqBeam = document.getElementById("filterDqBeam").value;
+    const dqVtx = document.getElementById("filterDqVtx").value;
+    const dqPix = document.getElementById("filterDqPix").value;
+    const dqFib = document.getElementById("filterDqFib").value;
+    const dqTil = document.getElementById("filterDqTil").value;
+    const dqLks = document.getElementById("filterDqLks").value;
+
+    // Only add Data Quality parameters that have values
+    if (dqMu3e) urlParams.set('dqMu3e', dqMu3e);
+    if (dqBeam) urlParams.set('dqBeam', dqBeam);
+    if (dqVtx) urlParams.set('dqVtx', dqVtx);
+    if (dqPix) urlParams.set('dqPix', dqPix);
+    if (dqFib) urlParams.set('dqFib', dqFib);
+    if (dqTil) urlParams.set('dqTil', dqTil);
+    if (dqLks) urlParams.set('dqLks', dqLks);
 
     // Navigate to the new URL with all active filters
     window.location.href = '/rdb/?' + urlParams.toString();
@@ -503,6 +722,81 @@ async function performBulkAction(action) {
 
                 <div class="filter-group">
                     <input type="button" class="button" value="Apply Filters" onclick="applyFilters()" />
+                </div>
+            </div>
+            
+            <!-- Data Quality Summary Filters (Collapsible) -->
+            <div class="dq-filter-box">
+                <div class="dq-filter-header" onclick="toggleDqFilters()">
+                    <span>Data Quality Filters</span>
+                    <span class="dq-toggle-icon">▼</span>
+                </div>
+                <div class="dq-filter-content" id="dqFilterContent">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="filterDqMu3e">Mu3e</label>
+                            <select id="filterDqMu3e">
+                                <option value="">Any</option>
+                                <option value="1" <% if (locals.dqMu3e === '1') { %>selected<% } %>>Good</option>
+                                <option value="0" <% if (locals.dqMu3e === '0') { %>selected<% } %>>Bad</option>
+                                <option value="-1" <% if (locals.dqMu3e === '-1') { %>selected<% } %>>Unset</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterDqBeam">Beam</label>
+                            <select id="filterDqBeam">
+                                <option value="">Any</option>
+                                <option value="1" <% if (locals.dqBeam === '1') { %>selected<% } %>>Good</option>
+                                <option value="0" <% if (locals.dqBeam === '0') { %>selected<% } %>>Bad</option>
+                                <option value="-1" <% if (locals.dqBeam === '-1') { %>selected<% } %>>Unset</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterDqVtx">Vertex</label>
+                            <select id="filterDqVtx">
+                                <option value="">Any</option>
+                                <option value="1" <% if (locals.dqVtx === '1') { %>selected<% } %>>Good</option>
+                                <option value="0" <% if (locals.dqVtx === '0') { %>selected<% } %>>Bad</option>
+                                <option value="-1" <% if (locals.dqVtx === '-1') { %>selected<% } %>>Unset</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterDqPix">Pixel</label>
+                            <select id="filterDqPix">
+                                <option value="">Any</option>
+                                <option value="1" <% if (locals.dqPix === '1') { %>selected<% } %>>Good</option>
+                                <option value="0" <% if (locals.dqPix === '0') { %>selected<% } %>>Bad</option>
+                                <option value="-1" <% if (locals.dqPix === '-1') { %>selected<% } %>>Unset</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterDqFib">Fibres</label>
+                            <select id="filterDqFib">
+                                <option value="">Any</option>
+                                <option value="1" <% if (locals.dqFib === '1') { %>selected<% } %>>Good</option>
+                                <option value="0" <% if (locals.dqFib === '0') { %>selected<% } %>>Bad</option>
+                                <option value="-1" <% if (locals.dqFib === '-1') { %>selected<% } %>>Unset</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterDqTil">Tiles</label>
+                            <select id="filterDqTil">
+                                <option value="">Any</option>
+                                <option value="1" <% if (locals.dqTil === '1') { %>selected<% } %>>Good</option>
+                                <option value="0" <% if (locals.dqTil === '0') { %>selected<% } %>>Bad</option>
+                                <option value="-1" <% if (locals.dqTil === '-1') { %>selected<% } %>>Unset</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterDqLks">Links</label>
+                            <select id="filterDqLks">
+                                <option value="">Any</option>
+                                <option value="1" <% if (locals.dqLks === '1') { %>selected<% } %>>Good</option>
+                                <option value="0" <% if (locals.dqLks === '0') { %>selected<% } %>>Bad</option>
+                                <option value="-1" <% if (locals.dqLks === '-1') { %>selected<% } %>>Unset</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
@@ -662,12 +956,13 @@ async function performBulkAction(action) {
         </div>
 
         <div style="
-            margin-top: 30px;
+            margin-top: 20px;
             padding: 15px;
             text-align: center;
             color: #666;
             font-size: 13px;
             border-top: 1px solid #eee;
+            flex-shrink: 0;
         ">
             Built with <a href="https://cursor.sh" target="_blank" style="
                 color: #04AA6D;

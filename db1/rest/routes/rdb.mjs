@@ -115,8 +115,17 @@ router.get("/", async (req, res) => {
     const stoptime = req.query.stopTime;
     const runClass = req.query.runClass;
     const comment = req.query.comment;  // Add comment parameter
+    
+    // Data Quality filter parameters
+    const dqMu3e = req.query.dqMu3e;
+    const dqBeam = req.query.dqBeam;
+    const dqVtx = req.query.dqVtx;
+    const dqPix = req.query.dqPix;
+    const dqFib = req.query.dqFib;
+    const dqTil = req.query.dqTil;
+    const dqLks = req.query.dqLks;
 
-    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass, comment });
+    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass, comment, dqMu3e, dqBeam, dqVtx, dqPix, dqFib, dqTil, dqLks });
 
     try {
         // Build the aggregation pipeline
@@ -155,6 +164,18 @@ router.get("/", async (req, res) => {
                                 input: "$Attributes",
                                 as: "attr",
                                 cond: { $eq: [{ $type: "$$attr.RunInfo" }, "object"] }
+                            }
+                        },
+                        -1  // Get the last element
+                    ]
+                },
+                lastDataQuality: {
+                    $arrayElemAt: [
+                        {
+                            $filter: {
+                                input: "$Attributes",
+                                as: "attr",
+                                cond: { $eq: [{ $type: "$$attr.DataQuality" }, "object"] }
                             }
                         },
                         -1  // Get the last element
@@ -199,6 +220,53 @@ router.get("/", async (req, res) => {
             });
         }
 
+        // Data Quality filters - build match conditions for each field
+        const dqMatchConditions = [];
+        const dqFieldMap = {
+            'dqMu3e': 'mu3e',
+            'dqBeam': 'beam',
+            'dqVtx': 'vertex',
+            'dqPix': 'pixel',
+            'dqFib': 'fibres',
+            'dqTil': 'tiles',
+            'dqLks': 'links'
+        };
+
+        // Process each Data Quality filter
+        for (const [paramName, fieldName] of Object.entries(dqFieldMap)) {
+            const filterValue = req.query[paramName];
+            if (filterValue !== undefined && filterValue !== '') {
+                if (filterValue === "-1") {
+                    // Unset: lastDataQuality is null, or field doesn't exist, or is not "1" or "0" (as string or number)
+                    dqMatchConditions.push({
+                        $or: [
+                            { "lastDataQuality": null },
+                            { [`lastDataQuality.DataQuality.${fieldName}`]: { $exists: false } },
+                            { [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["1", "0", 1, 0] } }
+                        ]
+                    });
+                } else {
+                    // Good (1) or Bad (0) - field must exist and match the value
+                    // Match both string and number versions since MongoDB can store either
+                    const numValue = parseInt(filterValue, 10);
+                    dqMatchConditions.push({
+                        [`lastDataQuality.DataQuality.${fieldName}`]: { $in: [filterValue, numValue] }
+                    });
+                }
+            }
+        }
+
+        // Apply Data Quality filters if any are specified
+        // All conditions must be met (AND logic)
+        if (dqMatchConditions.length > 0) {
+            // Combine all conditions with $and
+            if (dqMatchConditions.length === 1) {
+                pipeline.push({ $match: dqMatchConditions[0] });
+            } else {
+                pipeline.push({ $match: { $and: dqMatchConditions } });
+            }
+        }
+
         // Sort by run number descending
         pipeline.push({ $sort: { "BOR.Run number": -1 } });
 
@@ -218,7 +286,14 @@ router.get("/", async (req, res) => {
             'data': result,
             'onlySignificant': onlySignificant || 'yes',  // Default to 'yes' if not specified
             'runClass': runClass || '',  // Pass the run class to the template
-            'comment': comment || ''  // Pass the comment to the template
+            'comment': comment || '',  // Pass the comment to the template
+            'dqMu3e': dqMu3e || '',
+            'dqBeam': dqBeam || '',
+            'dqVtx': dqVtx || '',
+            'dqPix': dqPix || '',
+            'dqFib': dqFib || '',
+            'dqTil': dqTil || '',
+            'dqLks': dqLks || ''
         });
     } catch (error) {
         console.error("Error executing query:", error);
