@@ -245,6 +245,11 @@ router.get("/", async (req, res) => {
                             { [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["1", "0", 1, 0] } }
                         ]
                     });
+                } else if (filterValue === "notbad") {
+                    // Not Bad: field is not "0" or 0 (matches Good, Unset, or any value except Bad)
+                    dqMatchConditions.push({
+                        [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["0", 0] }
+                    });
                 } else {
                     // Good (1) or Bad (0) - field must exist and match the value
                     // Match both string and number versions since MongoDB can store either
@@ -257,14 +262,10 @@ router.get("/", async (req, res) => {
         }
 
         // Apply Data Quality filters if any are specified
-        // All conditions must be met (AND logic)
+        // All conditions must be met (AND logic) - explicitly use $and for all cases
         if (dqMatchConditions.length > 0) {
-            // Combine all conditions with $and
-            if (dqMatchConditions.length === 1) {
-                pipeline.push({ $match: dqMatchConditions[0] });
-            } else {
-                pipeline.push({ $match: { $and: dqMatchConditions } });
-            }
+            // Always use $and to ensure explicit AND logic, even for single condition
+            pipeline.push({ $match: { $and: dqMatchConditions } });
         }
 
         // Sort by run number descending
