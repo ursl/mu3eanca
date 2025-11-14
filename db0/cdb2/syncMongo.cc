@@ -17,7 +17,9 @@
 #include <bsoncxx/builder/stream/array.hpp>
 
 #include "cdbUtil.hh"
+#include "../../common/json.h"
 
+using json = nlohmann::ordered_json;
 
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::stream::close_array;
@@ -252,33 +254,33 @@ int main(int argc, char* argv[]) {
     buffer << INS.rdbuf();
     INS.close();
     
-    collectionContents = buffer.str();
 
-    // if (dirName == "runrecords") {
-    //   // -- check whether EOR is present
-    //   size_t pos = collectionContents.find("EOR");
-    //   if (string::npos == pos) {
-    //     cout << "EOR not found in ->" << it << "<- ... skipping" << endl;
-    //     continue;
-    //   }
-    //   // -- count multiple EORs
-    //   size_t pos2 = collectionContents.find("EOR");
-    //   if (string::npos != pos2) {
-    //     size_t pos3 = collectionContents.find("EOR", pos2 + 1);
-    //     if (string::npos != pos3) {
-    //       cout << "multiple EORs found in ->" << it << "<- ... skipping" << endl;
-    //       continue;
-    //     }
-    //   }
-
-    //   collectionContents = collectionContents.substr(0, collectionContents.size() - 3);
-    //   collectionContents += ",\n";
     
-    //   historyString = "  \"History\": ";
-    //   historyString += "[{\"date\": \"" + shortTimeStamp() + "\", \"comment\": \"Database entry inserted\"}]";
-    //   collectionContents += historyString + "\n";
-    //   collectionContents += "}";
-    // }
+    collectionContents = buffer.str();
+    
+    // -- parse buffer into nlohmann json
+    json j = json::parse(collectionContents);
+    
+    // -- drop the "_id" field if it exists
+    j.erase("_id");
+
+    // -- add History to json object j
+    j["History"] = json::array({json::object({{"date", shortTimeStamp()}, {"comment", "Database entry inserted"}})});
+    
+    if (dirName == "runrecords") {
+      // -- check whether EOR is present using nlohmann json
+      if (!j.contains("EOR")) {
+        cout << "EOR not found in ->" << it << "<- ... skipping" << endl;
+        continue;
+      }
+      // -- check if EOR appears multiple times (as array with multiple elements)
+      if (j["EOR"].is_array() && j["EOR"].size() > 1) {
+        cout << "multiple EORs found in ->" << it << "<- ... skipping" << endl;
+        continue;
+      }
+    }
+    // -- convert json object j back to string
+    collectionContents = j.dump();
     
     if (gDBX) {
       cout << "insert: " << it << endl
@@ -305,7 +307,11 @@ int main(int argc, char* argv[]) {
       bsoncxx::oid oid = insert_one_result->inserted_id().get_oid().value;
       std::string oidString = oid.to_string();
       cout << "oidString ->" << oidString << "<-" << endl;
- 
+
+      string sfilename = "./inserted/" + it.substr(it.rfind("/")+1);
+      ofstream ONS(sfilename);
+      ONS << collectionContents << endl;
+      ONS.close();
     }
   }
   
