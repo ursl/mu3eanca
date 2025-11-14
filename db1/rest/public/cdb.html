@@ -7,19 +7,83 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .container-fluid { padding: 20px; }
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .container-fluid { 
+            padding: 15px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .container-fluid h1 {
+            margin: 0 0 10px 0;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .main-row {
+            display: flex;
+            gap: 10px;
+            flex: 0 0 30vh;
+            min-height: 0;
+            margin-bottom: 10px;
+        }
+        .payloads-row {
+            display: flex;
+            flex: 0 0 30vh;
+            min-height: 0;
+            margin-bottom: 10px;
+        }
+        .detconfigs-row {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+        .half-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .full-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
         .data-box {
             border: 1px solid #dee2e6;
             border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 20px;
-            height: 500px;
-            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
         }
         .data-box h3 {
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            margin: 0 0 8px 0;
+            padding: 0 0 8px 0;
             border-bottom: 2px solid #dee2e6;
+            flex-shrink: 0;
+            line-height: 1.2;
+            font-size: 16px;
+        }
+        .data-box > div:not(.table-responsive) {
+            flex-shrink: 0;
+        }
+        .data-box .table-responsive {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: auto;
         }
         .table-hover tbody tr:hover {
             cursor: pointer;
@@ -61,18 +125,31 @@
         #payloads-table td {
             padding: 6px 8px;
         }
+        .table {
+            font-size: 13px;
+            margin-bottom: 0;
+        }
+        .table th,
+        .table td {
+            padding: 6px 8px;
+        }
+        .form-control {
+            font-size: 13px;
+            padding: 4px 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container-fluid">
         <h1 class="mb-4">MU3E CDB Browser</h1>
         
-        <div class="row">
+        <!-- Global Tags and Tags Row -->
+        <div class="main-row">
             <!-- Globaltags Box -->
-            <div class="col-md-6">
+            <div class="half-column">
                 <div class="data-box">
-                    <h3>Global Tags</h3>
-                    <div class="mb-3">
+                    <h3>Global Tags1</h3>
+                    <div style="margin-bottom: 8px; flex-shrink: 0;">
                         <input type="text" class="form-control" id="globaltag-filter" placeholder="Filter global tags...">
                     </div>
                     <div id="globaltags-loading" class="loading"></div>
@@ -90,7 +167,7 @@
             </div>
 
             <!-- Tags Box -->
-            <div class="col-md-6">
+            <div class="half-column">
                 <div class="data-box">
                     <h3>Tags <span id="tags-tag-label" style="font-weight: normal; color: #555; vertical-align: baseline;"></span></h3>
                     <div id="tags-loading" class="loading"></div>
@@ -107,9 +184,10 @@
                 </div>
             </div>
         </div>
-        <!-- Payloads Box below -->
-        <div class="row">
-            <div class="col-12">
+        
+        <!-- Payloads Box -->
+        <div class="payloads-row">
+            <div class="full-column">
                 <div class="data-box">
                     <h3>Payloads <span id="payloads-tag-label" style="font-weight: normal; color: #555; vertical-align: baseline;"></span></h3>
                     <div id="payloads-loading" class="loading"></div>
@@ -129,12 +207,13 @@
                 </div>
             </div>
         </div>
-        <!-- Detconfigs Summary Box below -->
-        <div class="row">
-            <div class="col-12">
+        
+        <!-- Detconfigs Summary Box -->
+        <div class="detconfigs-row">
+            <div class="full-column">
                 <div class="data-box">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="mb-0">Detconfigs Summary</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-shrink: 0;">
+                        <h3 style="margin: 0; padding: 0 0 8px 0; border-bottom: 2px solid #dee2e6;">Detconfigs Summary</h3>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
                             <i class="bi bi-upload"></i> Upload Files
                         </button>
