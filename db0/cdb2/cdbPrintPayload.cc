@@ -62,33 +62,65 @@ int main(int argc, const char* argv[]) {
   } else if (string::npos != filename.find("fibrealignment_")) {
     c = new calFibreAlignment();
     c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("mppcalignment_")) {
     c = new calMppcAlignment();
     c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("tilealignment_")) {
     c = new calTileAlignment();
     c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("detconfv1_")) {
     c = new calDetConfV1();
     c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("detsetupv1_")) {
     c = new calDetSetupV1();
     c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixelquality_")) {
     c = new calPixelQuality();
     c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixelqualitylm_")) {
     c = new calPixelQualityLM();
     c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixelcabling_")) {
     c = new calPixelCablingMap();
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->readPayloadFromFile(hash, pdir);
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
     
