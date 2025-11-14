@@ -90,6 +90,7 @@ int main(int argc, char* argv[]) {
   bool debug(false);
   int firstRun(0), lastRun(-1), mode(0);
   string runfile("unset");
+  string gt("datav6.3=2025V0");
   for (int i = 0; i < argc; i++) {
     // -- runfile
     if (!strcmp(argv[i], "-r"))    {runfile = string(argv[++i]);}
@@ -100,6 +101,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-f"))    {firstRun = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-l"))    {lastRun = atoi(argv[++i]);}
     // -- stuff
+    if (!strcmp(argv[i], "-g"))    {gt = string(argv[++i]);}
     if (!strcmp(argv[i], "-h"))    {hostString = string(argv[++i]);}
     if (!strcmp(argv[i], "-t"))    {runInfoTemplateFile = string(argv[++i]);}
     // -- selection for runlist output (mode = 2)
@@ -132,8 +134,8 @@ int main(int argc, char* argv[]) {
 
   cdbAbs *pDB(0);
 
-  pDB = new cdbRest("mcidealv6.1", urlString, 0);
-  Mu3eConditions *pDC = Mu3eConditions::instance("mcidealv6.1", pDB);
+  pDB = new cdbRest(gt, urlString, 0);
+  Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
 
 
   if (2 == mode) {
@@ -161,8 +163,16 @@ int main(int argc, char* argv[]) {
     vRunNumbers = split(fileContent, ',');
   } 
 
-  cout << "vRunNumbers.size() ->" << vRunNumbers.size() << "<-" << endl;
 
+
+  if (debug) {
+    cout << "vRunNumbers.size() ->" << vRunNumbers.size() << "<-" << endl;
+    for (const auto &irun : vRunNumbers) {
+      cout << "irun ->" << irun << "<-" << endl;
+    }
+    return 0;
+  }
+  
   for (int it = 0; it < vRunNumbers.size(); ++it) {
     int irun = stoi(vRunNumbers[it]);
     if (irun < firstRun) continue;
@@ -466,9 +476,29 @@ void rdbMode3(int irun, string key, string value, bool debug) {
         
         // Navigate to the nested key
         json* current = &j;
+        cout << "current: " << current->dump() << endl;
         for (size_t i = 0; i < keyParts.size() - 1; ++i) {
-          if (current->contains(keyParts[i])) {
+          cout << "keyParts[" << i << "] = " << keyParts[i] << endl;
+          if (current->is_array()) {
+            // If current is an array, search for an object containing the key
+            bool found = false;
+            for (auto& elem : *current) {
+              if (elem.is_object() && elem.contains(keyParts[i])) {
+                current = &elem[keyParts[i]];
+                found = true;
+                cout << " current: " << current->dump() << endl;
+                break;
+              }
+            }
+            if (!found) {
+              cerr << "Key path not found: " << keyParts[i] << " in array in path " << key << endl;
+              curl_slist_free_all(headers);
+              curl_easy_cleanup(curl);
+              return;
+            }
+          } else if (current->contains(keyParts[i])) {
             current = &((*current)[keyParts[i]]);
+            cout << " current: " << current->dump() << endl;
           } else {
             cerr << "Key path not found: " << keyParts[i] << " in path " << key << endl;
             curl_slist_free_all(headers);
@@ -480,9 +510,11 @@ void rdbMode3(int irun, string key, string value, bool debug) {
         // Get the final key part
         string finalKey = keyParts.back();
         
+        cout << "finalKey: " << finalKey << endl;
         // Check if the final key exists
         if (current->contains(finalKey)) {
           // Store the old value for logging
+          cout << "current before update: " << current->dump() << endl;
           string oldValue = (*current)[finalKey].dump();
           
           // Handle the value update
@@ -495,7 +527,7 @@ void rdbMode3(int irun, string key, string value, bool debug) {
             // Normal update (or append on non-string which becomes a normal update)
             (*current)[finalKey] = convertValueToType(value);
           }
-          
+          cout << "current after update: " << current->dump() << endl;
           // Convert back to string
           responseData = j.dump(2);  // Pretty print with 2-space indentation
           
