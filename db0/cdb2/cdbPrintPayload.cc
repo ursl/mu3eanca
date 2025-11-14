@@ -117,11 +117,11 @@ int main(int argc, const char* argv[]) {
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixelcabling_")) {
     c = new calPixelCablingMap();
+    c->readPayloadFromFile(hash, pdir);
     cout << "hash:    " << c->getPayload(hash).fHash << endl;
     cout << "comment: " << c->getPayload(hash).fComment << endl;
     cout << "schema:  " << c->getPayload(hash).fSchema << endl;
     cout << "date:    " << c->getPayload(hash).fDate << endl;
-    c->readPayloadFromFile(hash, pdir);
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
     
   }
