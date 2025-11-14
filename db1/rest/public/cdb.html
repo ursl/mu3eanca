@@ -54,6 +54,13 @@
         .btn-group .btn:last-child {
             margin-right: 0;
         }
+        #payloads-table {
+            font-size: 12px;
+        }
+        #payloads-table th,
+        #payloads-table td {
+            padding: 6px 8px;
+        }
     </style>
 </head>
 <body>
@@ -352,16 +359,22 @@
                     return;
                 }
                 
-                // Sort payloads by IOV number
+                // Sort payloads by IOV number (descending - highest first)
                 data.payloads.sort((a, b) => {
                     const iovA = parseInt(a.hash.split("_iov_")[1]);
                     const iovB = parseInt(b.hash.split("_iov_")[1]);
-                    return iovA - iovB;
+                    return iovB - iovA;
                 });
                 
                 // Set the tag label next to the Payloads title
                 const tagLabel = document.getElementById("payloads-tag-label");
-                tagLabel.textContent = `${data.tag} (Total IOVs: ${data.iovs.length})`;
+                let labelText = `${data.tag} (Total IOVs: ${data.iovs.length})`;
+                if (data.hasMore) {
+                    labelText += ` - Showing ${data.returnedCount} of ${data.totalCount} payloads`;
+                } else if (data.totalCount) {
+                    labelText += ` (${data.totalCount} payloads)`;
+                }
+                tagLabel.textContent = labelText;
                 
                 // Add each payload
                 data.payloads.forEach(payload => {

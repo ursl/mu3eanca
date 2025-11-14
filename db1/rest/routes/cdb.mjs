@@ -372,7 +372,7 @@ router.get("/findPayloadsByTag/:tag", async (req, res) => {
     
     if (!tag || !tag.iovs) {
       console.log("No tag found or no IOVs array:", req.params.tag);
-      return res.send([]).status(200);
+      return res.send({ tag: req.params.tag, iovs: [], payloads: [] }).status(200);
     }
     
     console.log("Found tag with IOVs:", tag.iovs);
@@ -382,20 +382,42 @@ router.get("/findPayloadsByTag/:tag", async (req, res) => {
     let query = {hash: { $regex: "^tag_" + req.params.tag + "_iov_" }};
     console.log("MongoDB query for payloads:", JSON.stringify(query));
     
-    let results = await payloadsCollection.find(query).toArray();
-    console.log("Found payloads:", results.length);
+    // Add a limit to prevent memory issues with very large datasets
+    // Default limit is 1000, but can be overridden with query parameter
+    const limit = parseInt(req.query.limit) || 1000;
+    
+    // Get count first to inform the client
+    const totalCount = await payloadsCollection.countDocuments(query);
+    console.log("Total payloads found:", totalCount);
+    
+    // Fetch payloads with limit and only essential fields to reduce response size
+    let results = await payloadsCollection.find(query)
+      .project({ hash: 1, date: 1, comment: 1, schema: 1, _id: 0 }) // Only include essential fields
+      .sort({ date: -1 }) // Sort by date descending
+      .limit(limit)
+      .toArray();
+    
+    console.log("Returning payloads:", results.length, "of", totalCount);
     
     // Add the IOVs array from the tag document to the response
     let response = {
       tag: tag.tag,
       iovs: tag.iovs,
-      payloads: results
+      payloads: results,
+      totalCount: totalCount,
+      returnedCount: results.length,
+      hasMore: totalCount > limit
     };
     
     res.send(response).status(200);
   } catch (error) {
     console.error("Error in findPayloadsByTag:", error);
-    res.status(500).send({ error: error.message });
+    console.error("Error stack:", error.stack);
+    res.status(500).json({ 
+      error: error.message,
+      details: error.toString(),
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
