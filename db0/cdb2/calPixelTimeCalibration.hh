@@ -5,6 +5,8 @@
 
 #include <string>
 #include <map>
+#include <array>
+#include <vector>
 
 
 // ----------------------------------------------------------------------
@@ -26,6 +28,20 @@ public:
   void readTxtFile(std::string filename); 
   void writeTxtFile(std::string filename);
 
+  // -- struct for constants
+  struct constants {
+    double mean;
+    double meanerr;
+    double sigma;
+    double sigmaerr;
+  };
+
+  // -- get constants indexed by ichip, isector, itotbin
+  const constants& getConstants(int ichip, int isector, int itotbin) const;
+  double getMean(int ichip, int isector, int itotbin) const;
+  double getMeanErr(int ichip, int isector, int itotbin) const;
+  double getSigma(int ichip, int isector, int itotbin) const;
+  double getSigmaErr(int ichip, int isector, int itotbin) const;
 
   bool        getNextID(uint32_t &ID);
 
@@ -35,25 +51,13 @@ private:
   std::string fPixelTimeCalibrationTag{"pixeltimecalibration_"};
   std::string fSchema{"ui_id,bla"};
 
-  // -- local and private
-  struct constants {
-    int chipnr;
-    int sector;
-    int totbin;
-    double mean;
-    double meanerr;
-    double sigma;
-    double sigmaerr;
-  };
-
   // -- constants
   static const int NCALIBRATIONCHIPS{108};
   static const int NSECTOR{6};
   static const int NTOTBINS{32};
-  
-  // -- array of constants
-  std::array<std::array<std::array<constants, NTOTBINS>, NSECTOR>, NCALIBRATIONCHIPS> fArrayConstants;
 
+  // -- array of constants (vector for first dimension, arrays for nested dimensions)
+  std::map<int, std::array<std::array<constants, NTOTBINS>, NSECTOR>> fMapConstants;
 
 };
 

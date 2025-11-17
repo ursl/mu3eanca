@@ -25,7 +25,7 @@ calPixelTimeCalibration::~calPixelTimeCalibration() {
 
 // ----------------------------------------------------------------------
 void calPixelTimeCalibration::calculate(string hash) {
-  if (fVerbose > 0) cout << "calPixelQualityLM::calculate() with "
+  if (fVerbose > 0) cout << "calPixelTimeCalibration::calculate() with "
        << "fHash ->" << hash << "<-"
        << endl;
   string spl = fTagIOVPayloadMap[hash].fBLOB;
@@ -50,12 +50,19 @@ void calPixelTimeCalibration::printBLOB(std::string sblob, int verbosity) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calPixelQuality::printBLOB(string)" << endl;
+  cout << "calPixelTimeCalibration::printBLOB(string)" << endl;
   cout << "   header: " << hex << header << dec << " (note: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off)" << endl;
 
   while (ibuffer != buffer.end()) {
-    // -- chipID
-    unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
+    unsigned int ichip = blob2UnsignedInt(getData(ibuffer));
+    unsigned int isector = blob2UnsignedInt(getData(ibuffer));
+    unsigned int itotbin = blob2UnsignedInt(getData(ibuffer));
+    constants a;  
+    a.mean = blob2Double(getData(ibuffer));
+    a.meanerr = blob2Double(getData(ibuffer));
+    a.sigma = blob2Double(getData(ibuffer));
+    a.sigmaerr = blob2Double(getData(ibuffer));
+    fMapConstants[ichip][isector][itotbin] = a;
   }
 }
 
@@ -111,82 +118,86 @@ string calPixelTimeCalibration::makeBLOB() {
 // ----------------------------------------------------------------------
 void calPixelTimeCalibration::readTxtFile(string filename) {
 
-
-  int ibin, ichip, isector; 
-  double mean, meanerr, sigma, sigmaerr;
   FILE *cf = fopen(filename.c_str(), "r");
+  fMapConstants.clear();
 
-  for(uint bin =0; bin < NTOTBINS; bin++){
-    fscanf(cf, "%i %lf %lf %lf %lf\n",
-        &ibin,
-        &mean,
-        &meanerr,
-        &sigma,
-        &sigmaerr);
-}
-for(uint chip =0; chip < NCALIBRATIONCHIPS; chip++){
+  int c(0), s(0), b(0);
+  for(uint chip = 0; chip < NCALIBRATIONCHIPS; chip++){
+    std::array<std::array<constants, NTOTBINS>, NSECTOR> arr;
     for(uint sector = 0; sector < NSECTOR; sector++){
-        fscanf(cf, "%i %i %lf %lf %lf %lf\n",
-        &ichip,
-        &isector,
-        &mean,
-        &meanerr,
-        &sigma,
-        &sigmaerr
-    );
-    }
-}
-for(uint chip =0; chip < NCALIBRATIONCHIPS; chip++){
-    for(uint tot = 0; tot < NTOTBINS; tot++){
-        fscanf(cf, "%i %i %lf %lf %lf %lf\n",
-        &ichip,
-        &ibin,
-        &mean,
-        &meanerr,
-        &sigma,
-        &sigmaerr
-    );
-    }
-}
- 
-for(uint chip = 0; chip < NCALIBRATIONCHIPS; chip++){
-    for(uint sector = 0; sector < NSECTOR; sector++){
-        for(uint tot = 0; tot < NTOTBINS; tot++){
-            fscanf(cf, "%i %i %i %lf %lf %lf %lf\n",
-            &(fArrayConstants[chip][sector][tot].chipnr),
-            &(fArrayConstants[chip][sector][tot].sector),
-            &(fArrayConstants[chip][sector][tot].totbin),
-            &(fArrayConstants[chip][sector][tot].mean),
-            &(fArrayConstants[chip][sector][tot].meanerr),
-            &(fArrayConstants[chip][sector][tot].sigma),
-            &(fArrayConstants[chip][sector][tot].sigmaerr)
-            );
+      for(uint tot = 0; tot < NTOTBINS; tot++){
+        fscanf(cf, "%i %i %i %lf %lf %lf %lf\n",
+          &c,
+          &s,
+          &b,
+          &(arr[sector][tot].mean),
+          &(arr[sector][tot].meanerr),
+          &(arr[sector][tot].sigma),
+          &(arr[sector][tot].sigmaerr));
+        if (s != sector || b != tot) {
+          cout << "calPixelTimeCalibration::readTxtFile> Error, sector or tot mismatch: expected (" << sector << "," << tot << ") got (" << s << "," << b << ")" << endl;
         }
+      }
     }
-}
-fclose(cf);
- 
-
+    fMapConstants.insert(make_pair(c, arr));
+  }
+  fclose(cf);
+  cout << "calPixelTimeCalibration::readTxtFile> read " << fMapConstants.size() << " chips" << endl;
 }
 
 // ----------------------------------------------------------------------
 void calPixelTimeCalibration::writeTxtFile(string filename) {
   FILE *cf = fopen(filename.c_str(), "w");
 
-  for(uint chip = 0; chip < NCALIBRATIONCHIPS; chip++){
+  for(auto it: fMapConstants){
+    uint chip = it.first;
+    std::array<std::array<constants, NTOTBINS>, NSECTOR> a = it.second;
     for(uint sector = 0; sector < NSECTOR; sector++){
       for(uint tot = 0; tot < NTOTBINS; tot++){
         fprintf(cf, "%i %i %i %lf %lf %lf %lf\n",
-        fArrayConstants[chip][sector][tot].chipnr,
-        fArrayConstants[chip][sector][tot].sector,
-        fArrayConstants[chip][sector][tot].totbin,
-        fArrayConstants[chip][sector][tot].mean,
-        fArrayConstants[chip][sector][tot].meanerr,
-        fArrayConstants[chip][sector][tot].sigma,
-        fArrayConstants[chip][sector][tot].sigmaerr);
+        chip, sector, tot,
+        a[sector][tot].mean,
+        a[sector][tot].meanerr,
+        a[sector][tot].sigma,
+        a[sector][tot].sigmaerr);
       }
     }
   }
   fclose(cf);
+}
+
+// ----------------------------------------------------------------------
+const calPixelTimeCalibration::constants& calPixelTimeCalibration::getConstants(int ichip, int isector, int itotbin) const {
+  auto it = fMapConstants.find(ichip);
+  if (it == fMapConstants.end()) {
+    static constants empty{0.0, 0.0, 0.0, 0.0};
+    return empty;
+  }
+  // -- bounds checking for array indices
+  if (isector < 0 || isector >= NSECTOR || itotbin < 0 || itotbin >= NTOTBINS) {
+    static constants empty{0.0, 0.0, 0.0, 0.0};
+    return empty;
+  }
+  return it->second[isector][itotbin];
+}
+
+// ----------------------------------------------------------------------
+double calPixelTimeCalibration::getMean(int ichip, int isector, int itotbin) const {
+  return getConstants(ichip, isector, itotbin).mean;
+}
+
+// ----------------------------------------------------------------------
+double calPixelTimeCalibration::getMeanErr(int ichip, int isector, int itotbin) const {
+  return getConstants(ichip, isector, itotbin).meanerr;
+}
+
+// ----------------------------------------------------------------------
+double calPixelTimeCalibration::getSigma(int ichip, int isector, int itotbin) const {
+  return getConstants(ichip, isector, itotbin).sigma;
+}
+
+// ----------------------------------------------------------------------
+double calPixelTimeCalibration::getSigmaErr(int ichip, int isector, int itotbin) const {
+  return getConstants(ichip, isector, itotbin).sigmaerr;
 }
 
