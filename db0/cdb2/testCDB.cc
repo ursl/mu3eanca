@@ -14,6 +14,7 @@
 #include "calMppcAlignment.hh"
 #include "calDetConfV1.hh"
 #include "calPixelQualityLM.hh"
+#include "calPixelTimeCalibration.hh"
 
 
 using namespace std;
@@ -227,7 +228,32 @@ int main(int argc, char* argv[]) {
     cout << "Test pixel quality LM" << endl;
     calPixelQualityLM *cpq = new calPixelQualityLM();
     cpq->readCsv("/Users/ursl/mu3e/mu3eanca/run2025/analysis/csv/pixelqualitylm-run483.csv");
+  } else if (11 == mode) {
+    cout << "Test pixel time calibration" << endl;
+    calPixelTimeCalibration *cpt = new calPixelTimeCalibration();
+    cpt->readTxtFile("ascii/largecalib.calib");
+    cpt->writeTxtFile("ascii/newlargecalib.calib");
+    string sblob = cpt->makeBLOB();
 
+    cpt->printBLOB(sblob, 1000);
+
+    payload pl;
+    pl.fHash = "tag_pixeltimecalibration_new_iov_1";
+    pl.fComment = "new large calib";
+    pl.fSchema = "ui_id,usector,utotbin,mean,meanerr,sigma,sigmaerr";
+    pl.fBLOB = sblob;
+    cout << "######################################################################" << endl;
+    cout << "### createPayload" << endl;
+    cout <<  pl.printString(false) << endl;
+    cpt->printBLOB(sblob);
+    cout << "######################################################################" << endl;
+    cpt->writeTxtFile("ascii/newlargecalibFromBLOB.calib");
+    cpt->writePayloadToFile("tag_pixeltimecalibration_iov_1", ".", pl);
+
+    calPixelTimeCalibration *cpt2 = new calPixelTimeCalibration();
+    cpt2->readPayloadFromFile("tag_pixeltimecalibration_iov_1", ".");
+    cpt2->calculate("tag_pixeltimecalibration_iov_1");
+    cpt2->writeTxtFile("ascii/newlargecalibFromPayload.calib");
   }
   return 0;
 }

@@ -18,6 +18,7 @@
 #include "calPixelCablingMap.hh"
 #include "calPixelQuality.hh"
 #include "calPixelQualityLM.hh"
+#include "calPixelTimeCalibration.hh"
 
 #include "calFibreAlignment.hh"
 
@@ -123,7 +124,14 @@ int main(int argc, const char* argv[]) {
     cout << "schema:  " << c->getPayload(hash).fSchema << endl;
     cout << "date:    " << c->getPayload(hash).fDate << endl;
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
-    
+  } else if (string::npos != filename.find("pixeltimecalibration_")) {
+    c = new calPixelTimeCalibration();
+    c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   }
   
   

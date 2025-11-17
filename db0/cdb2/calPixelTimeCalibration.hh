@@ -49,7 +49,7 @@ public:
 
 private:
   std::string fPixelTimeCalibrationTag{"pixeltimecalibration_"};
-  std::string fSchema{"ui_id,bla"};
+  std::string fSchema{"ui_id,ui_sector,ui_totbin,mean,meanerr,sigma,sigmaerr"};
 
   // -- constants
   static const int NCALIBRATIONCHIPS{108};
