@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
       sstr << "{ \"gt\" : \"" << it << "\", \"tags\" : ";
       sstr << jsFormat(vTags);
       sstr << " }" << endl;
-      ofstream ofs(dirPath + "/globalTags/" + it);
+      ofstream ofs(dirPath + "/globaltags/" + it);
       ofs << sstr.str();
       ofs.close();
     
