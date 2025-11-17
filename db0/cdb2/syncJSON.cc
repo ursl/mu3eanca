@@ -27,6 +27,7 @@
 //            -f  run          provide a first run number
 //            -l  run          provide a last run number
 //            -m, --max runs   provide a maximum number of runs to dump
+//            -p, --pat pattern provide a pattern to match the global tags
 //            -r               RDB only
 // ----------------------------------------------------------------------
 
@@ -53,6 +54,8 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-f"))     {firstRun = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-l"))     {lastRun = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-m"))     {maxRuns = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-p"))     {pattern = string(argv[++i]);}
+    if (!strcmp(argv[i], "--pat"))  {pattern = string(argv[++i]);}
     if (!strcmp(argv[i], "-r"))     {rdbOnly = true;}
     if (!strcmp(argv[i], "--rdb"))  {rdbOnly = true;}
   }
@@ -85,6 +88,12 @@ int main(int argc, char* argv[]) {
   
   if (!rdbOnly) {
     for (auto it: vGlobalTags) {
+      if (pattern != "unset") {
+        if (string::npos == it.find(pattern)) {
+          cout << "pattern ->" << pattern << "<- not matched to ->" << it << "<- ... skipping" << endl;
+          continue;
+        }
+      }
       // -- write global tag to file
       vector<string> vTags = pDB->readTags(it);
       cout << "global tag: " << it << endl;
