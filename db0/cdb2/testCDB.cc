@@ -238,9 +238,9 @@ int main(int argc, char* argv[]) {
     cpt->printBLOB(sblob, 1000);
 
     payload pl;
-    pl.fHash = "tag_pixeltimecalibration_new_iov_1";
-    pl.fComment = "new large calib";
-    pl.fSchema = "ui_id,usector,utotbin,mean,meanerr,sigma,sigmaerr";
+    pl.fHash = "tag_pixeltimecalibration_datav6.3=2025V0_iov_1";
+    pl.fComment = "PixelTimeCalibration";
+    pl.fSchema = cpt->getSchema();
     pl.fBLOB = sblob;
     cout << "######################################################################" << endl;
     cout << "### createPayload" << endl;
@@ -248,7 +248,7 @@ int main(int argc, char* argv[]) {
     cpt->printBLOB(sblob);
     cout << "######################################################################" << endl;
     cpt->writeTxtFile("ascii/newlargecalibFromBLOB.calib");
-    cpt->writePayloadToFile("tag_pixeltimecalibration_iov_1", ".", pl);
+    cpt->writePayloadToFile(pl.fHash, ".", pl);
 
     calPixelTimeCalibration *cpt2 = new calPixelTimeCalibration();
     cpt2->readPayloadFromFile("tag_pixeltimecalibration_iov_1", ".");
