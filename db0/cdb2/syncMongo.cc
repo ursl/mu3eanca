@@ -98,7 +98,16 @@ void clearCollection(string scollection, string pattern) {
   auto collection = db[scollection];
   
   if (pattern != "unset") {
-    auto tagCursor     = collection.find(document{} << "tag" << pattern << finalize);
+    auto gtCursor     = collection.find(document{} << "gt" << open_document << "$regex" << pattern << "$options" << "i" << close_document << finalize);
+    cout << "hello" << endl;
+    for (auto doc : gtCursor) {
+      cout << "*********** Global Tags *** " << endl;
+      cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      auto delete_one_result = collection.delete_one(doc);
+      cout << "*** deleted" << endl;
+    }
+
+    auto tagCursor     = collection.find(document{} << "tag" << open_document << "$regex" << pattern << "$options" << "i" << close_document << finalize);
     cout << "hello" << endl;
     for (auto doc : tagCursor) {
       cout << "*********** Tags *** " << endl;
@@ -107,7 +116,7 @@ void clearCollection(string scollection, string pattern) {
       cout << "*** deleted" << endl;
     }
     
-    auto hashCursor    = collection.find(document{} << "hash" << pattern << finalize);
+    auto hashCursor    = collection.find(document{} << "hash" << open_document << "$regex" << pattern << "$options" << "i" << close_document << finalize);
     for (auto doc : hashCursor) {
       cout << "*********** Hash *** " << endl;
       cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
@@ -115,7 +124,7 @@ void clearCollection(string scollection, string pattern) {
       cout << "*** deleted" << endl;
     }
     
-    auto cfgHashCursor = collection.find(document{} << "cfgHash" << pattern << finalize);
+    auto cfgHashCursor = collection.find(document{} << "cfgHash" << open_document << "$regex" << pattern << "$options" << "i" << close_document << finalize);
     for (auto doc : cfgHashCursor) {
       cout << "*********** cfgHash *** " << endl;
       cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
