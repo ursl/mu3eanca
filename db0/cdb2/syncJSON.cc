@@ -19,6 +19,10 @@
 // 
 // Usage:     ./bin/syncJSON --dir junk [-a] [-h pc11740]
 // -----
+// 
+// Examples:  ./bin/syncJSON --dir /Users/ursl/data/mu3e/test-cdb --host localhost -m payload --pat tag_pixelalignment_datav6.3=2025V1test_iov_1 -c
+//            ./bin/syncJSON --dir /Users/ursl/data/mu3e/test-cdb --host localhost -m tag --pat pixelalignment_datav6.3=2025V1test -c
+//            ./bin/syncJSON --dir /Users/ursl/data/mu3e/test-cdb --host localhost -m gt --pat datav6.3=2025V1test -c
 //
 // Options:   -a, --all        all runs dumped into the runrecords
 // -------    -c               CDB only
@@ -180,12 +184,12 @@ int main(int argc, char* argv[]) {
       }
     } else if (mode == "payload") {
       vector<string> vGlobalTags = pDB->readGlobalTags();
-      cout << "  dbx vGlobalTags: " << vGlobalTags.size() << endl;
+      // cout << "  dbx vGlobalTags: " << vGlobalTags.size() << endl;
       for (auto it: vGlobalTags) {
         vector<string> vTags = pDB->readTags(it);
-        cout << "  dbx vTags: " << vTags.size() << endl;
+        //cout << "  dbx vTags: " << vTags.size() << endl;
         for (auto ittt: vTags) {
-          cout << "  dbx ittt: " << ittt << endl;
+          //cout << "  dbx ittt: " << ittt << endl;
             map<string, vector<int>> mIOVs = pDB->readIOVs(vTags);
             string ppattern = pattern;
             if (string::npos != ppattern.find("tag_")) {
@@ -194,7 +198,7 @@ int main(int argc, char* argv[]) {
             if (string::npos != ppattern.find("_iov_")) {
               ppattern = ppattern.substr(0, ppattern.rfind('_iov_')-5);
             }
-            cout << "  dbx ppattern: " << ppattern << endl;
+            //cout << "  dbx ppattern: " << ppattern << endl;
             if ((pattern != "unset") && (string::npos == ittt.find(ppattern))) {
               continue;
             }
