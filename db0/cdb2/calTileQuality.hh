@@ -25,22 +25,17 @@ public:
   ~calTileQuality();
 
   // -- direct accessors
-  int channelQuality(uint32_t id, int channelIdx) {return fMapConstants[id].quality;}
+  Status getChannelQuality(uint32_t id) {return static_cast<Status>(fMapConstants[id].quality);}
 
   std::string getName() override {return fTileQualityTag;}
   void        calculate(std::string hash) override;
 
   std::string makeBLOB() override;
-  std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) override;
-  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
   void printBLOB(std::string, int verbosity = 1) override;
   void writeCsv(std::string filename);
   void readCsv(std::string filename);
 
-  virtual Status getStatus(unsigned int chipid, int icol, int irow);
-
   bool        getNextID(uint32_t &ID);
-  void        printChannelQuality(uint32_t id, int channelIdx);
 
   std::string getSchema() override {return fSchema;}
 

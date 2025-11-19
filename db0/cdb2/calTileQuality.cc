@@ -58,44 +58,14 @@ void calTileQuality::calculate(string hash) {
 
   int npix(0);
   while (ibuffer != buffer.end()) {
-    constants a;
-    // -- chipID
-    a.id = blob2UnsignedInt(getData(ibuffer));
-    // -- get number of pixel entries
-    npix = blob2Int(getData(ibuffer));
-    // -- initialize matrix with zero before filling specified pixels
-    a.quality = 0;
-    for (int i = 0; i < npix; ++i) {
-      int channelIdx     = blob2Int(getData(ibuffer));
-      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      a.vChannelQuality[channelIdx] = static_cast<int>(iqual);
-    }
-    // cout << "inserting " << a.id << " with size = " << sizeof(a) << endl;
-    fMapConstants.insert(make_pair(a.id, a));
+    constants cq;
+    cq.id = blob2UnsignedInt(getData(ibuffer));
+    cq.quality = blob2Int(getData(ibuffer));
+    fMapConstants.insert(make_pair(cq.id, cq));
   }
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
-}
-
-
-// ----------------------------------------------------------------------
-calTileQuality::Status calTileQuality::getStatus(unsigned int chipid, int channelIdx) {
-  if (fMapConstants.find(chipid) == fMapConstants.end()) {
-    return Status::ChannelNotFound; // -- channel not found
-  }
-  return static_cast<Status>(fMapConstants[chipid].vChannelQuality[channelIdx]);
-}
-
-
-// ----------------------------------------------------------------------
-void calTileQuality::printChannelQuality(unsigned int chipid, int channelIdx) {
-  if (fMapConstants[chipid].vChannelQuality[channelIdx] > 0) {
-    cout << "chipID = " << chipid
-         << " channelIdx = " << channelIdx
-         << " status = " << static_cast<unsigned int>(fMapConstants[chipid].vChannelQuality[channelIdx])
-         << endl;
-  }
 }
 
 
@@ -109,30 +79,21 @@ string calTileQuality::makeBLOB() {
   // chipID => [quality]
   for (auto it: fMapConstants) {
     s << dumpArray(uint2Blob(it.first));
-    constants a = it.second;
-    s << dumpArray(int2Blob(a.quality));
+    s << dumpArray(int2Blob(it.second.quality));
   }
   return s.str();
 }
 
 // ----------------------------------------------------------------------
-map<unsigned int, vector<double> > decodeBLOB(std::string) {
-  std::map<unsigned int, calTileQuality::constants> vmap;
-  return vmap;
+void calTileQuality::printBLOB(std::string blob, int verbosity) {
+  cout << "calTileQuality::printBLOB() with "
+       << "blob ->" << blob << "<-"
+       << endl;
+  cout << "calTileQuality::printBLOB() with "
+       << "verbosity ->" << verbosity << "<-"
+       << endl;
 }
 
-
-// ----------------------------------------------------------------------
-std::string calTileQuality::makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
-  return "";
-}
-
-
-// ----------------------------------------------------------------------
-map<unsigned int, vector<double> > decodeBLOB() {
-  std::map<unsigned int, calTileQuality::constants> vmap;
-  return vmap;
-}
 
 // ----------------------------------------------------------------------
 void calTileQuality::writeCsv(string filename) {
