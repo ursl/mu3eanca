@@ -113,44 +113,6 @@ void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-map<unsigned int, vector<double> > calTileAlignment::decodeBLOB(string spl) {
-  map<unsigned int, vector<double> > vmap;
-
-  std::vector<char> buffer(spl.begin(), spl.end());
-  std::vector<char>::iterator ibuffer = buffer.begin();
-
-  unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calTileAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
-  }
-  while (ibuffer != buffer.end()) {
-    unsigned int id = blob2UnsignedInt(getData(ibuffer));
-    int sensor      = blob2Int(getData(ibuffer));
-    vector<double> vdet;
-    constants a;
-    a.sensor = sensor;
-    a.id = id;
-    a.posx = blob2Double(getData(ibuffer));
-    a.posy = blob2Double(getData(ibuffer));
-    a.posz = blob2Double(getData(ibuffer));
-    a.dirx = blob2Double(getData(ibuffer));
-    a.diry = blob2Double(getData(ibuffer));
-    a.dirz = blob2Double(getData(ibuffer));
-    vdet.push_back(static_cast<double>(sensor));
-    vdet.push_back(a.posx);
-    vdet.push_back(a.posy);
-    vdet.push_back(a.posz);
-    vdet.push_back(a.dirx);
-    vdet.push_back(a.diry);
-    vdet.push_back(a.dirz);
-    vmap.insert(make_pair(id, vdet));
-  }
-
-  return vmap;
-}
-
-
-// ----------------------------------------------------------------------
 string calTileAlignment::makeBLOB() {
   stringstream s;
   unsigned int header(0xdeadface);

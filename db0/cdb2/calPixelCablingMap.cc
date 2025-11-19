@@ -99,29 +99,6 @@ void calPixelCablingMap::printBLOB(std::string sblob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-map<unsigned int, vector<double> > calPixelCablingMap::decodeBLOB(string spl) {
-  map<unsigned int, vector<double> > vmap;
-
-  std::vector<char> buffer(spl.begin(), spl.end());
-  std::vector<char>::iterator ibuffer = buffer.begin();
-
-  unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calPixelCablingMap::decodeBLOB> header is wrong. Something is really messed up!" << endl;
-  }
-
-  unsigned int sensor(0), online(0);
-  while (ibuffer != buffer.end()) {
-    sensor = blob2UnsignedInt(getData(ibuffer));
-    online = blob2UnsignedInt(getData(ibuffer));
-    vmap.insert(make_pair(sensor, online));
-  }
-
-  return vmap;
-}
-
-
-// ----------------------------------------------------------------------
 string calPixelCablingMap::makeBLOB() {
   stringstream s;
   unsigned int header(0xdeadface);

@@ -34,7 +34,6 @@ public:
 
   std::string makeBLOB() override;
   std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) override;
-  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
   // -- verbosity = -1 (all), 0 (no elements), n (n elements)
   void printBLOB(std::string, int verbosity = -1) override;
   std::string readJSON(std::string filename);

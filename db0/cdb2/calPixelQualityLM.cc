@@ -341,46 +341,6 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-// FIXME: this is not used anywhere probably wrong
-map<unsigned int, vector<double> > calPixelQualityLM::decodeBLOB(string spl) {
-  map<unsigned int, vector<double> > vmap;
-
-  std::vector<char> buffer(spl.begin(), spl.end());
-  std::vector<char>::iterator ibuffer = buffer.begin();
-
-  unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calPixelQuality::decodeBLOB> header is wrong. Something is really messed up!" << endl;
-  }
-  while (ibuffer != buffer.end()) {
-    // -- chipID
-    unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-    // -- ckdivend and ckdivend2
-    unsigned int ckdivend = blob2UnsignedInt(getData(ibuffer));
-    unsigned int ckdivend2 = blob2UnsignedInt(getData(ibuffer));
-    // -- get link words
-    unsigned int linkA = blob2UnsignedInt(getData(ibuffer));
-    unsigned int linkB = blob2UnsignedInt(getData(ibuffer));
-    unsigned int linkC = blob2UnsignedInt(getData(ibuffer));
-    unsigned int linkM = blob2UnsignedInt(getData(ibuffer));
-    vector<double> vdet;
-    // -- get number of pixel entries
-    int npix = blob2Int(getData(ibuffer));
-    for (int i = 0; i < npix; ++i) {
-      int icol           = blob2Int(getData(ibuffer));
-      int irow           = blob2Int(getData(ibuffer));
-      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      vdet.push_back(static_cast<double>(icol));
-      vdet.push_back(static_cast<double>(irow));
-      vdet.push_back(static_cast<double>(iqual));
-    }
-    vmap.insert(make_pair(chipID, vdet));
-  }
-
-  return vmap;
-}
-
-// ----------------------------------------------------------------------
 string calPixelQualityLM::makeBLOB() {
   stringstream s;
   unsigned int header(0xdeadface);

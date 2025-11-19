@@ -133,60 +133,6 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-map<unsigned int, vector<double> > calPixelAlignment::decodeBLOB(string spl) {
-  map<unsigned int, vector<double> > vmap;
-
-  std::vector<char> buffer(spl.begin(), spl.end());
-  std::vector<char>::iterator ibuffer = buffer.begin();
-
-  unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calPixelAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
-  }
-  while (ibuffer != buffer.end()) {
-    // -- chipID
-    unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-    vector<double> vdet;
-    constants a;
-    a.id = chipID;
-    a.vx = blob2Double(getData(ibuffer));
-    a.vy = blob2Double(getData(ibuffer));
-    a.vz = blob2Double(getData(ibuffer));
-    a.rowx = blob2Double(getData(ibuffer));
-    a.rowy = blob2Double(getData(ibuffer));
-    a.rowz = blob2Double(getData(ibuffer));
-    a.colx = blob2Double(getData(ibuffer));
-    a.coly = blob2Double(getData(ibuffer));
-    a.colz = blob2Double(getData(ibuffer));
-    a.nrow = blob2Int(getData(ibuffer));
-    a.ncol = blob2Int(getData(ibuffer));
-    a.width = blob2Double(getData(ibuffer));
-    a.length = blob2Double(getData(ibuffer));
-    a.thickness = blob2Double(getData(ibuffer));
-    a.pixelSize = blob2Double(getData(ibuffer));
-    vdet.push_back(a.vx);
-    vdet.push_back(a.vy);
-    vdet.push_back(a.vz);
-    vdet.push_back(a.rowx);
-    vdet.push_back(a.rowy);
-    vdet.push_back(a.rowz);
-    vdet.push_back(a.colx);
-    vdet.push_back(a.coly);
-    vdet.push_back(a.colz);
-    vdet.push_back(a.nrow);
-    vdet.push_back(a.ncol);
-    vdet.push_back(a.width);
-    vdet.push_back(a.length);
-    vdet.push_back(a.thickness);
-    vdet.push_back(a.pixelSize);
-    vmap.insert(make_pair(chipID, vdet));
-  }
-
-  return vmap;
-}
-
-
-// ----------------------------------------------------------------------
 string calPixelAlignment::makeBLOB() {
   stringstream s;
   unsigned int header(0xdeadface);

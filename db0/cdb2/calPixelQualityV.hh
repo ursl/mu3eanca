@@ -25,7 +25,6 @@ public:
 
   // -- these are identical to the code in calPixelQuality (but this does not derive from that)
   std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) override;
-  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
   void printBLOB(std::string, int verbosity = 1) override;
 
   int         getStatus(unsigned int chipid, int icol, int irow);

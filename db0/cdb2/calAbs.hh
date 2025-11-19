@@ -38,11 +38,6 @@ public:
     return "calAbs::makeBLOB(map<int, vector<double>>) ?";
   }
 
-  // -- BLOB decoding. This is base-class dependent and hence needs to be overridden.
-  virtual std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) {
-    return {};
-  }
-
   // -- print the payload. This is base-class dependent and hence needs to be overridden.
   virtual void printBLOB(std::string, int verbosity = 1) {
     std::cout << "calAbs::printBLOB() ?" << std::endl;

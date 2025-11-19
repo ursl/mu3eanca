@@ -148,40 +148,6 @@ void calPixelQuality::printBLOB(std::string sblob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-map<unsigned int, vector<double> > calPixelQuality::decodeBLOB(string spl) {
-  map<unsigned int, vector<double> > vmap;
-
-  std::vector<char> buffer(spl.begin(), spl.end());
-  std::vector<char>::iterator ibuffer = buffer.begin();
-
-  unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calPixelQuality::decodeBLOB> header is wrong. "
-         << " Something is really messed up!"
-         << endl;
-  }
-  while (ibuffer != buffer.end()) {
-    // -- chipID
-    unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-    vector<double> vdet;
-    // -- get number of pixel entries
-    int npix = blob2Int(getData(ibuffer));
-    for (int i = 0; i < npix; ++i) {
-      int icol           = blob2Int(getData(ibuffer));
-      int irow           = blob2Int(getData(ibuffer));
-      unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-      vdet.push_back(static_cast<double>(icol));
-      vdet.push_back(static_cast<double>(irow));
-      vdet.push_back(static_cast<double>(iqual));
-    }
-    vmap.insert(make_pair(chipID, vdet));
-  }
-
-  return vmap;
-}
-
-
-// ----------------------------------------------------------------------
 string calPixelQuality::makeBLOB() {
   stringstream s;
   unsigned int header(0xdeadface);

@@ -119,48 +119,6 @@ void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-map<unsigned int, vector<double> > calFibreAlignment::decodeBLOB(string spl) {
-  map<unsigned int, vector<double> > vmap;
-
-  std::vector<char> buffer(spl.begin(), spl.end());
-  std::vector<char>::iterator ibuffer = buffer.begin();
-
-  unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calFibreAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
-  }
-  while (ibuffer != buffer.end()) {
-    // -- chipID
-    unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-    vector<double> vdet;
-    constants a;
-    a.id = chipID;
-    a.cx = blob2Double(getData(ibuffer));
-    a.cy = blob2Double(getData(ibuffer));
-    a.cz = blob2Double(getData(ibuffer));
-    a.fx = blob2Double(getData(ibuffer));
-    a.fy = blob2Double(getData(ibuffer));
-    a.fz = blob2Double(getData(ibuffer));
-    a.round = blob2Double(getData(ibuffer));
-    a.square = blob2Double(getData(ibuffer));
-    a.diameter = blob2Double(getData(ibuffer));
-    vdet.push_back(a.cx);
-    vdet.push_back(a.cy);
-    vdet.push_back(a.cz);
-    vdet.push_back(a.fx);
-    vdet.push_back(a.fy);
-    vdet.push_back(a.fz);
-    vdet.push_back(static_cast<double>(a.round));
-    vdet.push_back(static_cast<double>(a.square));
-    vdet.push_back(a.diameter);
-    vmap.insert(make_pair(chipID, vdet));
-  }
-
-  return vmap;
-}
-
-
-// ----------------------------------------------------------------------
 string calFibreAlignment::makeBLOB() {
   stringstream s;
   unsigned int header(0xdeadface);

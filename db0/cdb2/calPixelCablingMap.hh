@@ -22,7 +22,6 @@ public:
 
   std::string makeBLOB() override;
   std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) override;
-  std::map<unsigned int, std::vector<double> > decodeBLOB(std::string) override;
   void printBLOB(std::string, int verbosity = 1) override;
 
   unsigned int getOnline(unsigned int sensor);

@@ -117,43 +117,6 @@ void calMppcAlignment::printBLOB(std::string sblob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-map<unsigned int, vector<double> > calMppcAlignment::decodeBLOB(string spl) {
-  map<unsigned int, vector<double> > vmap;
-
-  std::vector<char> buffer(spl.begin(), spl.end());
-  std::vector<char>::iterator ibuffer = buffer.begin();
-
-  unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calMppcAlignment::decodeBLOB> header is wrong. Something is really messed up!" << endl;
-  }
-  while (ibuffer != buffer.end()) {
-    unsigned int mppc = blob2UnsignedInt(getData(ibuffer));
-    vector<double> vdet;
-    constants a;
-    a.mppc = mppc;
-    a.vx   = blob2Double(getData(ibuffer));
-    a.vy   = blob2Double(getData(ibuffer));
-    a.vz   = blob2Double(getData(ibuffer));
-    a.colx = blob2Double(getData(ibuffer));
-    a.coly = blob2Double(getData(ibuffer));
-    a.colz = blob2Double(getData(ibuffer));
-    a.ncol = blob2Int(getData(ibuffer));
-    vdet.push_back(a.vx);
-    vdet.push_back(a.vy);
-    vdet.push_back(a.vz);
-    vdet.push_back(a.colx);
-    vdet.push_back(a.coly);
-    vdet.push_back(a.colz);
-    vdet.push_back(static_cast<double>(a.ncol));
-    vmap.insert(make_pair(mppc, vdet));
-  }
-
-  return vmap;
-}
-
-
-// ----------------------------------------------------------------------
 string calMppcAlignment::makeBLOB() {
   stringstream s;
   unsigned int header(0xdeadface);

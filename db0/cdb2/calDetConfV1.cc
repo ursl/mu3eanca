@@ -79,38 +79,6 @@ void calDetConfV1::printBLOB(std::string sblob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-map<unsigned int, vector<double> > calDetConfV1::decodeBLOB(string spl) {
-  map<unsigned int, vector<double> > vmap;
-
-  std::vector<char> buffer(spl.begin(), spl.end());
-  std::vector<char>::iterator ibuffer = buffer.begin();
-
-  unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calDetConfV1::decodeBLOB> header is wrong. Something is really messed up!" << endl;
-  }
-
-  // -- format of m
-  // 0 => target.(shape,thickness1,thickness2,length,radius,offsetX,offsetY,offsetZ),magnet.fieldStrength
-  vector<double> vdet;
-  vdet.push_back(static_cast<double>(blob2UnsignedInt(getData(ibuffer))));
-  vdet.push_back(blob2Double(getData(ibuffer)));
-  vdet.push_back(blob2Double(getData(ibuffer)));
-  vdet.push_back(blob2Double(getData(ibuffer)));
-  vdet.push_back(blob2Double(getData(ibuffer)));
-
-  vdet.push_back(blob2Double(getData(ibuffer)));
-  vdet.push_back(blob2Double(getData(ibuffer)));
-  vdet.push_back(blob2Double(getData(ibuffer)));
-
-  vdet.push_back(blob2Double(getData(ibuffer)));
-
-  vmap.insert(make_pair(0, vdet));
-  return vmap;
-}
-
-
-// ----------------------------------------------------------------------
 string calDetConfV1::makeBLOB() {
   stringstream s;
   unsigned int header(0xdeadface);
