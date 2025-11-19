@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
@@ -96,54 +97,79 @@ void calTileQuality::printBLOB(std::string blob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-void calTileQuality::writeCsv(string filename) {
+void calTileQuality::writeJSON(string filename) {
   string spl("");
   ofstream OUT(filename);
-  if (!OUT.is_open()) {
-    cout << ("calTileQuality::writeCsv> Error, file "
-             + filename + " not opened for output")
-         << endl;
-  }
-
-  OUT << "# Format: channelID,quality"
-      << endl;
-
+  nlohmann::json json;
   for (auto it: fMapConstants) {
-    OUT << it.first << "," << it.second.quality << endl;
+    uint32_t tileID = it.first;
+    int quality = it.second.quality;
+    json[to_string(tileID)] = {
+      {"tileID", tileID},
+      {"Good", (quality == calTileQuality::Good) ? 1 : 0},
+      {"Dead", (quality == calTileQuality::Dead) ? 1 : 0},
+      {"Noisy", (quality == calTileQuality::Noisy) ? 1 : 0}
+    };
   }
+  OUT << json.dump(4);
   OUT.close();
 }
 
-
 // ----------------------------------------------------------------------
-void calTileQuality::readCsv(string filename) {
-  cout << "calTileQuality::readCsv> reset fMapConstants" << endl;
-  fMapConstants.clear();
-
-  string spl("");
+void calTileQuality::readJSON(string filename) {
+  nlohmann::json json;
   ifstream INS(filename);
-  if (!INS.is_open()) {
-    cout << ("calTileQuality::readCsv> Error, file "
-             + filename + " not found")
-         << endl;
-  }
-
-  vector<string> vline;
-  while (getline(INS, spl)) {
-    if (string::npos == spl.find("#")) {
-      vline.push_back(spl);
-    }
-  }
-  INS.close();
-
-  for (unsigned int it = 0; it < vline.size(); ++it) {
+  json = nlohmann::json::parse(INS);
+  fMapConstants.clear();
+  for (auto& [key, value] : json.items()) {
     constants a;
-    vector<string> tokens = split(vline[it], ',');
-    a.id = stoi(tokens[0]);
-    a.quality = stoi(tokens[1]);
+    // -- check if value is an object (new format) or a number (old format)
+    if (value.is_object()) {
+      // -- new format: {"tileID": 1, "Good": 0, "Dead": 0, "Noisy": 0}
+      a.id = value["tileID"];
+      int iGood = value["Good"];
+      int iDead = value["Dead"];
+      int iNoisy = value["Noisy"];
+      if (1 == iGood) {
+        a.quality = Status::Good;
+      } else if (1 == iNoisy) {
+        a.quality = Status::Noisy;
+      } else if (1 == iDead) {
+        a.quality = Status::Dead;
+      } else {
+        a.quality = Status::Unset;
+      }
+      int cntFlags(0); 
+      if (0 != iGood) ++cntFlags;  
+      if (0 != iNoisy) ++cntFlags;  
+      if (0 != iDead) ++cntFlags;  
+      if (cntFlags > 1) {
+        a.quality = Status::DeclaredBad;
+      }
+    } else if (value.is_number()) {
+      // -- old format: just a number
+      // -- key is already a string from json.items()
+      if (key.empty()) {
+        cerr << "calTileQuality::readJSON> Empty key encountered" << endl;
+        continue;
+      }
+      try {
+        a.id = stoi(key);
+      } catch (const std::invalid_argument& e) {
+        cerr << "calTileQuality::readJSON> Invalid key format (not a number): '" << key << "'" << endl;
+        continue;
+      } catch (const std::out_of_range& e) {
+        cerr << "calTileQuality::readJSON> Key out of range: " << key << endl;
+        continue;
+      }
+      a.quality = static_cast<Status>(value.get<int>());
+    } else {
+      // -- unexpected format
+      cerr << "calTileQuality::readJSON> Unexpected format for key: " << key << endl;
+      continue;
+    }
     fMapConstants.insert(make_pair(a.id, a));
   }
-
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }

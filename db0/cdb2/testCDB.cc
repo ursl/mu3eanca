@@ -15,7 +15,7 @@
 #include "calDetConfV1.hh"
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
-
+#include "calTileQuality.hh"
 
 using namespace std;
 
@@ -37,6 +37,7 @@ void printAll(cdbAbs *);
 //
 // _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -db ~/data/mu3e/json10
 //
+// ./bin/testCDB -gt datav6.3=2025V0 -db ~/data/mu3e/cdb -m 12
 //
 // The following dumps the entire CDB contents
 // _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -m 1
@@ -254,6 +255,11 @@ int main(int argc, char* argv[]) {
     cpt2->readPayloadFromFile("tag_pixeltimecalibration_iov_1", ".");
     cpt2->calculate("tag_pixeltimecalibration_iov_1");
     cpt2->writeTxtFile("ascii/newlargecalibFromPayload.calib");
+  } else if (12 == mode) {
+    cout << "Test tile quality" << endl;
+    calTileQuality *ctq = new calTileQuality();
+    ctq->readJSON("ascii/run3265_quality_overview.json");
+    ctq->writeJSON("out-run3265_quality_overview.json");
   }
   return 0;
 }

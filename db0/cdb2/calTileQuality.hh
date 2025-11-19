@@ -15,8 +15,10 @@ public:
     ChannelNotFound = -1,
     Good = 0,
     Noisy = 1,
-    DeclaredBad = 2,
-    TurnedOff = 9
+    Dead = 2,
+    Unset = 3,
+    DeclaredBad = 4,
+    Masked = 9
   };
 
   calTileQuality() = default;
@@ -32,8 +34,8 @@ public:
 
   std::string makeBLOB() override;
   void printBLOB(std::string, int verbosity = 1) override;
-  void writeCsv(std::string filename);
-  void readCsv(std::string filename);
+  void writeJSON(std::string filename);
+  void readJSON(std::string filename);
 
   bool        getNextID(uint32_t &ID);
 
