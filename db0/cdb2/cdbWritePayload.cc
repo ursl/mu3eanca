@@ -32,9 +32,10 @@ void writePixelQualityLM(string jsondir, string gt, string filename, int iov);
 void writeAlignmentInformation(string jsondir, string gt, string type, string ifilename, int iov);
 
 // ----------------------------------------------------------------------
-// cdbWritePayload -g datav6.2=2025DataV0 -j CDBJSONDIR -f filename -i iov
-// ---------
+// cdbWritePayload
+// ---------------
 //
+// NOTE: works (validated) for pixelalignement. All the rest might need some improvements!
 //
 // Usage examples   ./bin/cdbWritePayload -c pixelalignment -g datav6.3=2025V1test -j ~/data/mu3e/cdb -f ascii/sensors-alignment-CosmicTracksV0.csv -i 1
 // --------------
