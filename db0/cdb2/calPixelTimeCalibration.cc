@@ -37,14 +37,14 @@ void calPixelTimeCalibration::calculate(string hash) {
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (fVerbose > 0) cout << "calPixelTimeCalibration header: " << hex << header << dec << endl;
 
-  int npix(0), ncol(0);
+  int globalChipID(0);
   fMapConstants.clear();
   while (ibuffer != buffer.end()) {
     for (uint chip = 0; chip < NCALIBRATIONCHIPS; chip++){
       std::array<std::array<constants, NTOTBINS>, NSECTOR> arr;
       for(uint sector = 0; sector < NSECTOR; sector++){
         for(uint tot = 0; tot < NTOTBINS; tot++){
-          int c = blob2Int(getData(ibuffer));
+          globalChipID = blob2Int(getData(ibuffer));
           int s = blob2Int(getData(ibuffer));
           int b = blob2Int(getData(ibuffer));
           arr[sector][tot].mean = blob2Double(getData(ibuffer));
@@ -53,7 +53,7 @@ void calPixelTimeCalibration::calculate(string hash) {
           arr[sector][tot].sigmaerr = blob2Double(getData(ibuffer));
         }
       }
-      fMapConstants.insert(make_pair(chip, arr));
+      fMapConstants.insert(make_pair(globalChipID, arr));
     }
   }
 
