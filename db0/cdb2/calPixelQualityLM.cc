@@ -172,13 +172,13 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
 // ----------------------------------------------------------------------
 calPixelQualityLM::Status calPixelQualityLM::getStatus(unsigned int chipid, int icol, int irow) {
   // -- first check dead links  
-  if (fMapConstants[chipid].linkA > 0 && icol < 89) {
+  if (fMapConstants[chipid].linkA > 0 && icol >= 0 && icol <= 87) {
     return static_cast<Status>(fMapConstants[chipid].linkA);
   } 
-  if (fMapConstants[chipid].linkB > 0 && icol >= 89 && icol < 173) {
+  if (fMapConstants[chipid].linkB > 0 && icol >= 88 && icol <= 171) {
     return static_cast<Status>(fMapConstants[chipid].linkB);
   }
-  if (fMapConstants[chipid].linkC > 0 && icol >= 173) {
+  if (fMapConstants[chipid].linkC > 0 && icol >= 172 && icol <= 255) {
     return static_cast<Status>(fMapConstants[chipid].linkC);
   }
   // -- now check  column status
