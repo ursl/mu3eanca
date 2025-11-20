@@ -40,9 +40,16 @@ string DataQuality::json() const {
 
 // ----------------------------------------------------------------------
 string DataQuality::extractValue(const string& json, const string& key) {
+    // -- try quoted string first: "key":"value"
     string pattern = "\"" + key + "\":\"([^\"]*)\"";
     regex re(pattern);
     smatch match;
+    if (regex_search(json, match, re) && match.size() > 1) {
+        return match[1].str();
+    }
+    // -- try numeric value: "key":123 or "key":-123
+    pattern = "\"" + key + "\":(-?\\d+)";
+    re = regex(pattern);
     if (regex_search(json, match, re) && match.size() > 1) {
         return match[1].str();
     }
@@ -76,28 +83,38 @@ size_t DataQuality::parse(const string &jsonString, size_t startPos) {
             return string::npos;
         }
 
-        // Extract the RunInfo JSON object
+        // Extract the DataQuality JSON object
         string dqJson = jsonString.substr(start, end - start);
 
-        // Extract values using regex
-        mu3e = stoi(extractValue(dqJson, "mu3e"));
-        beam = stoi(extractValue(dqJson, "beam"));
-        vertex = stoi(extractValue(dqJson, "vertex"));
-        pixel = stoi(extractValue(dqJson, "pixel"));
-        tiles = stoi(extractValue(dqJson, "tiles"));
-        fibres = stoi(extractValue(dqJson, "fibres"));
-        calibration = stoi(extractValue(dqJson, "calibration"));
+        // Extract values using regex, handling "unset" values
+        string val;
+        val = extractValue(dqJson, "mu3e");
+        mu3e = (val != "unset") ? stoi(val) : 0;
+        val = extractValue(dqJson, "beam");
+        beam = (val != "unset") ? stoi(val) : 0;
+        val = extractValue(dqJson, "vertex");
+        vertex = (val != "unset") ? stoi(val) : 0;
+        val = extractValue(dqJson, "pixel");
+        pixel = (val != "unset") ? stoi(val) : 0;
+        val = extractValue(dqJson, "tiles");
+        tiles = (val != "unset") ? stoi(val) : 0;
+        val = extractValue(dqJson, "fibres");
+        fibres = (val != "unset") ? stoi(val) : 0;
+        val = extractValue(dqJson, "calibration");
+        calibration = (val != "unset") ? stoi(val) : 0;
         // -- goodLinks -> links
-        if ("unset" == extractValue(dqJson, "links")) {
-          links = stoi(extractValue(dqJson, "goodLinks"));
+        val = extractValue(dqJson, "links");
+        if (val == "unset") {
+          val = extractValue(dqJson, "goodLinks");
+          links = (val != "unset") ? stoi(val) : 0;
         } else {
-          links = stoi(extractValue(dqJson, "links"));
+          links = stoi(val);
         }
         version = extractValue(dqJson, "version");
 
-        return end;  // Return position after the parsed RunInfo
+        return end;  // Return position after the parsed DataQuality
     } catch (const exception& e) {
-        cout << "Error parsing RunInfo JSON: " << e.what() << endl;
+        cout << "Error parsing DataQuality JSON: " << e.what() << endl;
         return string::npos;
     }
 }
