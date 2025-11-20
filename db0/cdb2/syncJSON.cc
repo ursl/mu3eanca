@@ -32,7 +32,8 @@
 //            -l  run          provide a last run number
 //            -m, --max runs   provide a maximum number of runs to dump
 //            -p, --pat pattern provide a pattern to match the global tags
-//            -r               RDB only
+//            -r runfile       provide comma-separated runs in a file
+//            --rdb            RDB only
 // ----------------------------------------------------------------------
 
 using namespace std;
@@ -41,7 +42,7 @@ int main(int argc, char* argv[]) {
 
   // -- command line arguments
   string dirName("fixme"), dirPath("fixme"), pattern("unset"), 
-         host("pc11740"), mode("all");
+         host("pc11740"), mode("all"), runfile("unset");
   bool all(false);
   bool cdbOnly(false);
   bool rdbOnly(false);
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-m"))     {mode = string(argv[++i]);}
     if (!strcmp(argv[i], "-p"))     {pattern = string(argv[++i]);}
     if (!strcmp(argv[i], "--pat"))  {pattern = string(argv[++i]);}
-    if (!strcmp(argv[i], "-r"))     {rdbOnly = true;}
+    if (!strcmp(argv[i], "-r"))     {runfile = string(argv[++i]);}
     if (!strcmp(argv[i], "--rdb"))  {rdbOnly = true;}
   }
 
@@ -220,11 +221,26 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-  return 0;
 
   if (!cdbOnly) {
     // -- dump all significant runs
-    vector<string> vRunNumbers = pDB->getAllRunNumbers();
+    vector<string> vRunNumbers;
+    if (runfile == "unset") {
+      vRunNumbers = pDB->getAllRunNumbers();
+    } else {
+      ifstream file(runfile);
+      string line;
+      string fileContent;
+      while (getline(file, line)) {
+        fileContent += line + "\n";
+      }
+      file.close();
+      replaceAll(fileContent, "\n", "");
+      replaceAll(fileContent, " ", "");
+      replaceAll(fileContent, "{", "");
+      replaceAll(fileContent, "}", "");
+      vRunNumbers = split(fileContent, ',');
+    }
     cout << "total number of runs: " << vRunNumbers.size() << endl;
     int cnt(0);
     cout << "all = " << all << endl;
