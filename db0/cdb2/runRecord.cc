@@ -163,24 +163,32 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
     corrupted(curlReadBuffer);
     return;
   }
-  if (verbose > 9) cout << "  Run number" << endl;
   fBORRunNumber = stoul(parseString);
+  if (verbose > 9) cout << "  Run number = " << fBORRunNumber << endl;
 
   parseString = jsonGetValue(curlReadBuffer, vector<string>{"BOR", "Start time"});
   if (parseString == "parseError") {
     corrupted(curlReadBuffer);
     return;
   }
-  if (verbose > 9) cout << "  Start time" << endl;
   fBORStartTime = parseString;
+  if (verbose > 9) cout << "  Start time = " << fBORStartTime << endl;
 
   parseString = jsonGetValue(curlReadBuffer, vector<string>{"BOR", "Shift crew"});
   if (parseString == "parseError") {
     corrupted(curlReadBuffer);
     return;
   }
-  if (verbose > 9) cout << "  Shift crew" << endl;
   fBORShiftCrew = parseString;
+  if (verbose > 9) cout << "  Shift crew = " << fBORShiftCrew << endl;
+
+  parseString = jsonGetValue(curlReadBuffer, vector<string>{"BOR", "Run Class"});
+  if (parseString == "parseError") {
+    corrupted(curlReadBuffer);
+    return;
+  }
+  fBORRunClass = parseString;
+  if (verbose > 9) cout << "  Run Class = " << fBORRunClass << endl;
 
   if (verbose > 2) cout << " after BOR" << endl;
 
@@ -191,8 +199,8 @@ void runRecord::fillFromJson(const std::string &curlReadBuffer) {
     return;
   } 
   fEORStopTime = parseString;
-
   parseString = jsonGetValue(curlReadBuffer, "Events");
+  if (verbose > 9) cout << "  Stop time = " << fEORStopTime << endl;
   if (parseString == "parseError") {
     corrupted(curlReadBuffer);
     return;
