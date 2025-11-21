@@ -67,7 +67,7 @@ struct pixhit {
 };
 
 // ----------------------------------------------------------------------
-void createPayload(string, calAbs *, string);
+void createPayload(string, calAbs *, string, string, string);
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 bool determineBrokenLinks(TH2 *h, vector<int> &links);
 void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links);
@@ -112,6 +112,7 @@ vector<int> gChipIDs = {1,2,3,4,5,6,
 
 
 map<int, AsicInfo> gRunInfoMap;
+bool gIsBeam(true);
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
@@ -225,7 +226,7 @@ int main(int argc, char* argv[]) {
     calPixelQualityLM *cpq = new calPixelQualityLM();
     cpq->readCsv(Form("csv/deadlinks-allpixels.csv"));
     string blob = cpq->makeBLOB();
-    createPayload(hash, cpq, "./payloads");
+    createPayload(hash, cpq, "./payloads", "unset", "unset");
   
     return 0; 
   }
@@ -279,14 +280,28 @@ int main(int argc, char* argv[]) {
     cout << "dir ->" << dir << "<-" << endl;
     (sbla, dir, "");
   }
-  // -- extract the runnumber. It directly precedes .root
+  // -- extract the runnumber and runclass
   replaceAll(sbla, ".root", "");
   size_t rIdx = sbla.rfind("_")+1;
   sbla = sbla.substr(rIdx);
-  cout << "sbla ->" << sbla << "<-" << endl;
+  cout << "sbla ->" << sbla << "<-" << endl;  
   run = ::stoi(sbla);
-  cout << "run = " << run << endl;
-  
+  pDC->setRunNumber(run);
+  runRecord rr = pDC->getRunRecord(run);
+  rr.print();
+  string runclass = rr.fBORRunClass;
+  int qVertex = rr.fvDQ[rr.fDataQualityIdx].vertex;
+  cout << "run = " << run << " runclass = " << runclass << " qVertex = " << qVertex << endl;
+  if (runclass.find("Cosmic") != string::npos) {
+    gIsBeam = false;
+  }
+  if (runclass.find("Calibration") != string::npos) {
+    gIsBeam = false;
+  }
+  if (runclass.find("Test") != string::npos) {
+    gIsBeam = false;
+  }
+  cout << "gIsBeam = " << gIsBeam << endl;
 
   // ----------------------------------------------------------------------
   // -- read in the meta midas tree
@@ -360,11 +375,12 @@ int main(int argc, char* argv[]) {
             if (gROOT->GetClass(key->GetClassName())->InheritsFrom("TDirectory")) continue;
             if (!gROOT->GetClass(key->GetClassName())->InheritsFrom("TH1")) continue;       
             string name = key->GetName();
+            string oname = s + "/" + name;
             if (string::npos != name.find("hitmap_perChip")) {
               unsigned int chipID;
               replaceAll(name, "hitmap_perChip_", "");
               chipID = ::stoi(name); 
-              if (0) cout << "   .. chipID = " << chipID << " from name = " << name << endl;
+              if (1) cout << "   .. chipID = " << chipID << " from name = " << oname << endl;
               if (0 == chipID) {
                 cout << "  XXXXXXXXX  skipping illegal chipID = " << chipID << " from name = " << name << " is 0, skipping" << endl;
                 continue;
@@ -385,7 +401,7 @@ int main(int argc, char* argv[]) {
   vector<int> deadlinks, deadcolumns, noisyPixels;
   ofstream ofs;
   ofs.open(Form("csv/pixelqualitylm-run%d.csv", run));
-  ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 4 = LVDS errors on link, 5 = LVDS errors from other link, 8 = no hits,9 = masked" << endl;
+  ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 4 = LVDS errors on link, 5 = LVDS errors from other link, 8 = no hits, 9 = masked" << endl;
   for (auto it: mHitmaps){
     // -- debug with first 12 only FIXME
     //if (it.first != 1315) continue;
@@ -399,6 +415,7 @@ int main(int argc, char* argv[]) {
     deadcolumns.clear();
     noisyPixels.clear();
     // -- determine broken links
+    cout << "mHitmaps[" << it.first << "] : " << mHitmaps[it.first]->GetName() << endl;
     bool turnedOn = determineBrokenLinks(mHitmaps[it.first], deadlinks);
     cout << "chipID = " << it.first << " turnedOn = " << turnedOn << endl;
     if (deadlinks.size() > 0) {
@@ -415,7 +432,11 @@ int main(int argc, char* argv[]) {
       cout << "chipID = " << it.first << " has no broken links" << endl;
     }
     // -- determine dead columns
-    determineDeadColumns(mHitmaps[it.first], deadcolumns, deadlinks);
+    if (gIsBeam) {
+      determineDeadColumns(mHitmaps[it.first], deadcolumns, deadlinks);
+    } else {
+      deadcolumns.clear();
+    }
    
     // -- determine noisy pixels
     determineNoisyPixels(mHitmaps[it.first], noisyPixels, deadcolumns, deadlinks);
@@ -456,7 +477,10 @@ int main(int argc, char* argv[]) {
   cout << "READING CSV: " << Form("csv/pixelqualitylm-run%d.csv", run) << endl;
   calPixelQualityLM *cpq = new calPixelQualityLM();
   cpq->readCsv(Form("csv/pixelqualitylm-run%d.csv", run));
-  createPayload(hash, cpq, "./payloads");
+  string schema = cpq->getSchema();
+  string comment = "runclass/meanY. " + filename;
+
+  createPayload(hash, cpq, "./payloads", schema, comment);
 
   if (0) {
     cout << "READ CSV: " << Form("csv/pixelqualitylm-run%d.csv", run) << endl;
@@ -468,17 +492,19 @@ int main(int argc, char* argv[]) {
 }
 
 // ----------------------------------------------------------------------
-void createPayload(string hash, calAbs *a, string jsondir) {
+void createPayload(string hash, calAbs *a, string jsondir, string schema, string comment) {
 
   string sblob = a->makeBLOB();
   payload pl;
   pl.fHash = hash;
-  pl.fComment = "pixelqualitylm";
+  pl.fComment = comment;
+  pl.fSchema = schema;
   pl.fBLOB = sblob;
   cout << "######################################################################" << endl;
   cout << "### createPayload" << endl;
+  cout <<  pl.printString(false) << endl;
   a->printBLOB(sblob);
-  
+  cout << "######################################################################" << endl;
   a->writePayloadToFile(hash, jsondir, pl);
 }
 
@@ -505,12 +531,18 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   bool DBX(false);
 
+  // -- the histogram still used to provide the chip name
+  string schip = h->GetName();
+  replaceAll(schip, "hitmap_perChip_", "");
+  int chipID = ::stoi(schip);
+
   // -- determine dead chips
   double nLinkA = h->Integral(1, 88, 1, 250);
   double nLinkB = h->Integral(89, 172, 1, 250);
   double nLinkC = h->Integral(173, 256, 1, 250);
+  vector<double> vLink = {nLinkA, nLinkB, nLinkC};
   double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
-
+  if (1) cout << "  nLinkA = " << nLinkA << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC << " nLinkAverage = " << nLinkAverage << endl;
   if (nLinkA < 1 && nLinkB < 1 && nLinkC < 1) {
     links.push_back(8);
     links.push_back(8);
@@ -519,10 +551,36 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     return false;
   }
 
-  // -- the histogram still used to provide the chip name
-  string schip = h->GetName();
-  replaceAll(schip, "hitmap_perChip_", "");
-  int chipID = ::stoi(schip);
+  // -- search for pathological cases where all hits are very close to the top (bottom) edge
+  vector<double> vLinkMeanY;
+  vLinkMeanY.push_back(h->ProjectionY("A", 1, 88)->GetMean());
+  vLinkMeanY.push_back(h->ProjectionY("B", 89, 172)->GetMean());
+  vLinkMeanY.push_back(h->ProjectionY("C", 173, 256)->GetMean());
+  int badChip(-1); // -- if any link is broken and not masked, the chip is bad
+  if (nLinkA > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245)) badChip = 1;
+  if (nLinkB > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245)) badChip = 2;
+  if (nLinkC > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)) badChip = 3;
+  if (badChip > 0) {
+    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2] << endl;  
+    if (nLinkA < 1) {
+      links.push_back(8);
+    } else {
+      links.push_back(3);
+    }
+    if (nLinkB < 1) {
+      links.push_back(8);
+    } else {
+      links.push_back(3);
+    }
+    if (nLinkC < 1) {
+      links.push_back(8);
+    } else {
+      links.push_back(3);
+    }
+    links.push_back(0);
+    return true;
+  }
+
 
   // -- hand-curated list to avoid getting lost in algorithmic nightmares
   vector<int> vBadChips = {102};
@@ -548,12 +606,15 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     return false;
   }
 
+  
   // -- check individual links
   int lkStatus[3] = {0, 0, 0};
-  int badChip(-1); // -- if any link is broken and not masked, the chip is bad
   int nBadLinks(0);
+  badChip = -1;
   for (int i = 0; i < 3; ++i) {
+    if (vLink[i] < 1) lkStatus[i] = 8;
     if (0 == ai.abcLinkMask[i]) lkStatus[i] = 9;
+    if (9 == ai.abcLinkMask[i]) lkStatus[i] = 9;
     if (ai.abcLinkErrs[i] > 10) lkStatus[i] = 4;
     if (ai.abcLinkErrs[i] > 10 && 1 == ai.abcLinkMask[i]) {
       badChip = i;
@@ -561,6 +622,13 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     }
   }
  
+  for (int i = 0; i < 3; ++i) {
+    cout << "Chip " << chipID << " link " << i << " status = " << lkStatus[i] 
+    << " mask = " << ai.abcLinkMask[i] << " errs = " << ai.abcLinkErrs[i]
+    << endl;
+  }
+
+
   if (badChip >= 0) {    
     cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << endl;
     for (int i = 0; i < 3; ++i) {
