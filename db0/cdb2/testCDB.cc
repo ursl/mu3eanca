@@ -260,6 +260,25 @@ int main(int argc, char* argv[]) {
     calTileQuality *ctq = new calTileQuality();
     ctq->readJSON("ascii/run3265_quality_overview.json");
     ctq->writeJSON("out-run3265_quality_overview.json");
+    string sblob = ctq->makeBLOB();
+
+    payload pl;
+    pl.fHash = "tag_tilequality_datav6.3=2025V0_iov_1";
+    pl.fComment = "TileQuality";
+    pl.fSchema = ctq->getSchema();
+    pl.fBLOB = sblob;
+    cout << "######################################################################" << endl;
+    cout << "### createPayload" << endl;
+    cout <<  pl.printString(false) << endl;
+    ctq->printBLOB(sblob, 1);
+    cout << "######################################################################" << endl;
+    ctq->writePayloadToFile(pl.fHash, ".", pl);
+
+    calTileQuality *ctq2 = new calTileQuality();
+    ctq2->readPayloadFromFile("tag_tilequality_datav6.3=2025V0_iov_1", ".");
+    ctq2->calculate("tag_tilequality_datav6.3=2025V0_iov_1");
+    ctq2->writeJSON("out-run3265_quality_overview_fromPayload.json");
+
   }
   return 0;
 }
