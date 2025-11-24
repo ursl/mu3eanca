@@ -21,6 +21,7 @@
 #include "calPixelTimeCalibration.hh"
 
 #include "calFibreAlignment.hh"
+#include "calTileQuality.hh"
 
 
 using namespace std;
@@ -46,6 +47,9 @@ int main(int argc, const char* argv[]) {
   }
   
   pdir = filename.substr(0, filename.find_last_of("/")+1);
+  if (pdir.empty()) {
+    pdir = "./";
+  }
   hash = filename.substr(filename.find_last_of("/")+1);
   cout << "payload ->" << filename  << "<-" << endl
        << "dir ->" << pdir << "<-" << endl
@@ -126,6 +130,14 @@ int main(int argc, const char* argv[]) {
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixeltimecalibration_")) {
     c = new calPixelTimeCalibration();
+    c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("tilequality_")) {
+    c = new calTileQuality();
     c->readPayloadFromFile(hash, pdir);
     cout << "hash:    " << c->getPayload(hash).fHash << endl;
     cout << "comment: " << c->getPayload(hash).fComment << endl;
