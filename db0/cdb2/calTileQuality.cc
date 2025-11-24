@@ -4,10 +4,13 @@
 
 #include <iostream>
 #include <sstream>
+#include <cctype>
+#include <algorithm>
 
 #include <nlohmann/json.hpp>
 
 using namespace std;
+using json = nlohmann::ordered_json;
 
 // ----------------------------------------------------------------------
 calTileQuality::calTileQuality(cdbAbs *db) : calAbs(db) {
@@ -100,28 +103,29 @@ void calTileQuality::printBLOB(std::string blob, int verbosity) {
 void calTileQuality::writeJSON(string filename) {
   string spl("");
   ofstream OUT(filename);
-  nlohmann::json json;
+  json j;
+  j["Run_number"] = fRunNumber;
   for (auto it: fMapConstants) {
     uint32_t tileID = it.first;
     int quality = it.second.quality;
-    json[to_string(tileID)] = {
+    j[to_string(tileID)] = {
       {"tileID", tileID},
       {"Good", (quality == calTileQuality::Good) ? 1 : 0},
       {"Dead", (quality == calTileQuality::Dead) ? 1 : 0},
       {"Noisy", (quality == calTileQuality::Noisy) ? 1 : 0}
     };
   }
-  OUT << json.dump(4);
+  OUT << j.dump(2);
   OUT.close();
 }
 
 // ----------------------------------------------------------------------
 void calTileQuality::readJSON(string filename) {
-  nlohmann::json json;
+  json j;
   ifstream INS(filename);
-  json = nlohmann::json::parse(INS);
+  j = json::parse(INS);
   fMapConstants.clear();
-  for (auto& [key, value] : json.items()) {
+  for (auto& [key, value] : j.items()) {
     constants a;
     // -- check if value is an object (new format) or a number (old format)
     if (value.is_object()) {
@@ -147,17 +151,24 @@ void calTileQuality::readJSON(string filename) {
         a.quality = Status::DeclaredBad;
       }
     } else if (value.is_number()) {
+      if (key == "Run_number") {
+        fRunNumber = value.get<int>();
+        continue;
+      }
       // -- old format: just a number
       // -- key is already a string from json.items()
       if (key.empty()) {
-        cerr << "calTileQuality::readJSON> Empty key encountered" << endl;
-        continue;
+        continue;  // Skip empty keys silently
+      }
+      // -- Check if key is numeric before converting (skip metadata keys like "Run_number")
+      bool isNumeric = !key.empty() && all_of(key.begin(), key.end(), [](char c) { return isdigit(c); });
+      if (!isNumeric) {
+        continue;  // Skip non-numeric keys silently (they're likely metadata)
       }
       try {
         a.id = stoi(key);
       } catch (const std::invalid_argument& e) {
-        cerr << "calTileQuality::readJSON> Invalid key format (not a number): '" << key << "'" << endl;
-        continue;
+        continue;  // Skip invalid keys silently
       } catch (const std::out_of_range& e) {
         cerr << "calTileQuality::readJSON> Key out of range: " << key << endl;
         continue;

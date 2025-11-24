@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
 
   // -- command line arguments
   int mode(0), run(3), verbose(0);
-  string db("json"), gt("mcidealv5.0");
+  string db("/Users/ursl/data/mu3e/cdb"), gt("datav6.3=2025V0");
   string scals, sconfigs;
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-cal")) {scals = string(argv[++i]);}

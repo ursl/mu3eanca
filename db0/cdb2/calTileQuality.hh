@@ -44,6 +44,7 @@ public:
 private:
   std::string fTileQualityTag{"tilequality_"};
   std::string fSchema{"ui_id,i_qual"};
+  int fRunNumber;
 
   // -- local and private
   struct constants {
