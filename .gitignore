@@ -4,7 +4,7 @@
 *.txt
 *.pdf
 *.root
-#util
+util
 bin
 obj
 lib
