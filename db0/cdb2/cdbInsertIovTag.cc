@@ -155,6 +155,7 @@ bool writeIOVsToFile(const string& filepath, const string& tag, const vector<int
   }
   out << "]}\n";
   out.close();
+  cout << "insertIovTag: wrote " << filepath << " with " << runs.size() << " runs" << endl;
   return true;
 }
 
