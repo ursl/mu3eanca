@@ -90,12 +90,40 @@ string calTileQuality::makeBLOB() {
 
 // ----------------------------------------------------------------------
 void calTileQuality::printBLOB(std::string blob, int verbosity) {
-  cout << "calTileQuality::printBLOB() with "
-       << "blob ->" << blob << "<-"
-       << endl;
-  cout << "calTileQuality::printBLOB() with "
-       << "verbosity ->" << verbosity << "<-"
-       << endl;
+
+  std::vector<char> buffer(blob.begin(), blob.end());
+  std::vector<char>::iterator ibuffer = buffer.begin();
+
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  cout << "calTileQuality::printBLOB(string)" << endl;
+  cout << "   header: " << hex << header << dec << endl;
+
+  int cnt(0);
+  while (ibuffer != buffer.end()) {
+    uint32_t id = blob2UnsignedInt(getData(ibuffer));
+    Status status = static_cast<Status>(blob2Int(getData(ibuffer)));
+    if (verbosity > 0) {
+      if (status == Good) {
+        ++cnt;
+        cout << "   id = " << id
+             << " quality = " << status
+             << endl;
+      }
+    } else if (verbosity < 0) {
+      if (status != Good) {
+        ++cnt;
+        cout << "   id = " << id
+             << " quality = " << status
+             << endl;
+      }
+    } else {
+      ++cnt;
+      cout << "   id = " << id
+           << " quality = " << status
+           << endl;
+    }
+  }
+  cout << "calTileQuality::printBLOB(...) printed status for " << cnt << " tiles" << endl;
 }
 
 
