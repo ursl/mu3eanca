@@ -82,7 +82,7 @@ LBINARIES = testCDB fillDB anaPixelQuality\
 ifneq (,$(findstring merlin,$(LHOST)))
        $(info ************  MERLIN VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
-       BINARIES = $(filter-out testCDB fillDB syncCloud syncRDB syncMongo uploadDetConfig downloadDetConfig, $(LBINARIES))
+       BINARIES = $(filter-out fillDB syncCloud syncRDB syncMongo uploadDetConfig downloadDetConfig, $(LBINARIES))
 else ifneq (,$(findstring mu3ebe,$(LHOST)))
        $(info ************  MU3EBE VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
