@@ -6,6 +6,8 @@
 #include <string.h>
 #include <chrono>
 #include <algorithm> // for std::lower_bound
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include <fstream>
 
@@ -48,6 +50,38 @@ using namespace std;
 void createPayload(string, calAbs *, string, string, string);
 
 // ----------------------------------------------------------------------
+vector<string> getFilesInDirectory(const string& dirname) {
+  vector<string> files;
+  DIR *dir = opendir(dirname.c_str());
+  if (dir == nullptr) {
+    cerr << "Error: Cannot open directory " << dirname << endl;
+    return files;
+  }
+  
+  struct dirent *entry;
+  while ((entry = readdir(dir)) != nullptr) {
+    // Skip . and ..
+    if (entry->d_name[0] == '.') {
+      continue;
+    }
+    
+    string fullpath = dirname + "/" + string(entry->d_name);
+    struct stat path_stat;
+    if (stat(fullpath.c_str(), &path_stat) == 0) {
+      // Only add regular files, not directories
+      if (S_ISREG(path_stat.st_mode)) {
+        if (fullpath.find("_quality_overview.json") != string::npos) {
+          files.push_back(fullpath);
+        }
+      }
+    }
+  }
+  closedir(dir);
+  sort(files.begin(), files.end());
+  return files;
+}
+
+// ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
   cout << "tileFillQuality" << endl;
   // -- command line arguments
@@ -77,7 +111,7 @@ int main(int argc, char *argv[]) {
   if (printMode == 4) {
     // -- create turned on CSV for all chipIDs
     ofstream ofs;
-    string filename = Form("csv/tileFillQuality-perfect.json");
+    string filename = Form("csv/run1_quality_overview.json");
     json j;
     j["Run_number"] = 1;
 
@@ -110,6 +144,25 @@ int main(int argc, char *argv[]) {
 
     return 0; 
   }
+
+  if (dirname != "") {
+    // -- read in all files in dirname
+    vector<string> files = getFilesInDirectory(dirname);
+    for (auto file : files) {
+      int runNumber = stoi(file.substr(file.find("run") + 3, file.find("_quality_overview.json") - file.find("run") - 3));
+      cout << "file = " << file << " runNumber = " << runNumber << endl;
+      string hash = string("tag_tilequality_") + gt + string("_iov_") + to_string(runNumber);
+      calTileQuality *ctq = new calTileQuality();
+      ctq->readJSON(file);
+      string blob = ctq->makeBLOB();
+      string schema = ctq->getSchema();
+      string comment = "Elizaveta's tile quality as of 2025/11/18";
+      cout << "XXXXXXXXX createPayload with hash = " << hash << " comment = " << comment << " schema = " << schema << endl;
+      createPayload(hash, ctq, "./payloads", schema, comment);
+      delete ctq;
+    }
+  }
+
 
   return 0;
 }
