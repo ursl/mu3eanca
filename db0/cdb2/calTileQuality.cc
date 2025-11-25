@@ -48,7 +48,7 @@ calTileQuality::~calTileQuality() {
 
 // ----------------------------------------------------------------------
 void calTileQuality::calculate(string hash) {
-  cout << "calTileQuality::calculate() with "
+  if (fVerbose > 0) cout << "calTileQuality::calculate() with "
        << "fHash ->" << hash << "<-"
        << endl;
   fMapConstants.clear();
@@ -58,7 +58,6 @@ void calTileQuality::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calTileQuality header: " << hex << header << dec << endl;
 
   int npix(0);
   while (ibuffer != buffer.end()) {

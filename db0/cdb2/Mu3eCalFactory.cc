@@ -7,6 +7,8 @@
 #include "calDetConfV1.hh"
 #include "calDetSetupV1.hh"
 #include "calPixelQualityLM.hh"
+#include "calPixelTimeCalibration.hh"
+#include "calTileQuality.hh"
 #include <algorithm>
 #include <chrono>
 
@@ -85,6 +87,10 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
     a = new calDetSetupV1(db, tag);
   } else if (!name.compare("pixelqualitylm_"))  {
     a = new calPixelQualityLM(db, tag);
+  } else if (!name.compare("pixeltimecalibration_"))  {
+    a = new calPixelTimeCalibration(db, tag);
+  } else if (!name.compare("tilequality_"))  {
+    a = new calTileQuality(db, tag);
   } else {
     cout << "ERROR: " << name
          << " is an unknown class. Nothing registered in Mu3Conditions"
@@ -119,6 +125,10 @@ calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
     a = new calDetSetupV1();
   } else if (!hash.compare("pixelqualitylm_"))  {
     a = new calPixelQualityLM();
+  } else if (!hash.compare("pixeltimecalibration_"))  {
+    a = new calPixelTimeCalibration();
+  } else if (!hash.compare("tilequality_"))  {
+    a = new calTileQuality();
   } else {
     cout << "ERROR: " << hash
          << " indicates an unknown class. Nothing known in Mu3CalFactory"
