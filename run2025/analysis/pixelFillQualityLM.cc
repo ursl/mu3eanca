@@ -57,6 +57,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 
 #define JSONDIR "/Users/ursl/data/mu3e/cdb"
+#define CSVSCHEMA "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 4 = LVDS errors on link, 5 = LVDS errors from other link, 8 = no hits, 9 = masked"
 
 // ----------------------------------------------------------------------
 struct pixhit {
@@ -145,6 +146,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
+  cout << "printMode = " << printMode << endl;
   if (check) {
     cout << "check mode" << endl;
     // --
@@ -204,8 +206,9 @@ int main(int argc, char* argv[]) {
 
     // -- create turned on CSV for all chipIDs
     ofstream ofs;
-    ofs.open(Form("csv/deadlinks-allpixels.csv"));
-    ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off" << endl;
+    string filename = Form("csv/deadlinks-allpixels.csv");
+    ofs.open(filename);
+    ofs << CSVSCHEMA << endl;
     
     cout << "print all chipIDs" << endl;
     calAbs* cal = pDC->getCalibration("pixelalignment_");
@@ -226,7 +229,10 @@ int main(int argc, char* argv[]) {
     calPixelQualityLM *cpq = new calPixelQualityLM();
     cpq->readCsv(Form("csv/deadlinks-allpixels.csv"));
     string blob = cpq->makeBLOB();
-    createPayload(hash, cpq, "./payloads", "unset", "unset");
+    string schema = cpq->getSchema();
+    string comment = "runclass/meanY. " + filename;
+    cout << "XXXXXXXXX createPayload with hash = " << hash << " comment = " << comment << " schema = " << schema << endl;
+    createPayload(hash, cpq, "./payloads", schema, comment);
   
     return 0; 
   }
@@ -401,7 +407,7 @@ int main(int argc, char* argv[]) {
   vector<int> deadlinks, deadcolumns, noisyPixels;
   ofstream ofs;
   ofs.open(Form("csv/pixelqualitylm-run%d.csv", run));
-  ofs << "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 4 = LVDS errors on link, 5 = LVDS errors from other link, 8 = no hits, 9 = masked" << endl;
+  ofs << CSVSCHEMA << endl;
   for (auto it: mHitmaps){
     // -- debug with first 12 only FIXME
     //if (it.first != 1315) continue;
