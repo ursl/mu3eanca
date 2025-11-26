@@ -9,6 +9,7 @@
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
 #include "calTileQuality.hh"
+#include "calFibreQuality.hh"
 #include <algorithm>
 #include <chrono>
 
@@ -91,6 +92,8 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
     a = new calPixelTimeCalibration(db, tag);
   } else if (!name.compare("tilequality_"))  {
     a = new calTileQuality(db, tag);
+  } else if (!name.compare("fibrequality_"))  {
+    a = new calFibreQuality(db, tag);
   } else {
     cout << "ERROR: " << name
          << " is an unknown class. Nothing registered in Mu3Conditions"
@@ -129,6 +132,8 @@ calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
     a = new calPixelTimeCalibration();
   } else if (!hash.compare("tilequality_"))  {
     a = new calTileQuality();
+  } else if (!hash.compare("fibrequality_"))  {
+    a = new calFibreQuality();
   } else {
     cout << "ERROR: " << hash
          << " indicates an unknown class. Nothing known in Mu3CalFactory"

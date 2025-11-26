@@ -16,6 +16,7 @@
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
 #include "calTileQuality.hh"
+#include "calFibreQuality.hh"
 
 using namespace std;
 
@@ -279,6 +280,29 @@ int main(int argc, char* argv[]) {
     ctq2->calculate("tag_tilequality_datav6.3=2025V0_iov_1");
     ctq2->writeJSON("out-run3265_quality_overview_fromPayload.json");
 
+  } else if (13 == mode) {
+    cout << "Test fibre quality" << endl;
+    calFibreQuality *cfq = new calFibreQuality();
+    cfq->readCSV("ascii/fibres-asic-lockAndData-1.csv");
+    cfq->writeCSV("out-fibres-asic-lockAndData-1.csv");
+    string sblob = cfq->makeBLOB();
+    cfq->printBLOB(sblob, 1000);
+    payload pl;
+    pl.fHash = "tag_fibrequality_datav6.3=2025V0_iov_1";
+    pl.fComment = "FibreQuality";
+    pl.fSchema = cfq->getSchema();
+    pl.fBLOB = sblob;
+    cout << "######################################################################" << endl;
+    cout << "### createPayload" << endl;
+    cout <<  pl.printString(false) << endl;
+    cfq->printBLOB(sblob, 1);
+    cout << "######################################################################" << endl;
+    cfq->writePayloadToFile(pl.fHash, ".", pl);
+
+    calFibreQuality *cfq2 = new calFibreQuality();
+    cfq2->readPayloadFromFile("tag_fibrequality_datav6.3=2025V0_iov_1", ".");
+    cfq2->calculate("tag_fibrequality_datav6.3=2025V0_iov_1");
+    cfq2->writeCSV("out-fibres-asic-lockAndData-1_fromPayload.csv");
   }
   return 0;
 }
