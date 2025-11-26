@@ -64,8 +64,8 @@ OSUFFIX := .o
 LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o \
          calPixelAlignment.o calFibreAlignment.o  \
          calMppcAlignment.o calTileAlignment.o \
-         calPixelQuality.o calPixelQualityLM.o calPixelQualityV.o calPixelQualityM.o \
-         calTileQuality.o \
+         calPixelQualityLM.o \
+         calTileQuality.o calFibreQuality.o \
          calPixelTimeCalibration.o \
          calPixelCablingMap.o calDetConfV1.o calDetSetupV1.o \
          Mu3eConditions.o Mu3eCalFactory.o \
