@@ -43,7 +43,7 @@ using namespace std;
 // --          7: capitalize RunInfo.Class and if its value is "calib" change it to "Calibration"
 // --          8: set RunInfo.Significant to value
 // --          9: check if Resources exist and remove all documents with description XXX in that array
-// --
+
 // -- History:
 // --   2025/06/10: add mode 9
 // --   2025/06/05: add modes 3, 4, 5, and 6 and 7. Add reading of certification files.
@@ -1038,7 +1038,7 @@ void rdbMode7(int irun, bool debug) {
 // ----------------------------------------------------------------------
 // -- set RunInfo.Significant to value
 void rdbMode8(int irun, string value, bool debug) {
-  bool DBX(false);
+  bool DBX(true);
   // Validate input parameters
   if (value == "unset") {
     cerr << "Error: Value must be set. Current value: " << value << endl;
@@ -1093,11 +1093,9 @@ void rdbMode8(int irun, string value, bool debug) {
         for (auto& attr : j["Attributes"]) {
           if (attr.contains("RunInfo")) {
             runInfoCount++;
-            if (attr["RunInfo"]["Significant"] == "unset") {
-              attr["RunInfo"]["Significant"] = valueLower;
-              anyChanges = true;
-              cout << "Run " << irun << ": Set RunInfo[" << runInfoCount << "].Significant to " << valueLower << endl;
-            }
+            attr["RunInfo"]["Significant"] = valueLower;
+            anyChanges = true;
+            cout << "Run " << irun << ": Set RunInfo[" << runInfoCount << "].Significant to " << valueLower << endl;
           }
         }
         
