@@ -12,9 +12,6 @@
 //#include "cdbUtil.hh" 
 #include "Mu3eConditions.hh"
 #include "calPixelAlignment.hh"
-#include "calPixelQuality.hh"
-#include "calPixelQualityV.hh"
-#include "calPixelQualityM.hh"
 #include "calPixelQualityLM.hh"
 
 
@@ -54,6 +51,10 @@ using namespace std;
 // bin/pixelFillQualityLM \
 // -g datav6.3=2025V0 -j ~/data/mu3e/cdb/ 
 // -f ~/data/mu3e/run2025/mlzr/merged-dqm_histos_06252.root -r MidasMeta2025Data.root
+//
+// Create _iov_1 payload:
+// moor>./bin/pixelFillQualityLM -g datav6.3=2025V0 -j ~/data/mu3e/cdb/ -p 4
+// 
 // ----------------------------------------------------------------------
 
 #define JSONDIR "/Users/ursl/data/mu3e/cdb"
