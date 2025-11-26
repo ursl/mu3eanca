@@ -98,7 +98,7 @@ $(addprefix obj/,%.o) : %.cc
 
 
 
-$(addprefix bin/,%) : $(addprefix obj/,%.o)
+$(addprefix bin/,%) : $(addprefix obj/,%.o) lib/libRun2025Analysis.so
 	$(LD) $(LDFLAGS) -o $@  $<  lib/libRun2025Analysis.so $(GLIBS) $(OTHERLIBS)
  
 
