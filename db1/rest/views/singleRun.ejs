@@ -99,6 +99,134 @@
              background-color: #00703c;
              color: white;
          }
+
+         /* Data Quality Summary styling */
+         #runs td input[type="checkbox"][id^="dq"] {
+             width: 18px;
+             height: 18px;
+             margin-right: 5px;
+             margin-left: 10px;
+             cursor: pointer;
+             appearance: none;
+             -webkit-appearance: none;
+             -moz-appearance: none;
+             border: 2px solid #ccc;
+             border-radius: 3px;
+             background-color: white;
+             position: relative;
+             vertical-align: middle;
+             display: inline-block;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"][disabled] {
+             cursor: not-allowed;
+             opacity: 0.8;
+         }
+
+         #runs td label[for^="dq"] {
+             font-weight: 600;
+             margin-right: 15px;
+             cursor: default;
+             font-size: 14px;
+             vertical-align: middle;
+             display: inline-block;
+         }
+
+         /* Good state (checked) - Green */
+         #runs td input[type="checkbox"][id^="dq"][disabled]:checked,
+         #runs td input[type="checkbox"][id^="dq"].dq-good[disabled] {
+             background-color: #2e7d32;
+             border-color: #2e7d32;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"][disabled]:checked::after,
+         #runs td input[type="checkbox"][id^="dq"].dq-good[disabled]::after {
+             content: '✓';
+             position: absolute;
+             left: 50%;
+             top: 50%;
+             transform: translate(-50%, -50%);
+             color: white;
+             font-size: 14px;
+             font-weight: bold;
+             line-height: 1;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"][disabled]:checked + label,
+         #runs td input[type="checkbox"][id^="dq"].dq-good[disabled] + label,
+         #runs td label.dq-good {
+             color: #2e7d32;
+         }
+
+         /* Bad state (unchecked, not indeterminate) - Red */
+         #runs td input[type="checkbox"][id^="dq"][disabled]:not(:checked):not(:indeterminate),
+         #runs td input[type="checkbox"][id^="dq"].dq-bad[disabled]:not(:checked):not(:indeterminate) {
+             background-color: #c62828;
+             border-color: #c62828;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"][disabled]:not(:checked):not(:indeterminate)::after,
+         #runs td input[type="checkbox"][id^="dq"].dq-bad[disabled]:not(:checked):not(:indeterminate)::after {
+             content: '✗';
+             position: absolute;
+             left: 50%;
+             top: 50%;
+             transform: translate(-50%, -50%);
+             color: white;
+             font-size: 14px;
+             font-weight: bold;
+             line-height: 1;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"][disabled]:not(:checked):not(:indeterminate) + label,
+         #runs td input[type="checkbox"][id^="dq"].dq-bad[disabled] + label,
+         #runs td label.dq-bad {
+             color: #c62828;
+         }
+
+         /* Unset/Indeterminate state - Neutral gray */
+         #runs td input[type="checkbox"][id^="dq"][disabled]:indeterminate,
+         #runs td input[type="checkbox"][id^="dq"].dq-unset[disabled] {
+             background-color: #333;
+             border-color: #333;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"][disabled]:indeterminate::after,
+         #runs td input[type="checkbox"][id^="dq"].dq-unset[disabled]::after {
+             content: '−';
+             position: absolute;
+             left: 50%;
+             top: 50%;
+             transform: translate(-50%, -50%);
+             color: white;
+             font-size: 16px;
+             font-weight: bold;
+             line-height: 1;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"][disabled]:indeterminate + label,
+         #runs td input[type="checkbox"][id^="dq"].dq-unset[disabled] + label,
+         #runs td label.dq-unset {
+             color: #333;
+         }
+
+         /* When enabled (edit mode), use standard colors */
+         #runs td input[type="checkbox"][id^="dq"]:not([disabled]) {
+             appearance: auto;
+             -webkit-appearance: checkbox;
+             -moz-appearance: checkbox;
+             border: none;
+             background-color: transparent;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"]:not([disabled])::after {
+             content: none;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"]:not([disabled]) + label {
+             cursor: pointer;
+             color: #333;
+         }
        
         </style>
     </head>
@@ -214,7 +342,7 @@
             <% if (data.hasOwnProperty('Attributes')) { %>
                 <% if (data.hasOwnProperty('Attributes') && Array.isArray(data.Attributes) && data.Attributes.some(attr => attr.hasOwnProperty('DataQuality'))) { %>
                 <tr>
-                    <td> Data Quality Summary </td>
+                    <td> Data Quality Summary2 </td>
                     <td>
                         <input type="checkbox" id="dqMu3e" name="dqMu3e" indeterminate disabled/> <label for="dqMu3e">Mu3e</label>
                         <input type="checkbox" id="dqBeam" name="dqBeam" indeterminate disabled/> <label for="dqBeam">Beam</label>
@@ -222,7 +350,6 @@
                         <input type="checkbox" id="dqPix" name="dqPix" indeterminate disabled/> <label for="dqPix">Pixel</label>
                         <input type="checkbox" id="dqFib" name="dqFib" indeterminate disabled/> <label for="dqFib">Fibres</label>
                         <input type="checkbox" id="dqTil" name="dqTil" indeterminate disabled/> <label for="dqTil">Tiles</label>
-                        <input type="checkbox" id="dqCal" name="dqCal" indeterminate disabled/> <label for="dqCal">Calibration</label>
                         <input type="checkbox" id="dqLks" name="dqLks" indeterminate disabled/> <label for="dqLks">Links</label>
                     </td>
                 </tr>
@@ -347,7 +474,6 @@
          ["pixel", "dqPix"],
          ["fibres", "dqFib"], 
          ["tiles", "dqTil"], 
-         ["calibration", "dqCal"], 
          ["links", "dqLks"],
          ["version", "dqVer"]        
      ]);
@@ -360,7 +486,6 @@
          ["pixel", "nada"], 
          ["fibres", "nada"], 
          ["tiles", "nada"],
-         ["calibration", "nada"], 
          ["links", "nada"], 
          ["version", "nada"]
      ]);
@@ -435,6 +560,8 @@
                             element.indeterminate = true;
                             dqOrig.set(prop, "-1");
                         }
+                        // Update styling classes
+                        updateDQCheckboxStyle(element);
                     }
                 }
             }
@@ -447,10 +574,35 @@
                  if (element) {
                      console.log(value);
                      element.indeterminate = true;
+                     updateDQCheckboxStyle(element);
                  }
              }
          } else {
              console.log("do nothing as this runrecord has no Attributes");
+         }
+     }
+
+     // Function to update checkbox styling based on state
+     function updateDQCheckboxStyle(checkbox) {
+         if (!checkbox) return;
+         const label = checkbox.nextElementSibling;
+         if (!label || label.tagName !== 'LABEL') return;
+         
+         // Remove any existing state classes
+         checkbox.classList.remove('dq-good', 'dq-bad', 'dq-unset');
+         label.classList.remove('dq-good', 'dq-bad', 'dq-unset');
+         
+         if (checkbox.disabled) {
+             if (checkbox.indeterminate) {
+                 checkbox.classList.add('dq-unset');
+                 label.classList.add('dq-unset');
+             } else if (checkbox.checked) {
+                 checkbox.classList.add('dq-good');
+                 label.classList.add('dq-good');
+             } else {
+                 checkbox.classList.add('dq-bad');
+                 label.classList.add('dq-bad');
+             }
          }
      }
      
@@ -514,6 +666,12 @@
                      if (element) {
                          console.log("key: " + key + " unsetting disabled: " + value);
                          element.disabled = false;
+                         // Remove styling classes when enabled (edit mode)
+                         element.classList.remove('dq-good', 'dq-bad', 'dq-unset');
+                         const label = element.nextElementSibling;
+                         if (label && label.tagName === 'LABEL') {
+                             label.classList.remove('dq-good', 'dq-bad', 'dq-unset');
+                         }
                      }
                  }
              }
@@ -575,6 +733,8 @@
                      if (element) {
                          console.log("key: " + key + " unsetting disabled: " + value);
                          element.disabled = true;
+                         // Reapply styling when disabled
+                         updateDQCheckboxStyle(element);
                      }
                  }
              }
@@ -688,7 +848,6 @@
                  pixel: "-2",
                  fibres: "-2",
                  tiles: "-2", 
-                 calibration: "-2",
                  links: "-2",
                  version: "unset-2"
              }
