@@ -43,6 +43,7 @@ using namespace std;
 // --          7: capitalize RunInfo.Class and if its value is "calib" change it to "Calibration"
 // --          8: set RunInfo.Significant to value
 // --          9: check if Resources exist and remove all documents with description XXX in that array
+// --         10: reset DataQuality: remove multiple DataQuality entries, keep one and reset all values to "-1".
 
 // -- History:
 // --   2025/06/10: add mode 9
@@ -64,6 +65,8 @@ void rdbMode6(int irun, bool debug);
 void rdbMode7(int irun, bool debug);
 void rdbMode8(int irun, string value, bool debug);
 void rdbMode9(int irun, string description, bool debug);
+void rdbMode10(int irun, bool debug);
+
 string getCurrentDateTime();
 
 // ----------------------------------------------------------------------
@@ -203,6 +206,10 @@ int main(int argc, char* argv[]) {
     }
     if (9 == mode) {
       rdbMode9(irun, value, debug);
+      continue;
+    }
+    if (10 == mode) {
+      rdbMode10(irun, debug);
       continue;
     }
 
@@ -525,7 +532,8 @@ void rdbMode3(int irun, string key, string value, bool debug) {
             (*current)[finalKey] = newValue;
           } else {
             // Normal update (or append on non-string which becomes a normal update)
-            (*current)[finalKey] = convertValueToType(value);
+            // (*current)[finalKey] = convertValueToType(value);
+            (*current)[finalKey] = value;
           }
           cout << "current after update: " << current->dump() << endl;
           // Convert back to string
@@ -1276,5 +1284,178 @@ string getCurrentDateTime() {
      << setw(2) << setfill('0') << now_tm->tm_sec;
   
   return ss.str();
+}
+
+
+// ----------------------------------------------------------------------
+// -- Remove superfluous DataQuality entries and keep only one, with all values set to -1 (unset)
+void rdbMode10(int irun, bool debug) {
+  bool DBX(true);
+  // Validate input parameters
+  string responseData;
+  CURL* curl = curl_easy_init();
+  if (curl) {
+    std::string url = rdbGetString + "/" + std::to_string(irun) + "/json";
+    
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+    
+    // Set headers
+    struct curl_slist* headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    
+    if (debug) {
+      cout << "Making request to: " << url << endl;
+    } else {
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+      
+      if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+    }
+
+    try {
+      // Parse the JSON response
+      json j = json::parse(responseData);
+      
+      // Check if Attributes array exists
+      if (!j.contains("Attributes")) {
+        cout << "Run " << irun << ": No Attributes array found" << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+
+      // Search for DataQuality in Attributes array and collect indices
+      vector<size_t> dataQualityIndices;
+      json* firstDataQuality = nullptr;
+      
+      for (size_t i = 0; i < j["Attributes"].size(); i++) {
+        if (j["Attributes"][i].contains("DataQuality")) {
+          dataQualityIndices.push_back(i);
+          if (firstDataQuality == nullptr) {
+            firstDataQuality = &j["Attributes"][i]["DataQuality"];
+          }
+        }
+      }
+
+      if (dataQualityIndices.empty()) {
+        cout << "Run " << irun << ": No DataQuality found in Attributes array" << endl;
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return;
+      }
+
+      bool anyChanges = false;
+
+      // Reset values in the first DataQuality object
+      if (firstDataQuality != nullptr && firstDataQuality->is_object()) {
+        // Remove "calibration" field
+        if (firstDataQuality->contains("calibration")) {
+          firstDataQuality->erase("calibration");
+          anyChanges = true;
+        }
+        
+        // Set "version" to "1"
+        if (!firstDataQuality->contains("version") || (*firstDataQuality)["version"] != "1") {
+          (*firstDataQuality)["version"] = "1";
+          anyChanges = true;
+        }
+        
+        // Reset all other values to "-1"
+        for (auto it = firstDataQuality->begin(); it != firstDataQuality->end(); ++it) {
+          string key = it.key();
+          if (key != "version" && key != "calibration") {
+            bool needsUpdate = false;
+            if (it.value().is_string()) {
+              string currentValue = it.value().get<string>();
+              if (currentValue != "-1") {
+                needsUpdate = true;
+              }
+            } else if (it.value().is_number_integer()) {
+              // Integer values should also be replaced with "-1"
+              needsUpdate = true;
+            } else if (it.value().is_number()) {
+              // Handle other numeric types (float, double) as well
+              needsUpdate = true;
+            }
+            
+            if (needsUpdate) {
+              (*firstDataQuality)[key] = "-1";
+              anyChanges = true;
+            }
+          }
+        }
+      }
+
+      // Remove all DataQuality objects except the first one
+      // Iterate backwards to avoid index shifting issues
+      if (dataQualityIndices.size() > 1) {
+        for (size_t idx = dataQualityIndices.size() - 1; idx > 0; idx--) {
+          size_t attrIndex = dataQualityIndices[idx];
+          // Check if this attribute only contains DataQuality (no other keys)
+          bool onlyDataQuality = true;
+          for (auto it = j["Attributes"][attrIndex].begin(); it != j["Attributes"][attrIndex].end(); ++it) {
+            if (it.key() != "DataQuality") {
+              onlyDataQuality = false;
+              break;
+            }
+          }
+          
+          if (onlyDataQuality) {
+            // Remove the entire attribute entry
+            j["Attributes"].erase(j["Attributes"].begin() + attrIndex);
+            anyChanges = true;
+          } else {
+            // Remove only the DataQuality key from this attribute
+            j["Attributes"][attrIndex].erase("DataQuality");
+            anyChanges = true;
+          }
+        }
+      }
+
+      // Only update the server if any changes were made
+      if (anyChanges) {
+        // Convert back to string
+        responseData = j.dump(2);  // Pretty print with 2-space indentation
+        
+        size_t removedCount = dataQualityIndices.size() > 1 ? dataQualityIndices.size() - 1 : 0;
+        cout << "Run " << irun << ": Reset DataQuality values to '-1', removed " << removedCount << " duplicate DataQuality object(s), kept 1" << endl;
+        if (DBX) cout << "responseData: ->" << responseData << "<-" << endl;
+        
+        // Send the updated JSON back to the server
+        curl_easy_reset(curl);
+        curl_easy_setopt(curl, CURLOPT_URL, rdbPutString.c_str());
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        
+        // Perform the update request
+        CURLcode res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+          cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
+        } else {
+          cout << "Successfully reset DataQuality values" << endl;
+        }
+      } else {
+        cout << "Run " << irun << ": No DataQuality values to reset" << endl;
+      }
+    } catch (const json::parse_error& e) {
+      cerr << "Run " << irun << ": Failed to parse JSON response: " << e.what() 
+           << "->" << responseData << "<-"
+           << endl;
+    } catch (const std::exception& e) {
+      cerr << "Run " << irun << ": Error processing JSON: " << e.what() << endl;
+    } 
+
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+  }
 }
 
