@@ -132,13 +132,13 @@ void calTileQuality::printBLOB(std::string blob, int verbosity) {
            << endl;
     }
   }
-  string tileType(" all");
+  string tileType("all");
   if (verbosity < 0) {
-    tileType = " not good";
+    tileType = "not good";
   } else if (verbosity > 0) {
-    tileType = " good";
+    tileType = "good";
   }
-  cout << "calTileQuality::printBLOB(...) printed status for " << cnt << tileType << " tiles" << endl;
+  cout << "calTileQuality::printBLOB(...) printed status for " << cnt  << " tiles " << "(" << tileType << ")" << endl;
 }
 
 
