@@ -28,7 +28,7 @@ public:
   ~calTileQuality();
 
   // -- direct accessors
-  Status getChannelQuality(uint32_t id) {return static_cast<Status>(fMapConstants[id].quality);}
+  Status getChannelQuality(uint32_t id);
 
   std::string getName() override {return fTileQualityTag;}
   void        calculate(std::string hash) override;
