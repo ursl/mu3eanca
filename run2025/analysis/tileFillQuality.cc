@@ -86,7 +86,6 @@ int main(int argc, char *argv[]) {
   cout << "tileFillQuality" << endl;
   // -- command line arguments
   int verbose(0), mode(1), printMode(0), check(0);
-  // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(JSONDIR), dirname("");
   string gt("datav6.3=2025V0");
   string igt("datav6.2=2025Beam");
