@@ -38,12 +38,19 @@ int main(int argc, const char* argv[]) {
   string filename(""), pdir(""), hash("");
   int verbose(10000);
   
+  // -- commmand line parsing
+  for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "-v")) {
+      verbose = atoi(argv[++i]);
+    }
+  }
+
   // -- command line arguments
   if (argc < 2) {
     cout << "provide a payload file" << endl;
     return 0;
   } else {
-    filename = argv[1];
+    filename = argv[argc-1];
   }
   
   pdir = filename.substr(0, filename.find_last_of("/")+1);
