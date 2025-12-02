@@ -58,7 +58,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 
 #define JSONDIR "/Users/ursl/data/mu3e/cdb"
-#define CSVSCHEMA "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 4 = LVDS errors on link, 5 = LVDS errors from other link, 8 = no hits, 9 = masked"
+#define CSVSCHEMA "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 4 = LVDS errors on link, 5 = LVDS errors from other link, 6 = LVDS errors on top/bottom edge, 7 = dead chip, 8 = no hits, 9 = masked"
 
 // ----------------------------------------------------------------------
 struct pixhit {
@@ -72,6 +72,7 @@ struct pixhit {
 void createPayload(string, calAbs *, string, string, string);
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 bool determineBrokenLinks(TH2 *h, vector<int> &links);
+bool determineBrokenLinksV0(TH2 *h, vector<int> &links);
 void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links);
 void determineNoisyPixels(TH2 *h, vector<int> &pixels, vector<int> &colums, vector<int> &links); // icol,irow,iqual
 
@@ -551,6 +552,128 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
   if (1) cout << "  nLinkA = " << nLinkA << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC << " nLinkAverage = " << nLinkAverage << endl;
   if (nLinkA < 1 && nLinkB < 1 && nLinkC < 1) {
+    links.push_back(7);
+    links.push_back(7);
+    links.push_back(7);
+    links.push_back(7);
+    return false;
+  }
+
+  // -- search for pathological cases where all hits are very close to the top (bottom) edge
+  vector<double> vLinkMeanY;
+  vLinkMeanY.push_back(h->ProjectionY("A", 1, 88)->GetMean());
+  vLinkMeanY.push_back(h->ProjectionY("B", 89, 172)->GetMean());
+  vLinkMeanY.push_back(h->ProjectionY("C", 173, 256)->GetMean());
+  int badChip(-1); // -- if any link is broken and not masked, the chip is bad
+  if (nLinkA > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245)) badChip = 1;
+  if (nLinkB > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245)) badChip = 2;
+  if (nLinkC > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)) badChip = 3;
+  if (badChip > 0) {
+    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2] << endl;  
+    if (nLinkA < 1) {
+      links.push_back(8);
+    } else {
+      links.push_back(6);
+    }
+    if (nLinkB < 1) {
+      links.push_back(8);
+    } else {
+      links.push_back(6);
+    }
+    if (nLinkC < 1) {
+      links.push_back(8);
+    } else {
+      links.push_back(6);
+    }
+    links.push_back(0);
+    return true;
+  }
+
+
+  // -- hand-curated list to avoid getting lost in algorithmic nightmares
+  vector<int> vBadChips = {102};
+
+  if (find(vBadChips.begin(), vBadChips.end(), chipID) != vBadChips.end()) {  
+    links.push_back(3);
+    links.push_back(3);
+    links.push_back(3);
+    links.push_back(3);
+    return true;
+  }
+
+  AsicInfo ai = gRunInfoMap[chipID];
+
+  // -- completely disabled chip
+  if (0 == ai.abcLinkMask[0]
+      && 0 == ai.abcLinkMask[1]
+      && 0 == ai.abcLinkMask[2]) {
+    links.push_back(9);
+    links.push_back(9);
+    links.push_back(9);
+    links.push_back(0);
+    return false;
+  }
+
+  
+  // -- check individual links
+  int lkStatus[3] = {0, 0, 0};
+  int nBadLinks(0);
+  badChip = -1;
+  for (int i = 0; i < 3; ++i) {
+    if (vLink[i] < 1) lkStatus[i] = 8;
+    if (0 == ai.abcLinkMask[i]) lkStatus[i] = 9;
+    if (ai.abcLinkErrs[i] > 10) lkStatus[i] = 4;
+    if (ai.abcLinkErrs[i] > 10 && 1 == ai.abcLinkMask[i]) {
+      badChip = i;
+      ++nBadLinks;
+    }
+  }
+ 
+  for (int i = 0; i < 3; ++i) {
+    cout << "Chip " << chipID << " link " << i << " status = " << lkStatus[i] 
+    << " mask = " << ai.abcLinkMask[i] << " errs = " << ai.abcLinkErrs[i]
+    << endl;
+  }
+
+
+  if (badChip >= 0) {    
+    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << endl;
+    for (int i = 0; i < 3; ++i) {
+      if (i != badChip) {
+        lkStatus[i] = 5;
+      } else {
+        lkStatus[i] = 4;
+      }
+    }
+  }
+
+
+  links.push_back(lkStatus[0]);
+  links.push_back(lkStatus[1]);
+  links.push_back(lkStatus[2]);
+  links.push_back(0);
+
+  return true;
+}
+
+// ----------------------------------------------------------------------
+// -- this is completely new and now relies on PCLS data read from midas meta data tree
+bool determineBrokenLinksV0(TH2 *h, vector<int> &links) {
+  bool DBX(false);
+
+  // -- the histogram still used to provide the chip name
+  string schip = h->GetName();
+  replaceAll(schip, "hitmap_perChip_", "");
+  int chipID = ::stoi(schip);
+
+  // -- determine dead chips
+  double nLinkA = h->Integral(1, 88, 1, 250);
+  double nLinkB = h->Integral(89, 172, 1, 250);
+  double nLinkC = h->Integral(173, 256, 1, 250);
+  vector<double> vLink = {nLinkA, nLinkB, nLinkC};
+  double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
+  if (1) cout << "  nLinkA = " << nLinkA << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC << " nLinkAverage = " << nLinkAverage << endl;
+  if (nLinkA < 1 && nLinkB < 1 && nLinkC < 1) {
     links.push_back(8);
     links.push_back(8);
     links.push_back(8);
@@ -666,6 +789,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
 
   return true;
 }
+
 
 // ----------------------------------------------------------------------
 void determineDeadColumns(TH2 *h, vector<int> &columns, vector<int> &links) {
