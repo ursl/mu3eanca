@@ -14,6 +14,11 @@
 #include "cdbUtil.hh"
 #include "base64.hh"
 
+#include <TFile.h>
+#include <TTree.h>
+#include <map>
+#include <vector>
+
 #include "calPixelAlignment.hh"
 #include "calFibreAlignment.hh"
 #include "calMppcAlignment.hh"
@@ -142,7 +147,57 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
   cout << "   ->cdbWritePayload> writing alignment " << type << " from file " << ifilename << endl;
 
   // -- pixel sensor alignment
+  string tmpFilename("");
+  if (string::npos != ifilename.find(".root")) {
+    tmpFilename = ifilename;
+    size_t pos = tmpFilename.find(".root");
+    if (pos != string::npos) {
+      tmpFilename.replace(pos, 5, ".csv-tmp");
+    }
+    cout << "   ->cdbWritePayload> temporary file " << tmpFilename << endl;
+  }
   if (type == "pixelalignment") {
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> reading alignment from root file " << ifilename << endl;
+      struct sensor {
+        unsigned int id;
+        double vx, vy, vz;
+        double rowx, rowy, rowz;
+        double colx, coly, colz;
+      };
+      map<int, sensor> sensors;
+      TFile *file = TFile::Open(ifilename.c_str());
+      TTree *ta = (TTree*)file->Get("alignment/sensors");
+      struct sensor a;
+      ta->SetBranchAddress("id", &a.id);
+      ta->SetBranchAddress("vx", &a.vx);
+      ta->SetBranchAddress("vy", &a.vy);
+      ta->SetBranchAddress("vz", &a.vz);
+      ta->SetBranchAddress("rowx", &a.rowx);
+      ta->SetBranchAddress("rowy", &a.rowy);
+      ta->SetBranchAddress("rowz", &a.rowz);
+      ta->SetBranchAddress("colx", &a.colx);
+      ta->SetBranchAddress("coly", &a.coly);
+      ta->SetBranchAddress("colz", &a.colz);
+      int nbytes(0);
+      for (int i = 0; i < ta->GetEntries(); ++i) {
+        nbytes += ta->GetEntry(i);
+        sensors.insert(make_pair(a.id, a));
+      }
+      ofstream ONS;
+      ONS.open(tmpFilename);
+      for (auto &s : sensors) {
+        ONS << s.first << "," << s.second.vx << "," << s.second.vy << "," << s.second.vz << "," << s.second.rowx << "," << s.second.rowy << "," << s.second.rowz << "," << s.second.colx << "," << s.second.coly << "," << s.second.colz << endl;
+      }
+      ONS.close();
+      file->Close();
+    } 
+
+    // -- if the input filename is a root file, use the temporary file
+    if (string::npos != ifilename.find(".root")) {
+      ifilename = tmpFilename;
+    }
+
     calPixelAlignment *cpa = new calPixelAlignment();
     string result = cpa->readCsv(ifilename);
     if (string::npos == result.find("Error")) {
