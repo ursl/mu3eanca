@@ -164,8 +164,10 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
         double vx, vy, vz;
         double rowx, rowy, rowz;
         double colx, coly, colz;
+        int nrow, ncol;
+        double width, length, thickness, pixelSize;
       };
-      map<int, sensor> sensors;
+      map<unsigned int, sensor> sensors;
       TFile *file = TFile::Open(ifilename.c_str());
       TTree *ta = (TTree*)file->Get("alignment/sensors");
       struct sensor a;
@@ -179,6 +181,12 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
       ta->SetBranchAddress("colx", &a.colx);
       ta->SetBranchAddress("coly", &a.coly);
       ta->SetBranchAddress("colz", &a.colz);
+      ta->SetBranchAddress("nrow", &a.nrow);
+      ta->SetBranchAddress("ncol", &a.ncol);
+      ta->SetBranchAddress("width", &a.width);
+      ta->SetBranchAddress("length", &a.length);
+      ta->SetBranchAddress("thickness", &a.thickness);
+      ta->SetBranchAddress("pixelSize", &a.pixelSize);
       int nbytes(0);
       for (int i = 0; i < ta->GetEntries(); ++i) {
         nbytes += ta->GetEntry(i);
@@ -187,7 +195,15 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
       ofstream ONS;
       ONS.open(tmpFilename);
       for (auto &s : sensors) {
-        ONS << s.first << "," << s.second.vx << "," << s.second.vy << "," << s.second.vz << "," << s.second.rowx << "," << s.second.rowy << "," << s.second.rowz << "," << s.second.colx << "," << s.second.coly << "," << s.second.colz << endl;
+        ONS << s.first << "," 
+        << std::setprecision(15)
+        << s.second.vx << "," << s.second.vy << "," << s.second.vz << "," 
+        << s.second.rowx << "," << s.second.rowy << "," << s.second.rowz 
+        << "," << s.second.colx << "," << s.second.coly << "," << s.second.colz 
+        << "," << s.second.nrow << "," << s.second.ncol << "," 
+        << s.second.width << "," << s.second.length << "," 
+        << s.second.thickness << "," << s.second.pixelSize
+        << endl;
       }
       ONS.close();
       file->Close();
