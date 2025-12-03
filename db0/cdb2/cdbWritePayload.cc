@@ -41,10 +41,18 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
 // ---------------
 //
 // NOTE: works (validated) for pixelalignement. All the rest might need some improvements!
+// 
+//  -c pixelalignment    produce the pixelalignment payloads. This is (currently) the only properly validated usage.
+//  -g GT                the global tag (GT) for the payload (part of the "hash" written into the payload metadata)
+//  -i RUN               the interval of validity, i.e., the first run for which the payload is valid
+//  -j JSONDIR           the CDB directory where the payloads will be written to JSONDIR/payloads/
 //
-// Usage examples   ./bin/cdbWritePayload -c pixelalignment -g datav6.3=2025V1test -j ~/data/mu3e/cdb -f ascii/sensors-alignment-CosmicTracksV0.csv -i 1
+// Usage examples   
 // --------------
 //
+// cdbWritePayload -c pixelalignment -g datav6.3=2025V1test -i 1 -j ~/data/mu3e/cdb -f ascii/sensors-alignment-CosmicTracksV0.csv 
+// cdbWritePayload -c pixelalignment -g datav6.3=2025V1test -i 1 -j ~/data/mu3e/cdb -f Downloads/cosmic_alignment_xyz.root 
+// 
 // ----------------------------------------------------------------------
 
 
