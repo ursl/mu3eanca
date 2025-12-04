@@ -18,6 +18,7 @@
 #include "calPixelCablingMap.hh"
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
+#include "calPixelEfficiency.hh"
 
 #include "calFibreAlignment.hh"
 #include "calTileQuality.hh"
@@ -145,6 +146,14 @@ int main(int argc, const char* argv[]) {
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("fibrequality_")) {
     c = new calFibreQuality();
+    c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("pixelefficiency_")) {
+    c = new calPixelEfficiency();
     c->readPayloadFromFile(hash, pdir);
     cout << "hash:    " << c->getPayload(hash).fHash << endl;
     cout << "comment: " << c->getPayload(hash).fComment << endl;
