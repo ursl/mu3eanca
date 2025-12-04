@@ -148,7 +148,7 @@
             <!-- Globaltags Box -->
             <div class="half-column">
                 <div class="data-box">
-                    <h3>Global Tags1</h3>
+                    <h3>Global Tags</h3>
                     <div style="margin-bottom: 8px; flex-shrink: 0;">
                         <input type="text" class="form-control" id="globaltag-filter" placeholder="Filter global tags...">
                     </div>
@@ -203,6 +203,35 @@
                             </thead>
                             <tbody></tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payload Details Modal -->
+        <div class="modal fade" id="payloadModal" tabindex="-1" aria-labelledby="payloadModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="payloadModalLabel">Payload details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2">
+                            <div><strong>Hash:</strong> <span id="payloadDetailHash"></span></div>
+                            <div><strong>Tag:</strong> <span id="payloadDetailTag"></span></div>
+                            <div><strong>IOV:</strong> <span id="payloadDetailIov"></span></div>
+                            <div><strong>Date:</strong> <span id="payloadDetailDate"></span></div>
+                            <div><strong>Schema:</strong> <span id="payloadDetailSchema"></span></div>
+                            <div><strong>Comment:</strong> <span id="payloadDetailComment"></span></div>
+                            <div><strong>BLOB size:</strong> <span id="payloadDetailBlobSize"></span></div>
+                        </div>
+                        <hr>
+                        <h6>Decoded content</h6>
+                        <pre id="payloadDetailDecoded" style="max-height: 55vh; overflow: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;"></pre>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -466,6 +495,14 @@
                     const date = new Date(payload.date);
                     const formattedDate = date.toLocaleString();
                     
+                    // Store some metadata on the row for later use
+                    row.dataset.hash = payload.hash;
+                    row.dataset.iov = iov;
+                    row.dataset.tag = data.tag;
+                    row.dataset.schema = payload.schema || "";
+                    row.dataset.comment = payload.comment || "";
+                    row.dataset.date = formattedDate;
+                    
                     // Add cells
                     row.insertCell().textContent = iov;
                     row.insertCell().textContent = formattedDate;
@@ -476,6 +513,11 @@
                     if (data.iovs.includes(parseInt(iov))) {
                         row.style.backgroundColor = "#e6ffe6"; // Light green
                     }
+                    
+                    // Click handler: fetch and show payload content
+                    row.addEventListener("click", () => {
+                        showPayloadDetails(row.dataset);
+                    });
                 });
                 
             } catch (error) {
@@ -487,6 +529,394 @@
                 cell.style.color = "red";
                 cell.style.textAlign = "center";
                 document.getElementById("payloads-tag-label").textContent = "";
+            }
+        }
+
+        // Parse schema into an array of lines, each with its original text and ordered variables.
+        // Variable types are inferred from prefixes:
+        //   "ui_" -> unsigned int, "i_" -> int, "b_" -> boolean, everything else -> double.
+        function parseSchemaLines(schema) {
+            if (!schema || typeof schema !== "string") return [];
+            const rawLines = schema.split(/\r?\n/);
+            const result = [];
+            for (const raw of rawLines) {
+                const line = raw.trim();
+                if (!line) continue;
+                const tokens = line.split(/[\s,;()]+/);
+                const vars = [];
+                for (const tok of tokens) {
+                    if (!tok) continue;
+                    if (tok.startsWith("ui_")) {
+                        vars.push({ name: tok, type: "uint" });
+                    } else if (tok.startsWith("i_")) {
+                        vars.push({ name: tok, type: "int" });
+                    } else if (tok.startsWith("b_")) {
+                        vars.push({ name: tok, type: "bool" });
+                    } else {
+                        vars.push({ name: tok, type: "double" });
+                    }
+                }
+                result.push({ raw, vars });
+            }
+            return result;
+        }
+
+        // Try to decode a base64-encoded BLOB field using the schema.
+        // Layout assumption:
+        //   - First 8 bytes: header block, with the first 4 bytes = 0xDEADFACE
+        //   - Remaining data: 8-byte chunks, one per schema variable, in schema order.
+        function decodePayloadBlobField(blobField, schema) {
+            if (!blobField) return { text: "(no BLOB field found)", size: 0 };
+
+            if (typeof blobField !== "string") {
+                return {
+                    text: JSON.stringify(blobField, null, 2),
+                    size: 0
+                };
+            }
+
+            const base64 = blobField.trim();
+            if (!base64.length) {
+                return { text: "(empty BLOB string)", size: 0 };
+            }
+
+            const schemaLines = parseSchemaLines(schema);
+
+            try {
+                // Decode base64 to raw bytes
+                const binaryStr = atob(base64);
+                const size = binaryStr.length;
+                const bytes = new Uint8Array(size);
+                for (let i = 0; i < size; ++i) {
+                    bytes[i] = binaryStr.charCodeAt(i);
+                }
+
+                const dataView = new DataView(bytes.buffer);
+                const lines = [];
+
+                // --- Schema printout first ---
+                if (schema && schema.trim().length > 0) {
+                    lines.push("Schema:");
+                    lines.push(schema.trim());
+                } else {
+                    lines.push("Schema: (none)");
+                }
+
+                // --- Header: first 8-byte block, first 4 bytes are magic 0xDEADFACE ---
+                if (size < 8) {
+                    lines.push("");
+                    lines.push("HEADER: (insufficient data, need at least 8 bytes)");
+                    return { text: lines.join("\n"), size };
+                }
+
+                const headerVal = dataView.getUint32(0, true); // first 4 bytes, little-endian
+                const headerHex = headerVal.toString(16).toUpperCase().padStart(8, "0");
+                const expectedHeader = 0xDEADFACE >>> 0;
+                if (headerVal === expectedHeader) {
+                    lines.push("");
+                    lines.push("HEADER: DEADFACE");
+                } else {
+                    lines.push("");
+                    lines.push(`HEADER: ${headerHex} (expected DEADFACE)`);
+                }
+
+                // --- Decode variables, one "output line" per schema line ---
+                lines.push("");
+                lines.push("Decoded values (one line per schema line):");
+                lines.push("");
+
+                if (!schemaLines.length) {
+                    lines.push("No schema lines parsed; cannot map values to variables.");
+                    return { text: lines.join("\n"), size };
+                }
+
+                let offset = 8; // start after header block
+
+                for (const sLine of schemaLines) {
+                    // Lines without any variables: just echo and move on
+                    if (!sLine.vars.length) {
+                        lines.push(sLine.raw);
+                        lines.push("");
+                        continue;
+                    }
+
+                    // Check if this line has variable-length sections (brackets)
+                    const hasBrackets = sLine.raw.includes("[");
+                    
+                    if (hasBrackets) {
+                        // Parse the schema line to separate regular variables from variable-length groups
+                        // Example: "ui_id,ui_ckdivend,i_ncol[,i_col,ui_qual],i_npix[,i_col,i_row,ui_qual]"
+                        // We need to extract:
+                        //   - Regular vars before any bracket: "ui_id,ui_ckdivend"
+                        //   - Variable-length groups: "i_ncol[,i_col,ui_qual]" and "i_npix[,i_col,i_row,ui_qual]"
+                        
+                        const groupRegex = /(\b[a-zA-Z_]\w*)\s*\[\s*,\s*([^\]]+)\]/g;
+                        const groups = [];
+                        let lastIndex = 0;
+                        let match;
+                        
+                        // Find all variable-length groups and their positions
+                        while ((match = groupRegex.exec(sLine.raw)) !== null) {
+                            groups.push({
+                                start: match.index,
+                                end: match.index + match[0].length,
+                                countName: match[1],
+                                innerList: match[2]
+                            });
+                            lastIndex = match.index + match[0].length;
+                        }
+                        
+                        // Extract regular variables (parts before brackets)
+                        const regularVarParts = [];
+                        let currentPos = 0;
+                        for (const g of groups) {
+                            if (g.start > currentPos) {
+                                const part = sLine.raw.substring(currentPos, g.start);
+                                // Remove trailing comma if present
+                                const cleaned = part.replace(/,\s*$/, "").trim();
+                                if (cleaned) {
+                                    regularVarParts.push(cleaned);
+                                }
+                            }
+                            currentPos = g.end;
+                        }
+                        // Also check for regular vars after the last group
+                        if (currentPos < sLine.raw.length) {
+                            const part = sLine.raw.substring(currentPos);
+                            const cleaned = part.replace(/,\s*$/, "").trim();
+                            if (cleaned && !cleaned.includes("[")) {
+                                regularVarParts.push(cleaned);
+                            }
+                        }
+                        
+                        // Combine all regular variable parts and parse them
+                        const regularVarStr = regularVarParts.join(",");
+                        const regularVars = [];
+                        if (regularVarStr) {
+                            const tokens = regularVarStr.split(/[\s,;()]+/).filter(Boolean);
+                            for (const tok of tokens) {
+                                if (tok.startsWith("ui_")) {
+                                    regularVars.push({ name: tok, type: "uint" });
+                                } else if (tok.startsWith("i_")) {
+                                    regularVars.push({ name: tok, type: "int" });
+                                } else if (tok.startsWith("b_")) {
+                                    regularVars.push({ name: tok, type: "bool" });
+                                } else {
+                                    regularVars.push({ name: tok, type: "double" });
+                                }
+                            }
+                        }
+                        
+                        // At minimum, each logical "record" needs space for all regular vars and
+                        // the counts of each variable-length group (but the groups themselves may be empty).
+                        const minBytesPerRecord = regularVars.length * 8 + groups.length * 8;
+
+                        // Print header once (regular vars + group names in compact format)
+                        const headerParts = [];
+                        if (regularVars.length > 0) {
+                            headerParts.push(regularVars.map(v => v.name).join(","));
+                        }
+                        for (const g of groups) {
+                            headerParts.push(g.countName);
+                        }
+                        if (headerParts.length > 0) {
+                            lines.push(headerParts.join(","));
+                        }
+
+                        // Decode as many complete records as the BLOB contains
+                        while (offset + minBytesPerRecord <= size) {
+                            const recordParts = [];
+                            
+                            // Decode regular variables for this record (if any)
+                            if (regularVars.length > 0) {
+                                if (offset + regularVars.length * 8 > size) {
+                                    lines.push("(no data available for regular variables)");
+                                    break;
+                                }
+
+                                const values = [];
+                                for (const v of regularVars) {
+                                    let value;
+                                    if (v.type === "uint") {
+                                        value = dataView.getUint32(offset, true);
+                                    } else if (v.type === "int") {
+                                        value = dataView.getInt32(offset, true);
+                                    } else if (v.type === "bool") {
+                                        const raw = dataView.getUint32(offset, true);
+                                        value = raw !== 0;
+                                    } else {
+                                        value = dataView.getFloat64(offset, true);
+                                    }
+                                    values.push(value);
+                                    offset += 8;
+                                }
+                                recordParts.push(values.join(","));
+                            }
+
+                            // Now process each variable-length group in order for this record
+                            let truncated = false;
+                            for (const g of groups) {
+                                if (offset + 8 > size) {
+                                    recordParts.push(`${g.countName}(no data)`);
+                                    truncated = true;
+                                    break;
+                                }
+                                
+                                // Decode count (always an int)
+                                const countVal = dataView.getInt32(offset, true);
+                                offset += 8;
+                                
+                                // If count is zero, just add "0[]"
+                                if (countVal <= 0) {
+                                    recordParts.push("0[]");
+                                    continue;
+                                }
+                                
+                                const innerVarNames = g.innerList.split(",").map(s => s.trim()).filter(Boolean);
+                                if (innerVarNames.length === 0) {
+                                    recordParts.push(`${countVal}[]`);
+                                    continue;
+                                }
+                                
+                                // Derive types from names
+                                const innerVars = innerVarNames.map(name => {
+                                    if (name.startsWith("ui_")) return { name, type: "uint" };
+                                    if (name.startsWith("i_"))  return { name, type: "int" };
+                                    if (name.startsWith("b_"))  return { name, type: "bool" };
+                                    return { name, type: "double" };
+                                });
+                                
+                                // Decode countVal entries for this group and flatten all values
+                                const allValues = [];
+                                for (let n = 0; n < countVal; ++n) {
+                                    if (offset + innerVars.length * 8 > size) {
+                                        truncated = true;
+                                        break;
+                                    }
+                                    for (const v of innerVars) {
+                                        let value;
+                                        if (v.type === "uint") {
+                                            value = dataView.getUint32(offset, true);
+                                        } else if (v.type === "int") {
+                                            value = dataView.getInt32(offset, true);
+                                        } else if (v.type === "bool") {
+                                            const raw = dataView.getUint32(offset, true);
+                                            value = raw !== 0;
+                                        } else {
+                                            value = dataView.getFloat64(offset, true);
+                                        }
+                                        allValues.push(value);
+                                        offset += 8;
+                                    }
+                                    if (truncated) break;
+                                }
+                                
+                                // Format as count[val1,val2,...] or count[] if empty
+                                if (allValues.length > 0) {
+                                    recordParts.push(`${countVal}[${allValues.join(",")}]`);
+                                } else {
+                                    recordParts.push(`${countVal}[]`);
+                                }
+                            }
+                            
+                            // Print the entire record on one line
+                            lines.push(recordParts.join(","));
+                            
+                            if (truncated) break;
+                        }
+                        
+                        lines.push("");
+
+                        continue; // move to next schema line
+                    }
+
+                    // Default case: fixed-size records (no brackets)
+                    const names = sLine.vars.map(v => v.name);
+                    lines.push(names.join(","));
+
+                    const bytesPerRecord = sLine.vars.length * 8;
+                    let anyRecord = false;
+                    while (offset + bytesPerRecord <= size) {
+                        const values = [];
+                        for (const v of sLine.vars) {
+                            let value;
+                            if (v.type === "uint") {
+                                value = dataView.getUint32(offset, true); // first 4 bytes
+                            } else if (v.type === "int") {
+                                value = dataView.getInt32(offset, true); // first 4 bytes
+                            } else if (v.type === "bool") {
+                                const raw = dataView.getUint32(offset, true);
+                                value = raw !== 0;
+                            } else {
+                                value = dataView.getFloat64(offset, true); // full 8 bytes
+                            }
+                            values.push(value);
+                            offset += 8;
+                        }
+                        lines.push(values.join(","));
+                        anyRecord = true;
+                    }
+
+                    if (!anyRecord) {
+                        lines.push("(no data available)");
+                    }
+
+                    lines.push("");
+                }
+
+                return { text: lines.join("\n"), size };
+            } catch (e) {
+                console.warn("Failed to decode BLOB, showing raw base64", e);
+                return {
+                    text: "Failed to base64-decode BLOB. Showing raw base64 string instead:\n\n" + base64,
+                    size: base64.length * 0.75
+                };
+            }
+        }
+
+        // Fetch a single payload document and show it in a modal
+        async function showPayloadDetails(rowData) {
+            const hash = rowData.hash;
+            if (!hash) return;
+
+            // Fill in basic metadata immediately
+            document.getElementById("payloadDetailHash").textContent = hash;
+            document.getElementById("payloadDetailTag").textContent = rowData.tag || "";
+            document.getElementById("payloadDetailIov").textContent = rowData.iov || "";
+            document.getElementById("payloadDetailDate").textContent = rowData.date || "";
+            document.getElementById("payloadDetailSchema").textContent = rowData.schema || "";
+            document.getElementById("payloadDetailComment").textContent = rowData.comment || "";
+            document.getElementById("payloadDetailBlobSize").textContent = "";
+            document.getElementById("payloadDetailDecoded").textContent = "Loading payload...";
+
+            const modalElement = document.getElementById("payloadModal");
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+
+            try {
+                const response = await fetch(`/cdb/findOne/payloads/${encodeURIComponent(hash)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const payloadDoc = await response.json();
+
+                // Try several possible field names for the BLOB
+                const blobField =
+                    payloadDoc.BLOB ||
+                    payloadDoc.blob ||
+                    payloadDoc.content ||
+                    payloadDoc.data ||
+                    null;
+                const schema = payloadDoc.schema || rowData.schema || "";
+
+                const { text, size } = decodePayloadBlobField(blobField, schema);
+                document.getElementById("payloadDetailBlobSize").textContent =
+                    size ? `${size} bytes (approx.)` : "(unknown)";
+                document.getElementById("payloadDetailDecoded").textContent = text;
+            } catch (error) {
+                console.error("Error loading payload document:", error);
+                document.getElementById("payloadDetailDecoded").textContent =
+                    "Error loading payload document: " + error.message;
             }
         }
 
