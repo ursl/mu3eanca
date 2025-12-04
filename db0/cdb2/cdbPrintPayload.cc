@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <dirent.h>  /// for directory reading
+#include <cstring>
 
 #include <chrono>
 
