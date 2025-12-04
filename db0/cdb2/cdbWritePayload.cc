@@ -162,11 +162,16 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
     if (pos != string::npos) {
       tmpFilename.replace(pos, 5, ".csv-tmp");
     }
+    // Remove directory path, keep only filename
+    size_t lastSlash = tmpFilename.find_last_of("/");
+    if (lastSlash != string::npos) {
+      tmpFilename = tmpFilename.substr(lastSlash + 1);
+    }
     cout << "   ->cdbWritePayload> temporary file " << tmpFilename << endl;
   }
   if (type == "pixelalignment") {
     if (string::npos != ifilename.find(".root")) {
-      cout << "   ->cdbWritePayload> reading alignment from root file " << ifilename << endl;
+      cout << "   ->cdbWritePayload> reading pixelalignment from root file " << ifilename << endl;
       struct sensor {
         unsigned int id;
         double vx, vy, vz;
@@ -234,6 +239,76 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
       pl.fBLOB = spl;
       cpa->writePayloadToFile(hash, jsondir + "/payloads", pl);
     }
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl;
+      remove(tmpFilename.c_str());
+    }
   } 
+
+  if (type == "mppcalignment") {
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> reading mppcalignment from root file " << ifilename << endl;
+      TFile *file = TFile::Open(ifilename.c_str());
+      TTree *ta = (TTree*)file->Get("alignment/mppcs");
+      struct mppc {
+        unsigned int mppc;
+        double vx, vy, vz;
+        double colx, coly, colz;
+        int ncol;
+      };
+      map<unsigned int, mppc> mppcs;
+      struct mppc m;
+      ta->SetBranchAddress("mppc", &m.mppc);
+      ta->SetBranchAddress("vx", &m.vx);
+      ta->SetBranchAddress("vy", &m.vy);
+      ta->SetBranchAddress("vz", &m.vz);
+      ta->SetBranchAddress("colx", &m.colx);
+      ta->SetBranchAddress("coly", &m.coly);
+      ta->SetBranchAddress("colz", &m.colz);
+      ta->SetBranchAddress("ncol", &m.ncol);
+      int nbytes(0);
+      for (int i = 0; i < ta->GetEntries(); ++i) {
+        nbytes += ta->GetEntry(i);
+        mppcs.insert(make_pair(m.mppc, m));
+      }
+      cout << "   ->cdbWritePayload> read " << mppcs.size() << " mppcs from tree with " << ta->GetEntries() << " entries" << endl;
+      ofstream ONS;
+      ONS.open(tmpFilename);
+      for (auto &m : mppcs) {
+        ONS << m.first << "," 
+        << std::setprecision(15)
+        << m.second.vx << "," << m.second.vy << "," << m.second.vz << "," 
+        << m.second.colx << "," << m.second.coly << "," << m.second.colz << ","
+        << m.second.ncol
+        << endl;
+      }
+      ONS.close();
+      file->Close();
+    } 
+
+    // -- if the input filename is a root file, use the temporary file
+    if (string::npos != ifilename.find(".root")) {
+      ifilename = tmpFilename;
+    }
+
+    calMppcAlignment *cmp = new calMppcAlignment();
+    string result = cmp->readCsv(ifilename);
+    if (string::npos == result.find("Error")) {
+      string spl = cmp->makeBLOB();
+      string hash = "tag_mppcalignment_" + gt + "_iov_" + to_string(iov);
+      payload pl;
+      pl.fHash = hash;
+      pl.fComment = ifilename;
+      pl.fSchema  = cmp->getSchema();
+      pl.fBLOB = spl;
+      cmp->writePayloadToFile(hash, jsondir + "/payloads", pl);
+    }
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl;
+      remove(tmpFilename.c_str());
+    }
+  } 
+
+
 }
 
