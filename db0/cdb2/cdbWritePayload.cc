@@ -26,6 +26,7 @@
 #include "calPixelCablingMap.hh"
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
+#include "calPixelEfficiency.hh"
 
 #include "calDetSetupV1.hh"
 
@@ -35,7 +36,7 @@ using namespace std;
 void writeDetSetupV1(string jsondir, string gt, int iov);
 void writePixelQualityLM(string jsondir, string gt, string filename, int iov);
 void writeAlignmentInformation(string jsondir, string gt, string type, string ifilename, int iov);
-
+void writePixelEfficiencyPayload(string jsondir, string gt, string filename, int iov);
 // ----------------------------------------------------------------------
 // cdbWritePayload
 // ---------------
@@ -93,8 +94,28 @@ int main(int argc, const char* argv[]) {
   //writeDetSetupV1(jsondir, gt, iov);
   // -- write pixelqualitylm payloads and tags
   //writePixelQualityLM(jsondir, gt, filename, iov);
+  // -- write pixelefficiency payloads and tags
+  if (string::npos != cal.find("pixelefficiency")) {
+    writePixelEfficiencyPayload(jsondir, gt, filename, iov);
+  }
+}
 
-  return 0;
+// ----------------------------------------------------------------------
+void writePixelEfficiencyPayload(string jsondir, string gt, string filename, int iov) {
+  cout << "   ->cdbInitGT> writing local template pixelefficiency payloads" << endl;
+  // -- create (local template) payloads for pixelefficiency
+  calPixelEfficiency *cpe = new calPixelEfficiency();
+  cpe->readCsv(filename);
+  string spl = cpe->makeBLOB();
+  string hash = "tag_pixelefficiency_" + gt + "_iov_" + to_string(iov);
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = filename;
+  pl.fSchema  = cpe->getSchema();
+  pl.fBLOB = spl;
+  cpe->writePayloadToFile(hash, jsondir + "/payloads", pl);
+  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << endl;
+  delete cpe;
 }
 
 // ----------------------------------------------------------------------
