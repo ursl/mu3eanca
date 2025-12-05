@@ -43,9 +43,8 @@ calPixelQualityLM::~calPixelQualityLM() {
 
 // ----------------------------------------------------------------------
 void calPixelQualityLM::calculate(string hash) {
-  if (fVerbose > 0) cout << "calPixelQualityLM::calculate() with "
-       << "fHash ->" << hash << "<-"
-       << endl;
+  cout << "calPixelQualityLM::calculate() with "
+       << "fHash ->" << hash << "<-";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
@@ -53,7 +52,7 @@ void calPixelQualityLM::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (fVerbose > 0) cout << "calPixelQualityLM header: " << hex << header << dec << endl;
+  cout << " header: " << hex << header << dec;
 
   int npix(0), ncol(0);
   while (ibuffer != buffer.end()) {
@@ -88,9 +87,9 @@ void calPixelQualityLM::calculate(string hash) {
         a.mpixel.insert({ idx, static_cast<char>(iqual) });
       }
     }
-    // cout << "inserting " << a.id << " with size = " << sizeof(a) << endl;
     fMapConstants.insert(make_pair(a.id, a));
   }
+  cout << " inserted " << fMapConstants.size() << " constants" << endl;
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();

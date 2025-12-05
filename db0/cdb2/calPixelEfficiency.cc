@@ -35,17 +35,18 @@ void calPixelEfficiency::calculate(string hash) {
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << " header: " << hex << header << dec;
   uint32_t pixel(0);
-  double efficiency(0);
+  double efficiency(0), meanEfficiency(0.);
   while (ibuffer != buffer.end()) {
     pixel = blob2UnsignedInt(getData(ibuffer));
     efficiency = blob2Double(getData(ibuffer));
+    meanEfficiency += efficiency;
     constants a;
     a.id = pixel;
     a.efficiency = efficiency;
     fMapConstants.insert(make_pair(a.id, a));
   }
-  cout << " inserted " << fMapConstants.size() << " constants" << endl;
-
+  meanEfficiency /= fMapConstants.size();
+  cout << " inserted " << fMapConstants.size() << " constants with mean efficiency = " << meanEfficiency << endl;
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
