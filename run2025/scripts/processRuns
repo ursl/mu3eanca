@@ -30,6 +30,8 @@
 #
 #    login001>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250829.tar.gz -m sort -e cosmics2025 -g datav6.2=2025CosmicsNoMagnet
 #    login001>~/mu3e/mu3eanca/run2025/scripts/processRuns -s -t slurm/250829.tar.gz -m calibration -e cosmics2025 -g datav6.2=2025Data
+#    login001>~/mu3e/mu3eanca/run2025/scripts/processRuns -s -t slurm/251205-mlzr.tar.gz -m minalyzer -e cosmics2025 -g datav6.3=2025V0
+#    login001>~/mu3e/mu3eanca/run2025/scripts/processRuns -s -t slurm/251205-mlzr.tar.gz -m minalyzer -e beam2025 -g datav6.3=2025V0
 
 #    merlin-l-002>wpd
 #    /data/experiment/mu3e/code/offline/250528-v6.1pre
@@ -37,6 +39,7 @@
 #    merlin-l-002>~/mu3e/mu3eanca/run2025/scripts/processRuns -t slurm/250606-mlzr.tar.gz -m prompt -e runs -r "2196"
 #
 # History
+#         2025/12/05 HOST on merlin7 is now only login001
 #         2025/10/29 add "--alignment.file=mu3e_alignment.root" 
 #         2025/10/24 add -q XXX, to be invoked: -q "-p hourly". Add numerical subdirs in init step
 #         2025/10/15 add "allhist"
@@ -134,7 +137,7 @@ if ($ENV{"HOST"} =~ "merlin-l-001") {
 }
 
 # -- modifications for merlin7
-if ($ENV{"HOST"} =~ "merlin7") {
+if (($ENV{"HOST"} =~ "login001") || ($ENV{"HOST"} =~ "login002") || ($ENV{"HOST"} =~ "merlin7")) {
     $VERSION  = "v6.3";
     ($filename, $directories) = fileparse($ENV{"PWD"});
     $VERSION = $filename;
