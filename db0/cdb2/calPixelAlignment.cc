@@ -34,7 +34,7 @@ bool calPixelAlignment::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calPixelAlignment::calPixelAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
-  if (fVerbose) cout << "calPixelAlignment created and registered with tag ->"
+  if (0) cout << "calPixelAlignment created and registered with tag ->"
                      << fTag << "<-"
                      << endl;
 }
@@ -57,7 +57,7 @@ void calPixelAlignment::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "header: " << hex << header << dec;
+  cout << " header: " << hex << header << dec;
 
   while (ibuffer != buffer.end()) {
     constants a;

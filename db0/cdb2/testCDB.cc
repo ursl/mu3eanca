@@ -17,6 +17,7 @@
 #include "calPixelTimeCalibration.hh"
 #include "calTileQuality.hh"
 #include "calFibreQuality.hh"
+#include "calPixelEfficiency.hh"
 
 using namespace std;
 
@@ -303,6 +304,29 @@ int main(int argc, char* argv[]) {
     cfq2->readPayloadFromFile("tag_fibrequality_datav6.3=2025V0_iov_1", ".");
     cfq2->calculate("tag_fibrequality_datav6.3=2025V0_iov_1");
     cfq2->writeCSV("out-fibres-asic-lockAndData-1_fromPayload.csv");
+  } else if (14 == mode) {
+    cout << "Test pixel efficiency" << endl;
+    calPixelEfficiency *cpe = new calPixelEfficiency();
+    cpe->readCsv("ascii/pixelefficiency-ideal.csv");
+    cpe->writeCsv("out-pixelefficiency-ideal.csv");
+    string sblob = cpe->makeBLOB();
+    cpe->printBLOB(sblob, 1000);
+    payload pl;
+    pl.fHash = "tag_pixelefficiency_datav6.3=2025V0_iov_1";
+    pl.fComment = "PixelEfficiency";
+    pl.fSchema = cpe->getSchema();
+    pl.fBLOB = sblob;
+    cout << "######################################################################" << endl;
+    cout << "### createPayload" << endl;
+    cout <<  pl.printString(false) << endl;
+    cpe->printBLOB(sblob, 1);
+    cout << "######################################################################" << endl;
+    cpe->writePayloadToFile(pl.fHash, ".", pl);
+
+    calPixelEfficiency *cpe2 = new calPixelEfficiency();
+    cpe2->readPayloadFromFile("tag_pixelefficiency_datav6.3=2025V0_iov_1", ".");
+    cpe2->calculate("tag_pixelefficiency_datav6.3=2025V0_iov_1");
+    cpe2->writeCsv("out-pixelefficiency-ideal_fromPayload.csv");
   }
   return 0;
 }

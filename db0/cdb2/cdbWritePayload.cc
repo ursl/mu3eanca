@@ -14,6 +14,11 @@
 #include "cdbUtil.hh"
 #include "base64.hh"
 
+#include <TFile.h>
+#include <TTree.h>
+#include <map>
+#include <vector>
+
 #include "calPixelAlignment.hh"
 #include "calFibreAlignment.hh"
 #include "calMppcAlignment.hh"
@@ -21,6 +26,7 @@
 #include "calPixelCablingMap.hh"
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
+#include "calPixelEfficiency.hh"
 
 #include "calDetSetupV1.hh"
 
@@ -30,16 +36,24 @@ using namespace std;
 void writeDetSetupV1(string jsondir, string gt, int iov);
 void writePixelQualityLM(string jsondir, string gt, string filename, int iov);
 void writeAlignmentInformation(string jsondir, string gt, string type, string ifilename, int iov);
-
+void writePixelEfficiencyPayload(string jsondir, string gt, string filename, int iov);
 // ----------------------------------------------------------------------
 // cdbWritePayload
 // ---------------
 //
 // NOTE: works (validated) for pixelalignement. All the rest might need some improvements!
+// 
+//  -c pixelalignment    produce the pixelalignment payloads. This is (currently) the only properly validated usage.
+//  -g GT                the global tag (GT) for the payload (part of the "hash" written into the payload metadata)
+//  -i RUN               the interval of validity, i.e., the first run for which the payload is valid
+//  -j JSONDIR           the CDB directory where the payloads will be written to JSONDIR/payloads/
 //
-// Usage examples   ./bin/cdbWritePayload -c pixelalignment -g datav6.3=2025V1test -j ~/data/mu3e/cdb -f ascii/sensors-alignment-CosmicTracksV0.csv -i 1
+// Usage examples   
 // --------------
 //
+// cdbWritePayload -c pixelalignment -g datav6.3=2025V1test -i 1 -j ~/data/mu3e/cdb -f ascii/sensors-alignment-CosmicTracksV0.csv 
+// cdbWritePayload -c pixelalignment -g datav6.3=2025V1test -i 1 -j ~/data/mu3e/cdb -f Downloads/cosmic_alignment_xyz.root 
+// 
 // ----------------------------------------------------------------------
 
 
@@ -80,8 +94,28 @@ int main(int argc, const char* argv[]) {
   //writeDetSetupV1(jsondir, gt, iov);
   // -- write pixelqualitylm payloads and tags
   //writePixelQualityLM(jsondir, gt, filename, iov);
+  // -- write pixelefficiency payloads and tags
+  if (string::npos != cal.find("pixelefficiency")) {
+    writePixelEfficiencyPayload(jsondir, gt, filename, iov);
+  }
+}
 
-  return 0;
+// ----------------------------------------------------------------------
+void writePixelEfficiencyPayload(string jsondir, string gt, string filename, int iov) {
+  cout << "   ->cdbInitGT> writing local template pixelefficiency payloads" << endl;
+  // -- create (local template) payloads for pixelefficiency
+  calPixelEfficiency *cpe = new calPixelEfficiency();
+  cpe->readCsv(filename);
+  string spl = cpe->makeBLOB();
+  string hash = "tag_pixelefficiency_" + gt + "_iov_" + to_string(iov);
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = filename;
+  pl.fSchema  = cpe->getSchema();
+  pl.fBLOB = spl;
+  cpe->writePayloadToFile(hash, jsondir + "/payloads", pl);
+  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << endl;
+  delete cpe;
 }
 
 // ----------------------------------------------------------------------
@@ -142,7 +176,78 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
   cout << "   ->cdbWritePayload> writing alignment " << type << " from file " << ifilename << endl;
 
   // -- pixel sensor alignment
+  string tmpFilename("");
+  if (string::npos != ifilename.find(".root")) {
+    tmpFilename = ifilename;
+    size_t pos = tmpFilename.find(".root");
+    if (pos != string::npos) {
+      tmpFilename.replace(pos, 5, ".csv-tmp");
+    }
+    // Remove directory path, keep only filename
+    size_t lastSlash = tmpFilename.find_last_of("/");
+    if (lastSlash != string::npos) {
+      tmpFilename = tmpFilename.substr(lastSlash + 1);
+    }
+    cout << "   ->cdbWritePayload> temporary file " << tmpFilename << endl;
+  }
   if (type == "pixelalignment") {
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> reading pixelalignment from root file " << ifilename << endl;
+      struct sensor {
+        unsigned int id;
+        double vx, vy, vz;
+        double rowx, rowy, rowz;
+        double colx, coly, colz;
+        int nrow, ncol;
+        double width, length, thickness, pixelSize;
+      };
+      map<unsigned int, sensor> sensors;
+      TFile *file = TFile::Open(ifilename.c_str());
+      TTree *ta = (TTree*)file->Get("alignment/sensors");
+      struct sensor a;
+      ta->SetBranchAddress("id", &a.id);
+      ta->SetBranchAddress("vx", &a.vx);
+      ta->SetBranchAddress("vy", &a.vy);
+      ta->SetBranchAddress("vz", &a.vz);
+      ta->SetBranchAddress("rowx", &a.rowx);
+      ta->SetBranchAddress("rowy", &a.rowy);
+      ta->SetBranchAddress("rowz", &a.rowz);
+      ta->SetBranchAddress("colx", &a.colx);
+      ta->SetBranchAddress("coly", &a.coly);
+      ta->SetBranchAddress("colz", &a.colz);
+      ta->SetBranchAddress("nrow", &a.nrow);
+      ta->SetBranchAddress("ncol", &a.ncol);
+      ta->SetBranchAddress("width", &a.width);
+      ta->SetBranchAddress("length", &a.length);
+      ta->SetBranchAddress("thickness", &a.thickness);
+      ta->SetBranchAddress("pixelSize", &a.pixelSize);
+      int nbytes(0);
+      for (int i = 0; i < ta->GetEntries(); ++i) {
+        nbytes += ta->GetEntry(i);
+        sensors.insert(make_pair(a.id, a));
+      }
+      ofstream ONS;
+      ONS.open(tmpFilename);
+      for (auto &s : sensors) {
+        ONS << s.first << "," 
+        << std::setprecision(15)
+        << s.second.vx << "," << s.second.vy << "," << s.second.vz << "," 
+        << s.second.rowx << "," << s.second.rowy << "," << s.second.rowz 
+        << "," << s.second.colx << "," << s.second.coly << "," << s.second.colz 
+        << "," << s.second.nrow << "," << s.second.ncol << "," 
+        << s.second.width << "," << s.second.length << "," 
+        << s.second.thickness << "," << s.second.pixelSize
+        << endl;
+      }
+      ONS.close();
+      file->Close();
+    } 
+
+    // -- if the input filename is a root file, use the temporary file
+    if (string::npos != ifilename.find(".root")) {
+      ifilename = tmpFilename;
+    }
+
     calPixelAlignment *cpa = new calPixelAlignment();
     string result = cpa->readCsv(ifilename);
     if (string::npos == result.find("Error")) {
@@ -155,6 +260,76 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
       pl.fBLOB = spl;
       cpa->writePayloadToFile(hash, jsondir + "/payloads", pl);
     }
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl;
+      remove(tmpFilename.c_str());
+    }
   } 
+
+  if (type == "mppcalignment") {
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> reading mppcalignment from root file " << ifilename << endl;
+      TFile *file = TFile::Open(ifilename.c_str());
+      TTree *ta = (TTree*)file->Get("alignment/mppcs");
+      struct mppc {
+        unsigned int mppc;
+        double vx, vy, vz;
+        double colx, coly, colz;
+        int ncol;
+      };
+      map<unsigned int, mppc> mppcs;
+      struct mppc m;
+      ta->SetBranchAddress("mppc", &m.mppc);
+      ta->SetBranchAddress("vx", &m.vx);
+      ta->SetBranchAddress("vy", &m.vy);
+      ta->SetBranchAddress("vz", &m.vz);
+      ta->SetBranchAddress("colx", &m.colx);
+      ta->SetBranchAddress("coly", &m.coly);
+      ta->SetBranchAddress("colz", &m.colz);
+      ta->SetBranchAddress("ncol", &m.ncol);
+      int nbytes(0);
+      for (int i = 0; i < ta->GetEntries(); ++i) {
+        nbytes += ta->GetEntry(i);
+        mppcs.insert(make_pair(m.mppc, m));
+      }
+      cout << "   ->cdbWritePayload> read " << mppcs.size() << " mppcs from tree with " << ta->GetEntries() << " entries" << endl;
+      ofstream ONS;
+      ONS.open(tmpFilename);
+      for (auto &m : mppcs) {
+        ONS << m.first << "," 
+        << std::setprecision(15)
+        << m.second.vx << "," << m.second.vy << "," << m.second.vz << "," 
+        << m.second.colx << "," << m.second.coly << "," << m.second.colz << ","
+        << m.second.ncol
+        << endl;
+      }
+      ONS.close();
+      file->Close();
+    } 
+
+    // -- if the input filename is a root file, use the temporary file
+    if (string::npos != ifilename.find(".root")) {
+      ifilename = tmpFilename;
+    }
+
+    calMppcAlignment *cmp = new calMppcAlignment();
+    string result = cmp->readCsv(ifilename);
+    if (string::npos == result.find("Error")) {
+      string spl = cmp->makeBLOB();
+      string hash = "tag_mppcalignment_" + gt + "_iov_" + to_string(iov);
+      payload pl;
+      pl.fHash = hash;
+      pl.fComment = ifilename;
+      pl.fSchema  = cmp->getSchema();
+      pl.fBLOB = spl;
+      cmp->writePayloadToFile(hash, jsondir + "/payloads", pl);
+    }
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl;
+      remove(tmpFilename.c_str());
+    }
+  } 
+
+
 }
 

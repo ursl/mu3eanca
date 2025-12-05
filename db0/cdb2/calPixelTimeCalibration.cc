@@ -13,7 +13,7 @@ calPixelTimeCalibration::calPixelTimeCalibration(cdbAbs *db) : calAbs(db) {
 
 // ----------------------------------------------------------------------
 calPixelTimeCalibration::calPixelTimeCalibration(cdbAbs *db, string tag) : calAbs(db, tag) {
-  cout << "calPixelTimeCalibration created and registered with tag ->" << fTag << "<-"
+  if (0) cout << "calPixelTimeCalibration created and registered with tag ->" << fTag << "<-"
        << endl;
 }
 
@@ -26,16 +26,15 @@ calPixelTimeCalibration::~calPixelTimeCalibration() {
 
 // ----------------------------------------------------------------------
 void calPixelTimeCalibration::calculate(string hash) {
-  if (fVerbose > 0) cout << "calPixelTimeCalibration::calculate() with "
-       << "fHash ->" << hash << "<-"
-       << endl;
+  cout << "calPixelTimeCalibration::calculate() with "
+       << "fHash ->" << hash << "<-";
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  if (fVerbose > 0) cout << "calPixelTimeCalibration header: " << hex << header << dec << endl;
+  cout << " header: " << hex << header << dec;
 
   int globalChipID(0);
   fMapConstants.clear();
@@ -56,7 +55,7 @@ void calPixelTimeCalibration::calculate(string hash) {
       fMapConstants.insert(make_pair(globalChipID, arr));
     }
   }
-
+  cout << " inserted " << fMapConstants.size() << " constants" << endl;
 
 }
 

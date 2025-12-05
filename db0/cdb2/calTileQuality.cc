@@ -34,7 +34,7 @@ bool calTileQuality::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calTileQuality::calTileQuality(cdbAbs *db, string tag) : calAbs(db, tag) {
-  cout << "calTileQuality created and registered with tag ->" << fTag << "<-"
+  if (0) cout << "calTileQuality created and registered with tag ->" << fTag << "<-"
        << endl;
 }
 
@@ -47,10 +47,17 @@ calTileQuality::~calTileQuality() {
 
 
 // ----------------------------------------------------------------------
+calTileQuality::Status calTileQuality::getChannelQuality(uint32_t id) {
+  if (fMapConstants.find(id) == fMapConstants.end()) {
+    return ChannelNotFound;
+  }
+  return static_cast<Status>(fMapConstants[id].quality);
+}
+
+
+// ----------------------------------------------------------------------
 void calTileQuality::calculate(string hash) {
-  if (fVerbose > 0) cout << "calTileQuality::calculate() with "
-       << "fHash ->" << hash << "<-"
-       << endl;
+  cout << "calTileQuality::calculate() with "  << "fHash ->" << hash << "<-";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
@@ -58,7 +65,7 @@ void calTileQuality::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-
+  cout << " header: " << hex << header << dec;
   int npix(0);
   while (ibuffer != buffer.end()) {
     constants cq;
@@ -66,6 +73,7 @@ void calTileQuality::calculate(string hash) {
     cq.quality = blob2Int(getData(ibuffer));
     fMapConstants.insert(make_pair(cq.id, cq));
   }
+  cout << " inserted " << fMapConstants.size() << " constants" << endl;
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
@@ -84,6 +92,7 @@ string calTileQuality::makeBLOB() {
     s << dumpArray(uint2Blob(it.first));
     s << dumpArray(int2Blob(it.second.quality));
   }
+  cout << "calTileQuality::makeBLOB> made BLOB with " << fMapConstants.size() << " tiles" << endl;
   return s.str();
 }
 
@@ -122,7 +131,13 @@ void calTileQuality::printBLOB(std::string blob, int verbosity) {
            << endl;
     }
   }
-  cout << "calTileQuality::printBLOB(...) printed status for " << cnt << " tiles" << endl;
+  string tileType("all");
+  if (verbosity < 0) {
+    tileType = "not good";
+  } else if (verbosity > 0) {
+    tileType = "good";
+  }
+  cout << "calTileQuality::printBLOB(...) printed status for " << cnt  << " tiles " << "(" << tileType << ")" << endl;
 }
 
 
@@ -208,6 +223,7 @@ void calTileQuality::readJSON(string filename) {
     }
     fMapConstants.insert(make_pair(a.id, a));
   }
+  cout << "calTileQuality::readJSON> read " << fMapConstants.size() << " tiles" << endl;
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
