@@ -14,8 +14,7 @@
 #include <fstream>
 
 #include "Mu3eConditions.hh"
-#include "calTileAlignment.hh"
-#include "calTileQuality.hh"
+#include "calFibreQuality.hh"
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::ordered_json;
@@ -41,8 +40,10 @@ using namespace std;
 // 1. parse FIBRE JSON file into CSV files per run
 // 2. create payloads for each run
 // 
-// Examples:
-// ---------
+// Usage:
+// ------
+// ./bin/fillQualityFibres -d csv -f ~/Downloads/scifi_run_range.json
+// ./bin/fillQualityFibres -d csv -p payloads
 // 
 // ----------------------------------------------------------------------
 
@@ -50,7 +51,15 @@ using namespace std;
 
 
 // ----------------------------------------------------------------------
-void createPayload(string, calAbs *, string, string, string);
+void createPayload(string hash, calAbs *cal, string dirname, string schema, string comment) {
+  cout << "createPayload with hash = " << hash << " comment = " << comment << " schema = " << schema << endl;
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = comment;
+  pl.fSchema = schema;
+  pl.fBLOB = cal->makeBLOB();
+  cal->writePayloadToFile(hash, dirname, pl);
+}
 
 // ----------------------------------------------------------------------
 vector<string> getFilesInDirectory(const string& dirname) {
@@ -73,7 +82,7 @@ vector<string> getFilesInDirectory(const string& dirname) {
     if (stat(fullpath.c_str(), &path_stat) == 0) {
       // Only add regular files, not directories
       if (S_ISREG(path_stat.st_mode)) {
-        if (fullpath.find("_quality_overview.json") != string::npos) {
+        if (fullpath.find("fibre-asics-") != string::npos) {
           files.push_back(fullpath);
         }
       }
@@ -135,73 +144,94 @@ void parseFibreJSON(string filename, string dirname) {
     ofstream ofs;
     ofs.open(csvfilename);
     
-    // Write header: #ASIC ID, lock, has_data, threshold, efficiency
-    ofs << "#ASIC ID, lock, has_data, threshold, efficiency" << endl;
+    // Write header: #ASIC ID, lock, has_data, quality, threshold, efficiency
+    ofs << "#ASIC ID, lock, has_data, quality, threshold, efficiency" << endl;
     
     map<int, pair<bool, double>>& runAsics = runsData[runNumber];
     
-    // Write one line per ASIC with data for this run
-    // Sort ASIC IDs for consistent output
-    vector<int> asicIDs;
-    for (auto& entry : runAsics) {
-      asicIDs.push_back(entry.first);
-    }
-    sort(asicIDs.begin(), asicIDs.end());
-    
-    for (int asicID : asicIDs) {
-      bool lockBool = runAsics[asicID].first;
-      double threshold = runAsics[asicID].second;
+    // Write one line per ASIC (all ASICs 0-95)
+    int asicCount = 0;
+    for (int asicID = 0; asicID <= 95; ++asicID) {
+      int lock = 0;
+      int hasData = 0;
+      double threshold = 0.0;
       
-      // If lock is true, set lock=1 and has_data=1, otherwise both are 0
-      int lock = lockBool ? 1 : 0;
-      int hasData = lockBool ? 1 : 0;
+      // Check if this ASIC has data for this run
+      if (runAsics.find(asicID) != runAsics.end()) {
+        bool lockBool = runAsics[asicID].first;
+        threshold = runAsics[asicID].second;
+        
+        // If lock is true, set lock=1 and has_data=1, otherwise both are 0
+        lock = lockBool ? 1 : 0;
+        hasData = lockBool ? 1 : 0;
+      }
+      
+      // Quality is the logical AND of has_data and lock
+      int quality = (hasData == 1 && lock == 1) ? 1 : 0;
       
       // Efficiency is 0 if both lock and has_data are 0, otherwise 1
       int efficiency = (lock == 0 && hasData == 0) ? 0 : 1;
       
-      ofs << asicID << ", " << lock << ", " << hasData << ", " << threshold << ", " << efficiency << endl;
+      ofs << asicID << ", " << lock << ", " << hasData << ", " << quality << ", " << threshold << ", " << efficiency << endl;
+      asicCount++;
     }
     
     ofs.close();
-    cout << "   -> wrote CSV file " << csvfilename << " for run " << runNumber << " with " << asicIDs.size() << " ASICs" << endl;
+    cout << "   -> wrote CSV file " << csvfilename << " for run " << runNumber << " with " << asicCount << " ASICs" << endl;
   }
 }
+
+
+// ----------------------------------------------------------------------
+void createPayloads(string dirname, string payloaddir, string gt) {
+  cout << "createPayloads with dirname = " << dirname << " and payloaddir = " << payloaddir << endl;
+  // -- read in all files in dirname
+  vector<string> files = getFilesInDirectory(dirname);
+  for (auto file : files) {
+    cout << "file = " << file << endl;
+    int runNumber = stoi(file.substr(file.find("fibre-asics-") + 12, file.find(".csv") - file.find("fibre-asics-") - 11));
+    string hash = string("tag_fibrequality_") + gt + string("_iov_") + to_string(runNumber);
+    calFibreQuality *cfq = new calFibreQuality();
+    cfq->readCSV(file);
+    string blob = cfq->makeBLOB();
+    string schema = cfq->getSchema();
+    string comment = "preliminary fibre quality (w/o separation of has_data and lock)";
+    cout << "XXXXXXXXX createPayload with hash = " << hash << " comment = " << comment << " schema = " << schema << endl;
+    createPayload(hash, cfq, payloaddir, schema, comment);
+    delete cfq;
+  }
+}
+
 
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
   cout << "tileFillQuality" << endl;
   // -- command line arguments
-  int verbose(0), mode(1), printMode(0), check(0);
-  string jsondir(JSONDIR), dirname("./"), filename("");
-  string gt("datav6.3=2025V0");
-  string igt("datav6.2=2025Beam");
+  int verbose(0), mode(1);
+  string dirname("./"), filename(""), payloaddir(""), gt("datav6.3=2025V0");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-d"))      {dirname = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
-    if (!strcmp(argv[i], "-i"))      {igt = argv[++i];}
-    if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
-    if (!strcmp(argv[i], "-p"))      {printMode = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-p"))      {payloaddir = argv[++i];}
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
 
-
+  // -- first step
   if (filename != "") {
     // -- parse the JSON file into CSV files per run
     parseFibreJSON(filename, dirname);
+    return 0;
+  }
+
+  // -- second step
+  if (payloaddir != "") {
+    // -- create payloads for each run
+    createPayloads(dirname, payloaddir, gt);
+    return 0;
   }
 
   return 0;
 }
 
 
-// ----------------------------------------------------------------------
-void createPayload(string hash, calAbs *cal, string dirname, string schema, string comment) {
-  cout << "createPayload with hash = " << hash << " comment = " << comment << " schema = " << schema << endl;
-  payload pl;
-  pl.fHash = hash;
-  pl.fComment = comment;
-  pl.fSchema = schema;
-  pl.fBLOB = cal->makeBLOB();
-  cal->writePayloadToFile(hash, dirname, pl);
-}
