@@ -34,7 +34,7 @@ bool calTileQuality::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calTileQuality::calTileQuality(cdbAbs *db, string tag) : calAbs(db, tag) {
-  cout << "calTileQuality created and registered with tag ->" << fTag << "<-"
+  if (0) cout << "calTileQuality created and registered with tag ->" << fTag << "<-"
        << endl;
 }
 

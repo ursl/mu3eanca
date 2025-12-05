@@ -15,7 +15,7 @@ calDetSetupV1::calDetSetupV1(cdbAbs *db) : calAbs(db) {
 
 // ----------------------------------------------------------------------
 calDetSetupV1::calDetSetupV1(cdbAbs *db, string tag) : calAbs(db, tag) {
-  if (fVerbose) cout << "calDetSetupV1 created and registered with tag ->"
+  if (0) cout << "calDetSetupV1 created and registered with tag ->"
                        << fTag << "<-"
                        << endl;
 }
@@ -37,7 +37,7 @@ void calDetSetupV1::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "header: " << hex << header << dec << endl;
+  cout << " header: " << hex << header << dec << endl;
 
   fConstants.target.shape = blob2UnsignedInt(getData(ibuffer));
   fConstants.target.thickness1 = blob2Double(getData(ibuffer));

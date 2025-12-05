@@ -28,7 +28,7 @@ bool calPixelQualityLM::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calPixelQualityLM::calPixelQualityLM(cdbAbs *db, string tag) : calAbs(db, tag) {
-  cout << "calPixelQualityLM created and registered with tag ->" << fTag << "<-"
+  if (0) cout << "calPixelQualityLM created and registered with tag ->" << fTag << "<-"
        << endl;
 }
 

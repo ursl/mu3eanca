@@ -13,7 +13,7 @@ calPixelTimeCalibration::calPixelTimeCalibration(cdbAbs *db) : calAbs(db) {
 
 // ----------------------------------------------------------------------
 calPixelTimeCalibration::calPixelTimeCalibration(cdbAbs *db, string tag) : calAbs(db, tag) {
-  cout << "calPixelTimeCalibration created and registered with tag ->" << fTag << "<-"
+  if (0) cout << "calPixelTimeCalibration created and registered with tag ->" << fTag << "<-"
        << endl;
 }
 
