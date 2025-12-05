@@ -10,7 +10,7 @@
 #include "calPixelTimeCalibration.hh"
 #include "calTileQuality.hh"
 #include "calPixelEfficiency.hh"
-//#include "calFibreQuality.hh"
+#include "calFibreQuality.hh"
 #include <algorithm>
 #include <chrono>
 
@@ -135,8 +135,8 @@ calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
     a = new calPixelTimeCalibration();
   } else if (!hash.compare("tilequality_"))  {
     a = new calTileQuality();
-//  } else if (!hash.compare("fibrequality_"))  {
-//    a = new calFibreQuality();
+  } else if (!hash.compare("fibrequality_"))  {
+    a = new calFibreQuality();
   } else if (!hash.compare("pixelefficiency_"))  {
     a = new calPixelEfficiency();
   } else {

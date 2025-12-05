@@ -82,9 +82,8 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
   if (cal) cal->setVerbosity(verbose);
   cal = createClass("pixelefficiency_");
   if (cal) cal->setVerbosity(verbose);
-
-  //  cal = createClass("fibrequality_");
-//  if (cal) cal->setVerbosity(verbose);
+  cal = createClass("fibrequality_");
+  if (cal) cal->setVerbosity(verbose);
 }
 
 
