@@ -77,7 +77,7 @@ LBINARIES = testCDB fillDB anaPixelQuality\
             syncCloud syncMongo syncJSON syncRDB\
             cdbInitDB cdbPrintPayload cdbInitGT cdbWritePayload \
             cdbPrintConfig \
-            uploadDetConfig downloadDetConfig cdbInsertIovTag diffRunnumbers
+            uploadDetConfig downloadDetConfig cdbInsertIovTag diffRunnumbers cdbPurgePayloads
 
 ifneq (,$(findstring merlin,$(LHOST)))
        $(info ************  MERLIN VERSION ************)
