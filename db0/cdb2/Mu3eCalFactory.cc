@@ -93,8 +93,8 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
     a = new calPixelTimeCalibration(db, tag);
   } else if (!name.compare("tilequality_"))  {
     a = new calTileQuality(db, tag);
-//  } else if (!name.compare("fibrequality_"))  {
-//    a = new calFibreQuality(db, tag);
+  } else if (!name.compare("fibrequality_"))  {
+    a = new calFibreQuality(db, tag);
   } else if (!name.compare("pixelefficiency_"))  {
     a = new calPixelEfficiency(db, tag);
   } else {
