@@ -41,6 +41,7 @@ public:
   std::string makeBLOB() override;
   // -- verbosity = <0 (not-good channels), 0 (all channels), >0 (good channels)
   void printBLOB(std::string, int verbosity = 1) override;
+  std::string printBLOBString(std::string blob, int verbosity = 0) override;
 
   void writeCSV(std::string filename);
   void readCSV(std::string filename);

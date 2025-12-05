@@ -89,15 +89,21 @@ void calPixelAlignment::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
+  cout << printBLOBString(sblob, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calPixelAlignment::printBLOBString(std::string sblob, int verbosity) {
+  stringstream ss;
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calPixelAlignment::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << endl;
+  ss << "calPixelAlignment::printBLOB(string)" << endl;
+  ss << "   header: " << hex << header << dec << endl;
 
-  if (0 == verbosity) return;
+  if (0 == verbosity) return ss.str();
 
   int cnt(0);
   while (ibuffer != buffer.end()) {
@@ -106,29 +112,30 @@ void calPixelAlignment::printBLOB(std::string sblob, int verbosity) {
     if (cnt > verbosity) break;
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-    cout << "   sensor = " << chipID
-         << " v = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << " "
-         << "row = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << " "
-         << "col = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << "n = "
-         << blob2Int(getData(ibuffer)) << "/"
-         << blob2Int(getData(ibuffer)) << " "
-         << "rest = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer))
-         << endl;
+    ss << "   sensor = " << chipID
+       << " v = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << " "
+       << "row = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << " "
+       << "col = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << "n = "
+       << blob2Int(getData(ibuffer)) << "/"
+       << blob2Int(getData(ibuffer)) << " "
+       << "rest = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer))
+       << endl;
   }
+  return ss.str();
 }
 
 

@@ -85,30 +85,37 @@ void calTileAlignment::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 void calTileAlignment::printBLOB(std::string sblob, int verbosity) {
+  cout << printBLOBString(sblob, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calTileAlignment::printBLOBString(std::string sblob, int verbosity) {
+  stringstream ss;
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calTileAlignment::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << endl;
+  ss << "calTileAlignment::printBLOB(string)" << endl;
+  ss << "   header: " << hex << header << dec << endl;
 
   int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
     if (cnt > verbosity) break;
-    cout << "   id = " << blob2UnsignedInt(getData(ibuffer))
-         << " sensor = " << blob2Int(getData(ibuffer))
-         << " pos = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << " "
-         << "dir = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << " "
-         << endl;
+    ss << "   id = " << blob2UnsignedInt(getData(ibuffer))
+       << " sensor = " << blob2Int(getData(ibuffer))
+       << " pos = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << " "
+       << "dir = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << " "
+       << endl;
   }
+  return ss.str();
 }
 
 

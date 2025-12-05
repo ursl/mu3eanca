@@ -54,27 +54,34 @@ void calDetConfV1::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 void calDetConfV1::printBLOB(std::string sblob, int verbosity) {
+  cout << printBLOBString(sblob, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calDetConfV1::printBLOBString(std::string sblob, int verbosity) {
+  stringstream ss;
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calDetConfV1::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << endl;
+  ss << "calDetConfV1::printBLOB(string)" << endl;
+  ss << "   header: " << hex << header << dec << endl;
 
-  if (0 == verbosity) return;
+  if (0 == verbosity) return ss.str();
 
-  cout << "target"  << endl
-       << "  .shape = " << blob2UnsignedInt(getData(ibuffer)) << endl
-       << "  .thickness1 = " << blob2Double(getData(ibuffer)) << endl
-       << "  .thickness2 = " << blob2Double(getData(ibuffer)) << endl
-       << "  .length = " << blob2Double(getData(ibuffer)) << endl
-       << "  .radius = " << blob2Double(getData(ibuffer)) << endl
-       << "  .Offset x/y/z = " << blob2Double(getData(ibuffer))
-       << "/" << blob2Double(getData(ibuffer))
-       << "/" << blob2Double(getData(ibuffer)) << endl
-       << "magnet.field" << endl
-       << "  .strength = " << blob2Double(getData(ibuffer)) << endl;
+  ss << "target"  << endl
+     << "  .shape = " << blob2UnsignedInt(getData(ibuffer)) << endl
+     << "  .thickness1 = " << blob2Double(getData(ibuffer)) << endl
+     << "  .thickness2 = " << blob2Double(getData(ibuffer)) << endl
+     << "  .length = " << blob2Double(getData(ibuffer)) << endl
+     << "  .radius = " << blob2Double(getData(ibuffer)) << endl
+     << "  .Offset x/y/z = " << blob2Double(getData(ibuffer))
+     << "/" << blob2Double(getData(ibuffer))
+     << "/" << blob2Double(getData(ibuffer)) << endl
+     << "magnet.field" << endl
+     << "  .strength = " << blob2Double(getData(ibuffer)) << endl;
+  return ss.str();
 }
 
 

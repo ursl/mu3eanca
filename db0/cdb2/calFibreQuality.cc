@@ -153,15 +153,22 @@ string calFibreQuality::makeBLOB() {
   return s.str();
 }
 
-// ----------------------------------------------------------------------
-void calFibreQuality::printBLOB(std::string blob, int verbosity) {
 
-  std::vector<char> buffer(blob.begin(), blob.end());
-  std::vector<char>::iterator ibuffer = buffer.begin();
+// ----------------------------------------------------------------------
+void calFibreQuality::printBLOB(string blob, int verbosity) {
+  cout << printBLOBString(blob, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calFibreQuality::printBLOBString(string blob, int verbosity) {
+  stringstream s;
+
+  vector<char> buffer(blob.begin(), blob.end());
+  vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calFibreQuality::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << endl;
+  s << "calFibreQuality::printBLOB(string)" << endl;
+  s << "   header: " << hex << header << dec << endl;
 
   int cnt(0);
   while (ibuffer != buffer.end()) {
@@ -171,7 +178,7 @@ void calFibreQuality::printBLOB(std::string blob, int verbosity) {
     int hasData = blob2Int(getData(ibuffer));
     double threshold = blob2Double(getData(ibuffer));
     double efficiency = blob2Double(getData(ibuffer));
-    cout << "   id = " << setw(3) << id
+    s << "   id = " << setw(3) << id
          << " quality = " << quality
          << " lock = " << lock
          << " hasData = " << hasData
@@ -180,7 +187,8 @@ void calFibreQuality::printBLOB(std::string blob, int verbosity) {
          << endl;
     ++cnt;
   }
-  cout << "calFibreQuality::printBLOB(...) printed status for " << cnt << " Asics" << endl;
+  s << "calFibreQuality::printBLOB(...) printed status for " << cnt << " Asics" << endl;
+  return s.str();
 }
 
 

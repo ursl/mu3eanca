@@ -87,13 +87,19 @@ void calFibreAlignment::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
+  cout << printBLOBString(sblob, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calFibreAlignment::printBLOBString(std::string sblob, int verbosity) {
+  stringstream ss;
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calFibreAlignment::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << endl;
+  ss << "calFibreAlignment::printBLOB(string)" << endl;
+  ss << "   header: " << hex << header << dec << endl;
 
   int cnt(0);
   while (ibuffer != buffer.end()) {
@@ -101,20 +107,21 @@ void calFibreAlignment::printBLOB(std::string sblob, int verbosity) {
     if (cnt > verbosity) break;
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-    cout << "   sensor = " << chipID
-         << " c = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << " "
-         << "f = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << " "
-         << "round = " << blob2UnsignedInt(getData(ibuffer)) << "/"
-         << "square = " << blob2UnsignedInt(getData(ibuffer)) << "/"
-         << "diameter = " << blob2Double(getData(ibuffer))
-         << endl;
+    ss << "   sensor = " << chipID
+       << " c = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << " "
+       << "f = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << " "
+       << "round = " << blob2UnsignedInt(getData(ibuffer)) << "/"
+       << "square = " << blob2UnsignedInt(getData(ibuffer)) << "/"
+       << "diameter = " << blob2Double(getData(ibuffer))
+       << endl;
   }
+  return ss.str();
 }
 
 

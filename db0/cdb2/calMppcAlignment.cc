@@ -88,31 +88,38 @@ void calMppcAlignment::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 void calMppcAlignment::printBLOB(std::string sblob, int verbosity) {
+  cout << printBLOBString(sblob, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calMppcAlignment::printBLOBString(std::string sblob, int verbosity) {
+  stringstream ss;
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calMppcAlignment::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << endl;
+  ss << "calMppcAlignment::printBLOB(string)" << endl;
+  ss << "   header: " << hex << header << dec << endl;
 
   int cnt(0);
   while (ibuffer != buffer.end()) {
     if (verbosity > 0) ++cnt;
     if (cnt > verbosity) break;
-    cout << "   mppc = "
-         << blob2UnsignedInt(getData(ibuffer))
-         << " v = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << " "
-         << "col = "
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << "/"
-         << blob2Double(getData(ibuffer)) << " "
-         << "ncol = " << blob2Int(getData(ibuffer))
-         << endl;
+    ss << "   mppc = "
+       << blob2UnsignedInt(getData(ibuffer))
+       << " v = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << " "
+       << "col = "
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << "/"
+       << blob2Double(getData(ibuffer)) << " "
+       << "ncol = " << blob2Int(getData(ibuffer))
+       << endl;
   }
+  return ss.str();
 }
 
 

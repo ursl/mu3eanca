@@ -69,15 +69,21 @@ void calPixelCablingMap::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 void calPixelCablingMap::printBLOB(std::string sblob, int verbosity) {
+  cout << printBLOBString(sblob, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calPixelCablingMap::printBLOBString(std::string sblob, int verbosity) {
+  stringstream ss;
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calPixelCablingMap::printBLOB(string," << verbosity << ")" << endl;
-  cout << "   header: " << hex << header << dec << endl;
+  ss << "calPixelCablingMap::printBLOB(string," << verbosity << ")" << endl;
+  ss << "   header: " << hex << header << dec << endl;
   if (0xdeadface != header) {
-    cout << "XXXXX ERRROR in calPixelCablingMap::printBLOB> header is wrong. Something is really messed up!" << endl;
+    ss << "XXXXX ERRROR in calPixelCablingMap::printBLOB> header is wrong. Something is really messed up!" << endl;
   }
 
   string summary("calPixelCablingMap ");
@@ -88,13 +94,14 @@ void calPixelCablingMap::printBLOB(std::string sblob, int verbosity) {
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
     // -- online
     unsigned int online = blob2UnsignedInt(getData(ibuffer));
-    if (verbosity > 0) cout << "   chipID offline/online = "
-                              << chipID << "/" <<  online
-                              << endl;
+    if (verbosity > 0) ss << "   chipID offline/online = "
+                          << chipID << "/" <<  online
+                          << endl;
   }
   if (0 == verbosity) {
-    cout << summary << " with " << nchips << " chips" << endl;
+    ss << summary << " with " << nchips << " chips" << endl;
   }
+  return ss.str();
 }
 
 

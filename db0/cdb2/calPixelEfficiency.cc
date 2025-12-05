@@ -68,18 +68,25 @@ string calPixelEfficiency::makeBLOB() {
 
 // ----------------------------------------------------------------------
 void calPixelEfficiency::printBLOB(string s, int verbosity) {
-  cout << "calPixelEfficiency::printBLOB> print BLOB" << endl;
+  cout << printBLOBString(s, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calPixelEfficiency::printBLOBString(string s, int verbosity) {
+  stringstream ss;
+  ss << "calPixelEfficiency::printBLOB> print BLOB" << endl;
   std::vector<char> buffer(s.begin(), s.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "header: " << hex << header << dec << endl;
+  ss << "header: " << hex << header << dec << endl;
   uint32_t chipID(0);
   double efficiency(0);
   while (ibuffer != buffer.end()) {
     chipID = blob2UnsignedInt(getData(ibuffer));
     efficiency = blob2Double(getData(ibuffer));
-    cout << "chipID: " << chipID << " efficiency: " << efficiency << endl;
+    ss << "chipID: " << chipID << " efficiency: " << efficiency << endl;
   }
+  return ss.str();
 }
 
 // ----------------------------------------------------------------------

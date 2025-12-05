@@ -291,13 +291,19 @@ void calPixelQualityLM::printPixelQuality(unsigned int chipid, int minimumStatus
 
 // ----------------------------------------------------------------------
 void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
+  cout << printBLOBString(sblob, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calPixelQualityLM::printBLOBString(std::string sblob, int verbosity) {
+  stringstream ss;
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calPixelQuality::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << " (note: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off)" << endl;
+  ss << "calPixelQuality::printBLOB(string)" << endl;
+  ss << "   header: " << hex << header << dec << " (note: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off)" << endl;
 
   while (ibuffer != buffer.end()) {
     // -- chipID
@@ -310,32 +316,33 @@ void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
     unsigned int linkB = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkC = blob2UnsignedInt(getData(ibuffer));
     unsigned int linkM = blob2UnsignedInt(getData(ibuffer));
-    cout << "   chipID: " << chipID << " ckdivend/ckdivend2: " << ckdivend << "/" << ckdivend2;
-    cout << " link status A/B/C/M: " << linkA  << "/" << linkB << "/" << linkC  << "/" << linkM << endl;
+    ss << "   chipID: " << chipID << " ckdivend/ckdivend2: " << ckdivend << "/" << ckdivend2;
+    ss << " link status A/B/C/M: " << linkA  << "/" << linkB << "/" << linkC  << "/" << linkM << endl;
     // -- get number of column entries
     int ncol = blob2Int(getData(ibuffer));
     if (ncol > 0) { 
-      cout << "            column status " << ncol << " (col/qual): ";
+      ss << "            column status " << ncol << " (col/qual): ";
       for (int i = 0; i < ncol; ++i) {
         int icol           = blob2Int(getData(ibuffer));
         unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-        cout << icol << "/" << iqual << (i < ncol-1? ", ":"");
+        ss << icol << "/" << iqual << (i < ncol-1? ", ":"");
       }
-      cout << endl;
+      ss << endl;
     }
     // -- get number of pixel entries
     int npix = blob2Int(getData(ibuffer));
     if (npix > 0) { 
-      cout << "            defective pixels " << npix << " (col/row/qual): " ;
+      ss << "            defective pixels " << npix << " (col/row/qual): " ;
       for (int i = 0; i < npix; ++i) {
         int icol           = blob2Int(getData(ibuffer));
         int irow           = blob2Int(getData(ibuffer));
         unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-        cout << icol << "/" << irow << "/" << iqual << (i < npix-1? ", ":"");
+        ss << icol << "/" << irow << "/" << iqual << (i < npix-1? ", ":"");
       }
-      cout << endl;
+      ss << endl;
     }
   }
+  return ss.str();
 }
 
 

@@ -27,6 +27,7 @@ public:
   // -- these are identical to the code in calPixelQuality (but this does not derive from that)
   std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) override;
   void printBLOB(std::string s, int verbosity = 1) override;
+  std::string printBLOBString(std::string blob, int verbosity = 1);
 
   void readCsv(std::string filename); 
   void writeCsv(std::string filename);

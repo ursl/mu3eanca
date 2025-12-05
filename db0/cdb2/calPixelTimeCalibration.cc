@@ -61,13 +61,19 @@ void calPixelTimeCalibration::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 void calPixelTimeCalibration::printBLOB(std::string sblob, int verbosity) {
+  cout << printBLOBString(sblob, verbosity) << endl;
+}
+
+// ----------------------------------------------------------------------
+string calPixelTimeCalibration::printBLOBString(std::string sblob, int verbosity) {
+  stringstream ss;
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calPixelTimeCalibration::printBLOB(string)" << endl;
-  cout << "   header: " << hex << header << dec << " (note: chip sector tot mean meanerr sigma sigmaerr)" << endl;
+  ss << "calPixelTimeCalibration::printBLOB(string)" << endl;
+  ss << "   header: " << hex << header << dec << " (note: chip sector tot mean meanerr sigma sigmaerr)" << endl;
 
   int c(0), s(0), b(0);
   while (ibuffer != buffer.end()) {
@@ -81,13 +87,14 @@ void calPixelTimeCalibration::printBLOB(std::string sblob, int verbosity) {
         a.meanerr = blob2Double(getData(ibuffer));
         a.sigma = blob2Double(getData(ibuffer));
         a.sigmaerr = blob2Double(getData(ibuffer));
-        cout << c << " " << s << " " << b << " " 
-             << setprecision(6) << fixed     
-             << a.mean << " " << a.meanerr << " " << a.sigma << " " << a.sigmaerr 
-             << endl;
+        ss << c << " " << s << " " << b << " " 
+           << setprecision(6) << fixed     
+           << a.mean << " " << a.meanerr << " " << a.sigma << " " << a.sigmaerr 
+           << endl;
       }
     }
   }
+  return ss.str();
 }
 
 

@@ -42,6 +42,9 @@ public:
   virtual void printBLOB(std::string, int verbosity = 1) {
     std::cout << "calAbs::printBLOB() ?" << std::endl;
   }
+  virtual std::string printBLOBString(std::string blob, int verbosity = 0) {
+    return "calAbs::printBLOBString() ?";
+  }
 
   virtual std::string  getSchema() {
     return "calAbs::getSchema()?";

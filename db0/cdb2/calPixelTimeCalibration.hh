@@ -24,6 +24,7 @@ public:
 
   std::string makeBLOB() override;
   void printBLOB(std::string s, int verbosity = 1) override;
+  std::string printBLOBString(std::string blob, int verbosity = 1);
 
   void readTxtFile(std::string filename); 
   void writeTxtFile(std::string filename);
