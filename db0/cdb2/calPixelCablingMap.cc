@@ -55,11 +55,14 @@ void calPixelCablingMap::calculate(string hash) {
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << "calPixelCablingMap header: " << hex << header << dec << endl;
 
-  unsigned int sensor(0), online(0);
+  constants a;
   while (ibuffer != buffer.end()) {
-    sensor = blob2UnsignedInt(getData(ibuffer));
-    online = blob2UnsignedInt(getData(ibuffer));
-    fMapConstants.insert(make_pair(sensor, online));
+    a.sensor = blob2UnsignedInt(getData(ibuffer));
+    a.offsetA = blob2UnsignedInt(getData(ibuffer));
+    a.offsetB = blob2UnsignedInt(getData(ibuffer));
+    a.offsetC = blob2UnsignedInt(getData(ibuffer));
+    a.offsetM = blob2UnsignedInt(getData(ibuffer));
+    fMapConstants.insert(make_pair(a.sensor, a));
   }
 
   // -- set iterator over all constants to the start of the map
@@ -68,15 +71,15 @@ void calPixelCablingMap::calculate(string hash) {
 
 
 // ----------------------------------------------------------------------
-void calPixelCablingMap::printBLOB(std::string sblob, int verbosity) {
+void calPixelCablingMap::printBLOB(string sblob, int verbosity) {
   cout << printBLOBString(sblob, verbosity) << endl;
 }
 
 // ----------------------------------------------------------------------
-string calPixelCablingMap::printBLOBString(std::string sblob, int verbosity) {
+string calPixelCablingMap::printBLOBString(string sblob, int verbosity) {
   stringstream ss;
 
-  std::vector<char> buffer(sblob.begin(), sblob.end());
+  vector<char> buffer(sblob.begin(), sblob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
@@ -87,19 +90,25 @@ string calPixelCablingMap::printBLOBString(std::string sblob, int verbosity) {
   }
 
   string summary("calPixelCablingMap ");
-  int nchips(0);
+  int nsensors(0);
   while (ibuffer != buffer.end()) {
-    ++nchips;
+    ++nsensors;
     // -- offline chipID
-    unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
-    // -- online
-    unsigned int online = blob2UnsignedInt(getData(ibuffer));
-    if (verbosity > 0) ss << "   chipID offline/online = "
-                          << chipID << "/" <<  online
+    unsigned int sensor = blob2UnsignedInt(getData(ibuffer));
+    // -- offsetA
+    unsigned int offsetA = blob2UnsignedInt(getData(ibuffer));
+    // -- offsetB
+    unsigned int offsetB = blob2UnsignedInt(getData(ibuffer));
+    // -- offsetC
+    unsigned int offsetC = blob2UnsignedInt(getData(ibuffer));
+    // -- offsetM
+    unsigned int offsetM = blob2UnsignedInt(getData(ibuffer));
+    if (verbosity > 0) ss << "   sensor offsetA/offsetB/offsetC/offsetM = "
+                          << sensor << "/" <<  offsetA << "/" << offsetB << "/" << offsetC << "/" << offsetM
                           << endl;
   }
   if (0 == verbosity) {
-    ss << summary << " with " << nchips << " chips" << endl;
+    ss << summary << " with " << nsensors << " sensors" << endl;
   }
   return ss.str();
 }
@@ -112,29 +121,16 @@ string calPixelCablingMap::makeBLOB() {
   s << dumpArray(uint2Blob(header));
 
   for (auto it: fMapConstants) {
-    s << dumpArray(uint2Blob(it.first));
-    s << dumpArray(uint2Blob(it.second));
+    constants a = it.second;
+    s << dumpArray(uint2Blob(a.sensor));
+    s << dumpArray(uint2Blob(a.offsetA));
+    s << dumpArray(uint2Blob(a.offsetB));
+    s << dumpArray(uint2Blob(a.offsetC));
+    s << dumpArray(uint2Blob(a.offsetM));
   }
   return s.str();
 
 }
-
-
-// ----------------------------------------------------------------------
-string calPixelCablingMap::makeBLOB(const map<unsigned int, vector<double>>& m) {
-  stringstream s;
-  unsigned int header(0xdeadface);
-  s << dumpArray(uint2Blob(header));
-
-  // -- format of m
-  // chipID => [online]
-  for (auto it: m) {
-    s << dumpArray(uint2Blob(it.first));
-    s << dumpArray(uint2Blob(it.second[0]));
-  }
-  return s.str();
-}
-
 
 // ----------------------------------------------------------------------
 string calPixelCablingMap::readJson(string filename) {

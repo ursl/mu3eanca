@@ -21,9 +21,8 @@ public:
   void        calculate(std::string hash) override;
 
   std::string makeBLOB() override;
-  std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) override;
   void printBLOB(std::string, int verbosity = 1) override;
-  std::string printBLOBString(std::string blob, int verbosity = 1);
+  std::string printBLOBString(std::string blob, int verbosity = 1) override;
 
   unsigned int getOnline(unsigned int sensor);
   unsigned int getSensor(unsigned int online);
@@ -36,11 +35,19 @@ public:
 
 private:
   std::string fPixelCablingMapTag{"pixelcablingmap_"};
-  std::string fSchema{"ui_sensor,ui_online"};
+  std::string fSchema{"ui_sensor,ui_offsetA,ui_offsetB,ui_offsetC,ui_offsetM"};
 
-  // -- map<sensor, online>
-  std::map<unsigned int, unsigned int> fMapConstants;
-  std::map<unsigned int, unsigned int>::iterator fMapConstantsIt{fMapConstants.end()};
+
+  struct constants {
+    unsigned int sensor;
+    unsigned int offsetA;
+    unsigned int offsetB;
+    unsigned int offsetC;
+    unsigned int offsetM;
+  };
+  // -- map<sensor, constants>
+  std::map<unsigned int, constants> fMapConstants;
+  std::map<unsigned int, constants>::iterator fMapConstantsIt{fMapConstants.end()};
 };
 
 #endif
