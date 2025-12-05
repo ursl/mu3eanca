@@ -65,6 +65,46 @@ calFibreQuality::Status calFibreQuality::getAsicStatus(uint32_t asicID) {
 }
 
 // ----------------------------------------------------------------------
+bool calFibreQuality::getAsicLock(uint32_t asicID) {
+  if (fMapConstants.find(asicID) == fMapConstants.end()) {
+    return false;
+  }
+  return fMapConstants[asicID].lock;
+}
+
+// ----------------------------------------------------------------------
+bool calFibreQuality::getAsicHasData(uint32_t asicID) {
+  if (fMapConstants.find(asicID) == fMapConstants.end()) {
+    return false;
+  }
+  return fMapConstants[asicID].hasData;
+}
+
+// ----------------------------------------------------------------------
+int calFibreQuality::getAsicQuality(uint32_t asicID) {
+  if (fMapConstants.find(asicID) == fMapConstants.end()) {
+    return -1;
+  }
+  return fMapConstants[asicID].quality;
+}
+
+// ----------------------------------------------------------------------
+double calFibreQuality::getAsicThreshold(uint32_t asicID) {
+  if (fMapConstants.find(asicID) == fMapConstants.end()) {
+    return -1.0;
+  }
+  return fMapConstants[asicID].threshold;
+}
+
+// ----------------------------------------------------------------------
+double calFibreQuality::getAsicEfficiency(uint32_t asicID) {
+  if (fMapConstants.find(asicID) == fMapConstants.end()) {
+    return -1.0;
+  }
+  return fMapConstants[asicID].efficiency;
+}
+
+// ----------------------------------------------------------------------
 void calFibreQuality::calculate(string hash) {
   if (fVerbose > 0) cout << "calFibreQuality::calculate() with "
        << "fHash ->" << hash << "<-"
@@ -81,8 +121,11 @@ void calFibreQuality::calculate(string hash) {
   while (ibuffer != buffer.end()) {
     constants cq;
     cq.id = blob2UnsignedInt(getData(ibuffer));
+    cq.quality = blob2Int(getData(ibuffer));
     cq.lock = blob2Int(getData(ibuffer));
     cq.hasData = blob2Int(getData(ibuffer));
+    cq.threshold = blob2Double(getData(ibuffer));
+    cq.efficiency = blob2Double(getData(ibuffer));
     fMapConstants.insert(make_pair(cq.id, cq));
   }
 
@@ -101,8 +144,11 @@ string calFibreQuality::makeBLOB() {
   // chipID => [lock, hasData]
   for (auto it: fMapConstants) {
     s << dumpArray(uint2Blob(it.first));
+    s << dumpArray(int2Blob(it.second.quality));
     s << dumpArray(int2Blob(it.second.lock));
     s << dumpArray(int2Blob(it.second.hasData));
+    s << dumpArray(double2Blob(it.second.threshold));
+    s << dumpArray(double2Blob(it.second.efficiency));
   }
   return s.str();
 }
@@ -120,11 +166,17 @@ void calFibreQuality::printBLOB(std::string blob, int verbosity) {
   int cnt(0);
   while (ibuffer != buffer.end()) {
     uint32_t id = blob2UnsignedInt(getData(ibuffer));
+    int quality = blob2Int(getData(ibuffer));
     int lock = blob2Int(getData(ibuffer));
     int hasData = blob2Int(getData(ibuffer));
-    cout << "   id = " << id
+    double threshold = blob2Double(getData(ibuffer));
+    double efficiency = blob2Double(getData(ibuffer));
+    cout << "   id = " << setw(3) << id
+         << " quality = " << quality
          << " lock = " << lock
          << " hasData = " << hasData
+         << " threshold = " << threshold
+         << " efficiency = " << efficiency
          << endl;
     ++cnt;
   }
@@ -134,41 +186,7 @@ void calFibreQuality::printBLOB(std::string blob, int verbosity) {
 
 // ----------------------------------------------------------------------
 void calFibreQuality::writeCSV(string filename) {
-  ofstream OUT(filename);
-  if (!OUT.is_open()) {
-    cout << "calFibreQuality::writeCSV> Error, cannot open file " + filename + " for writing" << endl;
-    return;
-  }
-  
-  // -- Write header line
-  OUT << "run_nr";
-  for (int asicID = 0; asicID <= 95; ++asicID) {
-    OUT << ", lock_asic" << asicID;
-  }
-  for (int asicID = 0; asicID <= 95; ++asicID) {
-    OUT << ", has_data_asic" << asicID;
-  }
-  OUT << endl;
-  
-  // -- Write data line
-  OUT << fRunNumber;
-  for (int asicID = 0; asicID <= 95; ++asicID) {
-    int lock = 0;
-    if (fMapConstants.find(asicID) != fMapConstants.end()) {
-      lock = fMapConstants[asicID].lock;
-    }
-    OUT << ", " << lock;
-  }
-  for (int asicID = 0; asicID <= 95; ++asicID) {
-    int hasData = 0;
-    if (fMapConstants.find(asicID) != fMapConstants.end()) {
-      hasData = fMapConstants[asicID].hasData;
-    }
-    OUT << ", " << hasData;
-  }
-  OUT << endl;
-  
-  OUT.close();
+ 
 }
 
 // ----------------------------------------------------------------------
@@ -181,93 +199,20 @@ void calFibreQuality::readCSV(string filename) {
   
   fMapConstants.clear();
   
-  // -- Read header line
-  string headerLine;
-  if (!getline(INS, headerLine)) {
-    cout << "calFibreQuality::readCSV> Error, cannot read header line" << endl;
-    return;
-  }
-  
-  // -- Parse header to find column indices
-  stringstream headerStream(headerLine);
-  vector<string> headers;
-  string header;
-  while (getline(headerStream, header, ',')) {
-    // Remove leading/trailing whitespace
-    header.erase(0, header.find_first_not_of(" \t"));
-    header.erase(header.find_last_not_of(" \t") + 1);
-    headers.push_back(header);
-  }
-  
-  // -- Build map of column name -> index
-  map<string, int> columnMap;
-  for (size_t i = 0; i < headers.size(); ++i) {
-    columnMap[headers[i]] = i;
-  }
-  
-  // -- Read data line
-  string dataLine;
-  if (!getline(INS, dataLine)) {
-    cout << "calFibreQuality::readCSV> Error, cannot read data line" << endl;
-    return;
-  }
-  
-  // -- Parse data values
-  stringstream dataStream(dataLine);
-  vector<string> values;
-  string value;
-  while (getline(dataStream, value, ',')) {
-    // Remove leading/trailing whitespace
-    value.erase(0, value.find_first_not_of(" \t"));
-    value.erase(value.find_last_not_of(" \t") + 1);
-    values.push_back(value);
-  }
-  
-  // -- Extract run number (if present)
-  if (columnMap.find("run_nr") != columnMap.end()) {
-    int colIdx = columnMap["run_nr"];
-    if (colIdx < static_cast<int>(values.size())) {
-      fRunNumber = stoi(values[colIdx]);
+  string sline;
+  while (getline(INS, sline)) {
+    if (string::npos == sline.find("#")) {
+      vector<string> tokens = split(sline, ',');
+      constants a;
+      uint32_t id = stoi(tokens[0]);
+      a.quality = stoi(tokens[1]);
+      a.lock = stoi(tokens[2]);
+      a.hasData = stoi(tokens[3]);
+      a.threshold = stod(tokens[4]);
+      a.efficiency = stod(tokens[5]);
+      fMapConstants.insert(make_pair(id, a));
     }
   }
-  
-  // -- Process ASICs 0-95
-  for (int asicID = 0; asicID <= 95; ++asicID) {
-    constants cq;
-    cq.id = asicID;
-    
-    // -- Extract lock value
-    string lockCol = "lock_asic" + to_string(asicID);
-    if (columnMap.find(lockCol) != columnMap.end()) {
-      int colIdx = columnMap[lockCol];
-      if (colIdx < static_cast<int>(values.size())) {
-        cq.lock = stoi(values[colIdx]);
-      } else {
-        cq.lock = 0;
-      }
-    } else {
-      cq.lock = 0;
-    }
-    
-    // -- Extract has_data value
-    string hasDataCol = "has_data_asic" + to_string(asicID);
-    if (columnMap.find(hasDataCol) != columnMap.end()) {
-      int colIdx = columnMap[hasDataCol];
-      if (colIdx < static_cast<int>(values.size())) {
-        cq.hasData = stoi(values[colIdx]);
-      } else {
-        cq.hasData = 0;
-      }
-    } else {
-      cq.hasData = 0;
-    }
-    cout << "calFibreQuality::readCSV> added asicID " << asicID << " with lock " << cq.lock << " and hasData " << cq.hasData << endl;
-    fMapConstants.insert(make_pair(cq.id, cq));
-
-  }
-  
-  // -- Set iterator over all constants to the start of the map
-  fMapConstantsIt = fMapConstants.begin();
-  
   INS.close();
+
 }

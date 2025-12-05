@@ -18,7 +18,8 @@ public:
     Noisy = 1,
     Dead = 2,
     Unlocked = 3,
-    Unset = 4
+    HasNoData = 4,
+    Unset = 5
   };
 
   calFibreQuality() = default;
@@ -28,8 +29,11 @@ public:
 
   // -- direct accessors
   Status getAsicStatus(uint32_t asicID);
-  bool   getAsicLock(uint32_t asicID) {return fMapConstants[asicID].lock;}
-  bool   getAsicHasData(uint32_t asicID) {return fMapConstants[asicID].hasData;}
+  bool   getAsicLock(uint32_t asicID);
+  bool   getAsicHasData(uint32_t asicID);
+  int    getAsicQuality(uint32_t asicID);
+  double getAsicThreshold(uint32_t asicID);
+  double getAsicEfficiency(uint32_t asicID);
 
   std::string getName() override {return fFibreQualityTag;}
   void        calculate(std::string hash) override;
@@ -48,15 +52,17 @@ public:
 
 private:
   std::string fFibreQualityTag{"fibrequality_"};
-  std::string fSchema{"ui_id,i_lock,i_hasData,thr"};
+  std::string fSchema{"ui_id,i_quality,i_lock,i_hasData,thr,eff"};
   int fRunNumber;
 
   // -- local and private
   struct constants {
     uint32_t id;
+    int quality;
     int lock;
     int hasData;
     double threshold;
+    double efficiency;
   };
 
   std::map<uint32_t, constants> fMapConstants;
