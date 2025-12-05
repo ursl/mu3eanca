@@ -106,9 +106,7 @@ double calFibreQuality::getAsicEfficiency(uint32_t asicID) {
 
 // ----------------------------------------------------------------------
 void calFibreQuality::calculate(string hash) {
-  if (fVerbose > 0) cout << "calFibreQuality::calculate() with "
-       << "fHash ->" << hash << "<-"
-       << endl;
+  cout << "calFibreQuality::calculate> calculate with hash ->" << hash << "<-";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
@@ -116,7 +114,7 @@ void calFibreQuality::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-
+  cout << " header: " << hex << header << dec;
   int npix(0);
   while (ibuffer != buffer.end()) {
     constants cq;
@@ -128,7 +126,7 @@ void calFibreQuality::calculate(string hash) {
     cq.efficiency = blob2Double(getData(ibuffer));
     fMapConstants.insert(make_pair(cq.id, cq));
   }
-
+  cout << " inserted " << fMapConstants.size() << " constants" << endl;
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
