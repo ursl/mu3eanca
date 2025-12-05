@@ -115,7 +115,6 @@ void calFibreQuality::calculate(string hash) {
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << " header: " << hex << header << dec;
-  int npix(0);
   while (ibuffer != buffer.end()) {
     constants cq;
     cq.id = blob2UnsignedInt(getData(ibuffer));

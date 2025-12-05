@@ -54,7 +54,6 @@ public:
 private:
   std::string fFibreQualityTag{"fibrequality_"};
   std::string fSchema{"ui_id,i_quality,i_lock,i_hasData,thr,eff"};
-  int fRunNumber;
 
   // -- local and private
   struct constants {
