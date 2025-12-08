@@ -12,6 +12,52 @@ calPixelQualityLM::calPixelQualityLM(cdbAbs *db) : calAbs(db) {
 
 
 // ----------------------------------------------------------------------
+string calPixelQualityLM::statusToString(Status status) {
+  // -- Update this when adding new Status values
+  switch (status) {
+    case ChipNotFound: return "ChipNotFound";
+    case Good: return "Good";
+    case Noisy: return "Noisy";
+    case Suspect: return "Suspect";
+    case DeclaredBad: return "DeclaredBad";
+    case LVDSErrorLink: return "LVDSErrorLink";
+    case LVDSErrorOtherLink: return "LVDSErrorOtherLink";
+    case LVDSErrorTopBottomEdge: return "LVDSErrorTopBottomEdge";
+    case DeadChip: return "DeadChip";
+    case NoHits: return "NoHits";
+    case Masked: return "Masked";
+    default: return "Unknown";
+  }
+}
+
+// ----------------------------------------------------------------------
+string calPixelQualityLM::getStatusDocumentation() {
+  // -- List of all Status enum values - update this when adding new Status values
+  const Status allStatuses[] = {
+    ChipNotFound,
+    Good,
+    Noisy,
+    Suspect,
+    DeclaredBad,
+    LVDSErrorLink,
+    LVDSErrorOtherLink,
+    LVDSErrorTopBottomEdge,
+    DeadChip,
+    NoHits,
+    Masked
+  };
+  
+  stringstream ss;
+  bool first = true;
+  for (Status s : allStatuses) {
+    if (!first) ss << ", ";
+    ss << static_cast<int>(s) << "=" << statusToString(s);
+    first = false;
+  }
+  return ss.str();
+}
+
+// ----------------------------------------------------------------------
 bool calPixelQualityLM::getNextID(uint32_t &ID) {
   if (fMapConstantsIt == fMapConstants.end()) {
     // -- reset
@@ -525,3 +571,4 @@ calPixelQualityLM::Status calPixelQualityLM::getLinkStatus(unsigned int chipid, 
     default: return Status::ChipNotFound; // -- invalid link number
   }
 }
+

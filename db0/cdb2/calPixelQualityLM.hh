@@ -32,6 +32,7 @@ public:
   void readCsv(std::string filename); 
   void writeCsv(std::string filename);
 
+  // -- Updates in implementation required as well!
   enum Status {
     ChipNotFound = -1,
     Good = 0,
@@ -40,9 +41,13 @@ public:
     DeclaredBad = 3,
     LVDSErrorLink = 4,
     LVDSErrorOtherLink = 5,
+    LVDSErrorTopBottomEdge = 6,
+    DeadChip = 7,
     NoHits = 8,
     Masked = 9
   };
+  static std::string statusToString(Status status);
+  static std::string getStatusDocumentation();
 
   Status getStatus(unsigned int chipid, int icol, int irow);
   Status getColStatus(unsigned int chipid, int icol);
