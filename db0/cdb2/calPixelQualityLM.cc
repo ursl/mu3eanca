@@ -54,6 +54,7 @@ string calPixelQualityLM::getStatusDocumentation() {
     ss << static_cast<int>(s) << "=" << statusToString(s);
     first = false;
   }
+  ss << ". M-link=nhit/ovfl";
   return ss.str();
 }
 
