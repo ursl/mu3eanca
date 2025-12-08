@@ -109,10 +109,13 @@ int main(int argc, char *argv[]) {
       }
     }
     for (int i = 0; i < thirdRunnumbers.size(); i++) {
-      if (find(secondAndFirstRunnumbers.begin(), secondAndFirstRunnumbers.end(), thirdRunnumbers[i]) != secondAndFirstRunnumbers.end()) {         thirdOnlyRunnumbers.push_back(thirdRunnumbers[i]);
+      if (find(firstRunnumbers.begin(), firstRunnumbers.end(), thirdRunnumbers[i]) == firstRunnumbers.end()
+          && find(secondRunnumbers.begin(), secondRunnumbers.end(), thirdRunnumbers[i]) == secondRunnumbers.end()
+         ) {
+          thirdOnlyRunnumbers.push_back(thirdRunnumbers[i]);
+      } 
+      if (find(secondAndFirstRunnumbers.begin(), secondAndFirstRunnumbers.end(), thirdRunnumbers[i]) != secondAndFirstRunnumbers.end()) {
         allRunnumbers.push_back(thirdRunnumbers[i]);
-      } else {
-        thirdOnlyRunnumbers.push_back(thirdRunnumbers[i]);
       }
     }
   }
@@ -121,8 +124,9 @@ int main(int argc, char *argv[]) {
   cout << endl;
   cout << "secondOnlyRunnumbers: " << secondOnlyRunnumbers.size() << " total (" << secondRunnumbers.size() << ")" << endl;
   cout << endl;
+
   if (secondAndFirstRunnumbers.size() > 0) {
-    cout << "secondAndFirstRunnumbers: " << secondAndFirstRunnumbers.size() << " runs: ";
+    cout << "secondAndFirstRunnumbers: " << secondAndFirstRunnumbers.size() << " runs: " << endl;
     for (int i = 0; i < secondAndFirstRunnumbers.size(); i++) {
       cout << secondAndFirstRunnumbers[i];
       if (i < secondAndFirstRunnumbers.size() - 1) {
@@ -140,21 +144,21 @@ int main(int argc, char *argv[]) {
 
     cout << endl;
     if (thirdAndFirstRunnumbers.size() > 0) {
-      cout << "thirdAndFirstRunnumbers: " << thirdAndFirstRunnumbers.size() << " runs: ";
-    for (int i = 0; i < thirdAndFirstRunnumbers.size(); i++) {
-      cout << thirdAndFirstRunnumbers[i];
-      if (i < thirdAndFirstRunnumbers.size() - 1) {
-        cout << ",";
+      cout << "thirdAndFirstRunnumbers: " << thirdAndFirstRunnumbers.size() << " runs: " << endl;
+      for (int i = 0; i < thirdAndFirstRunnumbers.size(); i++) {
+        cout << thirdAndFirstRunnumbers[i];
+        if (i < thirdAndFirstRunnumbers.size() - 1) {
+          cout << ",";
+        }
       }
-    }
-    cout << endl;
+      cout << endl;
     } else {
       cout << "thirdAndFirstRunnumbers: no runs" << endl;
     }
 
     cout << endl << endl;
     if (thirdAndSecondRunnumbers.size() > 0) {
-      cout << "thirdAndSecondRunnumbers: " << thirdAndSecondRunnumbers.size() << " runs: ";
+      cout << "thirdAndSecondRunnumbers: " << thirdAndSecondRunnumbers.size() << " runs: " << endl;
       for (int i = 0; i < thirdAndSecondRunnumbers.size(); i++) {
         cout << thirdAndSecondRunnumbers[i];
         if (i < thirdAndSecondRunnumbers.size() - 1) {
@@ -168,7 +172,7 @@ int main(int argc, char *argv[]) {
 
     cout << endl;
     if (allRunnumbers.size() > 0) {
-      cout << "allRunnumbers: " << allRunnumbers.size() << " runs: ";
+      cout << "allRunnumbers: " << allRunnumbers.size() << " runs: " << endl;
       for (int i = 0; i < allRunnumbers.size(); i++) {
         cout << allRunnumbers[i];
         if (i < allRunnumbers.size() - 1) {
