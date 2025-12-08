@@ -58,8 +58,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 
 #define JSONDIR "/Users/ursl/data/mu3e/cdb"
-#define CSVSCHEMA "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual] NB: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 4 = LVDS errors on link, 5 = LVDS errors from other link, 6 = LVDS errors on top/bottom edge, 7 = dead chip, 8 = no hits, 9 = masked"
-
+#define CSVSCHEMA "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual]"
 // ----------------------------------------------------------------------
 struct pixhit {
   unsigned int ichip;
@@ -210,7 +209,7 @@ int main(int argc, char* argv[]) {
     ofstream ofs;
     string filename = Form("csv/deadlinks-allpixels.csv");
     ofs.open(filename);
-    ofs << CSVSCHEMA << endl;
+    ofs << CSVSCHEMA << " NB: " << calPixelQualityLM::getStatusDocumentation() << endl;
     
     cout << "print all chipIDs" << endl;
     calAbs* cal = pDC->getCalibration("pixelalignment_");
@@ -409,7 +408,7 @@ int main(int argc, char* argv[]) {
   vector<int> deadlinks, deadcolumns, noisyPixels;
   ofstream ofs;
   ofs.open(Form("csv/pixelqualitylm-run%d.csv", run));
-  ofs << CSVSCHEMA << endl;
+  ofs << CSVSCHEMA << " NB: " << calPixelQualityLM::getStatusDocumentation() << endl;
   for (auto it: mHitmaps){
     // -- debug with first 12 only FIXME
     //if (it.first != 1315) continue;
@@ -486,7 +485,7 @@ int main(int argc, char* argv[]) {
   calPixelQualityLM *cpq = new calPixelQualityLM();
   cpq->readCsv(Form("csv/pixelqualitylm-run%d.csv", run));
   string schema = cpq->getSchema();
-  string comment = "runclass/meanY. " + filename;
+  string comment = "no E, only LVDS error rate, " + calPixelQualityLM::getStatusDocumentation();
 
   createPayload(hash, cpq, "./payloads", schema, comment);
 
