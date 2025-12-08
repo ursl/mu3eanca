@@ -83,8 +83,10 @@ int main(int argc, char *argv[]) {
   string srunfile("");
   string srunlist("");
   string suffix("");
+  string payloadDir("");
   for (int i = 0; i < argc; i++) {
-    if (!strcmp(argv[i], "-db"))    {db = argv[++i];}
+    if (!strcmp(argv[i], "-d"))     {payloadDir = argv[++i];}
+    if (!strcmp(argv[i], "-db"))    {db = argv[++i];}  
     if (!strcmp(argv[i], "-f"))     {first = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-g"))     {gt = argv[++i];}
     if (!strcmp(argv[i], "-l"))     {last = atoi(argv[++i]);}
@@ -307,7 +309,15 @@ int main(int argc, char *argv[]) {
     if (last > 0 && itIoV > last) {
       continue;
     }
-    pDC->setRunNumber(itIoV);
+    if (payloadDir == "") {
+      cout << "Reading payload via CDB" << endl;
+      pDC->setRunNumber(itIoV);
+    } else {
+      string hash = "tag_pixelqualitylm_" + gt + "_iov_" + to_string(itIoV);
+      cout << "Reading payload from " << payloadDir << "/" << hash << endl;
+      pPQ->readPayloadFromFile(hash, payloadDir);
+      pPQ->calculate(hash);
+    }
     uint32_t chipid(0);
     pPQ->resetIterator();
     int nNoisyPixels(0);
@@ -350,7 +360,8 @@ int main(int argc, char *argv[]) {
   plotHistograms(filename, suffix);
 
 
-  vector<int> vJakGoodRuns = {4756, 4757, 4758, 4863, 4864, 4865, 4866, 4868, 4869, 4870, 4871, 4872, 4873, 4876, 4877, 4878, 4880, 4881, 4882, 4883, 4884, 4885, 4886, 4887, 4888, 4889, 4890, 4891, 4892, 4893, 4894, 4896, 4897, 4898, 4899, 4900, 5102};
+//  vector<int> vJakGoodRuns = {4756, 4757, 4758, 4863, 4864, 4865, 4866, 4868, 4869, 4870, 4871, 4872, 4873, 4876, 4877, 4878, 4880, 4881, 4882, 4883, 4884, 4885, 4886, 4887, 4888, 4889, 4890, 4891, 4892, 4893, 4894, 4896, 4897, 4898, 4899, 4900, 5102};
+  vector<int> vJakGoodRuns = {3312,3416,3471,3472,3474,3475,3487,3488,3492,3493,3494,3495,3496,3497,3498,3499,3500,3501,3502,3503,3504,3514,3568,3574,3575,3576,3578,3581,3582,3583,3585,3586,3602,3603,3604,3606,3619,3620,3622,3624,3625,3627,3629,3633,3634,3635,3636,3637,3638,3642,3644,3645,3646,3649,3651,3652,3653,3657,3794,3795,3796,3797,3798,3799,3812,3813,3814,3815,3816,3817,3818,3819,3820,3822,4724,4725,4726,4727,4728,4739,4740,4742,4743,4744,4745,4746,4748,4756,4757,4758,4863,4864,4865,4866,4868,4869,4870,4871,4872,4873,4876,4877,4878,4880,4881,4882,4883,4884,4885,4886,4887,4888,4889,4890,4891,4892,4893,4894,4896,4897,4898,4899,4900,5102,6116};
 
   cout << "Jak's run list has " << vJaksRuns.size() << " runs" << endl;
   string sfilename = "goodJakRunList" + suffix + ".txt";
