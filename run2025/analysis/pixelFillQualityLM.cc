@@ -485,7 +485,7 @@ int main(int argc, char* argv[]) {
   calPixelQualityLM *cpq = new calPixelQualityLM();
   cpq->readCsv(Form("csv/pixelqualitylm-run%d.csv", run));
   string schema = cpq->getSchema();
-  string comment = "no E, only LVDS error rate, " + calPixelQualityLM::getStatusDocumentation();
+  string comment = "no E, only LVDS error rate. " + calPixelQualityLM::getStatusDocumentation();
 
   createPayload(hash, cpq, "./payloads", schema, comment);
 
@@ -615,33 +615,53 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
 
   
   // -- check individual links
-  int lkStatus[3] = {0, 0, 0};
+  int lkStatus[4] = {0, 0, 0, 0};
   int nBadLinks(0);
   badChip = -1;
+  bool badLink[3] = {false, false, false};
   for (int i = 0; i < 3; ++i) {
     if (vLink[i] < 1) lkStatus[i] = 8;
     if (0 == ai.abcLinkMask[i]) lkStatus[i] = 9;
     if (ai.abcLinkErrs[i] > 10) lkStatus[i] = 4;
     if (ai.abcLinkErrs[i] > 10 && 1 == ai.abcLinkMask[i]) {
-      badChip = i;
+      badChip = 1;
       ++nBadLinks;
+      badLink[i] = true;
     }
   }
  
   for (int i = 0; i < 3; ++i) {
     cout << "Chip " << chipID << " link " << i << " status = " << lkStatus[i] 
     << " mask = " << ai.abcLinkMask[i] << " errs = " << ai.abcLinkErrs[i]
+    << " badLink = " << badLink[i]
     << endl;
+  }
+
+  // -- Check for row overflow (indicating LVDS errors)
+  int iOverFlow = h->Integral(1, 256, 251, 252);
+  if (0) cout << "Chip " << chipID << " overflow bin: " << iOverFlow << endl;
+
+  if (iOverFlow > 0) {
+    double nhits = h->Integral(1, 256, 1, 250);
+    uint32_t istatus = static_cast<uint32_t>(nhits/iOverFlow);
+    if (iOverFlow > nhits) istatus = 1;
+    if (nhits/iOverFlow > UINT32_MAX) istatus = UINT32_MAX;
+    lkStatus[3] = istatus;
+    cout << "Chip " << chipID << " overflow: " << iOverFlow << " nhits = " << nhits << " status = " << istatus 
+         << " UINT32_MAX = " << UINT32_MAX << endl;
+  } else {
+    lkStatus[3] = 0;
+    cout << "Chip " << chipID << " NO overflow: " << iOverFlow << " status = " << lkStatus[3] <<  endl;
   }
 
 
   if (badChip >= 0) {    
     cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << endl;
     for (int i = 0; i < 3; ++i) {
-      if (i != badChip) {
-        lkStatus[i] = 5;
-      } else {
+      if (badLink[i]) {
         lkStatus[i] = 4;
+      } else {
+        lkStatus[i] = 5;
       }
     }
   }
@@ -650,7 +670,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   links.push_back(lkStatus[0]);
   links.push_back(lkStatus[1]);
   links.push_back(lkStatus[2]);
-  links.push_back(0);
+  links.push_back(lkStatus[3]);
 
   return true;
 }
@@ -820,7 +840,7 @@ void determineDeadColumns(TH2 *h, vector<int> &columns, vector<int> &links) {
         continue;
       }
       columns.push_back(ix-1);
-      columns.push_back(9); 
+      columns.push_back(8); 
       if (DBX) {
         cout << "determineDeadColumns> ix = " << ix << " pushed! nHits = " << nHits
              << " minHits = " << minHits << " deadlinks = ";
