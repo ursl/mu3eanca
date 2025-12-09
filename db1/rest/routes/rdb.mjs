@@ -100,14 +100,15 @@ function mergeQueryConditions(baseQuery, additionalConditions) {
 // ----------------------------------------------------------------------
 router.get("/", async (req, res) => {
     let collection = await db.collection("runrecords");
-    let MAXRUNS = 1000;
+    const DEFAULT_PAGE_SIZE = 1000;
+    const MAX_PAGE_SIZE = 5000; // Maximum allowed page size
 
     console.log("----------------------------------------------------");
     console.log("req.query: " + JSON.stringify(req.query));
     console.log("serving from RDB / " + req.params.id);
 
     // Parse query parameters with onlySignificant defaulting to "yes"
-    const nruns = req.query.nRun ? Number(req.query.nRun) : -1;
+    const nruns = req.query.nRun ? Number(req.query.nRun) : -1; // Legacy parameter, kept for backward compatibility
     const minrun = Number(req.query.minRun) || -1;
     const maxrun = Number(req.query.maxRun) || -1;
     const onlySignificant = req.query.onlySignificant === "no" ? "no" : "yes";  // Default to "yes" unless explicitly set to "no"
@@ -115,6 +116,10 @@ router.get("/", async (req, res) => {
     const stoptime = req.query.stopTime;
     const runClass = req.query.runClass;
     const comment = req.query.comment;  // Add comment parameter
+    
+    // Pagination parameters
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(req.query.pageSize) || DEFAULT_PAGE_SIZE));
     
     // Data Quality filter parameters
     const dqMu3e = req.query.dqMu3e;
@@ -271,31 +276,127 @@ router.get("/", async (req, res) => {
         // Sort by run number descending
         pipeline.push({ $sort: { "BOR.Run number": -1 } });
 
-        // Apply limit if specified
+        // Get total count efficiently - build count pipeline (same filters, no sort/limit/skip)
+        const countPipeline = [];
+        for (let i = 0; i < pipeline.length; i++) {
+            if (pipeline[i].$sort) break; // Stop before sort
+            countPipeline.push(pipeline[i]);
+        }
+        
+        // Get total count and data in parallel for better performance
+        const skip = (page - 1) * pageSize;
+        
+        // Build data pipeline with pagination
+        const dataPipeline = [...pipeline];
         if (nruns > 0) {
-            pipeline.push({ $limit: nruns });
+            // Legacy mode
+            dataPipeline.push({ $limit: nruns });
         } else {
-            pipeline.push({ $limit: MAXRUNS });
+            dataPipeline.push({ $skip: skip });
+            dataPipeline.push({ $limit: pageSize });
         }
 
-        console.log("Aggregation pipeline:", JSON.stringify(pipeline, null, 2));
+        console.log("Aggregation pipeline:", JSON.stringify(dataPipeline, null, 2));
+        console.log(`Pagination: page=${page}, pageSize=${pageSize}, skip=${skip}`);
         
-        const result = await collection.aggregate(pipeline).toArray();
-        console.log("Query successful, found", result.length, "results");
+        // Execute count and data queries in parallel
+        const [countResult, dataResult] = await Promise.all([
+            collection.aggregate([...countPipeline, { $count: "total" }]).toArray(),
+            collection.aggregate(dataPipeline).toArray()
+        ]);
         
-        res.render('index', {
-            'data': result,
-            'onlySignificant': onlySignificant || 'yes',  // Default to 'yes' if not specified
-            'runClass': runClass || '',  // Pass the run class to the template
-            'comment': comment || '',  // Pass the comment to the template
-            'dqMu3e': dqMu3e || '',
-            'dqBeam': dqBeam || '',
-            'dqVtx': dqVtx || '',
-            'dqPix': dqPix || '',
-            'dqFib': dqFib || '',
-            'dqTil': dqTil || '',
-            'dqLks': dqLks || ''
-        });
+        const totalCount = countResult.length > 0 ? countResult[0].total : 0;
+        const actualResults = dataResult;
+        
+        console.log("Query successful, found", actualResults.length, "results out of", totalCount, "total");
+        
+        // Calculate pagination info with accurate total count
+        const totalPages = totalCount > 0 ? Math.ceil(totalCount / pageSize) : 1;
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
+        
+        // Calculate pagination info - always provide pagination object
+        // Ensure all values are valid numbers
+        const pagination = {
+            currentPage: Math.max(1, parseInt(page) || 1),
+            pageSize: Math.max(1, parseInt(pageSize) || 1000),
+            totalCount: Math.max(0, parseInt(totalCount) || 0),
+            totalPages: Math.max(1, parseInt(totalPages) || 1),
+            hasNextPage: Boolean(hasNextPage),
+            hasPrevPage: Boolean(hasPrevPage)
+        };
+        
+        console.log("Pagination object:", JSON.stringify(pagination));
+        
+        // Check Accept header - only prefer JSON if it explicitly requests JSON and NOT HTML
+        const acceptHeader = req.headers.accept || '';
+        const prefersJson = acceptHeader.includes('application/json') && 
+                           !acceptHeader.includes('text/html') &&
+                           (acceptHeader.split(',')[0].trim().includes('application/json') || 
+                            acceptHeader === 'application/json');
+        
+        const resultSize = JSON.stringify(actualResults).length;
+        const MAX_RENDER_SIZE = 50 * 1024 * 1024; // 50MB limit for rendering (increased from 10MB)
+        
+        console.log(`Accept header: ${acceptHeader}`);
+        console.log(`Prefers JSON: ${prefersJson}`);
+        console.log(`Result size: ${resultSize} bytes (${Math.round(resultSize/1024/1024)}MB)`);
+        
+        // Only return JSON if explicitly requested or if result is extremely large
+        if (prefersJson) {
+            console.log("JSON explicitly requested, returning JSON");
+            return res.json({
+                message: 'JSON format requested',
+                count: actualResults.length,
+                data: actualResults
+            });
+        }
+        
+        if (resultSize > MAX_RENDER_SIZE) {
+            console.log(`Result too large (${resultSize} bytes), returning JSON with message`);
+            return res.json({
+                message: `Result set too large (${actualResults.length} records, ${Math.round(resultSize/1024/1024)}MB). Please use filters to reduce the result set.`,
+                count: actualResults.length,
+                data: actualResults
+            });
+        }
+        
+        // Try to render the HTML template
+        console.log("Attempting to render HTML template...");
+        
+        // Explicitly set content type to HTML
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        
+        try {
+            res.render('index', {
+                'data': actualResults,
+                'onlySignificant': onlySignificant || 'yes',  // Default to 'yes' if not specified
+                'runClass': runClass || '',  // Pass the run class to the template
+                'comment': comment || '',  // Pass the comment to the template
+                'dqMu3e': dqMu3e || '',
+                'dqBeam': dqBeam || '',
+                'dqVtx': dqVtx || '',
+                'dqPix': dqPix || '',
+                'dqFib': dqFib || '',
+                'dqTil': dqTil || '',
+                'dqLks': dqLks || '',
+                'pagination': pagination,
+                'page': page,
+                'pageSize': pageSize
+            });
+            console.log("Template render call completed - response will be sent automatically");
+        } catch (renderError) {
+            console.error("Synchronous error during render call:", renderError);
+            console.error("Render error stack:", renderError.stack);
+            // Fallback to JSON if template rendering fails
+            console.log("Falling back to JSON response due to render error");
+            return res.json({
+                error: "Template rendering failed",
+                message: renderError.message,
+                count: result.length,
+                data: result
+            });
+        }
     } catch (error) {
         console.error("Error executing query:", error);
         console.error("Error stack:", error.stack);
@@ -323,16 +424,177 @@ router.get("/run/:id", async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
-// -- Get all run numbers
+// -- Get all run numbers (with optional filters)
 router.get("/allRunNumbers", async (req, res) => {
-    console.log("serving from RDB /allRunNumbers");
+    console.log("serving from RDB /allRunNumbers with filters:", JSON.stringify(req.query));
     let collection = await db.collection("runrecords");
-    let results = await collection.find({})
-      .sort({ "BOR.Run number": -1 })  // Sort by run number in descending order
-      .toArray();
+    
+    // Parse query parameters (same as main route)
+    const minrun = Number(req.query.minRun) || -1;
+    const maxrun = Number(req.query.maxRun) || -1;
+    const onlySignificant = req.query.onlySignificant === "no" ? "no" : "yes";
+    const starttime = req.query.startTime;
+    const stoptime = req.query.stopTime;
+    const runClass = req.query.runClass;
+    const comment = req.query.comment;
+    const dqMu3e = req.query.dqMu3e;
+    const dqBeam = req.query.dqBeam;
+    const dqVtx = req.query.dqVtx;
+    const dqPix = req.query.dqPix;
+    const dqFib = req.query.dqFib;
+    const dqTil = req.query.dqTil;
+    const dqLks = req.query.dqLks;
+    
+    try {
+        // Build the same aggregation pipeline as the main route (without pagination)
+        let pipeline = [];
+        
+        // Filter by run number range if specified
+        if (minrun > -1 && maxrun > 0) {
+            pipeline.push({ $match: { "BOR.Run number": { $gte: minrun, $lte: maxrun } } });
+        } else if (minrun > -1) {
+            pipeline.push({ $match: { "BOR.Run number": { $gte: minrun } } });
+        } else if (maxrun > -1) {
+            pipeline.push({ $match: { "BOR.Run number": { $lte: maxrun } } });
+        }
 
-    let runNumbers = results.map(record => record.BOR["Run number"]);
-    res.send(runNumbers);
+        // Filter by time if specified
+        if (starttime && stoptime) {
+            pipeline.push({ 
+                $match: { 
+                    "BOR.Start time": { $regex: starttime },
+                    "BOR.Stop time": { $regex: stoptime }
+                } 
+            });
+        } else if (starttime) {
+            pipeline.push({ $match: { "BOR.Start time": { $regex: starttime } } });
+        } else if (stoptime) {
+            pipeline.push({ $match: { "BOR.Stop time": { $regex: stoptime } } });
+        }
+
+        // Add fields for filtering (same as main route)
+        pipeline.push({
+            $addFields: {
+                lastRunInfo: {
+                    $arrayElemAt: [
+                        {
+                            $filter: {
+                                input: "$Attributes",
+                                as: "attr",
+                                cond: { $eq: [{ $type: "$$attr.RunInfo" }, "object"] }
+                            }
+                        },
+                        -1
+                    ]
+                },
+                lastDataQuality: {
+                    $arrayElemAt: [
+                        {
+                            $filter: {
+                                input: "$Attributes",
+                                as: "attr",
+                                cond: { $eq: [{ $type: "$$attr.DataQuality" }, "object"] }
+                            }
+                        },
+                        -1
+                    ]
+                }
+            }
+        });
+
+        // Apply filters (same logic as main route)
+        if (onlySignificant === "yes") {
+            pipeline.push({
+                $match: {
+                    "lastRunInfo.RunInfo.Significant": "true"
+                }
+            });
+        }
+
+        if (runClass) {
+            pipeline.push({
+                $match: {
+                    "BOR.Run Class": runClass
+                }
+            });
+        }
+
+        if (comment) {
+            pipeline.push({
+                $match: {
+                    $or: [
+                        { "lastRunInfo.RunInfo.Comments": { 
+                            $regex: comment,
+                            $options: 'i'
+                        }},
+                        { "EOR.Comments": { 
+                            $regex: comment,
+                            $options: 'i'
+                        }}
+                    ]
+                }
+            });
+        }
+
+        // Data Quality filters
+        const dqMatchConditions = [];
+        const dqFieldMap = {
+            'dqMu3e': 'mu3e',
+            'dqBeam': 'beam',
+            'dqVtx': 'vertex',
+            'dqPix': 'pixel',
+            'dqFib': 'fibres',
+            'dqTil': 'tiles',
+            'dqLks': 'links'
+        };
+
+        for (const [paramName, fieldName] of Object.entries(dqFieldMap)) {
+            const filterValue = req.query[paramName];
+            if (filterValue !== undefined && filterValue !== '') {
+                if (filterValue === "-1") {
+                    dqMatchConditions.push({
+                        $or: [
+                            { "lastDataQuality": null },
+                            { [`lastDataQuality.DataQuality.${fieldName}`]: { $exists: false } },
+                            { [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["1", "0", 1, 0] } }
+                        ]
+                    });
+                } else if (filterValue === "notbad") {
+                    dqMatchConditions.push({
+                        [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["0", 0] }
+                    });
+                } else {
+                    const numValue = parseInt(filterValue, 10);
+                    dqMatchConditions.push({
+                        [`lastDataQuality.DataQuality.${fieldName}`]: { $in: [filterValue, numValue] }
+                    });
+                }
+            }
+        }
+
+        if (dqMatchConditions.length > 0) {
+            pipeline.push({ $match: { $and: dqMatchConditions } });
+        }
+
+        // Project only the run number
+        pipeline.push({
+            $project: {
+                runNumber: "$BOR.Run number"
+            }
+        });
+
+        // Sort by run number descending
+        pipeline.push({ $sort: { runNumber: -1 } });
+
+        const results = await collection.aggregate(pipeline).toArray();
+        const runNumbers = results.map(record => record.runNumber);
+        
+        console.log(`Returning ${runNumbers.length} run numbers`);
+        res.json(runNumbers);
+    } catch (error) {
+        console.error("Error in allRunNumbers:", error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // ----------------------------------------------------------------------

@@ -163,7 +163,8 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         background: white;
-        min-height: 0;
+        min-height: 200px;
+        max-height: calc(100vh - 400px);
         overflow: auto;
         position: relative;
     }
@@ -231,6 +232,10 @@
         border-radius: 4px;
         background: white;
         flex-shrink: 0;
+        max-height: 40vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     .csv-header {
@@ -249,13 +254,16 @@
     }
 
     .csv-content {
-        padding: 15px;
+        padding: 5px 10px;
         display: none;
         font-family: monospace;
         white-space: pre-wrap;
         word-break: break-all;
         background: #f8f9fa;
         border-top: 1px solid #ddd;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
     }
 
     .csv-content.expanded {
@@ -415,6 +423,20 @@ function adjustLayout() {
         // Set content section height to fill remaining viewport space
         contentSection.style.height = (viewportHeight - headerHeight) + 'px';
         contentSection.style.marginTop = headerHeight + 'px';
+        
+        // Ensure table container has minimum space even when CSV is open
+        const tableContainer = document.querySelector('.table-container');
+        const csvBox = document.querySelector('.csv-box');
+        if (tableContainer && csvBox) {
+            const csvExpanded = csvBox.querySelector('.csv-content.expanded');
+            if (csvExpanded) {
+                // When CSV is open, ensure table gets at least 50% of available space
+                const availableHeight = viewportHeight - headerHeight - 100; // 100px for padding/margins
+                tableContainer.style.minHeight = Math.max(200, availableHeight * 0.5) + 'px';
+            } else {
+                tableContainer.style.minHeight = '200px';
+            }
+        }
     }
     
     // Ensure table header is visible - force a repaint
@@ -427,6 +449,14 @@ function adjustLayout() {
 // Initialize checkbox state on page load
 window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // Remove keepCsvOpen from URL if present (it's client-side only)
+    if (urlParams.has('keepCsvOpen')) {
+        urlParams.delete('keepCsvOpen');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+    
     const significantParam = urlParams.get('onlySignificant');
     const checkbox = document.getElementById("filterSignificant");
     if (checkbox) {
@@ -486,12 +516,38 @@ window.onload = function() {
     const csvHeader = document.querySelector('.csv-header');
     const csvContent = document.querySelector('.csv-content');
     const toggleIcon = document.querySelector('.toggle-icon');
+    const csvSectionOpenFlag = document.getElementById('csvSectionOpen');
     
     if (csvHeader && csvContent) {
         csvHeader.addEventListener('click', () => {
+            const isExpanded = csvContent.classList.contains('expanded');
             csvContent.classList.toggle('expanded');
             toggleIcon.classList.toggle('expanded');
+            // Update status flag and localStorage (client-side only, not URL)
+            const newState = !isExpanded;
+            csvSectionOpenFlag.value = newState ? 'true' : 'false';
+            if (newState) {
+                localStorage.setItem('csvSectionOpen', 'true');
+            } else {
+                localStorage.removeItem('csvSectionOpen');
+            }
+            // Adjust layout when CSV section is toggled
+            setTimeout(adjustLayout, 100);
         });
+        
+        // Check if CSV section should be open from localStorage only (not URL)
+        const keepCsvOpen = localStorage.getItem('csvSectionOpen') === 'true';
+        if (keepCsvOpen) {
+            csvContent.classList.add('expanded');
+            toggleIcon.classList.add('expanded');
+            csvSectionOpenFlag.value = 'true';
+            // Auto-update CSV display when section is open on page load
+            setTimeout(() => {
+                if (csvSectionOpenFlag.value === 'true') {
+                    updateCsvDisplay();
+                }
+            }, 100);
+        }
     }
     
     // Check if any Data Quality filters are active and expand if so
@@ -571,6 +627,13 @@ function applyFilters() {
     if (dqTil) urlParams.set('dqTil', dqTil);
     if (dqLks) urlParams.set('dqLks', dqLks);
 
+    // Preserve pagination parameters (reset to page 1, but keep pageSize)
+    urlParams.set('page', '1');
+    const currentPageSize = new URL(window.location.href).searchParams.get('pageSize');
+    if (currentPageSize) {
+        urlParams.set('pageSize', currentPageSize);
+    }
+    
     // Navigate to the new URL with all active filters
     window.location.href = '/rdb/?' + urlParams.toString();
 }
@@ -666,6 +729,99 @@ async function performBulkAction(action) {
     } catch (error) {
         statusElement.textContent = `Error: ${error.message}`;
         statusElement.className = 'status error';
+    }
+}
+
+function goToPage(page) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', page);
+    
+    // Remove keepCsvOpen from URL if present (it's client-side only)
+    url.searchParams.delete('keepCsvOpen');
+    
+    // Preserve all existing query parameters (except keepCsvOpen)
+    window.location.href = url.toString();
+}
+
+function changePageSize(pageSize) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('pageSize', pageSize);
+    url.searchParams.set('page', '1'); // Reset to first page when changing page size
+    // Preserve all existing query parameters
+    window.location.href = url.toString();
+}
+
+let allRunNumbersCache = null;
+
+// Store current page run numbers on page load
+let currentPageRunNumbers = null;
+
+async function updateCsvDisplay() {
+    const scope = document.querySelector('input[name="csvScope"]:checked').value;
+    const csvRunNumbers = document.getElementById('csvRunNumbers');
+    const csvLoading = document.getElementById('csvLoading');
+    
+    if (scope === 'current') {
+        // Show current page run numbers
+        csvLoading.style.display = 'none';
+        csvRunNumbers.style.display = 'block';
+        
+        // Use cached current page numbers or extract from DOM
+        if (currentPageRunNumbers) {
+            csvRunNumbers.value = currentPageRunNumbers;
+        } else {
+            // Fallback: extract from DOM
+            const currentRuns = Array.from(document.querySelectorAll('.main-table tbody tr'))
+                .map(tr => {
+                    const link = tr.querySelector('td:nth-child(2) a');
+                    return link ? parseInt(link.textContent) : null;
+                })
+                .filter(run => run !== null)
+                .sort((a, b) => b - a)
+                .join(',');
+            csvRunNumbers.value = currentRuns;
+        }
+    } else {
+        // Show all filtered run numbers
+        csvRunNumbers.style.display = 'none';
+        csvLoading.style.display = 'block';
+        
+        // Check cache first
+        if (allRunNumbersCache) {
+            csvRunNumbers.textContent = allRunNumbersCache;
+            csvRunNumbers.style.display = 'block';
+            csvLoading.style.display = 'none';
+            return;
+        }
+        
+        try {
+            // Build URL with current filters but request all run numbers
+            const url = new URL('/rdb/allRunNumbers', window.location.origin);
+            const currentParams = new URLSearchParams(window.location.search);
+            
+            // Copy all filter parameters
+            ['onlySignificant', 'minRun', 'maxRun', 'startTime', 'stopTime', 'runClass', 'comment',
+             'dqMu3e', 'dqBeam', 'dqVtx', 'dqPix', 'dqFib', 'dqTil', 'dqLks'].forEach(param => {
+                if (currentParams.has(param)) {
+                    url.searchParams.set(param, currentParams.get(param));
+                }
+            });
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Failed to fetch all run numbers');
+            }
+            
+            const runNumbers = await response.json();
+            allRunNumbersCache = runNumbers.sort((a, b) => b - a).join(',');
+            
+            csvRunNumbers.value = allRunNumbersCache;
+            csvRunNumbers.style.display = 'block';
+            csvLoading.style.display = 'none';
+        } catch (error) {
+            console.error('Error fetching all run numbers:', error);
+            csvLoading.textContent = 'Error loading run numbers: ' + error.message;
+        }
     }
 }
 </script>
@@ -809,7 +965,15 @@ async function performBulkAction(action) {
         </form>
 
         <div class="status-text">
-            <% if (isFiltered) { %>
+            <% if (locals.pagination) { %>
+                Showing <%= (locals.pagination.currentPage - 1) * locals.pagination.pageSize + 1 %> - 
+                <%= Math.min(locals.pagination.currentPage * locals.pagination.pageSize, locals.pagination.totalCount) %> 
+                of <%= locals.pagination.totalCount %> runs
+                (Page <%= locals.pagination.currentPage %> of <%= locals.pagination.totalPages %>)
+                <% if (locals.onlySignificant === "yes") { %>
+                    (significant runs only)
+                <% } %>
+            <% } else if (isFiltered) { %>
                 Showing filtered results
                 <% if (locals.onlySignificant === "yes") { %>
                     (significant runs only)
@@ -946,19 +1110,143 @@ async function performBulkAction(action) {
             </table>
         </div>
 
+        <% if (locals.pagination && (locals.pagination.hasNextPage || locals.pagination.hasPrevPage || locals.pagination.totalPages > 1)) { %>
+        <div class="pagination-container" style="
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        ">
+            <button 
+                onclick="goToPage(<%= locals.pagination.currentPage - 1 %>)" 
+                <%= !locals.pagination.hasPrevPage ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '' %>
+                style="
+                    padding: 8px 16px;
+                    border: 1px solid #dee2e6;
+                    background-color: white;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                "
+            >← Previous</button>
+            
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <% 
+                    const currentPage = locals.pagination.currentPage;
+                    const totalPages = locals.pagination.totalPages;
+                    let startPage = Math.max(1, currentPage - 2);
+                    let endPage = Math.min(totalPages, currentPage + 2);
+                    
+                    // Adjust if we're near the start or end
+                    if (endPage - startPage < 4) {
+                        if (startPage === 1) {
+                            endPage = Math.min(5, totalPages);
+                        } else if (endPage === totalPages) {
+                            startPage = Math.max(1, totalPages - 4);
+                        }
+                    }
+                %>
+                
+                <% if (startPage > 1) { %>
+                    <button onclick="goToPage(1)" <%= 1 === currentPage ? 'style="padding: 8px 12px; border: 2px solid #0d6efd; background-color: #0d6efd; color: white; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; min-width: 40px; box-sizing: border-box;"' : 'style="padding: 8px 12px; border: 2px solid transparent; background-color: white; border-radius: 4px; cursor: pointer; font-size: 14px; min-width: 40px; box-sizing: border-box;"' %>><%= 1 %></button>
+                    <% if (startPage > 2) { %>
+                        <span style="padding: 0 5px;">...</span>
+                    <% } %>
+                <% } %>
+                
+                <% for (let p = startPage; p <= endPage; p++) { %>
+                    <button 
+                        onclick="goToPage(<%= p %>)" 
+                        <%= p === currentPage ? 'style="padding: 8px 12px; border: 2px solid #0d6efd; background-color: #0d6efd; color: white; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; min-width: 40px; box-sizing: border-box;"' : 'style="padding: 8px 12px; border: 2px solid transparent; background-color: white; border-radius: 4px; cursor: pointer; font-size: 14px; min-width: 40px; box-sizing: border-box;"' %>
+                    ><%= p %></button>
+                <% } %>
+                
+                <% if (endPage < totalPages) { %>
+                    <% if (endPage < totalPages - 1) { %>
+                        <span style="padding: 0 5px;">...</span>
+                    <% } %>
+                    <button onclick="goToPage(<%= totalPages %>)" <%= totalPages === currentPage ? 'style="padding: 8px 12px; border: 2px solid #0d6efd; background-color: #0d6efd; color: white; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; min-width: 40px; box-sizing: border-box;"' : 'style="padding: 8px 12px; border: 2px solid transparent; background-color: white; border-radius: 4px; cursor: pointer; font-size: 14px; min-width: 40px; box-sizing: border-box;"' %>><%= totalPages %></button>
+                <% } %>
+            </div>
+            
+            <button 
+                onclick="goToPage(<%= locals.pagination.currentPage + 1 %>)" 
+                <%= !locals.pagination.hasNextPage ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '' %>
+                style="
+                    padding: 8px 16px;
+                    border: 1px solid #dee2e6;
+                    background-color: white;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                "
+            >Next →</button>
+            
+            <div style="margin-left: 20px; display: flex; align-items: center; gap: 8px;">
+                <label for="pageSizeSelect" style="font-size: 13px; color: #666;">Page size:</label>
+                <select id="pageSizeSelect" onchange="changePageSize(this.value)" style="
+                    padding: 6px 10px;
+                    border: 1px solid #dee2e6;
+                    border-radius: 4px;
+                    font-size: 13px;
+                ">
+                    <option value="10" <%= locals.pageSize === 10 ? 'selected' : '' %>>10</option>
+                    <option value="100" <%= locals.pageSize === 100 ? 'selected' : '' %>>100</option>
+                    <option value="1000" <%= locals.pageSize === 1000 ? 'selected' : '' %>>1000</option>
+                </select>
+            </div>
+        </div>
+        <% } %>
+
         <div class="csv-box">
             <div class="csv-header">
                 <span>Run Numbers (CSV)</span>
                 <span class="toggle-icon">▼</span>
             </div>
+            <!-- Status flag to track if CSV section is open -->
+            <input type="hidden" id="csvSectionOpen" value="false">
             <div class="csv-content">
-                <% 
+                <div style="margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; flex-wrap: nowrap;">
+                    <label style="cursor: pointer; white-space: nowrap;">
+                        <input type="radio" name="csvScope" value="current" checked onchange="updateCsvDisplay()" style="margin-right: 5px;">
+                        Current page only
+                    </label>
+                    <label style="cursor: pointer; white-space: nowrap;">
+                        <input type="radio" name="csvScope" value="all" onchange="updateCsvDisplay()" style="margin-right: 5px;">
+                        All filtered runs (<%= locals.pagination ? locals.pagination.totalCount : data.length %>)
+                    </label>
+                </div>
+                <textarea id="csvRunNumbers" readonly style="
+                    width: 100%;
+                    min-height: 80px;
+                    max-height: 250px;
+                    font-family: monospace;
+                    font-size: 11px;
+                    padding: 5px;
+                    border: 1px solid #ddd;
+                    border-radius: 3px;
+                    resize: vertical;
+                    overflow-y: auto;
+                    background-color: #f8f9fa;
+                    margin: 0;
+                "><% 
                     const runNumbers = data
                         .map(result => result.BOR["Run number"])
                         .sort((a, b) => b - a)
                         .join(',');
-                %>
-                <%= runNumbers %>
+                %><%= runNumbers %></textarea>
+                <script>
+                    // Store current page run numbers for quick switching
+                    currentPageRunNumbers = '<%= runNumbers %>';
+                </script>
+                <div id="csvLoading" style="display: none; text-align: center; padding: 10px; color: #666; font-size: 12px;">
+                    Loading all run numbers...
+                </div>
             </div>
         </div>
 
