@@ -6,6 +6,8 @@ ROOTLDFLAGS   = $(shell root-config --ldflags)
 LHOST = $(shell hostname)
 LDIRECTORY = $(shell pwd)
 
+UTIL := ../../util
+
 # -- ARGH!? But it works ...
 ifneq (,$(findstring merlin,$(LHOST)))
   INCMONGODB    =
@@ -56,6 +58,8 @@ LDFLAGS      := -g -O0  #?? -Wl -rpath$(ROOTSYS)
 SOFLAGS      += -g -shared  #?? -Wl -rpath
 
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
+
+OTHERLIBS         = $(UTIL)/lib/libAnaUtil.so 
 
 
 OSUFFIX := .o
@@ -111,7 +115,7 @@ $(addprefix obj/,%.o) : %.cc
 	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
 
 bin/% : obj/%.o lib/libCDB.so
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so $(OTHERLIBS)
 
 clean:
 	rm -f obj/*.o lib/*.so bin/*
@@ -119,3 +123,4 @@ clean:
 # -- preparatory setup
 prep:
 	mkdir -p obj bin lib
+	cd lib && ln -f -s ../$(UTIL)/lib/libAnaUtil.so && cd -

@@ -1,4 +1,5 @@
 #include <Rtypes.h>
+#include <TAttMarker.h>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -9,6 +10,7 @@
 #include <cmath>
 #include <TFile.h>
 #include <TTree.h>
+#include <TF1.h>
 #include <TCanvas.h>
 #include <TLatex.h>
 #include <TH1.h>
@@ -25,6 +27,8 @@
 
 #include "calPixelQualityLM.hh"
 
+#include "util.hh"
+
 using namespace std;
 
 // ----------------------------------------------------------------------
@@ -34,7 +38,8 @@ using namespace std;
 // Analyze pixel quality data
 //
 // -v          verbose output
-// -o FILENAME output filename
+// -o1 X -o2 Y overlay histograms in files X and Y
+// -s  SUFFIX  output filename suffix
 // -f first    runnumber
 // -l last     runnumber
 // -p          plot only (i.e. no reading of all the payloads)
@@ -69,6 +74,7 @@ void writeRunList(string filename, vector<int> &vRuns);
 void plotHistograms(string filename, string suffix);
 void setRunLabelsY(TH2D *h);
 void setRunLabelsX(TH1D *h);
+void overlayHistograms(string filename1, string filename2);
 
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
@@ -83,6 +89,8 @@ int main(int argc, char *argv[]) {
   string srunfile("");
   string srunlist("");
   string suffix("");
+  string filename1("");
+  string filename2("");
   string payloadDir("");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-d"))     {payloadDir = argv[++i];}
@@ -90,7 +98,8 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-f"))     {first = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-g"))     {gt = argv[++i];}
     if (!strcmp(argv[i], "-l"))     {last = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-o"))     {filename = argv[++i];}
+    if (!strcmp(argv[i], "-o1"))    {filename1 = argv[++i];}
+    if (!strcmp(argv[i], "-o2"))    {filename2 = argv[++i];}
     if (!strcmp(argv[i], "-p"))     {plot = 1;}
     if (!strcmp(argv[i], "-r"))     {srunfile = argv[++i];}
     if (!strcmp(argv[i], "-R"))     {srunlist = argv[++i];}
@@ -106,6 +115,13 @@ int main(int argc, char *argv[]) {
   } else {
     filename = string("anaPixelQuality.root");
   }
+
+
+  if ("" != filename1 && "" != filename2) {
+    overlayHistograms(filename1, filename2);
+    return 0;
+  } 
+
 
   // -- fill vRuns from sruns
   vector<int> vRuns;
@@ -172,6 +188,7 @@ int main(int argc, char *argv[]) {
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);
   vector<string> vTags = pDC->getTags();
+  // -- keep the definition of the run ranges from the CDB
   vector<int> vIoV;
   bool foundPQ(false);
   for (auto it: vTags) {
@@ -187,7 +204,6 @@ int main(int argc, char *argv[]) {
     cout << "ERROR: no pixel quality data found" << endl;
     return 0;
   }
-
 
   // -- get the number of runs
   int minRun(vIoV[0]);
@@ -272,30 +288,37 @@ int main(int argc, char *argv[]) {
 
   // -- Plot stuff for each run
   TFile *pFile = new TFile(filename.c_str(), "RECREATE");
-  TH2D *hLinkStatus = new TH2D("hLinkStatus", "Working links per chip", 108, 0, 108, nRuns, 0, nRuns);
-  hLinkStatus->SetXTitle("Chip index");
-  hLinkStatus->SetYTitle("Run ");
-  hLinkStatus->SetZTitle("Working links");  
-  hLinkStatus->SetMaximum(3); // simplest way to get reasonable color scheme
+
+  // -- Working links per chip
+  TH2D *rLinkStatus = new TH2D("rLinkStatus", "Working links per chip", 108, 0, 108, nRuns, 0, nRuns);
+  setTitles(rLinkStatus , "Chip index", "Run", 0.05, 1.1, 1.2);
+  rLinkStatus->GetZaxis()->SetTitle("Working links"); rLinkStatus->SetTitleOffset(1.2, "z");
+  rLinkStatus->SetMaximum(3); // simplest way to get reasonable color scheme
+  TH1D *hLinkStatus = new TH1D("hLinkStatus", "Working links per chip", 328, 0., 328.);
+  setTitles(hLinkStatus, "Working links", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
   // -- Number of noisy pixels per run
-  TH1D *hNoisyPixelVsRun = new TH1D("hNoisyPixelVsRun", "Total number of noisy pixels per run", nRuns, 0, nRuns);
-  hNoisyPixelVsRun->SetXTitle("Run");
-  hNoisyPixelVsRun->SetYTitle("Noisy pixels");
+  TH1D *rNoisyPixels = new TH1D("rNoisyPixels", "Total number of noisy pixels per run", nRuns, 0, nRuns);
+  setTitles(rNoisyPixels, "Run", "Noisy pixels", 0.05, 1.0, 1.2);
+  TH1D *hNoisyPixels = new TH1D("hNoisyPixels", "Noisy pixels per run", 100, 0, 100000.);
+  setTitles(hNoisyPixels, "Noisy pixels", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
-  TH1D *hEEEVsRun = new TH1D("hEEEVsRun", "Number of links with LVDS errors per run", nRuns, 0, nRuns);
-  hEEEVsRun->SetXTitle("Run");
-  hEEEVsRun->SetYTitle("Links with LVDS errors");
+  TH1D *rEEE = new TH1D("rEEE", "Chips without good links", nRuns, 0, nRuns);
+  setTitles(rEEE, "Run", "Chips without good links", 0.05, 1.0, 1.2);
+  TH1D *hEEE = new TH1D("hEEE", "Chips without good links", 328, 0., 328.);
+  setTitles(hEEE, "Chips without good links", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
   // -- this is only for debugging (e.g. if some illegal chipIDs sneaked in)
-  TH1D *hGoodPixelVsRun = new TH1D("hGoodPixelVsRun", "Total number of good pixels per run", nRuns, 0, nRuns);
-  hGoodPixelVsRun->SetXTitle("Run");
-  hGoodPixelVsRun->SetYTitle("Good pixels");
+  TH1D *rGoodPixel = new TH1D("rGoodPixel", "Total number of good pixels per run", nRuns, 0, nRuns);
+  setTitles(rGoodPixel, "Run", "Good pixels", 0.05, 1.0, 1.2);
+  TH1D *hGoodPixel = new TH1D("hGoodPixel", "Good pixels per run", 70, 0, 7.e6);
+  setTitles(hGoodPixel, "Good pixels", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
   // -- Size of JSON payload
-  TH1D *hPayloadSize = new TH1D("hPayloadSize", "Size of JSON payload", nRuns, 0, nRuns);
-  hPayloadSize->SetXTitle("Run");
-  hPayloadSize->SetYTitle("Size of JSON payload [kB]");
+  TH1D *rPayloadSize = new TH1D("rPayloadSize", "Size of JSON payload", nRuns, 0, nRuns);
+  setTitles(rPayloadSize, "Run", "Size of JSON payload [kB]", 0.05, 1.0, 1.2, 0.04);
+  TH1D *hPayloadSize = new TH1D("hPayloadSize", "Size of JSON payload [kB]", 50, 0, 1.e6);
+  setTitles(hPayloadSize, "Size of JSON payload [kB]", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
   vector<int> vJaksRuns, vAllBadLinkRuns, vGoodPixelRuns, vGoodRuns;
   
@@ -323,9 +346,12 @@ int main(int argc, char *argv[]) {
     int nNoisyPixels(0);
     int nGoodPixels(0);
     int nChips(0);
-    //cout << " Working links: ";  
+    //cout << " Working links: "; 
+    int nWorkingLinks(0);
     while (pPQ->getNextID(chipid)) {
-      hLinkStatus->Fill(chipIndex(chipid), runIndex(itIoV), linkStatus(pPQ, chipid));
+      int lStatus = linkStatus(pPQ, chipid);
+      nWorkingLinks += lStatus;
+      rLinkStatus->Fill(chipIndex(chipid), runIndex(itIoV), lStatus);
       int chipNoisy = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy); 
       int chipGood = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Good);
       nNoisyPixels += chipNoisy;
@@ -333,22 +359,29 @@ int main(int argc, char *argv[]) {
       ++nChips;
       if (0) cout << "Chip " << chipid << " has " << chipNoisy << " noisy pixels and " << chipGood << " good pixels" << endl;
     }
+    hLinkStatus->Fill(nWorkingLinks);
+    hNoisyPixels->Fill(nNoisyPixels);
+    hGoodPixel->Fill(nGoodPixels);
+
     cout << "Run " << itIoV << " has " 
          << nChips << " chips, "
          << nNoisyPixels << " noisy pixels and " 
          << nGoodPixels << " good pixels" 
+         << " and " << nWorkingLinks << " working links"
          << endl;
-    hNoisyPixelVsRun->Fill(runIndex(itIoV), nNoisyPixels);
-    hGoodPixelVsRun->Fill(runIndex(itIoV), nGoodPixels);
+    rNoisyPixels->Fill(runIndex(itIoV), nNoisyPixels);
+    rGoodPixel->Fill(runIndex(itIoV), nGoodPixels);
     if (nGoodPixels < 1.e6) {
       vGoodPixelRuns.push_back(itIoV);
     }
     // -- get the size of the JSON payload via size of BLOB
     string sblob = pPQ->makeBLOB();
-    hPayloadSize->Fill(runIndex(itIoV), sblob.size()/1024.);
+    rPayloadSize->Fill(runIndex(itIoV), sblob.size()/1024.);
+    hPayloadSize->Fill(sblob.size()/1024.);
 
     struct runQuality rn = jakGoodRunList(pPQ, itIoV, vJaksRuns);
-    hEEEVsRun->Fill(runIndex(itIoV), rn.nEEE);
+    rEEE->Fill(runIndex(itIoV), rn.nEEE);
+    hEEE->Fill(rn.nEEE);
     if (rn.nEEE > 40) {
       vAllBadLinkRuns.push_back(itIoV);
     }
@@ -538,66 +571,103 @@ void plotHistograms(string filename, string suffix) {
 
   // -- plot the histograms
   TCanvas *c1 = new TCanvas("c1", "c1", 1000, 1000);
-  c1->SetRightMargin(0.15);
+  shrinkPad(0.12, 0.15, 0.15);
 
-  TH2D *hLinkStatus = (TH2D*)pFile->Get("hLinkStatus");
-  setRunLabelsY(hLinkStatus);
-  hLinkStatus->SetStats(0);
-  hLinkStatus->Draw("colz");
-  c1->SaveAs(("hLinkStatus" + suffix + ".pdf").c_str());
+  TH2D *rLinkStatus  = (TH2D*)pFile->Get("rLinkStatus");
+  cout << " plotting rLinkStatus" << endl;
+  setRunLabelsY(rLinkStatus);
+  rLinkStatus->SetStats(0);
+  rLinkStatus->Draw("colz");
+  c1->SaveAs(("rLinkStatus" + suffix + ".pdf").c_str());
 
   c1->Clear();
   c1->SetRightMargin(0.1);
   c1->SetBottomMargin(0.15);
 
 
-  TH1D *hNoisyPixelVsRun = (TH1D*)pFile->Get("hNoisyPixelVsRun");
-  setRunLabelsX(hNoisyPixelVsRun);
-  hNoisyPixelVsRun->SetMinimum(0.5);
-  hNoisyPixelVsRun->SetStats(0);
-  hNoisyPixelVsRun->GetXaxis()->SetTitleOffset(1.3);
-  c1->SetLogy(1);
-  hNoisyPixelVsRun->Draw("hist");
-  c1->SaveAs(("hNoisyPixelVsRun" + suffix + ".pdf").c_str());
+  shrinkPad(0.15, 0.15, 0.1);
 
-  TH1D *hGoodPixelVsRun = (TH1D*)pFile->Get("hGoodPixelVsRun");
-  setRunLabelsX(hGoodPixelVsRun);
-  hGoodPixelVsRun->SetMinimum(1.e5);
-  hGoodPixelVsRun->SetStats(0);
-  hGoodPixelVsRun->GetXaxis()->SetTitleOffset(1.3);
+  TH1D *hLinkStatus = (TH1D*)pFile->Get("hLinkStatus");
+  cout << " plotting hLinkStatus" << endl;
+  hLinkStatus->SetStats(0);
+  hLinkStatus->Draw("hist");
+  c1->SaveAs(("hLinkStatus" + suffix + ".pdf").c_str());
+
+
+  TH1D *rNoisyPixels = (TH1D*)pFile->Get("rNoisyPixels");
+  cout << " plotting rNoisyPixels" << endl;
+  setRunLabelsX(rNoisyPixels);
+  rNoisyPixels->SetMinimum(0.5);
+  rNoisyPixels->SetStats(0);
+  rNoisyPixels->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
-  hGoodPixelVsRun->Draw("hist");
-  TLine *l1 = new TLine(0., 108*64000., hGoodPixelVsRun->GetXaxis()->GetBinCenter(hGoodPixelVsRun->GetNbinsX()), 108*64000.);
+  rNoisyPixels->Draw("hist");
+  c1->SaveAs(("rNoisyPixels" + suffix + ".pdf").c_str());
+
+  TH1D *hNoisyPixels = (TH1D*)pFile->Get("hNoisyPixels");
+  cout << " plotting hNoisyPixels" << endl;
+  hNoisyPixels->SetStats(0);
+  hNoisyPixels->Draw("hist");
+  c1->SaveAs(("hNoisyPixels" + suffix + ".pdf").c_str());
+
+  TH1D *rGoodPixel = (TH1D*)pFile->Get("rGoodPixel");
+  cout << " plotting rGoodPixel" << endl;
+  setRunLabelsX(rGoodPixel);
+  rGoodPixel->SetMinimum(1.e5);
+  rGoodPixel->SetMaximum(1.35*108.*64000.);
+  rGoodPixel->SetStats(0);
+  rGoodPixel->GetXaxis()->SetTitleOffset(1.3);
+  c1->SetLogy(1);
+  rGoodPixel->Draw("hist");
+  TLine *l1 = new TLine(0., 108*64000., rGoodPixel->GetXaxis()->GetBinCenter(rGoodPixel->GetNbinsX()), 108*64000.);
   l1->SetLineColor(kBlack);
   l1->SetLineStyle(kDashed);
   l1->Draw();
   TLatex *t1 = new TLatex();
   t1->SetTextColor(kBlack);
   t1->SetTextSize(0.02);
-  t1->DrawLatexNDC(0.2, 0.82, "N_{pix}^{VTX} = 108*64000");
+  t1->DrawLatexNDC(0.2, 0.86, "N_{pix}^{VTX} = 108*64000");
 
-  c1->SaveAs(("hGoodPixelVsRun" + suffix + ".pdf").c_str());
+  c1->SaveAs(("rGoodPixel" + suffix + ".pdf").c_str());
+
+  TH1D *hGoodPixel = (TH1D*)pFile->Get("hGoodPixel");
+  cout << " plotting hGoodPixel" << endl;
+  hGoodPixel->SetStats(0);
+  hGoodPixel->Draw("hist");
+  t1->DrawLatexNDC(0.2, 0.86, Form("<N_{good}> = %d", static_cast<int>(hGoodPixel->GetMean())));
+  t1->DrawLatexNDC(0.2, 0.81, Form("#varepsilon = %4.3f", hGoodPixel->GetMean()/108./64000.));
+
+  c1->SaveAs(("hGoodPixel" + suffix + ".pdf").c_str());
 
 
-  TH1D *hPayloadSize = (TH1D*)pFile->Get("hPayloadSize");
-  setRunLabelsX(hPayloadSize);
-  hPayloadSize->SetMinimum(0.5);
-  hPayloadSize->SetStats(0);
-  hPayloadSize->GetXaxis()->SetTitleOffset(1.3);
+
+  TH1D *rPayloadSize = (TH1D*)pFile->Get("rPayloadSize");
+  cout << " plotting rPayloadSize" << endl;
+  setRunLabelsX(rPayloadSize);
+  rPayloadSize->SetMinimum(0.5);
+  rPayloadSize->SetStats(0);
+  rPayloadSize->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
-  hPayloadSize->Draw("hist");
-  c1->SaveAs(("hPayloadSize" + suffix + ".pdf").c_str());
+  rPayloadSize->Draw("hist");
+  c1->SaveAs(("rPayloadSize" + suffix + ".pdf").c_str());
 
 
 
-  TH1D *hEEEVsRun = (TH1D*)pFile->Get("hEEEVsRun");
-  setRunLabelsX(hEEEVsRun);
-  hEEEVsRun->SetMinimum(0.5);
-  hEEEVsRun->SetStats(0);
-  hEEEVsRun->GetXaxis()->SetTitleOffset(1.3);
+  TH1D *rEEE = (TH1D*)pFile->Get("rEEE");
+  cout << " plotting rEEE" << endl;
+  setRunLabelsX(rEEE);
+  rEEE->SetMinimum(0.5);
+  rEEE->SetStats(0);
+  rEEE->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
-  hEEEVsRun->Draw("hist");
-  c1->SaveAs(("hEEEVsRun" + suffix + ".pdf").c_str());
+  rEEE->Draw("hist");
+  c1->SaveAs(("rEEE" + suffix + ".pdf").c_str());
+
+  TH1D *hEEE = (TH1D*)pFile->Get("hEEE");
+  cout << " plotting hEEE" << endl;
+  hEEE->SetStats(0);
+  hEEE->Draw("hist");
+  c1->SaveAs(("hEEE" + suffix + ".pdf").c_str());
 
   // -- close the file  
   pFile->Close();
@@ -666,8 +736,8 @@ struct runQuality jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<i
         rn.nDeadLinks++;
       }
     }
-    if (nBadLinks == 7) {
-      //      cout << "Run " << runnumber << " has EEE" << endl;
+    if (7 == nBadLinks) {
+      //  n is NOT a counter!!
       status = 5;
       sStatus += "/" + to_string(chipid) + "/"+ " EEE,";
       rn.nEEE++;
@@ -697,4 +767,73 @@ struct runQuality jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<i
     cout << "Run " << runnumber << " is bad, has " << rn.nActiveChips << " active chips and nStatus5 = " << rn.nStatus5 << " -> " << sStatus << "<-" << endl;
   }
   return rn;
+}
+
+// ----------------------------------------------------------------------
+// -- overlay histograms in files X and Y
+void overlayHistograms(string filename1, string filename2) {
+  TFile *pFile1 = new TFile(filename1.c_str());
+  TFile *pFile2 = new TFile(filename2.c_str());
+  TCanvas *c1 = new TCanvas("c1", "c1", 1000, 1000);
+  shrinkPad(0.12, 0.15, 0.15);
+
+  TH1D *hLinkStatus1 = (TH1D*)pFile1->Get("hLinkStatus");
+  TH1D *hLinkStatus2 = (TH1D*)pFile2->Get("hLinkStatus");
+  hLinkStatus1->SetStats(0);
+  hLinkStatus2->SetStats(0);
+  hLinkStatus1->SetMarkerStyle(2);
+  hLinkStatus1->SetMarkerSize(0.8);
+  setFilledHist(hLinkStatus2, kBlack, kYellow, 1000);
+  hLinkStatus2->Draw("hist");
+  hLinkStatus1->Draw("psame");
+
+  TLegend *legg = new TLegend(0.18, 0.7, 0.50, 0.85);
+  legg->SetBorderSize(0);
+  legg->AddEntry(hLinkStatus1, filename1.c_str(), "p");
+  legg->AddEntry(hLinkStatus2, filename2.c_str(), "f");
+  legg->SetTextSize(0.03);
+  legg->Draw();
+  c1->SaveAs("hLinkStatus-overlay.pdf");
+
+
+  c1->Clear();
+  shrinkPad(0.12, 0.15, 0.15);
+  TH1D *hNoisyPixels1 = (TH1D*)pFile1->Get("hNoisyPixels");
+  TH1D *hNoisyPixels2 = (TH1D*)pFile2->Get("hNoisyPixels");
+  hNoisyPixels1->SetStats(0);
+  hNoisyPixels2->SetStats(0);
+  hNoisyPixels1->SetMarkerStyle(2);
+  hNoisyPixels1->SetMarkerSize(0.8);
+  hLinkStatus1->SetMarkerSize(0.8);
+  setFilledHist(hNoisyPixels2, kBlack, kYellow, 1000);
+  hNoisyPixels2->Draw("hist");
+  hNoisyPixels1->Draw("psame");
+  legg = new TLegend(0.18, 0.7, 0.50, 0.85);
+  legg->SetBorderSize(0);
+  legg->AddEntry(hNoisyPixels1, filename1.c_str(), "p");
+  legg->AddEntry(hNoisyPixels2, filename2.c_str(), "f");
+  legg->SetTextSize(0.03);
+  legg->Draw();
+
+  c1->SaveAs("hNoisyPixels-overlay.pdf"); 
+
+  c1->Clear();
+  shrinkPad(0.12, 0.15, 0.15);
+  TH1D *hGoodPixel1 = (TH1D*)pFile1->Get("hGoodPixel");
+  TH1D *hGoodPixel2 = (TH1D*)pFile2->Get("hGoodPixel");
+  hGoodPixel1->SetStats(0);
+  hGoodPixel2->SetStats(0);
+  hGoodPixel1->SetMarkerStyle(2);
+  hGoodPixel1->SetMarkerSize(0.8);
+  hGoodPixel2->SetMarkerSize(0.8);
+  setFilledHist(hGoodPixel2, kBlack, kYellow, 1000);
+  hGoodPixel2->Draw("hist");
+  hGoodPixel1->Draw("psame");
+  legg = new TLegend(0.18, 0.7, 0.50, 0.85);
+  legg->SetBorderSize(0);
+  legg->AddEntry(hGoodPixel1, filename1.c_str(), "p");
+  legg->AddEntry(hGoodPixel2, filename2.c_str(), "f");
+  legg->SetTextSize(0.03);
+  legg->Draw();
+  c1->SaveAs("hGoodPixel-overlay.pdf");
 }
