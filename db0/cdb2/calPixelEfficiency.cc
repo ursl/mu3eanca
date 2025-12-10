@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 
 
 using namespace std;
@@ -47,6 +48,7 @@ void calPixelEfficiency::calculate(string hash) {
     }
     fMapConstants.insert(make_pair(a.id, a));
   }
+  cout << " inserted " << fMapConstants.size() << " constants" << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -135,7 +137,7 @@ void calPixelEfficiency::writeCsv(string filename) {
     cout << "calPixelEfficiency::writeCsv> Error, file " + filename + " not opened" << endl;
     return;
   }
-  ONS << "#chipID,i_n[efficiency]" << endl;
+  ONS << "#" << fSchema << endl;
   for (auto &c : fMapConstants) {
     ONS << c.first << "," << c.second.vefficiency.size() << ",";
     for (int i = 0; i < c.second.vefficiency.size(); i++) {
