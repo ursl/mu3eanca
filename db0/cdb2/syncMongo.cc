@@ -118,10 +118,10 @@ void clearCollection(string scollection, string pattern) {
     
     auto hashCursor    = collection.find(document{} << "hash" << open_document << "$regex" << pattern << "$options" << "i" << close_document << finalize);
     for (auto doc : hashCursor) {
-      cout << "*********** Hash *** " << endl;
-      cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      if (doc["hash"]) {
+        cout << doc["hash"].get_utf8().value.to_string() << " ... deleted" << endl;
+      }
       auto delete_one_result = collection.delete_one(doc);
-      cout << "*** deleted" << endl;
     }
     
     auto cfgHashCursor = collection.find(document{} << "cfgHash" << open_document << "$regex" << pattern << "$options" << "i" << close_document << finalize);
@@ -309,13 +309,10 @@ int main(int argc, char* argv[]) {
         size_t offset = string("cfgString").size() + 5;
         replaceAll(collectionContents, "\n", "\\n", collectionContents.find("cfgString") + offset);
       }
-      cout << "start inserting " << it << endl
-           << collectionContents
-           << endl;
+      cout << "start inserting " << it << endl;
       auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
       bsoncxx::oid oid = insert_one_result->inserted_id().get_oid().value;
       std::string oidString = oid.to_string();
-      cout << "oidString ->" << oidString << "<-" << endl;
 
       string sfilename = "./inserted/" + it.substr(it.rfind("/")+1);
       ofstream ONS(sfilename);
