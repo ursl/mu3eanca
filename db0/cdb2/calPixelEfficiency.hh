@@ -20,7 +20,7 @@ public:
 
   // -- direct accessors
   uint32_t id(uint32_t id) {return fMapConstants[id].id;}
-  double efficiency(uint32_t id) {return fMapConstants[id].efficiency;}
+  double efficiency(uint32_t id, int i) {return fMapConstants[id].vefficiency[i];}
 
   std::string getName() override {return fPixelEfficiencyTag;}
   void        calculate(std::string hash) override;
@@ -42,10 +42,10 @@ private:
   // -- local and private
   struct constants {
     uint32_t id;
-    double efficiency;
+    std::vector<double> vefficiency;
   };
 
-  std::string fSchema{"ui_id,efficiency"};
+  std::string fSchema{"ui_id,i_n[efficiency]"};
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};

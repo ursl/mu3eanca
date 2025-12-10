@@ -34,21 +34,19 @@ void calPixelEfficiency::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << " header: " << hex << header << dec;
-  uint32_t pixel(0);
-  double efficiency(0), meanEfficiency(0.);
+  uint32_t chip(0);
+  int n(0), meanEfficiency(0.);
   while (ibuffer != buffer.end()) {
-    pixel = blob2UnsignedInt(getData(ibuffer));
-    efficiency = blob2Double(getData(ibuffer));
-    meanEfficiency += efficiency;
+    chip = blob2UnsignedInt(getData(ibuffer));
+    n = blob2Int(getData(ibuffer));
     constants a;
-    a.id = pixel;
-    a.efficiency = efficiency;
+    a.id = chip;
+    a.vefficiency.resize(n);
+    for (int i = 0; i < n; i++) {
+      a.vefficiency[i] = blob2Double(getData(ibuffer));
+    }
     fMapConstants.insert(make_pair(a.id, a));
   }
-  meanEfficiency /= fMapConstants.size();
-  cout << " inserted " << fMapConstants.size() << " constants with mean efficiency = " << meanEfficiency << endl;
-  // -- set iterator over all constants to the start of the map
-  fMapConstantsIt = fMapConstants.begin();
 }
 
 // ----------------------------------------------------------------------
@@ -60,7 +58,10 @@ string calPixelEfficiency::makeBLOB() {
   for (auto it: fMapConstants) {
     constants a = it.second;
     s << dumpArray(uint2Blob(a.id));
-    s << dumpArray(double2Blob(a.efficiency));
+    s << dumpArray(int2Blob(a.vefficiency.size()));
+    for (int i = 0; i < a.vefficiency.size(); i++) {
+      s << dumpArray(double2Blob(a.vefficiency[i]));
+    }
   }
   return s.str();
 }
@@ -80,11 +81,21 @@ string calPixelEfficiency::printBLOBString(string s, int verbosity) {
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   ss << "header: " << hex << header << dec << endl;
   uint32_t chipID(0);
-  double efficiency(0);
+  int n(0);
+  vector<double> vefficiency;
   while (ibuffer != buffer.end()) {
     chipID = blob2UnsignedInt(getData(ibuffer));
-    efficiency = blob2Double(getData(ibuffer));
-    ss << "chipID: " << chipID << " efficiency: " << efficiency << endl;
+    n = blob2Int(getData(ibuffer));
+    vefficiency.resize(n);
+    for (int i = 0; i < n; i++) {
+      vefficiency[i] = blob2Double(getData(ibuffer));
+    }
+    ss << "chipID: " << chipID << " n: " << n << ", efficiency: ";
+    for (int i = 0; i < n; i++) {
+      ss << setprecision(7) << vefficiency[i];
+      if (i < n - 1) ss << ",";
+      else ss << endl;
+    }
   }
   return ss.str();
 }
@@ -100,22 +111,18 @@ void calPixelEfficiency::readCsv(string filename) {
 
   string sline;
   while (getline(INS, sline)) {
-    spl += sline;
-    spl += ",";
-  }
-  INS.close();
-
-  spl.pop_back();
-  vector<string> tokens = split(spl, ',');
-
-  for (unsigned int it = 0; it < tokens.size(); it += 2) {
+    if (string::npos != sline.find("#")) continue;
+    vector<string> tokens = split(sline, ',');
     constants a;
-    int idx = it;
-    a.id = ::stoi(tokens[idx++]);
-    a.efficiency = ::stod(tokens[idx++]);
-
+    a.id = ::stoi(tokens[0]);
+    int n = ::stoi(tokens[1]);
+    a.vefficiency.resize(n);
+    for (int i = 0; i < n; i++) {
+      a.vefficiency[i] = ::stod(tokens[2 + i]);
+    }
     fMapConstants.insert(make_pair(a.id, a));
   }
+  INS.close();
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
@@ -128,8 +135,14 @@ void calPixelEfficiency::writeCsv(string filename) {
     cout << "calPixelEfficiency::writeCsv> Error, file " + filename + " not opened" << endl;
     return;
   }
+  ONS << "#chipID,i_n[efficiency]" << endl;
   for (auto &c : fMapConstants) {
-    ONS << c.first << "," << c.second.efficiency << endl;
+    ONS << c.first << "," << c.second.vefficiency.size() << ",";
+    for (int i = 0; i < c.second.vefficiency.size(); i++) {
+      ONS << fixed << setprecision(7) << c.second.vefficiency[i];
+      if (i < c.second.vefficiency.size() - 1) ONS << ",";
+      else ONS << endl;
+    }
   }
   ONS.close();
 }
