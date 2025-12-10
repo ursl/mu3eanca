@@ -350,7 +350,7 @@ string calPixelQualityLM::printBLOBString(std::string sblob, int verbosity) {
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   ss << "calPixelQuality::printBLOB(string)" << endl;
-  ss << "   header: " << hex << header << dec << " (note: 0 = good, 1 = noisy, 2 = suspect, 3 = declared bad, 9 = turned off)" << endl;
+  ss << "   header: " << hex << header << dec << endl;
 
   while (ibuffer != buffer.end()) {
     // -- chipID
