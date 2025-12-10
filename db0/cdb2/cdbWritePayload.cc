@@ -33,10 +33,10 @@
 using namespace std;
 
 // Forward declarations
-void writeDetSetupV1(string jsondir, string gt, int iov);
-void writePixelQualityLM(string jsondir, string gt, string filename, int iov);
-void writeAlignmentInformation(string jsondir, string gt, string type, string ifilename, int iov);
-void writePixelEfficiencyPayload(string jsondir, string gt, string filename, int iov);
+void writeDetSetupV1(string payloaddir, string gt, int iov);
+void writePixelQualityLM(string payloaddir, string gt, string filename, int iov);
+void writeAlignmentInformation(string payloaddir, string gt, string type, string ifilename, int iov);
+void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, int iov);
 // ----------------------------------------------------------------------
 // cdbWritePayload
 // ---------------
@@ -46,7 +46,7 @@ void writePixelEfficiencyPayload(string jsondir, string gt, string filename, int
 //  -c pixelalignment    produce the pixelalignment payloads. This is (currently) the only properly validated usage.
 //  -g GT                the global tag (GT) for the payload (part of the "hash" written into the payload metadata)
 //  -i RUN               the interval of validity, i.e., the first run for which the payload is valid
-//  -j JSONDIR           the CDB directory where the payloads will be written to JSONDIR/payloads/
+//  -p payloaddir        the CDB directory where the payloads will be written to payloaddir/payloads/
 //
 // Usage examples   
 // --------------
@@ -62,7 +62,7 @@ int main(int argc, const char* argv[]) {
 
   // -- command line arguments
   string cal("");
-  string jsondir("");
+  string payloaddir("");
   string gt("");
   string filename("");
   int iov(1);
@@ -70,16 +70,16 @@ int main(int argc, const char* argv[]) {
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-c"))  {cal        = argv[++i];}
     if (!strcmp(argv[i], "-i"))  {iov        = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-j"))  {jsondir    = argv[++i];}
     if (!strcmp(argv[i], "-g"))  {gt         = argv[++i];}
     if (!strcmp(argv[i], "-f"))  {filename   = argv[++i];}
+    if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
     if (!strcmp(argv[i], "-v"))  {verbose    = 1;}
   }
   
   cout << "===============" << endl;
   cout << "== cdbWritePayload ==" << endl;
   cout << "===============" << endl;
-  cout << "== installing in directory " << jsondir << endl;
+  cout << "== installing in directory " << payloaddir << endl;
   cout << "== global tag " << gt << endl;
   cout << "== filename " << filename << endl;
   cout << "== iov " << iov << endl;
@@ -88,20 +88,22 @@ int main(int argc, const char* argv[]) {
  
   // -- write alignment information payloads and tags
   if (string::npos != cal.find("alignment")) {
-    writeAlignmentInformation(jsondir, gt, cal, filename, iov);
+    writeAlignmentInformation(payloaddir, gt, cal, filename, iov);
   }
   // -- write detsetupv1 (basically magnet status) payloads and tags
-  //writeDetSetupV1(jsondir, gt, iov);
+  //writeDetSetupV1(payloaddir, gt, iov);
   // -- write pixelqualitylm payloads and tags
-  //writePixelQualityLM(jsondir, gt, filename, iov);
+  if (string::npos != cal.find("pixelqualitylm")) {
+    writePixelQualityLM(payloaddir, gt, filename, iov);
+  }
   // -- write pixelefficiency payloads and tags
   if (string::npos != cal.find("pixelefficiency")) {
-    writePixelEfficiencyPayload(jsondir, gt, filename, iov);
+    writePixelEfficiencyPayload(payloaddir, gt, filename, iov);
   }
 }
 
 // ----------------------------------------------------------------------
-void writePixelEfficiencyPayload(string jsondir, string gt, string filename, int iov) {
+void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, int iov) {
   cout << "   ->cdbInitGT> writing local template pixelefficiency payloads" << endl;
   // -- create (local template) payloads for pixelefficiency
   calPixelEfficiency *cpe = new calPixelEfficiency();
@@ -113,13 +115,13 @@ void writePixelEfficiencyPayload(string jsondir, string gt, string filename, int
   pl.fComment = filename;
   pl.fSchema  = cpe->getSchema();
   pl.fBLOB = spl;
-  cpe->writePayloadToFile(hash, jsondir + "/payloads", pl);
+  cpe->writePayloadToFile(hash, payloaddir, pl);
   cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << endl;
   delete cpe;
 }
 
 // ----------------------------------------------------------------------
-void writeDetSetupV1(string jsondir, string gt, string filename, int iov) {
+void writeDetSetupV1(string payloaddir, string gt, string filename, int iov) {
   cout << "   ->cdbInitGT> writing local template detsetupv1 payloads" << endl;
   // -- create (local template) payloads for no field and with field
   calDetSetupV1 *cdc = new calDetSetupV1();
@@ -146,14 +148,14 @@ void writeDetSetupV1(string jsondir, string gt, string filename, int iov) {
   pl.fSchema = cdc->getSchema();
   pl.fComment = filename;
   pl.fHash = hash;
-  cdc->writePayloadToFile(hash, jsondir + "/payloads", pl);
+  cdc->writePayloadToFile(hash, payloaddir, pl);
   cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << templateHash << endl;
 
   delete cdc;
 }
 
 // ----------------------------------------------------------------------
-void writePixelQualityLM(string jsondir, string gt, string filename, int iov) {
+void writePixelQualityLM(string payloaddir, string gt, string filename, int iov) {
   cout << "   ->cdbInitGT> writing local template pixelqualitylm payloads" << endl;
   // -- create (local template) payloads for no problematic pixels
   calPixelQualityLM *cpq = new calPixelQualityLM();
@@ -162,17 +164,17 @@ void writePixelQualityLM(string jsondir, string gt, string filename, int iov) {
   string hash = "tag_pixelqualitylm_" + gt + "_iov_" + to_string(iov);
   payload pl;
   pl.fHash = hash;
-  pl.fComment = filename;
+  pl.fComment = filename + string(". ") + cpq->getStatusDocumentation();
   pl.fSchema  = cpq->getSchema();
   pl.fBLOB = spl;
-  cpq->writePayloadToFile(hash, jsondir + "/payloads", pl);
-  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << endl;
+  cpq->writePayloadToFile(hash, payloaddir, pl);
+  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and comment " << pl.fComment << endl;
   delete cpq;
 }
 
 
 // ----------------------------------------------------------------------
-void writeAlignmentInformation(string jsondir, string gt, string type, string ifilename, int iov) {
+void writeAlignmentInformation(string payloaddir, string gt, string type, string ifilename, int iov) {
   cout << "   ->cdbWritePayload> writing alignment " << type << " from file " << ifilename << endl;
 
   // -- pixel sensor alignment
@@ -258,7 +260,7 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
       pl.fComment = ifilename;
       pl.fSchema  = cpa->getSchema();
       pl.fBLOB = spl;
-      cpa->writePayloadToFile(hash, jsondir + "/payloads", pl);
+      cpa->writePayloadToFile(hash, payloaddir, pl);
     }
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl;
@@ -322,7 +324,7 @@ void writeAlignmentInformation(string jsondir, string gt, string type, string if
       pl.fComment = ifilename;
       pl.fSchema  = cmp->getSchema();
       pl.fBLOB = spl;
-      cmp->writePayloadToFile(hash, jsondir + "/payloads", pl);
+      cmp->writePayloadToFile(hash, payloaddir, pl);
     }
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl;
