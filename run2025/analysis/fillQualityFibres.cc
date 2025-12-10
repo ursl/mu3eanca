@@ -94,6 +94,13 @@ vector<string> getFilesInDirectory(const string& dirname) {
 }
 
 // ----------------------------------------------------------------------
+struct AsicData {
+  bool lock;
+  bool hasData;
+  double threshold;
+};
+
+// ----------------------------------------------------------------------
 void parseFibreJSON(string filename, string dirname) {
   cout << "parseFibreJSON with filename = " << filename << " and dirname = " << dirname << endl;
   // -- read in the JSON file
@@ -104,11 +111,11 @@ void parseFibreJSON(string filename, string dirname) {
   cout << "j = " << j.dump(2) << endl;
   
   // -- Invert: collect data by run number (currently organized by ASIC ID with run ranges)
-  // Structure: {"8": [[3481, 3498, 14.9375, true], [3499, 3499, 14.9375, false], ...]}
-  // Each array: [startRun, endRun, threshold, lock]
+  // Structure: {"8": [{"start run": 3481, "end run": 3498, "mean mask": 14.9375, "at leas one time locked": false, "at leas one time data": false}, ...]}
+  // Each object: {"start run": int, "end run": int, "mean mask": double, "at leas one time locked": bool, "at leas one time data": bool}
   
   // First pass: collect all run numbers and their ASIC data
-  map<int, map<int, pair<bool, double>>> runsData; // run -> asicID -> (lock, threshold)
+  map<int, map<int, AsicData>> runsData; // run -> asicID -> (lock, hasData, threshold)
   set<int> allRuns;
   
   for (auto asicItem : j.items()) {
@@ -116,21 +123,30 @@ void parseFibreJSON(string filename, string dirname) {
     // Skip special keys like "Run_number"
     if (asicIDStr == "Run_number") continue;
     
+    // Skip empty arrays
+    if (asicItem.value().is_array() && asicItem.value().size() == 0) continue;
+    
     int asicID = stoi(asicIDStr);
     
     if (asicItem.value().is_array()) {
       // For each run range in this ASIC
-      for (auto rangeArray : asicItem.value()) {
-        if (rangeArray.is_array() && rangeArray.size() >= 4) {
-          int startRun = rangeArray[0].get<int>();
-          int endRun = rangeArray[1].get<int>();
-          double threshold = rangeArray[2].get<double>();
-          bool lock = rangeArray[3].get<bool>();
+      for (auto rangeObj : asicItem.value()) {
+        if (rangeObj.is_object()) {
+          // Extract fields (handling typos in field names)
+          int startRun = rangeObj["start run"].get<int>();
+          int endRun = rangeObj["end run"].get<int>();
+          double threshold = rangeObj["mean mask"].get<double>();
+          bool lock = rangeObj["at leas one time locked"].get<bool>();
+          bool hasData = rangeObj["at leas one time data"].get<bool>();
           
           // Expand the run range to individual runs
           for (int run = startRun; run <= endRun; ++run) {
             allRuns.insert(run);
-            runsData[run][asicID] = make_pair(lock, threshold);
+            AsicData data;
+            data.lock = lock;
+            data.hasData = hasData;
+            data.threshold = threshold;
+            runsData[run][asicID] = data;
           }
         }
       }
@@ -147,7 +163,7 @@ void parseFibreJSON(string filename, string dirname) {
     // Write header: #ASIC ID, lock, has_data, quality, threshold, efficiency
     ofs << "#ASIC ID, lock, has_data, quality, threshold, efficiency" << endl;
     
-    map<int, pair<bool, double>>& runAsics = runsData[runNumber];
+    map<int, AsicData>& runAsics = runsData[runNumber];
     
     // Write one line per ASIC (all ASICs 0-95)
     int asicCount = 0;
@@ -158,12 +174,9 @@ void parseFibreJSON(string filename, string dirname) {
       
       // Check if this ASIC has data for this run
       if (runAsics.find(asicID) != runAsics.end()) {
-        bool lockBool = runAsics[asicID].first;
-        threshold = runAsics[asicID].second;
-        
-        // If lock is true, set lock=1 and has_data=1, otherwise both are 0
-        lock = lockBool ? 1 : 0;
-        hasData = lockBool ? 1 : 0;
+        lock = runAsics[asicID].lock ? 1 : 0;
+        hasData = runAsics[asicID].hasData ? 1 : 0;
+        threshold = runAsics[asicID].threshold;
       }
       
       // Quality is the logical AND of has_data and lock
@@ -195,7 +208,7 @@ void createPayloads(string dirname, string payloaddir, string gt) {
     cfq->readCSV(file);
     string blob = cfq->makeBLOB();
     string schema = cfq->getSchema();
-    string comment = "preliminary fibre quality (w/o separation of has_data and lock)";
+    string comment = "fibre quality as of 2025/12/10";
     cout << "XXXXXXXXX createPayload with hash = " << hash << " comment = " << comment << " schema = " << schema << endl;
     createPayload(hash, cfq, payloaddir, schema, comment);
     delete cfq;
