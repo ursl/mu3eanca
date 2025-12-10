@@ -17,6 +17,7 @@ using namespace std;
 // Usage:   cdbInsertIovTag -j jsondir -t tag -i 265
 //          cdbInsertIovTag -j jsondir -t tag -r 265
 //          cdbInsertIovTag -j jsondir -t tag -c
+//          cdbInsertIovTag -j jsondir -t tag -init
 //          cdbInsertIovTag -j jsondir -t tag -d payloaddir -p pat
 //
 // History
@@ -119,18 +120,13 @@ void removeRunFromVector(vector<int>& runs, int runNumber) {
 // ----------------------------------------------------------------------
 // Create backup of a file
 bool backupFile(const string& filepath) {
-  ifstream src(filepath, ios::binary);
-  ofstream dst(filepath + ".bac", ios::binary);
-  if (src && dst) {
-    dst << src.rdbuf();
-    src.close();
-    dst.close();
-    return true;
+  string oldfilepath = filepath.substr(0, filepath.find_last_of('/')) + "/../old/";
+  string cmd = "mv " + filepath + " " + oldfilepath;
+  if (system(cmd.c_str()) != 0) {
+    cerr << "insertIovTag: Failed to mv backup from " << filepath << " to " << oldfilepath << endl;
+    return false;
   }
-  if (src) src.close();
-  if (dst) dst.close();
-  cerr << "insertIovTag: Failed to create backup " << filepath << ".bac" << endl;
-  return false;
+  return true;
 }
 
 // ----------------------------------------------------------------------
@@ -138,7 +134,7 @@ bool backupFile(const string& filepath) {
 bool writeIOVsToFile(const string& filepath, const string& tag, const vector<int>& runs, bool clear) {
   ofstream out(filepath);
   if (!out) {
-    cerr << "insertIovTag: Cannot open " << filepath << " for output" << endl;
+    cout << "insertIovTag: Cannot open " << filepath << " for output" << endl;
     return false;
   }
 
@@ -252,7 +248,7 @@ int processTagFile(const string& jsondir, const string& tag, int insertRun, int 
 
   // Create backup
   if (!backupFile(file)) {
-    return 1;
+
   }
 
   // Write updated file
@@ -272,9 +268,11 @@ int main(int argc, char* argv[]) {
   int insertRun = 0;
   int removeRun = 0;
   bool clear = false;
+  bool init = false;
 
-  // Parse command line arguments
+  // -- Parse command line arguments
   for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "-init") == 0) init = true;
     if (strcmp(argv[i], "-j") == 0 && i + 1 < argc) jsondir = argv[++i];
     if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) tag = argv[++i];
     if (strcmp(argv[i], "-i") == 0 && i + 1 < argc) insertRun = stoi(argv[++i]);
@@ -286,6 +284,19 @@ int main(int argc, char* argv[]) {
       printUsage(argv[0]);
       return 0;
     }
+  }
+
+  // -- Init mode: create a new tag file with IOV 1
+  if (init) {
+    if (jsondir.empty() || tag.empty()) {
+      cerr << "Error: -j jsondir and -t tag are required for init mode" << endl;
+      printUsage(argv[0]);
+      return 1;
+    }
+    ofstream out(jsondir + "/tags/" + tag);
+    out << "{\"tag\" : \"" << tag << "\", \"iovs\" : [1]}" << endl;
+    out.close();
+    return 0;
   }
 
   // Meta mode: extract runs from payloads
@@ -331,7 +342,6 @@ int main(int argc, char* argv[]) {
     
     // Create backup and write once
     if (!backupFile(file)) {
-      return 1;
     }
     if (!writeIOVsToFile(file, tag, runs, false)) {
       return 1;
