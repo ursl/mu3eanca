@@ -37,8 +37,8 @@ bool calFibreQuality::getNextID(uint32_t &ID) {
 
 // ----------------------------------------------------------------------
 calFibreQuality::calFibreQuality(cdbAbs *db, string tag) : calAbs(db, tag) {
-  cout << "calFibreQuality created and registered with tag ->" << fTag << "<-"
-       << endl;
+  if (fVerbose) cout << "calFibreQuality created and registered with tag ->" << fTag << "<-"
+                     << endl;
 }
 
 
