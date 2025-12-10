@@ -307,8 +307,8 @@ int main(int argc, char* argv[]) {
   } else if (14 == mode) {
     cout << "Test pixel efficiency" << endl;
     calPixelEfficiency *cpe = new calPixelEfficiency();
-    cpe->readCsv("ascii/pixelefficiency-ideal.csv");
-    cpe->writeCsv("out-pixelefficiency-ideal.csv");
+    cpe->readCsv("ascii/pixelefficiency-pattern.csv");
+    cpe->writeCsv("out-pixelefficiency-pattern.csv");
     string sblob = cpe->makeBLOB();
     cpe->printBLOB(sblob, 1000);
     payload pl;
