@@ -210,9 +210,9 @@ void calFibreQuality::readCSV(string filename) {
       vector<string> tokens = split(sline, ',');
       constants a;
       uint32_t id = stoi(tokens[0]);
-      a.quality = stoi(tokens[1]);
-      a.lock = stoi(tokens[2]);
-      a.hasData = stoi(tokens[3]);
+      a.lock = stoi(tokens[1]);
+      a.hasData = stoi(tokens[2]);
+      a.quality = stoi(tokens[3]);
       a.threshold = stod(tokens[4]);
       a.efficiency = stod(tokens[5]);
       fMapConstants.insert(make_pair(id, a));
