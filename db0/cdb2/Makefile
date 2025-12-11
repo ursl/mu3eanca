@@ -9,7 +9,7 @@ LDIRECTORY = $(shell pwd)
 UTIL := ../../util
 
 # -- ARGH!? But it works ...
-ifneq (,$(findstring merlin,$(LHOST)))
+ifneq (,$(or $(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
   INCMONGODB    =
   LIBMONGODB    =
   LIBCURL       = -L/usr/lib64 -lcurl
