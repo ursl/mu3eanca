@@ -46,7 +46,7 @@ else
   SOFLAGS       =
 endif
 
-EXTHEADERS    = -I../..
+EXTHEADERS    = -I../.. -I../../util
 
 #CXX          := /usr/bin/c++
 
