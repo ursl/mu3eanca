@@ -34,6 +34,10 @@
 //            -p, --pat pattern provide a pattern to match the global tags
 //            -r runfile       provide comma-separated runs in a file
 //            --rdb            RDB only
+//
+// History
+// -------  
+//             2025/12/11      add break in payload and tag download after done
 // ----------------------------------------------------------------------
 
 using namespace std;
@@ -162,6 +166,7 @@ int main(int argc, char* argv[]) {
       }
     } else if (mode == "tag") {
       vector<string> vGlobalTags = pDB->readGlobalTags();
+      bool done(false);
       for (auto it: vGlobalTags) {
         vector<string> vTags = pDB->readTags(it);
         for (auto ittt: vTags) {
@@ -180,12 +185,16 @@ int main(int argc, char* argv[]) {
                 ofs.close();
               }
             }
+            done = true;
+            break;
           }
         }
+        if (done) break;
       }
     } else if (mode == "payload") {
       vector<string> vGlobalTags = pDB->readGlobalTags();
       // cout << "  dbx vGlobalTags: " << vGlobalTags.size() << endl;
+      bool done(false);
       for (auto it: vGlobalTags) {
         vector<string> vTags = pDB->readTags(it);
         //cout << "  dbx vTags: " << vTags.size() << endl;
@@ -217,7 +226,10 @@ int main(int argc, char* argv[]) {
                 }
               }
             }
+            done = true;
+            break;
         }
+        if (done) break;
       }
     }
   }
