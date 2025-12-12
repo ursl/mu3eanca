@@ -217,7 +217,7 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
 
 // ----------------------------------------------------------------------
 calPixelQualityLM::Status calPixelQualityLM::getStatus(unsigned int chipid, int icol, int irow) {
-  // -- first check dead links  
+  // -- first check link status (any non-zero status, including dead links 7,8,9)
   if (fMapConstants[chipid].linkA > 0 && icol >= 0 && icol <= 87) {
     return static_cast<Status>(fMapConstants[chipid].linkA);
   } 
@@ -296,17 +296,23 @@ bool calPixelQualityLM::isLinkDead(unsigned int chipid, int ilink) {
   }
   switch (ilink) {
     case 0:
-      if (fMapConstants[chipid].linkA == 8 || fMapConstants[chipid].linkA == 9) {
+      if (fMapConstants[chipid].linkA == 7
+          || fMapConstants[chipid].linkA == 8 
+          || fMapConstants[chipid].linkA == 9) {
         return true;
       }
       return false;
     case 1:
-      if (fMapConstants[chipid].linkB == 8 || fMapConstants[chipid].linkB == 9) {
+      if (fMapConstants[chipid].linkB == 7
+          || fMapConstants[chipid].linkB == 8 
+          || fMapConstants[chipid].linkB == 9) {
         return true;
       }
       return false;
     case 2:
-      if (fMapConstants[chipid].linkC == 8 || fMapConstants[chipid].linkC == 9) {
+      if (fMapConstants[chipid].linkC == 7
+          || fMapConstants[chipid].linkC == 8 
+          || fMapConstants[chipid].linkC == 9) {
         return true;
       }
       return false;
@@ -327,6 +333,20 @@ bool calPixelQualityLM::isChipDead(unsigned int chipid, int row, int col) {
     }
   }
   return cntDeadLinks == 3;
+}
+
+// ----------------------------------------------------------------------
+double calPixelQualityLM::getLVDSOverflowRate(unsigned int chipid) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return -1.; // -- chip not found
+  }
+  if (fMapConstants[chipid].linkM == 0) {
+    return .0; // -- no overflow
+  } else if (fMapConstants[chipid].linkM == 1) {
+    return 9.99e+99; // -- overflow larger than nhits
+  } else {
+    return 1./static_cast<double>(fMapConstants[chipid].linkM); // -- raw overflow rate
+  }
 }
 
 

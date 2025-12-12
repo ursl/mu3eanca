@@ -58,6 +58,8 @@ public:
   bool isLinkBad(unsigned int chipid, int ilink);
   bool isLinkDead(unsigned int chipid, int ilink);
 
+  double getLVDSOverflowRate(unsigned int chipid);
+
   int getCkdivend(unsigned int chipid);
   int getCkdivend2(unsigned int chipid);
 
