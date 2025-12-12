@@ -233,11 +233,19 @@ class CalPixelQualityLM(Calibration):
         
         const = self._constants[chip_id]
         
-        # Check column status first
+        # First check dead links (matches C++ implementation)
+        if const["linkA"] > 0 and 0 <= col <= 87:
+            return PixelQualityStatus(const["linkA"])
+        if const["linkB"] > 0 and 88 <= col <= 171:
+            return PixelQualityStatus(const["linkB"])
+        if const["linkC"] > 0 and 172 <= col <= 255:
+            return PixelQualityStatus(const["linkC"])
+        
+        # Now check column status
         if col in const["mcol"]:
             return PixelQualityStatus(const["mcol"][col])
         
-        # Check pixel status
+        # Finally check pixel status
         idx = col * 250 + row
         if idx in const["mpixel"]:
             return PixelQualityStatus(const["mpixel"][idx])
@@ -272,12 +280,16 @@ class CalPixelQualityLM(Calibration):
         return PixelQualityStatus.CHIP_NOT_FOUND
     
     def is_chip_dead(self, chip_id: int, row: int = -1, col: int = -1) -> bool:
-        """Check if chip is dead."""
+        """Check if chip is dead (all three links are dead: DeadChip, NoHits, or Masked)."""
         if chip_id not in self._constants:
             return True
         
-        # Implementation would check if all links are masked or have no hits
-        return False
+        # Check if all three links are dead (status 7, 8, or 9)
+        cnt_dead_links = 0
+        for ilink in range(3):
+            if self.is_link_dead(chip_id, ilink):
+                cnt_dead_links += 1
+        return cnt_dead_links == 3
     
     def is_link_bad(self, chip_id: int, link: int) -> bool:
         """Check if link is bad."""
@@ -285,9 +297,9 @@ class CalPixelQualityLM(Calibration):
         return status != PixelQualityStatus.GOOD
     
     def is_link_dead(self, chip_id: int, link: int) -> bool:
-        """Check if link is dead."""
+        """Check if link is dead (DeadChip=7, NoHits=8, or Masked=9)."""
         status = self.get_link_status(chip_id, link)
-        return status in (PixelQualityStatus.MASKED, PixelQualityStatus.NO_HITS)
+        return status in (PixelQualityStatus.DEAD_CHIP, PixelQualityStatus.NO_HITS, PixelQualityStatus.MASKED)
     
     def get_lvds_overflow_rate(self, chip_id: int) -> float:
         """Get LVDS overflow rate for a chip."""
