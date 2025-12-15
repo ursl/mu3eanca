@@ -16,6 +16,8 @@
 #include "calTileAlignment.hh"
 #include "calDetConfV1.hh"
 #include "calDetSetupV1.hh"
+#include "calEventStuffV1.hh"
+
 #include "calPixelCablingMap.hh"
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
@@ -115,12 +117,23 @@ int main(int argc, const char* argv[]) {
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixelqualitylm_")) {
     c = new calPixelQualityLM();
-    c->readPayloadFromFile(hash, pdir);
-    cout << "hash:    " << c->getPayload(hash).fHash << endl;
-    cout << "comment: " << c->getPayload(hash).fComment << endl;
-    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
-    cout << "date:    " << c->getPayload(hash).fDate << endl;
-    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+    calPixelQualityLM *cpq = dynamic_cast<calPixelQualityLM*>(c);
+    cpq->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << cpq->getPayload(hash).fHash << endl;
+    cout << "comment: " << cpq->getPayload(hash).fComment << endl;
+    cout << "schema:  " << cpq->getPayload(hash).fSchema << endl;
+    cout << "date:    " << cpq->getPayload(hash).fDate << endl;
+    cpq->printBLOB(cpq->getPayload(hash).fBLOB, verbose);
+    cout << "now try to loop over things" << endl;
+    cpq->calculate(hash);
+    cpq->resetIterator();
+    uint32_t id;
+    while (cpq->getNextID(id)) {
+      double lvdsOverflowRate = cpq->getLVDSOverflowRate(id);
+      if (lvdsOverflowRate > 0.) { 
+        cout << "chipID: " << id << " LVDS overflow rate: " << lvdsOverflowRate << endl; 
+      }
+    }
   } else if (string::npos != filename.find("pixelcabling_")) {
     c = new calPixelCablingMap();
     c->readPayloadFromFile(hash, pdir);
@@ -155,6 +168,14 @@ int main(int argc, const char* argv[]) {
     c->printBLOB(c->getPayload(hash).fBLOB, verbose);
   } else if (string::npos != filename.find("pixelefficiency_")) {
     c = new calPixelEfficiency();
+    c->readPayloadFromFile(hash, pdir);
+    cout << "hash:    " << c->getPayload(hash).fHash << endl;
+    cout << "comment: " << c->getPayload(hash).fComment << endl;
+    cout << "schema:  " << c->getPayload(hash).fSchema << endl;
+    cout << "date:    " << c->getPayload(hash).fDate << endl;
+    c->printBLOB(c->getPayload(hash).fBLOB, verbose);
+  } else if (string::npos != filename.find("eventstuffv1_")) {
+    c = new calEventStuffV1();
     c->readPayloadFromFile(hash, pdir);
     cout << "hash:    " << c->getPayload(hash).fHash << endl;
     cout << "comment: " << c->getPayload(hash).fComment << endl;

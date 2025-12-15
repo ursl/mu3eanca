@@ -29,7 +29,7 @@
 #include "calPixelEfficiency.hh"
 
 #include "calDetSetupV1.hh"
-
+#include "calEventStuffV1.hh"
 using namespace std;
 
 // Forward declarations
@@ -37,6 +37,7 @@ void writeDetSetupV1(string payloaddir, string gt, int iov);
 void writePixelQualityLM(string payloaddir, string gt, string filename, int iov);
 void writeAlignmentInformation(string payloaddir, string gt, string type, string ifilename, int iov);
 void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, int iov);
+void writeEventStuffV1(string payloaddir, string gt, string filename, int iov);
 // ----------------------------------------------------------------------
 // cdbWritePayload
 // ---------------
@@ -44,6 +45,7 @@ void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, 
 // NOTE: works (validated) for pixelalignement. All the rest might need some improvements!
 // 
 //  -c pixelalignment    produce the pixelalignment payloads. This is (currently) the only properly validated usage.
+//  -f filename          file to read in
 //  -g GT                the global tag (GT) for the payload (part of the "hash" written into the payload metadata)
 //  -i RUN               the interval of validity, i.e., the first run for which the payload is valid
 //  -p payloaddir        the CDB directory where the payloads will be written to payloaddir/payloads/
@@ -62,7 +64,7 @@ int main(int argc, const char* argv[]) {
 
   // -- command line arguments
   string cal("");
-  string payloaddir("");
+  string payloaddir(".");
   string gt("");
   string filename("");
   int iov(1);
@@ -99,6 +101,10 @@ int main(int argc, const char* argv[]) {
   // -- write pixelefficiency payloads and tags
   if (string::npos != cal.find("pixelefficiency")) {
     writePixelEfficiencyPayload(payloaddir, gt, filename, iov);
+  }
+  // -- write eventstuffv1 payloads and tags
+  if (string::npos != cal.find("eventstuffv1")) {
+    writeEventStuffV1(payloaddir, gt, filename, iov);
   }
 }
 
@@ -152,6 +158,24 @@ void writeDetSetupV1(string payloaddir, string gt, string filename, int iov) {
   cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << templateHash << endl;
 
   delete cdc;
+}
+
+// ----------------------------------------------------------------------
+void writeEventStuffV1(string payloaddir, string gt, string filename, int iov) {
+  cout << "   ->cdbInitGT> writing local template eventstuffv1 payloads" << endl;
+  // -- create (local template) payloads for eventstuffv1
+  calEventStuffV1 *ces = new calEventStuffV1();
+  ces->readJSON(filename);
+  string hash = "tag_eventstuffv1_" + gt + "_iov_" + to_string(iov);
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = filename;
+  pl.fSchema  = ces->getSchema();
+  pl.fBLOB = ces->makeBLOB();
+  cout << "   ->cdbWritePayload> writing payload with BLOB " << ces->printBLOBString(pl.fBLOB, 1000) << endl;
+  ces->writePayloadToFile(hash, payloaddir, pl);
+  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and schema " << pl.fSchema << endl;
+  delete ces;
 }
 
 // ----------------------------------------------------------------------

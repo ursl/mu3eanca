@@ -13,11 +13,14 @@
 #include "calPixelAlignment.hh"
 #include "calMppcAlignment.hh"
 #include "calDetConfV1.hh"
+#include "calEventStuffV1.hh"
+
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
+#include "calPixelEfficiency.hh"
+
 #include "calTileQuality.hh"
 #include "calFibreQuality.hh"
-#include "calPixelEfficiency.hh"
 
 using namespace std;
 
@@ -327,6 +330,67 @@ int main(int argc, char* argv[]) {
     cpe2->readPayloadFromFile("tag_pixelefficiency_datav6.3=2025V0_iov_1", ".");
     cpe2->calculate("tag_pixelefficiency_datav6.3=2025V0_iov_1");
     cpe2->writeCsv("out-pixelefficiency-ideal_fromPayload.csv");
+  } else if (15 == mode) {
+    cout << "Test pixel quality LM" << endl;
+    calPixelQualityLM *cpq = new calPixelQualityLM();
+    cpq->readPayloadFromFile("tag_pixelqualitylm_datav6.3=2025V0_iov_5736", "/Users/ursl/data/mu3e/cdb/payloads");
+    cpq->calculate("tag_pixelqualitylm_datav6.3=2025V0_iov_5736");
+    int chip = 161;
+    for (int col = 0; col < 15; col++) {
+      for (int row = 0; row < 250; row += 50) {
+        calPixelQualityLM::Status status = cpq->getStatus(chip, col, row);
+        cout << "col/row: " << col << "/" << row << " status: " << status << ", ";
+      }
+      cout << endl;
+    }
+    for (int col = 100; col < 115; col++) {
+      for (int row = 0; row < 250; row += 50) {
+        calPixelQualityLM::Status status = cpq->getStatus(chip, col, row);
+        cout << "col/row: " << col << "/" << row << " status: " << status << ", ";
+      }
+      cout << endl;
+    }
+
+    for (int col = 200; col < 215; col++) {
+      for (int row = 0; row < 250; row += 50) {
+        calPixelQualityLM::Status status = cpq->getStatus(chip, col, row);
+        cout << "col/row: " << col << "/" << row << " status: " << status << ", ";
+      }
+      cout << endl;
+    }
+  } else if (16 == mode) {
+    cout << "Test event stuff" << endl;
+    calEventStuffV1 *ces = new calEventStuffV1();
+    ces->readJSON("ascii/eventstuff-ideal.json");
+    string sblob = ces->makeBLOB();
+    ces->printBLOB(sblob, 1000);
+    payload pl;
+    pl.fHash = "tag_eventstuffv1_datav6.3=2025V0_iov_1";
+    pl.fComment = "everything works fine";
+    pl.fSchema = ces->getSchema();
+    pl.fBLOB = sblob;
+    cout << "######################################################################" << endl;
+    cout << "### createPayload" << endl;
+    cout <<  pl.printString(false) << endl;
+    ces->printBLOB(sblob, 1);
+    cout << "######################################################################" << endl;
+    ces->writePayloadToFile(pl.fHash, ".", pl);
+
+    calEventStuffV1 *ces2 = new calEventStuffV1();
+    ces2->readPayloadFromFile("tag_eventstuffv1_datav6.3=2025V0_iov_1", ".");
+    ces2->calculate("tag_eventstuffv1_datav6.3=2025V0_iov_1");
+    ces2->printBLOB(ces2->makeBLOB(), 1000);
+    payload pl2;
+    pl2.fHash = "tag_eventstuffv1_datav6.3=2025V0_iov_1";
+    pl2.fComment = "everything works fine";
+    pl2.fSchema = ces2->getSchema();
+    pl2.fBLOB = ces2->makeBLOB();
+    cout << "######################################################################" << endl;
+    cout << "### createPayload" << endl;
+    cout <<  pl2.printString(false) << endl;
+    ces2->printBLOB(ces2->makeBLOB(), 1);
+    cout << "######################################################################" << endl;
+    ces2->writePayloadToFile(pl2.fHash, ".", pl2);
   }
   return 0;
 }
