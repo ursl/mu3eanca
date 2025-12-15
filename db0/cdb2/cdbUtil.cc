@@ -58,6 +58,14 @@ double blob2Double(std::array<char,8> v) {
   return a;
 }
 
+// ----------------------------------------------------------------------
+uint64_t blob2Uint64(std::array<char,8> v) {
+  char data[8] = {0};
+  for (int i = 0; i < 8; ++i) data[i] = v[i];
+  uint64_t a(0);
+  memcpy(&a, data, sizeof a);
+  return a;
+}
 
 // ----------------------------------------------------------------------
 std::array<char,8> int2Blob(int a) {
@@ -80,6 +88,16 @@ std::array<char,8> uint2Blob(unsigned int a) {
 
 // ----------------------------------------------------------------------
 std::array<char,8> double2Blob(double a) {
+  char data[8] = {0};
+  memcpy(data, &a, sizeof a);
+  array<char,8> v;
+  for (int i = 0; i < 8; ++i) v[i] = data[i];
+  return v;
+}
+
+
+// ----------------------------------------------------------------------
+std::array<char,8> uint642Blob(uint64_t a) {
   char data[8] = {0};
   memcpy(data, &a, sizeof a);
   array<char,8> v;

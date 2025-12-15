@@ -56,10 +56,12 @@ std::vector<std::string> jsonGetVectorOfValues(const std::string& jstring, const
 int blob2Int(std::array<char,8> v);
 unsigned int blob2UnsignedInt(std::array<char,8> v);
 double blob2Double(std::array<char,8> v);
+uint64_t blob2Uint64(std::array<char,8> v);
 
 std::array<char,8> int2Blob(int a);
 std::array<char,8> uint2Blob(unsigned int a);
 std::array<char,8> double2Blob(double a);
+std::array<char,8> uint642Blob(uint64_t a);
 
 std::array<char,8> getData(std::vector<char>::iterator &it);
 
