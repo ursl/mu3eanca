@@ -126,6 +126,26 @@ void calPixelEfficiency::readCsv(string filename) {
   }
   INS.close();
 
+  // -- check whether these are percent efficiencies
+  double meanEfficiency(0.0);
+  int n(0);
+  for (auto &c : fMapConstants) {
+    for (int i = 0; i < c.second.vefficiency.size(); i++) {
+      if (c.second.vefficiency[i] > 0.0) {
+        meanEfficiency += c.second.vefficiency[i];
+        n++;
+      }
+    }
+  }
+  meanEfficiency /= n;
+  if (meanEfficiency > 1.0) {
+    cout << "calPixelEfficiency::readCsv> Note: mean efficiency " << meanEfficiency << " is greater than 1.0, assuming this is in percent and converting to fraction" << endl;
+    for (auto &c : fMapConstants) {
+      for (int i = 0; i < c.second.vefficiency.size(); i++) {
+        c.second.vefficiency[i] /= 100.0;
+      }
+    }
+  }
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
 }
