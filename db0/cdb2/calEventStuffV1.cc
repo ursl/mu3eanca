@@ -96,9 +96,19 @@ string calEventStuffV1::readJSON(string filename) {
   }
   INS.close();
 
+  // -- figure out what type of JSON file this was
+  // -- custom with "pixeldata" or midas meta data 
+  if (string::npos == filename.find(".mid.lz4.json")) {
+    fConstants.pixelData.startFrame = ::stoull(jsonGetValue(spl, vector<string> {"pixeldata", "startframe"}));
+    fConstants.pixelData.endFrame    = ::stoul(jsonGetValue(spl, vector<string> {"pixeldata", "endframe"}));
+  } else {
 
-  fConstants.pixelData.startFrame = ::stoull(jsonGetValue(spl, vector<string> {"pixeldata", "startframe"}));
-  fConstants.pixelData.endFrame    = ::stoul(jsonGetValue(spl, vector<string> {"pixeldata", "endframe"}));
-
+    string sstart_frame_good_pixel_data = jsonGetValue(spl, vector<string> {"stat", "start_frame_good_pixel_data"});
+    string send_frame_good_pixel_data = jsonGetValue(spl, vector<string> {"stat", "end_frame_good_pixel_data"});
+    cout << "start_frame_good_pixel_data ->" << sstart_frame_good_pixel_data << "<-" << endl;
+    cout << "end_frame_good_pixel_data ->" << send_frame_good_pixel_data << "<-" << endl;
+    fConstants.pixelData.startFrame = ::stoull(sstart_frame_good_pixel_data);
+    fConstants.pixelData.endFrame    = ::stoull(send_frame_good_pixel_data);
+  }
   return spl;
 }
