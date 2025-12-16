@@ -102,7 +102,9 @@ endif
 # -- targets
 all: prep lib/libCDB.so bin
 
-bin: $(addprefix bin/,$(BINARIES))
+# -- Build all binary object files first to avoid parallel build races
+BINARY_OBJS = $(addprefix obj/,$(addsuffix .o,$(BINARIES)))
+bin: $(BINARY_OBJS) $(addprefix bin/,$(BINARIES))
 
 lib/libCDB.so: $(addprefix obj/,$(FILES))
 	$(CXX) $(SOFLAGS) $^ -o $@ $(GLIBS)
@@ -114,6 +116,7 @@ $(addprefix obj/,%.o) : %.cc %.hh
 $(addprefix obj/,%.o) : %.cc
 	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
 
+# -- Binary targets: object file must exist (built by pattern rule above)
 bin/% : obj/%.o lib/libCDB.so
 	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so $(OTHERLIBS)
 
