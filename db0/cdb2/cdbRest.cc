@@ -104,8 +104,9 @@ map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
     doCurl("tags", it, "findOne");
     
     vector<int> viov;
+    //cout << "it ->" << it << "<- fCurlReadBuffer = " << fCurlReadBuffer << endl;
     string sarr = jsonGetVector(fCurlReadBuffer, "iovs");
-    
+    //cout << "sarr = " << sarr << endl;
     vector<string> subarr = split(sarr, ',');
     if (subarr.size() > 0) {
       for (auto it: subarr) {
