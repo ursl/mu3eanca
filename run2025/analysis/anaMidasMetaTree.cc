@@ -5,6 +5,8 @@
 #include <TProfile2D.h>
 #include <TStyle.h>
 
+#include "calPixelQualityLM.hh"
+
 using namespace std;
 
 // ----------------------------------------------------------------------
@@ -64,6 +66,13 @@ void anaMidasMetaTree::bookHistograms() {
   fMapH2["abcLinkErrors2D"]->SetZTitle("Maximum Link Error Rate / Run");
   fMapH2["abcLinkErrors2D"]->SetStats(0);
 
+  fMapH2["overflowVsRate"] = new TH2D("overflowVsRate", "overflowVsRate", 100, 0, 10000., 100, 0, 0.1);
+  fMapH2["overflowVsRate"]->SetOption("colz");
+  fMapH2["overflowVsRate"]->SetTitle("Overflow Rate vs LVDS Overflow Rate");
+  fMapH2["overflowVsRate"]->SetXTitle("LVDS Error Rate");
+  fMapH2["overflowVsRate"]->SetYTitle("Overflow Rate");
+  fMapH2["overflowVsRate"]->SetZTitle("Overflow Rate");
+  fMapH2["overflowVsRate"]->SetStats(0);
 
   fMapH1["abcErrs"] = new TH1D("abcErrs", "abcErrs", 100, 0, 100);
   fMapH1["abcMask"] = new TH1D("abcMask", "abcMask", 100, 0, 100);
@@ -234,12 +243,20 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
 
   int oldRunNumber = -1;
   int irun = -1;
+  calPixelQualityLM *cpq = new calPixelQualityLM();
+  string gt = "datav6.3=2025V0";
+  string hash = string("tag_pixelqualitylm_") + gt + string("_iov_") + to_string(irun);
+  string pdir = string("/Users/ursl/data/mu3e/cdb/payloads/");
   for (Long64_t jentry = 0; jentry < nentries; ++jentry) {
     loadTree(jentry);
     getEntry(jentry);
     // Example hook for user analysis
     // int eCount = std::count(linkMatrix.begin(), linkMatrix.end(), 'E');
+    if (runNumber < 3000) continue;
     if (runNumber != oldRunNumber) {
+      hash = string("tag_pixelqualitylm_") + gt + string("_iov_") + to_string(runNumber);
+      cpq->readPayloadFromFile(hash, pdir);
+      cpq->calculate(hash);
       oldRunNumber = runNumber;
       cout << "==> anaMidasMetaTree::loop() new runNumber = " << runNumber << endl;
       fMapH1["runNumber"]->Fill(runNumber);
@@ -305,6 +322,24 @@ void anaMidasMetaTree::loop(Long64_t maxEntries) {
       << " runNumber = " << runNumber 
       << endl;
     }
+
+    double overflowRate = cpq->getLVDSOverflowRate(globalChipID);
+    double meanErrRate(0.);
+    int nrate(0);
+    if (abcLinkMask[0] > 0) {
+      meanErrRate += abcLinkErrs[0];
+      nrate++;
+    }
+    if (abcLinkMask[1] > 0) {
+      meanErrRate += abcLinkErrs[1];
+      nrate++;
+    }
+    if (abcLinkMask[2] > 0) {
+      meanErrRate += abcLinkErrs[2];
+      nrate++;
+    }
+    meanErrRate /= nrate;
+    fMapH2["overflowVsRate"]->Fill(meanErrRate, overflowRate);
 
     // -- check against 9/'E' without corresponding mask!
     cnt0 = cnt1 = cnt2 = 0;
