@@ -214,35 +214,64 @@ int main(int argc, char* argv[]) {
         //cout << "  dbx vTags: " << vTags.size() << endl;
         for (auto ittt: vTags) {
           //cout << "  dbx ittt: " << ittt << endl;
-            map<string, vector<int>> mIOVs = pDB->readIOVs(vTags);
-            string ppattern = pattern;
-            if (string::npos != ppattern.find("tag_")) {
-              replaceAll(ppattern, "tag_", "");
-            }
-            if (string::npos != ppattern.find("_iov_")) {
-              ppattern = ppattern.substr(0, ppattern.rfind('_iov_')-5);
-            }
             //cout << "  dbx ppattern: " << ppattern << endl;
-            if ((pattern != "unset") && (string::npos == ittt.find(ppattern))) {
-              continue;
-            }
-            for (auto ittti: mIOVs) {
-              for (auto itttt: ittti.second) {
-                string spl = "tag_" + ittti.first + "_iov_" + to_string(itttt); 
-                if ((pattern != "unset") && (string::npos != spl.find(pattern))) {
-                  cout << "    tag: " << ittti.first << " iov: " << itttt 
-                  << " pattern: " << pattern << " spl: " << spl
-                  << endl;
-                  payload pl = pDB->getPayload(spl);
-                  ofstream ofs(dirPath + "/payloads/" + spl);
-                  ofs << pl.json() << endl;
-                  ofs.close();
-                }
+            string ppattern("");
+            if (exactPattern != "unset") {
+              ppattern = exactPattern;
+              if (string::npos != ppattern.find("tag_")) {
+                replaceAll(ppattern, "tag_", "");
+              }
+              if (string::npos != ppattern.find("_iov_")) {
+                ppattern = ppattern.substr(0, ppattern.rfind('_iov_')-5);
+              }
+              if (string::npos == ittt.find(ppattern)) {
+                continue;
+              }
+            } else  if (pattern != "unset")  {
+              ppattern = pattern;
+              if (string::npos != ppattern.find("tag_")) {
+                replaceAll(ppattern, "tag_", "");
+              }
+              if (string::npos != ppattern.find("_iov_")) {
+                ppattern = ppattern.substr(0, ppattern.rfind('_iov_')-5);
+              }
+              if (string::npos == ittt.find(ppattern)) {
+                continue;
               }
             }
-            if (!all) done = true;
-            break;
-        }
+            //cout << "DBX exactPattern: " << exactPattern << " pattern: " << pattern << " ittt: " << ittt << endl;
+            map<string, vector<int>> mIOVs = pDB->readIOVs(vTags);
+            for (auto ittti: mIOVs) {
+              if (exactPattern != "unset") {
+                if (exactPattern != ittti.first) {
+                  continue;
+                }
+              } else  if (pattern != "unset")  {
+                if (string::npos == ittti.first.find(ppattern)) {
+                  continue;
+                }
+              }
+              for (auto itttt: ittti.second) {
+                string spl = "tag_" + ittti.first + "_iov_" + to_string(itttt); 
+                if ((exactPattern != "unset") && (exactPattern != ittt)) {
+                  continue;
+                } else  if ((pattern != "unset") && (string::npos == ittt.find(pattern))) {
+                  continue;
+                }
+                cout << "    tag: " << ittti.first << " iov: " << itttt 
+                << " pattern: " << pattern << " spl: " << spl
+                << endl;
+                payload pl = pDB->getPayload(spl);
+                ofstream ofs(dirPath + "/payloads/" + spl);
+                ofs << pl.json() << endl;
+                ofs.close();
+              }
+            }
+            if (!all) {
+              done = true;
+              break;
+            }
+        } 
         if (done) break;
       }
     }
