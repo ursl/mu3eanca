@@ -83,6 +83,7 @@ int main(int argc, char *argv[]) {
   string filename("anaPixelQuality.root");
   string gt("datav6.3=2025V0");
   string db("/Users/ursl/data/mu3e/cdb");
+  string metaMidasTreeFile("");
   int first(0), last(0);
   int verbose(0);
   int plot(0);
@@ -98,6 +99,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-f"))     {first = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-g"))     {gt = argv[++i];}
     if (!strcmp(argv[i], "-l"))     {last = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-m"))     {metaMidasTreeFile = argv[++i];}
     if (!strcmp(argv[i], "-o1"))    {filename1 = argv[++i];}
     if (!strcmp(argv[i], "-o2"))    {filename2 = argv[++i];}
     if (!strcmp(argv[i], "-p"))     {plot = 1;}
@@ -116,8 +118,20 @@ int main(int argc, char *argv[]) {
     filename = string("anaPixelQuality.root");
   }
 
+  TTree *tMetaMidas(0);
+  if (metaMidasTreeFile != "") {
+    cout << "Meta Midas tree file: " << metaMidasTreeFile << endl;
 
-  if ("" != filename1 && "" != filename2) {
+    TFile *fMetaMidas = TFile::Open(metaMidasTreeFile.c_str());
+    tMetaMidas = (TTree*)fMetaMidas->Get("midasMetaTree");
+    if (tMetaMidas) {
+      cout << "Meta Midas tree found" << endl;
+    } else {
+      cout << "Meta Midas tree not found" << endl;
+    }
+  }
+
+    if ("" != filename1 && "" != filename2) {
     overlayHistograms(filename1, filename2);
     return 0;
   } 
@@ -303,6 +317,11 @@ int main(int argc, char *argv[]) {
   TH1D *hNoisyPixels = new TH1D("hNoisyPixels", "Noisy pixels per run", 100, 0, 100000.);
   setTitles(hNoisyPixels, "Noisy pixels", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
+  // -- Number of noisy pixels per chip
+  TH1D *cNoisyPixels = new TH1D("cNoisyPixels", "Total number of noisy pixels per chip", 100, 0, 2000.);
+  setTitles(cNoisyPixels, "Noisy pixels", "Number of chips", 0.05, 1.0, 1.2, 0.04);
+
+
   TH1D *rEEE = new TH1D("rEEE", "Chips without good links", nRuns, 0, nRuns);
   setTitles(rEEE, "Run", "Chips without good links", 0.05, 1.0, 1.2);
   TH1D *hEEE = new TH1D("hEEE", "Chips without good links", 328, 0., 328.);
@@ -356,6 +375,9 @@ int main(int argc, char *argv[]) {
       int chipGood = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Good);
       nNoisyPixels += chipNoisy;
       nGoodPixels += chipGood;
+      if (!pPQ->isChipDead(chipid)) {
+        cNoisyPixels->Fill(chipNoisy);
+      }
       ++nChips;
       if (0) cout << "Chip " << chipid << " has " << chipNoisy << " noisy pixels and " << chipGood << " good pixels" << endl;
     }
@@ -363,12 +385,6 @@ int main(int argc, char *argv[]) {
     hNoisyPixels->Fill(nNoisyPixels);
     hGoodPixel->Fill(nGoodPixels);
 
-    cout << "Run " << itIoV << " has " 
-         << nChips << " chips, "
-         << nNoisyPixels << " noisy pixels and " 
-         << nGoodPixels << " good pixels" 
-         << " and " << nWorkingLinks << " working links"
-         << endl;
     rNoisyPixels->Fill(runIndex(itIoV), nNoisyPixels);
     rGoodPixel->Fill(runIndex(itIoV), nGoodPixels);
     if (nGoodPixels < 1.e6) {
@@ -385,6 +401,13 @@ int main(int argc, char *argv[]) {
     if (rn.nEEE > 40) {
       vAllBadLinkRuns.push_back(itIoV);
     }
+    cout << "Run " << itIoV << " has " 
+         << nChips << " chips, "
+         << nNoisyPixels << " noisy pixels and " 
+         << nGoodPixels << " good pixels" 
+         << " and " << nWorkingLinks << " working links"
+         << " and " << rn.nEEE << " EEE"
+         << endl;
   }
    // -- save the histograms 
   pFile->Write();
@@ -610,6 +633,12 @@ void plotHistograms(string filename, string suffix) {
   hNoisyPixels->Draw("hist");
   c1->SaveAs(("hNoisyPixels" + suffix + ".pdf").c_str());
 
+  TH1D *cNoisyPixels = (TH1D*)pFile->Get("cNoisyPixels");
+  cout << " plotting cNoisyPixels" << endl;
+  cNoisyPixels->SetStats(11111);
+  cNoisyPixels->Draw("hist");
+  c1->SaveAs(("cNoisyPixels" + suffix + ".pdf").c_str());
+
   TH1D *rGoodPixel = (TH1D*)pFile->Get("rGoodPixel");
   cout << " plotting rGoodPixel" << endl;
   setRunLabelsX(rGoodPixel);
@@ -680,7 +709,7 @@ void setRunLabelsY(TH2D *h) {
   h->GetYaxis()->SetNdivisions(2, false);
   h->GetYaxis()->SetTickLength(0.0);
 
-  int empty(0);
+  int empty(5);
   if (nRuns > 100) empty = 50;
   if (nRuns > 1000) empty = 100;
 
@@ -700,7 +729,7 @@ void setRunLabelsY(TH2D *h) {
 // -- set the run labels
 void setRunLabelsX(TH1D *h) {
   int nRuns(h->GetNbinsX());
-  int empty(0);
+  int empty(5);
   if (nRuns > 100) empty = 50;
   if (nRuns > 1000) empty = 100;
   h->GetXaxis()->SetNdivisions(2, false);
