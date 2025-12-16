@@ -554,7 +554,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     links.push_back(7);
     links.push_back(7);
     links.push_back(7);
-    links.push_back(7);
+    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return false;
   }
 
@@ -584,7 +584,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     } else {
       links.push_back(6);
     }
-    links.push_back(0);
+    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return true;
   }
 
@@ -596,7 +596,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     links.push_back(3);
     links.push_back(3);
     links.push_back(3);
-    links.push_back(3);
+    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return true;
   }
 
@@ -609,7 +609,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     links.push_back(9);
     links.push_back(9);
     links.push_back(9);
-    links.push_back(0);
+    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return false;
   }
 
