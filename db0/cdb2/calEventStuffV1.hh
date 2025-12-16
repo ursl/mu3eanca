@@ -18,6 +18,9 @@ public:
   ~calEventStuffV1();
 
   // -- direct accessors
+  uint64_t startFrameGoodPixelData() {return fConstants.pixelData.startFrame;}
+  uint64_t endFrameGoodPixelData() {return fConstants.pixelData.endFrame;}
+
   std::string getName() override {return fEventStuffTag;}
   void        calculate(std::string hash) override;
 
