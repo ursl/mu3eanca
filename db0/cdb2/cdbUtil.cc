@@ -429,6 +429,7 @@ vector<string> jsonGetValueVector(const string& jstring, const string& key) {
 
 // ----------------------------------------------------------------------
 string jsonGetVector(const string& jstring, const string& key) {
+  //cout << "jsonGetVector> key = " << key << " jstring = " << jstring << endl;
   string::size_type s0 = jstring.find(key);
   s0 = jstring.find(":", s0);
   string::size_type s1 = jstring.find("[", s0);
