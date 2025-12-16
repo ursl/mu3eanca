@@ -24,8 +24,9 @@
 //            ./bin/syncJSON --dir /Users/ursl/data/mu3e/test-cdb --host localhost -m tag --pat pixelalignment_datav6.3=2025V1test -c
 //            ./bin/syncJSON --dir /Users/ursl/data/mu3e/test-cdb --host localhost -m gt --pat datav6.3=2025V1test -c
 //
-// Options:   -a, --all        all runs dumped into the runrecords
-// -------    -c               CDB only
+// Options:   -a, --all        (1) all runs dumped into the runrecords 
+// -------                     (2) do all tags/gt/payloads matching pattern (required for V1 after V1test)
+//            -c               CDB only
 //            -d, --dir path   provide a location to dump the JSON files
 //            -h, --host host  provide a hostname from where to retrieve
 //            -f  run          provide a first run number
@@ -45,7 +46,7 @@ using namespace std;
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
-  string dirName("fixme"), dirPath("fixme"), pattern("unset"), 
+  string dirName("fixme"), dirPath("fixme"), pattern("unset"), exactPattern("unset"), 
          host("pc11740"), mode("all"), runfile("unset");
   bool all(false);
   bool cdbOnly(false);
@@ -59,6 +60,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "--cdb"))  {cdbOnly = true;}
     if (!strcmp(argv[i], "-d"))     {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "--dir"))  {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "-e"))     {exactPattern = string(argv[++i]);}
     if (!strcmp(argv[i], "-h"))     {host = string(argv[++i]);}
     if (!strcmp(argv[i], "--host")) {host = string(argv[++i]);}
     if (!strcmp(argv[i], "-f"))     {firstRun = atoi(argv[++i]);}
@@ -170,21 +172,33 @@ int main(int argc, char* argv[]) {
       for (auto it: vGlobalTags) {
         vector<string> vTags = pDB->readTags(it);
         for (auto ittt: vTags) {
-          if ((pattern != "unset") && (string::npos != ittt.find(pattern))) {
-            cout << "    tag: " << ittt << endl;
-            map<string, vector<int>> mIOVs = pDB->readIOVs(vTags);
-            for (auto ittt: mIOVs) {
-              if ((pattern != "unset") && (string::npos != ittt.first.find(pattern))) {
-                // -- write tag to file
-                stringstream sstr;
-                sstr << "  { \"tag\" : \"" << ittt.first << "\", \"iovs\" : ";
-                sstr << jsFormat(ittt.second);
-                sstr << " }" << endl;
-                ofstream ofs(dirPath + "/tags/" + ittt.first);
-                ofs << sstr.str();
-                ofs.close();
-              }
+          if ((exactPattern != "unset") && (exactPattern != ittt)) {
+            continue;
+          } else  if ((pattern != "unset") && (string::npos == ittt.find(pattern))) {
+            continue;
+          }
+          cout << "    tag: " << ittt << " (for GT = " << it << " with tags: ";
+          for (auto iprint: vTags)  cout << iprint << " ";
+          cout << ")" << endl;
+
+          map<string, vector<int> > mIOVs = pDB->readIOVs(vTags);
+          for (auto ittt: mIOVs) {
+            if ((exactPattern != "unset") && (exactPattern != ittt.first)) {
+              continue;
+            } else  if ((pattern != "unset") && (string::npos == ittt.first.find(pattern))) {
+              continue;
             }
+            // -- write tag to file
+            stringstream sstr;
+            sstr << "  { \"tag\" : \"" << ittt.first << "\", \"iovs\" : ";
+            sstr << jsFormat(ittt.second);
+            sstr << " }" << endl;
+            ofstream ofs(dirPath + "/tags/" + ittt.first);
+            ofs << sstr.str();
+            ofs.close();
+            
+          }
+          if (!all) {
             done = true;
             break;
           }
@@ -226,7 +240,7 @@ int main(int argc, char* argv[]) {
                 }
               }
             }
-            done = true;
+            if (!all) done = true;
             break;
         }
         if (done) break;
