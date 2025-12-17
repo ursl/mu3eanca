@@ -1,10 +1,9 @@
-#! /bin/csh -f
+#! /bin/csh -f                                                                                                                                                                                                                  
 
-#SBATCH --job-name=midasMetaData      # Job name
-
-setenv DIR 
-setenv MIDASFILE 
+setenv JOB
+setenv DIR
 
 cd $DIR
-/data/project/mu3e/offline/251215-midasMeta2/mu3eUtil/_build/tools/midasMeta/mu3e_midas_meta $DIR/$MIDASFILE
-
+pwd
+echo $DIR/run0$JOB.mid.lz4
+/data/project/mu3e/offline/251215-midasMeta2/mu3eUtil/_build/tools/midasMeta/mu3e_midas_meta $DIR/run0$JOB.mid.lz4
