@@ -173,7 +173,32 @@ int pixelHistograms::pixelQuality(pixelHit &hitIn) {
   uint32_t chipid = ((hitIn.fPixelID >> 16) & 0xFFFF);
   uint32_t col = int((hitIn.fPixelID >> 8) & 0xFF);
   uint32_t row = int((hitIn.fPixelID >> 0) & 0xFF);
+
   result = fCalPixelQualityLM->getStatus(chipid, col, row);
+
+  hitIn.fStatusBits = 0;
+
+  if (fCalPixelQualityLM->getLVDSOverflowRate(chipid) > 1.e-9) {
+    hitIn.fStatusBits |= (0x1 << 0);
+  }
+
+  bool isEdgePixel = false;
+  if (col <= 11 || col >= 245 || row <= 11 || row >= 239) {
+    isEdgePixel = true;
+    hitIn.fStatusBits |= (0x1 << 15);
+  }
+
+  bool isLowToT = false;
+  if (hitIn.fBitToT < 5) {
+    isLowToT = true;
+    hitIn.fStatusBits |= (0x1 << 16);
+  }
+
+  if (chipid > 12000) {
+    fTH1D["badChipIDs"]->Fill(chipid);
+    hitIn.fStatusBits |= (0x1 << 17);
+  }
+  
 
   return result;
 }
@@ -202,13 +227,8 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
   }
 
   // -- FIXME!!!!
-  int run = 6000;
-  int ckdivend(0), ckdivend2(0);
-  if (run < 3098) {
-    ckdivend2 = 15;
-  } else {
-    ckdivend2 = 31;
-  }
+  int ckdivend = fCalPixelQualityLM->getCkdivend(chipid);
+  int ckdivend2 = fCalPixelQualityLM->getCkdivend2(chipid);
 
   uint32_t rawtot = (hit.fDebugSiData >> 27) & 0x1F;
   uint32_t localTime = hit.fTimeInt % (1 << 11);  // local pixel time is first 11 bits of the global time
@@ -227,17 +247,20 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
   }
 
   bool isLowToT = false;
-  if (hitToT < 3) {
+  cout << "pixelHistograms::goodPixel() hitToT = " << hitToT << endl;
+  if (hitToT < 5) {
     isLowToT = true;
     hit.fStatusBits |= 2;
   }
 
-    if (chipid > 12000) {
+  if (chipid > 12000) {
     fTH1D["badChipIDs"]->Fill(chipid);
     result |= (1 << 16);
   }
 
+  hitIn.fStatusBits = hit.fStatusBits;
 
+  
   string hname("");
   if (result < 99 ) {
     int status = hit.fStatus;
@@ -245,7 +268,7 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
       status = fCalPixelQualityLM->getStatus(chipid, col, row);
     }
 
-    if (status > 0 && status < 9) {
+    if (status > 0 && status < 10) {
       result |= (0x1 << status);
     }
 
@@ -295,6 +318,7 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
     hname = Form("C%d_ok_hittot_chipprof2d", chipid);
     fTProfile2D[hname]->Fill(col, row, hitToT);
   }
+
   return result;
 }
 
