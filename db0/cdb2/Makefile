@@ -77,7 +77,7 @@ LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o \
          payload.o cfgPayload.o cdbUtil.o runRecord.o \
          RunInfo.o DataQuality.o Resource.o
 
-LBINARIES = testCDB fillDB anaPixelQuality\
+LBINARIES = testCDB fillDB anaPixelQuality anaEventStuff\
             syncCloud syncMongo syncJSON syncRDB\
             cdbInitDB cdbPrintPayload cdbInitGT cdbWritePayload \
             cdbPrintConfig \
