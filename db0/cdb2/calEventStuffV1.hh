@@ -18,6 +18,8 @@ public:
   ~calEventStuffV1();
 
   // -- direct accessors
+  uint64_t startFrameEventData() {return fConstants.eventData.startFrame;}
+  uint64_t endFrameEventData() {return fConstants.eventData.endFrame;}
   uint64_t startFrameGoodPixelData() {return fConstants.pixelData.startFrame;}
   uint64_t endFrameGoodPixelData() {return fConstants.pixelData.endFrame;}
 
@@ -36,13 +38,17 @@ private:
 
   // -- local and private
   struct constants {
-    struct PixelData {
-      uint64_t startFrame;
-      uint64_t endFrame;
+      struct PixelData {
+      uint64_t startFrame{0};
+      uint64_t endFrame{0xffffffffffffffff};
     } pixelData;
+    struct EventData {
+      uint64_t startFrame{0};
+      uint64_t endFrame{0xffffffffffffffff};
+    } eventData;
   };
 
-  std::string fSchema{"pixeldata.(ull_startframe,ull_endframe)"};
+  std::string fSchema{"pixeldata.(ull_startframe,ull_endframe),eventdata.(ull_startframe,ull_endframe)"};
 
   constants fConstants;
 };
