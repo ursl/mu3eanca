@@ -45,6 +45,7 @@ void writeEventStuffV1(string payloaddir, string gt, string filename, int iov);
 // NOTE: works (validated) for pixelalignement. All the rest might need some improvements!
 // 
 //  -c pixelalignment    produce the pixelalignment payloads. This is (currently) the only properly validated usage.
+//  -d inputfiledir
 //  -f filename          file to read in
 //  -g GT                the global tag (GT) for the payload (part of the "hash" written into the payload metadata)
 //  -i RUN               the interval of validity, i.e., the first run for which the payload is valid
@@ -65,12 +66,14 @@ int main(int argc, const char* argv[]) {
   // -- command line arguments
   string cal("");
   string payloaddir(".");
+  string inputfiledir("");
   string gt("");
   string filename("");
   int iov(1);
   int verbose(0);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-c"))  {cal        = argv[++i];}
+    if (!strcmp(argv[i], "-d"))  {inputfiledir = argv[++i];}
     if (!strcmp(argv[i], "-i"))  {iov        = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-g"))  {gt         = argv[++i];}
     if (!strcmp(argv[i], "-f"))  {filename   = argv[++i];}
@@ -86,8 +89,43 @@ int main(int argc, const char* argv[]) {
   cout << "== filename " << filename << endl;
   cout << "== iov " << iov << endl;
     
-  
- 
+  if (inputfiledir != "") {
+    vector<string> vfiles;
+    DIR *folder = opendir(inputfiledir.c_str());
+    if (folder == NULL) {
+      cout << "Error failed to open " << inputfiledir << endl;
+      return 0;  
+    }
+    struct dirent *entry;
+    while ((entry = readdir(folder))) {
+      if (entry->d_type == DT_REG) {
+        // -- this cannot be moved to the function below because that expectes to get a filename
+        if ((cal == "eventstuffv1") && (string::npos == string(entry->d_name).find(".mid.lz4.json"))) {
+          continue;
+        }
+        vfiles.push_back(inputfiledir + "/" + entry->d_name);
+      }
+    }
+    closedir(folder);
+    for (auto it: vfiles) {
+      filename = it;
+      string srun = filename;
+      replaceAll(srun, ".mid.lz4.json", "");
+      replaceAll(srun, inputfiledir, "");
+      replaceAll(srun, "/", "");
+      replaceAll(srun, "run", "");
+      int irun = ::stoi(srun);
+      cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
+      writeEventStuffV1(payloaddir, gt, filename, irun);
+    }
+    return 0;
+  }
+
+  // -- write alignment information payloads and tags
+  if (string::npos != cal.find("alignment")) {
+    writeAlignmentInformation(payloaddir, gt, cal, filename, iov);
+  }
+
   // -- write alignment information payloads and tags
   if (string::npos != cal.find("alignment")) {
     writeAlignmentInformation(payloaddir, gt, cal, filename, iov);
