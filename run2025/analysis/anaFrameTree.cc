@@ -1,4 +1,5 @@
 #include "anaFrameTree.hh"
+
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -210,6 +211,37 @@ void anaFrameTree::endAnalysis() {
 
 
 // ---------------------------------------------------------------------- 
+void anaFrameTree::fillPixelHit(pixelHit &hit, int hitIndex) {
+  hit.fPixelID = hitPixelID[hitIndex];
+  hit.fChipID = hitChipID[hitIndex];
+  hit.fCol = hitCol[hitIndex];
+  hit.fRow = hitRow[hitIndex];
+  hit.fTimeInt = hitTimeInt[hitIndex];
+  hit.fDebugSiData = hitDebugSiData[hitIndex];
+}
+
+// ---------------------------------------------------------------------- 
+void anaFrameTree::trkHitsStatus(int trkIndex, bool& noBad, bool& noLowToT, bool& noEdgePixel, bool& noNoise) {
+  noBad = true;
+  noLowToT = true;
+  noEdgePixel = true;
+  noNoise = true;
+  // -- loop over all hits of this track
+  for (int i = 0; i < fTrkNhits[trkIndex]; ++i) {
+    int hitIndex = fTrkHitIndices[trkIndex][i];
+    if (!isGoodPixel(hitIndex)) {
+      noBad = false;
+    }
+    if (!isLowToT(hitIndex)) {
+      noLowToT = false;
+    }
+    if (!isEdgePixel(hitIndex)) {
+      noEdgePixel = false;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------- 
 void anaFrameTree::loop(int nevents, int start) {
   int maxEvents(0);
  
@@ -276,19 +308,15 @@ void anaFrameTree::loop(int nevents, int start) {
       int badHitN(0), goodHitN(0), invalidHitN(0);
       pixelHit pphit;
       for (int ihit = 0; ihit < hitN; ++ihit) {
-        pphit.fPixelID = hitPixelID[ihit];
-        pphit.fChipID = hitChipID[ihit];
-        pphit.fCol = hitCol[ihit];
-        pphit.fRow = hitRow[ihit];
-        pphit.fTimeInt = hitTimeInt[ihit];
-        pphit.fDebugSiData = hitDebugSiData[ihit];
-        pphit.fStatus = hitStatus[ihit];
+        fillPixelHit(pphit, ihit);
         // -- fill pixelHistograms
-        int goodpixel = fpPixelHistograms->goodPixel(pphit);
+        bool goodpixel = isGoodPixel(pphit);
+        bool lowtopixel = isLowToT(pphit);
+        bool edgepixel = isEdgePixel(pphit);
 
         if (hitValidHit[ihit]) {
           hc->Fill(11);
-          if (hitStatus[ihit] == 0) {
+          if (goodpixel) {
             fHistograms["nGoodHitVsFrameNumber"]->Fill(jentry);
             goodHitN++;
           } else {
@@ -338,13 +366,19 @@ void anaFrameTree::loop(int nevents, int start) {
             }
           }
       }
+      bool noBad(true), noLowToT(true), noEdgePixel(true), noNoise(true);
       for (int i = 0; i < fTrkN; ++i) {
-        addTrkGraph(i);
+        // addTrkGraph(i);
+        trkHitsStatus(i, noBad, noLowToT, noEdgePixel, noNoise);
+        if (noBad && noLowToT && noEdgePixel && noNoise) {
+          addTrkGraph(i);
+          printFrame();  
+        } 
       }
 
-      printFrame();  
     }
 }
+
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::addTrkGraph(int trkIndex) {
@@ -403,6 +437,51 @@ void anaFrameTree::addTrkGraph(int trkIndex) {
   if ("unset" != lowToTHits)  gr->SetTitle(Form("%s lowToT: (%s)", gr->GetTitle(), lowToTHits.c_str()));
 
   fTrkGraph.push_back(gr);
+}
+
+// ---------------------------------------------------------------------- 
+bool anaFrameTree::isGoodPixel(int hitIndex) {
+  bool result(true);
+  if (hitStatus[hitIndex] > 0 && hitStatus[hitIndex] < 10) {
+    result = false;
+  }
+  if (hitStatusBits[hitIndex] & 0x1) {
+    result = false;
+  }
+  return result;
+}
+
+// ---------------------------------------------------------------------- 
+bool anaFrameTree::isGoodPixel(pixelHit &hit) {
+  bool result(true);
+  if (hit.fStatus > 0 && hit.fStatus < 10) {
+    result = false;
+  }
+  if (hit.fStatusBits & 0x1) {
+    result = false;
+  }
+  return result;
+}
+
+// ---------------------------------------------------------------------- 
+bool anaFrameTree::isLowToT(pixelHit &hit) {
+  return (hit.fBitToT <= 5);
+}
+
+// ---------------------------------------------------------------------- 
+bool anaFrameTree::isLowToT(int hitIndex) {
+  return (hitBitToT[hitIndex] <= 5);
+}
+
+
+// ---------------------------------------------------------------------- 
+bool anaFrameTree::isEdgePixel(pixelHit &hit) {
+  return (hit.fCol <= 11 || hit.fCol >= 245 || hit.fRow <= 11 || hit.fRow >= 239);
+}
+
+// ---------------------------------------------------------------------- 
+bool anaFrameTree::isEdgePixel(int hitIndex) {
+  return (hitCol[hitIndex] <= 11 || hitCol[hitIndex] >= 245 || hitRow[hitIndex] <= 11 || hitRow[hitIndex] >= 239);
 }
 
 // ---------------------------------------------------------------------- 

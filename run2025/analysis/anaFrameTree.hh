@@ -33,6 +33,15 @@ public:
     virtual void     closeHistFile();
 
     int              getChipTopology(int pixelID, int &layer, int &ladder, int &chip);
+    void             fillPixelHit(pixelHit &hit, int hitIndex);
+    bool             isGoodPixel(int hitIndex);
+    bool             isGoodPixel(pixelHit &hit);
+    bool             isLowToT(int hitIndex);
+    bool             isLowToT(pixelHit &hit);
+    bool             isEdgePixel(int hitIndex);
+    bool             isEdgePixel(pixelHit &hit);
+
+    void             trkHitsStatus(int trkIndex, bool& noBad, bool& noLowToT, bool& noEdgePixel, bool& noNoise);
 
     enum module      { l1top, l1bot, l2top, l2bot };
     module           getModule(int layer, int chip);
