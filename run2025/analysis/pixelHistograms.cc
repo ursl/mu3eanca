@@ -189,7 +189,7 @@ int pixelHistograms::pixelQuality(pixelHit &hitIn) {
   }
 
   bool isLowToT = false;
-  if (hitIn.fBitToT < 5) {
+  if (hitIn.fBitToT <= 5) {
     isLowToT = true;
     hitIn.fStatusBits |= (0x1 << 16);
   }
@@ -248,7 +248,7 @@ int pixelHistograms::goodPixel(pixelHit &hitIn) {
 
   bool isLowToT = false;
   cout << "pixelHistograms::goodPixel() hitToT = " << hitToT << endl;
-  if (hitToT < 5) {
+  if (hitToT <= 5) {
     isLowToT = true;
     hit.fStatusBits |= 2;
   }
