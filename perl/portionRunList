@@ -1,0 +1,74 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# portionRunList
+# ==============
+#           
+# Usage:   cd .../mu3eanca/perl
+#          portionRunList -f filename -n numOnLine -m numInBlock -r 123,124,125,..
+#
+# For large run ranges, you likely have to first paste into a file:
+#          portionRunList -r `cat ~/bla`
+#
+#
+# History 
+#         2025/12/22 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+use File::Basename;
+
+getopts('f:n:r:');
+
+
+print "portionRunList executed at ". localtime, "\n";
+
+my $filename = "portionRunList.txt";
+if ($opt_f) {
+    $filename = $opt_f;
+}
+
+my $numOnLine = 10; 
+if ($opt_n) {
+    $numOnLine = $opt_n;
+}
+
+my $numInBlock = 10;
+if ($opt_m) {
+    $numInBlock = $opt_m;
+}
+
+my @runlist = "";
+if ($opt_r) {
+    @runlist = split(/,/, $opt_r);
+} else {
+    print "no run list, nothing to do. Exiting ... \n";
+    exit(0);
+}
+
+open(OUT, ">$filename") || die "portionRunList: Cannot open $filename\n";
+
+my $i = 1;
+my $block = 1;
+foreach $run (@runlist) {
+    print OUT "$run,";
+    if ($i % $numOnLine == 0) {
+        print OUT "\n";
+        $block++;
+    }
+    $i++;
+
+    if ($block % $numInBlock == 0) {
+        print OUT "\n\n";
+        $block = 1;
+    }
+}
+print OUT "\n";
+
+close(OUT);
+
+print "Run list written to $filename\n";
