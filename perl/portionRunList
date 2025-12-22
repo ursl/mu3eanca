@@ -78,15 +78,32 @@ my $i = 1;
 my $block = 0;
 my $prevThousand = -1;
 foreach $run (@runlist) {
-    # Check if we should start a new block based on run/1000 change
+    # Check if we should start a new block
+    my $startNewBlock = 0;
+    
     if (!$opt_b) {
+        # Default mode: check for thousand change OR block length limit
         my $currentThousand = int($run / 1000);
         if ($prevThousand >= 0 && $currentThousand != $prevThousand) {
             # Start new block when thousand changes
-            print OUT "\n\n";
-            $block = 0;
+            $startNewBlock = 1;
         }
         $prevThousand = $currentThousand;
+        
+        # Also check block length limit
+        if ($block > 0 && ($block % $numInBlock == 0)) {
+            $startNewBlock = 1;
+        }
+    } else {
+        # Block-based mode: only check block length limit
+        if ($block > 0 && ($block % $numInBlock == 0)) {
+            $startNewBlock = 1;
+        }
+    }
+    
+    if ($startNewBlock) {
+        print OUT "\n\n";
+        $block = 0;
     }
     
     print OUT "$run,";
@@ -95,12 +112,6 @@ foreach $run (@runlist) {
         $block++;
     }
     $i++;
-
-    # Original block logic (only if -b is provided)
-    if ($opt_b && $block > 0 && ($block % $numInBlock == 0)) {
-        print OUT "\n\n";
-        $block = 0;
-    }
 }
 print OUT "\n";
 
