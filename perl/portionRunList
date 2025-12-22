@@ -22,7 +22,7 @@
 use Getopt::Std;
 use File::Basename;
 
-getopts('f:n:r:');
+getopts('f:m:n:r:');
 
 
 print "portionRunList executed at ". localtime, "\n";
@@ -53,18 +53,18 @@ if ($opt_r) {
 open(OUT, ">$filename") || die "portionRunList: Cannot open $filename\n";
 
 my $i = 1;
-my $block = 1;
+my $block = 0;
 foreach $run (@runlist) {
     print OUT "$run,";
-    if ($i % $numOnLine == 0) {
+    if ($i > 0 && ($i % $numOnLine == 0)) {
         print OUT "\n";
         $block++;
     }
     $i++;
 
-    if ($block % $numInBlock == 0) {
+    if ($block > 0 && ($block % $numInBlock == 0)) {
         print OUT "\n\n";
-        $block = 1;
+        $block = 0;
     }
 }
 print OUT "\n";
