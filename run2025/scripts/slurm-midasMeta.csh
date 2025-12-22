@@ -1,5 +1,9 @@
 #! /bin/csh -f                                                                                                                                                                                                                  
 
+#SBATCH -e
+#SBATCH -o
+#SBATCH --mem=8G
+
 setenv JOB
 setenv DIR
 
