@@ -5,11 +5,33 @@
 # ==============
 #           
 # Usage:   cd .../mu3eanca/perl
-#          portionRunList -f filename -n numOnLine -m numInBlock -r 123,124,125,..
+#          portionRunList [-b] -f filename -n numOnLine -m numInBlock -r 123,124,125,..
+#
+# Options:
+#   -b            Use block-based grouping instead of thousand-based grouping.
+#                 When -b is NOT provided (default), a new block starts when
+#                 the run number crosses a 1000 boundary (e.g., 999->1000, 1999->2000).
+#                 When -b IS provided, blocks are created every numInBlock lines.
+#
+#   -f            filename  Output filename (default: "portionRunList.txt")
+#
+#   -n            numOnLine Number of runs per line (default: 10)
+#
+#   -m numInBlock Number of lines per block when using -b option (default: 10)
+#                 Note: This option only applies when -b is used.
+#
+#   -r runlist    Comma-separated list of run numbers (required)
+#                 Example: -r 123,124,125,126,127
 #
 # For large run ranges, you likely have to first paste into a file:
 #          portionRunList -r `cat ~/bla`
 #
+# Examples:
+#   # Default behavior: blocks start at thousand boundaries
+#   portionRunList -r 999,1000,1001,1999,2000,2001
+#
+#   # Use block-based grouping (every 10 lines)
+#   portionRunList -b -r 123,124,125,... -m 10
 #
 # History 
 #         2025/12/22 first shot
@@ -22,7 +44,7 @@
 use Getopt::Std;
 use File::Basename;
 
-getopts('f:m:n:r:');
+getopts('bf:m:n:r:');
 
 
 print "portionRunList executed at ". localtime, "\n";
@@ -54,7 +76,19 @@ open(OUT, ">$filename") || die "portionRunList: Cannot open $filename\n";
 
 my $i = 1;
 my $block = 0;
+my $prevThousand = -1;
 foreach $run (@runlist) {
+    # Check if we should start a new block based on run/1000 change
+    if (!$opt_b) {
+        my $currentThousand = int($run / 1000);
+        if ($prevThousand >= 0 && $currentThousand != $prevThousand) {
+            # Start new block when thousand changes
+            print OUT "\n\n";
+            $block = 0;
+        }
+        $prevThousand = $currentThousand;
+    }
+    
     print OUT "$run,";
     if ($i > 0 && ($i % $numOnLine == 0)) {
         print OUT "\n";
@@ -62,7 +96,8 @@ foreach $run (@runlist) {
     }
     $i++;
 
-    if ($block > 0 && ($block % $numInBlock == 0)) {
+    # Original block logic (only if -b is provided)
+    if ($opt_b && $block > 0 && ($block % $numInBlock == 0)) {
         print OUT "\n\n";
         $block = 0;
     }
