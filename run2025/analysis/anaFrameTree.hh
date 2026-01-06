@@ -42,6 +42,7 @@ public:
     bool             isEdgePixel(pixelHit &hit);
 
     void             trkHitsStatus(int trkIndex, bool& noBad, bool& noLowToT, bool& noEdgePixel, bool& noNoise);
+    void             trkFillHitmaps(std::string stype, int trkIndex);
 
     enum module      { l1top, l1bot, l2top, l2bot };
     module           getModule(int layer, int chip);

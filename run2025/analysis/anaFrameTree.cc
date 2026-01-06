@@ -159,6 +159,12 @@ void anaFrameTree::bookHistograms() {
 
   }
 
+  for (auto &chip: fAllChips) {
+    fHistograms2D[Form("trkGoodHits_%d", chip)] = new TH2D(Form("trkGoodHits_%d", chip), Form("trkGoodHits for C%d", chip), 256, 0, 256, 250, 0, 250);
+  }
+
+
+
   bookVtx2D("nonburstGood");
   bookVtx2D("nonburstBad");
   bookVtx2D("burstGood");
@@ -371,6 +377,7 @@ void anaFrameTree::loop(int nevents, int start) {
         // addTrkGraph(i);
         trkHitsStatus(i, noBad, noLowToT, noEdgePixel, noNoise);
         if (noBad && noLowToT && noEdgePixel && noNoise) {
+          trkFillHitmaps("trkGoodHits", i);
           addTrkGraph(i);
           printFrame();  
         } 
@@ -379,6 +386,16 @@ void anaFrameTree::loop(int nevents, int start) {
     }
 }
 
+
+// ---------------------------------------------------------------------- 
+void anaFrameTree::trkFillHitmaps(std::string stype, int trkIndex) {
+  for (int ihit = 0; ihit < fTrkNhits[trkIndex]; ++ihit) {
+    int hitIndex = fTrkHitIndices[trkIndex][ihit];
+    int layer, ladder, chip, station;
+    station = getChipTopology(hitPixelID[hitIndex], layer, ladder, chip);
+    fHistograms2D[Form("%s_%d", stype.c_str(), hitChipID[hitIndex])]->Fill(hitCol[hitIndex], hitRow[hitIndex]);
+  }
+}
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::addTrkGraph(int trkIndex) {
