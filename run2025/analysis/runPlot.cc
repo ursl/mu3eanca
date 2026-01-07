@@ -52,6 +52,8 @@ int main(int argc, char *argv[]) {
       a.plotTrkHitmaps();
     } else if (mode == "pixelhistograms") {
       a.plotAllPixelHistograms();
+    } else if (mode == "p1") {
+      a.makeAll("p1");
     } else {
       cout << "plotFrameTreeResults::main() mode = " << mode << " not supported" << endl;
       return 1;
