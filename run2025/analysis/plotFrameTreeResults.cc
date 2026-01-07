@@ -26,6 +26,7 @@
 #include "../../util/dataset.hh"
 #include "../../util/util.hh"
 
+
 ClassImp(plotFrameTreeResults)
 
 using namespace std;
@@ -79,10 +80,8 @@ plotFrameTreeResults::plotFrameTreeResults(string dir, string files, string cuts
   cout << "==> plotFrameTreeResults: fAllChips.size() = " << fAllChips.size() << endl;
 
   gDirectory->ls();
-  readHist("all_hitmap", "chipmap");
-  readHist("all_hittot", "chipToT");
-  readHist("all_hittot", "chipprof2d");
-  readHist("trk_hitmap", "chipmap");
+  readHist(".", "trkGoodHitsToT", "TH1D");
+  readHist(".", "trkGoodHits", "TH2D");
 }
 
 // ----------------------------------------------------------------------
@@ -101,12 +100,44 @@ void plotFrameTreeResults::makeAll(string what) {
     plotAllPixelHistograms();
     return;
   } 
+  if (what == "p1") {
+    plotAllOnOnePage("trkGoodHits");
+    plotAllOnOnePage("trkGoodHitsToT");
+    return;
+  }
   // -- plot all
   plotTrkGraphs(-1);
   plotTrkHitmaps();
   plotAllPixelHistograms();
   
 }
+
+// ----------------------------------------------------------------------
+void  plotFrameTreeResults::plotAllOnOnePage(string hname, string opt) {
+  cout << "plotFrameTreeResults::plotAllOnOnePage() hname = " << hname << " opt = " << opt << endl;
+
+  std::map<std::string, TH1*> mHists;
+  if (string::npos != hname.find("trkGoodHitsToT")) {
+    for (auto &chip: fAllChips) {
+      string hname = Form("trkGoodHitsToT_C%d", chip);
+      cout << "plotFrameTreeResults::plotAllOnOnePage() adding histogram " << hname << " = " << fTH1D[hname] << endl;
+      mHists[hname] = (TH1*)fTH1D[hname];
+    }
+  } else if (string::npos != hname.find("trkGoodHits")) {
+    for (auto &chip: fAllChips) {
+      string hname = Form("trkGoodHits_C%d", chip);
+      cout << "plotFrameTreeResults::plotAllOnOnePage() adding histogram " << hname << " = " << fTH2D[hname] << endl;
+      mHists[hname] = (TH1*)fTH2D[hname];
+    }
+  }
+
+
+  fPlotUtils.fPDFName = "results/plotAllOnOnePage-" + hname + ".pdf";
+  fPlotUtils.fOptStat = 0;
+  fPlotUtils.plotVertexL1L2(mHists, hname + "_C%d");
+
+}
+
 
 // ----------------------------------------------------------------------
 void   plotFrameTreeResults::plotTrkHitmaps(int run) {
@@ -380,21 +411,22 @@ void plotFrameTreeResults::plotAllPixelHistograms() {
 
 
 // ---------------------------------------------------------------------- 
-void plotFrameTreeResults::readHist(string hname, string hType) {
-  string dir = "pixelHistograms";
+void plotFrameTreeResults::readHist(string dir, string hname, string hType) {
   int cnt = 0;
   cout << "plotFrameTreeResults::readHist() hname = " << hname << " hType = " << hType; 
   for (auto iChip: fAllChips) {
-    string name = Form("C%d_%s_%s", iChip, hname.c_str(), hType.c_str());
+    string name = Form("%s_C%d", hname.c_str(), iChip);
     cnt++;
-    if (hType == "chipmap") {  
-      fTH2D[name] = (TH2D*)fHistFile->Get(Form("%s/%s", dir.c_str(), name.c_str()));
-      //cout << "plotFrameTreeResults::readHist() " << name << " = " << fTH2D[name] << endl;
-    } else if (hType == "chipToT") {
-      fTH1D[name] = (TH1D*)fHistFile->Get(Form("%s/%s", dir.c_str(), name.c_str()));
+    string fullHname = Form("%s/%s", dir.c_str(), name.c_str());
+    if (dir == ".") fullHname = Form("%s", name.c_str());
+    if (hType == "TH2D") {  
+      fTH2D[name] = (TH2D*)fHistFile->Get(fullHname.c_str());
+      cout << "plotFrameTreeResults::readHist() " << name << " = " << fTH2D[name] << endl;
+    } else if (hType == "TH1D") {
+      fTH1D[name] = (TH1D*)fHistFile->Get(fullHname.c_str());
       //cout << "plotFrameTreeResults::readHist() " << name << " = " << fTH1D[name] << endl;
-    } else if (hType == "chipprof2d") {
-      fTProfile2D[name] = (TProfile2D*)fHistFile->Get(Form("%s/%s", dir.c_str(), name.c_str()));
+    } else if (hType == "TProfile2D") {
+      fTProfile2D[name] = (TProfile2D*)fHistFile->Get(fullHname.c_str());
       //cout << "plotFrameTreeResults::readHist() " << name << " = " << fTProfile2D[name] << endl;
     }
   }
