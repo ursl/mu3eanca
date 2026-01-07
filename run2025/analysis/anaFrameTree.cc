@@ -88,6 +88,12 @@ void anaFrameTree::closeHistFile() {
   for (auto &h: fHistograms2D) {
     h.second->SetDirectory(fpHistFile);
     h.second->Write();
+    string hname = h.second->GetName();
+    if (string::npos != hname.find("trkGoodHits")) {
+      if (h.second->GetEntries() > 0) {
+        cout << "==> anaFrameTree: trkGoodHits " << hname << " has " << h.second->GetEntries() << " entries" << endl;
+      }
+    }
   }
 
   fpHistFile->mkdir("vtx");
@@ -161,6 +167,7 @@ void anaFrameTree::bookHistograms() {
 
   for (auto &chip: fAllChips) {
     fHistograms2D[Form("trkGoodHits_%d", chip)] = new TH2D(Form("trkGoodHits_%d", chip), Form("trkGoodHits for C%d", chip), 256, 0, 256, 250, 0, 250);
+    fHistograms[Form("trkGoodHitsToT_%d", chip)] = new TH1D(Form("trkGoodHitsToT_%d", chip), Form("trkGoodHitsToT for C%d", chip), 32, 0, 32);
   }
 
 
@@ -228,6 +235,7 @@ void anaFrameTree::fillPixelHit(pixelHit &hit, int hitIndex) {
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::trkHitsStatus(int trkIndex, bool& noBad, bool& noLowToT, bool& noEdgePixel, bool& noNoise) {
+  bool verbose(true);
   noBad = true;
   noLowToT = true;
   noEdgePixel = true;
@@ -236,15 +244,19 @@ void anaFrameTree::trkHitsStatus(int trkIndex, bool& noBad, bool& noLowToT, bool
   for (int i = 0; i < fTrkNhits[trkIndex]; ++i) {
     int hitIndex = fTrkHitIndices[trkIndex][i];
     if (!isGoodPixel(hitIndex)) {
+      if (verbose) cout << "==> anaFrameTree: trkHitsStatus() hit " << hitIndex << " is not good" << endl;
       noBad = false;
     }
-    if (!isLowToT(hitIndex)) {
+    if (isLowToT(hitIndex)) {
+      if (verbose) cout << "==> anaFrameTree: trkHitsStatus() hit " << hitIndex << " is not low toT" << endl;
       noLowToT = false;
     }
-    if (!isEdgePixel(hitIndex)) {
+    if (isEdgePixel(hitIndex)) {
+      if (verbose) cout << "==> anaFrameTree: trkHitsStatus() hit " << hitIndex << " is not edge pixel" << endl;
       noEdgePixel = false;
     }
   }
+  if (verbose && noBad && !noLowToT && !noEdgePixel) cout << "==> anaFrameTree: trkHitsStatus() GOOD" << endl;
 }
 
 // ---------------------------------------------------------------------- 
@@ -378,6 +390,7 @@ void anaFrameTree::loop(int nevents, int start) {
         trkHitsStatus(i, noBad, noLowToT, noEdgePixel, noNoise);
         if (noBad && noLowToT && noEdgePixel && noNoise) {
           trkFillHitmaps("trkGoodHits", i);
+          trkFillHistToT("trkGoodHitsToT", i);
           addTrkGraph(i);
           printFrame();  
         } 
@@ -391,9 +404,15 @@ void anaFrameTree::loop(int nevents, int start) {
 void anaFrameTree::trkFillHitmaps(std::string stype, int trkIndex) {
   for (int ihit = 0; ihit < fTrkNhits[trkIndex]; ++ihit) {
     int hitIndex = fTrkHitIndices[trkIndex][ihit];
-    int layer, ladder, chip, station;
-    station = getChipTopology(hitPixelID[hitIndex], layer, ladder, chip);
     fHistograms2D[Form("%s_%d", stype.c_str(), hitChipID[hitIndex])]->Fill(hitCol[hitIndex], hitRow[hitIndex]);
+  }
+}
+
+// ---------------------------------------------------------------------- 
+void anaFrameTree::trkFillHistToT(std::string stype, int trkIndex) {
+  for (int ihit = 0; ihit < fTrkNhits[trkIndex]; ++ihit) {
+    int hitIndex = fTrkHitIndices[trkIndex][ihit];
+    fHistograms[Form("%s_%d", stype.c_str(), hitChipID[hitIndex])]->Fill(hitBitToT[hitIndex]);
   }
 }
 
