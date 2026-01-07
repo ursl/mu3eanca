@@ -166,8 +166,8 @@ void anaFrameTree::bookHistograms() {
   }
 
   for (auto &chip: fAllChips) {
-    fHistograms2D[Form("trkGoodHits_%d", chip)] = new TH2D(Form("trkGoodHits_%d", chip), Form("trkGoodHits for C%d", chip), 256, 0, 256, 250, 0, 250);
-    fHistograms[Form("trkGoodHitsToT_%d", chip)] = new TH1D(Form("trkGoodHitsToT_%d", chip), Form("trkGoodHitsToT for C%d", chip), 32, 0, 32);
+    fHistograms2D[Form("trkGoodHits_C%d", chip)] = new TH2D(Form("trkGoodHits_C%d", chip), Form("trkGoodHits for C%d", chip), 256, 0, 256, 250, 0, 250);
+    fHistograms[Form("trkGoodHitsToT_C%d", chip)] = new TH1D(Form("trkGoodHitsToT_C%d", chip), Form("trkGoodHitsToT for C%d", chip), 32, 0, 32);
   }
 
 
@@ -404,7 +404,7 @@ void anaFrameTree::loop(int nevents, int start) {
 void anaFrameTree::trkFillHitmaps(std::string stype, int trkIndex) {
   for (int ihit = 0; ihit < fTrkNhits[trkIndex]; ++ihit) {
     int hitIndex = fTrkHitIndices[trkIndex][ihit];
-    fHistograms2D[Form("%s_%d", stype.c_str(), hitChipID[hitIndex])]->Fill(hitCol[hitIndex], hitRow[hitIndex]);
+    fHistograms2D[Form("%s_C%d", stype.c_str(), hitChipID[hitIndex])]->Fill(hitCol[hitIndex], hitRow[hitIndex]);
   }
 }
 
@@ -412,7 +412,7 @@ void anaFrameTree::trkFillHitmaps(std::string stype, int trkIndex) {
 void anaFrameTree::trkFillHistToT(std::string stype, int trkIndex) {
   for (int ihit = 0; ihit < fTrkNhits[trkIndex]; ++ihit) {
     int hitIndex = fTrkHitIndices[trkIndex][ihit];
-    fHistograms[Form("%s_%d", stype.c_str(), hitChipID[hitIndex])]->Fill(hitBitToT[hitIndex]);
+    fHistograms[Form("%s_C%d", stype.c_str(), hitChipID[hitIndex])]->Fill(hitBitToT[hitIndex]);
   }
 }
 
