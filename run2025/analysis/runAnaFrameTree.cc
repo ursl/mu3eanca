@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
       // -- input from chain
       if (barefile.Contains("chains/")) {
         barefile.ReplaceAll("chains/", "");
-        histfile = barefile + "." + fn + ".root";
+        histfile = "anaFrameTree-" + barefile + "." + fn + ".root";
         if (dirspec) {
           if (dirName[0] == '/') {
             histfile = dirName + "/" + histfile;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
           }
         }
       } else {
-        histfile =  barefile + "." + fn + ".root";
+        histfile =  "anaFrameTree-" + barefile + "." + fn + ".root";
         if (dirspec) {
           if (dirName[0] == '/') {
             histfile = dirName + "/" + histfile;
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
       int fl = barefile.Last('/');
       TString bla(barefile);
       bla.Replace(0, fl+1, ' '); bla.Strip(TString::kLeading, ' ');  bla.Remove(0,1);
-      histfile =  bla + "." + fn + ".root";
+      histfile =  "anaFrameTree-" + bla + "." + fn + ".root";
       if (dirspec) {
         histfile = dirBase + "/" + dirName + "/" + histfile;
       }
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
       bla.Replace(0, fl+1, ' '); bla.Strip(TString::kLeading, ' ');  bla.Remove(0,1);
       histfile =  bla;
       replaceAll(histfile, ".root", "");
-      histfile +=  "." + fn + ".root";
+      histfile =  "anaFrameTree-" + histfile + "." + fn + ".root";
       if (dirspec) {
         if (dirName[0] == '/') {
           histfile = dirName + "/" + histfile;
