@@ -148,6 +148,8 @@ void anaFrameTree::bookHistograms() {
   fHistograms["trkToT"] = new TH1D("trkToT", "trkToT", 32, 0, 32);
   fHistograms["trkT0SiRMS"] = new TH1D("trkT0SiRMS", "trkT0SiRMS", 100, 0, 100);
 
+  fHistograms["trkNhits"] = new TH1D("trkNhits", "trkNhits", 10, 0, 10);
+
   fHistograms2D["trkLambdaPhi"] = new TH2D("trkLambdaPhi", "trk Lambda vs Phi", 60, -3.14, 3.14, 60, -3.14, 3.14);
   fHistograms2D["allHitsXY"] = new TH2D("allHitsXY", "All hits in transverse plane", 100, -40, 40, 100, -40, 40);
 
@@ -168,6 +170,10 @@ void anaFrameTree::bookHistograms() {
   for (auto &chip: fAllChips) {
     fHistograms2D[Form("trkGoodHits_C%d", chip)] = new TH2D(Form("trkGoodHits_C%d", chip), Form("trkGoodHits for C%d", chip), 256, 0, 256, 250, 0, 250);
     fHistograms[Form("trkGoodHitsToT_C%d", chip)] = new TH1D(Form("trkGoodHitsToT_C%d", chip), Form("trkGoodHitsToT for C%d", chip), 32, 0, 32);
+
+    fHistograms2D[Form("trkS6GoodHits_C%d", chip)] = new TH2D(Form("trkS6GoodHits_C%d", chip), Form("trkGoodHits S6 for C%d", chip), 256, 0, 256, 250, 0, 250);
+    fHistograms[Form("trkS6GoodHitsToT_C%d", chip)] = new TH1D(Form("trkS6GoodHitsToT_C%d", chip), Form("trkGoodHitsToT S6 for C%d", chip), 32, 0, 32);
+
   }
 
 
@@ -387,10 +393,16 @@ void anaFrameTree::loop(int nevents, int start) {
       bool noBad(true), noLowToT(true), noEdgePixel(true), noNoise(true);
       for (int i = 0; i < fTrkN; ++i) {
         // addTrkGraph(i);
+        fHistograms["trkNhits"]->Fill(fTrkNhits[i]);
         trkHitsStatus(i, noBad, noLowToT, noEdgePixel, noNoise);
         if (noBad && noLowToT && noEdgePixel && noNoise) {
-          trkFillHitmaps("trkGoodHits", i);
-          trkFillHistToT("trkGoodHitsToT", i);
+          if (fTrkNhits[i] == 6) {
+            trkFillHitmaps("trkS6GoodHits", i);
+            trkFillHistToT("trkS6GoodHitsToT", i);
+          } else {
+            trkFillHitmaps("trkGoodHits", i);
+            trkFillHistToT("trkGoodHitsToT", i);
+          }
           addTrkGraph(i);
           printFrame();  
         } 

@@ -122,6 +122,8 @@ void  plotFrameTreeResults::plotAllOnOnePage(string hname, string opt) {
       string hname = Form("trkGoodHitsToT_C%d", chip);
       cout << "plotFrameTreeResults::plotAllOnOnePage() adding histogram " << hname << " = " << fTH1D[hname] << endl;
       mHists[hname] = (TH1*)fTH1D[hname];
+      fPlotUtils.setOptionsForTotDistributions(false);
+      fPlotUtils.fSetLogy = false;
     }
   } else if (string::npos != hname.find("trkGoodHits")) {
     for (auto &chip: fAllChips) {
