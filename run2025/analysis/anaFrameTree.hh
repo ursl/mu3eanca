@@ -61,8 +61,6 @@ private:
     std::string fHistFileName;
     TFile *fpHistFile;
 
-    pixelHistograms *fpPixelHistograms;
-
     std::vector<int> fLayer1, fLayer2, fAllChips;
 
     std::map<std::string, TH1D*> fHistograms, fVtx1D;

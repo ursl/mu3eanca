@@ -54,7 +54,6 @@ anaFrameTree::anaFrameTree(TChain *chain) : fpChain(0), fNentries(0) {
   
 // ---------------------------------------------------------------------- 
 anaFrameTree::~anaFrameTree() {
-  delete fpPixelHistograms;
 }
 
 // ---------------------------------------------------------------------- 
@@ -68,10 +67,6 @@ void anaFrameTree::openHistFile(std::string histfile) {
   if (fVerbose > 0) cout << "==> anaFrameTree: Opening histograms file " << fHistFileName << endl;
   fpHistFile = new TFile(fHistFileName.c_str(), "RECREATE");
   fpHistFile->cd();
-
-  fpPixelHistograms = new pixelHistograms(fpHistFile);
-  fpPixelHistograms->setCalPixelQualityLM(0);
-  fpPixelHistograms->bookHist("trk_hitmap", "chipmap");
 }
 
 // ---------------------------------------------------------------------- 
@@ -117,7 +112,6 @@ void anaFrameTree::closeHistFile() {
     g->Write();
   }
   fpHistFile->cd();
-  fpPixelHistograms->saveHistograms();
   fpHistFile->Close();
   fpHistFile = 0;
 }
@@ -168,11 +162,20 @@ void anaFrameTree::bookHistograms() {
   }
 
   for (auto &chip: fAllChips) {
-    fHistograms2D[Form("trkGoodHits_C%d", chip)] = new TH2D(Form("trkGoodHits_C%d", chip), Form("trkGoodHits for C%d", chip), 256, 0, 256, 250, 0, 250);
-    fHistograms[Form("trkGoodHitsToT_C%d", chip)] = new TH1D(Form("trkGoodHitsToT_C%d", chip), Form("trkGoodHitsToT for C%d", chip), 32, 0, 32);
+    fHistograms2D[Form("trkS4GoodHits_C%d", chip)] = new TH2D(Form("trkS4GoodHits_C%d", chip), Form("trkGoodHits S4 for C%d", chip), 256, 0, 256, 250, 0, 250);
+    fHistograms[Form("trkS4GoodHitsToT_C%d", chip)] = new TH1D(Form("trkS4GoodHitsToT_C%d", chip), Form("trkGoodHitsToT S4 for C%d", chip), 32, 0, 32);
 
     fHistograms2D[Form("trkS6GoodHits_C%d", chip)] = new TH2D(Form("trkS6GoodHits_C%d", chip), Form("trkGoodHits S6 for C%d", chip), 256, 0, 256, 250, 0, 250);
     fHistograms[Form("trkS6GoodHitsToT_C%d", chip)] = new TH1D(Form("trkS6GoodHitsToT_C%d", chip), Form("trkGoodHitsToT S6 for C%d", chip), 32, 0, 32);
+
+    fHistograms2D[Form("noTrkGoodHits_C%d", chip)] = new TH2D(Form("noTrkGoodHits_C%d", chip), Form("noTrkGoodHits for C%d", chip), 256, 0, 256, 250, 0, 250);
+    fHistograms[Form("noTrkGoodHitsToT_C%d", chip)] = new TH1D(Form("noTrkGoodHitsToT_C%d", chip), Form("noTrkGoodHitsToT for C%d", chip), 32, 0, 32);
+
+    fHistograms2D[Form("noTrkBadHits_C%d", chip)] = new TH2D(Form("noTrkBadHits_C%d", chip), Form("noTrkBadHits for C%d", chip), 256, 0, 256, 250, 0, 250);
+    fHistograms[Form("noTrkBadHitsToT_C%d", chip)] = new TH1D(Form("noTrkBadHitsToT_C%d", chip), Form("noTrkBadHitsToT for C%d", chip), 32, 0, 32);
+
+    fHistograms2D[Form("allHits_C%d", chip)] = new TH2D(Form("allHits_C%d", chip), Form("allHits for C%d", chip), 256, 0, 256, 250, 0, 250);
+    fHistograms[Form("allHitsToT_C%d", chip)] = new TH1D(Form("allHitsToT_C%d", chip), Form("allHitsToT for C%d", chip), 32, 0, 32);
 
   }
 
@@ -400,8 +403,8 @@ void anaFrameTree::loop(int nevents, int start) {
             trkFillHitmaps("trkS6GoodHits", i);
             trkFillHistToT("trkS6GoodHitsToT", i);
           } else {
-            trkFillHitmaps("trkGoodHits", i);
-            trkFillHistToT("trkGoodHitsToT", i);
+            trkFillHitmaps("trkS4GoodHits", i);
+            trkFillHistToT("trkS4GoodHitsToT", i);
           }
           addTrkGraph(i);
           printFrame();  
@@ -463,7 +466,6 @@ void anaFrameTree::addTrkGraph(int trkIndex) {
     module m = getModule(layer, hitChipID[fTrkHitIndices[trkIndex][j]]);
     fHistograms2D[Form("%s", getModuleString(m).c_str())]->Fill(hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]);
     fHistograms2D[Form("%s_C%d", getModuleString(m).c_str(), chip)]->Fill(hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]]);
-    fpPixelHistograms->fillPixelHist("trk_hitmap_chipmap", hitChipID[fTrkHitIndices[trkIndex][j]], hitCol[fTrkHitIndices[trkIndex][j]], hitRow[fTrkHitIndices[trkIndex][j]], 1.);
 
     if (hitStatus[fTrkHitIndices[trkIndex][j]] == 1) {
       if ("unset" == noisyHits) noisyHits = ""; else noisyHits += ", ";
