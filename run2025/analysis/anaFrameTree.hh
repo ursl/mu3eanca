@@ -13,7 +13,8 @@
 #include <vector>
 #include <iomanip>
 
-#include "pixelHistograms.hh"
+#include "pixelHit.hh"
+#include "Mu3eConditions.hh"
 
 class anaFrameTree {
 public:
@@ -60,6 +61,7 @@ private:
     std::string fOutputDir = ".";
     std::string fHistFileName;
     TFile *fpHistFile;
+    Mu3eConditions *fpDC;
 
     std::vector<int> fLayer1, fLayer2, fAllChips;
 

@@ -16,6 +16,12 @@
 #include <vector>
 #include <map>
 
+#include "Mu3eConditions.hh"
+#include "calEventStuffV1.hh"
+
+#include "cdbJSON.hh"
+#include "cdbAbs.hh"
+
 using namespace std;
 
 
@@ -49,7 +55,12 @@ anaFrameTree::anaFrameTree(TChain *chain) : fpChain(0), fNentries(0) {
   fAllChips.insert(fAllChips.end(), fLayer2.begin(), fLayer2.end());
   cout << "==> anaFrameTree: fAllChips.size() = " << fAllChips.size() << endl;
 
-  cout << "==> anaFrameTree: instatiate pixelHistograms, " << "  fHistFileName = " << fHistFileName << endl;
+  string gt("datav6.3=2025V1");
+  string jsondir("/Users/ursl/data/mu3e/cdb");
+
+  cdbAbs *pDB = new cdbJSON(gt, jsondir, fVerbose);
+  fpDC = Mu3eConditions::instance(gt, pDB);
+  fpDC->setRunNumber(1);
 }
   
 // ---------------------------------------------------------------------- 
@@ -59,7 +70,7 @@ anaFrameTree::~anaFrameTree() {
 // ---------------------------------------------------------------------- 
 void anaFrameTree::startAnalysis() {
   if (fVerbose > 0) cout << "==> anaFrameTree: Starting analysis" << endl;
-}
+}  
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::openHistFile(std::string histfile) {
@@ -265,7 +276,8 @@ void anaFrameTree::trkHitsStatus(int trkIndex, bool& noBad, bool& noLowToT, bool
       noEdgePixel = false;
     }
   }
-  if (verbose && noBad && !noLowToT && !noEdgePixel) cout << "==> anaFrameTree: trkHitsStatus() GOOD" << endl;
+  if (verbose && noBad && !noLowToT && !noEdgePixel) cout << "==> anaFrameTree: trkHitsStatus() GOOD for frame = " 
+     << frameID << endl;
 }
 
 // ---------------------------------------------------------------------- 
@@ -312,12 +324,25 @@ void anaFrameTree::loop(int nevents, int start) {
   if (maxEvents < 10000)   step = 500;
   if (maxEvents < 1000)    step = 100;
 
-   Long64_t nbytes = 0, nb = 0;
-   for (Long64_t jentry = start; jentry < maxEvents ; ++jentry) {
+  Long64_t nbytes = 0, nb = 0;
+  int oldRunNumber(-1);
+  int runNumber(0);
+  unsigned long long goodPixelStart, goodPixelEnd;
+  for (Long64_t jentry = start; jentry < maxEvents ; ++jentry) {
       Long64_t ientry = LoadTree(jentry);
       if (ientry < 0) break;
       nb = fpChain->GetEntry(jentry);   
       nbytes += nb;
+      if (run != oldRunNumber) {
+        oldRunNumber = run;
+        fpDC->setRunNumber(run);
+        calEventStuffV1 *pCES = (calEventStuffV1*)fpDC->getCalibration("eventstuffv1_");
+        goodPixelStart = pCES->startFrameGoodPixelData();
+        goodPixelEnd = pCES->endFrameGoodPixelData();
+        cout << "==> anaFrameTree: Processing run " << run 
+        << " goodPixelStart = " << goodPixelStart 
+        << " goodPixelEnd = " << goodPixelEnd << endl;
+}
       if (jentry % step == 0) cout << "==> anaFrameTree: Processing event " << setw(8) << setfill(' ') << jentry 
                                    << " of " << maxEvents << " (" << Form("%4.1f",  jentry*100./maxEvents) << "%) " 
                                    << endl;
