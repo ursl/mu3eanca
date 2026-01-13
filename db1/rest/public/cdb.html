@@ -18,10 +18,23 @@
         }
         .container-fluid { 
             padding: 15px;
-            height: 100vh;
+            height: calc(100vh - 40px); /* Subtract footer height */
             display: flex;
             flex-direction: column;
             overflow: hidden;
+        }
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            padding: 10px 15px;
+            font-size: 12px;
+            z-index: 1000;
+            height: 40px;
+            box-sizing: border-box;
         }
         .container-fluid h1 {
             margin: 0 0 10px 0;
@@ -264,6 +277,11 @@
             </div>
         </div>
     </div>
+
+    <!-- Footer with footnote -->
+    <footer>
+            Running on <span id="hostname-display">Loading...</span>
+    </footer>
 
     <!-- Upload Modal -->
     <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
@@ -1172,10 +1190,34 @@
             statusDiv.classList.add('d-none');
         });
 
+        // Get and display hostname
+        async function loadHostname() {
+            const hostnameDisplay = document.getElementById('hostname-display');
+            try {
+                // Try to get hostname from an API endpoint first (if available)
+                try {
+                    const response = await fetch('/cdb/hostname');
+                    if (response.ok) {
+                        const data = await response.json();
+                        hostnameDisplay.textContent = data.hostname || window.location.hostname;
+                        return;
+                    }
+                } catch (e) {
+                    // Fall back to window.location.hostname if API call fails
+                }
+                // Fallback to window.location.hostname
+                hostnameDisplay.textContent = window.location.hostname || 'Unknown';
+            } catch (error) {
+                console.error('Error loading hostname:', error);
+                hostnameDisplay.textContent = window.location.hostname || 'Unknown';
+            }
+        }
+
         // Load initial data when page loads
         document.addEventListener('DOMContentLoaded', () => {
             loadGlobaltags();
             loadDetconfigsSummary();
+            loadHostname();
         });
     </script>
 </body>
