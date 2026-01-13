@@ -80,8 +80,10 @@ plotFrameTreeResults::plotFrameTreeResults(string dir, string files, string cuts
   cout << "==> plotFrameTreeResults: fAllChips.size() = " << fAllChips.size() << endl;
 
   gDirectory->ls();
-  readHist(".", "trkGoodHitsToT", "TH1D");
-  readHist(".", "trkGoodHits", "TH2D");
+  readHist(".", "trkS4GoodHitsToT", "TH1D");
+  readHist(".", "trkS6GoodHitsToT", "TH1D");
+  readHist(".", "trkS4GoodHits", "TH2D");
+  readHist(".", "trkS6GoodHits", "TH2D");
 }
 
 // ----------------------------------------------------------------------
@@ -101,9 +103,11 @@ void plotFrameTreeResults::makeAll(string what) {
     return;
   } 
   if (what == "p1") {
-    plotAllOnOnePage("trkGoodHits");
-    plotAllOnOnePage("trkGoodHitsToT");
-    return;
+      plotAllOnOnePage("trkS4GoodHits");
+      plotAllOnOnePage("trkS4GoodHitsToT");
+      plotAllOnOnePage("trkS6GoodHits");
+      plotAllOnOnePage("trkS6GoodHitsToT");
+      return;
   }
   // -- plot all
   plotTrkGraphs(-1);
@@ -117,19 +121,19 @@ void  plotFrameTreeResults::plotAllOnOnePage(string hname, string opt) {
   cout << "plotFrameTreeResults::plotAllOnOnePage() hname = " << hname << " opt = " << opt << endl;
 
   std::map<std::string, TH1*> mHists;
-  if (string::npos != hname.find("trkGoodHitsToT")) {
+  if (string::npos != hname.find("GoodHitsToT")) {
     for (auto &chip: fAllChips) {
-      string hname = Form("trkGoodHitsToT_C%d", chip);
-      cout << "plotFrameTreeResults::plotAllOnOnePage() adding histogram " << hname << " = " << fTH1D[hname] << endl;
-      mHists[hname] = (TH1*)fTH1D[hname];
+      string h1name = Form("%s_C%d", hname.c_str(), chip);
+      cout << "plotFrameTreeResults::plotAllOnOnePage() adding histogram " << h1name << " = " << fTH1D[h1name] << endl;
+      mHists[h1name] = (TH1*)fTH1D[h1name];
       fPlotUtils.setOptionsForTotDistributions(false);
       fPlotUtils.fSetLogy = false;
     }
-  } else if (string::npos != hname.find("trkGoodHits")) {
+  } else if (string::npos != hname.find("GoodHits")) {
     for (auto &chip: fAllChips) {
-      string hname = Form("trkGoodHits_C%d", chip);
-      cout << "plotFrameTreeResults::plotAllOnOnePage() adding histogram " << hname << " = " << fTH2D[hname] << endl;
-      mHists[hname] = (TH1*)fTH2D[hname];
+      string h2name = Form("%s_C%d", hname.c_str(), chip);
+      cout << "plotFrameTreeResults::plotAllOnOnePage() adding histogram " << h2name << " = " << fTH2D[h2name] << endl;
+      mHists[h2name] = (TH1*)fTH2D[h2name];
     }
   }
 
