@@ -25,3 +25,15 @@ First steps
 ```
 node test1.js
 ```
+
+## NGINX configuration for mu3edb0
+```
+   sudo cp /home/mu3e/mu3eanca/db2/nginx.conf /etc/nginx/sites-available/mu3edb0.conf
+   sudo mkdir -p /etc/nginx/snippets
+   sudo cp /home/mu3e/mu3eanca/db2/nginx-proxy-common.conf /etc/nginx/snippets/mu3edb0-proxy-common.conf
+
+   sudo nginx -t
+
+   sudo systemctl reload nginx
+
+```
