@@ -54,6 +54,7 @@ plotFrameTreeResults::plotFrameTreeResults(string dir, string files, string cuts
     }
   }
 
+  cout << "plotFrameTreeResults::plotFrameTreeResults() setup = " << setup << endl;
   changeSetup(dir, "plotFrameTreeResults", setup);
 
   fLayer1 = {1,2,3,4,5,6,
@@ -138,7 +139,7 @@ void  plotFrameTreeResults::plotAllOnOnePage(string hname, string opt) {
   }
 
 
-  fPlotUtils.fPDFName = "results/plotAllOnOnePage-" + hname + ".pdf";
+  fPlotUtils.fPDFName = "results/plotAllOnOnePage-" + hname + "-" + fSetup + ".pdf";
   fPlotUtils.fOptStat = 0;
   fPlotUtils.plotVertexL1L2(mHists, hname + "_C%d");
 

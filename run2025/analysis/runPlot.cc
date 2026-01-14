@@ -24,13 +24,15 @@ int main(int argc, char *argv[]) {
   string dir("results"), 
     ifiles("plotFrameTreeResults.files"), 
     ana("plotFrameTreeResults"),
-    setup("nada");
+    setup("nada"),
+    cuts("nada");
   
   string mode("all");
 
   // -- command line arguments
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i], "-a"))  {ana    = string(argv[++i]);}
+    if (!strcmp(argv[i], "-c"))  {cuts   = string(argv[++i]);}
     if (!strcmp(argv[i], "-d"))  {dir    = string(argv[++i]);}
     if (!strcmp(argv[i], "-f"))  {ifiles = string(argv[++i]);}
     if (!strcmp(argv[i], "-m"))  {mode   = string(argv[++i]);}
@@ -40,7 +42,8 @@ int main(int argc, char *argv[]) {
   gROOT->Clear();  gROOT->DeleteAll();
 
   if (ana == "plotFrameTreeResults") {
-    plotFrameTreeResults a(dir, ifiles, setup);
+    cout << "plotFrameTreeResults::main() dir = " << dir << " ifiles = " << ifiles << " setup = " << setup << endl;
+    plotFrameTreeResults a(dir, ifiles, cuts, setup);
     if (mode == "all") {
       a.makeAll(mode);  
     } else if (string::npos != mode.find("trkgraphs:")) {

@@ -36,7 +36,6 @@ int main(int argc, char *argv[]) {
   int dirspec(0);
   int nevents(-1), start(-1);
   int verbose(-99);
-
   // Change the MaxTreeSize to 100 GB (default since root v5.26)
   TTree::SetMaxTreeSize(100000000000ll); // 100 GB
 
@@ -48,6 +47,8 @@ int main(int argc, char *argv[]) {
   string treeName("frameTree");
 
   string histfile("");
+  bool isMC(false);
+  int runnumber(-1);
 
   // -- command line arguments
   for (int i = 0; i < argc; i++){
@@ -58,6 +59,8 @@ int main(int argc, char *argv[]) {
       cout << "-D path       where to put the output" << endl;
       cout << "-f filename   single file instead of chain" << endl;
       cout << "-n integer    number of events to run on" << endl;
+      cout << "-mc           is MC" << endl;
+      cout << "-r number     set runnumber" << endl;
       cout << "-s number     seed for random number generator" << endl;
       cout << "-S start      starting event number" << endl;
       cout << "-o filename   set output file" << endl;
@@ -69,8 +72,10 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-C"))  {cutFile    = string(argv[++i]);           }     // file with cuts
     if (!strcmp(argv[i],"-D"))  {dirName    = string(argv[++i]);  dirspec = 1; } // where to put the output
     if (!strcmp(argv[i],"-f"))  {fileName   = string(argv[++i]); file = 1; }     // single file instead of chain
+    if (!strcmp(argv[i],"-mc")) {isMC       = true; }                            // is MC
     if (!strcmp(argv[i],"-n"))  {nevents    = atoi(argv[++i]); }                 // number of events to run
     if (!strcmp(argv[i],"-o"))  {histfile   = string(argv[++i]); }               // set output file
+    if (!strcmp(argv[i],"-r"))  {runnumber   = atoi(argv[++i]); }                // set runnumber
     if (!strcmp(argv[i],"-S"))  {start = atoi(argv[++i]); }                      // set start event number
     if (!strcmp(argv[i],"-t"))  {treeName   = string(argv[++i]); }               // set tree name
     if (!strcmp(argv[i],"-v"))  {verbose    = atoi(argv[++i]); }                 // set verbosity level
@@ -172,9 +177,15 @@ int main(int argc, char *argv[]) {
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   anaFrameTree *a = new anaFrameTree(chain);
   a->setVerbose(verbose);
+  a->setIsMC(isMC);
+  if (runnumber > 0) {
+    cout << "Manually set runNumber = " << runnumber << endl;
+    a->setRunnumber(runnumber);
+  }
   a->setOutputDir(dirName);
   a->openHistFile(histfile);
   a->bookHistograms();
+  a->startAnalysis();
   a->loop(nevents, start);
   a->closeHistFile();
   a->endAnalysis();

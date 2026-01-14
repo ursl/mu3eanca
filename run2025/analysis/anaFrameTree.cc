@@ -26,7 +26,7 @@ using namespace std;
 
 
 // ---------------------------------------------------------------------- 
-anaFrameTree::anaFrameTree(TChain *chain) : fpChain(0), fNentries(0) {
+anaFrameTree::anaFrameTree(TChain *chain) : fpChain(0), fNentries(0), fRunnumber(-1), fIsMC(false) {
   fpChain = chain;
   fNentries = fpChain->GetEntries();
   fChainName = fpChain->GetName();
@@ -53,7 +53,6 @@ anaFrameTree::anaFrameTree(TChain *chain) : fpChain(0), fNentries(0) {
 
   fAllChips = fLayer1;
   fAllChips.insert(fAllChips.end(), fLayer2.begin(), fLayer2.end());
-  cout << "==> anaFrameTree: fAllChips.size() = " << fAllChips.size() << endl;
 
   string gt("datav6.3=2025V1");
   string jsondir("/Users/ursl/data/mu3e/cdb");
@@ -61,6 +60,7 @@ anaFrameTree::anaFrameTree(TChain *chain) : fpChain(0), fNentries(0) {
   cdbAbs *pDB = new cdbJSON(gt, jsondir, fVerbose);
   fpDC = Mu3eConditions::instance(gt, pDB);
   fpDC->setRunNumber(1);
+  fpCPQ = (calPixelQualityLM*)fpDC->getCalibration("pixelqualitylm_");
 }
   
 // ---------------------------------------------------------------------- 
@@ -69,7 +69,15 @@ anaFrameTree::~anaFrameTree() {
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::startAnalysis() {
-  if (fVerbose > 0) cout << "==> anaFrameTree: Starting analysis" << endl;
+  cout << "===================================================" << endl;
+  cout << "==> anaFrameTree::startAnalysis() Starting analysis" << endl;  
+  cout << "==> anaFrameTree: fAllChips.size() = " << fAllChips.size() << endl;
+  cout << "==> anaFrameTree: fChainName = " << fChainName << endl;
+  cout << "==> anaFrameTree: fNentries = " << fNentries << endl;  
+  cout << "==> anaFrameTree: fVerbose = " << fVerbose << endl;
+  cout << "==> anaFrameTree: fIsMC = " << (fIsMC ? "true" : "false") << endl;
+  cout << "==> anaFrameTree: fRunnumber = " << fRunnumber << " (" << (fRunnumber > 0 ? "set" : "not set") << ")" << endl;
+
 }  
 
 // ---------------------------------------------------------------------- 
@@ -255,7 +263,12 @@ void anaFrameTree::fillPixelHit(pixelHit &hit, int hitIndex) {
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::trkHitsStatus(int trkIndex, bool& noBad, bool& noLowToT, bool& noEdgePixel, bool& noNoise) {
-  bool verbose(true);
+  bool verbose(fVerbose > 0);
+  static int first(1);
+  if (first) {
+    cout << "==> anaFrameTree: trkHitsStatus() first call" << endl;
+    first = 0;
+  }
   noBad = true;
   noLowToT = true;
   noEdgePixel = true;
@@ -278,6 +291,49 @@ void anaFrameTree::trkHitsStatus(int trkIndex, bool& noBad, bool& noLowToT, bool
   }
   if (verbose && noBad && !noLowToT && !noEdgePixel) cout << "==> anaFrameTree: trkHitsStatus() GOOD for frame = " 
      << frameID << endl;
+}
+
+// ---------------------------------------------------------------------- 
+void anaFrameTree::trkHitsStatusFromCDB(int trkIndex, bool& noBad, bool& noLowToT, bool& noEdgePixel, bool& noNoise) {
+  bool verbose(fVerbose > 0);
+  static int first(1);
+  if (first) {
+    cout << "==> anaFrameTree: trkHitsStatusFromCDB() first call" << endl;
+    first = 0;
+  }
+
+  noBad = true;
+  noLowToT = true;
+  noEdgePixel = true;
+  noNoise = true;
+
+  for (int i = 0; i < fTrkNhits[trkIndex]; ++i) {
+    int hitIndex = fTrkHitIndices[trkIndex][i];
+    int chipID = hitChipID[hitIndex];
+    int col = hitCol[hitIndex];
+    int row = hitRow[hitIndex];
+    int status = fpCPQ->getStatus(chipID, col, row);
+    if (status != calPixelQualityLM::Good) {
+      if (verbose) cout << "==> anaFrameTree: trkHitsStatusFromCDB() hit " << hitIndex << " is not good" << endl;
+      noBad = false;
+    }
+    if (status == calPixelQualityLM::Noisy) {
+      if (verbose) cout << "==> anaFrameTree: trkHitsStatusFromCDB() hit " << hitIndex << " is noisy" << endl;
+      noNoise = false;
+    }
+    if (isEdgePixel(hitIndex)) {
+      if (verbose) cout << "==> anaFrameTree: trkHitsStatusFromCDB() hit " << hitIndex << " is not edge pixel" << endl;
+      noEdgePixel = false;
+    }
+    if (isLowToT(hitIndex)) {
+      if (verbose) cout << "==> anaFrameTree: trkHitsStatusFromCDB() hit " << hitIndex << " is not low toT" << endl;
+      noLowToT = false;
+    }
+
+  }
+  if (verbose && noBad && !noNoise) cout << "==> anaFrameTree: trkHitsStatusFromCDB() GOOD for frame = " 
+     << frameID << endl;
+
 }
 
 // ---------------------------------------------------------------------- 
@@ -333,6 +389,7 @@ void anaFrameTree::loop(int nevents, int start) {
       if (ientry < 0) break;
       nb = fpChain->GetEntry(jentry);   
       nbytes += nb;
+      if (fRunnumber > 0) run = fRunnumber;
       if (run != oldRunNumber) {
         oldRunNumber = run;
         fpDC->setRunNumber(run);
@@ -342,7 +399,7 @@ void anaFrameTree::loop(int nevents, int start) {
         cout << "==> anaFrameTree: Processing run " << run 
         << " goodPixelStart = " << goodPixelStart 
         << " goodPixelEnd = " << goodPixelEnd << endl;
-}
+      }
       if (jentry % step == 0) cout << "==> anaFrameTree: Processing event " << setw(8) << setfill(' ') << jentry 
                                    << " of " << maxEvents << " (" << Form("%4.1f",  jentry*100./maxEvents) << "%) " 
                                    << endl;
@@ -423,6 +480,7 @@ void anaFrameTree::loop(int nevents, int start) {
         // addTrkGraph(i);
         fHistograms["trkNhits"]->Fill(fTrkNhits[i]);
         trkHitsStatus(i, noBad, noLowToT, noEdgePixel, noNoise);
+        if (fIsMC) trkHitsStatusFromCDB(i, noBad, noLowToT, noEdgePixel, noNoise);
         if (noBad && noLowToT && noEdgePixel && noNoise) {
           if (fTrkNhits[i] == 6) {
             trkFillHitmaps("trkS6GoodHits", i);
@@ -435,7 +493,6 @@ void anaFrameTree::loop(int nevents, int start) {
           printFrame();  
         } 
       }
-
     }
 }
 

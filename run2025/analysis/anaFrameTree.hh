@@ -15,6 +15,7 @@
 
 #include "pixelHit.hh"
 #include "Mu3eConditions.hh"
+#include "calPixelQualityLM.hh"
 
 class anaFrameTree {
 public:
@@ -33,6 +34,11 @@ public:
     virtual void     openHistFile(std::string histfile);
     virtual void     closeHistFile();
 
+    virtual void     setRunnumber(int runnumber) { fRunnumber = runnumber; }
+    virtual int      getRunnumber() { return fRunnumber; }
+    virtual void     setIsMC(bool isMC) { fIsMC = isMC; }
+    virtual bool     getIsMC() { return fIsMC; }
+
     int              getChipTopology(int pixelID, int &layer, int &ladder, int &chip);
     void             fillPixelHit(pixelHit &hit, int hitIndex);
     bool             isGoodPixel(int hitIndex);
@@ -43,6 +49,7 @@ public:
     bool             isEdgePixel(pixelHit &hit);
 
     void             trkHitsStatus(int trkIndex, bool& noBad, bool& noLowToT, bool& noEdgePixel, bool& noNoise);
+    void             trkHitsStatusFromCDB(int trkIndex, bool& noBad, bool& noLowToT, bool& noEdgePixel, bool& noNoise);
     void             trkFillHitmaps(std::string stype, int trkIndex);
     void             trkFillHistToT(std::string stype, int trkIndex);
 
@@ -62,6 +69,10 @@ private:
     std::string fHistFileName;
     TFile *fpHistFile;
     Mu3eConditions *fpDC;
+    calPixelQualityLM *fpCPQ;
+
+    int fRunnumber;
+    bool fIsMC;
 
     std::vector<int> fLayer1, fLayer2, fAllChips;
 
