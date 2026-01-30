@@ -1,0 +1,60 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# mkAnaLinks
+# ==========
+#
+# Usage:   ~/mu3e/mu3eanca/run2025/scripts/mkAnaLinks  
+#
+# History
+#         2026/01/16 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+use Cwd;
+use File::Basename;
+
+use Getopt::Std;
+getopts('d:');
+
+print "prog: $0\n";
+my $destdir = $0;
+$destdir =~ s/\/scripts.*$//;
+
+if ($opt_d) {
+    $destdir = $opt_d;
+}
+print "destdir: $destdir\n";
+
+# -- now create the following links
+# lrwxr-xr-x  1 ursl  staff     55 Dec  9 12:00 frameTree.h -> /Users/ursl/mu3e/mu3eanca/run2025/analysis/frameTree.hh
+# lrwxr-xr-x  1 ursl  staff     55 Dec  9 12:00 frameTree.hh -> /Users/ursl/mu3e/mu3eanca/run2025/analysis/frameTree.hh
+# lrwxr-xr-x  1 ursl  staff     55 Dec  9 12:00 frameTree.cpp -> /Users/ursl/mu3e/mu3eanca/run2025/analysis/frameTree.cc
+# lrwxr-xr-x  1 ursl  staff     51 Dec  9 12:01 track.hh -> /Users/ursl/mu3e/mu3eanca/run2025/analysis/track.hh
+# lrwxr-xr-x  1 ursl  staff     54 Dec 12 09:41 pixelHit.hh -> /Users/ursl/mu3e/mu3eanca/run2025/analysis/pixelHit.hh
+# lrwxr-xr-x  1 ursl  staff     61 Dec 12 09:51 pixelHistograms.hh -> /Users/ursl/mu3e/mu3eanca/run2025/analysis/pixelHistograms.hh
+# lrwxr-xr-x  1 ursl  staff     61 Dec 12 10:01 pixelHistograms.cpp -> /Users/ursl/mu3e/mu3eanca/run2025/analysis/pixelHistograms.cc
+
+# Map link names to actual filenames
+my %link_map = (
+    "frameTree.h" => "frameTree.hh",
+    "frameTree.hh" => "frameTree.hh",
+    "frameTree.cpp" => "frameTree.cc",
+    "track.hh" => "track.hh",
+    "pixelHit.hh" => "pixelHit.hh",
+    "pixelHistograms.hh" => "pixelHistograms.hh",
+    "pixelHistograms.cpp" => "pixelHistograms.cc",
+    "fillFrameTreeObjects.cpp" => "fillFrameTreeObjects.cc",
+    "fillFrameTreeObjects.hh" => "fillFrameTreeObjects.hh"
+);
+
+foreach my $linkname (keys %link_map) {
+    my $target = $destdir . "/analysis/" . $link_map{$linkname};
+    my $link = "./" . $linkname;
+    print "ln -s $target $link \n";
+    system("ln -s $target $link");
+}
+
+
