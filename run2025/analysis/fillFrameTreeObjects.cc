@@ -3,6 +3,10 @@
 #include <iostream>
 #include <string>
 
+#include "watson/propagators/zhelix.hpp"
+#include "watson/geometry/surfaces.hpp"
+
+
 #include "track.hh"
 #include "pixelHit.hh"
 #include "frameTree.hh"
@@ -43,21 +47,21 @@ fillFrameTreeObjects::~fillFrameTreeObjects() {
 // ---------------------------------------------------------------------- 
 void fillFrameTreeObjects::init() {
   cout << "fillFrameTreeObjects::init() fpFrameTree = " << fpFrameTree << endl;
-  fPixelHitIndex = 0;
-  fTrackIndex = 0;
 
   Mu3eConditions *conditions = Mu3eConditions::instance();
   fpCalPixelQualityLM = dynamic_cast<calPixelQualityLM *>(conditions->getCalibration("pixelqualitylm_"));
 
-  fpFrameTree->setRunAndFrameID(conditions->getRunNumber(), 
-                              mu3e::conf.runtime.frame);
+  fpCalDetSetupV1 = dynamic_cast<calDetSetupV1 *>(conditions->getCalibration("detsetupv1_"));
+  double fMagneticField = fpCalDetSetupV1->magnetFieldStrength();
+  cout << "fillFrameTreeObjects::init() magnetic field: " << fMagneticField << endl;
+
+  fpFrameTree->setRunAndFrameID(conditions->getRunNumber(), mu3e::conf.runtime.frame);
 
 }
 
 // ---------------------------------------------------------------------- 
 void fillFrameTreeObjects::fillFrame() {
-  cout << "fillFrameTreeObjects::fillFrame() fPixelHitIndex = " << fPixelHitIndex << endl;
-  cout << "fillFrameTreeObjects::fillFrame() fTrackIndex = " << fTrackIndex << endl;
+  cout << "fillFrameTreeObjects::fillFrame()" << endl;
   fpFrameTree->fillFrame();
 }
 
@@ -97,5 +101,104 @@ void fillFrameTreeObjects::fillPixelHit(const mu3e::sim::vars_sihit_t &sihit, in
 }
 
 // ---------------------------------------------------------------------- 
-void fillFrameTreeObjects::fillTracks(Segment::ptr_t segment) {
+void fillFrameTreeObjects::fillSegment(Segment::ptr_t segment) {
+  track TRK;
+
+  TRK.fTrkChi2 = segment->chi2;
+  TRK.fTrkType = segment->type;
+
+  // -- this is only pT
+  double r = 1./segment->k;
+  TRK.fTrkMomentum = r * double(mu3e::conf.B);
+  TRK.fTrkK = segment->k;
+  TRK.fTrkKerr2 = segment->kerr2;
+
+  TRK.fTrkPhi = segment->tan(0);
+  TRK.fTrkLambda = segment->lam(0);
+
+  auto t_ = segment->time();
+  auto t_si = segment->si_times();
+  auto t_si2 = segment->si_times();
+
+  TRK.fTrkT0 = t_.ns();
+  TRK.fTrkT0Err = t_.ns_sigma();
+  TRK.fTrkT0RMS = t_.ns_rms();
+  TRK.fTrkT0Si = t_si.ns();
+  TRK.fTrkT0SiErr = t_si.ns_sigma();
+  TRK.fTrkT0SiRMS = t_si.ns_rms();
+
+  TRK.fTrkDoca = calculateDCAtoDoubleCone(*segment, 19.0, 25.0, fMagneticField);
+
+  for (int i = 0; i < segment->n; i++) {
+    SiDet::Hit* hit_before = segment->hits[i][0];
+    std::cout << "  hit " ;
+    int idx = fpFrameTree->findHitIndex(hit_before->id.value());
+    if (0)std::cout << idx << "  ";
+    if (1) std::cout << " idx " << idx
+             << "  chip/col/row = " << std::setw(4) << hit_before->id.sensorId.value() << "/"
+             << std::setw(3) << hit_before->id.col << "/" << std::setw(3) << hit_before->id.row 
+             << " time = " << hit_before->time.ns()
+             << i << ": x,y,z = " << hit_before->x << ", " << hit_before->y << ", " << hit_before->z << " "
+             << std::endl;
+    //continue;
+    bool ok = TRK.fillIndex(idx);
+    if (!ok) {
+        if (0) std::cout << "trirec - failed to fill hit index " << idx 
+                  << " where segment-> n = " << segment->n 
+                  << std::endl;
+    }
+ }
+
+  fpFrameTree->fillTrack(TRK);
+
+
+
 }
+
+// ---------------------------------------------------------------------- 
+// -- cursor generated
+double fillFrameTreeObjects::calculateDCAtoDoubleCone(const Segment& segment, 
+      double cone_radius, 
+      double cone_half_length,
+      double B_field) {
+
+  // Get track parameters
+  auto track_params = segment.params_before(0).to_global(1);
+
+  // Create double cone target
+  watson::ZDoubleCone doubleCone(cone_radius, cone_half_length);
+
+  // Create propagator
+  watson::ZHelixPropagator propagator(B_field);
+
+  // Propagate to double cone
+  auto result = propagator.propagate_to(track_params, doubleCone);
+
+  if (result.error()) {
+      return -1.0;  // Error case
+  }
+
+  auto intersection_params = result.get<0>();
+  double path_length = result.get<1>();
+
+  // Distance from original position to intersection
+  double distance = (intersection_params.position() - track_params.position()).norm();
+
+  return distance;
+}
+
+// ---------------------------------------------------------------------- 
+void fillFrameTreeObjects::fillSegments(const Frame *frame) {
+  for(auto& [_, segs] : frame->ttype2segs) {
+  // [AK] TODO: frame->tracks[0] == MCTrack::FAKE
+    for(auto& s : segs) {
+        int tid = s->tid();
+        if(tid == 0) continue;
+        fillSegment(s);
+        if(mu3e::conf.verbose >= 1 && frame->tracks.find(tid) == frame->tracks.end()) {
+            MU3E_WARN("no MCTrack with tid = %d\n", tid);
+        }
+    }
+  } 
+}
+
