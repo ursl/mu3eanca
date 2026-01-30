@@ -8,6 +8,8 @@
 #
 # History
 #         2026/01/16 first shot
+#         2026/01/30 make sure that we are in the correct directory
+#
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -28,6 +30,29 @@ if ($opt_d) {
 }
 print "destdir: $destdir\n";
 
+# -- need to make sure that we are in ".../mu3eTrirec/src/mu3e/rec"
+my $originaldir = getcwd();
+
+while(my $currentdir = getcwd()) {
+   print "currentdir: $currentdir\n";
+   if ($currentdir =~ /mu3eTrirec\/src\/mu3e\/rec/) {
+     last;
+   } else {
+      chdir("mu3eTrirec/src/mu3e/rec") or chdir("..");
+      $currentdir = getcwd();
+      chdir("$currentdir/mu3eTrirec/src/mu3e/rec");
+      print "tried to chdir, now in $currentdir\n";
+   } 
+}
+
+my $currentdir = getcwd();
+if ($currentdir !~ /mu3eTrirec\/src\/mu3e\/rec/) {
+    print "Error: you are not in the correct directory\n";
+    print "You are in: $currentdir\n";
+    print "Failed to chdir to .../mu3eTrirec/src/mu3e/rec\n";
+    exit 1;
+}
+
 # -- now create the following links
 # lrwxr-xr-x  1 ursl  staff     55 Dec  9 12:00 frameTree.h -> /Users/ursl/mu3e/mu3eanca/run2025/analysis/frameTree.hh
 # lrwxr-xr-x  1 ursl  staff     55 Dec  9 12:00 frameTree.hh -> /Users/ursl/mu3e/mu3eanca/run2025/analysis/frameTree.hh
@@ -44,8 +69,6 @@ my %link_map = (
     "frameTree.cpp" => "frameTree.cc",
     "track.hh" => "track.hh",
     "pixelHit.hh" => "pixelHit.hh",
-    "pixelHistograms.hh" => "pixelHistograms.hh",
-    "pixelHistograms.cpp" => "pixelHistograms.cc",
     "fillFrameTreeObjects.cpp" => "fillFrameTreeObjects.cc",
     "fillFrameTreeObjects.hh" => "fillFrameTreeObjects.hh"
 );
