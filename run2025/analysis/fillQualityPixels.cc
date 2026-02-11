@@ -48,12 +48,17 @@ using namespace std;
 // Examples:
 // ---------
 // cd mu3eanca/run2025/analysis
-// bin/pixelFillQualityLM \
-// -g datav6.3=2025V0 -j ~/data/mu3e/cdb/ 
-// -f ~/data/mu3e/run2025/mlzr/merged-dqm_histos_06252.root -r MidasMeta2025Data.root
+//    ./bin/fillQualityPixels -i datav6.3=2025V0 -g datav6.4=2025V0 \
+//    -j ~/data/mu3e/cdb/ -f ~/data/mu3e/run2025/mlzr/merged-dqm_histos_06163.root 
+//    -r datav6.4=2025V0-MidasMeta2025Data.root
+//
+// moor>foreach file (~/data/mu3e/run2025/mlzr/merged-dqm_histos_0*.root)
+// foreach? echo $file
+// foreach? ./bin/fillQualityPixels -i datav6.3=2025V0 -g datav6.4=2025V0 -j ~/data/mu3e/cdb/ -f $file -r datav6.4=2025V0-MidasMeta2025Data.root
+// foreach? end
 //
 // Create _iov_1 payload:
-// moor>./bin/pixelFillQualityLM -g datav6.3=2025V0 -j ~/data/mu3e/cdb/ -p 4
+// moor>./bin/fillQualityPixels -i datav6.3=2025V0 -g datav6.4=2025V0 -j ~/data/mu3e/cdb/ -p 4
 // 
 // ----------------------------------------------------------------------
 
@@ -661,7 +666,14 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
       if (badLink[i]) {
         lkStatus[i] = 4;
       } else {
-        lkStatus[i] = 5;
+        // -- do not override 9 status (masked link stays masked)
+        if (lkStatus[i] != 9) {
+          lkStatus[i] = 5;
+        }
+        // -- if masked link has hits, set to bad
+        if (9 == lkStatus[i] && vLink[i] > 0) {
+          lkStatus[i] = 5;
+        }
       }
     }
   }
@@ -812,7 +824,7 @@ bool determineBrokenLinksV0(TH2 *h, vector<int> &links) {
 
 // ----------------------------------------------------------------------
 void determineDeadColumns(TH2 *h, vector<int> &columns, vector<int> &links) {
-  bool DBX(false);
+  bool DBX(true);
   double minHits(1);
   double meanHits = h->Integral(1, 256, 1, 250)/h->GetNbinsX();
   if (meanHits < 10) {
@@ -821,6 +833,12 @@ void determineDeadColumns(TH2 *h, vector<int> &columns, vector<int> &links) {
     minHits = meanHits/10.;
     minHits = 1;
   }
+  // -- the histogram still used to provide the chip name
+  string schip = h->GetName();
+  replaceAll(schip, "hitmap_perChip_", "");
+  int chipID = ::stoi(schip);
+ 
+  cout << "chipID = " << chipID << " meanHits = " << meanHits << " minHits = " << minHits << endl;
   bool linkA = links[0] > 0;
   bool linkB = links[1] > 0;
   bool linkC = links[2] > 0;
@@ -859,6 +877,11 @@ void determineDeadColumns(TH2 *h, vector<int> &columns, vector<int> &links) {
 void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels, vector<int> &columns, vector<int> &links) {
   bool DBX(false);
   bool DODEADPIX(false);
+
+  // -- the histogram still used to provide the chip name
+  string schip = h->GetName();
+  replaceAll(schip, "hitmap_perChip_", "");
+  int chipID = ::stoi(schip);
 
   int chipCnt = h->GetSumOfWeights();
   int npix(0);
@@ -901,6 +924,7 @@ void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels, vector<int> &columns
 
         double nhits = h->GetBinContent(ix,iy);
         if (nhits > noiseThr) {
+          cout << "chipID = " << chipID << " noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << " noiseThr = " << noiseThr << endl;
           ++nNoisyPix;
           ++colNoisyPixels;
           noisyPixels.push_back(ix-1);
