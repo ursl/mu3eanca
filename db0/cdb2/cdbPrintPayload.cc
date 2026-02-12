@@ -124,16 +124,32 @@ int main(int argc, const char* argv[]) {
     cout << "schema:  " << cpq->getPayload(hash).fSchema << endl;
     cout << "date:    " << cpq->getPayload(hash).fDate << endl;
     cpq->printBLOB(cpq->getPayload(hash).fBLOB, verbose);
-    cout << "now try to loop over things" << endl;
     cpq->calculate(hash);
     cpq->resetIterator();
     uint32_t id;
+    int nGoodLinks(0);
+    int nBadColumns(0);
+    int nNoisyPixels(0), nGoodPixels(0);
     while (cpq->getNextID(id)) {
+      for (int icol = 0; icol < 256; icol++) {
+        if (cpq->getColStatus(id, icol) != calPixelQualityLM::Good) {
+          nBadColumns++;
+        }
+      }
       double lvdsOverflowRate = cpq->getLVDSOverflowRate(id);
+      nGoodLinks += (cpq->getLinkStatus(id, 0) == calPixelQualityLM::Good) ? 1 : 0;
+      nGoodLinks += (cpq->getLinkStatus(id, 1) == calPixelQualityLM::Good) ? 1 : 0;
+      nGoodLinks += (cpq->getLinkStatus(id, 2) == calPixelQualityLM::Good) ? 1 : 0;
+      nNoisyPixels += cpq->getNpixWithStatus(id, calPixelQualityLM::Noisy);
+      nGoodPixels += cpq->getNpixWithStatus(id, calPixelQualityLM::Good);
       if (lvdsOverflowRate > 0.) { 
         cout << "chipID: " << id << " LVDS overflow rate: " << lvdsOverflowRate << endl; 
       }
     }
+    cout << "nGoodLinks: " << nGoodLinks 
+         << " nBadColumns: " << nBadColumns
+         << " nNoisyPixels: " << nNoisyPixels << " nGoodPixels: " << nGoodPixels 
+         << endl;
   } else if (string::npos != filename.find("pixelcabling_")) {
     c = new calPixelCablingMap();
     c->readPayloadFromFile(hash, pdir);
