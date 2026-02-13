@@ -127,7 +127,7 @@ int main(int argc, const char* argv[]) {
     cpq->calculate(hash);
     cpq->resetIterator();
     uint32_t id;
-    int nGoodLinks(0);
+    int nGoodLinks(0), nMaskedLinks(0), nDeadLinks(0), nStatus4Links(0), nStatus5Links(0);
     int nBadColumns(0);
     int nNoisyPixels(0), nGoodPixels(0);
     while (cpq->getNextID(id)) {
@@ -137,9 +137,14 @@ int main(int argc, const char* argv[]) {
         }
       }
       double lvdsOverflowRate = cpq->getLVDSOverflowRate(id);
-      nGoodLinks += (cpq->getLinkStatus(id, 0) == calPixelQualityLM::Good) ? 1 : 0;
-      nGoodLinks += (cpq->getLinkStatus(id, 1) == calPixelQualityLM::Good) ? 1 : 0;
-      nGoodLinks += (cpq->getLinkStatus(id, 2) == calPixelQualityLM::Good) ? 1 : 0;
+      for (int ilink = 0; ilink < 3; ilink++) {
+        if (cpq->getLinkStatus(id, ilink) == calPixelQualityLM::Good) nGoodLinks++;
+        if (cpq->getLinkStatus(id, ilink) == calPixelQualityLM::Masked) nMaskedLinks++;
+        if (cpq->isLinkDead(id, ilink)) nDeadLinks++;
+        if (cpq->getLinkStatus(id, ilink) == calPixelQualityLM::LVDSErrorLink) nStatus4Links++;
+        if (cpq->getLinkStatus(id, ilink) == calPixelQualityLM::LVDSErrorOtherLink) nStatus5Links++;
+      }
+
       nNoisyPixels += cpq->getNpixWithStatus(id, calPixelQualityLM::Noisy);
       nGoodPixels += cpq->getNpixWithStatus(id, calPixelQualityLM::Good);
       if (lvdsOverflowRate > 0.) { 
@@ -147,8 +152,13 @@ int main(int argc, const char* argv[]) {
       }
     }
     cout << "nGoodLinks: " << nGoodLinks 
+         << " nMaskedLinks: " << nMaskedLinks
+         << " nDeadLinks: " << nDeadLinks
+         << " nStatus4Links: " << nStatus4Links
+         << " nStatus5Links: " << nStatus5Links
          << " nBadColumns: " << nBadColumns
-         << " nNoisyPixels: " << nNoisyPixels << " nGoodPixels: " << nGoodPixels 
+         << " nNoisyPixels: " << nNoisyPixels 
+         << " nGoodPixels: " << nGoodPixels 
          << endl;
   } else if (string::npos != filename.find("pixelcabling_")) {
     c = new calPixelCablingMap();
