@@ -140,7 +140,9 @@ int main(int argc, char* argv[]) {
   string gt("datav6.3=2025V0");
   string igt("datav6.2=2025Beam");
   string rootMetaMidasFilename("nada.root");
+  string comment("no comment provided :-(");
   for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "-c"))      {comment = argv[++i];}
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-i"))      {igt = argv[++i];}
@@ -214,9 +216,9 @@ int main(int argc, char* argv[]) {
     cpq->readCsv(Form("csv/deadlinks-allpixels.csv"));
     string blob = cpq->makeBLOB();
     string schema = cpq->getSchema();
-    string comment = "runclass/meanY. " + filename;
-    cout << "XXXXXXXXX createPayload with hash = " << hash << " comment = " << comment << " schema = " << schema << endl;
-    createPayload(hash, cpq, "./payloads", schema, comment);
+    string payloadcomment = comment + " " +  calPixelQualityLM::getStatusDocumentation();
+    cout << "XXXXXXXXX createPayload with hash = " << hash << " comment = " << payloadcomment << " schema = " << schema << endl;
+    createPayload(hash, cpq, "./payloads", schema, payloadcomment);
   
     return 0; 
   }
@@ -468,9 +470,9 @@ int main(int argc, char* argv[]) {
   calPixelQualityLM *cpq = new calPixelQualityLM();
   cpq->readCsv(Form("csv/pixelqualitylm-run%d.csv", run));
   string schema = cpq->getSchema();
-  string comment = "no E, only LVDS error rate. " + calPixelQualityLM::getStatusDocumentation();
+  string payloadcomment = comment + " " +  calPixelQualityLM::getStatusDocumentation();
 
-  createPayload(hash, cpq, "./payloads", schema, comment);
+  createPayload(hash, cpq, "./payloads", schema, payloadcomment);
 
   if (0) {
     cout << "READ CSV: " << Form("csv/pixelqualitylm-run%d.csv", run) << endl;
@@ -528,7 +530,19 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
 
   AsicInfo ai = gRunInfoMap[chipID];
 
-  cout << "XXX chipID = " << chipID << " linkMask = " << ai.abcLinkMask[0] << " " << ai.abcLinkMask[1] << " " << ai.abcLinkMask[2] << endl;
+  if (DBX) cout << "XXX chipID = " << chipID << " linkMask = " << ai.abcLinkMask[0] << " " << ai.abcLinkMask[1] << " " << ai.abcLinkMask[2] << endl;
+  
+  // -- hand-curated list to avoid getting lost in algorithmic nightmares
+  vector<int> vBadChips = {102};
+
+  if (find(vBadChips.begin(), vBadChips.end(), chipID) != vBadChips.end()) {  
+    links.push_back(3);
+    links.push_back(3);
+    links.push_back(3);
+    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
+    return true;
+  }
+  
   // -- completely masked chip
   if (0 == ai.abcLinkMask[0]
       && 0 == ai.abcLinkMask[1]
@@ -557,7 +571,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   double nLinkC = h->Integral(173, 256, 1, 250);
   vector<double> vLink = {nLinkA, nLinkB, nLinkC};
   double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
-  if (1) cout << "  nLinkA = " << nLinkA << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC << " nLinkAverage = " << nLinkAverage << endl;
+  if (DBX) cout << "  nLinkA = " << nLinkA << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC << " nLinkAverage = " << nLinkAverage << endl;
   if (nLinkA < 1 && nLinkB < 1 && nLinkC < 1) {
     links.push_back(7);
     links.push_back(7);
@@ -610,17 +624,6 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return true;
   }
-
-  // -- hand-curated list to avoid getting lost in algorithmic nightmares
-  vector<int> vBadChips = {102};
-
-  if (find(vBadChips.begin(), vBadChips.end(), chipID) != vBadChips.end()) {  
-    links.push_back(3);
-    links.push_back(3);
-    links.push_back(3);
-    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
-    return true;
-  }
   
   // -- check individual links
   int lkStatus[4] = {0, 0, 0, 0};
@@ -639,11 +642,13 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     }
   }
  
-  for (int i = 0; i < 3; ++i) {
-    cout << "Chip " << chipID << " link " << i << " status = " << lkStatus[i] 
-    << " mask = " << ai.abcLinkMask[i] << " errs = " << ai.abcLinkErrs[i]
-    << " badLink = " << badLink[i]
-    << endl;
+  if (DBX) {
+    for (int i = 0; i < 3; ++i) {
+      if (DBX) cout << "Chip " << chipID << " link " << i << " status = " << lkStatus[i] 
+         << " mask = " << ai.abcLinkMask[i] << " errs = " << ai.abcLinkErrs[i]
+         << " badLink = " << badLink[i]
+         << endl;
+    }
   }
 
   // -- Check for row overflow (indicating LVDS errors)
@@ -656,11 +661,11 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     if (iOverFlow > nhits) istatus = 1;
     if (nhits/iOverFlow > UINT32_MAX) istatus = UINT32_MAX;
     lkStatus[3] = istatus;
-    cout << "Chip " << chipID << " overflow: " << iOverFlow << " nhits = " << nhits << " status = " << istatus 
+    if (DBX) cout << "Chip " << chipID << " overflow: " << iOverFlow << " nhits = " << nhits << " status = " << istatus 
          << " UINT32_MAX = " << UINT32_MAX << endl;
   } else {
     lkStatus[3] = 0;
-    cout << "Chip " << chipID << " NO overflow: " << iOverFlow << " status = " << lkStatus[3] <<  endl;
+    if (DBX) cout << "Chip " << chipID << " NO overflow: " << iOverFlow << " status = " << lkStatus[3] <<  endl;
   }
 
 
@@ -842,7 +847,7 @@ void determineDeadColumns(TH2 *h, vector<int> &columns, vector<int> &links) {
   replaceAll(schip, "hitmap_perChip_", "");
   int chipID = ::stoi(schip);
  
-  cout << "chipID = " << chipID << " meanHits = " << meanHits << " minHits = " << minHits << endl;
+  if (DBX) cout << "chipID = " << chipID << " meanHits = " << meanHits << " minHits = " << minHits << endl;
   bool linkA = links[0] > 0;
   bool linkB = links[1] > 0;
   bool linkC = links[2] > 0;
@@ -928,7 +933,7 @@ void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels, vector<int> &columns
 
         double nhits = h->GetBinContent(ix,iy);
         if (nhits > noiseThr) {
-          cout << "chipID = " << chipID << " noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << " noiseThr = " << noiseThr << endl;
+          if (DBX) cout << "chipID = " << chipID << " noisy pixel at icol/irow = " << ix-1 << "/" << iy-1  << " nhits = " << nhits << " noiseThr = " << noiseThr << endl;
           ++nNoisyPix;
           ++colNoisyPixels;
           noisyPixels.push_back(ix-1);
