@@ -134,14 +134,13 @@ int main(int argc, char* argv[]) {
   };
  
   // -- command line arguments
-  int verbose(0), mode(1), printMode(0), check(0);
+  int verbose(0), mode(1), printMode(0);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(JSONDIR), filename("nada.root");
   string gt("datav6.3=2025V0");
   string igt("datav6.2=2025Beam");
   string rootMetaMidasFilename("nada.root");
   for (int i = 0; i < argc; i++) {
-    if (!strcmp(argv[i], "-c"))      {check = 1;}
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-i"))      {igt = argv[++i];}
@@ -153,27 +152,6 @@ int main(int argc, char* argv[]) {
   }
   
   cout << "printMode = " << printMode << endl;
-  if (check) {
-    cout << "check mode" << endl;
-    // --
-    ifstream INS(filename);
-    if (INS.fail()) {
-      cout << "Error failed to open ->" << filename << "<-" << endl;
-      return 1;
-    }
-    
-    std::stringstream buffer;
-    buffer << INS.rdbuf();
-    INS.close();
-    
-    string lBuffer = buffer.str();
-
-    // -- get the first one   
-    // string bla = jsonGetValue(lBuffer, {"Equipment", "PixelsCentral", "Settings", "CONFDACS", "ckdivend2"});
-    //cout << "bla = " << bla << endl;
-
-    return 0;
-  }
 
   // -- this is just to get the list of all chipIDs
   cdbAbs *pDB = new cdbJSON(igt, jsondir, verbose);
@@ -548,6 +526,31 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   replaceAll(schip, "hitmap_perChip_", "");
   int chipID = ::stoi(schip);
 
+  AsicInfo ai = gRunInfoMap[chipID];
+
+  cout << "XXX chipID = " << chipID << " linkMask = " << ai.abcLinkMask[0] << " " << ai.abcLinkMask[1] << " " << ai.abcLinkMask[2] << endl;
+  // -- completely masked chip
+  if (0 == ai.abcLinkMask[0]
+      && 0 == ai.abcLinkMask[1]
+      && 0 == ai.abcLinkMask[2]) {
+    links.push_back(9);
+    links.push_back(9);
+    links.push_back(9);
+    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
+    return false;
+  }
+
+  if (9 == ai.abcLinkMask[0]
+    && 9 == ai.abcLinkMask[1]
+    && 9 == ai.abcLinkMask[2]) {
+    links.push_back(9);
+    links.push_back(9);
+    links.push_back(9);
+    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
+    return false;
+  }
+
+
   // -- determine dead chips
   double nLinkA = h->Integral(1, 88, 1, 250);
   double nLinkB = h->Integral(89, 172, 1, 250);
@@ -575,24 +578,38 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   if (badChip > 0) {
     cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2] << endl;  
     if (nLinkA < 1) {
-      links.push_back(8);
+      if (0 == ai.abcLinkMask[0] || 9 == ai.abcLinkMask[0]) {
+        // -- keep mask information if present
+        links.push_back(9);
+      } else {
+        links.push_back(8);
+      }
     } else {
       links.push_back(6);
     }
     if (nLinkB < 1) {
-      links.push_back(8);
+      if (0 == ai.abcLinkMask[1] || 9 == ai.abcLinkMask[1]) {
+        // -- keep mask information if present
+        links.push_back(9);
+      } else {
+        links.push_back(8);
+      }
     } else {
       links.push_back(6);
     }
     if (nLinkC < 1) {
-      links.push_back(8);
+      if (0 == ai.abcLinkMask[2] || 9 == ai.abcLinkMask[2]) {
+        // -- keep mask information if present
+        links.push_back(9);
+      } else {
+        links.push_back(8);
+      }
     } else {
       links.push_back(6);
     }
     links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return true;
   }
-
 
   // -- hand-curated list to avoid getting lost in algorithmic nightmares
   vector<int> vBadChips = {102};
@@ -604,20 +621,6 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return true;
   }
-
-  AsicInfo ai = gRunInfoMap[chipID];
-
-  // -- completely disabled chip
-  if (0 == ai.abcLinkMask[0]
-      && 0 == ai.abcLinkMask[1]
-      && 0 == ai.abcLinkMask[2]) {
-    links.push_back(9);
-    links.push_back(9);
-    links.push_back(9);
-    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
-    return false;
-  }
-
   
   // -- check individual links
   int lkStatus[4] = {0, 0, 0, 0};
@@ -627,6 +630,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   for (int i = 0; i < 3; ++i) {
     if (vLink[i] < 1) lkStatus[i] = 8;
     if (0 == ai.abcLinkMask[i]) lkStatus[i] = 9;
+    if (9 == ai.abcLinkMask[i]) lkStatus[i] = 9;
     if (ai.abcLinkErrs[i] > 10) lkStatus[i] = 4;
     if (ai.abcLinkErrs[i] > 10 && 1 == ai.abcLinkMask[i]) {
       badChip = 1;
@@ -969,7 +973,7 @@ void determineNoisyPixels(TH2 *h, vector<int> &noisyPixels, vector<int> &columns
 
         // -- possibly out of order!
         columns.push_back(ix-1);
-        columns.push_back(3);
+        columns.push_back(2);
 
         if (DBX) {
           cout << "  -> colNoisyPixels > SUSPECTMAXIMUM -> removing " << colNoisyPixels << " noisy pixels, deadcolumn: " << endl;
