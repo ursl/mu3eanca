@@ -53,10 +53,13 @@ public:
   Status getColStatus(unsigned int chipid, int icol);
   Status getLinkStatus(unsigned int chipid, int ilink);
 
-  // -- returns true if all three links are masked or have no hits
-  bool isChipDead(unsigned int chipid, int row = -1, int col = -1);
-  bool isLinkBad(unsigned int chipid, int ilink);
+  // -- true if link is dead (7,8,9), i.e. DeadChip, NoHits, Masked
   bool isLinkDead(unsigned int chipid, int ilink);
+  // -- true if all three links are "dead"
+  bool isChipDead(unsigned int chipid, int row = -1, int col = -1);
+
+  // -- true if link has non-zero status, i.e. Suspect, DeclaredBad, LVDSErrorLink, LVDSErrorOtherLink, LVDSErrorTopBottomEdge, DeadChip, NoHits, Masked
+  bool isLinkBad(unsigned int chipid, int ilink);
 
   double getLVDSOverflowRate(unsigned int chipid);
 
