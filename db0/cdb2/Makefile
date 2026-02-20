@@ -77,12 +77,12 @@ LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o cdbMongo.o \
          payload.o cfgPayload.o cdbUtil.o runRecord.o \
          RunInfo.o DataQuality.o Resource.o
 
-LBINARIES = testCDB anaPixelQuality anaEventStuff \
+LBINARIES = testCDB anaPixelQuality anaEventStuff syncJSON \
             cdbInitDB cdbPrintPayload cdbInitGT cdbWritePayload \
             cdbPrintConfig \
             cdbInsertIovTag diffRunnumbers cdbPurgePayloads diffPayloads
 
-MONGOBINARIES = fillDB syncMongo syncJSON syncRDB uploadDetConfig downloadDetConfig
+MONGOBINARIES = fillDB syncMongo  syncRDB uploadDetConfig downloadDetConfig
 
 ifneq (,$(or $(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
        $(info ************  MERLIN VERSION ************)
