@@ -166,7 +166,7 @@ void clearCollection(string scollection, string pattern) {
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
-  mongocxx::instance instance;
+  // mongocxx::instance already created in cdbMongo.cc (in libCDB.so)
 
   // -- command line arguments
   string dirName("fixme"), dirPath("fixme"), pattern("unset"), uriString("unset"), host("localhost");

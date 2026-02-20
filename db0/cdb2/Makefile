@@ -22,14 +22,13 @@ else ifneq (,$(findstring mu3ebe,$(LHOST)))
   LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
   SOFLAGS       =
 else ifneq (,$(findstring moor,$(LHOST)))
-#  INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
-#  INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
-#  INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi/bsoncxx/third_party/mnmlstc
-#  LIBMONGODB    = -L/usr/local/lib -lmongocxx -lbsoncxx
-  LIBCURL       = -L/opt/homebrew/lib -lcurl
-  LIBBOOST      = -L/usr/lib64 -lboost_serialization
-#  SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
-  SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
+ INCMONGODB    = -I/opt/software/include/mongocxx/v_noabi
+ INCMONGODB   += -I/opt/software/include/bsoncxx/v_noabi
+ INCMONGODB   += -I/opt/software/include/bsoncxx/v_noabi/bsoncxx/third_party/mnmlstc
+ LIBMONGODB    = -L/opt/software/lib -Wl,-rpath,/opt/software/lib -lmongocxx -lbsoncxx
+ LIBCURL       = -L/opt/homebrew/lib -lcurl
+ LIBBOOST      = -L/usr/lib64 -lboost_serialization
+ SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
 else ifneq (,$(findstring mu3ebe,$(LHOST)))
   INCMONGODB    = -I/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/include/mongocxx/v_noabi
   INCMONGODB   += -I/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/include/bsoncxx/v_noabi
@@ -66,7 +65,7 @@ OTHERLIBS         = $(UTIL)/lib/libAnaUtil.so
 OSUFFIX := .o
 
 # -- CDB (Conditions DB) files  // cdbMongo.o
-LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o \
+LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o cdbMongo.o \
          calPixelAlignment.o calFibreAlignment.o  \
          calMppcAlignment.o calTileAlignment.o \
          calPixelQualityLM.o \
@@ -96,7 +95,7 @@ else ifneq (,$(findstring mu3ebe,$(LHOST)))
 else
        $(info ************  non-MERLIN VERSION ************)
        FILES = $(LFILES)
-       BINARIES = $(LBINARIES)
+       BINARIES = $(LBINARIES) $(MONGOBINARIES)
 endif
 
 
@@ -113,17 +112,17 @@ lib/libCDB.so: $(addprefix obj/,$(FILES))
 
 # -- Default rules
 $(addprefix obj/,%.o) : %.cc %.hh
-#	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
-	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\"  $(EXTHEADERS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
+#	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\"  $(EXTHEADERS) -c $< -o $@
 
 $(addprefix obj/,%.o) : %.cc
-#	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
-	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\"  $(EXTHEADERS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\" $(INCMONGODB) $(EXTHEADERS) -c $< -o $@
+#	$(CXX) $(CXXFLAGS) -DLOCALDIR=\"$(LDIRECTORY)\"  $(EXTHEADERS) -c $< -o $@
 
 # -- Binary targets: object file must exist (built by pattern rule above)
 bin/% : obj/%.o lib/libCDB.so
-#	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so $(OTHERLIBS)
-	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@  $(LIBCURL) $(GLIBS) lib/libCDB.so $(OTHERLIBS)
+	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@ $(LIBMONGODB) $(LIBCURL) $(GLIBS) lib/libCDB.so $(OTHERLIBS)
+#	$(CXX) $(LDFLAGS) -DNDEBUG -rdynamic $< -o $@  $(LIBCURL) $(GLIBS) lib/libCDB.so $(OTHERLIBS)
 
 clean:
 	rm -f obj/*.o lib/*.so bin/*

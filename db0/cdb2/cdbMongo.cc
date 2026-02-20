@@ -151,16 +151,22 @@ runRecord cdbMongo::getRunRecord(int irun) {
   for (auto doc : cursor_filtered) {
     assert(doc["_id"].type() == bsoncxx::type::k_oid);
     
-    auto bor = doc["BOR"];
+    auto bor = doc["BOR"].get_document().view();
     rr.fBORRunNumber     = bor["Run number"].get_int32().value;
     rr.fBORStartTime     = bor["Start time"].get_string().value.to_string();
-    rr.fBORSubsystems    = bor["Subsystems"].get_int32().value;
-    if (bor["Beam"].type() == bsoncxx::type::k_double) {
-      rr.fBORBeam          = bor["Beam"].get_double().value;
-    } else if (bor["Beam"].type() == bsoncxx::type::k_int32) {
-      rr.fBORBeam          = static_cast<double>(bor["Beam"].get_int32().value);
-    }
     rr.fBORShiftCrew     = bor["Shift crew"].get_string().value.to_string();
+    if (bor.find("Run Class") != bor.end()) rr.fBORRunClass = bor["Run Class"].get_string().value.to_string();
+    if (bor.find("Mu3e Magnet") != bor.end()) {
+      if (bor["Mu3e Magnet"].type() == bsoncxx::type::k_double) rr.fBORMu3eMagnet = bor["Mu3e Magnet"].get_double().value;
+      else if (bor["Mu3e Magnet"].type() == bsoncxx::type::k_int32) rr.fBORMu3eMagnet = static_cast<float>(bor["Mu3e Magnet"].get_int32().value);
+    } else if (bor.find("Beam") != bor.end()) {
+      if (bor["Beam"].type() == bsoncxx::type::k_double) rr.fBORMu3eMagnet = bor["Beam"].get_double().value;
+      else if (bor["Beam"].type() == bsoncxx::type::k_int32) rr.fBORMu3eMagnet = static_cast<float>(bor["Beam"].get_int32().value);
+    }
+    if (bor.find("Pixel readout") != bor.end()) rr.fBORPixelReadout = bor["Pixel readout"].get_bool().value;
+    if (bor.find("SciFi readout") != bor.end()) rr.fBORSciFiReadout = bor["SciFi readout"].get_bool().value;
+    if (bor.find("SciTile readout") != bor.end()) rr.fBORSciTileReadout = bor["SciTile readout"].get_bool().value;
+    if (bor.find("Beam Blocker Open") != bor.end()) rr.fBORBeamBlockerOpen = bor["Beam Blocker Open"].get_bool().value;
     
     auto eor = doc["EOR"];
     rr.fEORStopTime      = eor["Stop time"].get_string().value.to_string();
