@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
   gRandom->SetSeed(rseed);
   
   string gt("mcideal");
-  cdbAbs *pDB = new cdbJSON(gt, "json", verbose);
+  cdbAbs *pDB = new cdbJSON("json", verbose);
   
   Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setVerbosity(verbose);

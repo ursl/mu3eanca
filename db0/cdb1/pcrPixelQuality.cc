@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
-  cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
+  cdbAbs *pDB = new cdbJSON(jsondir, verbose);
 
   calAbs *cpq(0);
   if (1 == mode) {

@@ -42,7 +42,7 @@ static size_t cdbRestWriteCallback(void *contents, size_t size, size_t nmemb, vo
 
 
 // ----------------------------------------------------------------------
-cdbRest::cdbRest(string gt, string uri, int verbose) : cdbAbs(gt, uri, verbose) {
+cdbRest::cdbRest(string uri, int verbose) : cdbAbs(uri, verbose) {
   init();
 }
 

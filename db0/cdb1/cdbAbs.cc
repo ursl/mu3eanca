@@ -8,7 +8,7 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-cdbAbs::cdbAbs(string globaltag, string uri, int verbose) : fURI(uri), fVerbose(verbose) {
+cdbAbs::cdbAbs(string uri, int verbose) : fURI(uri), fVerbose(verbose) {
   
 }
 

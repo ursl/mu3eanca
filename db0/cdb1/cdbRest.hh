@@ -12,7 +12,7 @@
 class cdbRest: public cdbAbs {
 public:
   cdbRest() = default;
-  cdbRest(std::string gt, std::string uri, int verbose);
+  cdbRest(std::string uri, int verbose);
   ~cdbRest();
 
   void                 init();
