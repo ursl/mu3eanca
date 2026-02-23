@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
     return 0;
   }
   
-  for (int it = 0; it < vRunNumbers.size(); ++it) {
+  for (unsigned int it = 0; it < vRunNumbers.size(); ++it) {
     int irun = stoi(vRunNumbers[it]);
     if (irun < firstRun) continue;
     if ((lastRun > 0) && (irun > lastRun)) continue;

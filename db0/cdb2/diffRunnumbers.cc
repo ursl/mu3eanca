@@ -84,24 +84,24 @@ int main(int argc, char *argv[]) {
   vector<int> allRunnumbers;
   vector<int> thirdAndFirstRunnumbers;
   vector<int> thirdAndSecondRunnumbers;
-  for (int i = 0; i < firstRunnumbers.size(); i++) {
+  for (unsigned int i = 0; i < firstRunnumbers.size(); i++) {
     if (find(secondRunnumbers.begin(), secondRunnumbers.end(), firstRunnumbers[i]) == secondRunnumbers.end()) {
       firstOnlyRunnumbers.push_back(firstRunnumbers[i]);
     } 
   }
-  for (int i = 0; i < secondRunnumbers.size(); i++) {
+  for (unsigned int i = 0; i < secondRunnumbers.size(); i++) {
     if (find(firstRunnumbers.begin(), firstRunnumbers.end(), secondRunnumbers[i]) == firstRunnumbers.end()) {
       secondOnlyRunnumbers.push_back(secondRunnumbers[i]);
     }
   }
-  for (int i = 0; i < firstRunnumbers.size(); i++) {
+  for (unsigned int i = 0; i < firstRunnumbers.size(); i++) {
     if (find(secondRunnumbers.begin(), secondRunnumbers.end(), firstRunnumbers[i]) != secondRunnumbers.end()) {
       secondAndFirstRunnumbers.push_back(firstRunnumbers[i]);
     }
   }
 
   if (thirdFile != "unset") {
-    for (int i = 0; i < thirdRunnumbers.size(); i++) {
+    for (unsigned int i = 0; i < thirdRunnumbers.size(); i++) {
       if (find(firstRunnumbers.begin(), firstRunnumbers.end(), thirdRunnumbers[i]) != firstRunnumbers.end()) {
         thirdAndFirstRunnumbers.push_back(thirdRunnumbers[i]);
       }
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
         thirdAndSecondRunnumbers.push_back(thirdRunnumbers[i]);
       }
     }
-    for (int i = 0; i < thirdRunnumbers.size(); i++) {
+    for (unsigned int i = 0; i < thirdRunnumbers.size(); i++) {
       if (find(firstRunnumbers.begin(), firstRunnumbers.end(), thirdRunnumbers[i]) == firstRunnumbers.end()
           && find(secondRunnumbers.begin(), secondRunnumbers.end(), thirdRunnumbers[i]) == secondRunnumbers.end()
          ) {
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
   if (secondAndFirstRunnumbers.size() > 0) {
     cout << "secondAndFirstRunnumbers: " << secondAndFirstRunnumbers.size() << " runs: " << endl;
-    for (int i = 0; i < secondAndFirstRunnumbers.size(); i++) {
+    for (unsigned int i = 0; i < secondAndFirstRunnumbers.size(); i++) {
       cout << secondAndFirstRunnumbers[i];
       if (i < secondAndFirstRunnumbers.size() - 1) {
         cout << ",";
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     cout << endl;
     if (thirdAndFirstRunnumbers.size() > 0) {
       cout << "thirdAndFirstRunnumbers: " << thirdAndFirstRunnumbers.size() << " runs: " << endl;
-      for (int i = 0; i < thirdAndFirstRunnumbers.size(); i++) {
+      for (unsigned int i = 0; i < thirdAndFirstRunnumbers.size(); i++) {
         cout << thirdAndFirstRunnumbers[i];
         if (i < thirdAndFirstRunnumbers.size() - 1) {
           cout << ",";
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     cout << endl << endl;
     if (thirdAndSecondRunnumbers.size() > 0) {
       cout << "thirdAndSecondRunnumbers: " << thirdAndSecondRunnumbers.size() << " runs: " << endl;
-      for (int i = 0; i < thirdAndSecondRunnumbers.size(); i++) {
+      for (unsigned int i = 0; i < thirdAndSecondRunnumbers.size(); i++) {
         cout << thirdAndSecondRunnumbers[i];
         if (i < thirdAndSecondRunnumbers.size() - 1) {
           cout << ",";
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
     cout << endl;
     if (allRunnumbers.size() > 0) {
       cout << "allRunnumbers: " << allRunnumbers.size() << " runs: " << endl;
-      for (int i = 0; i < allRunnumbers.size(); i++) {
+      for (unsigned int i = 0; i < allRunnumbers.size(); i++) {
         cout << allRunnumbers[i];
         if (i < allRunnumbers.size() - 1) {
           cout << ",";

@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
 
   // -- initialize the run number index
   int cnt(0);
-  for (int i = 0; i < vIoV.size(); i++) {
+  for (unsigned int i = 0; i < vIoV.size(); i++) {
     if (first > 0 && vIoV[i] < first) {
       continue;
     }
