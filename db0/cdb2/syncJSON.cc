@@ -51,7 +51,6 @@ int main(int argc, char* argv[]) {
   bool all(false);
   bool cdbOnly(false);
   bool rdbOnly(false);
-  bool onlyDelete(false); // ONLY delete, do not write new records
   int firstRun(0), lastRun(-1);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-a"))     {all = true;}
@@ -222,7 +221,7 @@ int main(int argc, char* argv[]) {
                 replaceAll(ppattern, "tag_", "");
               }
               if (string::npos != ppattern.find("_iov_")) {
-                ppattern = ppattern.substr(0, ppattern.rfind('_iov_')-5);
+                ppattern = ppattern.substr(0, ppattern.rfind("_iov_")-5);
               }
               if (string::npos == ittt.find(ppattern)) {
                 continue;
@@ -233,7 +232,7 @@ int main(int argc, char* argv[]) {
                 replaceAll(ppattern, "tag_", "");
               }
               if (string::npos != ppattern.find("_iov_")) {
-                ppattern = ppattern.substr(0, ppattern.rfind('_iov_')-5);
+                ppattern = ppattern.substr(0, ppattern.rfind("_iov_")-5);
               }
               if (string::npos == ittt.find(ppattern)) {
                 continue;
@@ -297,7 +296,6 @@ int main(int argc, char* argv[]) {
       vRunNumbers = split(fileContent, ',');
     }
     cout << "total number of runs: " << vRunNumbers.size() << endl;
-    int cnt(0);
     cout << "all = " << all << endl;
     for (int it = 0; it < vRunNumbers.size(); ++it) {
       int irun = stoi(vRunNumbers[it]);
@@ -310,7 +308,6 @@ int main(int argc, char* argv[]) {
         ofstream ofs(filename);
         ofs << rr.json() << endl;
         ofs.close();
-        ++cnt;  
       }
     }
   }

@@ -70,7 +70,6 @@ int main(int argc, const char* argv[]) {
   string gt("");
   string filename("");
   int iov(1);
-  int verbose(0);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-c"))  {cal        = argv[++i];}
     if (!strcmp(argv[i], "-d"))  {inputfiledir = argv[++i];}
@@ -78,7 +77,6 @@ int main(int argc, const char* argv[]) {
     if (!strcmp(argv[i], "-g"))  {gt         = argv[++i];}
     if (!strcmp(argv[i], "-f"))  {filename   = argv[++i];}
     if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
-    if (!strcmp(argv[i], "-v"))  {verbose    = 1;}
   }
   
   cout << "===============" << endl;
@@ -290,6 +288,7 @@ void writeAlignmentInformation(string payloaddir, string gt, string type, string
         nbytes += ta->GetEntry(i);
         sensors.insert(make_pair(a.id, a));
       }
+      cout << "   ->cdbWritePayload> read " << sensors.size() << " sensors from tree with " << ta->GetEntries() << " entries and " << nbytes << " bytes" << endl;
       ofstream ONS;
       ONS.open(tmpFilename);
       for (auto &s : sensors) {
@@ -356,7 +355,7 @@ void writeAlignmentInformation(string payloaddir, string gt, string type, string
         nbytes += ta->GetEntry(i);
         mppcs.insert(make_pair(m.mppc, m));
       }
-      cout << "   ->cdbWritePayload> read " << mppcs.size() << " mppcs from tree with " << ta->GetEntries() << " entries" << endl;
+      cout << "   ->cdbWritePayload> read " << mppcs.size() << " mppcs from tree with " << ta->GetEntries() << " entries and " << nbytes << " bytes" << endl;
       ofstream ONS;
       ONS.open(tmpFilename);
       for (auto &m : mppcs) {

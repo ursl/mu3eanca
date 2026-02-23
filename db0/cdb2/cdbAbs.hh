@@ -20,7 +20,7 @@ public:
   cdbAbs() = default;
   cdbAbs(std::string gt, std::string uri, int verbose);
   void init();
-  ~cdbAbs();
+  virtual ~cdbAbs();
 
 
   // -- access to runRecords

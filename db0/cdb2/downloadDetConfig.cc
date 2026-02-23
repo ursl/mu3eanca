@@ -27,7 +27,7 @@ void retrieve_files_from_mongo(const std::string& tag, mongocxx::collection& col
   // Iterate over the documents and retrieve the files
   for (auto&& doc : cursor) {
     // Extract the filename
-    std::string filename = doc["filename"].get_utf8().value.to_string();
+    std::string filename = doc["filename"].get_string().value.to_string();
     
     // Extract the binary content
     auto binary_content = doc["content"].get_binary();

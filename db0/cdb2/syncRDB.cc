@@ -138,8 +138,6 @@ int main(int argc, char* argv[]) {
   cdbAbs *pDB(0);
 
   pDB = new cdbRest(gt, urlString, 0);
-  Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
-
 
   if (2 == mode) {
     rdbMode2(selectionString, classString, goodString, debug);

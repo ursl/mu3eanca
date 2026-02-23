@@ -119,7 +119,7 @@ void clearCollection(string scollection, string pattern) {
     auto hashCursor    = collection.find(document{} << "hash" << open_document << "$regex" << pattern << "$options" << "i" << close_document << finalize);
     for (auto doc : hashCursor) {
       if (doc["hash"]) {
-        cout << doc["hash"].get_utf8().value.to_string() << " ... deleted" << endl;
+        cout << doc["hash"].get_string().value.to_string() << " ... deleted" << endl;
       }
       auto delete_one_result = collection.delete_one(doc);
     }

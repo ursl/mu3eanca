@@ -57,7 +57,7 @@ void cdbMongo::init() {
     auto cursor1 = fDB.list_collections();
     for (const bsoncxx::document::view& doc :cursor1) {
       bsoncxx::document::element ele = doc["name"];
-      string name = ele.get_utf8().value.to_string();
+      string name = ele.get_string().value.to_string();
       cout << " " << name << endl;
     }
   }

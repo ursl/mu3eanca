@@ -79,12 +79,10 @@ int main(int argc, const char* argv[]) {
   string jsondir("");
   string gt("");
   string payloaddir("");
-  int verbose(0);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-j"))  {jsondir    = argv[++i];}
     if (!strcmp(argv[i], "-g"))  {gt         = argv[++i];}
     if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
-    if (!strcmp(argv[i], "-v"))  {verbose    = 1;}
   }
   
   cout << "===============" << endl;
