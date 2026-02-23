@@ -36,7 +36,7 @@ void calPixelEfficiency::calculate(string hash) {
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   cout << " header: " << hex << header << dec;
   uint32_t chip(0);
-  int n(0), meanEfficiency(0.);
+  int n(0);
   while (ibuffer != buffer.end()) {
     chip = blob2UnsignedInt(getData(ibuffer));
     n = blob2Int(getData(ibuffer));
@@ -46,6 +46,7 @@ void calPixelEfficiency::calculate(string hash) {
     for (int i = 0; i < n; i++) {
       a.vefficiency[i] = blob2Double(getData(ibuffer));
     }
+
     fMapConstants.insert(make_pair(a.id, a));
   }
   cout << " inserted " << fMapConstants.size() << " constants" << endl;
@@ -61,7 +62,7 @@ string calPixelEfficiency::makeBLOB() {
     constants a = it.second;
     s << dumpArray(uint2Blob(a.id));
     s << dumpArray(int2Blob(a.vefficiency.size()));
-    for (int i = 0; i < a.vefficiency.size(); i++) {
+    for (unsigned int i = 0; i < a.vefficiency.size(); i++) {
       s << dumpArray(double2Blob(a.vefficiency[i]));
     }
   }
@@ -130,7 +131,7 @@ void calPixelEfficiency::readCsv(string filename) {
   double meanEfficiency(0.0);
   int n(0);
   for (auto &c : fMapConstants) {
-    for (int i = 0; i < c.second.vefficiency.size(); i++) {
+    for (unsigned int i = 0; i < c.second.vefficiency.size(); i++) {
       if (c.second.vefficiency[i] > 0.0) {
         meanEfficiency += c.second.vefficiency[i];
         n++;
@@ -141,7 +142,7 @@ void calPixelEfficiency::readCsv(string filename) {
   if (meanEfficiency > 1.0) {
     cout << "calPixelEfficiency::readCsv> Note: mean efficiency " << meanEfficiency << " is greater than 1.0, assuming this is in percent and converting to fraction" << endl;
     for (auto &c : fMapConstants) {
-      for (int i = 0; i < c.second.vefficiency.size(); i++) {
+      for (unsigned int i = 0; i < c.second.vefficiency.size(); i++) {
         c.second.vefficiency[i] /= 100.0;
       }
     }
@@ -160,7 +161,7 @@ void calPixelEfficiency::writeCsv(string filename) {
   ONS << "#" << fSchema << endl;
   for (auto &c : fMapConstants) {
     ONS << c.first << "," << c.second.vefficiency.size() << ",";
-    for (int i = 0; i < c.second.vefficiency.size(); i++) {
+    for (unsigned int i = 0; i < c.second.vefficiency.size(); i++) {
       ONS << fixed << setprecision(7) << c.second.vefficiency[i];
       if (i < c.second.vefficiency.size() - 1) ONS << ",";
       else ONS << endl;

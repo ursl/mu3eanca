@@ -192,13 +192,14 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
       n += 250*83;
     }
   } else {
-    if (fMapConstants[chipid].linkA == status) {
+    const uint32_t ustatus = static_cast<uint32_t>(status);
+    if (fMapConstants[chipid].linkA == ustatus) {
       n += 250*89;
     }
-    if (fMapConstants[chipid].linkB == status) {
+    if (fMapConstants[chipid].linkB == ustatus) {
       n += 250*84;
     }
-    if (fMapConstants[chipid].linkC == status) {
+    if (fMapConstants[chipid].linkC == ustatus) {
       n += 250*83;
     }
   }
@@ -533,7 +534,7 @@ void calPixelQualityLM::readCsv(string filename) {
     // -- initialize column map
     int ncol = stoi(tokens[7]);
     a.mcol.clear();
-    for (unsigned ipix = 0; ipix < ncol; ++ipix) {
+    for (int ipix = 0; ipix < ncol; ++ipix) {
       int icol           = stoi(tokens[8 + 2*ipix]);
       unsigned int iqual = stoi(tokens[8 + 2*ipix + 1]);
       a.mcol[icol] = static_cast<char>(iqual);
@@ -541,7 +542,7 @@ void calPixelQualityLM::readCsv(string filename) {
     // -- initialize pixel map
     int npix = stoi(tokens[8 + 2*ncol]);
     a.mpixel.clear();
-    for (unsigned ipix = 0; ipix < npix; ++ipix) {
+    for (int ipix = 0; ipix < npix; ++ipix) {
       int icol           = stoi(tokens[9 + 2*ncol + ipix*3]);
       int irow           = stoi(tokens[9 + 2*ncol + ipix*3 + 1]);
       int iqual          = stoi(tokens[9 + 2*ncol + ipix*3 + 2]);

@@ -30,7 +30,7 @@ private:
 
   std::string fGT{"GT unset"};
   cdbAbs *fDB{0};
-  int fVerbose{10}, fPrintTiming{0};
+  int fVerbose{10};
 
   // -- for the set global tag
   std::vector<std::string> fTags;

@@ -75,7 +75,6 @@ calAbs* Mu3eCalFactory::createClass(string name, string tag) {
 // ----------------------------------------------------------------------
 calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
   calAbs* a(0);
-  auto tbegin = std::chrono::high_resolution_clock::now();
   if (!name.compare("pixelalignment_")) {
     a = new calPixelAlignment(db, tag);
   } else if (!name.compare("fibrealignment_")) {

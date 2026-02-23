@@ -16,7 +16,7 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 static size_t cdbRestWriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-  ((std::string*)userp)->append((char*)contents, size * nmemb);
+  static_cast<std::string*>(userp)->append(static_cast<const char*>(contents), size * nmemb);
   return size * nmemb;
 }
 
@@ -261,7 +261,10 @@ void cdbRest::doCurl(string collection, string filter, string api) {
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fCurlReadBuffer);
   
   CURLcode curlRes = curl_easy_perform(curl);
-  
+  if (curlRes != CURLE_OK && fVerbose > 0) {
+    cout << "cdbRest::doCurl> curl_easy_perform failed: " << curl_easy_strerror(curlRes) << endl;
+  }
+
   if (0) cout << "==:cdbRest::doCurl(\"" << collection << "\"): "
                 << " sapi ->" << sapi << "<- result: "
                 << fCurlReadBuffer

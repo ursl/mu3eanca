@@ -44,8 +44,8 @@ void calPixelTimeCalibration::calculate(string hash) {
       for(uint sector = 0; sector < NSECTOR; sector++){
         for(uint tot = 0; tot < NTOTBINS; tot++){
           globalChipID = blob2Int(getData(ibuffer));
-          int s = blob2Int(getData(ibuffer));
-          int b = blob2Int(getData(ibuffer));
+          blob2Int(getData(ibuffer));
+          blob2Int(getData(ibuffer));
           arr[sector][tot].mean = blob2Double(getData(ibuffer));
           arr[sector][tot].meanerr = blob2Double(getData(ibuffer));
           arr[sector][tot].sigma = blob2Double(getData(ibuffer));
@@ -130,11 +130,13 @@ void calPixelTimeCalibration::readTxtFile(string filename) {
   FILE *cf = fopen(filename.c_str(), "r");
   fMapConstants.clear();
 
-  int c(0), s(0), b(0);
-  for(uint chip = 0; chip < NCALIBRATIONCHIPS; chip++){
+  unsigned int c(0);
+  unsigned int s(0);
+  unsigned int b(0);
+  for(uint chip = 0; chip < NCALIBRATIONCHIPS; chip++) {
     std::array<std::array<constants, NTOTBINS>, NSECTOR> arr;
-    for(uint sector = 0; sector < NSECTOR; sector++){
-      for(uint tot = 0; tot < NTOTBINS; tot++){
+    for (uint sector = 0; sector < NSECTOR; sector++) {
+      for (uint tot = 0; tot < NTOTBINS; tot++) {
         fscanf(cf, "%i %i %i %lf %lf %lf %lf\n",
           &c,
           &s,
