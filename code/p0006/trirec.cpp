@@ -70,7 +70,7 @@ int main(int argc, const char* argv[]) {
         if (boost::filesystem::is_directory(dir)) {
           std::string gt = mu3e::rec::conf.conddb.globalTag;
           int dbverbose(0);
-          cdbAbs *pDB = new cdbJSON(gt, mu3e::rec::conf.conddb.dbconn, dbverbose);
+          cdbAbs *pDB = new cdbJSON(mu3e::rec::conf.conddb.dbconn, dbverbose);
           Mu3eConditions *pDC = Mu3eConditions::instance(gt, pDB);
         } else {
           std::cout << "Error: dbconn ->" << dir << "<- is not an existing directory" << std::endl;

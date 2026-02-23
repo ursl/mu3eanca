@@ -380,10 +380,10 @@ int main(int argc, const char* argv[]) {
     cdbAbs *pDB(0);
     std::string gt = "mcideal";
     if (dbconn == "rest") {
-      pDB = new cdbRest(gt, "https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/",
+      pDB = new cdbRest("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/",
                         dbverbose);
     } else if (dbconn == "json") {
-      pDB = new cdbJSON(gt, "/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1/json", dbverbose);
+      pDB = new cdbJSON("/psi/home/langenegger/mu3e/mu3eanca/db0/cdb1/json", dbverbose);
     } else {
       std::cout << "NO DB connection defined. Using legacy root:alignment/*" << std::endl;
     }
