@@ -82,7 +82,7 @@ LBINARIES = testCDB anaPixelQuality anaEventStuff syncJSON \
             cdbPrintConfig \
             cdbInsertIovTag diffRunnumbers cdbPurgePayloads diffPayloads
 
-MONGOBINARIES = fillDB syncMongo  syncRDB uploadDetConfig downloadDetConfig
+MONGOBINARIES = syncMongo  syncRDB uploadDetConfig downloadDetConfig
 
 ifneq (,$(or $(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
        $(info ************  MERLIN VERSION ************)
