@@ -56,6 +56,12 @@ public:
   void    registerCalibration(std::string tag, calAbs *c);
   void    printCalibrations();
   calAbs* getCalibration(std::string name);
+
+  // -- replace a calibration with a different tag 
+  //    (e.g. pixelalignment_mcidealv6.1=2025CosmicsVtxOnly  -> pixelalignment_datav6.3=2025V1test
+  //     name is the calibration type prefix (e.g. "pixelalignment_")
+  //     replacementTag is the new tag to use for the calibration (e.g. "pixelalignment_datav6.3=2025V1test")
+  bool    replaceCalibration(std::string name, std::string replacementTag);
   std::map<std::string, calAbs*> getCalibrations() {return fCalibrations;}
 
   std::string  getHash(int irun, std::string tag);

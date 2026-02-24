@@ -391,6 +391,19 @@ int main(int argc, char* argv[]) {
     ces2->printBLOB(ces2->makeBLOB(), 1);
     cout << "######################################################################" << endl;
     ces2->writePayloadToFile(pl2.fHash, ".", pl2);
+  } else if (17 == mode) {
+    cout << "Test replace calibration" << endl;
+    Mu3eConditions *pDC = Mu3eConditions::instance();
+    calPixelAlignment *cpa = dynamic_cast<calPixelAlignment*>(pDC->getCalibration("pixelalignment_"));
+    cpa->printBLOB(cpa->makeBLOB(), 10); 
+    bool result = pDC->replaceCalibration("pixelalignment_", "pixelalignment_datav6.3=2025V2test");
+    if (result) {
+      cout << "==> Replacement successful" << endl;
+      calPixelAlignment *cpa2 = dynamic_cast<calPixelAlignment*>(pDC->getCalibration("pixelalignment_"));
+      cpa2->printBLOB(cpa2->makeBLOB(), 12);
+    } else {
+      cout << "==> Replacement failed" << endl;
+    }
   }
   return 0;
 }

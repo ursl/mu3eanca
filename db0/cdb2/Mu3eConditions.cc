@@ -225,6 +225,47 @@ calAbs* Mu3eConditions::getCalibration(std::string name) {
 
 
 // ----------------------------------------------------------------------
+bool Mu3eConditions::replaceCalibration(std::string name, std::string replacementTag) {
+  if (!fDB) return false;
+
+  std::string oldTag;
+  calAbs* oldCal = 0;
+  for (auto it : fCalibrations) {
+    if (string::npos != it.first.find(name)) {
+      oldTag = it.first;
+      oldCal = it.second;
+      break;
+    }
+  }
+  if (!oldCal) {
+    cout << "Mu3eConditions::replaceCalibration> no calibration matching " << name << endl;
+    return false;
+  }
+
+  if (fVerbose > 0) cout << "Mu3eConditions::replaceCalibration> " << oldTag << " -> " << replacementTag << endl;
+
+  delete oldCal;
+  fCalibrations.erase(oldTag);
+
+  // -- update fTags: replace old with new
+  for (auto& t : fTags) {
+    if (t == oldTag) { t = replacementTag; break; }
+  }
+
+  // -- fetch IOVs for replacement tag
+  auto m = fDB->readIOVs({replacementTag});
+  fIOVs[replacementTag] = m[replacementTag];
+
+  calAbs* a = createClassWithDB(name, replacementTag, fDB);
+  if (a) {
+    // -- load payload for current run (same as setRunNumber does for other calibrations)
+    a->update(getHash(fRunNumber, replacementTag));
+  }
+  return (a != 0);
+}
+
+
+// ----------------------------------------------------------------------
 void Mu3eConditions::printCalibrations() {
   for (auto it: fCalibrations) {
     cout << it.second->getName() << endl;
