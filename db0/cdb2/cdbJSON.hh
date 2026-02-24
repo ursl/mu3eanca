@@ -10,7 +10,7 @@
 class cdbJSON: public cdbAbs {
 public:
   cdbJSON() = default;
-  cdbJSON(std::string gt, std::string uri, int verbose);
+  cdbJSON(std::string uri, int verbose);
   ~cdbJSON();
 
   void                 init();

@@ -13,7 +13,7 @@
 class cdbMongo: public cdbAbs {
 public:
   cdbMongo() = default;
-  cdbMongo(std::string name, std::string uri, int verbose);
+  cdbMongo(std::string uri, int verbose);
   ~cdbMongo();
   
   void       init();

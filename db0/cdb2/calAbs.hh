@@ -25,30 +25,18 @@ public:
   void                setVerbosity(int v) {fVerbose = v;}
   virtual std::string getName() { return "blurp"; }
   virtual std::string getHash() {return fHash;}
-  virtual void        calculate(std::string hash) {
-    std::cout << "calAbs::calculate() ?" << std::endl;
-  }
+  virtual void        calculate(std::string hash) = 0;
 
   // -- BLOB creation from fMapConstants. This is base-class dependent and hence needs to be overridden.
-  virtual std::string makeBLOB() {
-    return "calAbs::makeBLOB() ?";
-  }
+  virtual std::string makeBLOB() = 0;
   // -- BLOB creation from a vector<double>. This is base-class dependent and hence needs to be overridden.
-  virtual std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
-    return "calAbs::makeBLOB(map<int, vector<double>>) ?";
-  }
+  virtual std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) = 0;
 
   // -- print the payload. This is base-class dependent and hence needs to be overridden.
-  virtual void printBLOB(std::string, int verbosity = 1) {
-    std::cout << "calAbs::printBLOB() ?" << std::endl;
-  }
-  virtual std::string printBLOBString(std::string blob, int verbosity = 0) {
-    return "calAbs::printBLOBString() ?";
-  }
+  virtual void printBLOB(std::string, int verbosity = 1) = 0;
+  virtual std::string printBLOBString(std::string blob, int verbosity = 0) = 0;
 
-  virtual std::string  getSchema() {
-    return "calAbs::getSchema()?";
-  }
+  virtual std::string  getSchema() = 0;
 
   // -- direct interactions
   void                readPayloadFromFile(std::string hash, std::string dir);

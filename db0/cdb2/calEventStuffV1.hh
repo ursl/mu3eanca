@@ -27,6 +27,7 @@ public:
   void        calculate(std::string hash) override;
 
   std::string makeBLOB() override;
+  std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) override;
   // -- verbosity = -1 (all), 0 (no elements), n (n elements)
   void printBLOB(std::string, int verbosity = -1) override;
   std::string printBLOBString(std::string blob, int verbosity = -1) override;

@@ -65,7 +65,7 @@ void calPixelTimeCalibration::printBLOB(std::string sblob, int verbosity) {
 }
 
 // ----------------------------------------------------------------------
-string calPixelTimeCalibration::printBLOBString(std::string sblob, int verbosity) {
+string calPixelTimeCalibration::printBLOBString(std::string sblob, int /*verbosity*/) {
   stringstream ss;
 
   std::vector<char> buffer(sblob.begin(), sblob.end());
@@ -122,6 +122,11 @@ string calPixelTimeCalibration::makeBLOB() {
   return s.str();
 }
 
+
+// ----------------------------------------------------------------------
+string calPixelTimeCalibration::makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
+  return makeBLOB();
+}
 
 
 // ----------------------------------------------------------------------

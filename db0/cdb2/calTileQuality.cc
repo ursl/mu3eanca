@@ -95,6 +95,13 @@ string calTileQuality::makeBLOB() {
   return s.str();
 }
 
+
+// ----------------------------------------------------------------------
+string calTileQuality::makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
+  return makeBLOB();
+}
+
+
 // ----------------------------------------------------------------------
 void calTileQuality::printBLOB(std::string blob, int verbosity) {
   cout << printBLOBString(blob, verbosity) << endl;

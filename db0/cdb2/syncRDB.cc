@@ -57,7 +57,7 @@ using namespace std;
 // Forward declarations
 void rdbMode1(runRecord &, bool);
 void rdbMode0(runRecord &, bool);
-void rdbMode2(string &, string &, string &, bool);
+void rdbMode2(string &, string &, string &);
 void rdbMode3(int irun, string key, string value, bool debug);
 void rdbMode4(int irun, string key, string value, bool debug);
 void rdbMode5(int irun, string key, bool debug);
@@ -137,10 +137,10 @@ int main(int argc, char* argv[]) {
 
   cdbAbs *pDB(0);
 
-  pDB = new cdbRest(gt, urlString, 0);
+  pDB = new cdbRest(urlString, 0);
 
   if (2 == mode) {
-    rdbMode2(selectionString, classString, goodString, debug);
+    rdbMode2(selectionString, classString, goodString);
     delete pDB;
     return 0; 
   }
@@ -344,7 +344,7 @@ void rdbMode1(runRecord &rr, bool debug) {
 
 // ----------------------------------------------------------------------
 // -- select runs from RDB based on selection string and class string
-void rdbMode2(string &selectionString, string &classString, string &goodString, bool debug) {
+void rdbMode2(string &selectionString, string &classString, string &goodString) {
   Mu3eConditions *pDC = Mu3eConditions::instance();
   vector<string> vRunNumbers = pDC->getAllRunNumbers();
   vector<int> vSelectedRuns;
@@ -392,7 +392,7 @@ void rdbMode2(string &selectionString, string &classString, string &goodString, 
 
 // ----------------------------------------------------------------------
 // Helper function to convert string to appropriate type
-json convertValueToType(const string& value, bool isAppend = false) {
+json convertValueToType(const string& value) {
     // Convert to lowercase for boolean comparison
     string valueLower = value;
     transform(valueLower.begin(), valueLower.end(), valueLower.begin(), ::tolower);

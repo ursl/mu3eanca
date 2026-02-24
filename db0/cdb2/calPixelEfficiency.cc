@@ -71,12 +71,18 @@ string calPixelEfficiency::makeBLOB() {
 
 
 // ----------------------------------------------------------------------
+string calPixelEfficiency::makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
+  return makeBLOB();
+}
+
+
+// ----------------------------------------------------------------------
 void calPixelEfficiency::printBLOB(string s, int verbosity) {
   cout << printBLOBString(s, verbosity) << endl;
 }
 
 // ----------------------------------------------------------------------
-string calPixelEfficiency::printBLOBString(string s, int verbosity) {
+string calPixelEfficiency::printBLOBString(string s, int /*verbosity*/) {
   stringstream ss;
   ss << "calPixelEfficiency::printBLOB> print BLOB" << endl;
   std::vector<char> buffer(s.begin(), s.end());

@@ -160,10 +160,10 @@ int main(int argc, char *argv[]) {
   cdbAbs *pDB(0);
   if (string::npos != db.find("rest") || string::npos != db.find("http://")) {
     string ms("http://pc11740.psi.ch/cdb");
-    pDB = new cdbRest(gt, ms, verbose);
+    pDB = new cdbRest(ms, verbose);
   } else {
     // -- hope for the best that this is a JSON directory
-    pDB = new cdbJSON(gt, db, verbose);
+    pDB = new cdbJSON(db, verbose);
   }
 
   // -- initialize the conditions

@@ -152,12 +152,18 @@ string calFibreQuality::makeBLOB() {
 
 
 // ----------------------------------------------------------------------
+string calFibreQuality::makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
+  return makeBLOB();
+}
+
+
+// ----------------------------------------------------------------------
 void calFibreQuality::printBLOB(string blob, int verbosity) {
   cout << printBLOBString(blob, verbosity) << endl;
 }
 
 // ----------------------------------------------------------------------
-string calFibreQuality::printBLOBString(string blob, int verbosity) {
+string calFibreQuality::printBLOBString(string blob, int /*verbosity*/) {
   stringstream s;
 
   vector<char> buffer(blob.begin(), blob.end());
@@ -190,7 +196,7 @@ string calFibreQuality::printBLOBString(string blob, int verbosity) {
 
 
 // ----------------------------------------------------------------------
-void calFibreQuality::writeCSV(string filename) {
+void calFibreQuality::writeCSV(string /*filename*/) {
  
 }
 

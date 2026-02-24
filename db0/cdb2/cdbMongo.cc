@@ -35,7 +35,7 @@ mongocxx::instance instance{};
 
 
 // ----------------------------------------------------------------------
-cdbMongo::cdbMongo(string name, string uri, int verbose) : cdbAbs(name, uri, verbose) {
+cdbMongo::cdbMongo(string uri, int verbose) : cdbAbs(uri, verbose) {
   init();
 }
 

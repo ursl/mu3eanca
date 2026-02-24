@@ -129,8 +129,14 @@ string calPixelCablingMap::makeBLOB() {
     s << dumpArray(uint2Blob(a.offsetM));
   }
   return s.str();
-
 }
+
+
+// ----------------------------------------------------------------------
+string calPixelCablingMap::makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
+  return makeBLOB();
+}
+
 
 // ----------------------------------------------------------------------
 string calPixelCablingMap::readJson(string filename) {

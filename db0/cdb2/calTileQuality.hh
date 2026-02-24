@@ -34,6 +34,7 @@ public:
   void        calculate(std::string hash) override;
 
   std::string makeBLOB() override;
+  std::string makeBLOB(const std::map<unsigned int, std::vector<double>>&) override;
   // -- verbosity = <0 (not-good channels), 0 (all channels), >0 (good channels)
   void printBLOB(std::string, int verbosity = 1) override;
   std::string printBLOBString(std::string blob, int verbosity = 1) override;

@@ -9,7 +9,7 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-cdbAbs::cdbAbs(string globaltag, string uri, int verbose) : fURI(uri), fVerbose(verbose) {
+cdbAbs::cdbAbs(string uri, int verbose) : fURI(uri), fVerbose(verbose) {
 
 }
 
@@ -64,21 +64,5 @@ void cdbAbs::print(std::map<std::string, std::vector<int>> m) {
     print(it.second);
   }
   cout << endl;
-}
-
-
-// ----------------------------------------------------------------------
-vector<string> cdbAbs::getAllRunNumbers(string selection, string det) {
-  return vector<string>();
-}
-
-// ----------------------------------------------------------------------
-vector<string> cdbAbs::getAllRunNumbers() {
-  return vector<string>();
-}
-
-// ----------------------------------------------------------------------
-runRecord cdbAbs::getRunRecord(int irun) {
-  return runRecord();
 }
 

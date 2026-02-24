@@ -104,6 +104,13 @@ string calEventStuffV1::makeBLOB() {
 
 
 // ----------------------------------------------------------------------
+string calEventStuffV1::makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
+  // EventStuff does not support map-based BLOB creation; use current constants
+  return makeBLOB();
+}
+
+
+// ----------------------------------------------------------------------
 string calEventStuffV1::readJSON(string filename) {
   string spl("");
   ifstream INS(filename);

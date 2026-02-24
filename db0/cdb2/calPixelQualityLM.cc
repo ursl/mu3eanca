@@ -323,7 +323,7 @@ bool calPixelQualityLM::isLinkDead(unsigned int chipid, int ilink) {
 }
 
 // ----------------------------------------------------------------------
-bool calPixelQualityLM::isChipDead(unsigned int chipid, int row, int col) {
+bool calPixelQualityLM::isChipDead(unsigned int chipid) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
     return true; // -- chip not found
   }
@@ -401,13 +401,17 @@ string calPixelQualityLM::printBLOBString(std::string sblob, int verbosity) {
     int npix = blob2Int(getData(ibuffer));
     if (npix > 0) { 
       ss << "            defective pixels " << npix << " (col/row/qual): " ;
-      for (int i = 0; i < npix; ++i) {
-        int icol           = blob2Int(getData(ibuffer));
-        int irow           = blob2Int(getData(ibuffer));
-        unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
-        ss << icol << "/" << irow << "/" << iqual << (i < npix-1? ", ":"");
+      if (verbosity > 0) {
+        for (int i = 0; i < npix; ++i) {
+          int icol           = blob2Int(getData(ibuffer));
+          int irow           = blob2Int(getData(ibuffer));
+          unsigned int iqual = blob2UnsignedInt(getData(ibuffer));
+          ss << icol << "/" << irow << "/" << iqual << (i < npix-1? ", ":"");
+        }
+        ss << endl;
+      } else {
+        ss << "(suppressed) " << endl;
       }
-      ss << endl;
     }
   }
   return ss.str();

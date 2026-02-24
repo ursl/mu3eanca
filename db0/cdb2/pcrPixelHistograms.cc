@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
-  cdbAbs *pDB = new cdbJSON(gt, jsondir, verbose);
+  cdbAbs *pDB = new cdbJSON(jsondir, verbose);
   Mu3eConditions* pDC = Mu3eConditions::instance(gt, pDB);
   pDC->setRunNumber(1);
   if(!pDC->getDB()) {

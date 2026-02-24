@@ -24,7 +24,7 @@
 
 using namespace std;
 
-void aFewRuns(cdbAbs *, string globalTag, calAbs *);
+void aFewRuns();
 void printStuff(cdbAbs *, string gt);
 void printAll(cdbAbs *);
 
@@ -74,19 +74,19 @@ int main(int argc, char* argv[]) {
   
   cdbAbs *pDB(0);
   if (string::npos != db.find("json")) {
-    pDB = new cdbJSON(gt, db, verbose);
+    pDB = new cdbJSON(db, verbose);
   } else if (string::npos != db.find("mongo")) {
     string ms("mongodb://pc11740.psi.ch:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
-    //no    pDB = new cdbMongo(gt, ms, verbose);
+    //no    pDB = new cdbMongo(ms, verbose);
     cout << "ERROR: " << db << " not available in this context." << endl;
     return 0;
   } else if (string::npos != db.find("rest") || string::npos != db.find("http://")) {
     //    string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
     string ms("http://pc11740.psi.ch/cdb");
-    pDB = new cdbRest(gt, ms, verbose);
+    pDB = new cdbRest(ms, verbose);
   } else {
     // -- hope for the best that this is a JSON directory without the magic word
-    pDB = new cdbJSON(gt, db, verbose);
+    pDB = new cdbJSON(db, verbose);
   }
   
   
@@ -421,19 +421,19 @@ void printStuff(cdbAbs *db, string gt) {
 
 
 // ----------------------------------------------------------------------
-void aFewRuns(cdbAbs *db, string gt, calAbs *cal) {
+void aFewRuns() {
   Mu3eConditions *pDC = Mu3eConditions::instance();
   cout << "DB " << pDC->getGlobalTag() << endl;
   vector<int> vruns{23,24,157,201,202};
   pDC->printCalibrations();
   
-  calAbs *cl = pDC->getCalibration("pixelalignment_");
+  calPixelAlignment *cl = dynamic_cast<calPixelAlignment*>(pDC->getCalibration("pixelalignment_"));
   std::cout << "cl = " << cl << std::endl;
   
   //  calPixelAlignment *al = dynamic_cast<calPixelAlignment*>(cal);
   for (auto it: vruns) {
     pDC->setRunNumber(it);
-    cout << "now for run = " << it << " payload hash ->" << cal->getHash() << "<-" << endl;
+    cout << "now for run = " << it << " payload hash ->" << cl->getHash() << "<-" << endl;
     // -- not any more. calAbs* classes are filled from BLOBs, not directly (except though makeBLOB)
     // double vx;
     // al->setVxAddr(&vx);

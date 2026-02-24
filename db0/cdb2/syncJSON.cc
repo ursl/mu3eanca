@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
 
   string urlString = host + ":5050/cdb/";
   cout << "urlString: " << urlString << endl;
-  pDB = new cdbRest("mcidealv6.1", urlString, 0);
+  pDB = new cdbRest(urlString, 0);
 
 // -- check whether directories for JSONs already exist
   vector<string> testdirs{dirPath,
@@ -297,7 +297,7 @@ int main(int argc, char* argv[]) {
     }
     cout << "total number of runs: " << vRunNumbers.size() << endl;
     cout << "all = " << all << endl;
-    for (int it = 0; it < vRunNumbers.size(); ++it) {
+    for (unsigned int it = 0; it < vRunNumbers.size(); ++it) {
       int irun = stoi(vRunNumbers[it]);
       if (irun < firstRun) continue;
       if (lastRun > -1 && irun > lastRun) continue;

@@ -13,7 +13,7 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-cdbJSON::cdbJSON(string gt, string uri, int verbose) : cdbAbs(gt, uri, verbose) {
+cdbJSON::cdbJSON(string uri, int verbose) : cdbAbs(uri, verbose) {
   init();
 }
 
