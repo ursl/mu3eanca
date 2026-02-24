@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   }
 
   // -- this is just to get the list of all chipIDs
-  cdbAbs *pDB = new cdbJSON(igt, jsondir, verbose);
+  cdbAbs *pDB = new cdbJSON(jsondir, verbose);
   Mu3eConditions* pDC = Mu3eConditions::instance(igt, pDB);
   pDC->setRunNumber(1);
   if(!pDC->getDB()) {

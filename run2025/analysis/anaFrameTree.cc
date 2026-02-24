@@ -57,7 +57,7 @@ anaFrameTree::anaFrameTree(TChain *chain) : fpChain(0), fNentries(0), fRunnumber
   string gt("datav6.3=2025V1");
   string jsondir("/Users/ursl/data/mu3e/cdb");
 
-  cdbAbs *pDB = new cdbJSON(gt, jsondir, fVerbose);
+  cdbAbs *pDB = new cdbJSON(jsondir, fVerbose);
   fpDC = Mu3eConditions::instance(gt, pDB);
   fpDC->setRunNumber(1);
   fpCPQ = (calPixelQualityLM*)fpDC->getCalibration("pixelqualitylm_");
