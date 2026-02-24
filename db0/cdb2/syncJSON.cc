@@ -139,7 +139,13 @@ int main(int argc, char* argv[]) {
             cout << itttt << " ";
             string payloadName = "tag_" + ittt.first + "_iov_" + to_string(itttt);
             payload pl = pDB->getPayload(payloadName);
-            ofstream ofs(dirPath + "/payloads/" + payloadName);
+            string subpath = payloadSubPathFromHash(payloadName);
+            string filepath = dirPath + "/payloads/" + subpath;
+            string::size_type lastSlash = subpath.rfind("/");
+            if (lastSlash != string::npos) {
+              system(string("mkdir -p " + dirPath + "/payloads/" + subpath.substr(0, lastSlash)).c_str());
+            }
+            ofstream ofs(filepath);
             ofs << pl.json() << endl;
             ofs.close();
           }
@@ -261,7 +267,13 @@ int main(int argc, char* argv[]) {
                 << " pattern: " << pattern << " spl: " << spl
                 << endl;
                 payload pl = pDB->getPayload(spl);
-                ofstream ofs(dirPath + "/payloads/" + spl);
+                string subpath = payloadSubPathFromHash(spl);
+                string filepath = dirPath + "/payloads/" + subpath;
+                string::size_type lastSlash = subpath.rfind("/");
+                if (lastSlash != string::npos) {
+                  system(string("mkdir -p " + dirPath + "/payloads/" + subpath.substr(0, lastSlash)).c_str());
+                }
+                ofstream ofs(filepath);
                 ofs << pl.json() << endl;
                 ofs.close();
               }

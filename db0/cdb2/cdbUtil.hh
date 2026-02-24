@@ -30,6 +30,12 @@ std::string jsFormat(std::vector<std::string>);
 std::string jsFormat(std::vector<int>);
 // -- check if file exists
 bool fileExists(const std::string& filename);
+
+// -- payload path layout: payloads/<tag>/<block>/<hash>
+//    Hash format: tag_<tagname>_iov_<runnumber>
+//    Block: runnumber/1000 as 4-digit dir (0000=1-999, 0001=1000-1999, ...)
+// Returns subpath "tag/block/hash" if parseable, else "hash" (flat fallback)
+std::string payloadSubPathFromHash(const std::string& hash);
 // -- get string (enclosed by double quotation marks) indexed by a single key
 std::string jsonGetString(const std::string& jstring, const std::string& key);
 // -- get string (enclosed by double quotation marks) indexed by a vector of keys

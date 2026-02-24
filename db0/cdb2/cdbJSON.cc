@@ -228,10 +228,16 @@ payload cdbJSON::getPayload(string hash) {
   payload pl;
   pl.fComment = sspl.str();
   
-  // -- read payload for hash
+  // -- read payload: try tag/block subdir first, then flat fallback
   ifstream INS;
-  string filename = fURI + "/payloads/" + hash;
+  string subpath = payloadSubPathFromHash(hash);
+  string filename = fURI + "/payloads/" + subpath;
   INS.open(filename);
+  if (INS.fail() && subpath != hash) {
+    filename = fURI + "/payloads/" + hash;
+    INS.clear();
+    INS.open(filename);
+  }
   if (INS.fail()) {
     cout << "Error failed to open ->" << filename << "<-" << endl;
     return pl;

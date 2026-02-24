@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cstdlib>
 
 
 using namespace std;
@@ -80,10 +81,16 @@ void calAbs::readPayloadFromFile(string hash, string dir) {
   payload pl;
   pl.fComment = sspl.str();
 
-  // -- read payload for hash
+  // -- read payload: try tag/block subdir first, then flat fallback
   ifstream INS;
-  string filename = dir + "/" + hash;
+  string subpath = payloadSubPathFromHash(hash);
+  string filename = dir + "/" + subpath;
   INS.open(filename);
+  if (INS.fail() && subpath != hash) {
+    filename = dir + "/" + hash;
+    INS.clear();
+    INS.open(filename);
+  }
   if (INS.fail()) {
     cout << "calAbs::readPayloadFromFile> Error failed to open ->" << filename << "<-" << endl;
     fError = "Error: file not found";
@@ -121,13 +128,18 @@ void calAbs::writePayloadToFile(string hash, string dir) {
   // sstr << "\"date\" : " << pl.fDate << "\", ";
   // sstr << "\"BLOB\" : \"" << base64_encode(pl.fBLOB) << "\" }" << endl;
 
-  // -- JSON
+  string subpath = payloadSubPathFromHash(hash);
+  string filepath = dir + "/" + subpath;
+  string::size_type lastSlash = subpath.rfind("/");
+  if (lastSlash != string::npos) {
+    string parentDir = dir + "/" + subpath.substr(0, lastSlash);
+    system(string("mkdir -p " + parentDir).c_str());
+  }
   ofstream JS;
-  JS.open(dir + "/" + hash);
+  JS.open(filepath);
   if (JS.fail()) {
     cout << "calAbs::writePayloadToFile> Error failed to open "
-         << dir << "/" << hash
-         << endl;
+         << filepath << endl;
   }
   JS << sstr.str();
   JS.close();
@@ -145,11 +157,17 @@ void calAbs::writePayloadToFile(string hash, string dir, payload &pl) {
   // sstr << "\"" << pl.fComment << "\", ";
   // sstr << "\"BLOB\" : \"" << base64_encode(pl.fBLOB) << "\" }" << endl;
 
-  // -- JSON
+  string subpath = payloadSubPathFromHash(hash);
+  string filepath = dir + "/" + subpath;
+  string::size_type lastSlash = subpath.rfind("/");
+  if (lastSlash != string::npos) {
+    string parentDir = dir + "/" + subpath.substr(0, lastSlash);
+    system(string("mkdir -p " + parentDir).c_str());
+  }
   ofstream JS;
-  JS.open(dir + "/" + hash);
+  JS.open(filepath);
   if (JS.fail()) {
-    cout << "calAbs::writePayloadToFile> Error failed to open " << dir << "/" << hash <<  endl;
+    cout << "calAbs::writePayloadToFile> Error failed to open " << filepath << endl;
   }
   JS << sstr.str();
   JS.close();

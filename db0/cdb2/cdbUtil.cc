@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <unistd.h>
 #include <cstring>
+#include <cstdlib>
 
 
 using namespace std;
@@ -230,6 +231,27 @@ bool fileExists(const string& filename) {
   }
   
   return false;
+}
+
+
+// ----------------------------------------------------------------------
+string payloadSubPathFromHash(const string& hash) {
+  // Hash format: tag_<tagname>_iov_<runnumber>
+  const string prefix("tag_");
+  const string suffix("_iov_");
+  if (hash.size() < prefix.size() + suffix.size() + 1) return hash;
+  if (hash.compare(0, prefix.size(), prefix) != 0) return hash;
+  string::size_type pos = hash.rfind(suffix);
+  if (pos == string::npos) return hash;
+  string tag = hash.substr(prefix.size(), pos - prefix.size());
+  string iovStr = hash.substr(pos + suffix.size());
+  if (iovStr.empty()) return hash;
+  int iov = atoi(iovStr.c_str());
+  if (iov < 0) return hash;
+  int block = iov / 1000;
+  stringstream ss;
+  ss << setfill('0') << setw(4) << block;
+  return tag + "/" + ss.str() + "/" + hash;
 }
 
 
