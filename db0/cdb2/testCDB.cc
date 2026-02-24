@@ -59,7 +59,7 @@ void printAll(cdbAbs *);
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
-  int mode(0), run(3), verbose(0);
+  int mode(0), run(4001), verbose(0);
   string db("/Users/ursl/data/mu3e/cdb"), gt("datav6.3=2025V0");
   string scals, sconfigs;
   for (int i = 0; i < argc; i++) {
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
   } else if (3 == mode) {
     cout << "Test run record" << endl;
     Mu3eConditions *pDC = Mu3eConditions::instance();
-    runRecord rr = pDC->getRunRecord(4001);
+    runRecord rr = pDC->getRunRecord(run);
     cout << "runRecord:" << endl;
     cout << "----------------------------------------------------------------------" << endl;
     cout << rr.json() << endl;

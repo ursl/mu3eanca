@@ -131,14 +131,18 @@ runRecord cdbJSON::getRunRecord(int irun) {
   runRecord rr;
   rr.fEORComments = sspl.str();
   
-  // -- read runRecord for run irun
+  // -- read runRecord: try block subdir first, then flat fallback
   ifstream INS;
-  //  string filename = fURI + "/runrecords/" + to_string(irun);
-  std::ostringstream oss;
-  oss << "runRecord_" << irun << ".json";
-  string filename = fURI + "/runrecords/" + oss.str();
-    
+  string subpath = runRecordSubPathFromRun(irun);
+  string filename = fURI + "/runrecords/" + subpath;
   INS.open(filename);
+  if (INS.fail()) {
+    std::ostringstream oss;
+    oss << "runRecord_" << irun << ".json";
+    filename = fURI + "/runrecords/" + oss.str();
+    INS.clear();
+    INS.open(filename);
+  }
   if (INS.fail()) {
     cout << "Error failed to open ->" << filename << "<-" << endl;
     return rr;
@@ -159,9 +163,8 @@ runRecord cdbJSON::getRunRecord(int irun) {
 // ----------------------------------------------------------------------
 vector<string> cdbJSON::getAllRunNumbers() {
   vector<string> v;
-  // -- read run numbers from fURI
-  string dir = fURI + "/runrecords/";
-  vector<string> vfiles = allFiles(dir);
+  string dir = fURI + "/runrecords";
+  vector<string> vfiles = allRunRecordPaths(dir);
   for (auto it: vfiles) {
     string::size_type pos = it.rfind("/");
     string file = it.substr(pos+1);
@@ -175,15 +178,16 @@ vector<string> cdbJSON::getAllRunNumbers() {
 // ----------------------------------------------------------------------
 vector<string> cdbJSON::getAllRunNumbers(string selection, string det) {
   vector<string> v;
-  // -- read run numbers from fURI
-  string dir = fURI + "/runrecords/";
-  vector<string> vfiles = allFiles(dir);
+  string dir = fURI + "/runrecords";
+  vector<string> vfiles = allRunRecordPaths(dir);
   for (auto it: vfiles) {
     string::size_type pos = it.rfind("/");
     string file = it.substr(pos+1);
     replaceAll(file, "runRecord_", "");
     replaceAll(file, ".json", "");
-    // FIXME add filtering!mm
+    // FIXME add filtering
+    (void)selection;
+    (void)det;
     v.push_back(file);
   }
   return v;

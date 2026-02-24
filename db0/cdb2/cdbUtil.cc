@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <cstdlib>
+#include <dirent.h>
 
 
 using namespace std;
@@ -252,6 +253,61 @@ string payloadSubPathFromHash(const string& hash) {
   stringstream ss;
   ss << setfill('0') << setw(4) << block;
   return tag + "/" + ss.str() + "/" + hash;
+}
+
+
+// ----------------------------------------------------------------------
+string runRecordSubPathFromRun(int irun) {
+  if (irun < 0) return string("runRecord_") + to_string(irun) + ".json";
+  int block = irun / 1000;
+  stringstream ss;
+  ss << setfill('0') << setw(4) << block;
+  return ss.str() + "/runRecord_" + to_string(irun) + ".json";
+}
+
+
+// ----------------------------------------------------------------------
+vector<string> allRunRecordPaths(const string& baseDir) {
+  vector<string> vfiles;
+  DIR *folder = opendir(baseDir.c_str());
+  if (folder == NULL) return vfiles;
+  struct dirent *entry;
+  const string prefix("runRecord_");
+  const string suffix(".json");
+  auto isRunRecordFile = [&prefix, &suffix](const string& name) {
+    return name.size() > prefix.size() + suffix.size() &&
+           name.compare(0, prefix.size(), prefix) == 0 &&
+           name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0;
+  };
+  auto is4DigitBlock = [](const string& name) {
+    if (name.size() != 4) return false;
+    for (char c : name) if (c < '0' || c > '9') return false;
+    return true;
+  };
+  while ((entry = readdir(folder))) {
+    string name(entry->d_name);
+    if (name == "." || name == "..") continue;
+    bool isFile = (entry->d_type == 8);
+    bool isDir = (entry->d_type == 4);
+    if (entry->d_type == 0) isFile = isDir = true;
+    if (isFile && isRunRecordFile(name)) vfiles.push_back(baseDir + "/" + name);
+    if (isDir && is4DigitBlock(name)) {
+      string subpath = baseDir + "/" + name;
+      DIR *sub = opendir(subpath.c_str());
+      if (sub) {
+        struct dirent *subentry;
+        while ((subentry = readdir(sub))) {
+          string subname(subentry->d_name);
+          if ((subentry->d_type == 8 || subentry->d_type == 0) && isRunRecordFile(subname))
+            vfiles.push_back(subpath + "/" + subname);
+        }
+        closedir(sub);
+      }
+    }
+  }
+  closedir(folder);
+  sort(vfiles.begin(), vfiles.end());
+  return vfiles;
 }
 
 

@@ -6,6 +6,7 @@
 
 #include <curl/curl.h>
 
+#include "cdbUtil.hh"
 
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
@@ -226,23 +227,23 @@ int main(int argc, char* argv[]) {
   
   
   vector<string> vfiles;
-  DIR *folder;
-  struct dirent *entry;
-  
-  folder = opendir(dirName.c_str());
-  if (folder == NULL) {
-    cout << "Unable to read directory ->" << dirName << "<-" << endl;
-    return 0;
-  }
-  
-  while ((entry=readdir(folder))) {
-    if (8 == entry->d_type) {
-      vfiles.push_back(dirName + "/" + entry->d_name);
+  if (dirName == "runrecords") {
+    vfiles = allRunRecordPaths(dirName);
+  } else {
+    DIR *folder = opendir(dirName.c_str());
+    if (folder == NULL) {
+      cout << "Unable to read directory ->" << dirName << "<-" << endl;
+      return 0;
     }
+    struct dirent *entry;
+    while ((entry=readdir(folder))) {
+      if (8 == entry->d_type) {
+        vfiles.push_back(dirName + "/" + entry->d_name);
+      }
+    }
+    closedir(folder);
+    sort(vfiles.begin(), vfiles.end());
   }
-  closedir(folder);
-  
-  sort(vfiles.begin(), vfiles.end());
   
   gApiKey = "api-key: " + gApiKey;
   

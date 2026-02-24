@@ -36,6 +36,15 @@ bool fileExists(const std::string& filename);
 //    Block: runnumber/1000 as 4-digit dir (0000=1-999, 0001=1000-1999, ...)
 // Returns subpath "tag/block/hash" if parseable, else "hash" (flat fallback)
 std::string payloadSubPathFromHash(const std::string& hash);
+
+// -- runrecords path layout: runrecords/<block>/runRecord_<irun>.json
+//    Block: irun/1000 as 4-digit dir (0000=1-999, 0001=1000-1999, ...)
+// Returns subpath "block/runRecord_irun.json"
+std::string runRecordSubPathFromRun(int irun);
+
+// -- list all runRecord_*.json paths in baseDir (flat or block subdirs)
+std::vector<std::string> allRunRecordPaths(const std::string& baseDir);
+
 // -- get string (enclosed by double quotation marks) indexed by a single key
 std::string jsonGetString(const std::string& jstring, const std::string& key);
 // -- get string (enclosed by double quotation marks) indexed by a vector of keys

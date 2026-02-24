@@ -425,9 +425,12 @@ int main(int argc, const char* argv[]) {
   INS.close();
   
   jdir = jsondir + "/runrecords";
-  string orr = jdir + "/" + filename;
-  
-  
+  string subpath = runRecordSubPathFromRun(226);
+  string orr = jdir + "/" + subpath;
+  string::size_type lastSlash = subpath.rfind("/");
+  if (lastSlash != string::npos) {
+    system(string("mkdir -p " + jdir + "/" + subpath.substr(0, lastSlash)).c_str());
+  }
   JS.open(orr);
   if (JS.fail()) {
     cout << "cdbInitDB> Error failed to open " << orr <<  endl;

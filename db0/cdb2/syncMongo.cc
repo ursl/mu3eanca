@@ -213,24 +213,25 @@ int main(int argc, char* argv[]) {
 
   
   vector<string> vfiles;
-  DIR *folder;
-  struct dirent *entry;
-  
-  folder = opendir(dirPath.c_str());
-  if (folder == NULL) {
-    cout << "Unable to read directory ->" << dirPath << "<-" << endl;
-    return 0;
-  } else {
-      while ((entry=readdir(folder))) {
-      if (8 == entry->d_type) {
-        vfiles.push_back(dirPath + "/" + entry->d_name);
-      }
-    }
-    closedir(folder);
-    sort(vfiles.begin(), vfiles.end());
-  }
-  
   dirName = dirPath.substr(dirPath.rfind("/")+1);
+  if (dirName == "runrecords") {
+    vfiles = allRunRecordPaths(dirPath);
+  } else {
+    DIR *folder = opendir(dirPath.c_str());
+    if (folder == NULL) {
+      cout << "Unable to read directory ->" << dirPath << "<-" << endl;
+      return 0;
+    } else {
+      struct dirent *entry;
+      while ((entry=readdir(folder))) {
+        if (8 == entry->d_type) {
+          vfiles.push_back(dirPath + "/" + entry->d_name);
+        }
+      }
+      closedir(folder);
+      sort(vfiles.begin(), vfiles.end());
+    }
+  }
   cout << "dirPath ->" << dirPath << "<-" << endl;
   cout << "dirName ->" << dirName << "<-" << endl;
   if (noDeletion) {

@@ -316,8 +316,13 @@ int main(int argc, char* argv[]) {
       runRecord rr = pDB->getRunRecord(irun);
       if (all || rr.isSignificant()) {
         cout << rr.printSummary() << endl;
-        string filename = dirPath + "/runrecords/" + "runRecord_" + to_string(irun) + ".json";
-        ofstream ofs(filename);
+        string subpath = runRecordSubPathFromRun(irun);
+        string filepath = dirPath + "/runrecords/" + subpath;
+        string::size_type lastSlash = subpath.rfind("/");
+        if (lastSlash != string::npos) {
+          system(string("mkdir -p " + dirPath + "/runrecords/" + subpath.substr(0, lastSlash)).c_str());
+        }
+        ofstream ofs(filepath);
         ofs << rr.json() << endl;
         ofs.close();
       }
