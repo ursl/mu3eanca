@@ -50,7 +50,7 @@ EXTHEADERS    = -I../.. -I../../util
 
 #CXX          := /usr/bin/c++
 
-CXXFLAGS     := -std=c++1z -g -O0 -Wall -fPIC -pipe  #CXXFLAGS     += $(ROOTCFLAGS)
+CXXFLAGS     := -std=c++1z -g -O0 -Wall -Wextra -fPIC -pipe  #CXXFLAGS     += $(ROOTCFLAGS)
 CXXFLAGS     += $(ROOTCFLAGS)
 
 LD           := $(CXX)
