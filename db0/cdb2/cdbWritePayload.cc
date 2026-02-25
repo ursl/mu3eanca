@@ -33,16 +33,16 @@
 using namespace std;
 
 // Forward declarations
-void writeDetSetupV1(string payloaddir, string gt, int iov);
-void writePixelQualityLM(string payloaddir, string gt, string filename, int iov);
-void writeAlignmentInformation(string payloaddir, string gt, string type, string ifilename, int iov);
-void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, int iov);
-void writeEventStuffV1(string payloaddir, string gt, string filename, int iov);
+void writeDetSetupV1(string payloaddir, string gt, string annotation, int iov);
+void writePixelQualityLM(string payloaddir, string gt, string filename, string annotation, int iov);
+void writeAlignmentInformation(string payloaddir, string gt, string type, string ifilename, string annotation, int iov);
+void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, string annotation, int iov);
+void writeEventStuffV1(string payloaddir, string gt, string filename, string annotation, int iov);
 // ----------------------------------------------------------------------
 // cdbWritePayload
 // ---------------
 //
-// NOTE: works (validated) for pixelalignment. All the rest might need some improvements!
+// NOTE: works (validated) for alignment. All the rest might need some improvements! FIXME fibrealignment (shape/round/square)
 // 
 //  -c pixelalignment    produce the pixelalignment payloads
 //  -c tilealignment    produce the tilealignment payloads
@@ -57,11 +57,13 @@ void writeEventStuffV1(string payloaddir, string gt, string filename, int iov);
 // Usage examples   
 // --------------
 //
-// cdbWritePayload -c pixelalignment -g mcidealv6.5 -i 1  -f ascii/sensors-alignment-CosmicTracksV0.csv 
-// cdbWritePayload -c pixelalignment -g mcidealv6.5 -i 1  -f /Users/ursl/mu3e/software/mu3e/run/mu3e_alignment.root
-// cdbWritePayload -c tilealignment -g mcidealv6.5 -i 1 -f mu3e_alignment.root
-// cdbWritePayload -c fibrealignment -g mcidealv6.5 -i 1 -f mu3e_alignment.root
-// cdbWritePayload -c mppcalignment -g mcidealv6.5 -i 1 -f mu3e_alignment.root
+// cdbWritePayload -c alignment -g mcidealv6.5 -f mu3e_alignment.root -a "complete detector with MC truth"
+// cdbWritePayload -c pixelqualitylm -g mcideal -f mu3e_alignment.root -a "complete detector with MC truth"
+
+// cdbWritePayload -c pixelalignment -g mcidealv6.5 -f mu3e_alignment.root
+// cdbWritePayload -c tilealignment -g mcidealv6.5 -f mu3e_alignment.root
+// cdbWritePayload -c fibrealignment -g mcidealv6.5 -f mu3e_alignment.root
+// cdbWritePayload -c mppcalignment -g mcidealv6.5  -f mu3e_alignment.root
 // 
 // ----------------------------------------------------------------------
 
@@ -73,10 +75,12 @@ int main(int argc, const char* argv[]) {
   string cal("");
   string payloaddir(".");
   string inputfiledir("");
+  string annotation("");
   string gt("");
   string filename("");
   int iov(1);
   for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "-a"))  {annotation = argv[++i];}
     if (!strcmp(argv[i], "-c"))  {cal        = argv[++i];}
     if (!strcmp(argv[i], "-d"))  {inputfiledir = argv[++i];}
     if (!strcmp(argv[i], "-i"))  {iov        = atoi(argv[++i]);}
@@ -92,7 +96,8 @@ int main(int argc, const char* argv[]) {
   cout << "== global tag " << gt << endl;
   cout << "== filename " << filename << endl;
   cout << "== iov " << iov << endl;
-    
+  cout << "== annotation " << annotation << endl;
+
   if (inputfiledir != "") {
     vector<string> vfiles;
     DIR *folder = opendir(inputfiledir.c_str());
@@ -120,38 +125,42 @@ int main(int argc, const char* argv[]) {
       replaceAll(srun, "run", "");
       int irun = ::stoi(srun);
       cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
-      writeEventStuffV1(payloaddir, gt, filename, irun);
+      writeEventStuffV1(payloaddir, gt, filename, annotation, irun);
     }
     return 0;
   }
 
   // -- write alignment information payloads and tags
   if (string::npos != cal.find("alignment")) {
-    writeAlignmentInformation(payloaddir, gt, cal, filename, iov);
+    writeAlignmentInformation(payloaddir, gt, cal, filename, annotation, iov);
   }
 
-  // -- write alignment information payloads and tags
-  if (string::npos != cal.find("alignment")) {
-    writeAlignmentInformation(payloaddir, gt, cal, filename, iov);
+  if ("alignment" == cal) {
+    writeAlignmentInformation(payloaddir, gt, "pixelalignment", filename, annotation, iov);
+    writeAlignmentInformation(payloaddir, gt, "tilealignment", filename, annotation, iov);
+    writeAlignmentInformation(payloaddir, gt, "fibrealignment", filename, annotation, iov);
+    writeAlignmentInformation(payloaddir, gt, "mppcalignment", filename, annotation, iov);
   }
-  // -- write detsetupv1 (basically magnet status) payloads and tags
-  //writeDetSetupV1(payloaddir, gt, iov);
+
   // -- write pixelqualitylm payloads and tags
   if (string::npos != cal.find("pixelqualitylm")) {
-    writePixelQualityLM(payloaddir, gt, filename, iov);
+    writePixelQualityLM(payloaddir, gt, filename, annotation, iov);
   }
+  
+  // -- write detsetupv1 (basically magnet status) payloads and tags
+  //writeDetSetupV1(payloaddir, gt, iov);
   // -- write pixelefficiency payloads and tags
   if (string::npos != cal.find("pixelefficiency")) {
-    writePixelEfficiencyPayload(payloaddir, gt, filename, iov);
+    writePixelEfficiencyPayload(payloaddir, gt, filename, annotation, iov);
   }
   // -- write eventstuffv1 payloads and tags
   if (string::npos != cal.find("eventstuffv1")) {
-    writeEventStuffV1(payloaddir, gt, filename, iov);
+    writeEventStuffV1(payloaddir, gt, filename, annotation, iov);
   }
 }
 
 // ----------------------------------------------------------------------
-void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, int iov) {
+void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template pixelefficiency payloads" << endl;
   // -- create (local template) payloads for pixelefficiency
   calPixelEfficiency *cpe = new calPixelEfficiency();
@@ -160,7 +169,7 @@ void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, 
   string hash = "tag_pixelefficiency_" + gt + "_iov_" + to_string(iov);
   payload pl;
   pl.fHash = hash;
-  pl.fComment = filename;
+  pl.fComment = annotation;
   pl.fSchema  = cpe->getSchema();
   pl.fBLOB = spl;
   cpe->writePayloadToFile(hash, payloaddir, pl);
@@ -169,7 +178,7 @@ void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, 
 }
 
 // ----------------------------------------------------------------------
-void writeDetSetupV1(string payloaddir, string gt, string filename, int iov) {
+void writeDetSetupV1(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template detsetupv1 payloads" << endl;
   // -- create (local template) payloads for no field and with field
   calDetSetupV1 *cdc = new calDetSetupV1();
@@ -194,7 +203,7 @@ void writeDetSetupV1(string payloaddir, string gt, string filename, int iov) {
   cdc->readPayloadFromFile(templateHash, filename);
   payload pl = cdc->getPayload(templateHash);
   pl.fSchema = cdc->getSchema();
-  pl.fComment = filename;
+  pl.fComment = annotation;
   pl.fHash = hash;
   cdc->writePayloadToFile(hash, payloaddir, pl);
   cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << templateHash << endl;
@@ -203,7 +212,7 @@ void writeDetSetupV1(string payloaddir, string gt, string filename, int iov) {
 }
 
 // ----------------------------------------------------------------------
-void writeEventStuffV1(string payloaddir, string gt, string filename, int iov) {
+void writeEventStuffV1(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template eventstuffv1 payloads" << endl;
   // -- create (local template) payloads for eventstuffv1
   calEventStuffV1 *ces = new calEventStuffV1();
@@ -211,7 +220,7 @@ void writeEventStuffV1(string payloaddir, string gt, string filename, int iov) {
   string hash = "tag_eventstuffv1_" + gt + "_iov_" + to_string(iov);
   payload pl;
   pl.fHash = hash;
-  pl.fComment = filename;
+  pl.fComment = annotation;
   pl.fSchema  = ces->getSchema();
   pl.fBLOB = ces->makeBLOB();
   cout << "   ->cdbWritePayload> writing payload with BLOB " << ces->printBLOBString(pl.fBLOB, 1000) << endl;
@@ -221,16 +230,40 @@ void writeEventStuffV1(string payloaddir, string gt, string filename, int iov) {
 }
 
 // ----------------------------------------------------------------------
-void writePixelQualityLM(string payloaddir, string gt, string filename, int iov) {
+void writePixelQualityLM(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template pixelqualitylm payloads" << endl;
   // -- create (local template) payloads for no problematic pixels
   calPixelQualityLM *cpq = new calPixelQualityLM();
+  if (string::npos != filename.find(".root")) {
+    cout << "   ->cdbWritePayload> reading pixel chipIDs from root file " << filename << endl;
+    TFile *file = TFile::Open(filename.c_str());
+    TTree *ta = (TTree*)file->Get("alignment/sensors");
+    unsigned int id;
+    vector<unsigned int> vChipIDs;
+    ta->SetBranchAddress("id", &id);
+    for (int i = 0; i < ta->GetEntries(); ++i) {
+      ta->GetEntry(i);
+      vChipIDs.push_back(id);
+    }
+    cout << "   ->cdbWritePayload> read " << vChipIDs.size() << " chipIDs from tree with " << ta->GetEntries() << " entries" << endl;
+    file->Close();
+    // -- create a temporary csv file
+    ofstream ONS;
+    string tmpFilename = "pixelqualitylm_tmp.csv";
+    ONS.open(tmpFilename);
+    for (auto &id : vChipIDs) {
+      //  chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol],npix[,icol,irow,qual]     
+      ONS << id << "," << 31 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << endl;
+    }
+    ONS.close();
+    filename = tmpFilename;
+  } 
   cpq->readCsv(filename);
   string spl = cpq->makeBLOB();
   string hash = "tag_pixelqualitylm_" + gt + "_iov_" + to_string(iov);
   payload pl;
   pl.fHash = hash;
-  pl.fComment = filename + string(". ") + cpq->getStatusDocumentation();
+  pl.fComment = annotation + string(". ") + cpq->getStatusDocumentation();
   pl.fSchema  = cpq->getSchema();
   pl.fBLOB = spl;
   cpq->writePayloadToFile(hash, payloaddir, pl);
@@ -240,7 +273,7 @@ void writePixelQualityLM(string payloaddir, string gt, string filename, int iov)
 
 
 // ----------------------------------------------------------------------
-void writeAlignmentInformation(string payloaddir, string gt, string type, string ifilename, int iov) {
+void writeAlignmentInformation(string payloaddir, string gt, string type, string ifilename, string annotation, int iov) {
   cout << "   ->cdbWritePayload> writing alignment " << type << " from file " << ifilename << endl;
 
   // -- pixel sensor alignment
@@ -324,7 +357,7 @@ void writeAlignmentInformation(string payloaddir, string gt, string type, string
       string hash = "tag_pixelalignment_" + gt + "_iov_" + to_string(iov);
       payload pl;
       pl.fHash = hash;
-      pl.fComment = ifilename;
+      pl.fComment = annotation;
       pl.fSchema  = cpa->getSchema();
       pl.fBLOB = spl;
       cpa->writePayloadToFile(hash, payloaddir, pl);
@@ -388,7 +421,7 @@ void writeAlignmentInformation(string payloaddir, string gt, string type, string
       string hash = "tag_mppcalignment_" + gt + "_iov_" + to_string(iov);
       payload pl;
       pl.fHash = hash;
-      pl.fComment = ifilename;
+      pl.fComment = annotation;
       pl.fSchema  = cmp->getSchema();
       pl.fBLOB = spl;
       cmp->writePayloadToFile(hash, payloaddir, pl);
@@ -448,7 +481,7 @@ void writeAlignmentInformation(string payloaddir, string gt, string type, string
       string hash = "tag_tilealignment_" + gt + "_iov_" + to_string(iov);
       payload pl;
       pl.fHash = hash;
-      pl.fComment = ifilename;
+      pl.fComment = annotation;
       pl.fSchema  = cta->getSchema();
       pl.fBLOB = spl;
       cta->writePayloadToFile(hash, payloaddir, pl);
@@ -481,8 +514,8 @@ void writeAlignmentInformation(string payloaddir, string gt, string type, string
       ta->SetBranchAddress("fx", &f.fx);
       ta->SetBranchAddress("fy", &f.fy);
       ta->SetBranchAddress("fz", &f.fz);
-      ta->SetBranchAddress("round", &f.round);
-      ta->SetBranchAddress("square", &f.square);
+      f.round = true;
+      f.square = false;
       ta->SetBranchAddress("diameter", &f.diameter);
       int nbytes(0);
       for (int i = 0; i < ta->GetEntries(); ++i) {
@@ -516,7 +549,7 @@ void writeAlignmentInformation(string payloaddir, string gt, string type, string
       string hash = "tag_fibrealignment_" + gt + "_iov_" + to_string(iov);
       payload pl;
       pl.fHash = hash;
-      pl.fComment = ifilename;
+      pl.fComment = annotation;
       pl.fSchema  = cfa->getSchema();
       pl.fBLOB = spl;
       cfa->writePayloadToFile(hash, payloaddir, pl);
