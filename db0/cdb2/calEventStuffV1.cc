@@ -132,8 +132,9 @@ string calEventStuffV1::readJSON(string filename) {
   fConstants.pixelData.startFrame = 0; 
   fConstants.pixelData.endFrame   = -1;
   if (string::npos == filename.find(".mid.lz4.json")) {
-    fConstants.pixelData.startFrame = ::stoull(jsonGetValue(spl, vector<string> {"pixeldata", "startframe"}));
-    fConstants.pixelData.endFrame    = ::stoul(jsonGetValue(spl, vector<string> {"pixeldata", "endframe"}));
+    fConstants.pixelData.startFrame = ::stoull(jsonGetValue(spl, vector<string>{"pixeldata", "startframe"}));
+    fConstants.pixelData.endFrame    = ::stoul(jsonGetValue(spl, vector<string>{"pixeldata", "endframe"}));
+    fConstants.eventData.endFrame   = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "endframe"}));
   } else {
     string sstart_frame_good_pixel_data = jsonGetValue(spl, vector<string> {"stat", "start_frame_good_pixel_data"});
     string send_frame_good_pixel_data = jsonGetValue(spl, vector<string> {"stat", "end_frame_good_pixel_data"});
