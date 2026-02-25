@@ -42,9 +42,12 @@ void writeEventStuffV1(string payloaddir, string gt, string filename, int iov);
 // cdbWritePayload
 // ---------------
 //
-// NOTE: works (validated) for pixelalignement. All the rest might need some improvements!
+// NOTE: works (validated) for pixelalignment. All the rest might need some improvements!
 // 
-//  -c pixelalignment    produce the pixelalignment payloads. This is (currently) the only properly validated usage.
+//  -c pixelalignment    produce the pixelalignment payloads
+//  -c tilealignment    produce the tilealignment payloads
+//  -c fibrealignment   produce the fibrealignment payloads
+//  -c mppcalignment    produce the mppcalignment payloads
 //  -d inputfiledir
 //  -f filename          file to read in
 //  -g GT                the global tag (GT) for the payload (part of the "hash" written into the payload metadata)
@@ -54,8 +57,11 @@ void writeEventStuffV1(string payloaddir, string gt, string filename, int iov);
 // Usage examples   
 // --------------
 //
-// cdbWritePayload -c pixelalignment -g datav6.3=2025V1test -i 1 -j ~/data/mu3e/cdb -f ascii/sensors-alignment-CosmicTracksV0.csv 
-// cdbWritePayload -c pixelalignment -g datav6.3=2025V1test -i 1 -j ~/data/mu3e/cdb -f Downloads/cosmic_alignment_xyz.root 
+// cdbWritePayload -c pixelalignment -g mcidealv6.5 -i 1  -f ascii/sensors-alignment-CosmicTracksV0.csv 
+// cdbWritePayload -c pixelalignment -g mcidealv6.5 -i 1  -f /Users/ursl/mu3e/software/mu3e/run/mu3e_alignment.root
+// cdbWritePayload -c tilealignment -g mcidealv6.5 -i 1 -f mu3e_alignment.root
+// cdbWritePayload -c fibrealignment -g mcidealv6.5 -i 1 -f mu3e_alignment.root
+// cdbWritePayload -c mppcalignment -g mcidealv6.5 -i 1 -f mu3e_alignment.root
 // 
 // ----------------------------------------------------------------------
 
@@ -391,7 +397,136 @@ void writeAlignmentInformation(string payloaddir, string gt, string type, string
       cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl;
       remove(tmpFilename.c_str());
     }
-  } 
+  }
+
+  if (type == "tilealignment") {
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> reading tilealignment from root file " << ifilename << endl;
+      TFile *file = TFile::Open(ifilename.c_str());
+      TTree *ta = (TTree*)file->Get("alignment/tiles");
+      struct tile {
+        unsigned int id;
+        double posx, posy, posz;
+        double dirx, diry, dirz;
+      };
+      map<unsigned int, tile> tiles;
+      struct tile t;
+      ta->SetBranchAddress("id", &t.id);
+      ta->SetBranchAddress("posx", &t.posx);
+      ta->SetBranchAddress("posy", &t.posy);
+      ta->SetBranchAddress("posz", &t.posz);
+      ta->SetBranchAddress("dirx", &t.dirx);
+      ta->SetBranchAddress("diry", &t.diry);
+      ta->SetBranchAddress("dirz", &t.dirz);
+      int nbytes(0);
+      for (int i = 0; i < ta->GetEntries(); ++i) {
+        nbytes += ta->GetEntry(i);
+        tiles.insert(make_pair(t.id, t));
+      }
+      cout << "   ->cdbWritePayload> read " << tiles.size() << " tiles from tree with " << ta->GetEntries() << " entries and " << nbytes << " bytes" << endl;
+      ofstream ONS;
+      ONS.open(tmpFilename);
+      for (auto &t : tiles) {
+        ONS << t.first << "," << t.first << ","
+            << std::setprecision(15)
+            << t.second.posx << "," << t.second.posy << "," << t.second.posz << ","
+            << t.second.dirx << "," << t.second.diry << "," << t.second.dirz
+            << endl;
+      }
+      ONS.close();
+      file->Close();
+    }
+
+    if (string::npos != ifilename.find(".root")) {
+      ifilename = tmpFilename;
+    }
+
+    calTileAlignment *cta = new calTileAlignment();
+    string result = cta->readCsv(ifilename);
+    if (string::npos == result.find("Error")) {
+      string spl = cta->makeBLOB();
+      string hash = "tag_tilealignment_" + gt + "_iov_" + to_string(iov);
+      payload pl;
+      pl.fHash = hash;
+      pl.fComment = ifilename;
+      pl.fSchema  = cta->getSchema();
+      pl.fBLOB = spl;
+      cta->writePayloadToFile(hash, payloaddir, pl);
+    }
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl;
+      remove(tmpFilename.c_str());
+    }
+    delete cta;
+  }
+
+  if (type == "fibrealignment") {
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> reading fibrealignment from root file " << ifilename << endl;
+      TFile *file = TFile::Open(ifilename.c_str());
+      TTree *ta = (TTree*)file->Get("alignment/fibres");
+      struct fibre {
+        unsigned int fibre;
+        double cx, cy, cz;
+        double fx, fy, fz;
+        bool round, square;
+        double diameter;
+      };
+      map<unsigned int, fibre> fibres;
+      struct fibre f;
+      ta->SetBranchAddress("fibre", &f.fibre);
+      ta->SetBranchAddress("cx", &f.cx);
+      ta->SetBranchAddress("cy", &f.cy);
+      ta->SetBranchAddress("cz", &f.cz);
+      ta->SetBranchAddress("fx", &f.fx);
+      ta->SetBranchAddress("fy", &f.fy);
+      ta->SetBranchAddress("fz", &f.fz);
+      ta->SetBranchAddress("round", &f.round);
+      ta->SetBranchAddress("square", &f.square);
+      ta->SetBranchAddress("diameter", &f.diameter);
+      int nbytes(0);
+      for (int i = 0; i < ta->GetEntries(); ++i) {
+        nbytes += ta->GetEntry(i);
+        fibres.insert(make_pair(f.fibre, f));
+      }
+      cout << "   ->cdbWritePayload> read " << fibres.size() << " fibres from tree with " << ta->GetEntries() << " entries and " << nbytes << " bytes" << endl;
+      ofstream ONS;
+      ONS.open(tmpFilename);
+      for (auto &f : fibres) {
+        ONS << f.first << ","
+            << std::setprecision(15)
+            << f.second.cx << "," << f.second.cy << "," << f.second.cz << ","
+            << f.second.fx << "," << f.second.fy << "," << f.second.fz << ","
+            << f.second.round << "," << f.second.square << ","
+            << f.second.diameter
+            << endl;
+      }
+      ONS.close();
+      file->Close();
+    }
+
+    if (string::npos != ifilename.find(".root")) {
+      ifilename = tmpFilename;
+    }
+
+    calFibreAlignment *cfa = new calFibreAlignment();
+    string result = cfa->readCsv(ifilename);
+    if (string::npos == result.find("Error")) {
+      string spl = cfa->makeBLOB();
+      string hash = "tag_fibrealignment_" + gt + "_iov_" + to_string(iov);
+      payload pl;
+      pl.fHash = hash;
+      pl.fComment = ifilename;
+      pl.fSchema  = cfa->getSchema();
+      pl.fBLOB = spl;
+      cfa->writePayloadToFile(hash, payloaddir, pl);
+    }
+    if (string::npos != ifilename.find(".root")) {
+      cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl;
+      remove(tmpFilename.c_str());
+    }
+    delete cfa;
+  }
 
 
 }
