@@ -23,10 +23,9 @@
 #include "calFibreAlignment.hh"
 #include "calMppcAlignment.hh"
 #include "calTileAlignment.hh"
-#include "calPixelCablingMap.hh"
 #include "calPixelQualityLM.hh"
-#include "calPixelTimeCalibration.hh"
 #include "calPixelEfficiency.hh"
+#include "calFibreQuality.hh"
 
 #include "calDetSetupV1.hh"
 #include "calEventStuffV1.hh"
@@ -34,10 +33,13 @@ using namespace std;
 
 // Forward declarations
 void writeDetSetupV1(string payloaddir, string gt, string annotation, int iov);
-void writePixelQualityLM(string payloaddir, string gt, string filename, string annotation, int iov);
 void writeAlignmentInformation(string payloaddir, string gt, string type, string ifilename, string annotation, int iov);
 void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, string annotation, int iov);
 void writeEventStuffV1(string payloaddir, string gt, string filename, string annotation, int iov);
+
+void writePixelQualityLM(string payloaddir, string gt, string filename, string annotation, int iov);
+void writeFibreQuality(string payloaddir, string gt, string filename, string annotation, int iov);
+
 // ----------------------------------------------------------------------
 // cdbWritePayload
 // ---------------
@@ -58,7 +60,10 @@ void writeEventStuffV1(string payloaddir, string gt, string filename, string ann
 // --------------
 //
 // cdbWritePayload -c alignment -g mcidealv6.5 -f mu3e_alignment.root -a "complete detector with MC truth"
-// cdbWritePayload -c pixelqualitylm -g mcideal -f mu3e_alignment.root -a "complete detector with MC truth"
+// cdbWritePayload -c eventstuffv1 -g mcideal -f ascii/eventstuff-ideal.json -a "entire run duration is perfect"
+// cdbWritePayload -c pixelefficiency -g mcideal -f mu3e_alignment.root -a "no inefficiency"
+// cdbWritePayload -c pixelqualitylm -g mcideal -f mu3e_alignment.root -a "perfect detector with no deficiencies"
+// cdbWritePayload -c fibrequality -g mcideal -f ascii/fibre-asics-1.csv -a "all good"
 
 // cdbWritePayload -c pixelalignment -g mcidealv6.5 -f mu3e_alignment.root
 // cdbWritePayload -c tilealignment -g mcidealv6.5 -f mu3e_alignment.root
@@ -147,6 +152,10 @@ int main(int argc, const char* argv[]) {
     writePixelQualityLM(payloaddir, gt, filename, annotation, iov);
   }
   
+  // -- write pixelqualitylm payloads and tags
+  if (string::npos != cal.find("fibrequality")) {
+    writeFibreQuality(payloaddir, gt, filename, annotation, iov);
+  }
   // -- write detsetupv1 (basically magnet status) payloads and tags
   //writeDetSetupV1(payloaddir, gt, iov);
   // -- write pixelefficiency payloads and tags
@@ -164,6 +173,35 @@ void writePixelEfficiencyPayload(string payloaddir, string gt, string filename, 
   cout << "   ->cdbInitGT> writing local template pixelefficiency payloads" << endl;
   // -- create (local template) payloads for pixelefficiency
   calPixelEfficiency *cpe = new calPixelEfficiency();
+  if (string::npos != filename.find(".root")) {
+    cout << "   ->cdbWritePayload> reading pixel chipIDs from root file " << filename << endl;
+    TFile *file = TFile::Open(filename.c_str());
+    TTree *ta = (TTree*)file->Get("alignment/sensors");
+    unsigned int id;
+    vector<unsigned int> vChipIDs;
+    ta->SetBranchAddress("id", &id);
+    for (int i = 0; i < ta->GetEntries(); ++i) {
+      ta->GetEntry(i);
+      vChipIDs.push_back(id);
+    }
+    cout << "   ->cdbWritePayload> read " << vChipIDs.size() << " chipIDs from tree with " << ta->GetEntries() << " entries" << endl;
+    file->Close();
+    // -- create a temporary csv file
+    ofstream ONS;
+    string tmpFilename = "pixelefficiency_tmp.csv";
+    ONS.open(tmpFilename);
+    for (auto &id : vChipIDs) {
+      //  chipID,nsec,[1.000]
+      ONS << id << "," << 18 << ",";
+      for (int i = 0; i < 18; i++) {
+        ONS << 1.000;
+        if (i < 17) ONS << ",";
+        else ONS << endl;
+      }
+    }
+    ONS.close();
+    filename = tmpFilename;
+  } 
   cpe->readCsv(filename);
   string spl = cpe->makeBLOB();
   string hash = "tag_pixelefficiency_" + gt + "_iov_" + to_string(iov);
@@ -269,6 +307,25 @@ void writePixelQualityLM(string payloaddir, string gt, string filename, string a
   cpq->writePayloadToFile(hash, payloaddir, pl);
   cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and comment " << pl.fComment << endl;
   delete cpq;
+}
+
+
+// ----------------------------------------------------------------------
+void writeFibreQuality(string payloaddir, string gt, string filename, string annotation, int iov) {
+  cout << "   ->cdbInitGT> writing local template fibrequality payloads" << endl;
+  // -- create (local template) payloads for fibrequality
+  calFibreQuality *cfq = new calFibreQuality();
+  cfq->readCSV(filename);
+  string spl = cfq->makeBLOB();
+  string hash = "tag_fibrequality_" + gt + "_iov_" + to_string(iov);
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = annotation;
+  pl.fSchema  = cfq->getSchema();
+  pl.fBLOB = spl;
+  cfq->writePayloadToFile(hash, payloaddir, pl);
+  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and comment " << pl.fComment << endl;
+  delete cfq;
 }
 
 
