@@ -2,5 +2,9 @@
   "pixeldata" : {
     "startframe" : 0,
     "endframe" : -1
+  }, 
+  "eventdata" : {
+    "startframe" : 0,
+    "endframe" : -1
   }
 }
