@@ -80,7 +80,7 @@ LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o cdbMongo.o \
 LBINARIES = testCDB anaPixelQuality anaEventStuff syncJSON \
             cdbInitDB cdbPrintPayload cdbInitGT cdbWritePayload \
             cdbPrintConfig \
-            cdbInsertIovTag diffRunnumbers cdbPurgePayloads diffPayloads
+            cdbInsertIovTag diffRunnumbers cdbPurgePayloads diffPayloads correlatePixelPayloads
 
 MONGOBINARIES = syncMongo  syncRDB uploadDetConfig downloadDetConfig
 
