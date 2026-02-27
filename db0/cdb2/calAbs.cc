@@ -26,8 +26,7 @@ calAbs::calAbs(cdbAbs *db, string tag) :
 
 // ----------------------------------------------------------------------
 calAbs::~calAbs() {
-  cout << "this is the end of calAbs with tag = " << fTag
-       << endl;
+  //cout << "this is the end of calAbs with tag = " << fTag  << endl;
 }
 
 
