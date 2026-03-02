@@ -75,29 +75,29 @@ calAbs* Mu3eCalFactory::createClass(string name, string tag) {
 // ----------------------------------------------------------------------
 calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
   calAbs* a(0);
-  if (!name.compare("pixelalignment_")) {
+  if (name.find("pixelalignment_") != string::npos) {
     a = new calPixelAlignment(db, tag);
-  } else if (!name.compare("fibrealignment_")) {
+  } else if (name.find("fibrealignment_") != string::npos) {
     a = new calFibreAlignment(db, tag);
-  } else if (!name.compare("mppcalignment_"))  {
+  } else if (name.find("mppcalignment_") != string::npos)  {
     a = new calMppcAlignment(db, tag);
-  } else if (!name.compare("tilealignment_"))  {
+  } else if (name.find("tilealignment_") != string::npos)  {
     a = new calTileAlignment(db, tag);
-  } else if (!name.compare("detconfv1_"))  {
+  } else if (name.find("detconfv1_") != string::npos)  {
     a = new calDetConfV1(db, tag);
-  } else if (!name.compare("detsetupv1_"))  {
+  } else if (name.find("detsetupv1_") != string::npos)  {
     a = new calDetSetupV1(db, tag);
-  } else if (!name.compare("eventstuffv1_"))  {
+  } else if (name.find("eventstuffv1_") != string::npos)  {
     a = new calEventStuffV1(db, tag);
-  } else if (!name.compare("pixelqualitylm_"))  {
+  } else if (name.find("pixelqualitylm_") != string::npos)  {
     a = new calPixelQualityLM(db, tag);
-  } else if (!name.compare("pixeltimecalibration_"))  {
+  } else if (name.find("pixeltimecalibration_") != string::npos)  {
     a = new calPixelTimeCalibration(db, tag);
-  } else if (!name.compare("tilequality_"))  {
+  } else if (name.find("tilequality_") != string::npos)  {
     a = new calTileQuality(db, tag);
-  } else if (!name.compare("fibrequality_"))  {
+  } else if (name.find("fibrequality_") != string::npos)  {
     a = new calFibreQuality(db, tag);
-  } else if (!name.compare("pixelefficiency_"))  {
+  } else if (name.find("pixelefficiency_") != string::npos)  {
     a = new calPixelEfficiency(db, tag);
   } else {
     cout << "ERROR: " << name
@@ -119,29 +119,29 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
 // ----------------------------------------------------------------------
 calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
   calAbs* a(0);
-  if (!hash.compare("pixelalignment_")) {
+  if (hash.find("pixelalignment_") != string::npos) {
     a = new calPixelAlignment();
-  } else if (!hash.compare("fibrealignment_")) {
+  } else if (hash.find("fibrealignment_") != string::npos) {
     a = new calFibreAlignment();
-  } else if (!hash.compare("mppcalignment_"))  {
+  } else if (hash.find("mppcalignment_") != string::npos)  {
     a = new calMppcAlignment();
-  } else if (!hash.compare("tilealignment_"))  {
+  } else if (hash.find("tilealignment_") != string::npos)  {
     a = new calTileAlignment();
-  } else if (!hash.compare("detconfv1_"))  {
+  } else if (hash.find("detconfv1_") != string::npos)  {
     a = new calDetConfV1();
-  } else if (!hash.compare("detsetupv1_"))  {
+  } else if (hash.find("detsetupv1_") != string::npos)  {
     a = new calDetSetupV1();
-  } else if (!hash.compare("eventstuffv1_"))  {
+  } else if (hash.find("eventstuffv1_") != string::npos)  {
     a = new calEventStuffV1();
-  } else if (!hash.compare("pixelqualitylm_"))  {
+  } else if (hash.find("pixelqualitylm_") != string::npos)  {
     a = new calPixelQualityLM();
-  } else if (!hash.compare("pixeltimecalibration_"))  {
+  } else if (hash.find("pixeltimecalibration_") != string::npos)  {
     a = new calPixelTimeCalibration();
-  } else if (!hash.compare("tilequality_"))  {
+  } else if (hash.find("tilequality_") != string::npos)  {
     a = new calTileQuality();
-  } else if (!hash.compare("fibrequality_"))  {
+  } else if (hash.find("fibrequality_") != string::npos)  {
     a = new calFibreQuality();
-  } else if (!hash.compare("pixelefficiency_"))  {
+  } else if (hash.find("pixelefficiency_") != string::npos)  {
     a = new calPixelEfficiency();
   } else {
     cout << "ERROR: " << hash
