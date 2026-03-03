@@ -40,7 +40,7 @@ using namespace std;
 // 
 // Examples:
 // ---------
-// 
+//              ./bin/fillQualityTiles -p 4 -i mcidealv6.1
 // ----------------------------------------------------------------------
 
 #define JSONDIR "/Users/ursl/data/mu3e/cdb"
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (printMode == 4) {
-    // -- create turned on CSV for all chipIDs
+    // -- create turned-on JSON for all chipIDs
     ofstream ofs;
     string filename = Form("csv/run1_quality_overview.json");
     json j;
