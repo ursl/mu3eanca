@@ -404,6 +404,16 @@ int main(int argc, char* argv[]) {
     } else {
       cout << "==> Replacement failed" << endl;
     }
+  } else if (18 == mode) {
+    cout << "Test replace calibration by replacement tag" << endl;
+    Mu3eConditions *pDC = Mu3eConditions::instance();
+    bool result = pDC->replaceCalibration("pixelalignment_datav6.3=2025V2test");
+    if (result) {
+      cout << "==> Replacement successful" << endl;
+    } else {
+      cout << "==> Replacement failed" << endl;
+    }
+    pDC->printCalibrations();
   }
   return 0;
 }
