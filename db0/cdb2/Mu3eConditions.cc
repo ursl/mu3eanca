@@ -242,7 +242,8 @@ bool Mu3eConditions::replaceCalibration(std::string name, std::string replacemen
     return false;
   }
 
-  if (fVerbose > 0) cout << "Mu3eConditions::replaceCalibration> " << oldTag << " -> " << replacementTag << endl;
+  cout << "Mu3eConditions::replaceCalibration> replacing " << oldTag
+       << " with " << replacementTag << endl;
 
   delete oldCal;
   fCalibrations.erase(oldTag);
@@ -262,6 +263,30 @@ bool Mu3eConditions::replaceCalibration(std::string name, std::string replacemen
     a->update(getHash(fRunNumber, replacementTag));
   }
   return (a != 0);
+}
+
+
+
+// ----------------------------------------------------------------------
+bool Mu3eConditions::replaceCalibration(std::string replacementTag) {
+  if (!fDB) return false;
+
+  std::string oldTag;
+  calAbs* oldCal = 0;
+  std::string name = replacementTag.substr(0, replacementTag.find("_")+1);
+  for (auto it : fCalibrations) {
+    if (string::npos != it.first.find(name)) {
+      oldTag = it.first;
+      oldCal = it.second;
+      break;
+    }
+  }
+  if (!oldCal) {
+    cout << "Mu3eConditions::replaceCalibration> no calibration matching " << name << " in " << replacementTag << endl;
+    return false;
+  }
+
+  return replaceCalibration(name, replacementTag);
 }
 
 

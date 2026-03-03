@@ -62,6 +62,11 @@ public:
   //     name is the calibration type prefix (e.g. "pixelalignment_")
   //     replacementTag is the new tag to use for the calibration (e.g. "pixelalignment_datav6.3=2025V1test")
   bool    replaceCalibration(std::string name, std::string replacementTag);
+  // -- replace a calibration with a different tag 
+  //    search for the same class name (substring before the first '_' and replace that)
+  bool    replaceCalibration(std::string replacementTag);
+
+
   std::map<std::string, calAbs*> getCalibrations() {return fCalibrations;}
 
   std::string  getHash(int irun, std::string tag);
