@@ -72,7 +72,7 @@ LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o cdbMongo.o \
          calTileQuality.o calFibreQuality.o \
          calPixelTimeCalibration.o calPixelEfficiency.o\
          calPixelCablingMap.o calDetConfV1.o calDetSetupV1.o calEventStuffV1.o\
-         Mu3eConditions.o Mu3eCalFactory.o \
+         Mu3eConditions.o Mu3eCalFactory.o cdbPayloadWriter.o \
          base64.o \
          payload.o cfgPayload.o cdbUtil.o runRecord.o \
          RunInfo.o DataQuality.o Resource.o
