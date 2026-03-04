@@ -619,6 +619,18 @@ vector<string> jsonGetVectorOfValues(const string& jstring, const vector<string>
 
 
 // ----------------------------------------------------------------------
+string escapeJsonString(const string& s) {
+  string r;
+  for (char c : s) {
+    if (c == '\\') r += "\\\\";
+    else if (c == '"') r += "\\\"";
+    else r += c;
+  }
+  return r;
+}
+
+
+// ----------------------------------------------------------------------
 string timeStamp(int format) {
   time_t t;
   time(&t);

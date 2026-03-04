@@ -65,6 +65,8 @@ std::string jsonGetVector(const std::string& jstring, const std::vector<std::str
 std::vector<std::string> jsonGetValueVector(const std::string& jstring, const std::string& key);
 // -- get vector indexed by a vector keys   // FIXME THIS IS NOT YET READY FOR USE!
 std::vector<std::string> jsonGetVectorOfValues(const std::string& jstring, const std::vector<std::string>& keys);
+// -- escape string for JSON value (backslash and double-quote)
+std::string escapeJsonString(const std::string& s);
 
 // ======================================================================
 // BLOB utilities
