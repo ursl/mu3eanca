@@ -32,9 +32,10 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writePixelEfficiencyPayload(string payloaddir, string gt, string filename, string annotation, int iov) {
+void cdbPayloadWriter::writePixelEfficiencyPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template pixelefficiency payloads" << endl;
   calPixelEfficiency *cpe = new calPixelEfficiency();
+  string tmpFilename = "pixelefficiency_tmp.csv";
   if (string::npos != filename.find(".root")) {
     cout << "   ->cdbWritePayload> reading pixel chipIDs from root file " << filename << endl;
     TFile *file = TFile::Open(filename.c_str());
@@ -49,7 +50,6 @@ void cdbPayloadWriter::writePixelEfficiencyPayload(string payloaddir, string gt,
     cout << "   ->cdbWritePayload> read " << vChipIDs.size() << " chipIDs from tree with " << ta->GetEntries() << " entries" << endl;
     file->Close();
     ofstream ONS;
-    string tmpFilename = "pixelefficiency_tmp.csv";
     ONS.open(tmpFilename);
     for (auto &id : vChipIDs) {
       ONS << id << "," << 18 << ",";
@@ -73,10 +73,14 @@ void cdbPayloadWriter::writePixelEfficiencyPayload(string payloaddir, string gt,
   cpe->writePayloadToFile(hash, payloaddir, pl);
   cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << endl;
   delete cpe;
+  if (filename == tmpFilename) { 
+    cout << "->cdbWritePayload> removing temporary file " << tmpFilename << endl; 
+    remove(tmpFilename.c_str()); 
+  }
 }
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writeDetSetupV1(string payloaddir, string gt, string filename, string annotation, int iov) {
+void cdbPayloadWriter::writeDetSetupV1Payloads(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template detsetupv1 payloads" << endl;
   calDetSetupV1 *cdc = new calDetSetupV1();
   string result = cdc->readJSON(filename);
@@ -93,7 +97,7 @@ void cdbPayloadWriter::writeDetSetupV1(string payloaddir, string gt, string file
 }
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writeEventStuffV1(string payloaddir, string gt, string filename, string annotation, int iov) {
+void cdbPayloadWriter::writeEventStuffV1Payloads(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template eventstuffv1 payloads" << endl;
   calEventStuffV1 *ces = new calEventStuffV1();
   ces->readJSON(filename);
@@ -109,7 +113,7 @@ void cdbPayloadWriter::writeEventStuffV1(string payloaddir, string gt, string fi
 }
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writePixelQualityLM(string payloaddir, string gt, string filename, string annotation, int iov) {
+void cdbPayloadWriter::writePixelQualityLMPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template pixelqualitylm payloads" << endl;
   calPixelQualityLM *cpq = new calPixelQualityLM();
   if (string::npos != filename.find(".root")) {
@@ -145,10 +149,14 @@ void cdbPayloadWriter::writePixelQualityLM(string payloaddir, string gt, string 
   cpq->writePayloadToFile(hash, payloaddir, pl);
   cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and comment " << pl.fComment << endl;
   delete cpq;
+  if (string::npos == filename.find(".root")) { 
+    cout << "->cdbWritePayload> removing temporary file " << filename << endl; 
+    remove(filename.c_str()); 
+  }
 }
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writeFibreQuality(string payloaddir, string gt, string filename, string annotation, int iov) {
+void cdbPayloadWriter::writeFibreQualityPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template fibrequality payloads" << endl;
   calFibreQuality *cfq = new calFibreQuality();
   cfq->readCSV(filename);
@@ -165,7 +173,7 @@ void cdbPayloadWriter::writeFibreQuality(string payloaddir, string gt, string fi
 }
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writeTileQuality(string payloaddir, string gt, string filename, string annotation, int iov) {
+void cdbPayloadWriter::writeTileQualityPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template tilequality payloads" << endl;
   calTileQuality *ctq = new calTileQuality();
   ctq->readJSON(filename);
@@ -182,19 +190,19 @@ void cdbPayloadWriter::writeTileQuality(string payloaddir, string gt, string fil
 }
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writeAlignmentInformation(string payloaddir, string gt, string type, string ifilename, string annotation, int iov) {
+void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, string type, string ifilename, string annotation, int iov) {
   cout << "   ->cdbWritePayload> writing alignment " << type << " from file " << ifilename << endl;
 
   string tmpFilename("");
   if (string::npos != ifilename.find(".root")) {
     tmpFilename = ifilename;
     size_t pos = tmpFilename.find(".root");
-    if (pos != string::npos) tmpFilename.replace(pos, 5, ".csv-tmp");
+    if (pos != string::npos) tmpFilename.replace(pos, 5, "_tmp.csv");
     size_t lastSlash = tmpFilename.find_last_of("/");
     if (lastSlash != string::npos) tmpFilename = tmpFilename.substr(lastSlash + 1);
     cout << "   ->cdbWritePayload> temporary file " << tmpFilename << endl;
   }
-  if (type == "pixelalignment") {
+  if (string::npos != type.find("pixelalignment")) {
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading pixelalignment from root file " << ifilename << endl;
       struct sensor { unsigned int id; double vx, vy, vz; double rowx, rowy, rowz; double colx, coly, colz; int nrow, ncol; double width, length, thickness, pixelSize; };
@@ -243,7 +251,7 @@ void cdbPayloadWriter::writeAlignmentInformation(string payloaddir, string gt, s
     if (string::npos != ifilename.find(".root")) { cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl; remove(tmpFilename.c_str()); }
   }
 
-  if (type == "mppcalignment") {
+  if (string::npos != type.find("mppcalignment")) {
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading mppcalignment from root file " << ifilename << endl;
       struct mppc { unsigned int mppc; double vx, vy, vz; double colx, coly, colz; int ncol; };
@@ -277,10 +285,14 @@ void cdbPayloadWriter::writeAlignmentInformation(string payloaddir, string gt, s
       payload pl; pl.fHash = hash; pl.fComment = annotation; pl.fSchema = cmp->getSchema(); pl.fBLOB = spl;
       cmp->writePayloadToFile(hash, payloaddir, pl);
     }
-    if (string::npos != ifilename.find(".root")) { cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl; remove(tmpFilename.c_str()); }
+    if (string::npos != ifilename.find(".root")) { 
+      cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl; 
+      remove(tmpFilename.c_str()); 
+    }
+    delete cmp;
   }
 
-  if (type == "tilealignment") {
+  if (string::npos != type.find("tilealignment")) {
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading tilealignment from root file " << ifilename << endl;
       struct tile { unsigned int id; double posx, posy, posz; double dirx, diry, dirz; };
@@ -313,11 +325,14 @@ void cdbPayloadWriter::writeAlignmentInformation(string payloaddir, string gt, s
       payload pl; pl.fHash = hash; pl.fComment = annotation; pl.fSchema = cta->getSchema(); pl.fBLOB = spl;
       cta->writePayloadToFile(hash, payloaddir, pl);
     }
-    if (string::npos != ifilename.find(".root")) { cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl; remove(tmpFilename.c_str()); }
+    if (string::npos != ifilename.find(".root")) { 
+      cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl; 
+      remove(tmpFilename.c_str()); 
+    }
     delete cta;
   }
 
-  if (type == "fibrealignment") {
+  if (string::npos != type.find("fibrealignment")) {
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading fibrealignment from root file " << ifilename << endl;
       struct fibre { unsigned int fibre; double cx, cy, cz; double fx, fy, fz; bool round, square; double diameter; };
@@ -353,8 +368,15 @@ void cdbPayloadWriter::writeAlignmentInformation(string payloaddir, string gt, s
       payload pl; pl.fHash = hash; pl.fComment = annotation; pl.fSchema = cfa->getSchema(); pl.fBLOB = spl;
       cfa->writePayloadToFile(hash, payloaddir, pl);
     }
-    if (string::npos != ifilename.find(".root")) { cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl; remove(tmpFilename.c_str()); }
+    if (string::npos != ifilename.find(".root")) { 
+      cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl; 
+      remove(tmpFilename.c_str()); 
+    }
     delete cfa;
+  }
+  if (string::npos == ifilename.find(".root")) { 
+    cout << "->cdbWritePayload> removing temporary file " << tmpFilename << endl; 
+    remove(tmpFilename.c_str()); 
   }
 }
 
@@ -405,33 +427,33 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
       replaceAll(srun, "run", "");
       int irun = ::stoi(srun);
       cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
-      writeEventStuffV1(payloaddir, gt, filename, annotation, irun);
+      writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, irun);
     }
     return;
   }
 
   if (string::npos != cal.find("alignment")) {
-    writeAlignmentInformation(payloaddir, gt, cal, filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, cal, filename, annotation, iov);
   }
   if ("alignment" == cal) {
-    writeAlignmentInformation(payloaddir, gt, "pixelalignment", filename, annotation, iov);
-    writeAlignmentInformation(payloaddir, gt, "tilealignment", filename, annotation, iov);
-    writeAlignmentInformation(payloaddir, gt, "fibrealignment", filename, annotation, iov);
-    writeAlignmentInformation(payloaddir, gt, "mppcalignment", filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, "pixelalignment", filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, "tilealignment", filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, "fibrealignment", filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, "mppcalignment", filename, annotation, iov);
   }
   if (string::npos != cal.find("pixelqualitylm")) {
-    writePixelQualityLM(payloaddir, gt, filename, annotation, iov);
+    writePixelQualityLMPayloads(payloaddir, gt, filename, annotation, iov);
   }
   if (string::npos != cal.find("fibrequality")) {
-    writeFibreQuality(payloaddir, gt, filename, annotation, iov);
+    writeFibreQualityPayloads(payloaddir, gt, filename, annotation, iov);
   }
   if (string::npos != cal.find("tilequality")) {
-    writeTileQuality(payloaddir, gt, filename, annotation, iov);
+    writeTileQualityPayloads(payloaddir, gt, filename, annotation, iov);
   }
   if (string::npos != cal.find("pixelefficiency")) {
-    writePixelEfficiencyPayload(payloaddir, gt, filename, annotation, iov);
+    writePixelEfficiencyPayloads(payloaddir, gt, filename, annotation, iov);
   }
   if (string::npos != cal.find("eventstuffv1")) {
-    writeEventStuffV1(payloaddir, gt, filename, annotation, iov);
+    writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, iov);
   }
 }
