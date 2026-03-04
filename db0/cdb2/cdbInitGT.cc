@@ -31,9 +31,8 @@ using namespace std;
 void writeDetSetupV1(string jsondir, string gt);
 void writePixelQualityLM(string jsondir, string gt, string payloaddir);
 void writeAlignmentInformation(string jsondir, string gt, string alignmentTag);
-void writeInitialTag(string jsondir, string gt, string initialTag);
-void insertIovTag(const std::string &jsondir, const std::string &tag,
-                  int insertRun /*-i*/, int removeRun /*-r*/, bool clear /*-c*/);
+void writeInitialTag(string jsondir, string gt, string initialTag, string comment = "");
+void insertIovTag(const std::string &jsondir, const std::string &tag, int insertRun /*-i*/, int removeRun /*-r*/, bool clear /*-c*/);
 
 // ----------------------------------------------------------------------
 // cdbInitGT -g mcidealv6.5 -j CDBJSONDIR -p payloadDir
@@ -51,26 +50,50 @@ void insertIovTag(const std::string &jsondir, const std::string &tag,
 
 // ----------------------------------------------------------------------
 int main(int argc, const char* argv[]) {
-
+  
   // ----------------------------------------------------------------------
   // -- global tags
   // ----------------------------------------------------------------------
   map<string, vector<string>> iniGlobalTags = {
-    {"mcidealv6.5", {"pixelalignment_", 
-                     "fibrealignment_", 
-                     "tilealignment_", 
-                     "mppcalignment_", 
-                     "pixelqualitylm_", 
-                     "fibrequality_", 
-                     "tilequality_", 
-                     "pixelefficiency_", 
-                     "eventstuffv1_",
-                     "detsetupv1_"
-                    }  
+    {"mcidealv6.5", {
+      "pixelalignment_", 
+      "fibrealignment_", 
+      "tilealignment_", 
+      "mppcalignment_", 
+      "pixelqualitylm_ideal", 
+      "fibrequality_ideal", 
+      "tilequality_ideal", 
+      "pixelefficiency_ideal", 
+      "eventstuffv1_ideal",
+      "detsetupv1_"} 
+     },
+     {"datav6.2=2025Beam", {
+      "pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", 
+      "fibrealignment_mcidealv6.1", 
+      "tilealignment_mcidealv6.1", 
+      "mppcalignment_mcidealv6.1", 
+      "pixelqualitylm-datav6.1=2025CosmicsVtxOnly", 
+      "detsetupv1_mcidealv6.1"} 
+    },
+     {"datav6.2=2025CosmicsNoMagnet", {
+      "pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", 
+      "fibrealignment_mcidealv6.1", 
+      "tilealignment_mcidealv6.1", 
+      "mppcalignment_mcidealv6.1", 
+      "pixelqualitylm-datav6.1=2025CosmicsVtxOnly", 
+      "detsetupv1_mcidealv6.1=2025CosmicsVtxOnly"} 
     }
-  };    
-   
-  // -- complete the tags by replacing trailing _ with the _GT
+ 
+  };
+
+  // -- comments for global tags (optional)
+  map<string, string> gtComments = {
+    {"mcidealv6.5", "MC ideal detector geometry v6.5"},
+    {"datav6.2=2025Beam", "Data tag for 2025 beam runs"},
+    {"datav6.2=2025CosmicsNoMagnet", "Data tag for cosmics without magnet"}
+  };
+  
+  // // -- complete the tags by replacing trailing _ with the _GT
   for (auto &it: iniGlobalTags) {
     for (unsigned int i = 0; i < it.second.size(); i++) { 
       if (it.second[i].back() == '_') {
@@ -78,8 +101,7 @@ int main(int argc, const char* argv[]) {
       }
     }
   } 
-  
-
+    
   // -- command line arguments
   string jsondir("");
   string gt("");
@@ -97,12 +119,13 @@ int main(int argc, const char* argv[]) {
   
   // -- check whether directories for JSONs already exist
   vector<string> testdirs{jsondir,
-                          jsondir + "/globaltags",
-                          jsondir + "/tags",
-                          jsondir + "/payloads",
-                          jsondir + "/runrecords",
-                          jsondir + "/configs",
-                         };
+    jsondir + "/globaltags",
+    jsondir + "/tags",
+    jsondir + "/payloads",
+    jsondir + "/runrecords",
+    jsondir + "/configs",
+  };
+
   for (auto it: testdirs) {
     DIR *folder = opendir(it.c_str());
     if (folder == NULL) {
@@ -118,7 +141,7 @@ int main(int argc, const char* argv[]) {
   string jdir  = jsondir + "/globaltags";
   
   for (auto igt : iniGlobalTags) {
-    if (igt.first != gt) continue;
+    if (gt != "all" && igt.first != gt) continue;
     
     vector<string> arrayBuilder;
     for (auto it : igt.second) {
@@ -128,6 +151,10 @@ int main(int argc, const char* argv[]) {
     stringstream sstr;
     sstr << "{ \"gt\" : \"" << igt.first << "\", \"tags\" : ";
     sstr << jsFormat(arrayBuilder);
+    auto itComment = gtComments.find(igt.first);
+    if (itComment != gtComments.end() && !itComment->second.empty()) {
+      sstr << ", \"comment\" : \"" << escapeJsonString(itComment->second) << "\"";
+    }
     sstr << " }" << endl;
     
     
@@ -140,39 +167,109 @@ int main(int argc, const char* argv[]) {
     cout << sstr.str();
     JS.close();
   }
-
-  if (string::npos != gt.find("mcideal")) {
-    map<string, vector<string>> iniGlobalTags = {
-      {"mcidealv6.5", {"pixelalignment_", 
-                       "fibrealignment_", 
-                       "tilealignment_", 
-                       "mppcalignment_", 
-                       "pixelqualitylm_", 
-                       "fibrequality_", 
-                       "tilequality_", 
-                       "detsetupv1_"
-                      }  
-      }
-    };    
   
-    cdbPayloadWriter writer;
-    string payloaddir = jsondir + "/payloads";
-    vector<string> vAlignments = {"pixelalignment", "tilealignment", "fibrealignment", "mppcalignment"};
-    for (auto alignment : vAlignments) {
-      writer.writeAlignmentInformation(payloaddir, gt, alignment,  "ascii/mu3e_alignment_" + gt + ".root", "complete detector with MC truth", 1);
-      writeInitialTag(jsondir, gt, alignment + "_");
+  cdbPayloadWriter writer;
+  string payloaddir = jsondir + "/payloads";
+  
+  string gtall = (gt == "all"? "all": "unset"); 
+  string tagLabel = gt; 
+  for (auto it : iniGlobalTags) {
+    if (gtall == "all") gt = it.first;
+    if (gt != it.first) continue;
+    cout << "************* processing global tag " << it.first << " and gt = " << gt << endl;
+    for (auto it2 : it.second) {
+      tagLabel = it2.substr(it2.rfind('_') + 1);
+      cout << "tagLabel = " << tagLabel << " it2 = " << it2 << " it.first = " << it.first << endl;
+    
+      bool RF(false);
+      string asciiFilename("");
+      if (string::npos != it.first.find("mcideal")) {
+        RF = true;
+      }
+
+      if (string::npos != it2.find("pixelalignment_")) {
+        if (RF) {
+          asciiFilename = string(LOCALDIR) + "/ascii/mu3e_alignment_" + gt + ".root";
+        } else {
+          asciiFilename = string(LOCALDIR) + "/ascii/sensors-" + tagLabel + ".csv";
+        }
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, "complete detector with MC truth", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "complete detector with MC truth");
+      }
+
+      if (string::npos != it2.find("tilealignment_")) {
+        if (RF) {
+          asciiFilename = string(LOCALDIR) + "/ascii/mu3e_alignment_" + gt + ".root";
+        } else {
+          asciiFilename = string(LOCALDIR) + "/ascii/tiles-" + tagLabel + ".csv";
+        }
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, "complete detector with MC truth", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "complete detector with MC truth");
+      }
+
+      if (string::npos != it2.find("fibrealignment_")) {
+        if (RF) {
+          asciiFilename = string(LOCALDIR) + "/ascii/mu3e_alignment_" + gt + ".root";
+        } else {
+          asciiFilename = string(LOCALDIR) + "/ascii/fibres-" + tagLabel + ".csv";
+        }
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, "complete detector with MC truth", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "complete detector with MC truth");
+      }
+
+      if (string::npos != it2.find("mppcalignment_")) {
+        if (RF) {
+          asciiFilename = string(LOCALDIR) + "/ascii/mu3e_alignment_" + gt + ".root";
+        } else {
+          asciiFilename = string(LOCALDIR) + "/ascii/mppcs-" + tagLabel + ".csv";
+        }
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, "complete detector with MC truth", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "complete detector with MC truth");
+      }
+
+      if (string::npos != it2.find("pixelqualitylm_")) {
+        if (RF) {
+          asciiFilename = string(LOCALDIR) + "/ascii/mu3e_alignment_" + gt + ".root";
+        } else {
+          asciiFilename = string(LOCALDIR) + "/ascii/pixelqualitylm-" + tagLabel + ".csv";
+        }
+        writer.writePixelQualityLMPayloads(payloaddir, tagLabel, asciiFilename, "perfect detector with no deficiencies", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "perfect detector with no deficiencies");
+      }
+      
+      if (string::npos != it2.find("fibrequality_")) {  
+        writer.writeFibreQualityPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/fibre-asics-perfect.csv", "all good", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "all good");
+      }
+
+      if (string::npos != it2.find("tilequality_")) {
+        writer.writeTileQualityPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/tile-quality-perfect.json", "all good", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "all good");
+      }
+
+      if (string::npos != it2.find("detsetupv1_")) {
+        writer.writeDetSetupV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/detector-MagnetOff-v6.5.json", "detector setup with magnet off", 1);
+        writer.writeDetSetupV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/detector-MagnetOn-v6.5.json", "detector setup with magnet on", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "detector setup");
+      }
+
+      if (string::npos != it2.find("eventstuffv1_")) {
+        writer.writeEventStuffV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/eventstuff-ideal.json", "ideal event stuff", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "ideal event stuff");
+      }
+
+      if (string::npos != it2.find("pixelefficiency_")) {
+        if (RF) {
+          asciiFilename = string(LOCALDIR) + "/ascii/mu3e_alignment_" + gt + ".root";
+        } else {
+          asciiFilename = string(LOCALDIR) + "/ascii/pixelefficiency-" + tagLabel + ".csv";
+        }
+        writer.writePixelEfficiencyPayloads(payloaddir, tagLabel, asciiFilename, "perfect pixel efficiency", 1);
+        writeInitialTag(jsondir, tagLabel, it2, "perfect pixel efficiency");
+      }
     }
-
-    writer.writePixelQualityLM(payloaddir, gt, "ascii/mu3e_alignment_" + gt + ".root", "perfect detector with no deficiencies", 1);
-    writeInitialTag(jsondir, gt, "pixelqualitylm_");
-    writer.writeFibreQuality(payloaddir, gt, "ascii/fibre-asics-1.csv", "all good", 1);
-    writeInitialTag(jsondir, gt, "fibrequality_");
-    writer.writeTileQuality(payloaddir, gt, "ascii/tile-quality-perfect.json", "all good", 1);
-    writeInitialTag(jsondir, gt, "tilequality_");
-
-    return 0;
-  }
-
+  }  
+  
   return 0;
 }
 
@@ -197,7 +294,7 @@ void writeDetSetupV1(string jsondir, string gt) {
       cdc->writePayloadToFile(hash, string(LOCALDIR), pl);
     }
   }
-
+  
   filename = string(LOCALDIR) + "/ascii/detector-MagnetOn-v6.2.json";
   result = cdc->readJSON(filename);
   if (string::npos == result.find("Error")) {
@@ -214,7 +311,7 @@ void writeDetSetupV1(string jsondir, string gt) {
       cdc->writePayloadToFile(hash, string(LOCALDIR), pl);
     }
   }
-
+  
   // -- now the payloads
   vector<pair<int, int>> iovMagnet = { {1, 0}, {2177, 1}, {6302, 0}};
   vector<int> iovs;
@@ -234,13 +331,13 @@ void writeDetSetupV1(string jsondir, string gt) {
     cdc->writePayloadToFile(hash, jsondir + "/payloads", pl);
     cout << "   ->cdbInitGT> writing IOV " << it.first << " with " << templateHash << endl;
   }
-
+  
   // -- and the tag/IOVs
   string tag = "detsetupv1_" + gt;
   stringstream sstr;
   sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
   sstr << jsFormat(iovs);
-  sstr << " }" << endl;
+  sstr << ", \"comment\" : \"detector setup\" }" << endl;
   cout << sstr.str();
   ofstream ONS;
   ONS.open(jsondir + "/tags/" + tag);
@@ -250,7 +347,7 @@ void writeDetSetupV1(string jsondir, string gt) {
   ONS << sstr.str();
   cout << sstr.str();
   ONS.close();
-
+  
   delete cdc;
 }
 
@@ -272,14 +369,14 @@ void writePixelQualityLM(string jsondir, string gt, string payloaddir) {
   pl.fSchema  = cpq->getSchema();
   pl.fBLOB = spl;
   cpq->writePayloadToFile(hash, jsondir + "/payloads", pl);
-
+  
   // -- and the tag/IOVs
   string tag = "pixelqualitylm_" + gt;
   stringstream sstr;
   sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
   vector<int> iovs{1};
   sstr << jsFormat(iovs);
-  sstr << " }" << endl;
+  sstr << ", \"comment\" : \"pixelqualitylm with no problematic pixels\" }" << endl;
   cout << sstr.str();
   ofstream ONS;
   ONS.open(jsondir + "/tags/" + tag);
@@ -289,31 +386,31 @@ void writePixelQualityLM(string jsondir, string gt, string payloaddir) {
   ONS << sstr.str();
   cout << sstr.str();
   ONS.close();
-
-
+  
+  
   // -- now the other payloads
   glob_t globbuf;
   int err = glob((payloaddir + "/tag_pixelqualitylm_*").c_str(), 0, NULL, &globbuf);
   map<int, string> mRunToHash;
   if (err == 0)  {
     for (size_t i = 0; i < globbuf.gl_pathc; i++)  {
-        cout << "   ->cdbInitGT> processing file: " << globbuf.gl_pathv[i] << endl;
-        string hash = globbuf.gl_pathv[i];
-        hash = hash.substr(hash.rfind('/') + 1);
-        string run = hash.substr(hash.rfind('_') + 1);
-        int irun = ::stoi(run);
-        // -- skip run 1 (because that is created above)
-        if (irun == 1) continue;
-        // -- check if the run already exists in the map with the correct hash (containing the gt)
-        if ((mRunToHash.find(irun) != mRunToHash.end()) 
-            && (string::npos != mRunToHash[irun].find(gt))) {
-          cout << "   ->cdbInitGT> run " << irun 
-               << " already exists with " << mRunToHash[irun] 
-               << ", skipping" 
-               << endl;
-          continue;
-        }
-        mRunToHash[::stoi(run)] = hash;
+      cout << "   ->cdbInitGT> processing file: " << globbuf.gl_pathv[i] << endl;
+      string hash = globbuf.gl_pathv[i];
+      hash = hash.substr(hash.rfind('/') + 1);
+      string run = hash.substr(hash.rfind('_') + 1);
+      int irun = ::stoi(run);
+      // -- skip run 1 (because that is created above)
+      if (irun == 1) continue;
+      // -- check if the run already exists in the map with the correct hash (containing the gt)
+      if ((mRunToHash.find(irun) != mRunToHash.end()) 
+      && (string::npos != mRunToHash[irun].find(gt))) {
+        cout << "   ->cdbInitGT> run " << irun 
+        << " already exists with " << mRunToHash[irun] 
+        << ", skipping" 
+        << endl;
+        continue;
+      }
+      mRunToHash[::stoi(run)] = hash;
     }
     globfree(&globbuf);
   }
@@ -356,9 +453,9 @@ void writeAlignmentInformation(string jsondir, string gt, string alignmentTag) {
       cpa->writePayloadToFile(hash, jsondir + "/payloads", pl);
     }
   }
-  writeInitialTag(jsondir, gt, "pixelalignment_");
-
-
+  writeInitialTag(jsondir, gt, "pixelalignment_", "pixel alignment");
+  
+  
   // -- tile sensor alignment
   calTileAlignment *cta = new calTileAlignment();
   filename = string(LOCALDIR) + "/ascii/tiles-" + alignmentTag + ".csv";
@@ -378,7 +475,7 @@ void writeAlignmentInformation(string jsondir, string gt, string alignmentTag) {
       cta->writePayloadToFile(hash, jsondir + "/payloads", pl);
     }
   }
-  writeInitialTag(jsondir, gt, "tilealignment_");
+  writeInitialTag(jsondir, gt, "tilealignment_", "tile alignment");
   
   // -- fiber sensor alignment
   calFibreAlignment *cfa = new calFibreAlignment();
@@ -399,7 +496,7 @@ void writeAlignmentInformation(string jsondir, string gt, string alignmentTag) {
       cfa->writePayloadToFile(hash, jsondir + "/payloads", pl);
     }
   }
-  writeInitialTag(jsondir, gt, "fibrealignment_");
+  writeInitialTag(jsondir, gt, "fibrealignment_", "fibre alignment");
   
   // -- mppc sensor alignment
   calMppcAlignment *cma = new calMppcAlignment();
@@ -420,18 +517,21 @@ void writeAlignmentInformation(string jsondir, string gt, string alignmentTag) {
       cma->writePayloadToFile(hash, jsondir + "/payloads", pl);
     }
   }
-  writeInitialTag(jsondir, gt, "mppcalignment_");
+  writeInitialTag(jsondir, gt, "mppcalignment_", "mppc alignment");
 }
 
 
 // ----------------------------------------------------------------------
-void writeInitialTag(string jsondir, string gt, string initialTag) {
+void writeInitialTag(string jsondir, string gt, string initialTag, string comment) {
   // -- and the tag/IOVs
-  string tag = initialTag + gt;
+  string tag = initialTag;// + gt;
   stringstream sstr;
   sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
   vector<int> iovs{1};
   sstr << jsFormat(iovs);
+  if (!comment.empty()) {
+    sstr << ", \"comment\" : \"" << escapeJsonString(comment) << "\"";
+  }
   sstr << " }" << endl;
   cout << sstr.str();
   ofstream ONS;
@@ -450,81 +550,93 @@ void writeInitialTag(string jsondir, string gt, string initialTag) {
 // removing (-r) a run, or clears to single '1' when clear (-c) is true.
 // Writes a .bac backup and rewrites the file in compact JSON.
 void insertIovTag(const std::string &jsondir, const std::string &tag,
-                  int insertRun, int removeRun, bool clear) {
-  const std::string file = jsondir + "/tags/" + tag;
-
-  // Read whole file
-  std::ifstream in(file);
-  if (!in) {
-    std::cerr << "insertIovTag: Cannot open ->" << file << "<-" << std::endl;
-    return;
-  }
-  std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-  in.close();
-
-  // Remove spaces and newlines to simplify parsing
-  content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
-  content.erase(std::remove(content.begin(), content.end(), ' '), content.end());
-
-  // Find the iovs array between '[' and ']'
-  std::vector<int> runs;
-  size_t lbr = content.find("[");
-  size_t rbr = content.find("]", lbr == std::string::npos ? 0 : lbr + 1);
-  if (lbr != std::string::npos && rbr != std::string::npos && rbr > lbr) {
-    std::string arr = content.substr(lbr + 1, rbr - lbr - 1);
-    std::stringstream ss(arr);
-    std::string tok;
-    while (std::getline(ss, tok, ',')) {
-      if (!tok.empty()) {
-        try { runs.push_back(std::stoi(tok)); } catch (...) {}
+  int insertRun, int removeRun, bool clear) {
+    const std::string file = jsondir + "/tags/" + tag;
+    
+    // Read whole file
+    std::ifstream in(file);
+    if (!in) {
+      std::cerr << "insertIovTag: Cannot open ->" << file << "<-" << std::endl;
+      return;
+    }
+    std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    in.close();
+    
+    // Extract optional comment before normalizing
+    std::string comment;
+    std::string commentVal = jsonGetString(content, "comment");
+    if (!commentVal.empty() && commentVal.find("parseError") == std::string::npos) {
+      comment = commentVal;
+    }
+    
+    // Remove spaces and newlines to simplify parsing
+    content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
+    content.erase(std::remove(content.begin(), content.end(), ' '), content.end());
+    
+    // Find the iovs array between '[' and ']'
+    std::vector<int> runs;
+    size_t lbr = content.find("[");
+    size_t rbr = content.find("]", lbr == std::string::npos ? 0 : lbr + 1);
+    if (lbr != std::string::npos && rbr != std::string::npos && rbr > lbr) {
+      std::string arr = content.substr(lbr + 1, rbr - lbr - 1);
+      std::stringstream ss(arr);
+      std::string tok;
+      while (std::getline(ss, tok, ',')) {
+        if (!tok.empty()) {
+          try { runs.push_back(std::stoi(tok)); } catch (...) {}
+        }
       }
     }
-  }
-
-  // Modify runs per options
-  if (removeRun > 0) {
-    std::vector<int> filtered;
-    filtered.reserve(runs.size());
-    for (int r : runs) if (r != removeRun) filtered.push_back(r);
-    runs.swap(filtered);
-  } else if (insertRun > 0) {
-    // Insert keeping ascending order and unique
-    bool inserted = false;
-    for (auto it = runs.begin(); it != runs.end(); ++it) {
-      if (*it == insertRun) { inserted = true; break; }
-      if (insertRun < *it) { runs.insert(it, insertRun); inserted = true; break; }
+    
+    // Modify runs per options
+    if (removeRun > 0) {
+      std::vector<int> filtered;
+      filtered.reserve(runs.size());
+      for (int r : runs) if (r != removeRun) filtered.push_back(r);
+      runs.swap(filtered);
+    } else if (insertRun > 0) {
+      // Insert keeping ascending order and unique
+      bool inserted = false;
+      for (auto it = runs.begin(); it != runs.end(); ++it) {
+        if (*it == insertRun) { inserted = true; break; }
+        if (insertRun < *it) { runs.insert(it, insertRun); inserted = true; break; }
+      }
+      if (!inserted) runs.push_back(insertRun);
     }
-    if (!inserted) runs.push_back(insertRun);
-  }
-
-  // Backup existing file
-  {
-    std::ifstream src(file, std::ios::binary);
-    std::ofstream dst(file + ".bac", std::ios::binary);
-    if (src && dst) dst << src.rdbuf();
-  }
-
-  // Write back
-  std::ofstream out(file);
-  if (!out) {
-    std::cerr << "insertIovTag: Cannot open " << file << " for output" << std::endl;
-    return;
-  }
-  out << "{\"tag\":\"" << tag << "\", \"iovs\": [";
-  if (clear) {
-    out << 1;
-  } else {
+    
+    // Backup existing file
+    {
+      std::ifstream src(file, std::ios::binary);
+      std::ofstream dst(file + ".bac", std::ios::binary);
+      if (src && dst) dst << src.rdbuf();
+    }
+    
+    // Write back
+    std::ofstream out(file);
+    if (!out) {
+      std::cerr << "insertIovTag: Cannot open " << file << " for output" << std::endl;
+      return;
+    }
+    out << "{\"tag\":\"" << tag << "\", \"iovs\": [";
+    if (clear) {
+      out << 1;
+    } else {
+      for (size_t i = 0; i < runs.size(); ++i) {
+        out << runs[i];
+        if (i + 1 < runs.size()) out << ", ";
+      }
+    }
+    out << "]";
+    if (!comment.empty()) {
+      out << ", \"comment\":\"" << escapeJsonString(comment) << "\"";
+    }
+    out << "}\n";
+    out.close();
+    
+    // Optional: log
+    std::cout << "insertIovTag: " << tag << ": ";
     for (size_t i = 0; i < runs.size(); ++i) {
-      out << runs[i];
-      if (i + 1 < runs.size()) out << ", ";
+      std::cout << runs[i] << (i + 1 < runs.size() ? " " : "\n");
     }
   }
-  out << "]}\n";
-  out.close();
-
-  // Optional: log
-  std::cout << "insertIovTag: " << tag << ": ";
-  for (size_t i = 0; i < runs.size(); ++i) {
-    std::cout << runs[i] << (i + 1 < runs.size() ? " " : "\n");
-  }
-}
+  
