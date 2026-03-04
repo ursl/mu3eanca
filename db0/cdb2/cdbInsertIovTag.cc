@@ -8,6 +8,8 @@
 #include <dirent.h>
 #include <set>
 
+#include "cdbUtil.hh"
+
 using namespace std;
 
 // ----------------------------------------------------------------------
@@ -42,26 +44,34 @@ void printUsage(const char* progname) {
 }
 
 // ----------------------------------------------------------------------
-// Read IOVs from a tag file
-vector<int> readIOVsFromFile(const string& filepath) {
+// Read IOVs and optional comment from a tag file
+// Returns pair of (runs, comment). Comment is empty if not present.
+pair<vector<int>, string> readIOVsAndCommentFromFile(const string& filepath) {
   vector<int> runs;
-  
+  string comment;
+
   ifstream in(filepath);
   if (!in) {
     cerr << "insertIovTag: Cannot open " << filepath << endl;
-    return runs;
+    return make_pair(runs, comment);
   }
 
   // Read entire file content
   string content((istreambuf_iterator<char>(in)), istreambuf_iterator<char>());
   in.close();
 
+  // Extract optional comment before normalizing
+  string commentVal = jsonGetString(content, "comment");
+  if (!commentVal.empty() && commentVal.find("parseError") == string::npos) {
+    comment = commentVal;
+  }
+
   // Remove all newlines and spaces (like Perl script)
   content.erase(remove(content.begin(), content.end(), '\n'), content.end());
   content.erase(remove(content.begin(), content.end(), ' '), content.end());
 
   // Parse the IOVs array
-  // Pattern: {"tag":"tagname","iovs":[1,2,3,...]}
+  // Pattern: {"tag":"tagname","iovs":[1,2,3,...],"comment":"..."}
   size_t iovsPos = content.find("\"iovs\":[");
   if (iovsPos != string::npos) {
     size_t lbr = content.find("[", iovsPos);
@@ -84,7 +94,7 @@ vector<int> readIOVsFromFile(const string& filepath) {
     }
   }
   
-  return runs;
+  return make_pair(runs, comment);
 }
 
 // ----------------------------------------------------------------------
@@ -130,8 +140,8 @@ bool backupFile(const string& filepath) {
 }
 
 // ----------------------------------------------------------------------
-// Write IOVs to a tag file
-bool writeIOVsToFile(const string& filepath, const string& tag, const vector<int>& runs, bool clear) {
+// Write IOVs and optional comment to a tag file
+bool writeIOVsToFile(const string& filepath, const string& tag, const vector<int>& runs, bool clear, const string& comment = "") {
   ofstream out(filepath);
   if (!out) {
     cout << "insertIovTag: Cannot open " << filepath << " for output" << endl;
@@ -149,7 +159,11 @@ bool writeIOVsToFile(const string& filepath, const string& tag, const vector<int
       }
     }
   }
-  out << "]}\n";
+  out << "]";
+  if (!comment.empty()) {
+    out << ", \"comment\" : \"" << escapeJsonString(comment) << "\"";
+  }
+  out << "}\n";
   out.close();
   cout << "insertIovTag: wrote " << filepath << " with " << runs.size() << " runs" << endl;
   return true;
@@ -212,8 +226,10 @@ int processTagFile(const string& jsondir, const string& tag, int insertRun, int 
   // Construct file path
   string file = jsondir + "/tags/" + tag;
 
-  // Read existing IOVs
-  vector<int> runs = readIOVsFromFile(file);
+  // Read existing IOVs and comment
+  auto pr = readIOVsAndCommentFromFile(file);
+  vector<int> runs = pr.first;
+  string comment = pr.second;
   if (runs.empty() && !clear) {
     // If file doesn't exist or is empty, we might need to create it
     // But for now, we'll just proceed
@@ -251,8 +267,8 @@ int processTagFile(const string& jsondir, const string& tag, int insertRun, int 
 
   }
 
-  // Write updated file
-  if (!writeIOVsToFile(file, tag, runs, clear)) {
+  // Write updated file (preserve comment)
+  if (!writeIOVsToFile(file, tag, runs, clear, comment)) {
     return 1;
   }
 
@@ -293,9 +309,9 @@ int main(int argc, char* argv[]) {
       printUsage(argv[0]);
       return 1;
     }
-    ofstream out(jsondir + "/tags/" + tag);
-    out << "{\"tag\" : \"" << tag << "\", \"iovs\" : [1]}" << endl;
-    out.close();
+    if (!writeIOVsToFile(jsondir + "/tags/" + tag, tag, {1}, false, "")) {
+      return 1;
+    }
     return 0;
   }
 
@@ -317,9 +333,11 @@ int main(int argc, char* argv[]) {
     }
     cout << endl;
     
-    // Read existing IOVs once
+    // Read existing IOVs and comment once
     string file = jsondir + "/tags/" + tag;
-    vector<int> runs = readIOVsFromFile(file);
+    auto pr = readIOVsAndCommentFromFile(file);
+    vector<int> runs = pr.first;
+    string comment = pr.second;
     
     cout << "insertIovTag: oldRuns = ";
     for (size_t i = 0; i < runs.size(); i++) {
@@ -340,10 +358,10 @@ int main(int argc, char* argv[]) {
     }
     cout << ", last index = " << (runs.empty() ? -1 : (int)runs.size() - 1) << endl;
     
-    // Create backup and write once
+    // Create backup and write once (preserve comment)
     if (!backupFile(file)) {
     }
-    if (!writeIOVsToFile(file, tag, runs, false)) {
+    if (!writeIOVsToFile(file, tag, runs, false, comment)) {
       return 1;
     }
     
