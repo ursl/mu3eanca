@@ -88,9 +88,28 @@ int main(int argc, const char* argv[]) {
 
   // -- comments for global tags (optional)
   map<string, string> gtComments = {
-    {"mcidealv6.5", "MC ideal detector geometry v6.5"},
-    {"datav6.2=2025Beam", "Data tag for 2025 beam runs"},
-    {"datav6.2=2025CosmicsNoMagnet", "Data tag for cosmics without magnet"}
+    {"mcidealv6.5", "MC ideal (=complete) detector geometry v6.5. No deficiencies, all 100% efficient"},
+    {"datav6.2=2025Beam", "Data tag for 2025 beam runs with magnetic field. Pixel 2-layer (VTX), fibres and tiles complete detector. Ideal detector geometry based on v6.1."},
+    {"datav6.2=2025CosmicsNoMagnet", "Data tag for cosmics without magnet. Pixel 2-layer (VTX), fibres and tiles complete detector. Ideal detector geometry based on v6.1."}
+  };
+
+  // -- comments for tags (optional)
+  map<string, string> tagComments = {
+    {"pixelalignment_mcidealv6.5", "Ideal detector geometry with pixel alignment with MC truth from v6.5"},
+    {"tilealignment_mcidealv6.5", "Ideal detector geometry with tile alignment with MC truth from v6.5"},
+    {"fibrealignment_mcidealv6.5", "Ideal detector geometry with fibre alignment with MC truth from v6.5"},
+    {"mppcalignment_mcidealv6.5", "Ideal detector geometry with mppc alignment with MC truth from v6.5"},
+    {"pixelqualitylm_ideal", "Perfect pixel detector with no deficiencies"},
+    {"fibrequality_ideal", "Perfect fibre detector with no deficiencies"},
+    {"tilequality_ideal", "Perfect tile detector with no deficiencies"},
+    {"pixelefficiency_ideal", "Fully efficient for complete pixel detector"},
+    {"eventstuffv1_ideal", "No limitations to time stamps"},
+    {"detsetupv1_ideal", "Magnet turned on"},
+    {"pixelalignment_mcidealv6.1=2025CosmicsVtxOnly", "Ideal detector geometry with 2-layer pixel (VTX)"},
+    {"pixelqualitylm-datav6.1=2025CosmicsVtxOnly", "Perfect 2-layer pixel detector (VTX)with no deficiencies"},
+    {"fibrealignment_mcidealv6.1", "Ideal complete fibre detector geometry based on v6.1"},
+    {"tilealignment_mcidealv6.1", "Ideal complete tile detector geometry based on v6.1"},
+    {"mppcalignment_mcidealv6.1", "Ideal complete mppc detector geometry based on v6.1"}
   };
   
   // // -- complete the tags by replacing trailing _ with the _GT
@@ -193,8 +212,8 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/sensors-" + tagLabel + ".csv";
         }
-        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, "complete detector with MC truth", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "complete detector with MC truth");
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
 
       if (string::npos != it2.find("tilealignment_")) {
@@ -203,8 +222,8 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/tiles-" + tagLabel + ".csv";
         }
-        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, "complete detector with MC truth", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "complete detector with MC truth");
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
 
       if (string::npos != it2.find("fibrealignment_")) {
@@ -213,8 +232,8 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/fibres-" + tagLabel + ".csv";
         }
-        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, "complete detector with MC truth", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "complete detector with MC truth");
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
 
       if (string::npos != it2.find("mppcalignment_")) {
@@ -223,8 +242,8 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/mppcs-" + tagLabel + ".csv";
         }
-        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, "complete detector with MC truth", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "complete detector with MC truth");
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
 
       if (string::npos != it2.find("pixelqualitylm_")) {
@@ -233,29 +252,29 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/pixelqualitylm-" + tagLabel + ".csv";
         }
-        writer.writePixelQualityLMPayloads(payloaddir, tagLabel, asciiFilename, "perfect detector with no deficiencies", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "perfect detector with no deficiencies");
+        writer.writePixelQualityLMPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
       
       if (string::npos != it2.find("fibrequality_")) {  
-        writer.writeFibreQualityPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/fibre-asics-perfect.csv", "all good", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "all good");
+        writer.writeFibreQualityPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/fibre-asics-perfect.csv", tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
 
       if (string::npos != it2.find("tilequality_")) {
-        writer.writeTileQualityPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/tile-quality-perfect.json", "all good", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "all good");
+        writer.writeTileQualityPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/tile-quality-perfect.json", tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
 
       if (string::npos != it2.find("detsetupv1_")) {
-        writer.writeDetSetupV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/detector-MagnetOff-v6.5.json", "detector setup with magnet off", 1);
-        writer.writeDetSetupV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/detector-MagnetOn-v6.5.json", "detector setup with magnet on", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "detector setup");
+        writer.writeDetSetupV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/detector-MagnetOff-v6.5.json", tagComments[it2], 1);
+        writer.writeDetSetupV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/detector-MagnetOn-v6.5.json", tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
 
       if (string::npos != it2.find("eventstuffv1_")) {
-        writer.writeEventStuffV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/eventstuff-ideal.json", "ideal event stuff", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "ideal event stuff");
+        writer.writeEventStuffV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/eventstuff-ideal.json", tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
 
       if (string::npos != it2.find("pixelefficiency_")) {
@@ -264,8 +283,8 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/pixelefficiency-" + tagLabel + ".csv";
         }
-        writer.writePixelEfficiencyPayloads(payloaddir, tagLabel, asciiFilename, "perfect pixel efficiency", 1);
-        writeInitialTag(jsondir, tagLabel, it2, "perfect pixel efficiency");
+        writer.writePixelEfficiencyPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
     }
   }  
