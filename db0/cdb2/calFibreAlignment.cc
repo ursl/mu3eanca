@@ -41,7 +41,7 @@ calFibreAlignment::calFibreAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
 
 // ----------------------------------------------------------------------
 calFibreAlignment::~calFibreAlignment() {
-  cout << "this is the end of calFibreAlignment with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calFibreAlignment with tag ->" << fTag << "<-" << endl;
 }
 
 

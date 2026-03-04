@@ -45,7 +45,7 @@ calFibreQuality::calFibreQuality(cdbAbs *db, string tag) : calAbs(db, tag) {
 // ----------------------------------------------------------------------
 calFibreQuality::~calFibreQuality() {
   fMapConstants.clear();
-  cout << "this is the end of calFibreQuality with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calFibreQuality with tag ->" << fTag << "<-" << endl;
 }
 
 

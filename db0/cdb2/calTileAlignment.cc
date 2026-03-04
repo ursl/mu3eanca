@@ -41,7 +41,7 @@ calTileAlignment::calTileAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
 
 // ----------------------------------------------------------------------
 calTileAlignment::~calTileAlignment() {
-  cout << "this is the end of calTileAlignment with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calTileAlignment with tag ->" << fTag << "<-" << endl;
 }
 
 

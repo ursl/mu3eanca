@@ -23,7 +23,7 @@ calDetSetupV1::calDetSetupV1(cdbAbs *db, string tag) : calAbs(db, tag) {
 
 // ----------------------------------------------------------------------
 calDetSetupV1::~calDetSetupV1() {
-  cout << "this is the end of calDetSetupV1 with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calDetSetupV1 with tag ->" << fTag << "<-" << endl;
 }
 
 

@@ -23,7 +23,7 @@ calPixelEfficiency::calPixelEfficiency(cdbAbs *db, string tag) : calAbs(db, tag)
 
 // ----------------------------------------------------------------------
 calPixelEfficiency::~calPixelEfficiency() {
-  cout << "this is the end of calPixelEfficiency with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calPixelEfficiency with tag ->" << fTag << "<-" << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -54,7 +54,6 @@ void calPixelEfficiency::calculate(string hash) {
 
 // ----------------------------------------------------------------------
 string calPixelEfficiency::makeBLOB() {
-  cout << "calPixelEfficiency::makeBLOB> make BLOB" << endl;
   stringstream s;
   unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));

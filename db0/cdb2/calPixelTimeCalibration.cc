@@ -20,7 +20,7 @@ calPixelTimeCalibration::calPixelTimeCalibration(cdbAbs *db, string tag) : calAb
 
 // ----------------------------------------------------------------------
 calPixelTimeCalibration::~calPixelTimeCalibration() {
-  cout << "this is the end of calPixelTimeCalibration with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calPixelTimeCalibration with tag ->" << fTag << "<-" << endl;
 }
 
 

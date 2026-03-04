@@ -23,7 +23,7 @@ calEventStuffV1::calEventStuffV1(cdbAbs *db, string tag) : calAbs(db, tag) {
 
 // ----------------------------------------------------------------------
 calEventStuffV1::~calEventStuffV1() {
-  cout << "this is the end of calEventStuffV1 with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calEventStuffV1 with tag ->" << fTag << "<-" << endl;
   }
 
 

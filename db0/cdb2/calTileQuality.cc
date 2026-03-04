@@ -42,7 +42,7 @@ calTileQuality::calTileQuality(cdbAbs *db, string tag) : calAbs(db, tag) {
 // ----------------------------------------------------------------------
 calTileQuality::~calTileQuality() {
   fMapConstants.clear();
-  cout << "this is the end of calTileQuality with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calTileQuality with tag ->" << fTag << "<-" << endl;
 }
 
 
@@ -91,7 +91,7 @@ string calTileQuality::makeBLOB() {
     s << dumpArray(uint2Blob(it.first));
     s << dumpArray(int2Blob(it.second.quality));
   }
-  cout << "calTileQuality::makeBLOB> made BLOB with " << fMapConstants.size() << " tiles" << endl;
+  if (fVerbose > 0) cout << "calTileQuality::makeBLOB> made BLOB with " << fMapConstants.size() << " tiles" << endl;
   return s.str();
 }
 

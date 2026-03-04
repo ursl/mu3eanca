@@ -42,7 +42,7 @@ calPixelAlignment::calPixelAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
 
 // ----------------------------------------------------------------------
 calPixelAlignment::~calPixelAlignment() {
-  cout << "this is the end of calPixelAlignment with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calPixelAlignment with tag ->" << fTag << "<-" << endl;
 }
 
 

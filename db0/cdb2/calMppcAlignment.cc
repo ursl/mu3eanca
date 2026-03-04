@@ -41,7 +41,7 @@ calMppcAlignment::calMppcAlignment(cdbAbs *db, string tag) : calAbs(db, tag) {
 
 // ----------------------------------------------------------------------
 calMppcAlignment::~calMppcAlignment() {
-  cout << "this is the end of calMppcAlignment with tag ->" << fTag << "<-" << endl;
+  if (fVerbose > 0) cout << "this is the end of calMppcAlignment with tag ->" << fTag << "<-" << endl;
 }
 
 
