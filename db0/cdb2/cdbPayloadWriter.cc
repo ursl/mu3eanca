@@ -39,7 +39,7 @@ void cdbPayloadWriter::writePixelEfficiencyPayloads(string payloaddir, string gt
   if (string::npos != filename.find(".root")) {
     cout << "   ->cdbWritePayload> reading pixel chipIDs from root file " << filename << endl;
     TFile *file = TFile::Open(filename.c_str());
-    TTree *ta = (TTree*)file->Get("alignment/sensors");
+    TTree *ta = static_cast<TTree*>(file->Get("alignment/sensors"));
     unsigned int id;
     vector<unsigned int> vChipIDs;
     ta->SetBranchAddress("id", &id);
@@ -119,7 +119,7 @@ void cdbPayloadWriter::writePixelQualityLMPayloads(string payloaddir, string gt,
   if (string::npos != filename.find(".root")) {
     cout << "   ->cdbWritePayload> reading pixel chipIDs from root file " << filename << endl;
     TFile *file = TFile::Open(filename.c_str());
-    TTree *ta = (TTree*)file->Get("alignment/sensors");
+    TTree *ta = static_cast<TTree*>(file->Get("alignment/sensors"));
     unsigned int id;
     vector<unsigned int> vChipIDs;
     ta->SetBranchAddress("id", &id);
@@ -208,7 +208,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
       struct sensor { unsigned int id; double vx, vy, vz; double rowx, rowy, rowz; double colx, coly, colz; int nrow, ncol; double width, length, thickness, pixelSize; };
       map<unsigned int, sensor> sensors;
       TFile *file = TFile::Open(ifilename.c_str());
-      TTree *ta = (TTree*)file->Get("alignment/sensors");
+      TTree *ta = static_cast<TTree*>(file->Get("alignment/sensors"));
       struct sensor a;
       ta->SetBranchAddress("id", &a.id);
       ta->SetBranchAddress("vx", &a.vx); 
@@ -258,7 +258,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
       map<unsigned int, mppc> mppcs;
       struct mppc m;
       TFile *file = TFile::Open(ifilename.c_str());
-      TTree *ta = (TTree*)file->Get("alignment/mppcs");
+      TTree *ta = static_cast<TTree*>(file->Get("alignment/mppcs"));
       ta->SetBranchAddress("mppc", &m.mppc); 
       ta->SetBranchAddress("vx", &m.vx); 
       ta->SetBranchAddress("vy", &m.vy); 
@@ -299,7 +299,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
       map<unsigned int, tile> tiles;
       struct tile t;
       TFile *file = TFile::Open(ifilename.c_str());
-      TTree *ta = (TTree*)file->Get("alignment/tiles");
+      TTree *ta = static_cast<TTree*>(file->Get("alignment/tiles"));
       ta->SetBranchAddress("id", &t.id); 
       ta->SetBranchAddress("posx", &t.posx); 
       ta->SetBranchAddress("posy", &t.posy); 
@@ -339,7 +339,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
       map<unsigned int, fibre> fibres;
       struct fibre f;
       TFile *file = TFile::Open(ifilename.c_str());
-      TTree *ta = (TTree*)file->Get("alignment/fibres");
+      TTree *ta = static_cast<TTree*>(file->Get("alignment/fibres"));
       ta->SetBranchAddress("fibre", &f.fibre); 
       ta->SetBranchAddress("cx", &f.cx); 
       ta->SetBranchAddress("cy", &f.cy); 
