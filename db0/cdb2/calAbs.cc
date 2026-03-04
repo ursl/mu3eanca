@@ -134,6 +134,7 @@ void calAbs::writePayloadToFile(string hash, string dir) {
     string parentDir = dir + "/" + subpath.substr(0, lastSlash);
     system(string("mkdir -p " + parentDir).c_str());
   }
+  cout << "calAbs::writePayloadToFile> writing payload to " << filepath << endl;
   ofstream JS;
   JS.open(filepath);
   if (JS.fail()) {
