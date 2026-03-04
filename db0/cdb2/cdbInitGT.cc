@@ -13,6 +13,7 @@
 
 #include "cdbUtil.hh"
 #include "base64.hh"
+#include "cdbPayloadWriter.hh"
 
 #include "calPixelAlignment.hh"
 #include "calFibreAlignment.hh"
@@ -35,7 +36,7 @@ void insertIovTag(const std::string &jsondir, const std::string &tag,
                   int insertRun /*-i*/, int removeRun /*-r*/, bool clear /*-c*/);
 
 // ----------------------------------------------------------------------
-// cdbInitGT -g datav6.2=2025DataV0 -j CDBJSONDIR -p payloadDir
+// cdbInitGT -g mcidealv6.5 -j CDBJSONDIR -p payloadDir
 // ---------
 //
 //
@@ -43,7 +44,7 @@ void insertIovTag(const std::string &jsondir, const std::string &tag,
 // --------------
 //
 // -- create a global tag with all tags/payloads 
-// merlin> ./bin/cdbInitGT -g v6.3=2025DataV0 -j ~/data/mu3e/cdb -p ~/data/tmp/cdb/payloads
+// merlin> ./bin/cdbInitGT -g mcidealv6.5 -j ~/data/mu3e/cdb -p ~/data/tmp/cdb/payloads
 //
 // ----------------------------------------------------------------------
 
@@ -55,13 +56,17 @@ int main(int argc, const char* argv[]) {
   // -- global tags
   // ----------------------------------------------------------------------
   map<string, vector<string>> iniGlobalTags = {
-    {"datav6.3=2025V0", {"pixelalignment_", 
-                         "fibrealignment_", 
-                         "tilealignment_", 
-                         "mppcalignment_", 
-                         "pixelqualitylm_", 
-                         "detsetupv1_"
-                        }  
+    {"mcidealv6.5", {"pixelalignment_", 
+                     "fibrealignment_", 
+                     "tilealignment_", 
+                     "mppcalignment_", 
+                     "pixelqualitylm_", 
+                     "fibrequality_", 
+                     "tilequality_", 
+                     "pixelefficiency_", 
+                     "eventstuffv1_",
+                     "detsetupv1_"
+                    }  
     }
   };    
    
@@ -78,11 +83,9 @@ int main(int argc, const char* argv[]) {
   // -- command line arguments
   string jsondir("");
   string gt("");
-  string payloaddir("");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-j"))  {jsondir    = argv[++i];}
     if (!strcmp(argv[i], "-g"))  {gt         = argv[++i];}
-    if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
   }
   
   cout << "===============" << endl;
@@ -90,8 +93,8 @@ int main(int argc, const char* argv[]) {
   cout << "===============" << endl;
   cout << "== installing in directory " << jsondir << endl;
   cout << "== global tag " << gt << endl;
-  cout << "== payload directory " << payloaddir << endl;
-    
+  cout << "== json directory " << jsondir << endl;
+  
   // -- check whether directories for JSONs already exist
   vector<string> testdirs{jsondir,
                           jsondir + "/globaltags",
@@ -138,12 +141,37 @@ int main(int argc, const char* argv[]) {
     JS.close();
   }
 
-  // -- write alignment information payloads and tags
-  writeAlignmentInformation(jsondir, gt, "datav6.3=2025V0");
-  // -- write detsetupv1 (basically magnet status) payloads and tags
-  writeDetSetupV1(jsondir, gt);
-  // -- write pixelqualitylm payloads and tags
-  writePixelQualityLM(jsondir, gt, payloaddir);
+  if (string::npos != gt.find("mcideal")) {
+    map<string, vector<string>> iniGlobalTags = {
+      {"mcidealv6.5", {"pixelalignment_", 
+                       "fibrealignment_", 
+                       "tilealignment_", 
+                       "mppcalignment_", 
+                       "pixelqualitylm_", 
+                       "fibrequality_", 
+                       "tilequality_", 
+                       "detsetupv1_"
+                      }  
+      }
+    };    
+  
+    cdbPayloadWriter writer;
+    string payloaddir = jsondir + "/payloads";
+    vector<string> vAlignments = {"pixelalignment", "tilealignment", "fibrealignment", "mppcalignment"};
+    for (auto alignment : vAlignments) {
+      writer.writeAlignmentInformation(payloaddir, gt, alignment,  "ascii/mu3e_alignment_" + gt + ".root", "complete detector with MC truth", 1);
+      writeInitialTag(jsondir, gt, alignment + "_");
+    }
+
+    writer.writePixelQualityLM(payloaddir, gt, "ascii/mu3e_alignment_" + gt + ".root", "perfect detector with no deficiencies", 1);
+    writeInitialTag(jsondir, gt, "pixelqualitylm_");
+    writer.writeFibreQuality(payloaddir, gt, "ascii/fibre-asics-1.csv", "all good", 1);
+    writeInitialTag(jsondir, gt, "fibrequality_");
+    writer.writeTileQuality(payloaddir, gt, "ascii/tile-quality-perfect.json", "all good", 1);
+    writeInitialTag(jsondir, gt, "tilequality_");
+
+    return 0;
+  }
 
   return 0;
 }
