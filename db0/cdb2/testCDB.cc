@@ -52,6 +52,9 @@ void printAll(cdbAbs *);
 //
 // The following dumps a runRecord
 // _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -m 3
+//
+// The following prints GT and tag comments
+// ./bin/testCDB -db ~/data/mu3e/cdb -m 19
 // ----------------------------------------------------------------------
 
 
@@ -414,6 +417,18 @@ int main(int argc, char* argv[]) {
       cout << "==> Replacement failed" << endl;
     }
     pDC->printCalibrations();
+  } else if (19 == mode) {
+    cout << "Test GT and tag comments" << endl;
+    vector<string> vgt = pDB->readGlobalTags();
+    for (auto igt : vgt) {
+      string comment = pDB->getGlobalTagComment(igt);
+      cout << "GT " << igt << (comment.empty() ? "" : ": " + comment) << endl;
+      vector<string> tags = pDB->readTags(igt);
+      for (auto itt : tags) {
+        string tagComment = pDB->getTagComment(itt);
+        cout << "  tag " << itt << (tagComment.empty() ? "" : ": " + tagComment) << endl;
+      }
+    }
   }
   return 0;
 }
