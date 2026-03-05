@@ -52,6 +52,9 @@ public:
   virtual std::vector<std::string>                readTags(std::string gt) = 0;
   virtual std::map<std::string, std::vector<int>> readIOVs(std::vector<std::string> tags) = 0;
 
+  virtual std::string getGlobalTagComment(std::string gt) = 0;
+  virtual std::string getTagComment(std::string tag) = 0;
+
 protected:
 
   std::string fURI{"URI unset"};

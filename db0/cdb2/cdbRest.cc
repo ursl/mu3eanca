@@ -127,6 +127,28 @@ map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
 
 
 // ----------------------------------------------------------------------
+string cdbRest::getGlobalTagComment(string gt) {
+  fCurlReadBuffer.clear();
+  doCurl("globaltags", gt, "findOne");
+  stripOverhead();
+  if (fCurlReadBuffer == "Not found" || fCurlReadBuffer.empty()) return "";
+  string comment = jsonGetString(fCurlReadBuffer, "comment");
+  return (comment.empty() || comment.find("parseError") != string::npos) ? "" : comment;
+}
+
+
+// ----------------------------------------------------------------------
+string cdbRest::getTagComment(string tag) {
+  fCurlReadBuffer.clear();
+  doCurl("tags", tag, "findOne");
+  stripOverhead();
+  if (fCurlReadBuffer == "Not found" || fCurlReadBuffer.empty()) return "";
+  string comment = jsonGetString(fCurlReadBuffer, "comment");
+  return (comment.empty() || comment.find("parseError") != string::npos) ? "" : comment;
+}
+
+
+// ----------------------------------------------------------------------
 vector<string> cdbRest::getAllRunNumbers() {
   doCurl("runNumbers", "nada", "findAll");
   

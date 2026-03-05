@@ -24,6 +24,8 @@ public:
   std::vector<std::string>                 readGlobalTags() override;
   std::vector<std::string>                 readTags(std::string gt) override;
   std::map<std::string, std::vector<int> > readIOVs(std::vector<std::string> tags) override;
+  std::string                              getGlobalTagComment(std::string gt) override;
+  std::string                              getTagComment(std::string tag) override;
   
 private:
   mongocxx::client   fConn;

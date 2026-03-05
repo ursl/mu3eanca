@@ -37,7 +37,6 @@ vector<string> cdbJSON::readGlobalTags() {
   cout << "cdbJSON::readGlobalTags() from  gtdir = " << gtdir << endl;
   vector<string> gtFiles = allFiles(gtdir);
   
-  ifstream INS;
   for (auto it: gtFiles) {
     // -- remove everything up to and including the last /
     string::size_type pos = it.rfind("/");
@@ -119,6 +118,29 @@ map<string, vector<int>> cdbJSON::readIOVs(vector<string> tags) {
   }
   
   return m;
+}
+
+
+// ----------------------------------------------------------------------
+string cdbJSON::getGlobalTagComment(string gt) {
+  string gtdir = fURI + "/globaltags/";
+  ifstream INS(gtdir + gt);
+  if (!INS) return "";
+  std::stringstream buffer;
+  buffer << INS.rdbuf();
+  string comment = jsonGetString(buffer.str(), "comment");
+  return (comment.empty() || comment.find("parseError") != string::npos) ? "" : comment;
+}
+
+
+// ----------------------------------------------------------------------
+string cdbJSON::getTagComment(string tag) {
+  ifstream INS(fURI + "/tags/" + tag);
+  if (!INS) return "";
+  std::stringstream buffer;
+  buffer << INS.rdbuf();
+  string comment = jsonGetString(buffer.str(), "comment");
+  return (comment.empty() || comment.find("parseError") != string::npos) ? "" : comment;
 }
 
 

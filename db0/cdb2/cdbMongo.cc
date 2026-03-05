@@ -139,6 +139,32 @@ map<string, vector<int>> cdbMongo::readIOVs(vector<string> tags) {
 
 
 // ----------------------------------------------------------------------
+string cdbMongo::getGlobalTagComment(string gt) {
+  auto cursor = fDB["globaltags"].find(make_document(kvp("gt", gt)));
+  for (auto doc : cursor) {
+    if (doc.find("comment") != doc.end()) {
+      return doc["comment"].get_string().value.to_string();
+    }
+    return "";
+  }
+  return "";
+}
+
+
+// ----------------------------------------------------------------------
+string cdbMongo::getTagComment(string tag) {
+  auto cursor = fDB["tags"].find(make_document(kvp("tag", tag)));
+  for (auto doc : cursor) {
+    if (doc.find("comment") != doc.end()) {
+      return doc["comment"].get_string().value.to_string();
+    }
+    return "";
+  }
+  return "";
+}
+
+
+// ----------------------------------------------------------------------
 runRecord cdbMongo::getRunRecord(int irun) {
   // -- initialize with default
   std::stringstream sspl;
