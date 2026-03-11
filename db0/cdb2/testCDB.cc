@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 
   // -- command line arguments
   int mode(0), run(4001), verbose(0);
-  string db("/Users/ursl/data/mu3e/cdb"), gt("datav6.3=2025V0");
+  string db("/Users/ursl/data/mu3e/cdb"), gt("unset");
   string scals, sconfigs;
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-cal")) {scals = string(argv[++i]);}
@@ -421,12 +421,13 @@ int main(int argc, char* argv[]) {
     cout << "Test GT and tag comments" << endl;
     vector<string> vgt = pDB->readGlobalTags();
     for (auto igt : vgt) {
+      if (gt != "unset" && igt != gt) continue;
       string comment = pDB->getGlobalTagComment(igt);
       cout << "GT " << igt << (comment.empty() ? "" : ": " + comment) << endl;
       vector<string> tags = pDB->readTags(igt);
       for (auto itt : tags) {
         string tagComment = pDB->getTagComment(itt);
-        cout << "  tag " << itt << (tagComment.empty() ? "" : ": " + tagComment) << endl;
+        cout << "  tag " << itt  << (tagComment.empty() ? "" : ": " + tagComment) << endl;
       }
     }
   }
