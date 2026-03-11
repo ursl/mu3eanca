@@ -14,7 +14,7 @@
 
  
 // ----------------------------------------------------------------------
-// synJSON copy mongoDB CDB contents via REST interface to JSON directory. 
+// syncJSON copy mongoDB CDB contents via REST interface to JSON directory. 
 //         Will not delete what is there but will overwrite //
 // 
 // Usage:     ./bin/syncJSON --dir junk [-a] [-h pc11740]
@@ -112,6 +112,8 @@ int main(int argc, char* argv[]) {
         stringstream sstr;
         sstr << "{ \"gt\" : \"" << it << "\", \"tags\" : ";
         sstr << jsFormat(vTags);
+        string gtComment = pDB->getGlobalTagComment(it);
+        if (!gtComment.empty()) sstr << ", \"comment\" : \"" << escapeJsonString(gtComment) << "\"";
         sstr << " }" << endl;
         ofstream ofs(dirPath + "/globaltags/" + it);
         ofs << sstr.str();
@@ -121,8 +123,10 @@ int main(int argc, char* argv[]) {
         for (auto ittt: mIOVs) {
           // -- write tag to file
           stringstream sstr;
-          sstr << "  { \"tag\" : \"" << ittt.first << "\", \"iovs\" : ";
+          sstr << "{ \"tag\" : \"" << ittt.first << "\", \"iovs\" : ";
           sstr << jsFormat(ittt.second);
+          string tagComment = pDB->getTagComment(ittt.first);
+          if (!tagComment.empty()) sstr << ", \"comment\" : \"" << escapeJsonString(tagComment) << "\"";
           sstr << " }" << endl;
           
           // -- JSON
@@ -166,6 +170,8 @@ int main(int argc, char* argv[]) {
         stringstream sstr;
         sstr << "{ \"gt\" : \"" << it << "\", \"tags\" : ";
         sstr << jsFormat(vTags);
+        string gtComment = pDB->getGlobalTagComment(it);
+        if (!gtComment.empty()) sstr << ", \"comment\" : \"" << escapeJsonString(gtComment) << "\"";
         sstr << " }" << endl;
         ofstream ofs(dirPath + "/globaltags/" + it);
         ofs << sstr.str();
@@ -195,8 +201,10 @@ int main(int argc, char* argv[]) {
             }
             // -- write tag to file
             stringstream sstr;
-            sstr << "  { \"tag\" : \"" << ittt.first << "\", \"iovs\" : ";
+            sstr << "{ \"tag\" : \"" << ittt.first << "\", \"iovs\" : ";
             sstr << jsFormat(ittt.second);
+            string tagComment = pDB->getTagComment(ittt.first);
+            if (!tagComment.empty()) sstr << ", \"comment\" : \"" << escapeJsonString(tagComment) << "\"";
             sstr << " }" << endl;
             ofstream ofs(dirPath + "/tags/" + ittt.first);
             ofs << sstr.str();
