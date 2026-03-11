@@ -353,12 +353,13 @@ string jsonGetValue(const string& jstring, const string& key) {
 // ----------------------------------------------------------------------
 string jsonGetString(const string& jstring, const string& key) {
   const bool DBX(false);
+  string result("parseError");
   if (DBX) cout << "jsonGetString key = " << key << endl;
   string::size_type s0 = jstring.find(key);
+  if (string::npos == s0) return result;
   s0 = jstring.find(":", s0+key.length());
   s0 = jstring.find("\"", s0+1);
   string::size_type s1 = jstring.find("\"", s0+1);
-  string result("parseError");
 
   if (DBX)   cout << "s0: " << s0 << " s1: " << s1 << endl;
   if (string::npos != s1) {
