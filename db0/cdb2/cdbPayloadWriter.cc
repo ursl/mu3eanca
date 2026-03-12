@@ -28,8 +28,61 @@
 #include "calTileQuality.hh"
 #include "calDetSetupV1.hh"
 #include "calEventStuffV1.hh"
+#include "calPixelTimeCalibration.hh"
 
 using namespace std;
+
+// ----------------------------------------------------------------------
+cdbPayloadWriter::cdbPayloadWriter() {
+  fChipIDs.clear();
+  // -- layer 1
+  fLayer1ChipIDs = {
+    1,2,3,4,5,6,
+    33, 34, 35, 36, 37, 38,
+    65, 66, 67, 68, 69, 70,
+    97, 98, 99, 100, 101, 102,
+    129, 130, 131, 132, 133, 134,
+    161, 162, 163, 164, 165, 166,
+    193, 194, 195, 196, 197, 198,
+    225, 226, 227, 228, 229, 230
+  };
+  // -- layer 2
+  fLayer2ChipIDs = {
+    1025, 1026, 1027, 1028, 1029, 1030,
+    1057, 1058, 1059, 1060, 1061, 1062,
+    1089, 1090, 1091, 1092, 1093, 1094,
+    1121, 1122, 1123, 1124, 1125, 1126,
+    1153, 1154, 1155, 1156, 1157, 1158,
+    1185, 1186, 1187, 1188, 1189, 1190,
+    1217, 1218, 1219, 1220, 1221, 1222,
+    1249, 1250, 1251, 1252, 1253, 1254,
+    1281, 1282, 1283, 1284, 1285, 1286,
+    1313, 1314, 1315, 1316, 1317, 1318
+  };
+
+  // -- layer 3
+
+
+
+  // -- combination
+  fChipIDs.insert(fChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+  fChipIDs.insert(fChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+}
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writePixelTimeCalibrationIdealInput(string filename) {
+  cout << "   ->cdbInitGT> writing local template pixeltimecalibration ideal input" << endl;
+  ofstream ONS;
+  ONS.open(filename);
+  for (auto &id : fChipIDs) {
+    for (int i = 0; i < 6; i++) {
+      for (int j = 0; j < 32; j++) {
+        ONS << id << " " << i << " " << j << " 0 0 0 0" << endl;
+      }
+    }
+  }
+  ONS.close();
+}
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writePixelEfficiencyPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
@@ -190,9 +243,28 @@ void cdbPayloadWriter::writeTileQualityPayloads(string payloaddir, string gt, st
 }
 
 // ----------------------------------------------------------------------
+void cdbPayloadWriter::writePixelTimeCalibrationPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
+  cout << "   ->cdbInitGT> writing local template pixeltimecalibration payloads" << endl;
+  calPixelTimeCalibration *cpt = new calPixelTimeCalibration();
+  cpt->readTxtFile(filename);
+  string spl = cpt->makeBLOB();
+  string hash = "tag_pixeltimecalibration_" + gt + "_iov_" + to_string(iov);
+  
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = annotation;
+  pl.fSchema  = cpt->getSchema();
+  pl.fBLOB = spl;
+  cpt->writePayloadToFile(hash, payloaddir, pl);
+  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and comment " << pl.fComment << endl;
+  delete cpt;
+}
+
+
+// ----------------------------------------------------------------------
 void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, string type, string ifilename, string annotation, int iov) {
   cout << "   ->cdbWritePayload> writing alignment " << type << " from file " << ifilename << endl;
-
+  
   string tmpFilename("");
   if (string::npos != ifilename.find(".root")) {
     tmpFilename = ifilename;
@@ -234,8 +306,8 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
       ofstream ONS; ONS.open(tmpFilename);
       for (auto &s : sensors) {
         ONS << s.first << "," << std::setprecision(15) << s.second.vx << "," << s.second.vy << "," << s.second.vz << ","
-            << s.second.rowx << "," << s.second.rowy << "," << s.second.rowz << "," << s.second.colx << "," << s.second.coly << "," << s.second.colz
-            << "," << s.second.nrow << "," << s.second.ncol << "," << s.second.width << "," << s.second.length << "," << s.second.thickness << "," << s.second.pixelSize << endl;
+        << s.second.rowx << "," << s.second.rowy << "," << s.second.rowz << "," << s.second.colx << "," << s.second.coly << "," << s.second.colz
+        << "," << s.second.nrow << "," << s.second.ncol << "," << s.second.width << "," << s.second.length << "," << s.second.thickness << "," << s.second.pixelSize << endl;
       }
       ONS.close(); file->Close();
     }
@@ -250,7 +322,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
     }
     if (string::npos != ifilename.find(".root")) { cout << "   ->cdbWritePayload> removing temporary file " << tmpFilename << endl; remove(tmpFilename.c_str()); }
   }
-
+  
   if (string::npos != type.find("mppcalignment")) {
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading mppcalignment from root file " << ifilename << endl;
@@ -291,7 +363,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
     }
     delete cmp;
   }
-
+  
   if (string::npos != type.find("tilealignment")) {
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading tilealignment from root file " << ifilename << endl;
@@ -331,7 +403,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
     }
     delete cta;
   }
-
+  
   if (string::npos != type.find("fibrealignment")) {
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading fibrealignment from root file " << ifilename << endl;
@@ -393,7 +465,7 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
     if (!strcmp(argv[i], "-f"))  {filename = argv[++i];}
     if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
   }
-
+  
   cout << "======================" << endl;
   cout << "== cdbPayloadWriter ==" << endl;
   cout << "======================" << endl;
@@ -402,7 +474,7 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
   cout << "== filename " << filename << endl;
   cout << "== iov " << iov << endl;
   cout << "== annotation " << annotation << endl << endl;
-
+  
   if (inputfiledir != "") {
     vector<string> vfiles;
     DIR *folder = opendir(inputfiledir.c_str());
@@ -431,7 +503,7 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
     }
     return;
   }
-
+  
   if (string::npos != cal.find("alignment")) {
     writeAlignmentPayloads(payloaddir, gt, cal, filename, annotation, iov);
   }
@@ -456,4 +528,94 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
   if (string::npos != cal.find("eventstuffv1")) {
     writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, iov);
   }
+}
+
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
+  cout << "   ->cdbPayloadWriter> creating chip IDs per layer from input file " << inputfilename << endl;
+  vector<unsigned int> Layer1ChipIDs, Layer2ChipIDs, Layer3ChipIDs, Layer4ChipIDs;
+
+  if (string::npos != inputfilename.find(".csv")) {
+    ifstream IN;
+    IN.open(inputfilename);
+    string line;
+    while (getline(IN, line)) {
+      stringstream ss(line);
+      string id;
+      ss >> id;
+      unsigned int ChipID = ::stoi(id);
+      int layer = (ChipID/1024)%4 + 1;
+      if (layer == 1) {
+        Layer1ChipIDs.push_back(ChipID);
+      } else if (layer == 2) {
+        Layer2ChipIDs.push_back(ChipID);
+      } else if (layer == 3) {
+        Layer3ChipIDs.push_back(ChipID);
+      } else if (layer == 4) {
+        Layer4ChipIDs.push_back(ChipID);
+      }
+    }
+    IN.close();
+  } else if (string::npos != inputfilename.find(".root")) {
+    TFile *file = TFile::Open(inputfilename.c_str());
+    TTree *ta = static_cast<TTree*>(file->Get("alignment/sensors"));
+    unsigned int id;
+    ta->SetBranchAddress("id", &id);
+    for (int i = 0; i < ta->GetEntries(); ++i) {
+      ta->GetEntry(i);
+      int layer = (id/1024)%4 + 1;
+      if (layer == 1) {
+        Layer1ChipIDs.push_back(id);
+      } else if (layer == 2) {
+        Layer2ChipIDs.push_back(id);
+      } else if (layer == 3) {
+        Layer3ChipIDs.push_back(id);
+      } else if (layer == 4) {
+        Layer4ChipIDs.push_back(id);
+      }
+    }
+    file->Close();
+  } else {
+    cout << "Error: input filename " << inputfilename << " is not a .csv or .root file" << endl;
+    return;
+  } 
+
+  cout << "   ->cdbPayloadWriter> read " << Layer1ChipIDs.size() << " layer 1 chip IDs" << endl;
+  int cnt(0);
+  for (auto &id : Layer1ChipIDs) {
+    cout << id << ", ";
+    cnt++;
+    if ((cnt % 12) == 0) cout << endl;
+  }
+  cout << endl;
+
+  cout << "   ->cdbPayloadWriter> read " << Layer2ChipIDs.size() << " layer 2 chip IDs" << endl;
+  cnt = 0; 
+  for (auto &id : Layer2ChipIDs) {
+    cout << id << ", ";
+    cnt++;
+    if ((cnt % 12) == 0) cout << endl;
+  }
+  cout << endl;
+
+  cout << "   ->cdbPayloadWriter> read " << Layer3ChipIDs.size() << " layer 3 chip IDs" << endl;
+  cnt = 0;
+  for (auto &id : Layer3ChipIDs) {
+    cout << id << ", ";
+    cnt++;
+    if ((cnt % 17) == 0) cout << endl;
+  }
+  cout << endl;
+
+  cout << "   ->cdbPayloadWriter> read " << Layer4ChipIDs.size() << " layer 4 chip IDs" << endl;
+  cnt = 0;
+  for (auto &id : Layer4ChipIDs) {
+    cout << id << ", ";
+    cnt++;
+    if ((cnt % 18) == 0) cout << endl;
+  }
+  cout << endl;
+
+  cout << "   ->cdbPayloadWriter> read " << Layer1ChipIDs.size() + Layer2ChipIDs.size() + Layer3ChipIDs.size() + Layer4ChipIDs.size() << " total chip IDs" << endl;
 }
