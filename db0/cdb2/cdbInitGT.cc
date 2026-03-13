@@ -35,15 +35,15 @@ void writeInitialTag(string jsondir, string gt, string initialTag, string commen
 void insertIovTag(const std::string &jsondir, const std::string &tag, int insertRun /*-i*/, int removeRun /*-r*/, bool clear /*-c*/);
 
 // ----------------------------------------------------------------------
-// cdbInitGT -g mcidealv6.5 -j CDBJSONDIR -p payloadDir
+// cdbInitGT 
 // ---------
-//
+// The primary purpose is mcideal initialization (and to provide the ideal starting point for data GT?)
 //
 // Usage examples
 // --------------
 //
 // -- create a global tag with all tags/payloads 
-// merlin> ./bin/cdbInitGT -g mcidealv6.5 -j ~/data/mu3e/cdb -p ~/data/tmp/cdb/payloads
+// merlin> ./bin/cdbInitGT -g mcidealv6.5 -j ~/data/mu3e/cdb 
 //
 // ----------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ int main(int argc, const char* argv[]) {
   // -- global tags
   // ----------------------------------------------------------------------
   map<string, vector<string>> iniGlobalTags = {
-    {"mcidealv6.5", {
+     {"mcidealv6.5", {
       "pixelalignment_", 
       "fibrealignment_", 
       "tilealignment_", 
@@ -64,6 +64,7 @@ int main(int argc, const char* argv[]) {
       "fibrequality_ideal", 
       "tilequality_ideal", 
       "pixelefficiency_ideal", 
+      "pixeltimecalibration_ideal",
       "eventstuffv1_ideal",
       "detsetupv1_"} 
     },
@@ -88,7 +89,7 @@ int main(int argc, const char* argv[]) {
   
   // -- comments for global tags (optional)
   map<string, string> gtComments = {
-    {"mcidealv6.5", "MC ideal (=complete) detector geometry v6.5. No deficiencies, all 100% efficient."},
+    {"mcidealv6.5", "MC ideal (=complete) detector geometry v6.5. No deficiencies, all 100% efficient. No time-walk corrections (zero shift and uncertainty)."},
     {"datav6.2=2025Beam", "Data tag for 2025 beam runs with magnetic field. Pixel 2-layer (VTX), fibres and tiles complete detector. Ideal detector geometry based on v6.1."},
     {"datav6.2=2025CosmicsNoMagnet", "Data tag for cosmics without magnet. Pixel 2-layer (VTX), fibres and tiles complete detector. Ideal detector geometry based on v6.1."}
   };
@@ -99,6 +100,7 @@ int main(int argc, const char* argv[]) {
     {"tilealignment_mcidealv6.5", "Ideal detector geometry with tile alignment with MC truth from v6.5."},
     {"fibrealignment_mcidealv6.5", "Ideal detector geometry with fibre alignment with MC truth from v6.5."},
     {"mppcalignment_mcidealv6.5", "Ideal detector geometry with mppc alignment with MC truth from v6.5."},
+    {"pixeltimecalibration_ideal", "Pixel time calibration for the entire detector with zero shifts and uncertainties, i.e. no time walk corrections for ideal MC."},
     {"pixelqualitylm_ideal", "Perfect pixel detector with no deficiencies."},
     {"fibrequality_ideal", "Perfect fibre detector with no deficiencies."},
     {"tilequality_ideal", "Perfect tile detector with no deficiencies."},
@@ -200,7 +202,7 @@ int main(int argc, const char* argv[]) {
       tagLabel = it2.substr(it2.rfind('_') + 1);
       cout << "tagLabel = " << tagLabel << " it2 = " << it2 << " it.first = " << it.first << endl;
       
-      bool RF(false);
+      bool RF(false); // RF = rootfile
       string asciiFilename("");
       if (string::npos != it.first.find("mcideal")) {
         RF = true;
@@ -286,6 +288,12 @@ int main(int argc, const char* argv[]) {
         writer.writePixelEfficiencyPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
       }
+
+      if (string::npos != it2.find("pixeltimecalibration_")) {
+        writer.writePixelTimeCalibrationPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/largecalib-ideal.calib", tagComments[it2], 1);
+        writeInitialTag(jsondir, tagLabel, it2, tagComments[it2]);
+      }
+
     }
   }  
   
