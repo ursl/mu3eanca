@@ -15,8 +15,9 @@ public:
 
   void writeAlignmentPayloads(std::string payloaddir, std::string gt, std::string type, std::string ifilename, std::string annotation, int iov);
 
-  // -- If the input files is a root file, then the contents will be "perfect" (the root file is simply used for the chipIDs)
   void writePixelQualityLMPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writePixelQualityLMIdealInput(std::string filename, std::string mode = "all");
+
   void writeFibreQualityPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   void writeTileQualityPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
 

@@ -323,28 +323,7 @@ void cdbPayloadWriter::writeEventStuffV1Payloads(string payloaddir, string gt, s
 void cdbPayloadWriter::writePixelQualityLMPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template pixelqualitylm payloads" << endl;
   calPixelQualityLM *cpq = new calPixelQualityLM();
-  if (string::npos != filename.find(".root")) {
-    cout << "   ->cdbWritePayload> reading pixel chipIDs from root file " << filename << endl;
-    TFile *file = TFile::Open(filename.c_str());
-    TTree *ta = static_cast<TTree*>(file->Get("alignment/sensors"));
-    unsigned int id;
-    vector<unsigned int> vChipIDs;
-    ta->SetBranchAddress("id", &id);
-    for (int i = 0; i < ta->GetEntries(); ++i) {
-      ta->GetEntry(i);
-      vChipIDs.push_back(id);
-    }
-    cout << "   ->cdbWritePayload> read " << vChipIDs.size() << " chipIDs from tree with " << ta->GetEntries() << " entries" << endl;
-    file->Close();
-    ofstream ONS;
-    string tmpFilename = "pixelqualitylm_tmp.csv";
-    ONS.open(tmpFilename);
-    for (auto &id : vChipIDs) {
-      ONS << id << "," << 31 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << endl;
-    }
-    ONS.close();
-    filename = tmpFilename;
-  }
+  
   cpq->readCsv(filename);
   string spl = cpq->makeBLOB();
   string hash = "tag_pixelqualitylm_" + gt + "_iov_" + to_string(iov);
@@ -361,6 +340,43 @@ void cdbPayloadWriter::writePixelQualityLMPayloads(string payloaddir, string gt,
     remove(filename.c_str()); 
   }
 }
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writePixelQualityLMIdealInput(string filename, std::string mode) {
+  cout << "   ->cdbWritePayload> reading pixel chipIDs from root file " << filename << endl;
+
+  vector<unsigned int> vChipIDs;
+  if (mode == "all") {
+    vChipIDs.insert(vChipIDs.end(), fChipIDs.begin(), fChipIDs.end());
+  } else if (mode.find("vtx") != string::npos) {
+    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+  } else if (mode.find("central3") != string::npos) {
+    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer3ChipIDs.begin(), fLayer3ChipIDs.end());
+  } else if (mode.find("central4") != string::npos) {
+    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer3ChipIDs.begin(), fLayer3ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer4ChipIDs.begin(), fLayer4ChipIDs.end());
+  } else {
+    cout << "Error: invalid mode " << mode << endl;
+    return;
+  }
+
+  ofstream ONS;
+  string tmpFilename = "pixelqualitylm_tmp.csv";
+  ONS.open(tmpFilename);
+  for (auto &id : vChipIDs) {
+    ONS << id << "," << 31 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << endl;
+  }
+  ONS.close();
+  filename = tmpFilename;
+  
+};
+
+
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writeFibreQualityPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
@@ -714,20 +730,30 @@ void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
   } else if (string::npos != inputfilename.find(".root")) {
     TFile *file = TFile::Open(inputfilename.c_str());
     TTree *ta = static_cast<TTree*>(file->Get("alignment/sensors"));
-    unsigned int id;
+    unsigned int id, station, z, zPrime;
+    double vz;
     ta->SetBranchAddress("id", &id);
+    ta->SetBranchAddress("vz", &vz);
     for (int i = 0; i < ta->GetEntries(); ++i) {
       ta->GetEntry(i);
-      int layer = (id/1024)%4 + 1;
+      station = (id/4096);
+      int layer = (id/1024)%4 + 1;     
+      zPrime = id % 32;
+
       if (layer == 1) {
         Layer1ChipIDs.push_back(id);
+        z = zPrime;
       } else if (layer == 2) {
         Layer2ChipIDs.push_back(id);
+        z = zPrime;
       } else if (layer == 3) {
         Layer3ChipIDs.push_back(id);
+        z = zPrime - 7;
       } else if (layer == 4) {
         Layer4ChipIDs.push_back(id);
+        z = zPrime - 6;
       }
+      cout << "id = " << id << " station = " << station << " z = " << z << " vz = " << vz << endl;
     }
     file->Close();
   } else {
