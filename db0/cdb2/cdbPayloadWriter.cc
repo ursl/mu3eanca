@@ -35,12 +35,12 @@ using namespace std;
 // ----------------------------------------------------------------------
 cdbPayloadWriter::cdbPayloadWriter() {
   fChipIDs.clear();
-
+  
   // -----------------------------------------------------------------
   // -- The code for this section can be obtained by running 
   //    ./bin/cdbWriteIdealInputFiles -m createchipidsperlayer -f ascii/mu3e_alignment_mcidealv6.5.root
   // -----------------------------------------------------------------
-
+  
   // ->cdbPayloadWriter> read 48 layer 1 chip IDs
   fLayer1ChipIDs = {
     1, 2, 3, 4, 5, 6, 33, 34, 35, 36, 37, 38, 
@@ -48,8 +48,8 @@ cdbPayloadWriter::cdbPayloadWriter() {
     129, 130, 131, 132, 133, 134, 161, 162, 163, 164, 165, 166, 
     193, 194, 195, 196, 197, 198, 225, 226, 227, 228, 229, 230
   };
-
-    
+  
+  
   // ->cdbPayloadWriter> read 60 layer 2 chip IDs
   fLayer2ChipIDs = {
     1025, 1026, 1027, 1028, 1029, 1030, 1057, 1058, 1059, 1060, 1061, 1062, 
@@ -58,8 +58,8 @@ cdbPayloadWriter::cdbPayloadWriter() {
     1217, 1218, 1219, 1220, 1221, 1222, 1249, 1250, 1251, 1252, 1253, 1254, 
     1281, 1282, 1283, 1284, 1285, 1286, 1313, 1314, 1315, 1316, 1317, 1318
   };
-
-    
+  
+  
   // ->cdbPayloadWriter> read 408 layer 3 station 0 (central) chip IDs
   fLayer3Station0ChipIDs = {
     2056, 2057, 2058, 2059, 2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 2072, 
@@ -87,8 +87,8 @@ cdbPayloadWriter::cdbPayloadWriter() {
     2760, 2761, 2762, 2763, 2764, 2765, 2766, 2767, 2768, 2769, 2770, 2771, 2772, 2773, 2774, 2775, 2776, 
     2792, 2793, 2794, 2795, 2796, 2797, 2798, 2799, 2800, 2801, 2802, 2803, 2804, 2805, 2806, 2807, 2808
   };
-
-    
+  
+  
   // ->cdbPayloadWriter> read 408 layer 3 station 1 (US) chip IDs
   fLayer3Station1ChipIDs = {
     6152, 6153, 6154, 6155, 6156, 6157, 6158, 6159, 6160, 6161, 6162, 6163, 6164, 6165, 6166, 6167, 6168, 
@@ -116,8 +116,8 @@ cdbPayloadWriter::cdbPayloadWriter() {
     6856, 6857, 6858, 6859, 6860, 6861, 6862, 6863, 6864, 6865, 6866, 6867, 6868, 6869, 6870, 6871, 6872, 
     6888, 6889, 6890, 6891, 6892, 6893, 6894, 6895, 6896, 6897, 6898, 6899, 6900, 6901, 6902, 6903, 6904
   };
-
-    
+  
+  
   // ->cdbPayloadWriter> read 408 layer 3 station 2 (DS) chip IDs
   fLayer3Station2ChipIDs = {
     10248, 10249, 10250, 10251, 10252, 10253, 10254, 10255, 10256, 10257, 10258, 10259, 10260, 10261, 10262, 10263, 10264, 
@@ -145,8 +145,8 @@ cdbPayloadWriter::cdbPayloadWriter() {
     10952, 10953, 10954, 10955, 10956, 10957, 10958, 10959, 10960, 10961, 10962, 10963, 10964, 10965, 10966, 10967, 10968, 
     10984, 10985, 10986, 10987, 10988, 10989, 10990, 10991, 10992, 10993, 10994, 10995, 10996, 10997, 10998, 10999, 11000
   };
-
-    
+  
+  
   // ->cdbPayloadWriter> read 504 layer 4 station 0 (central) chip IDs
   fLayer4Station0ChipIDs = {
     3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3090, 3091, 3092, 3093, 3094, 3095, 3096, 
@@ -178,8 +178,8 @@ cdbPayloadWriter::cdbPayloadWriter() {
     3911, 3912, 3913, 3914, 3915, 3916, 3917, 3918, 3919, 3920, 3921, 3922, 3923, 3924, 3925, 3926, 3927, 3928, 
     3943, 3944, 3945, 3946, 3947, 3948, 3949, 3950, 3951, 3952, 3953, 3954, 3955, 3956, 3957, 3958, 3959, 3960
   };
-
-    
+  
+  
   // ->cdbPayloadWriter> read 504 layer 4 station 1 (US) chip IDs
   fLayer4Station1ChipIDs = {
     7175, 7176, 7177, 7178, 7179, 7180, 7181, 7182, 7183, 7184, 7185, 7186, 7187, 7188, 7189, 7190, 7191, 7192, 
@@ -211,8 +211,8 @@ cdbPayloadWriter::cdbPayloadWriter() {
     8007, 8008, 8009, 8010, 8011, 8012, 8013, 8014, 8015, 8016, 8017, 8018, 8019, 8020, 8021, 8022, 8023, 8024, 
     8039, 8040, 8041, 8042, 8043, 8044, 8045, 8046, 8047, 8048, 8049, 8050, 8051, 8052, 8053, 8054, 8055, 8056
   };
-
-    
+  
+  
   // ->cdbPayloadWriter> read 504 layer 4 station 2 (DS) chip IDs
   fLayer4Station2ChipIDs = {
     11271, 11272, 11273, 11274, 11275, 11276, 11277, 11278, 11279, 11280, 11281, 11282, 11283, 11284, 11285, 11286, 11287, 11288, 
@@ -244,8 +244,8 @@ cdbPayloadWriter::cdbPayloadWriter() {
     12103, 12104, 12105, 12106, 12107, 12108, 12109, 12110, 12111, 12112, 12113, 12114, 12115, 12116, 12117, 12118, 12119, 12120, 
     12135, 12136, 12137, 12138, 12139, 12140, 12141, 12142, 12143, 12144, 12145, 12146, 12147, 12148, 12149, 12150, 12151, 12152
   };
-
-
+  
+  
   // -- combination
   fChipIDs.insert(fChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
   fChipIDs.insert(fChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
@@ -255,16 +255,97 @@ cdbPayloadWriter::cdbPayloadWriter() {
   fChipIDs.insert(fChipIDs.end(), fLayer4Station0ChipIDs.begin(), fLayer4Station0ChipIDs.end());
   fChipIDs.insert(fChipIDs.end(), fLayer4Station1ChipIDs.begin(), fLayer4Station1ChipIDs.end());
   fChipIDs.insert(fChipIDs.end(), fLayer4Station2ChipIDs.begin(), fLayer4Station2ChipIDs.end());
-
+  
   fCentral3LayerChipIDs.insert(fCentral3LayerChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
   fCentral3LayerChipIDs.insert(fCentral3LayerChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
   fCentral3LayerChipIDs.insert(fCentral3LayerChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
-
+  
   fCentral4LayerChipIDs.insert(fCentral4LayerChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
   fCentral4LayerChipIDs.insert(fCentral4LayerChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
   fCentral4LayerChipIDs.insert(fCentral4LayerChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
   fCentral4LayerChipIDs.insert(fCentral4LayerChipIDs.end(), fLayer4Station0ChipIDs.begin(), fLayer4Station0ChipIDs.end());
 }
+
+
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::run(int argc, const char* argv[]) {
+  string cal(""), payloaddir("."), inputfiledir(""), annotation(""), gt(""), filename("");
+  int iov(1);
+  for (int i = 0; i < argc; i++) {
+    if (!strcmp(argv[i], "-a"))  {annotation = argv[++i];}
+    if (!strcmp(argv[i], "-c"))  {cal = argv[++i];}
+    if (!strcmp(argv[i], "-d"))  {inputfiledir = argv[++i];}
+    if (!strcmp(argv[i], "-i"))  {iov = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-g"))  {gt = argv[++i];}
+    if (!strcmp(argv[i], "-f"))  {filename = argv[++i];}
+    if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
+  }
+  
+  cout << "======================" << endl;
+  cout << "== cdbPayloadWriter ==" << endl;
+  cout << "======================" << endl;
+  cout << "== writing payload " << cal << " for global tag " << gt << endl;
+  cout << "== installing in directory " << payloaddir << endl;
+  cout << "== filename " << filename << endl;
+  cout << "== iov " << iov << endl;
+  cout << "== annotation " << annotation << endl << endl;
+  
+  if (inputfiledir != "") {
+    vector<string> vfiles;
+    DIR *folder = opendir(inputfiledir.c_str());
+    if (folder == NULL) {
+      cout << "Error failed to open " << inputfiledir << endl;
+      return;
+    }
+    struct dirent *entry;
+    while ((entry = readdir(folder))) {
+      if (entry->d_type == DT_REG) {
+        if ((cal == "eventstuffv1") && (string::npos == string(entry->d_name).find(".mid.lz4.json"))) continue;
+        vfiles.push_back(inputfiledir + "/" + entry->d_name);
+      }
+    }
+    closedir(folder);
+    for (auto it: vfiles) {
+      filename = it;
+      string srun = filename;
+      replaceAll(srun, ".mid.lz4.json", "");
+      replaceAll(srun, inputfiledir, "");
+      replaceAll(srun, "/", "");
+      replaceAll(srun, "run", "");
+      int irun = ::stoi(srun);
+      cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
+      writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, irun);
+    }
+    return;
+  }
+  
+  if (string::npos != cal.find("alignment")) {
+    writeAlignmentPayloads(payloaddir, gt, cal, filename, annotation, iov);
+  }
+  if ("alignment" == cal) {
+    writeAlignmentPayloads(payloaddir, gt, "pixelalignment", filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, "tilealignment", filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, "fibrealignment", filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, "mppcalignment", filename, annotation, iov);
+  }
+  if (string::npos != cal.find("pixelqualitylm")) {
+    writePixelQualityLMPayloads(payloaddir, gt, filename, annotation, iov);
+  }
+  if (string::npos != cal.find("fibrequality")) {
+    writeFibreQualityPayloads(payloaddir, gt, filename, annotation, iov);
+  }
+  if (string::npos != cal.find("tilequality")) {
+    writeTileQualityPayloads(payloaddir, gt, filename, annotation, iov);
+  }
+  if (string::npos != cal.find("pixelefficiency")) {
+    writePixelEfficiencyPayloads(payloaddir, gt, filename, annotation, iov);
+  }
+  if (string::npos != cal.find("eventstuffv1")) {
+    writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, iov);
+  }
+}
+
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writePixelTimeCalibrationIdealInput(string filename) {
@@ -363,13 +444,14 @@ void cdbPayloadWriter::writeEventStuffV1Payloads(string payloaddir, string gt, s
 }
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writePixelQualityLMPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
-  cout << "   ->cdbInitGT> writing local template pixelqualitylm payloads" << endl;
+void cdbPayloadWriter::writePixelQualityLMPayloads(string payloaddir, string tag, string filename, string annotation, int iov) {
+  cout << "   ->cdbInitGT> writing local template pixelqualitylm payloads" 
+  << " from file " << filename << " for tag " << tag << endl;
   calPixelQualityLM *cpq = new calPixelQualityLM();
   
   cpq->readCsv(filename);
   string spl = cpq->makeBLOB();
-  string hash = "tag_pixelqualitylm_" + gt + "_iov_" + to_string(iov);
+  string hash = "tag_pixelqualitylm_" + tag + "_iov_" + to_string(iov);
   payload pl;
   pl.fHash = hash;
   pl.fComment = annotation + string(". ") + cpq->getStatusDocumentation();
@@ -386,36 +468,19 @@ void cdbPayloadWriter::writePixelQualityLMPayloads(string payloaddir, string gt,
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writePixelQualityLMIdealInput(string filename, std::string mode) {
-  cout << "   ->cdbWritePayload> reading pixel chipIDs from root file " << filename << endl;
-
+  cout << "   ->cdbWritePayload::writePixelQualityLMIdealInput> writing pixel chipIDs to file " << filename 
+      << " for mode " << mode
+       << endl;
+  
   vector<unsigned int> vChipIDs;
-  if (mode == "all") {
-    vChipIDs.insert(vChipIDs.end(), fChipIDs.begin(), fChipIDs.end());
-  } else if (mode.find("vtx") != string::npos) {
-    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
-    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-  } else if (mode.find("central3") != string::npos) {
-    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
-    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-    vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
-  } else if (mode.find("central4") != string::npos) {
-    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
-    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-    vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
-    vChipIDs.insert(vChipIDs.end(), fLayer4Station0ChipIDs.begin(), fLayer4Station0ChipIDs.end());
-  } else {
-    cout << "Error: invalid mode " << mode << endl;
-    return;
-  }
-
+  fillChipIDs(vChipIDs, mode);
+  
   ofstream ONS;
-  string tmpFilename = "pixelqualitylm_tmp.csv";
-  ONS.open(tmpFilename);
+  ONS.open(filename);
   for (auto &id : vChipIDs) {
     ONS << id << "," << 31 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << "," << 0 << endl;
   }
   ONS.close();
-  filename = tmpFilename;
   
 };
 
@@ -476,7 +541,14 @@ void cdbPayloadWriter::writePixelTimeCalibrationPayloads(string payloaddir, stri
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, string type, string ifilename, string annotation, int iov) {
-  cout << "   ->cdbWritePayload> writing alignment " << type << " from file " << ifilename << endl;
+  cout << "   ->cdbWritePayload> writing alignment " << type << " from file " << ifilename 
+  << " tag: " << gt << endl
+  << " type: " << type << endl
+  << " annotation: " << annotation << endl
+  << " iov: " << iov << endl
+  << " payloaddir: " << payloaddir << endl  
+  << " ifilename: " << ifilename 
+  << endl;
   
   string tmpFilename("");
   if (string::npos != ifilename.find(".root")) {
@@ -488,6 +560,32 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
     cout << "   ->cdbWritePayload> temporary file " << tmpFilename << endl;
   }
   if (string::npos != type.find("pixelalignment")) {
+    bool doFilter(false);
+    vector<unsigned int> vFilter;
+    if (string::npos != type.find(",")) {
+      replaceAll(type, "pixelalignment", ""); 
+      replaceAll(type, ",", ""); 
+      if (string::npos != type.find("vtx") || string::npos != type.find("=2025")) {
+        doFilter = true;
+        vFilter.insert(vFilter.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+        vFilter.insert(vFilter.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+      } else if (string::npos != type.find("central3")) {
+        doFilter = true;
+        vFilter.insert(vFilter.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+        vFilter.insert(vFilter.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+        vFilter.insert(vFilter.end(), fCentral3LayerChipIDs.begin(), fCentral3LayerChipIDs.end());
+      } else if (string::npos != type.find("central4")) {
+        doFilter = true;
+        vFilter.insert(vFilter.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+        vFilter.insert(vFilter.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+        vFilter.insert(vFilter.end(), fCentral3LayerChipIDs.begin(), fCentral3LayerChipIDs.end());
+        vFilter.insert(vFilter.end(), fCentral4LayerChipIDs.begin(), fCentral4LayerChipIDs.end());
+      }
+    }
+    if (doFilter) {
+      cout << "   ->cdbWritePayload> filtering pixelalignment for " << type << endl;
+      cout << "   ->cdbWritePayload> number of chips to filter: " << vFilter.size() << endl;
+    }
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading pixelalignment from root file " << ifilename << endl;
       struct sensor { unsigned int id; double vx, vy, vz; double rowx, rowy, rowz; double colx, coly, colz; int nrow, ncol; double width, length, thickness, pixelSize; };
@@ -513,6 +611,9 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
       ta->SetBranchAddress("pixelSize", &a.pixelSize);
       for (int i = 0; i < ta->GetEntries(); ++i) { 
         ta->GetEntry(i); 
+        if (doFilter) {
+          if (find(vFilter.begin(), vFilter.end(), a.id) == vFilter.end()) continue;
+        }
         sensors.insert(make_pair(a.id, a)); 
       }
       cout << "   ->cdbWritePayload> read " << sensors.size() << " sensors" << endl;
@@ -665,84 +766,34 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
   }
 }
 
+
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::run(int argc, const char* argv[]) {
-  string cal(""), payloaddir("."), inputfiledir(""), annotation(""), gt(""), filename("");
-  int iov(1);
-  for (int i = 0; i < argc; i++) {
-    if (!strcmp(argv[i], "-a"))  {annotation = argv[++i];}
-    if (!strcmp(argv[i], "-c"))  {cal = argv[++i];}
-    if (!strcmp(argv[i], "-d"))  {inputfiledir = argv[++i];}
-    if (!strcmp(argv[i], "-i"))  {iov = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-g"))  {gt = argv[++i];}
-    if (!strcmp(argv[i], "-f"))  {filename = argv[++i];}
-    if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
-  }
-  
-  cout << "======================" << endl;
-  cout << "== cdbPayloadWriter ==" << endl;
-  cout << "======================" << endl;
-  cout << "== writing payload " << cal << " for global tag " << gt << endl;
-  cout << "== installing in directory " << payloaddir << endl;
-  cout << "== filename " << filename << endl;
-  cout << "== iov " << iov << endl;
-  cout << "== annotation " << annotation << endl << endl;
-  
-  if (inputfiledir != "") {
-    vector<string> vfiles;
-    DIR *folder = opendir(inputfiledir.c_str());
-    if (folder == NULL) {
-      cout << "Error failed to open " << inputfiledir << endl;
-      return;
-    }
-    struct dirent *entry;
-    while ((entry = readdir(folder))) {
-      if (entry->d_type == DT_REG) {
-        if ((cal == "eventstuffv1") && (string::npos == string(entry->d_name).find(".mid.lz4.json"))) continue;
-        vfiles.push_back(inputfiledir + "/" + entry->d_name);
-      }
-    }
-    closedir(folder);
-    for (auto it: vfiles) {
-      filename = it;
-      string srun = filename;
-      replaceAll(srun, ".mid.lz4.json", "");
-      replaceAll(srun, inputfiledir, "");
-      replaceAll(srun, "/", "");
-      replaceAll(srun, "run", "");
-      int irun = ::stoi(srun);
-      cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
-      writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, irun);
-    }
+void cdbPayloadWriter::fillChipIDs(std::vector<unsigned int> &vChipIDs, std::string mode) {
+  vChipIDs.clear();
+  // -- Note: the order is significant. First years and other restrictions. Then "ideal"
+  if (mode == "all") {
+    vChipIDs.insert(vChipIDs.end(), fChipIDs.begin(), fChipIDs.end());
+  } else if ((mode.find("vtx") != string::npos) || (mode.find("2025") != string::npos)) {
+    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+  } else if (mode.find("central3") != string::npos) {
+    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
+  } else if ((mode.find("central4") != string::npos) || (mode.find("ideal") != string::npos)) {
+    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer3Station1ChipIDs.begin(), fLayer3Station1ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer3Station2ChipIDs.begin(), fLayer3Station2ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer4Station0ChipIDs.begin(), fLayer4Station0ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer4Station1ChipIDs.begin(), fLayer4Station1ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer4Station2ChipIDs.begin(), fLayer4Station2ChipIDs.end());
+  } else {
+    cout << "Error: invalid mode " << mode << endl;
     return;
   }
-  
-  if (string::npos != cal.find("alignment")) {
-    writeAlignmentPayloads(payloaddir, gt, cal, filename, annotation, iov);
-  }
-  if ("alignment" == cal) {
-    writeAlignmentPayloads(payloaddir, gt, "pixelalignment", filename, annotation, iov);
-    writeAlignmentPayloads(payloaddir, gt, "tilealignment", filename, annotation, iov);
-    writeAlignmentPayloads(payloaddir, gt, "fibrealignment", filename, annotation, iov);
-    writeAlignmentPayloads(payloaddir, gt, "mppcalignment", filename, annotation, iov);
-  }
-  if (string::npos != cal.find("pixelqualitylm")) {
-    writePixelQualityLMPayloads(payloaddir, gt, filename, annotation, iov);
-  }
-  if (string::npos != cal.find("fibrequality")) {
-    writeFibreQualityPayloads(payloaddir, gt, filename, annotation, iov);
-  }
-  if (string::npos != cal.find("tilequality")) {
-    writeTileQualityPayloads(payloaddir, gt, filename, annotation, iov);
-  }
-  if (string::npos != cal.find("pixelefficiency")) {
-    writePixelEfficiencyPayloads(payloaddir, gt, filename, annotation, iov);
-  }
-  if (string::npos != cal.find("eventstuffv1")) {
-    writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, iov);
-  }
 }
-
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
@@ -773,7 +824,7 @@ void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
       station = (id/4096);
       int layer = (id/1024)%4 + 1;     
       zPrime = id % 32;
-
+      
       if (layer == 1) {
         fLayer1ChipIDs.push_back(id);
         z = zPrime;
@@ -828,7 +879,7 @@ void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
     if ((cnt % 12) == 0) cout << endl << "    ";
   }
   cout << endl;
-
+  
   cout << "  // ->cdbPayloadWriter> read " << fLayer3Station0ChipIDs.size() << " layer 3 station 0 (central) chip IDs" << endl;
   cout << "  fLayer3Station0ChipIDs = {" << endl << "    ";
   cnt = 0;
@@ -859,7 +910,7 @@ void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
     if ((cnt % 17) == 0) cout << endl << "    ";
   }
   cout << endl;
-
+  
   cout << "  // ->cdbPayloadWriter> read " << fLayer4Station0ChipIDs.size() << " layer 4 station 0 (central) chip IDs" << endl;
   cout << "  fLayer4Station0ChipIDs = {" << endl << "    ";
   cnt = 0;
@@ -890,4 +941,16 @@ void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
     if ((cnt % 18) == 0) cout << endl << "    ";
   }
   cout << endl;
+}
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::createFibreIDs(string inputfilename) {
+  cout << "   ->cdbPayloadWriter> creating fibre IDs from input file " << inputfilename << endl;
+  //  fFibreIDs.clear();
+}
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::createTileIDs(string inputfilename) {
+  cout << "   ->cdbPayloadWriter> creating tile IDs from input file " << inputfilename << endl;
+  //  fTileIDs.clear();
 }

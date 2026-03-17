@@ -32,11 +32,20 @@ public:
 
   void run(int argc, const char* argv[]);
 
+  // -------------------
   // -- helper functions
 
   // -- create code (for copy-pasting) with definitions of chip IDs per layer and station
   void createChipIDsPerLayer(std::string inputfilename);
 
+  // -- fill vector with chip IDs based on mode
+  void fillChipIDs(std::vector<unsigned int> &vChipIDs, std::string mode);
+
+  // -- create code (for copy-pasting) with definitions of fibre IDs 
+  void createFibreIDs(std::string inputfilename);
+
+  // -- create code (for copy-pasting) with definitions of tile IDs
+  void createTileIDs(std::string inputfilename);
 
 private:
   std::vector<unsigned int> fChipIDs, fCentral3LayerChipIDs, fCentral4LayerChipIDs, 
