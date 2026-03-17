@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <iterator>
 #include <sstream>
 #include "calPixelTimeCalibration.hh"
 
@@ -38,11 +39,12 @@ void calPixelTimeCalibration::calculate(string hash) {
 
   int globalChipID(0);
   fMapConstants.clear();
+  const size_t bytesPerChip = NSECTOR * NTOTBINS * (3 * sizeof(int) + 4 * sizeof(double));
   while (ibuffer != buffer.end()) {
-    for (uint chip = 0; chip < NCALIBRATIONCHIPS; chip++){
-      std::array<std::array<constants, NTOTBINS>, NSECTOR> arr;
-      for(uint sector = 0; sector < NSECTOR; sector++){
-        for(uint tot = 0; tot < NTOTBINS; tot++){
+    if (static_cast<size_t>(std::distance(ibuffer, buffer.end())) < bytesPerChip) break;
+    std::array<std::array<constants, NTOTBINS>, NSECTOR> arr;
+    for(uint sector = 0; sector < NSECTOR; sector++){
+      for(uint tot = 0; tot < NTOTBINS; tot++){
           globalChipID = blob2Int(getData(ibuffer));
           blob2Int(getData(ibuffer));
           blob2Int(getData(ibuffer));
@@ -52,8 +54,7 @@ void calPixelTimeCalibration::calculate(string hash) {
           arr[sector][tot].sigmaerr = blob2Double(getData(ibuffer));
         }
       }
-      fMapConstants.insert(make_pair(globalChipID, arr));
-    }
+    fMapConstants.insert(make_pair(globalChipID, arr));
   }
   cout << " inserted " << fMapConstants.size() << " constants" << endl;
 
@@ -76,7 +77,9 @@ string calPixelTimeCalibration::printBLOBString(std::string sblob, int /*verbosi
   ss << "   header: " << hex << header << dec << " (note: chip sector tot mean meanerr sigma sigmaerr)" << endl;
 
   int c(0), s(0), b(0);
+  const size_t bytesPerChip = NSECTOR * NTOTBINS * (3 * sizeof(int) + 4 * sizeof(double));
   while (ibuffer != buffer.end()) {
+    if (static_cast<size_t>(std::distance(ibuffer, buffer.end())) < bytesPerChip) break;
     for (uint sector = 0; sector < NSECTOR; sector++){
       for (uint tot = 0; tot < NTOTBINS; tot++){
         constants a;  
@@ -138,7 +141,10 @@ void calPixelTimeCalibration::readTxtFile(string filename) {
   unsigned int c(0);
   unsigned int s(0);
   unsigned int b(0);
-  for(uint chip = 0; chip < NCALIBRATIONCHIPS; chip++) {
+  unsigned int chip(0); 
+  fNCALIBRATIONCHIPS = 0;
+  //  for(uint chip = 0; chip < NCALIBRATIONCHIPS; chip++) {
+  while (1) {
     std::array<std::array<constants, NTOTBINS>, NSECTOR> arr;
     for (uint sector = 0; sector < NSECTOR; sector++) {
       for (uint tot = 0; tot < NTOTBINS; tot++) {
@@ -150,12 +156,17 @@ void calPixelTimeCalibration::readTxtFile(string filename) {
           &(arr[sector][tot].meanerr),
           &(arr[sector][tot].sigma),
           &(arr[sector][tot].sigmaerr));
+        if (c != chip) {
+          ++fNCALIBRATIONCHIPS;
+          chip = c; 
+        }
         if (s != sector || b != tot) {
           cout << "calPixelTimeCalibration::readTxtFile> Error, sector or tot mismatch: expected (" << sector << "," << tot << ") got (" << s << "," << b << ")" << endl;
         }
       }
     }
-    fMapConstants.insert(make_pair(c, arr));
+   fMapConstants.insert(make_pair(c, arr));
+   if (feof(cf)) break;
   }
   fclose(cf);
   cout << "calPixelTimeCalibration::readTxtFile> read " << fMapConstants.size() << " chips" << endl;

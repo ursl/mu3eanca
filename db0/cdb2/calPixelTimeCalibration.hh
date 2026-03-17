@@ -54,7 +54,7 @@ private:
   std::string fSchema{"ui_id,ui_sector,ui_totbin,mean,meanerr,sigma,sigmaerr"};
 
   // -- constants
-  static const int NCALIBRATIONCHIPS{108};
+  int fNCALIBRATIONCHIPS;
   static const int NSECTOR{6};
   static const int NTOTBINS{32};
 
