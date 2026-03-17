@@ -33,10 +33,16 @@ public:
   void run(int argc, const char* argv[]);
 
   // -- helper functions
+
+  // -- create code (for copy-pasting) with definitions of chip IDs per layer and station
   void createChipIDsPerLayer(std::string inputfilename);
 
+
 private:
-  std::vector<unsigned int> fChipIDs, fLayer1ChipIDs, fLayer2ChipIDs, fLayer3ChipIDs, fLayer4ChipIDs;
+  std::vector<unsigned int> fChipIDs, fCentral3LayerChipIDs, fCentral4LayerChipIDs, 
+  fLayer1ChipIDs, fLayer2ChipIDs, 
+  fLayer3Station0ChipIDs, fLayer3Station1ChipIDs, fLayer3Station2ChipIDs, 
+  fLayer4Station0ChipIDs, fLayer4Station1ChipIDs, fLayer4Station2ChipIDs;
 };
 
 #endif

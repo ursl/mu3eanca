@@ -35,16 +35,22 @@ using namespace std;
 // ----------------------------------------------------------------------
 cdbPayloadWriter::cdbPayloadWriter() {
   fChipIDs.clear();
+
+  // -----------------------------------------------------------------
   // -- The code for this section can be obtained by running 
   //    ./bin/cdbWriteIdealInputFiles -m createchipidsperlayer -f ascii/mu3e_alignment_mcidealv6.5.root
-  // -- layer 1
+  // -----------------------------------------------------------------
+
+  // ->cdbPayloadWriter> read 48 layer 1 chip IDs
   fLayer1ChipIDs = {
     1, 2, 3, 4, 5, 6, 33, 34, 35, 36, 37, 38, 
     65, 66, 67, 68, 69, 70, 97, 98, 99, 100, 101, 102, 
     129, 130, 131, 132, 133, 134, 161, 162, 163, 164, 165, 166, 
     193, 194, 195, 196, 197, 198, 225, 226, 227, 228, 229, 230
   };
-  // -- layer 2
+
+    
+  // ->cdbPayloadWriter> read 60 layer 2 chip IDs
   fLayer2ChipIDs = {
     1025, 1026, 1027, 1028, 1029, 1030, 1057, 1058, 1059, 1060, 1061, 1062, 
     1089, 1090, 1091, 1092, 1093, 1094, 1121, 1122, 1123, 1124, 1125, 1126, 
@@ -52,9 +58,10 @@ cdbPayloadWriter::cdbPayloadWriter() {
     1217, 1218, 1219, 1220, 1221, 1222, 1249, 1250, 1251, 1252, 1253, 1254, 
     1281, 1282, 1283, 1284, 1285, 1286, 1313, 1314, 1315, 1316, 1317, 1318
   };
-  
-  // -- layer 3
-  fLayer3ChipIDs = {
+
+    
+  // ->cdbPayloadWriter> read 408 layer 3 station 0 (central) chip IDs
+  fLayer3Station0ChipIDs = {
     2056, 2057, 2058, 2059, 2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 2072, 
     2088, 2089, 2090, 2091, 2092, 2093, 2094, 2095, 2096, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 2104, 
     2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134, 2135, 2136, 
@@ -78,7 +85,12 @@ cdbPayloadWriter::cdbPayloadWriter() {
     2696, 2697, 2698, 2699, 2700, 2701, 2702, 2703, 2704, 2705, 2706, 2707, 2708, 2709, 2710, 2711, 2712, 
     2728, 2729, 2730, 2731, 2732, 2733, 2734, 2735, 2736, 2737, 2738, 2739, 2740, 2741, 2742, 2743, 2744, 
     2760, 2761, 2762, 2763, 2764, 2765, 2766, 2767, 2768, 2769, 2770, 2771, 2772, 2773, 2774, 2775, 2776, 
-    2792, 2793, 2794, 2795, 2796, 2797, 2798, 2799, 2800, 2801, 2802, 2803, 2804, 2805, 2806, 2807, 2808, 
+    2792, 2793, 2794, 2795, 2796, 2797, 2798, 2799, 2800, 2801, 2802, 2803, 2804, 2805, 2806, 2807, 2808
+  };
+
+    
+  // ->cdbPayloadWriter> read 408 layer 3 station 1 (US) chip IDs
+  fLayer3Station1ChipIDs = {
     6152, 6153, 6154, 6155, 6156, 6157, 6158, 6159, 6160, 6161, 6162, 6163, 6164, 6165, 6166, 6167, 6168, 
     6184, 6185, 6186, 6187, 6188, 6189, 6190, 6191, 6192, 6193, 6194, 6195, 6196, 6197, 6198, 6199, 6200, 
     6216, 6217, 6218, 6219, 6220, 6221, 6222, 6223, 6224, 6225, 6226, 6227, 6228, 6229, 6230, 6231, 6232, 
@@ -102,7 +114,12 @@ cdbPayloadWriter::cdbPayloadWriter() {
     6792, 6793, 6794, 6795, 6796, 6797, 6798, 6799, 6800, 6801, 6802, 6803, 6804, 6805, 6806, 6807, 6808, 
     6824, 6825, 6826, 6827, 6828, 6829, 6830, 6831, 6832, 6833, 6834, 6835, 6836, 6837, 6838, 6839, 6840, 
     6856, 6857, 6858, 6859, 6860, 6861, 6862, 6863, 6864, 6865, 6866, 6867, 6868, 6869, 6870, 6871, 6872, 
-    6888, 6889, 6890, 6891, 6892, 6893, 6894, 6895, 6896, 6897, 6898, 6899, 6900, 6901, 6902, 6903, 6904, 
+    6888, 6889, 6890, 6891, 6892, 6893, 6894, 6895, 6896, 6897, 6898, 6899, 6900, 6901, 6902, 6903, 6904
+  };
+
+    
+  // ->cdbPayloadWriter> read 408 layer 3 station 2 (DS) chip IDs
+  fLayer3Station2ChipIDs = {
     10248, 10249, 10250, 10251, 10252, 10253, 10254, 10255, 10256, 10257, 10258, 10259, 10260, 10261, 10262, 10263, 10264, 
     10280, 10281, 10282, 10283, 10284, 10285, 10286, 10287, 10288, 10289, 10290, 10291, 10292, 10293, 10294, 10295, 10296, 
     10312, 10313, 10314, 10315, 10316, 10317, 10318, 10319, 10320, 10321, 10322, 10323, 10324, 10325, 10326, 10327, 10328, 
@@ -128,8 +145,10 @@ cdbPayloadWriter::cdbPayloadWriter() {
     10952, 10953, 10954, 10955, 10956, 10957, 10958, 10959, 10960, 10961, 10962, 10963, 10964, 10965, 10966, 10967, 10968, 
     10984, 10985, 10986, 10987, 10988, 10989, 10990, 10991, 10992, 10993, 10994, 10995, 10996, 10997, 10998, 10999, 11000
   };
-  
-  fLayer4ChipIDs = {
+
+    
+  // ->cdbPayloadWriter> read 504 layer 4 station 0 (central) chip IDs
+  fLayer4Station0ChipIDs = {
     3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3090, 3091, 3092, 3093, 3094, 3095, 3096, 
     3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119, 3120, 3121, 3122, 3123, 3124, 3125, 3126, 3127, 3128, 
     3143, 3144, 3145, 3146, 3147, 3148, 3149, 3150, 3151, 3152, 3153, 3154, 3155, 3156, 3157, 3158, 3159, 3160, 
@@ -157,7 +176,12 @@ cdbPayloadWriter::cdbPayloadWriter() {
     3847, 3848, 3849, 3850, 3851, 3852, 3853, 3854, 3855, 3856, 3857, 3858, 3859, 3860, 3861, 3862, 3863, 3864, 
     3879, 3880, 3881, 3882, 3883, 3884, 3885, 3886, 3887, 3888, 3889, 3890, 3891, 3892, 3893, 3894, 3895, 3896, 
     3911, 3912, 3913, 3914, 3915, 3916, 3917, 3918, 3919, 3920, 3921, 3922, 3923, 3924, 3925, 3926, 3927, 3928, 
-    3943, 3944, 3945, 3946, 3947, 3948, 3949, 3950, 3951, 3952, 3953, 3954, 3955, 3956, 3957, 3958, 3959, 3960, 
+    3943, 3944, 3945, 3946, 3947, 3948, 3949, 3950, 3951, 3952, 3953, 3954, 3955, 3956, 3957, 3958, 3959, 3960
+  };
+
+    
+  // ->cdbPayloadWriter> read 504 layer 4 station 1 (US) chip IDs
+  fLayer4Station1ChipIDs = {
     7175, 7176, 7177, 7178, 7179, 7180, 7181, 7182, 7183, 7184, 7185, 7186, 7187, 7188, 7189, 7190, 7191, 7192, 
     7207, 7208, 7209, 7210, 7211, 7212, 7213, 7214, 7215, 7216, 7217, 7218, 7219, 7220, 7221, 7222, 7223, 7224, 
     7239, 7240, 7241, 7242, 7243, 7244, 7245, 7246, 7247, 7248, 7249, 7250, 7251, 7252, 7253, 7254, 7255, 7256, 
@@ -185,7 +209,12 @@ cdbPayloadWriter::cdbPayloadWriter() {
     7943, 7944, 7945, 7946, 7947, 7948, 7949, 7950, 7951, 7952, 7953, 7954, 7955, 7956, 7957, 7958, 7959, 7960, 
     7975, 7976, 7977, 7978, 7979, 7980, 7981, 7982, 7983, 7984, 7985, 7986, 7987, 7988, 7989, 7990, 7991, 7992, 
     8007, 8008, 8009, 8010, 8011, 8012, 8013, 8014, 8015, 8016, 8017, 8018, 8019, 8020, 8021, 8022, 8023, 8024, 
-    8039, 8040, 8041, 8042, 8043, 8044, 8045, 8046, 8047, 8048, 8049, 8050, 8051, 8052, 8053, 8054, 8055, 8056, 
+    8039, 8040, 8041, 8042, 8043, 8044, 8045, 8046, 8047, 8048, 8049, 8050, 8051, 8052, 8053, 8054, 8055, 8056
+  };
+
+    
+  // ->cdbPayloadWriter> read 504 layer 4 station 2 (DS) chip IDs
+  fLayer4Station2ChipIDs = {
     11271, 11272, 11273, 11274, 11275, 11276, 11277, 11278, 11279, 11280, 11281, 11282, 11283, 11284, 11285, 11286, 11287, 11288, 
     11303, 11304, 11305, 11306, 11307, 11308, 11309, 11310, 11311, 11312, 11313, 11314, 11315, 11316, 11317, 11318, 11319, 11320, 
     11335, 11336, 11337, 11338, 11339, 11340, 11341, 11342, 11343, 11344, 11345, 11346, 11347, 11348, 11349, 11350, 11351, 11352, 
@@ -215,12 +244,26 @@ cdbPayloadWriter::cdbPayloadWriter() {
     12103, 12104, 12105, 12106, 12107, 12108, 12109, 12110, 12111, 12112, 12113, 12114, 12115, 12116, 12117, 12118, 12119, 12120, 
     12135, 12136, 12137, 12138, 12139, 12140, 12141, 12142, 12143, 12144, 12145, 12146, 12147, 12148, 12149, 12150, 12151, 12152
   };
-  
+
+
   // -- combination
   fChipIDs.insert(fChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
   fChipIDs.insert(fChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-  fChipIDs.insert(fChipIDs.end(), fLayer3ChipIDs.begin(), fLayer3ChipIDs.end());
-  fChipIDs.insert(fChipIDs.end(), fLayer4ChipIDs.begin(), fLayer4ChipIDs.end());
+  fChipIDs.insert(fChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
+  fChipIDs.insert(fChipIDs.end(), fLayer3Station1ChipIDs.begin(), fLayer3Station1ChipIDs.end());
+  fChipIDs.insert(fChipIDs.end(), fLayer3Station2ChipIDs.begin(), fLayer3Station2ChipIDs.end());
+  fChipIDs.insert(fChipIDs.end(), fLayer4Station0ChipIDs.begin(), fLayer4Station0ChipIDs.end());
+  fChipIDs.insert(fChipIDs.end(), fLayer4Station1ChipIDs.begin(), fLayer4Station1ChipIDs.end());
+  fChipIDs.insert(fChipIDs.end(), fLayer4Station2ChipIDs.begin(), fLayer4Station2ChipIDs.end());
+
+  fCentral3LayerChipIDs.insert(fCentral3LayerChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+  fCentral3LayerChipIDs.insert(fCentral3LayerChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+  fCentral3LayerChipIDs.insert(fCentral3LayerChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
+
+  fCentral4LayerChipIDs.insert(fCentral4LayerChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+  fCentral4LayerChipIDs.insert(fCentral4LayerChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+  fCentral4LayerChipIDs.insert(fCentral4LayerChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
+  fCentral4LayerChipIDs.insert(fCentral4LayerChipIDs.end(), fLayer4Station0ChipIDs.begin(), fLayer4Station0ChipIDs.end());
 }
 
 // ----------------------------------------------------------------------
@@ -354,12 +397,12 @@ void cdbPayloadWriter::writePixelQualityLMIdealInput(string filename, std::strin
   } else if (mode.find("central3") != string::npos) {
     vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
     vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-    vChipIDs.insert(vChipIDs.end(), fLayer3ChipIDs.begin(), fLayer3ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
   } else if (mode.find("central4") != string::npos) {
     vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
     vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-    vChipIDs.insert(vChipIDs.end(), fLayer3ChipIDs.begin(), fLayer3ChipIDs.end());
-    vChipIDs.insert(vChipIDs.end(), fLayer4ChipIDs.begin(), fLayer4ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer4Station0ChipIDs.begin(), fLayer4Station0ChipIDs.end());
   } else {
     cout << "Error: invalid mode " << mode << endl;
     return;
@@ -704,29 +747,19 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
   cout << "   ->cdbPayloadWriter> creating chip IDs per layer from input file " << inputfilename << endl;
-  vector<unsigned int> Layer1ChipIDs, Layer2ChipIDs, Layer3ChipIDs, Layer4ChipIDs;
   
+  fLayer1ChipIDs.clear();
+  fLayer2ChipIDs.clear();
+  fLayer3Station0ChipIDs.clear();
+  fLayer3Station1ChipIDs.clear();
+  fLayer3Station2ChipIDs.clear();
+  fLayer4Station0ChipIDs.clear();
+  fLayer4Station1ChipIDs.clear();
+  fLayer4Station2ChipIDs.clear();
   if (string::npos != inputfilename.find(".csv")) {
-    ifstream IN;
-    IN.open(inputfilename);
-    string line;
-    while (getline(IN, line)) {
-      stringstream ss(line);
-      string id;
-      ss >> id;
-      unsigned int ChipID = ::stoi(id);
-      int layer = (ChipID/1024)%4 + 1;
-      if (layer == 1) {
-        Layer1ChipIDs.push_back(ChipID);
-      } else if (layer == 2) {
-        Layer2ChipIDs.push_back(ChipID);
-      } else if (layer == 3) {
-        Layer3ChipIDs.push_back(ChipID);
-      } else if (layer == 4) {
-        Layer4ChipIDs.push_back(ChipID);
-      }
-    }
-    IN.close();
+    cout << "Error: input filename " << inputfilename << " is a .csv file" << endl;
+    cout << "Usage: cdbWriteIdealInputFiles -m createchipidsperlayer -f filename.root" << endl;
+    return;
   } else if (string::npos != inputfilename.find(".root")) {
     TFile *file = TFile::Open(inputfilename.c_str());
     TTree *ta = static_cast<TTree*>(file->Get("alignment/sensors"));
@@ -736,21 +769,34 @@ void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
     ta->SetBranchAddress("vz", &vz);
     for (int i = 0; i < ta->GetEntries(); ++i) {
       ta->GetEntry(i);
+      // -- specbook: Section 4.1.7 "Pixel numbering and naming"
       station = (id/4096);
       int layer = (id/1024)%4 + 1;     
       zPrime = id % 32;
 
       if (layer == 1) {
-        Layer1ChipIDs.push_back(id);
+        fLayer1ChipIDs.push_back(id);
         z = zPrime;
       } else if (layer == 2) {
-        Layer2ChipIDs.push_back(id);
+        fLayer2ChipIDs.push_back(id);
         z = zPrime;
       } else if (layer == 3) {
-        Layer3ChipIDs.push_back(id);
+        if (station == 0) {
+          fLayer3Station0ChipIDs.push_back(id);
+        } else if (station == 1) {
+          fLayer3Station1ChipIDs.push_back(id);
+        } else if (station == 2) {
+          fLayer3Station2ChipIDs.push_back(id);
+        }
         z = zPrime - 7;
       } else if (layer == 4) {
-        Layer4ChipIDs.push_back(id);
+        if (station == 0) {
+          fLayer4Station0ChipIDs.push_back(id);
+        } else if (station == 1) {
+          fLayer4Station1ChipIDs.push_back(id);
+        } else if (station == 2) {
+          fLayer4Station2ChipIDs.push_back(id);
+        }
         z = zPrime - 6;
       }
       cout << "id = " << id << " station = " << station << " z = " << z << " vz = " << vz << endl;
@@ -761,41 +807,87 @@ void cdbPayloadWriter::createChipIDsPerLayer(string inputfilename) {
     return;
   } 
   
-  cout << "   ->cdbPayloadWriter> read " << Layer1ChipIDs.size() << " layer 1 chip IDs" << endl;
-  int cnt(0);
-  for (auto &id : Layer1ChipIDs) {
-    cout << id << ", ";
+  cout << "  // ->cdbPayloadWriter> read " << fLayer1ChipIDs.size() << " layer 1 chip IDs" << endl;
+  cout << "  fLayer1ChipIDs = {" << endl << "    ";
+  unsigned long cnt(0);
+  for (auto &id : fLayer1ChipIDs) {
+    if (cnt < fLayer1ChipIDs.size() - 1) cout << id << ", ";
+    else cout << id << endl << "  };" << endl;
     cnt++;
-    if ((cnt % 12) == 0) cout << endl;
+    if ((cnt % 12) == 0) cout << endl << "    ";
   }
   cout << endl;
   
-  cout << "   ->cdbPayloadWriter> read " << Layer2ChipIDs.size() << " layer 2 chip IDs" << endl;
+  cout << "  // ->cdbPayloadWriter> read " << fLayer2ChipIDs.size() << " layer 2 chip IDs" << endl;
+  cout << "  fLayer2ChipIDs = {" << endl << "    ";
   cnt = 0; 
-  for (auto &id : Layer2ChipIDs) {
-    cout << id << ", ";
+  for (auto &id : fLayer2ChipIDs) {
+    if (cnt < fLayer2ChipIDs.size() - 1) cout << id << ", ";
+    else cout << id << endl << "  };" << endl;
     cnt++;
-    if ((cnt % 12) == 0) cout << endl;
+    if ((cnt % 12) == 0) cout << endl << "    ";
   }
   cout << endl;
-  
-  cout << "   ->cdbPayloadWriter> read " << Layer3ChipIDs.size() << " layer 3 chip IDs" << endl;
+
+  cout << "  // ->cdbPayloadWriter> read " << fLayer3Station0ChipIDs.size() << " layer 3 station 0 (central) chip IDs" << endl;
+  cout << "  fLayer3Station0ChipIDs = {" << endl << "    ";
   cnt = 0;
-  for (auto &id : Layer3ChipIDs) {
-    cout << id << ", ";
+  for (auto &id : fLayer3Station0ChipIDs) {
+    if (cnt < fLayer3Station0ChipIDs.size() - 1) cout << id << ", ";
+    else cout << id << endl << "  };" << endl;
     cnt++;
-    if ((cnt % 17) == 0) cout << endl;
+    if ((cnt % 17) == 0) cout << endl << "    ";
   }
   cout << endl;
-  
-  cout << "   ->cdbPayloadWriter> read " << Layer4ChipIDs.size() << " layer 4 chip IDs" << endl;
+  cout << "  // ->cdbPayloadWriter> read " << fLayer3Station1ChipIDs.size() << " layer 3 station 1 (US) chip IDs" << endl;
+  cout << "  fLayer3Station1ChipIDs = {" << endl << "    ";
   cnt = 0;
-  for (auto &id : Layer4ChipIDs) {
-    cout << id << ", ";
+  for (auto &id : fLayer3Station1ChipIDs) {
+    if (cnt < fLayer3Station1ChipIDs.size() - 1) cout << id << ", ";
+    else cout << id << endl << "  };" << endl;
     cnt++;
-    if ((cnt % 18) == 0) cout << endl;
+    if ((cnt % 17) == 0) cout << endl << "    ";
   }
   cout << endl;
-  
-  cout << "   ->cdbPayloadWriter> read " << Layer1ChipIDs.size() + Layer2ChipIDs.size() + Layer3ChipIDs.size() + Layer4ChipIDs.size() << " total chip IDs" << endl;
+  cout << "  // ->cdbPayloadWriter> read " << fLayer3Station2ChipIDs.size() << " layer 3 station 2 (DS) chip IDs" << endl;
+  cout << "  fLayer3Station2ChipIDs = {" << endl << "    ";
+  cnt = 0;
+  for (auto &id : fLayer3Station2ChipIDs) {
+    if (cnt < fLayer3Station2ChipIDs.size() - 1) cout << id << ", ";
+    else cout << id << endl << "  };" << endl;
+    cnt++;
+    if ((cnt % 17) == 0) cout << endl << "    ";
+  }
+  cout << endl;
+
+  cout << "  // ->cdbPayloadWriter> read " << fLayer4Station0ChipIDs.size() << " layer 4 station 0 (central) chip IDs" << endl;
+  cout << "  fLayer4Station0ChipIDs = {" << endl << "    ";
+  cnt = 0;
+  for (auto &id : fLayer4Station0ChipIDs) {
+    if (cnt < fLayer4Station0ChipIDs.size() - 1) cout << id << ", ";
+    else cout << id << endl << "  };" << endl;
+    cnt++;
+    if ((cnt % 18) == 0) cout << endl << "    ";
+  }
+  cout << endl;
+  cout << "  // ->cdbPayloadWriter> read " << fLayer4Station1ChipIDs.size() << " layer 4 station 1 (US) chip IDs" << endl;
+  cout << "  fLayer4Station1ChipIDs = {" << endl << "    ";
+  cnt = 0;
+  for (auto &id : fLayer4Station1ChipIDs) {
+    if (cnt < fLayer4Station1ChipIDs.size() - 1) cout << id << ", ";
+    else cout << id << endl << "  };" << endl;
+    cnt++;
+    if ((cnt % 18) == 0) cout << endl << "    ";
+  }
+  cout << endl;
+  cout << "  // ->cdbPayloadWriter> read " << fLayer4Station2ChipIDs.size() << " layer 4 station 2 (DS) chip IDs" << endl;
+  cout << "  fLayer4Station2ChipIDs = {" << endl << "    ";
+  cnt = 0;
+  for (auto &id : fLayer4Station2ChipIDs) {
+    if (cnt < fLayer4Station2ChipIDs.size() - 1) cout << id << ", ";
+    else cout << id << endl << "  };" << endl;
+    cnt++;
+    if ((cnt % 18) == 0) cout << endl << "    ";
+  }
+  cout << endl;
 }
