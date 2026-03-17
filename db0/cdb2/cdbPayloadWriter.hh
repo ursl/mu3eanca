@@ -28,7 +28,7 @@ public:
   void writeEventStuffV1Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
 
   void writePixelTimeCalibrationPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
-  void writePixelTimeCalibrationIdealInput(std::string filename);
+  void writePixelTimeCalibrationIdealInput(std::string filename, std::string mode);
 
   void run(int argc, const char* argv[]);
 

@@ -63,7 +63,7 @@ int main(int argc, const char* argv[]) {
       .gt = "mcidealv6.5",
       .tags = {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", 
                "pixelqualitylm_", "fibrequality_ideal", "tilequality_ideal", 
-               "pixelefficiency_ideal", "pixeltimecalibration_ideal", 
+               "pixelefficiency_ideal", "pixeltimecalibration_", 
                "eventstuffv1_ideal", "detsetupv1_"},
       .comment = "MC ideal (=complete) detector geometry v6.5. No deficiencies, all 100% efficient. No time-walk corrections (zero shift and uncertainty).",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
@@ -72,7 +72,7 @@ int main(int argc, const char* argv[]) {
       .gt = "mcidealv6.5=2025",
       .tags = {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", 
                "pixelqualitylm_", "fibrequality_ideal", "tilequality_ideal", 
-               "pixelefficiency_ideal", "pixeltimecalibration_ideal", 
+               "pixelefficiency_ideal", "pixeltimecalibration_", 
                "eventstuffv1_ideal", "detsetupv1_"},
       .comment = "MC ideal 2025 detector geometry v6.5 (VTX + ideal rest). No deficiencies, all 100% efficient. No time-walk corrections (zero shift and uncertainty).",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
@@ -230,7 +230,7 @@ int main(int argc, const char* argv[]) {
       }
       
       if (string::npos != it2.find("pixelqualitylm_")) {
-        asciiFilename = string(LOCALDIR) + "tmp-pixelqualitylm-" + tagLabel + ".csv";
+        asciiFilename = string(LOCALDIR) + "/tmp-pixelqualitylm-" + tagLabel + ".csv";
         writer.writePixelQualityLMIdealInput(asciiFilename, tagLabel);
         writer.writePixelQualityLMPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
@@ -269,8 +269,11 @@ int main(int argc, const char* argv[]) {
       }
       
       if (string::npos != it2.find("pixeltimecalibration_")) {
-        writer.writePixelTimeCalibrationPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/largecalib-ideal.calib", tagComments[it2], 1);
+        asciiFilename = string(LOCALDIR) + "/tmp-pixeltimecalibration-" + tagLabel + ".calib";
+        writer.writePixelTimeCalibrationIdealInput(asciiFilename, tagLabel);      
+        writer.writePixelTimeCalibrationPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
+        //remove(asciiFilename.c_str());
       }
       
     }

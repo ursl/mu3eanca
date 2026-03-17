@@ -348,11 +348,16 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
 
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writePixelTimeCalibrationIdealInput(string filename) {
-  cout << "   ->cdbInitGT> writing local template pixeltimecalibration ideal input" << endl;
+void cdbPayloadWriter::writePixelTimeCalibrationIdealInput(string filename, string mode) {
+  cout << "   ->cdbInitGT> writing local template pixeltimecalibration ideal input for mode = " << mode << endl;
   ofstream ONS;
   ONS.open(filename);
-  for (auto &id : fChipIDs) {
+
+  vector<unsigned int> vChipIDs;
+  fillChipIDs(vChipIDs, mode);
+
+  cout << "   ->cdbPayloadWriter::writePixelTimeCalibrationIdealInput> writing " << vChipIDs.size() << " chipIDs to file " << filename << endl;
+  for (auto &id : vChipIDs) {
     for (int i = 0; i < 6; i++) {
       for (int j = 0; j < 32; j++) {
         ONS << id << " " << i << " " << j << " 0 0 0 0" << endl;
@@ -361,6 +366,7 @@ void cdbPayloadWriter::writePixelTimeCalibrationIdealInput(string filename) {
   }
   ONS.close();
 }
+
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writePixelEfficiencyPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
@@ -522,7 +528,8 @@ void cdbPayloadWriter::writeTileQualityPayloads(string payloaddir, string gt, st
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writePixelTimeCalibrationPayloads(string payloaddir, string gt, string filename, string annotation, int iov) {
-  cout << "   ->cdbInitGT> writing local template pixeltimecalibration payloads" << endl;
+  cout << "   ->cdbPayloadWriter::writePixelTimeCalibrationPayloads> writing local template pixeltimecalibration payloads" << endl;
+  cout << "   ->cdbPayloadWriter::writePixelTimeCalibrationPayloads> reading pixeltimecalibration from file " << filename << endl;
   calPixelTimeCalibration *cpt = new calPixelTimeCalibration();
   cpt->readTxtFile(filename);
   string spl = cpt->makeBLOB();
@@ -534,7 +541,7 @@ void cdbPayloadWriter::writePixelTimeCalibrationPayloads(string payloaddir, stri
   pl.fSchema  = cpt->getSchema();
   pl.fBLOB = spl;
   cpt->writePayloadToFile(hash, payloaddir, pl);
-  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and comment " << pl.fComment << endl;
+  cout << "   ->cdbPayloadWriter::writePixelTimeCalibrationPayloads> writing IOV " << iov << " with " << hash << " and comment " << pl.fComment << endl;
   delete cpt;
 }
 

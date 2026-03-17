@@ -40,7 +40,7 @@ int main(int argc, const char* argv[]) {
       cout << "Usage: cdbWriteIdealInputFiles -m pixeltimecalibration -f filename" << endl;
       return 0;
     }
-    writer.writePixelTimeCalibrationIdealInput(filename);
+    writer.writePixelTimeCalibrationIdealInput(filename, mode);
   }
   
   
