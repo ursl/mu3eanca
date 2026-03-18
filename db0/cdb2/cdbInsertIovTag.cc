@@ -131,6 +131,10 @@ void removeRunFromVector(vector<int>& runs, int runNumber) {
 // Create backup of a file
 bool backupFile(const string& filepath) {
   string oldfilepath = filepath.substr(0, filepath.find_last_of('/')) + "/../old/";
+  if (!fileExists(oldfilepath)) {
+    system(string("mkdir -p " + oldfilepath).c_str());
+  }
+
   string cmd = "mv " + filepath + " " + oldfilepath;
   if (system(cmd.c_str()) != 0) {
     cerr << "insertIovTag: Failed to mv backup from " << filepath << " to " << oldfilepath << endl;
