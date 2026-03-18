@@ -174,53 +174,100 @@ bool writeIOVsToFile(const string& filepath, const string& tag, const vector<int
 }
 
 // ----------------------------------------------------------------------
-// Extract run numbers from payload filenames matching pattern
-// Filenames are like: tag_pixelqualitylm_mcidealv6.1_iov_265
+// Extract run number from payload filename (tag_<tagname>_iov_<run>)
+// Returns -1 if not parseable.
+static int extractRunFromPayloadFilename(const string& filename) {
+  size_t iovPos = filename.find("_iov_");
+  if (iovPos == string::npos) return -1;
+  string runStr = filename.substr(iovPos + 5);
+  size_t dotPos = runStr.find('.');
+  if (dotPos != string::npos) runStr = runStr.substr(0, dotPos);
+  try {
+    return stoi(runStr);
+  } catch (...) {
+    return -1;
+  }
+}
+
+// ----------------------------------------------------------------------
+// Collect run numbers from payload files in a directory (flat or block subdir).
+// Adds to uniqueRuns and runs. Block subdirs are 4-digit (0000, 0001, ...).
+static void collectRunsFromDir(const string& dirpath, const string& pattern,
+                               set<int>& uniqueRuns, vector<int>& runs) {
+  DIR* d = opendir(dirpath.c_str());
+  if (!d) return;
+  auto is4DigitBlock = [](const string& name) {
+    if (name.size() != 4) return false;
+    for (char c : name) if (c < '0' || c > '9') return false;
+    return true;
+  };
+  struct dirent* e;
+  while ((e = readdir(d)) != nullptr) {
+    string name(e->d_name);
+    if (name == "." || name == "..") continue;
+    string full = dirpath + "/" + name;
+    bool isDir = (e->d_type == 4);
+    if (e->d_type == 0) isDir = false;  // unknown: treat as file
+    if (isDir && is4DigitBlock(name)) {
+      collectRunsFromDir(full, pattern, uniqueRuns, runs);
+    } else if (e->d_type == 8 || e->d_type == 0) {
+      if (name.find(pattern) != string::npos) {
+        int run = extractRunFromPayloadFilename(name);
+        if (run >= 0 && uniqueRuns.insert(run).second) runs.push_back(run);
+      }
+    }
+  }
+  closedir(d);
+}
+
+// ----------------------------------------------------------------------
+// Extract run numbers from payload filenames matching pattern.
+// Traverses entire directory structure: payloaddir, tag subdirs, and block subdirs.
+// Layout: payloads/<tag>/<block>/tag_<tagname>_iov_<run>
+// Also supports legacy flat layout: payloads/tag_<tagname>_iov_<run>
 vector<int> extractRunsFromPayloads(const string& payloaddir, const string& pattern) {
   vector<int> runs;
-  set<int> uniqueRuns;  // Use set to avoid duplicates
-  
+  set<int> uniqueRuns;
+
   DIR* dir = opendir(payloaddir.c_str());
   if (!dir) {
     cerr << "insertIovTag: Cannot open directory " << payloaddir << endl;
     return runs;
   }
-  
+
   struct dirent* entry;
   while ((entry = readdir(dir)) != nullptr) {
-    string filename = entry->d_name;
-    
-    // Skip . and ..
-    if (filename == "." || filename == "..") continue;
-    
-    // Check if filename contains pattern
-    if (filename.find(pattern) == string::npos) continue;
-    
-    // Extract run number after _iov_
-    size_t iovPos = filename.find("_iov_");
-    if (iovPos != string::npos) {
-      string runStr = filename.substr(iovPos + 5);  // +5 for "_iov_"
-      // Remove any extension
-      size_t dotPos = runStr.find('.');
-      if (dotPos != string::npos) {
-        runStr = runStr.substr(0, dotPos);
+    string name = entry->d_name;
+    if (name == "." || name == "..") continue;
+
+    string fullpath = payloaddir + "/" + name;
+    bool isDir = (entry->d_type == 4);
+    if (entry->d_type == 0) isDir = false;
+
+    if (isDir) {
+      if (name.find(pattern) != string::npos) {
+        // Matching tag directory: traverse into block subdirs
+        collectRunsFromDir(fullpath, pattern, uniqueRuns, runs);
+      } else {
+        // May be block subdir (0000, 0001) if payloaddir is tag dir
+        auto is4Digit = [](const string& s) {
+          if (s.size() != 4) return false;
+          for (char c : s) if (c < '0' || c > '9') return false;
+          return true;
+        };
+        if (is4Digit(name)) collectRunsFromDir(fullpath, pattern, uniqueRuns, runs);
       }
-      try {
-        int run = stoi(runStr);
-        if (uniqueRuns.insert(run).second) {  // Insert returns true if new
-          runs.push_back(run);
-        }
-      } catch (...) {
-        // Skip invalid run numbers
+    } else if (entry->d_type == 8 || entry->d_type == 0) {
+      // Flat file (legacy layout)
+      if (name.find(pattern) != string::npos) {
+        int run = extractRunFromPayloadFilename(name);
+        if (run >= 0 && uniqueRuns.insert(run).second) runs.push_back(run);
       }
     }
   }
-  
+
   closedir(dir);
-  
-  // Sort the runs
   sort(runs.begin(), runs.end());
-  
   return runs;
 }
 
