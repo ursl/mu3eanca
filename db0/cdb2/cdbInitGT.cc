@@ -308,7 +308,7 @@ void writeInitialTag(string jsondir, string gt, string initialTag, string commen
   sstr << "  { \"tag\" : \"" << tag << "\", \"iovs\" : ";
   vector<int> iovs{1};
   sstr << jsFormat(iovs);
-  string lcomment = "Created for GT " + gt;
+  string lcomment = "Created (initially) for GT " + gt;
   if (!comment.empty()) {
     sstr << ", \"comment\" : \"" << escapeJsonString(comment + " " + lcomment) << "\"";
   } else {
@@ -325,6 +325,7 @@ void writeInitialTag(string jsondir, string gt, string initialTag, string commen
   cout << sstr.str();
   ONS.close();
 }
+
 
 // ----------------------------------------------------------------------
 // Translated from  run2025/scripts/insertIovTag into C++
