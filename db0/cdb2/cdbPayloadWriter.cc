@@ -557,6 +557,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
   << " ifilename: " << ifilename 
   << endl;
   
+
   string tmpFilename("");
   if (string::npos != ifilename.find(".root")) {
     tmpFilename = ifilename;
@@ -572,22 +573,23 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
     if (string::npos != type.find(",")) {
       replaceAll(type, "pixelalignment", ""); 
       replaceAll(type, ",", ""); 
-      if (string::npos != type.find("vtx") || string::npos != type.find("=2025")) {
-        doFilter = true;
-        vFilter.insert(vFilter.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
-        vFilter.insert(vFilter.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-      } else if (string::npos != type.find("central3")) {
-        doFilter = true;
-        vFilter.insert(vFilter.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
-        vFilter.insert(vFilter.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-        vFilter.insert(vFilter.end(), fCentral3LayerChipIDs.begin(), fCentral3LayerChipIDs.end());
-      } else if (string::npos != type.find("central4")) {
-        doFilter = true;
-        vFilter.insert(vFilter.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
-        vFilter.insert(vFilter.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-        vFilter.insert(vFilter.end(), fCentral3LayerChipIDs.begin(), fCentral3LayerChipIDs.end());
-        vFilter.insert(vFilter.end(), fCentral4LayerChipIDs.begin(), fCentral4LayerChipIDs.end());
-      }
+      fillChipIDs(vFilter, type);
+      // if (string::npos != type.find("vtx") || string::npos != type.find("=2025")) {
+      //   doFilter = true;
+      //   vFilter.insert(vFilter.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+      //   vFilter.insert(vFilter.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+      // } else if (string::npos != type.find("central3")) {
+      //   doFilter = true;
+      //   vFilter.insert(vFilter.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+      //   vFilter.insert(vFilter.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+      //   vFilter.insert(vFilter.end(), fCentral3LayerChipIDs.begin(), fCentral3LayerChipIDs.end());
+      // } else if (string::npos != type.find("central4")) {
+      //   doFilter = true;
+      //   vFilter.insert(vFilter.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+      //   vFilter.insert(vFilter.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+      //   vFilter.insert(vFilter.end(), fCentral3LayerChipIDs.begin(), fCentral3LayerChipIDs.end());
+      //   vFilter.insert(vFilter.end(), fCentral4LayerChipIDs.begin(), fCentral4LayerChipIDs.end());
+      // }
     }
     if (doFilter) {
       cout << "   ->cdbWritePayload> filtering pixelalignment for " << type << endl;
@@ -787,7 +789,12 @@ void cdbPayloadWriter::fillChipIDs(std::vector<unsigned int> &vChipIDs, std::str
     vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
     vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
     vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
-  } else if ((mode.find("central4") != string::npos) || (mode.find("ideal") != string::npos)) {
+  } else if (mode.find("central4") != string::npos) {
+    vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
+    vChipIDs.insert(vChipIDs.end(), fLayer4Station0ChipIDs.begin(), fLayer4Station0ChipIDs.end());
+  } else if (mode.find("ideal") != string::npos) {
     vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
     vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
     vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
