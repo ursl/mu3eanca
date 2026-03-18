@@ -34,6 +34,13 @@ void insertIovTag(const std::string &jsondir, const std::string &tag, int insert
 // cdbInitGT 
 // ---------
 // The primary purpose is mcideal initialization (and to provide the ideal starting point for data GT?)
+// Note: The initial payload for ANY GT should be perfect conditions. realistic starts for specific runs (determined in data analysis)
+//       However, the geometric detector contents varies
+//         - mcidealv6.5 with complete detector
+//         - mcidealv6.5=2025 with VTX and complete(?) fibres and tiles
+//         - mcidealv6.5=central3 with 3-layer central pixel 
+//         - mcrealisticv6.5=2025 with VTX and complete(?) fibres and tiles, eventually smeared calibrations
+//         - datav6.5=2025 
 //
 // Usage examples
 // --------------
@@ -76,10 +83,20 @@ int main(int argc, const char* argv[]) {
                "eventstuffv1_ideal", "detsetupv1_"},
       .comment = "MC ideal 2025 detector geometry v6.5 (VTX + ideal rest). No deficiencies, all 100% efficient. No time-walk corrections (zero shift and uncertainty).",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
+    }},
+    {"mcrealisticv6.5=2025V0", {
+      .gt = "mcrealisticv6.5=2025V0",
+      .tags = {"pixelalignment_mcidealv6.5=2025", "fibrealignment_mcidealv6.5=2025", "tilealignment_mcidealv6.5=2025", "mppcalignment_mcidealv6.5=2025", 
+               "pixelqualitylm_datav6.5=2025V0", "fibrequality_datav6.3=2025V0", "tilequality_datav6.3=2025V0", 
+               "pixelefficiency_datav6.5=2025V0", "pixeltimecalibration_", 
+               "eventstuffv1_ideal", "detsetupv1_"},
+      .comment = "MC realistic 2025 detector conditions with placeholder MC smearing. Ideal 2025 geometries using MC truth from v6.5 (VTX + ideal rest). Starting point for analysis of MC simulation data.",
+      .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
     }}
+
   };
   
-  // -- comments for tags 
+  // -- comments for tags. Since tags can be part of multiple GT, do not insert this into iniStructGT
   map<string, string> tagComments = {
     {"pixelalignment_mcidealv6.5", "Ideal detector geometry with pixel alignment using MC truth from v6.5."},
     {"pixelalignment_mcidealv6.5=2025", "Ideal detector geometry (VTX and complete fibres and tiles) with pixel alignment using MC truth from v6.5."},
