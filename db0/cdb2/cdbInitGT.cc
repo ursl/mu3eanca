@@ -37,7 +37,7 @@ void insertIovTag(const std::string &jsondir, const std::string &tag, int insert
 // Note: The initial payload for ANY GT should be perfect conditions. realistic starts for specific runs (determined in data analysis)
 //       However, the geometric detector contents varies
 //         - mcidealv6.5 with complete detector
-//         - mcidealv6.5=2025 with VTX and complete(?) fibres and tiles
+//         - mcidealv6.5=2025 with VTX and complete(?) fibres and DS tiles
 //         - mcidealv6.5=central3 with 3-layer central pixel 
 //         - mcrealisticv6.5=2025 with VTX and complete(?) fibres and tiles, eventually smeared calibrations
 //         - datav6.5=2025 
@@ -78,10 +78,10 @@ int main(int argc, const char* argv[]) {
     {"mcidealv6.5=2025", {
       .gt = "mcidealv6.5=2025",
       .tags = {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", 
-               "pixelqualitylm_", "fibrequality_ideal", "tilequality_ideal", 
-               "pixelefficiency_ideal", "pixeltimecalibration_", 
+               "pixelqualitylm_", "fibrequality_", "tilequality_", 
+               "pixelefficiency_", "pixeltimecalibration_", 
                "eventstuffv1_ideal", "detsetupv1_"},
-      .comment = "MC ideal 2025 detector geometry v6.5 (VTX + ideal rest). No deficiencies, all 100% efficient. No time-walk corrections (zero shift and uncertainty).",
+      .comment = "MC ideal 2025 detector geometry v6.5 (VTX + DS tiles + all fibres). No deficiencies, all 100% efficient. No time-walk corrections (zero shift and uncertainty).",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
     }},
     {"mcrealisticv6.5=2025V0", {
@@ -90,7 +90,7 @@ int main(int argc, const char* argv[]) {
                "pixelqualitylm_datav6.5=2025V0", "fibrequality_datav6.3=2025V0", "tilequality_datav6.3=2025V0", 
                "pixelefficiency_datav6.5=2025V0", "pixeltimecalibration_", 
                "eventstuffv1_ideal", "detsetupv1_"},
-      .comment = "MC realistic 2025 detector conditions with placeholder MC smearing. Ideal 2025 geometries using MC truth from v6.5 (VTX + ideal rest). Starting point for analysis of MC simulation data.",
+      .comment = "MC realistic 2025 detector conditions with *placeholder* MC smearing. Ideal 2025 geometries using MC truth from v6.5 (VTX + DS tiles + all fibres). Starting point for analysis of MC simulation data.",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
     }}
 
@@ -251,21 +251,27 @@ int main(int argc, const char* argv[]) {
         writer.writePixelQualityLMIdealInput(asciiFilename, tagLabel);
         writer.writePixelQualityLMPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
-        remove(asciiFilename.c_str());
+        //remove(asciiFilename.c_str());
       }
       
       if (string::npos != it2.find("fibrequality_")) {  
-        writer.writeFibreQualityPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/fibre-asics-perfect.csv", tagComments[it2], 1);
+        asciiFilename = string(LOCALDIR) + "/tmp-fibrequality-" + tagLabel + ".csv";
+        writer.writeFibreQualityIdealInput(asciiFilename, tagLabel);
+        writer.writeFibreQualityPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
+        //remove(asciiFilename.c_str());
       }
       
       if (string::npos != it2.find("tilequality_")) {
-        writer.writeTileQualityPayloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/tile-quality-perfect.json", tagComments[it2], 1);
+        asciiFilename = string(LOCALDIR) + "/tmp-tilequality-" + tagLabel + ".json";
+        writer.writeTileQualityIdealInput(asciiFilename, tagLabel);
+        writer.writeTileQualityPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
+        //remove(asciiFilename.c_str());
       }
       
       if (string::npos != it2.find("detsetupv1_")) {
-        writer.writeDetSetupV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/detector-MagnetOff-v6.5.json", tagComments[it2], 1);
+        //writer.writeDetSetupV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/detector-MagnetOff-v6.5.json", tagComments[it2], 1);
         writer.writeDetSetupV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/detector-MagnetOn-v6.5.json", tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
@@ -276,13 +282,11 @@ int main(int argc, const char* argv[]) {
       }
       
       if (string::npos != it2.find("pixelefficiency_")) {
-        if (RF) {
-          asciiFilename = its.second.rootfile;
-        } else {
-          asciiFilename = string(LOCALDIR) + "/ascii/pixelefficiency-" + tagLabel + ".csv";
-        }
+        asciiFilename = string(LOCALDIR) + "/tmp-pixelefficiency-" + tagLabel + ".csv";
+        writer.writePixelEfficiencyIdealInput(asciiFilename, tagLabel);
         writer.writePixelEfficiencyPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
+        //remove(asciiFilename.c_str());
       }
       
       if (string::npos != it2.find("pixeltimecalibration_")) {

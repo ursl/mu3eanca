@@ -7,6 +7,9 @@
 // ----------------------------------------------------------------------
 // CDB payload writer: produces payload files for various calibration types
 //                     also produces ideal bootstrap files (csv,json,...)
+//                     allows filtering on specific setups 
+//                       (in particular various pixel configurations 
+//                        and US/DS tiles)
 // ----------------------------------------------------------------------
 class cdbPayloadWriter {
 public:
@@ -19,11 +22,15 @@ public:
   void writePixelQualityLMIdealInput(std::string filename, std::string mode = "all");
 
   void writeFibreQualityPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writeFibreQualityIdealInput(std::string filename, std::string mode = "all");
+
   void writeTileQualityPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writeTileQualityIdealInput(std::string filename, std::string mode = "all");
 
   void writeDetSetupV1Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
 
   void writePixelEfficiencyPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writePixelEfficiencyIdealInput(std::string filename, std::string mode = "all");
 
   void writeEventStuffV1Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
 
@@ -36,10 +43,7 @@ public:
   // -- helper functions
 
   // -- create code (for copy-pasting) with definitions of chip IDs per layer and station
-  void createChipIDsPerLayer(std::string inputfilename);
-
-  // -- fill vector with chip IDs based on mode
-  void fillChipIDs(std::vector<unsigned int> &vChipIDs, std::string mode);
+  void createSensorIDs(std::string inputfilename);
 
   // -- create code (for copy-pasting) with definitions of fibre IDs 
   void createFibreIDs(std::string inputfilename);
@@ -47,11 +51,28 @@ public:
   // -- create code (for copy-pasting) with definitions of tile IDs
   void createTileIDs(std::string inputfilename);
 
-private:
+
+  // -- fill vector with (pixel) chip IDs based on mode
+  void fillChipIDs(std::vector<unsigned int> &vChipIDs, std::string mode);
+
+  // -- fill vector with tile IDs based on mode (non-ideal: only DS possible for 2025/2026? running)
+  void fillTileIDs(std::vector<unsigned int> &vTileIDs, std::string mode);
+
+  // -- fill vector with fibre IDs based on mode (no non-ideal mode available currently)
+  void fillFibreIDs(std::vector<unsigned int> &vFibreIDs, std::string mode);
+
+
+  private:
+  // -- pixels
   std::vector<unsigned int> fChipIDs, fCentral3LayerChipIDs, fCentral4LayerChipIDs, 
   fLayer1ChipIDs, fLayer2ChipIDs, 
   fLayer3Station0ChipIDs, fLayer3Station1ChipIDs, fLayer3Station2ChipIDs, 
   fLayer4Station0ChipIDs, fLayer4Station1ChipIDs, fLayer4Station2ChipIDs;
+  // -- tiles
+  std::vector<unsigned int> fTileIDs,
+  fTileUS, fTileDS;
+  // -- fibres
+  std::vector<unsigned int> fFibreIDs;
 };
 
 #endif

@@ -25,13 +25,34 @@ int main(int argc, const char* argv[]) {
 
   cdbPayloadWriter writer;
 
-  if (mode == "createchipidsperlayer") {
+  if (mode == "createsensorids") {
     if (filename == "unset") {
       cout << "Error: filename is unset" << endl;
-      cout << "Usage: cdbWriteIdealInputFiles -m createchipidsperlayer -f filename" << endl;
+      cout << "Usage: cdbWriteIdealInputFiles -m createsensorids -f filename" << endl;
       return 0;
     }
-    writer.createChipIDsPerLayer(filename);
+    writer.createSensorIDs(filename);
+    return 0;
+  }
+
+  if (mode == "createtileids") {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbWriteIdealInputFiles -m createtileids -f filename" << endl;
+      return 0;
+    }
+    writer.createTileIDs(filename);
+    return 0;
+  }
+
+  if (mode == "createfibreids") {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbWriteIdealInputFiles -m createfibreids -f filename" << endl;
+      return 0;
+    }
+    writer.createFibreIDs(filename);
+    return 0;
   }
 
   if (mode == "pixeltimecalibration") {
@@ -41,6 +62,7 @@ int main(int argc, const char* argv[]) {
       return 0;
     }
     writer.writePixelTimeCalibrationIdealInput(filename, mode);
+    return 0;
   }
   
   
