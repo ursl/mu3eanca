@@ -15,6 +15,8 @@
 #include "calPixelQualityLM.hh"
 #include "calFibreQuality.hh"
 #include "calTileQuality.hh"
+#include "calPixelEfficiency.hh"
+#include "calPixelTimeCalibration.hh"
 
 using namespace std;
 
@@ -156,6 +158,8 @@ int main(int argc, char* argv[]) {
       else if (tag.find("pixelqualitylm") == 0) cal = new calPixelQualityLM(pDB);
       else if (tag.find("fibrequality") == 0) cal = new calFibreQuality(pDB);
       else if (tag.find("tilequality") == 0) cal = new calTileQuality(pDB);
+      else if (tag.find("pixelefficiency") == 0) cal = new calPixelEfficiency(pDB);
+      else if (tag.find("pixeltimecalibration") == 0) cal = new calPixelTimeCalibration(pDB);
       if (cal) {
         cal->update(hash);
         payloadSize = cal->getPayloadSize();
@@ -177,6 +181,8 @@ int main(int argc, char* argv[]) {
         else if (tag.find("pixelqualitylm") == 0) calIov = new calPixelQualityLM(pDB);
         else if (tag.find("fibrequality") == 0) calIov = new calFibreQuality(pDB);
         else if (tag.find("tilequality") == 0) calIov = new calTileQuality(pDB);
+        else if (tag.find("pixelefficiency") == 0) calIov = new calPixelEfficiency(pDB);
+        else if (tag.find("pixeltimecalibration") == 0) calIov = new calPixelTimeCalibration(pDB);
         if (calIov) {
           for (size_t i = 1; i < it->second.size(); i++) {
             int iov = it->second[i];
@@ -221,10 +227,10 @@ int main(int argc, char* argv[]) {
           alignPrefix = "tilealignment";
           granularity = 1;
         } else if (tag.find("pixelefficiency") == 0) {
-          alignPrefix = "pixelefficiency";
+          alignPrefix = "pixelalignment";
           granularity = 1;
         } else if (tag.find("pixeltimecalibration") == 0) {
-          alignPrefix = "pixeltimecalibration";
+          alignPrefix = "pixelalignment";
           granularity = 1;
         }
         string alignTag;
