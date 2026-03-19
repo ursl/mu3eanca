@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
     size_t iovLen = (it != iovs.end()) ? it->second.size() : 0;
     string tagComment = pDB->getTagComment(tag);
 
-    cout << "  " << setw(3) << cntTag++ << ") " << tag << endl;
+    cout << setw(2) << cntTag++ << ") " << tag << endl;
     cout << "    IOV length: " << iovLen << endl;
 
     // -- Alignment/quality payload size: read first payload and report detector units
@@ -159,21 +159,20 @@ int main(int argc, char* argv[]) {
       if (it != iovs.end() && it->second.size() > 1) {
         bool allSame = true;
         size_t firstSize = payloadSize;
-        for (size_t i = 1; i < it->second.size(); i++) {
-          int iov = it->second[i];
-          string hashIov = "tag_" + tag + "_iov_" + to_string(iov);
-          calAbs* calIov = nullptr;
-          if (tag.find("pixelalignment") == 0) calIov = new calPixelAlignment(pDB);
-          else if (tag.find("fibrealignment") == 0) calIov = new calFibreAlignment(pDB);
-          else if (tag.find("mppcalignment") == 0) calIov = new calMppcAlignment(pDB);
-          else if (tag.find("tilealignment") == 0) calIov = new calTileAlignment(pDB);
-          else if (tag.find("pixelqualitylm") == 0) calIov = new calPixelQualityLM(pDB);
-          else if (tag.find("fibrequality") == 0) calIov = new calFibreQuality(pDB);
-          else if (tag.find("tilequality") == 0) calIov = new calTileQuality(pDB);
-          if (calIov) {
+        calAbs* calIov = nullptr;
+        if (tag.find("pixelalignment") == 0) calIov = new calPixelAlignment(pDB);
+        else if (tag.find("fibrealignment") == 0) calIov = new calFibreAlignment(pDB);
+        else if (tag.find("mppcalignment") == 0) calIov = new calMppcAlignment(pDB);
+        else if (tag.find("tilealignment") == 0) calIov = new calTileAlignment(pDB);
+        else if (tag.find("pixelqualitylm") == 0) calIov = new calPixelQualityLM(pDB);
+        else if (tag.find("fibrequality") == 0) calIov = new calFibreQuality(pDB);
+        else if (tag.find("tilequality") == 0) calIov = new calTileQuality(pDB);
+        if (calIov) {
+          for (size_t i = 1; i < it->second.size(); i++) {
+            int iov = it->second[i];
+            string hashIov = "tag_" + tag + "_iov_" + to_string(iov);
             calIov->update(hashIov);
             size_t sz = calIov->getPayloadSize();
-            delete calIov;
             if (sz != firstSize) {
               if (allSame) cout << endl;  // break from "size" line before first mismatch
               allSame = false;
@@ -186,6 +185,7 @@ int main(int argc, char* argv[]) {
               cout << s << "\r" << flush;
             }
           }
+          delete calIov;
         }
         if (allSame) {
           cout << endl << "    all IOVs same size: OK" << endl;
