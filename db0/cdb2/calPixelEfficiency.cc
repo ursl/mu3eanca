@@ -91,12 +91,18 @@ string calPixelEfficiency::printBLOBString(string s, int /*verbosity*/) {
   uint32_t chipID(0);
   int n(0);
   vector<double> vefficiency;
+  double meanEfficiency(0.0);
+  int nWorkingSectors(0);
   while (ibuffer != buffer.end()) {
     chipID = blob2UnsignedInt(getData(ibuffer));
     n = blob2Int(getData(ibuffer));
     vefficiency.resize(n);
     for (int i = 0; i < n; i++) {
       vefficiency[i] = blob2Double(getData(ibuffer));
+      if (vefficiency[i] > 0.0) {
+        meanEfficiency += vefficiency[i];
+        nWorkingSectors++;
+      }
     }
     ss << "chipID: " << chipID << " n: " << n << ", efficiency: ";
     for (int i = 0; i < n; i++) {
@@ -105,6 +111,13 @@ string calPixelEfficiency::printBLOBString(string s, int /*verbosity*/) {
       else ss << endl;
     }
   }
+
+  bool allWorking = nWorkingSectors == fMapConstants.size()*n;
+  ss << "nChips: " << fMapConstants.size() 
+     << " mean efficiency (working sectors): " << meanEfficiency/nWorkingSectors 
+     << " " << 
+     << endl;
+
   return ss.str();
 }
 

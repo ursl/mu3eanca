@@ -77,6 +77,7 @@ string calPixelTimeCalibration::printBLOBString(std::string sblob, int /*verbosi
   ss << "   header: " << hex << header << dec << " (note: chip sector tot mean meanerr sigma sigmaerr)" << endl;
 
   int c(0), s(0), b(0);
+  bool allZero(true);
   const size_t bytesPerChip = NSECTOR * NTOTBINS * (3 * sizeof(int) + 4 * sizeof(double));
   while (ibuffer != buffer.end()) {
     if (static_cast<size_t>(std::distance(ibuffer, buffer.end())) < bytesPerChip) break;
@@ -94,9 +95,15 @@ string calPixelTimeCalibration::printBLOBString(std::string sblob, int /*verbosi
            << setprecision(6) << fixed     
            << a.mean << " " << a.meanerr << " " << a.sigma << " " << a.sigmaerr 
            << endl;
+        if (a.mean > 1.e-8 || a.meanerr > 1.e-8 || a.sigma > 1.e-8 || a.sigmaerr > 1.e-8) {
+          allZero = false;
+        }
       }
     }
   }
+  ss << "nChips: " << fMapConstants.size() 
+  << " " << (allZero ? " perfect detector w/o time-walk corrections" : " detector with time-walk corrections") << endl;
+
   return ss.str();
 }
 
