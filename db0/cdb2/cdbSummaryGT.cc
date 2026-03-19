@@ -29,6 +29,8 @@ using namespace std;
 //   -u, --uri   CDB URI: path for cdbJSON, or http(s) URL for cdbRest
 //   -g, --gt    Global tag name (required)
 //
+// Examples:  ./bin/cdbSummaryGT -u http://mu3edb0/cdb
+//            ./bin/cdbSummaryGT -u ~/data/mu3e/cdb/ -g datav6.5=2025V0
 // ----------------------------------------------------------------------
 
 void printUsage(const char* progname) {
@@ -65,7 +67,7 @@ string wrapComment(const string& text, size_t width = 60, const string& indent =
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
   string uri;
-  string gt;
+  string gt("unset");
   int verbose = 0;
 
   for (int i = 1; i < argc; i++) {
@@ -101,7 +103,7 @@ int main(int argc, char* argv[]) {
       break;
     }
   }
-  if (!found) {
+  if (gt != "unset" && !found) {
     cerr << "cdbSummaryGT: GT '" << gt << "' not found in CDB" << endl;
     cerr << "Available GTs: ";
     for (size_t i = 0; i < allGTs.size(); i++) {
@@ -111,6 +113,14 @@ int main(int argc, char* argv[]) {
     cerr << endl;
     delete pDB;
     return 1;
+  }
+
+  if (gt == "unset") {
+    cout << "Available GTs:" << endl;
+    for (size_t i = 0; i < allGTs.size(); i++) {
+      cout << allGTs[i] << endl;
+    }
+    return 0;
   }
 
   vector<string> tags = pDB->readTags(gt);
