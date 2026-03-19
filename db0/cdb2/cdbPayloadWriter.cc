@@ -1442,7 +1442,7 @@ void cdbPayloadWriter::fillChipIDs(std::vector<unsigned int> &vChipIDs, std::str
   } else if ((mode.find("vtx") != string::npos) || (mode.find("2025") != string::npos)) {
     vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
     vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
-  } else if (mode.find("central3") != string::npos) {
+  } else if ((mode.find("central3") != string::npos) || (mode.find("2026") != string::npos)) {
     vChipIDs.insert(vChipIDs.end(), fLayer1ChipIDs.begin(), fLayer1ChipIDs.end());
     vChipIDs.insert(vChipIDs.end(), fLayer2ChipIDs.begin(), fLayer2ChipIDs.end());
     vChipIDs.insert(vChipIDs.end(), fLayer3Station0ChipIDs.begin(), fLayer3Station0ChipIDs.end());
