@@ -21,6 +21,8 @@ using namespace std;
 //          cdbInsertIovTag -j jsondir -t tag -c
 //          cdbInsertIovTag -j jsondir -t tag -init
 //          cdbInsertIovTag -j jsondir -t tag -d payloaddir -p pat
+//          ./bin/cdbInsertIovTag -t pixelqualitylm_datav6.5=2025V0 -j /Users/ursl/data/mu3e/test-cdb \
+//            -d ~/data/mu3e/test-cdb/payloads/pixelqualitylm_datav6.5=2025V0/ -p pixelqualitylm_datav6.5=2025V0
 //
 // History
 //         2023/08/21 first shot
@@ -39,8 +41,8 @@ void printUsage(const char* progname) {
   cerr << "  -i run        : Insert run number (keeps sorted order)" << endl;
   cerr << "  -r run        : Remove run number" << endl;
   cerr << "  -c            : Clear IOVs to [1]" << endl;
-  cerr << "  -d payloaddir : Payload directory (for meta mode)" << endl;
-  cerr << "  -p pat        : Pattern to match in payload filenames (for meta mode)" << endl;
+  cerr << "  -d payloaddir : Payload directory (for meta mode: extract runs from payloads)" << endl;
+  cerr << "  -p pat        : Pattern to match in payload filenames (for meta mode: extract runs from payloads)" << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -366,7 +368,7 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  // Meta mode: extract runs from payloads
+  // -- Meta mode: extract runs from payloads
   if (!payloaddir.empty() && !pattern.empty()) {
     if (jsondir.empty() || tag.empty()) {
       cerr << "Error: -j jsondir and -t tag are required for meta mode" << endl;
