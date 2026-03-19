@@ -66,6 +66,7 @@ int main(int argc, const char* argv[]) {
   // -- global tags
   // ----------------------------------------------------------------------
   map<string, structGT> iniStructGT = {
+    // -- MC ideal
     {"mcidealv6.5", {
       .gt = "mcidealv6.5",
       .tags = {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", 
@@ -84,6 +85,16 @@ int main(int argc, const char* argv[]) {
       .comment = "MC ideal 2025 detector geometry v6.5 (VTX + DS tiles + all fibres). No deficiencies, all 100% efficient. No time-walk corrections (zero shift and uncertainty).",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
     }},
+    {"mcidealv6.5=2026", {
+      .gt = "mcidealv6.5=2026",
+      .tags = {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", 
+               "pixelqualitylm_", "fibrequality_", "tilequality_", 
+               "pixelefficiency_", "pixeltimecalibration_", 
+               "eventstuffv1_ideal", "detsetupv1_"},
+      .comment = "MC ideal 2026 detector geometry v6.5 (VTX + central L3 + DS tiles + all fibres). No deficiencies, all 100% efficient. No time-walk corrections (zero shift and uncertainty).",
+      .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
+    }},
+    // -- MC realistic
     {"mcrealisticv6.5=2025V0", {
       .gt = "mcrealisticv6.5=2025V0",
       .tags = {"pixelalignment_mcidealv6.5=2025", "fibrealignment_mcidealv6.5=2025", "tilealignment_mcidealv6.5=2025", "mppcalignment_mcidealv6.5=2025", 
