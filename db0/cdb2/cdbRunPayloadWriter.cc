@@ -6,8 +6,12 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-// cdbWriteIdealInputFiles
-// -----------------------
+// cdbRunPayloadWriter
+// -------------------
+// 
+// This is basically a "run" executable for cdbPayloadWriter and 
+// special calls there (in particular the creation of code segments
+// for the creation of lists of sensor, tile, and fibre IDs)
 //
 // ----------------------------------------------------------------------
 
