@@ -29,7 +29,7 @@ calDetSetupV1::~calDetSetupV1() {
 
 // ----------------------------------------------------------------------
 void calDetSetupV1::calculate(string hash) {
-  cout << "calDetSetupV1::calculate() with "
+  if (fVerbose > 0) cout << "calDetSetupV1::calculate() with "
        << "fHash ->" << hash << "<-";
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
@@ -37,7 +37,7 @@ void calDetSetupV1::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << " header: " << hex << header << dec << endl;
+  if (fVerbose > 0) cout << " header: " << hex << header << dec << endl;
 
   fConstants.target.shape = blob2UnsignedInt(getData(ibuffer));
   fConstants.target.thickness1 = blob2Double(getData(ibuffer));

@@ -29,7 +29,7 @@ calEventStuffV1::~calEventStuffV1() {
 
 // ----------------------------------------------------------------------
 void calEventStuffV1::calculate(string hash) {
-  cout << "calEventStuffV1::calculate() with "
+  if (fVerbose > 0) cout << "calEventStuffV1::calculate() with "
        << "fHash ->" << hash << "<-";
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
@@ -37,7 +37,7 @@ void calEventStuffV1::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << " header: " << hex << header << dec << " BLOB size: " << buffer.size() << endl;
+  if (fVerbose > 0) cout << " header: " << hex << header << dec << " BLOB size: " << buffer.size() << endl;
 
   fConstants.pixelData.startFrame = blob2Uint64(getData(ibuffer));
   fConstants.pixelData.endFrame = blob2Uint64(getData(ibuffer));

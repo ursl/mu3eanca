@@ -43,7 +43,7 @@ calPixelCablingMap::~calPixelCablingMap() {
 
 // ----------------------------------------------------------------------
 void calPixelCablingMap::calculate(string hash) {
-  cout << "calPixelCablingMap::calculate() with "
+  if (fVerbose > 0) cout << "calPixelCablingMap::calculate() with "
        << "fHash ->" << hash << "<-"
        << endl;
   fMapConstants.clear();
@@ -53,7 +53,7 @@ void calPixelCablingMap::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << "calPixelCablingMap header: " << hex << header << dec << endl;
+  if (fVerbose > 0) cout << "calPixelCablingMap header: " << hex << header << dec << endl;
 
   constants a;
   while (ibuffer != buffer.end()) {

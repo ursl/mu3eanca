@@ -48,7 +48,7 @@ calPixelAlignment::~calPixelAlignment() {
 
 // ----------------------------------------------------------------------
 void calPixelAlignment::calculate(string hash) {
-  cout << "calPixelAlignment::calculate() with "
+  if (fVerbose > 0) cout << "calPixelAlignment::calculate() with "
        << "fHash ->" << hash << "<-";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
@@ -57,7 +57,7 @@ void calPixelAlignment::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << " header: " << hex << header << dec;
+  if (fVerbose > 0) cout << " header: " << hex << header << dec;
 
   while (ibuffer != buffer.end()) {
     constants a;
@@ -80,7 +80,7 @@ void calPixelAlignment::calculate(string hash) {
 
     fMapConstants.insert(make_pair(a.id, a));
   }
-  cout << " inserted " << fMapConstants.size() << " constants" << endl;
+  if (fVerbose > 0) cout << " inserted " << fMapConstants.size() << " constants" << endl;
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();

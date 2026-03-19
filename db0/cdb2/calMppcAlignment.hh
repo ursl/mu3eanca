@@ -41,6 +41,7 @@ public:
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
   bool        getNextID(uint32_t &ID);
   std::string getSchema() override {return fSchema;}
+  size_t      getPayloadSize() const override {return fMapConstants.size();}
 
 private:
   std::string fMppcAlignmentTag{"mppcalignment_"};

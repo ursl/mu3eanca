@@ -28,13 +28,13 @@ calPixelEfficiency::~calPixelEfficiency() {
 
 // ----------------------------------------------------------------------
 void calPixelEfficiency::calculate(string hash) {
-  cout << "calPixelEfficiency::calculate> calculate with hash ->" << hash << "<-";
+  if (fVerbose > 0) cout << "calPixelEfficiency::calculate> calculate with hash ->" << hash << "<-";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
   std::vector<char> buffer(spl.begin(), spl.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << " header: " << hex << header << dec;
+  if (fVerbose > 0) cout << " header: " << hex << header << dec;
   uint32_t chip(0);
   int n(0);
   while (ibuffer != buffer.end()) {
@@ -49,7 +49,7 @@ void calPixelEfficiency::calculate(string hash) {
 
     fMapConstants.insert(make_pair(a.id, a));
   }
-  cout << " inserted " << fMapConstants.size() << " constants" << endl;
+  if (fVerbose > 0) cout << " inserted " << fMapConstants.size() << " constants" << endl;
 }
 
 // ----------------------------------------------------------------------

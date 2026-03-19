@@ -81,7 +81,7 @@ LBINARIES = testCDB anaPixelQuality anaEventStuff syncJSON \
             cdbInitGT cdbWriteIdealInputFiles \
             cdbPrintPayload  cdbWritePayload \
             cdbPrintConfig \
-            cdbInsertIovTag cdbCopyPayloads diffRunnumbers cdbPurgePayloads diffPayloads correlatePixelPayloads
+            cdbInsertIovTag cdbCopyPayloads cdbSummaryGT diffRunnumbers cdbPurgePayloads diffPayloads correlatePixelPayloads
 
 MONGOBINARIES = syncMongo  syncRDB uploadDetConfig downloadDetConfig
 

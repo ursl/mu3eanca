@@ -33,6 +33,7 @@ public:
   std::string  readJson(std::string filename);
 
   std::string getSchema() override {return fSchema;}
+  size_t      getPayloadSize() const override {return fMapConstants.size();}
 
 private:
   std::string fPixelCablingMapTag{"pixelcablingmap_"};

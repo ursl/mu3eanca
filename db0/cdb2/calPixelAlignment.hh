@@ -54,6 +54,7 @@ public:
   bool        getNextID(uint32_t &ID);
 
   std::string getSchema() override {return fSchema;}
+  size_t      getPayloadSize() const override {return fMapConstants.size();}
 
 private:
   std::string fPixelAlignmentTag{"pixelalignment_"};

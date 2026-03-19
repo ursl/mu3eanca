@@ -38,6 +38,9 @@ public:
 
   virtual std::string  getSchema() = 0;
 
+  // -- number of detector units (map size); 0 for classes without a map
+  virtual size_t       getPayloadSize() const = 0;
+
   // -- direct interactions
   void                readPayloadFromFile(std::string hash, std::string dir);
   void                writePayloadToFile(std::string hash, std::string dir);

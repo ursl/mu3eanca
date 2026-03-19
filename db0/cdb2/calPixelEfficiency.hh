@@ -36,6 +36,7 @@ public:
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
 
   std::string getSchema() override {return fSchema;}
+  size_t      getPayloadSize() const override {return fMapConstants.size();}
 
 private:
   std::string fPixelEfficiencyTag{"pixelefficiency_"};

@@ -57,7 +57,7 @@ calTileQuality::Status calTileQuality::getChannelQuality(uint32_t id) {
 
 // ----------------------------------------------------------------------
 void calTileQuality::calculate(string hash) {
-  cout << "calTileQuality::calculate() with "  << "fHash ->" << hash << "<-";
+  if (fVerbose > 0) cout << "calTileQuality::calculate() with "  << "fHash ->" << hash << "<-";
   fMapConstants.clear();
   string spl = fTagIOVPayloadMap[hash].fBLOB;
 
@@ -65,14 +65,14 @@ void calTileQuality::calculate(string hash) {
   std::vector<char>::iterator ibuffer = buffer.begin();
 
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
-  cout << " header: " << hex << header << dec;
+  if (fVerbose > 0) cout << " header: " << hex << header << dec;
   while (ibuffer != buffer.end()) {
     constants cq;
     cq.id = blob2UnsignedInt(getData(ibuffer));
     cq.quality = blob2Int(getData(ibuffer));
     fMapConstants.insert(make_pair(cq.id, cq));
   }
-  cout << " inserted " << fMapConstants.size() << " constants" << endl;
+  if (fVerbose > 0) cout << " inserted " << fMapConstants.size() << " constants" << endl;
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
