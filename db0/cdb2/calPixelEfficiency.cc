@@ -115,7 +115,7 @@ string calPixelEfficiency::printBLOBString(string s, int /*verbosity*/) {
   bool allWorking = nWorkingSectors == fMapConstants.size()*n;
   ss << "nChips: " << fMapConstants.size() 
      << " mean efficiency (working sectors): " << meanEfficiency/nWorkingSectors 
-     << " " << 
+     << " " 
      << endl;
 
   return ss.str();
