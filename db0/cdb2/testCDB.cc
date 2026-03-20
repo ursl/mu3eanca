@@ -22,6 +22,8 @@
 #include "calTileQuality.hh"
 #include "calFibreQuality.hh"
 
+#include "calPixelMask.hh"
+
 using namespace std;
 
 void aFewRuns();
@@ -63,7 +65,7 @@ int main(int argc, char* argv[]) {
 
   // -- command line arguments
   int mode(0), run(4001), verbose(0);
-  string db("/Users/ursl/data/mu3e/cdb"), gt("unset");
+  string db("/Users/ursl/data/mu3e/cdb"), gt("mcidealv6.5");
   string scals, sconfigs;
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-cal")) {scals = string(argv[++i]);}
@@ -430,6 +432,10 @@ int main(int argc, char* argv[]) {
         cout << "  tag " << itt  << (tagComment.empty() ? "" : ": " + tagComment) << endl;
       }
     }
+  } else if (20 == mode) {
+    cout << "Test pixel mask" << endl;
+    calPixelMask *cpm = new calPixelMask();
+    cpm->readMaskBinaryFile(scals);
   }
   return 0;
 }
