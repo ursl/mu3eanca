@@ -105,6 +105,7 @@ int main(int argc, char* argv[]) {
       break;
     }
   }
+  
   if (gt != "unset" && !found) {
     cerr << "cdbSummaryGT: GT '" << gt << "' not found in CDB" << endl;
     cerr << "Available GTs: ";
