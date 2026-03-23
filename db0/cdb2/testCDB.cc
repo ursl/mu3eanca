@@ -62,7 +62,7 @@ void printAll(cdbAbs *);
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
-
+  
   // -- command line arguments
   int mode(0), run(4001), verbose(0);
   string db("/Users/ursl/data/mu3e/cdb"), gt("mcidealv6.5");
@@ -221,14 +221,14 @@ int main(int argc, char* argv[]) {
     cdc->readJSON(jsonFileName);
     string sbla = cdc->makeBLOB();
     cdc->printBLOB(sbla, 1000);
-
+    
   } else if (8 == mode) {
     cout << "Test run numbers" << endl;
     vector<string> vruns = pDB->getAllRunNumbers();
     for (auto it: vruns) {
       cout << "run number: " << it << endl;
     }
-
+    
   } else if (9 == mode) {
     cout << "Test run numbers" << endl;
     vector<string> vruns = pDC->getAllRunNumbers();
@@ -245,9 +245,9 @@ int main(int argc, char* argv[]) {
     cpt->readTxtFile("ascii/largecalib.calib");
     cpt->writeTxtFile("ascii/newlargecalib.calib");
     string sblob = cpt->makeBLOB();
-
+    
     cpt->printBLOB(sblob, 1000);
-
+    
     payload pl;
     pl.fHash = "tag_pixeltimecalibration_datav6.3=2025V0_iov_1";
     pl.fComment = "PixelTimeCalibration";
@@ -260,7 +260,7 @@ int main(int argc, char* argv[]) {
     cout << "######################################################################" << endl;
     cpt->writeTxtFile("ascii/newlargecalibFromBLOB.calib");
     cpt->writePayloadToFile(pl.fHash, ".", pl);
-
+    
     calPixelTimeCalibration *cpt2 = new calPixelTimeCalibration();
     cpt2->readPayloadFromFile("tag_pixeltimecalibration_iov_1", ".");
     cpt2->calculate("tag_pixeltimecalibration_iov_1");
@@ -271,7 +271,7 @@ int main(int argc, char* argv[]) {
     ctq->readJSON("ascii/run3265_quality_overview.json");
     ctq->writeJSON("out-run3265_quality_overview.json");
     string sblob = ctq->makeBLOB();
-
+    
     payload pl;
     pl.fHash = "tag_tilequality_datav6.3=2025V0_iov_1";
     pl.fComment = "TileQuality";
@@ -283,12 +283,12 @@ int main(int argc, char* argv[]) {
     ctq->printBLOB(sblob, 1);
     cout << "######################################################################" << endl;
     ctq->writePayloadToFile(pl.fHash, ".", pl);
-
+    
     calTileQuality *ctq2 = new calTileQuality();
     ctq2->readPayloadFromFile("tag_tilequality_datav6.3=2025V0_iov_1", ".");
     ctq2->calculate("tag_tilequality_datav6.3=2025V0_iov_1");
     ctq2->writeJSON("out-run3265_quality_overview_fromPayload.json");
-
+    
   } else if (13 == mode) {
     cout << "Test fibre quality" << endl;
     calFibreQuality *cfq = new calFibreQuality();
@@ -307,7 +307,7 @@ int main(int argc, char* argv[]) {
     cfq->printBLOB(sblob, 1);
     cout << "######################################################################" << endl;
     cfq->writePayloadToFile(pl.fHash, ".", pl);
-
+    
     calFibreQuality *cfq2 = new calFibreQuality();
     cfq2->readPayloadFromFile("tag_fibrequality_datav6.3=2025V0_iov_1", ".");
     cfq2->calculate("tag_fibrequality_datav6.3=2025V0_iov_1");
@@ -330,7 +330,7 @@ int main(int argc, char* argv[]) {
     cpe->printBLOB(sblob, 1);
     cout << "######################################################################" << endl;
     cpe->writePayloadToFile(pl.fHash, ".", pl);
-
+    
     calPixelEfficiency *cpe2 = new calPixelEfficiency();
     cpe2->readPayloadFromFile("tag_pixelefficiency_datav6.3=2025V0_iov_1", ".");
     cpe2->calculate("tag_pixelefficiency_datav6.3=2025V0_iov_1");
@@ -355,7 +355,7 @@ int main(int argc, char* argv[]) {
       }
       cout << endl;
     }
-
+    
     for (int col = 200; col < 215; col++) {
       for (int row = 0; row < 250; row += 50) {
         calPixelQualityLM::Status status = cpq->getStatus(chip, col, row);
@@ -380,7 +380,7 @@ int main(int argc, char* argv[]) {
     ces->printBLOB(sblob, 1);
     cout << "######################################################################" << endl;
     ces->writePayloadToFile(pl.fHash, ".", pl);
-
+    
     calEventStuffV1 *ces2 = new calEventStuffV1();
     ces2->readPayloadFromFile("tag_eventstuffv1_datav6.3=2025V0_iov_1", ".");
     ces2->calculate("tag_eventstuffv1_datav6.3=2025V0_iov_1");
@@ -446,13 +446,30 @@ int main(int argc, char* argv[]) {
       cout << "Error: chipid not found" << endl;
       return 0;
     }
-    for (int col = 0; col < 256; col++) {
-      for (int row = 0; row < 250; row++) {
-        enum Masked masked = cpm->getMasked(chipid, col, row);
-        cout << "col: " << col << " row: " << row << " masked: " << masked << " " << maskedToString(masked) << endl;
+    if (0) {
+      for (int col = 0; col < 256; col++) {
+        for (int row = 0; row < 250; row++) {
+          enum Masked masked = cpm->getMasked(chipid, col, row);
+          cout << "col: " << col << " row: " << row << " masked: " << masked << " " << maskedToString(masked) << endl;
+        }
       }
     }
-
+    
+    string sblob = cpm->makeBLOB();
+    cpm->printBLOB(sblob, 1000);
+    payload pl;
+    pl.fHash = "tag_pixelmask_datav6.5=2025V0_iov_1";
+    pl.fComment = "Tune 2, tdac_files_bu_06_21_bestsofar";
+    pl.fSchema = cpm->getSchema();
+    pl.fBLOB = sblob;
+    cout << "######################################################################" << endl;
+    cout << "### createPayload" << endl;
+    cout <<  pl.printString(false) << endl;
+    cpm->printBLOB(sblob, 1);
+    cout << "######################################################################" << endl;
+    cpm->writePayloadToFile(pl.fHash, ".", pl);
+    
+    
   }
   return 0;
 }
