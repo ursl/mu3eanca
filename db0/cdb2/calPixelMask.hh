@@ -7,6 +7,20 @@
 #include <map>
 #include <vector>
 
+enum Masked {
+  Unmasked = 0,
+  Masked = 9, 
+  Unknown = 10
+};
+
+static std::string maskedToString(enum Masked maskedStatus) {
+  switch (maskedStatus) {
+    case Unmasked: return "Unmasked";
+    case Masked: return "Masked";
+    case Unknown: return "Unknown";
+    default: return "Unknown";
+  }
+}
 
 // ----------------------------------------------------------------------
 // pixel mask class 
@@ -32,6 +46,8 @@ public:
   void readMaskBinaryFile(std::string filename); 
   void writeMaskBinaryFile(std::string filename);
 
+  enum Masked getMasked(unsigned int chipid, int icol, int irow);
+
   bool        getNextID(uint32_t &ID);
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
 
@@ -47,7 +63,7 @@ private:
     uint32_t id;
     //std::array<std::array<uint32_t, 8>, 256> mask;
     //std::vector<uint32_t> mask;
-    char mask[256*256];
+    char mask[256*250];
   };
 
   std::map<uint32_t, constants> fMapConstants;

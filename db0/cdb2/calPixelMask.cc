@@ -81,6 +81,16 @@ void calPixelMask::readMaskBinaryFile(string filename) {
     return;
   }
 
+  unsigned int chipid(0);
+  size_t pos = filename.find("mask_chip_");
+  if (pos != std::string::npos) {
+    std::sscanf(filename.c_str() + pos, "mask_chip_%d.bin", &chipid);
+    cout << "chipid: " << chipid << endl;
+  } else {
+    cout << "Error: chipid not found in filename ->" << filename << "<-" << endl;
+    return;
+  }
+
   std::vector<uint32_t> vec(256 * 64);
   file.read(reinterpret_cast<char*>(&vec[0]), 256 * 64 * sizeof(uint32_t));
 
@@ -113,6 +123,17 @@ void calPixelMask::readMaskBinaryFile(string filename) {
     vec[col * 64 + 63] = 0xda00da00 | ((col & 0xff) << 16);
   }
 
+  constants cc;
+  cc.id = chipid;
+  for (int i = 0; i < 256*250; ++i) {
+    if (cmask[i] == 0) {
+      cc.mask[i] = Masked::Masked;
+    } else {
+      cc.mask[i] = Masked::Unmasked;
+    }
+  }
+  fMapConstants.insert(make_pair(chipid, cc));
+
   for (int col = 0; col < 256; ++col) {
     for (int row = 0; row < 64; ++row) {
       cout << "col: " << setw(3) << dec << col << " row: " << setw(3) << dec << row 
@@ -127,6 +148,7 @@ void calPixelMask::readMaskBinaryFile(string filename) {
       cout << "col: " << setw(3) << dec << col << " row: " << setw(3) << dec << row
            << " cmask: " << setw(2) << dec
            << static_cast<int>(static_cast<unsigned char>(cmask[col * kMaskPerCol + row]))
+           << " api: " << getMasked(chipid, col, row)
            << endl;
       if (static_cast<int>(static_cast<unsigned char>(cmask[col * kMaskPerCol + row])) == 0) {
         ++nMasked;
@@ -134,4 +156,12 @@ void calPixelMask::readMaskBinaryFile(string filename) {
     }
   }
   cout << "nMasked: " << nMasked << endl;
+}
+
+// ----------------------------------------------------------------------
+enum Masked calPixelMask::getMasked(unsigned int chipid, int icol, int irow) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return Masked::Unknown;
+  }
+  return static_cast<enum Masked>(fMapConstants[chipid].mask[icol * 250 + irow]);
 }
