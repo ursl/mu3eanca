@@ -436,6 +436,23 @@ int main(int argc, char* argv[]) {
     cout << "Test pixel mask" << endl;
     calPixelMask *cpm = new calPixelMask();
     cpm->readMaskBinaryFile(scals);
+    int chipid(-1);
+    size_t pos = scals.find("mask_chip_");
+    if (pos != std::string::npos) {
+      std::sscanf(scals.c_str() + pos, "mask_chip_%d.bin", &chipid);
+    }
+    cout << "chipid: " << chipid << endl;
+    if (chipid < 0) {
+      cout << "Error: chipid not found" << endl;
+      return 0;
+    }
+    for (int col = 0; col < 256; col++) {
+      for (int row = 0; row < 250; row++) {
+        enum Masked masked = cpm->getMasked(chipid, col, row);
+        cout << "col: " << col << " row: " << row << " masked: " << masked << " " << maskedToString(masked) << endl;
+      }
+    }
+
   }
   return 0;
 }
