@@ -12,6 +12,7 @@
 #include "calTileQuality.hh"
 #include "calPixelEfficiency.hh"
 #include "calFibreQuality.hh"
+#include "calPixelMask.hh"
 #include <algorithm>
 #include <chrono>
 
@@ -99,6 +100,8 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
     a = new calFibreQuality(db, tag);
   } else if (name.find("pixelefficiency_") != string::npos)  {
     a = new calPixelEfficiency(db, tag);
+  } else if (name.find("pixelmask_") != string::npos)  {
+    a = new calPixelMask(db, tag);
   } else {
     cout << "ERROR: " << name
          << " is an unknown class. Nothing registered in Mu3Conditions"
@@ -143,6 +146,8 @@ calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
     a = new calFibreQuality();
   } else if (hash.find("pixelefficiency_") != string::npos)  {
     a = new calPixelEfficiency();
+  } else if (hash.find("pixelmask_") != string::npos)  {
+    a = new calPixelMask();
   } else {
     cout << "ERROR: " << hash
          << " indicates an unknown class. Nothing known in Mu3CalFactory"

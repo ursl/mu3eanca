@@ -2,6 +2,8 @@
 
 #include "cdbUtil.hh"
 
+#include <glob.h>
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -117,39 +119,64 @@ string calPixelMask::printBLOBString(string sblob, int verbosity) {
   while (ibuffer != buffer.end()) {
     unsigned int chipid = blob2UnsignedInt(getData(ibuffer));
     char mask[256*250];
+    int nMasked(0);
     for (int i = 0; i < 256*250/8; ++i) {
       std::array<char,8> v = getData(ibuffer);
       for (int j = 0; j < 8; ++j) {
         if (v[j] == Masked::Masked) {
           mask[i*8 + j] = 9;
+          ++nMasked;
         } else {
           mask[i*8 + j] = 0;
         }
       }
     }
-    ss << "   chipid: " << chipid << endl;
+    ss << "==> chipId: " << chipid ;
+    if (nMasked > 0) ss << " begin " << endl;
     for (int i = 0; i < 256; ++i) {
       for (int j = 0; j < 250; ++j) {
         if (mask[i*250 + j] == Masked::Masked) {
           ss << i << "/" << j << ":9,";
         } 
       }
-      ss << endl;
+      if (nMasked > 0) ss << endl;
     }
+   if (nMasked > 0) ss << "--> chipId: " << chipid;
+   ss << " nMasked: " << nMasked << endl;
   }
   return ss.str();
 }
 
 
 // ----------------------------------------------------------------------
-void calPixelMask::readMaskBinaryFile(string filename) {
-  ifstream file;
-  file.open(filename, std::ios::binary);
-  if (!file) {
-    cout << "file ->" << filename << "<- not found, skipping" << endl;
-    return;
+void calPixelMask::readAllMaskBinaryFiles(string directory) {
+  vector<string> vFiles;
+  glob_t globbuf;
+  string lPattern = directory + "/*mask_chip_*.bin";
+  cout << "globbing " << lPattern << endl;
+  if (lPattern.find("*") == string::npos) {
+    lPattern = lPattern + "*";
   }
+  if (::glob(lPattern.c_str(), GLOB_TILDE, NULL, &globbuf) == 0) {
+    for (size_t i = 0; i < globbuf.gl_pathc; i++) {
+      if (string(globbuf.gl_pathv[i]).find("mask_chip_blank.bin") != string::npos) {
+        continue;
+      }
+      vFiles.push_back(string(globbuf.gl_pathv[i]));
+    }
+  }
+  globfree(&globbuf);
 
+  cout << "found " << vFiles.size() << " mask binary files" << endl;
+  for (const auto & entry : vFiles) {
+    cout << "entry: " << entry << endl;
+    readMaskBinaryFile(entry);
+  }
+}
+
+// ----------------------------------------------------------------------
+void calPixelMask::readMaskBinaryFile(string filename) {
+  cout << "reading file ->" << filename << "<-" << endl;
   unsigned int chipid(0);
   size_t pos = filename.find("mask_chip_");
   if (pos != std::string::npos) {
@@ -161,7 +188,9 @@ void calPixelMask::readMaskBinaryFile(string filename) {
   }
 
   std::vector<uint32_t> vec(256 * 64);
+  ifstream file(filename, std::ios::binary);
   file.read(reinterpret_cast<char*>(&vec[0]), 256 * 64 * sizeof(uint32_t));
+  file.close();
 
   constexpr int kCols = 256;
   constexpr int kMaskPerCol = 250;  // hardware: col0 row0..row249, col1 row0.., etc.
