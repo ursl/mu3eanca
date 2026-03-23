@@ -3,6 +3,10 @@
 #include <iostream>
 #include <sstream>
 #include "calPixelQualityLM.hh"
+#include "calPixelMask.hh"
+#include "Mu3eConditions.hh"
+
+
 
 using namespace std;
 
@@ -140,13 +144,25 @@ void calPixelQualityLM::calculate(string hash) {
 
   // -- set iterator over all constants to the start of the map
   fMapConstantsIt = fMapConstants.begin();
+
+  // -- get the pixel mask
+  fCalPixelMask = dynamic_cast<calPixelMask*>(Mu3eConditions::instance()->getCalibration("pixelmask"));
+  if (fCalPixelMask) {
+    cout << "calPixelQualityLM::calculate> found pixel mask with hash ->" << fCalPixelMask->getHash() << "<-" << endl;
+  } else {
+    cout << "calPixelQualityLM::calculate> did not find pixel mask information" << endl;
+  }
 }
-
-
 // ----------------------------------------------------------------------
 calPixelQualityLM::Status calPixelQualityLM::getColStatus(unsigned int chipid, int icol) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
     return Status::ChipNotFound; // -- chip not found
+  }
+  if (fCalPixelMask) {
+    if (fCalPixelMask->getMasked(chipid, icol, 0) == Masked::Masked) {
+      cout << "calPixelQualityLM::getColStatus> chipid = " << chipid << " icol = " << icol << " is masked" << endl;
+      return Status::Masked;
+    }
   }
   return static_cast<Status>(fMapConstants[chipid].mcol[icol]);
 }

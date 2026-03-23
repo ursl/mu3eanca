@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 
+class calPixelMask;
 
 // ----------------------------------------------------------------------
 // pixel quality class using 3+1 link words and maps for dead cols and pixels 
@@ -91,6 +92,8 @@ private:
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};
+
+  calPixelMask *fCalPixelMask;
 };
 
 #endif
