@@ -27,7 +27,28 @@ calPixelMask::~calPixelMask() {
 
 // ----------------------------------------------------------------------
 void calPixelMask::calculate(string hash) {
-  (void)hash;
+  fMapConstants.clear();
+  string spl = fTagIOVPayloadMap[hash].fBLOB;
+  std::vector<char> buffer(spl.begin(), spl.end());
+  std::vector<char>::iterator ibuffer = buffer.begin();
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  if (fVerbose > 0) cout << " header: " << hex << header << dec;
+
+  while (ibuffer != buffer.end()) {
+    constants a;
+    a.id = blob2UnsignedInt(getData(ibuffer));
+    for (int i = 0; i < 256*250/8; ++i) {
+      std::array<char,8> v = getData(ibuffer);
+      for (int j = 0; j < 8; ++j) {
+        a.mask[i*8 + j] = v[j];
+      }
+    }
+    fMapConstants.insert(make_pair(a.id, a));
+  }
+  if (fVerbose > 0) cout << " inserted " << fMapConstants.size() << " constants" << endl;
+
+  // -- set iterator over all constants to the start of the map
+  fMapConstantsIt = fMapConstants.begin();
 }
 
 // ----------------------------------------------------------------------
@@ -50,13 +71,24 @@ string calPixelMask::makeBLOB() {
   stringstream s;
   unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
+
+  // -- format of m
+  // chipID => [mask]
+  for (auto it: fMapConstants) {
+    s << dumpArray(uint2Blob(it.first));
+    constants a = it.second;
+
+    for (int i = 0; i < 256*250; i += 8) {
+      std::array<char,8> v;
+      for (int j = 0; j < 8; ++j) {
+        v[j] = a.mask[i + j];
+      }
+      s << dumpArray(v);
+    }
+  }
   return s.str();
 }
 
-// ----------------------------------------------------------------------
-string calPixelMask::makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
-  return makeBLOB();
-}
 
 // ----------------------------------------------------------------------
 void calPixelMask::printBLOB(string s, int verbosity) {
@@ -64,13 +96,50 @@ void calPixelMask::printBLOB(string s, int verbosity) {
 }
 
 // ----------------------------------------------------------------------
-string calPixelMask::printBLOBString(string /*blob*/, int /*verbosity*/) {
-  return string("calPixelMask::printBLOBString (stub)");
+string calPixelMask::makeBLOB(const std::map<unsigned int, std::vector<double>>&) {
+  return "nada";
 }
 
 // ----------------------------------------------------------------------
-void calPixelMask::writeMaskBinaryFile(string /*filename*/) {
+string calPixelMask::printBLOBString(string sblob, int verbosity) {
+
+  vector<char> buffer(sblob.begin(), sblob.end());
+  std::vector<char>::iterator ibuffer = buffer.begin();
+
+  stringstream ss;
+  unsigned int header = blob2UnsignedInt(getData(ibuffer));
+  ss << "calPixelMask::printBLOB(string," << verbosity << ")" << endl;
+  ss << "   header: " << hex << header << dec << endl;
+  if (0xdeadface != header) {
+    ss << "XXXXX ERRROR in calPixelMask::printBLOB> header is wrong. Something is really messed up!" << endl;
+  }
+
+  while (ibuffer != buffer.end()) {
+    unsigned int chipid = blob2UnsignedInt(getData(ibuffer));
+    char mask[256*250];
+    for (int i = 0; i < 256*250/8; ++i) {
+      std::array<char,8> v = getData(ibuffer);
+      for (int j = 0; j < 8; ++j) {
+        if (v[j] == Masked::Masked) {
+          mask[i*8 + j] = 9;
+        } else {
+          mask[i*8 + j] = 0;
+        }
+      }
+    }
+    ss << "   chipid: " << chipid << endl;
+    for (int i = 0; i < 256; ++i) {
+      for (int j = 0; j < 250; ++j) {
+        if (mask[i*250 + j] == Masked::Masked) {
+          ss << i << "/" << j << ":9,";
+        } 
+      }
+      ss << endl;
+    }
+  }
+  return ss.str();
 }
+
 
 // ----------------------------------------------------------------------
 void calPixelMask::readMaskBinaryFile(string filename) {
@@ -136,20 +205,20 @@ void calPixelMask::readMaskBinaryFile(string filename) {
 
   for (int col = 0; col < 256; ++col) {
     for (int row = 0; row < 64; ++row) {
-      cout << "col: " << setw(3) << dec << col << " row: " << setw(3) << dec << row 
-      << " vec: " << setw(8) << hex << vec[col*64 + row] 
-      << endl;
+      //cout << "col: " << setw(3) << dec << col << " row: " << setw(3) << dec << row 
+      //<< " vec: " << setw(8) << hex << vec[col*64 + row] 
+      //<< endl;
     }
   }
 
   int nMasked(0);
   for (int col = 0; col < kCols; ++col) {
     for (int row = 0; row < kMaskPerCol; ++row) {
-      cout << "col: " << setw(3) << dec << col << " row: " << setw(3) << dec << row
-           << " cmask: " << setw(2) << dec
-           << static_cast<int>(static_cast<unsigned char>(cmask[col * kMaskPerCol + row]))
-           << " api: " << getMasked(chipid, col, row)
-           << endl;
+      //cout << "col: " << setw(3) << dec << col << " row: " << setw(3) << dec << row
+      //     << " cmask: " << setw(2) << dec
+      //     << static_cast<int>(static_cast<unsigned char>(cmask[col * kMaskPerCol + row]))
+      //     << " api: " << getMasked(chipid, col, row)
+      //     << endl;
       if (static_cast<int>(static_cast<unsigned char>(cmask[col * kMaskPerCol + row])) == 0) {
         ++nMasked;
       }

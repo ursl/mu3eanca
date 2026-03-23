@@ -44,7 +44,6 @@ public:
   std::string printBLOBString(std::string blob, int verbosity = 1) override;
 
   void readMaskBinaryFile(std::string filename); 
-  void writeMaskBinaryFile(std::string filename);
 
   enum Masked getMasked(unsigned int chipid, int icol, int irow);
 
