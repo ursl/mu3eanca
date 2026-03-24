@@ -148,9 +148,9 @@ void calPixelQualityLM::calculate(string hash) {
   // -- get the pixel mask
   fCalPixelMask = dynamic_cast<calPixelMask*>(Mu3eConditions::instance()->getCalibration("pixelmask"));
   if (fCalPixelMask) {
-    cout << "calPixelQualityLM::calculate> found pixel mask with hash ->" << fCalPixelMask->getHash() << "<-" << endl;
+    if (fVerbose) cout << "calPixelQualityLM::calculate> found pixel mask with hash ->" << fCalPixelMask->getHash() << "<-" << endl;
   } else {
-    cout << "calPixelQualityLM::calculate> did not find pixel mask information" << endl;
+    if (fVerbose) cout << "calPixelQualityLM::calculate> did not find pixel mask information" << endl;
   }
 }
 // ----------------------------------------------------------------------
