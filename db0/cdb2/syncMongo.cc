@@ -147,23 +147,6 @@ void clearCollection(string scollection, string pattern) {
 }
 
 
-// // ----------------------------------------------------------------------
-// void updateDoc(string hashName, string hashValue, string scollection, const string& docContents) {
-//   vector<string> idCollections;
-
-//   auto db = gClient["mu3e"];
-//   auto collection = db[scollection];
-
-//   //  bsoncxx::from_json(docContents)
-//   cout << "before update" << endl;
-//   auto update_one_result =
-//     collection.update_one(make_document(kvp(hashName, hashValue)), bsoncxx::from_json(docContents));
-//   cout << "after update" << endl;
-//   assert(update_one_result);  // Acknowledged writes return results.
-//   assert(update_one_result->modified_count() == 1);
-// }
-
-
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
   // mongocxx::instance already created in cdbMongo.cc (in libCDB.so)
@@ -216,6 +199,8 @@ int main(int argc, char* argv[]) {
   dirName = dirPath.substr(dirPath.rfind("/")+1);
   if (dirName == "runrecords") {
     vfiles = allRunRecordPaths(dirPath);
+  } else if (dirName == "payloads") {
+    vfiles = allPayloadPaths(dirPath);
   } else {
     DIR *folder = opendir(dirPath.c_str());
     if (folder == NULL) {
@@ -232,6 +217,7 @@ int main(int argc, char* argv[]) {
       sort(vfiles.begin(), vfiles.end());
     }
   }
+  
   cout << "dirPath ->" << dirPath << "<-" << endl;
   cout << "dirName ->" << dirName << "<-" << endl;
   if (noDeletion) {
@@ -253,7 +239,7 @@ int main(int argc, char* argv[]) {
   for (auto it: vfiles) {
     if (pattern != "unset") {
       if (string::npos == it.find(pattern)) {
-        cout << "pattern ->" << pattern << "<- not matched to ->" << it << "<- ... skipping" << endl;
+        //cout << "pattern ->" << pattern << "<- not matched to ->" << it << "<- ... skipping" << endl;
         continue;
       }
     }
