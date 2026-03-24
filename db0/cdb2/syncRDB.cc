@@ -29,7 +29,7 @@ using namespace std;
 // --
 // -- Usage: bin/syncRDB -m mode -f firstRun -l lastRun [-t ../../db1/rest/runInfoTemplate.json] [-h localhost]
 // --
-// -- Examples: bin/syncRDB -m 2 -g tkar -c cosmic -s significant -h pc11740
+// -- Examples: bin/syncRDB -m 2 -g tkar -c cosmic -s significant -h mu3edb0
 //              bin/syncRDB -m 3 -k "EOR.Comments" -v "New comment" -h <hostname>
 //              bin/syncRDB -m 3 -k "EOR.Comments" -v "+= Additional comment" -h <hostname>
 // --
@@ -86,7 +86,7 @@ vector<string> runInfoTemplateFileLines;
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
-  string hostString("pc11740");
+  string hostString("mu3edb0");
   string urlString(":5050/cdb");
   string selectionString("significant"), classString("cosmic"), goodString("");
   string key("unset"), value("unset");
