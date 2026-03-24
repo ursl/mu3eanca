@@ -8,8 +8,14 @@
 #include "base64.hh"
 #include "cdbUtil.hh"
 
+#include <array>
+
 #include <bsoncxx/json.hpp>
+#include <bsoncxx/types.hpp>
+#include <bsoncxx/types/bson_value/view.hpp>
 #include <mongocxx/client.hpp>
+#include <mongocxx/gridfs/bucket.hpp>
+#include <mongocxx/options/gridfs/bucket.hpp>
 #include <mongocxx/stdx.hpp>
 #include <mongocxx/uri.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
@@ -227,7 +233,39 @@ payload cdbMongo::getPayload(string hash) {
     pl.fComment = doc["comment"].get_string().value.to_string();
     pl.fSchema  = doc["schema"].get_string().value.to_string();
     pl.fDate    = doc["date"].get_string().value.to_string();
-    pl.fBLOB    = base64_decode(doc["BLOB"].get_string().value.to_string());
+
+    bool fromGridFs = false;
+    if (doc.find("blobStorage") != doc.end()) {
+      std::string bs = doc["blobStorage"].get_string().value.to_string();
+      if (bs == "gridfs" && doc.find("blobGridFsId") != doc.end()) {
+        std::string oidHex = doc["blobGridFsId"].get_string().value.to_string();
+        try {
+          bsoncxx::oid oid(oidHex);
+          bsoncxx::types::b_oid bid{oid};
+          bsoncxx::types::bson_value::value idwrap{bid};
+          mongocxx::options::gridfs::bucket bopts;
+          bopts.bucket_name(kPayloadGridFsBucketName);
+          mongocxx::gridfs::bucket bucket = fDB.gridfs_bucket(bopts);
+          mongocxx::gridfs::downloader dl = bucket.open_download_stream(idwrap.view());
+          std::string blob;
+          std::array<char, 65536> buf{};
+          while (true) {
+            std::size_t n = dl.read(reinterpret_cast<std::uint8_t*>(buf.data()), buf.size());
+            if (n == 0) break;
+            blob.append(buf.data(), n);
+          }
+          pl.fBLOB = std::move(blob);
+          fromGridFs = true;
+        } catch (const std::exception& e) {
+          if (fVerbose > 0) {
+            std::cout << "cdbMongo::getPayload> GridFS read failed for " << hash << ": " << e.what() << std::endl;
+          }
+        }
+      }
+    }
+    if (!fromGridFs && doc.find("BLOB") != doc.end()) {
+      pl.fBLOB = base64_decode(doc["BLOB"].get_string().value.to_string());
+    }
   }
   
   return pl;
