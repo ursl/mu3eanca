@@ -10,9 +10,42 @@
 #include <cstring>
 #include <cstdlib>
 #include <dirent.h>
+#include <sys/stat.h>
 
 
 using namespace std;
+
+namespace {
+
+void collectPayloadFilesRecursive(const string& dir, vector<string>& out) {
+  DIR* folder = opendir(dir.c_str());
+  if (!folder) return;
+  struct dirent* entry;
+  while ((entry = readdir(folder))) {
+    string name(entry->d_name);
+    if (name == "." || name == "..") continue;
+    string full = dir + "/" + name;
+    unsigned char dt = static_cast<unsigned char>(entry->d_type);
+    if (dt == 0) {
+      struct stat st;
+      if (stat(full.c_str(), &st) != 0) continue;
+      if (S_ISREG(st.st_mode)) {
+        out.push_back(full);
+      } else if (S_ISDIR(st.st_mode)) {
+        collectPayloadFilesRecursive(full, out);
+      }
+      continue;
+    }
+    if (dt == 8) {  // DT_REG
+      out.push_back(full);
+    } else if (dt == 4) {  // DT_DIR
+      collectPayloadFilesRecursive(full, out);
+    }
+  }
+  closedir(folder);
+}
+
+}  // namespace
 
 
 // ----------------------------------------------------------------------
@@ -306,6 +339,15 @@ vector<string> allRunRecordPaths(const string& baseDir) {
     }
   }
   closedir(folder);
+  sort(vfiles.begin(), vfiles.end());
+  return vfiles;
+}
+
+
+// ----------------------------------------------------------------------
+vector<string> allPayloadPaths(const string& baseDir) {
+  vector<string> vfiles;
+  collectPayloadFilesRecursive(baseDir, vfiles);
   sort(vfiles.begin(), vfiles.end());
   return vfiles;
 }

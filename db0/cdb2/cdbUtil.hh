@@ -45,6 +45,9 @@ std::string runRecordSubPathFromRun(int irun);
 // -- list all runRecord_*.json paths in baseDir (flat or block subdirs)
 std::vector<std::string> allRunRecordPaths(const std::string& baseDir);
 
+// -- list all payload files under baseDir (flat and payloads/<tag>/<block>/ per payloadSubPathFromHash)
+std::vector<std::string> allPayloadPaths(const std::string& baseDir);
+
 // -- get string (enclosed by double quotation marks) indexed by a single key
 std::string jsonGetString(const std::string& jstring, const std::string& key);
 // -- get string (enclosed by double quotation marks) indexed by a vector of keys
