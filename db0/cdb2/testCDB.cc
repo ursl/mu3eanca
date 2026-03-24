@@ -40,7 +40,7 @@ void printAll(cdbAbs *);
 // The following runs within the PSI network
 //
 // _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -db rest
-// _build/conddb/test/testCDB -v 1 -gt mcidealv5.1 -db http://pc11740.psi.ch/cdb
+// _build/conddb/test/testCDB -v 1 -gt mcidealv5.1 -db http://mu3edb0.psi.ch/cdb
 //
 // _build/conddb/test/testCDB -v 1 -gt mcidealv5.0 -db ~/data/mu3e/json10
 //
@@ -81,13 +81,13 @@ int main(int argc, char* argv[]) {
   if (string::npos != db.find("json")) {
     pDB = new cdbJSON(db, verbose);
   } else if (string::npos != db.find("mongo")) {
-    string ms("mongodb://pc11740.psi.ch:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
+    string ms("mongodb://mu3edb0.psi.ch:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.7.1");
     //no    pDB = new cdbMongo(ms, verbose);
     cout << "ERROR: " << db << " not available in this context." << endl;
     return 0;
   } else if (string::npos != db.find("rest") || string::npos != db.find("http://")) {
     //    string ms("https://eu-central-1.aws.data.mongodb-api.com/app/data-pauzo/endpoint/data/v1/action/");
-    string ms("http://pc11740.psi.ch/cdb");
+    string ms("http://mu3edb0.psi.ch/cdb");
     pDB = new cdbRest(ms, verbose);
   } else {
     // -- hope for the best that this is a JSON directory without the magic word
