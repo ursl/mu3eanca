@@ -37,6 +37,20 @@ bool fileExists(const std::string& filename);
 // Returns subpath "tag/block/hash" if parseable, else "hash" (flat fallback)
 std::string payloadSubPathFromHash(const std::string& hash);
 
+// Basename looks like tag_<tagname>_iov_<digits> (payload document hash / filename)
+bool isPayloadHashBasename(const std::string& name);
+
+// Last path component (works with '/' separators)
+std::string pathBaseName(const std::string& path);
+
+// Join two path segments with a single '/'
+std::string pathJoin(const std::string& a, const std::string& b);
+
+// -- MongoDB BSON document limit ~16 MiB. If JSON "BLOB" (base64) exceeds this, syncMongo stores
+//    bytes in GridFS (bucket payloadBlobs) and writes a thin payloads doc (blobStorage/gridfs).
+inline constexpr std::size_t kMaxInlinePayloadB64Chars = 10 * 1024 * 1024;
+inline constexpr const char* kPayloadGridFsBucketName = "payloadBlobs";
+
 // -- runrecords path layout: runrecords/<block>/runRecord_<irun>.json
 //    Block: irun/1000 as 4-digit dir (0000=1-999, 0001=1000-1999, ...)
 // Returns subpath "block/runRecord_irun.json"

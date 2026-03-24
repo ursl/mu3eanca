@@ -290,6 +290,40 @@ string payloadSubPathFromHash(const string& hash) {
 
 
 // ----------------------------------------------------------------------
+bool isPayloadHashBasename(const string& name) {
+  const string pre("tag_");
+  const string mid("_iov_");
+  if (name.size() < pre.size() + mid.size() + 1) return false;
+  if (name.compare(0, pre.size(), pre) != 0) return false;
+  string::size_type pos = name.rfind(mid);
+  if (pos == string::npos || pos < pre.size()) return false;
+  string num = name.substr(pos + mid.size());
+  if (num.empty()) return false;
+  for (char c : num) {
+    if (c < '0' || c > '9') return false;
+  }
+  return true;
+}
+
+
+// ----------------------------------------------------------------------
+string pathBaseName(const string& path) {
+  if (path.empty()) return string();
+  string::size_type p = path.rfind('/');
+  if (p == string::npos) return path;
+  return path.substr(p + 1);
+}
+
+
+// ----------------------------------------------------------------------
+string pathJoin(const string& a, const string& b) {
+  if (a.empty()) return b;
+  if (!a.empty() && a.back() == '/') return a + b;
+  return a + "/" + b;
+}
+
+
+// ----------------------------------------------------------------------
 string runRecordSubPathFromRun(int irun) {
   if (irun < 0) return string("runRecord_") + to_string(irun) + ".json";
   int block = irun / 1000;
@@ -551,8 +585,22 @@ vector<string> jsonGetValueVector(const string& jstring, const string& key) {
 // ----------------------------------------------------------------------
 string jsonGetVector(const string& jstring, const string& key) {
   //cout << "jsonGetVector> key = " << key << " jstring = " << jstring << endl;
-  string::size_type s0 = jstring.find(key);
+  // Match a JSON object key, not a bare substring (e.g. "iovs" inside tag
+  // names like foo_iovs_bar must not match before the real "iovs" field).
+  string searchKey = key;
+  if (!key.empty() && key.front() != '"') {
+    searchKey = string("\"") + key + string("\"");
+  }
+  string::size_type s0 = jstring.find(searchKey);
+  if (string::npos == s0) {
+    cout << "jsonGetVector> parse error (key not found)" << endl;
+    return string("parseError");
+  }
   s0 = jstring.find(":", s0);
+  if (string::npos == s0) {
+    cout << "jsonGetVector> parse error (no ':' after key)" << endl;
+    return string("parseError");
+  }
   string::size_type s1 = jstring.find("[", s0);
   string::size_type s2 = jstring.find("]", s0);
   string result("parseError");
