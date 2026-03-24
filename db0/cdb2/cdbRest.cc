@@ -104,13 +104,38 @@ map<string, vector<int>> cdbRest::readIOVs(vector<string> tags) {
     doCurl("tags", it, "findOne");
     
     vector<int> viov;
+    string buf = fCurlReadBuffer;
+    ltrim(buf);
+    rtrim(buf);
+    // REST returns plain "Not found" when no { tag: <name> } document exists.
+    if (buf == "Not found") {
+      cerr << "cdbRest::readIOVs> tag \"" << it
+           << "\" is listed on a global tag but has no document in collection "
+              "\"tags\" (skip IOVs)" << endl;
+      m.insert(make_pair(it, viov));
+      continue;
+    }
+    if (buf.find("\"iovs\"") == string::npos) {
+      cerr << "cdbRest::readIOVs> tag \"" << it
+           << "\" document has no \"iovs\" field (skip IOVs)" << endl;
+      m.insert(make_pair(it, viov));
+      continue;
+    }
     //cout << "it ->" << it << "<- fCurlReadBuffer = " << fCurlReadBuffer << endl;
     string sarr = jsonGetVector(fCurlReadBuffer, "iovs");
     //cout << "sarr = " << sarr << endl;
+    if (sarr == "parseError" || sarr.empty()) {
+      cerr << "cdbRest::readIOVs> cannot parse iovs for tag \"" << it << "\"" << endl;
+      m.insert(make_pair(it, viov));
+      continue;
+    }
     vector<string> subarr = split(sarr, ',');
     if (subarr.size() > 0) {
-      for (auto it: subarr) {
-        viov.push_back(stoi(it));
+      for (auto tok : subarr) {
+        if (tok.empty()) {
+          continue;
+        }
+        viov.push_back(stoi(tok));
       }
     } else {
       viov.push_back(stoi(sarr));
