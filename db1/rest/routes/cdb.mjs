@@ -1,5 +1,5 @@
 import express from "express";
-import {MongoClient, Binary} from "mongodb";
+import {Binary, GridFSBucket, ObjectId} from "mongodb";
 
 import multer from "multer";
 import archiver from "archiver";
@@ -23,6 +23,26 @@ const singleUpload = multer({ dest: 'uploads/' });
 
 import db from "../db/conn.mjs";
 
+const PAYLOAD_GRIDFS_BUCKET = "payloadBlobs";
+
+/** If payload doc stores BLOB in GridFS, download and set BLOB (base64) for API clients. */
+async function mergePayloadBlobFromGridFS(database, result) {
+  if (!result || result.blobStorage !== "gridfs" || !result.blobGridFsId) {
+    return result;
+  }
+  const bucket = new GridFSBucket(database, { bucketName: PAYLOAD_GRIDFS_BUCKET });
+  const oid = new ObjectId(result.blobGridFsId);
+  const chunks = [];
+  const stream = bucket.openDownloadStream(oid);
+  await new Promise((resolve, reject) => {
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("error", reject);
+    stream.on("end", resolve);
+  });
+  const buf = Buffer.concat(chunks);
+  return { ...result, BLOB: buf.toString("base64") };
+}
+
 const router = express.Router();
 
 // --------------------------------------------------------------
@@ -43,7 +63,7 @@ router.get("/findOne/runrecords/:id", async (req, res) => {
 // ----------------------------------------------------------------------
 // -- Get all run numbers
 router.get("/findAll/runNumbers", async (req, res) => {
-    console.log("serving from CDB /findAll/runNumbers " + req.params.id);
+    console.log("serving from CDB /findAll/runNumbers");
     let collection = await db.collection("runrecords");
     let results = await collection.find({})
       .toArray();
@@ -96,8 +116,16 @@ router.get("/findOne/payloads/:id", async (req, res) => {
   let query = {hash: req.params.id};
   let result = await collection.findOne(query);
 
-  if (!result) res.send("Not found").status(404);
-  else res.send(result).status(200);
+  if (!result) {
+    return res.status(404).send("Not found");
+  }
+  try {
+    result = await mergePayloadBlobFromGridFS(db, result);
+    return res.status(200).send(result);
+  } catch (err) {
+    console.error("findOne/payloads GridFS merge failed:", err);
+    return res.status(500).send("GridFS read failed: " + err.message);
+  }
 });
 
 
@@ -117,7 +145,7 @@ router.get("/findOne/configs/:id", async (req, res) => {
 // --------------------------------------------------------------
 // -- Get all globaltags
 router.get("/findAll/globaltags", async (req, res) => {
-  console.log("serving /findAll/globaltags/" + req.params.id);
+  console.log("serving /findAll/globaltags");
   let collection = await db.collection("globaltags");
   let results = await collection.find({})
     .limit(50)
