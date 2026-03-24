@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 
   cdbAbs *pDB(0);
   if (string::npos != db.find("rest") || string::npos != db.find("http://")) {
-    string ms("http://pc11740.psi.ch/cdb");
+    string ms("http://mu3edb0.psi.ch/cdb");
     pDB = new cdbRest(ms, verbose);
   } else {
     // -- hope for the best that this is a JSON directory
