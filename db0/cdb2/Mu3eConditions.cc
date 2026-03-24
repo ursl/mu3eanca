@@ -47,9 +47,6 @@ Mu3eConditions* Mu3eConditions::instance(std::string gt, cdbAbs *db) {
 
 // ----------------------------------------------------------------------
 Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
-  cout << "Mu3eConditions::Mu3eConditions(" << fGT
-       << ", " << (fDB? fDB->getName(): "no DB")
-       << ")" << endl;
 
   if (fDB) {
     fGlobalTags = fDB->readGlobalTags();
@@ -59,6 +56,10 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
     // -- safe guard to keep Mu3eConditions::setRunNumber free of DB checks in mu3e code
     return;
   }
+
+  cout << "Mu3eConditions::Mu3eConditions(" << fGT
+  << ", " << (fDB? fDB->getName(): "no DB")
+  << ")" << endl;
 
   // -- setup basic classes
   int verbose(0);
