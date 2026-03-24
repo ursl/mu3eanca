@@ -20,7 +20,7 @@ using namespace std;
 //    uploadDetConfig --dir /Users/ursl/Downloads/tdac_files_bu_06_10 -p mask_chip_ -t tdac_files_bu_06_10
 //
 // -- Retrieval of all files corresponding to "tag" (result will be in a zip file with name "tag".zip)
-//    curl -O -J "http://pc11740:5050/cdb/downloadTag?tag=tdac_files_bu_06_10"
+//    curl -O -J "http://mu3edb0:5050/cdb/downloadTag?tag=tdac_files_bu_06_10"
 // ----------------------------------------------------------------------
 
 
@@ -28,7 +28,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
   
-  string dirPath("."), tag("nada"), host("pc11740"), pattern("mask_chip_");
+  string dirPath("."), tag("nada"), host("mu3edb0"), pattern("mask_chip_");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "--dir"))     {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "-d"))        {dirPath = string(argv[++i]);}
