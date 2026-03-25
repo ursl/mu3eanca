@@ -12,6 +12,7 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 calPixelQualityLM::calPixelQualityLM(cdbAbs *db) : calAbs(db) {
+  fCalPixelMask = 0; 
 }
 
 
@@ -33,6 +34,7 @@ string calPixelQualityLM::statusToString(Status status) {
     default: return "Unknown";
   }
 }
+
 
 // ----------------------------------------------------------------------
 string calPixelQualityLM::getStatusDocumentation() {
@@ -62,6 +64,7 @@ string calPixelQualityLM::getStatusDocumentation() {
   return ss.str();
 }
 
+
 // ----------------------------------------------------------------------
 bool calPixelQualityLM::getNextID(uint32_t &ID) {
   if (fMapConstantsIt == fMapConstants.end()) {
@@ -81,6 +84,7 @@ bool calPixelQualityLM::getNextID(uint32_t &ID) {
 calPixelQualityLM::calPixelQualityLM(cdbAbs *db, string tag) : calAbs(db, tag) {
   if (0) cout << "calPixelQualityLM created and registered with tag ->" << fTag << "<-"
        << endl;
+  fCalPixelMask = 0; 
 }
 
 
@@ -151,8 +155,11 @@ void calPixelQualityLM::calculate(string hash) {
     if (fVerbose) cout << "calPixelQualityLM::calculate> found pixel mask with hash ->" << fCalPixelMask->getHash() << "<-" << endl;
   } else {
     if (fVerbose) cout << "calPixelQualityLM::calculate> did not find pixel mask information" << endl;
+    fCalPixelMask = 0; 
   }
 }
+
+
 // ----------------------------------------------------------------------
 calPixelQualityLM::Status calPixelQualityLM::getColStatus(unsigned int chipid, int icol) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
@@ -160,6 +167,7 @@ calPixelQualityLM::Status calPixelQualityLM::getColStatus(unsigned int chipid, i
   }
   return static_cast<Status>(fMapConstants[chipid].mcol[icol]);
 }
+
 
 // ----------------------------------------------------------------------
 int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
@@ -238,6 +246,7 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
   return n;
 }
 
+
 // ----------------------------------------------------------------------
 calPixelQualityLM::Status calPixelQualityLM::getStatus(unsigned int chipid, int icol, int irow) {
   // -- first check link status (any non-zero status, including dead links 7,8,9)
@@ -269,6 +278,7 @@ calPixelQualityLM::Status calPixelQualityLM::getStatus(unsigned int chipid, int 
   }
 }
 
+
 // ----------------------------------------------------------------------
 int calPixelQualityLM::getCkdivend(unsigned int chipid) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
@@ -276,6 +286,7 @@ int calPixelQualityLM::getCkdivend(unsigned int chipid) {
   }
   return fMapConstants[chipid].ckdivend;
 }
+
 
 // ----------------------------------------------------------------------
 int calPixelQualityLM::getCkdivend2(unsigned int chipid) {
@@ -318,6 +329,7 @@ bool calPixelQualityLM::isLinkBad(unsigned int chipid, int ilink) {
   return result;
 }
 
+
 // ----------------------------------------------------------------------
 bool calPixelQualityLM::isLinkDead(unsigned int chipid, int ilink) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
@@ -350,6 +362,7 @@ bool calPixelQualityLM::isLinkDead(unsigned int chipid, int ilink) {
   }
 }
 
+
 // ----------------------------------------------------------------------
 bool calPixelQualityLM::isChipDead(unsigned int chipid) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
@@ -363,6 +376,7 @@ bool calPixelQualityLM::isChipDead(unsigned int chipid) {
   }
   return cntDeadLinks == 3;
 }
+
 
 // ----------------------------------------------------------------------
 double calPixelQualityLM::getLVDSOverflowRate(unsigned int chipid) {
@@ -389,6 +403,7 @@ void calPixelQualityLM::printPixelQuality(unsigned int chipid, int minimumStatus
 void calPixelQualityLM::printBLOB(std::string sblob, int verbosity) {
   cout << printBLOBString(sblob, verbosity) << endl;
 }
+
 
 // ----------------------------------------------------------------------
 string calPixelQualityLM::printBLOBString(std::string sblob, int verbosity) {
@@ -491,8 +506,8 @@ string calPixelQualityLM::makeBLOB() {
 
   }
   return s.str();
-
 }
+
 
 // ----------------------------------------------------------------------
 string calPixelQualityLM::makeBLOB(const map<unsigned int, vector<double>>& m) {
@@ -587,6 +602,7 @@ void calPixelQualityLM::readCsv(string filename) {
   fMapConstantsIt = fMapConstants.begin();
 }
 
+
 // ----------------------------------------------------------------------
 void calPixelQualityLM::writeCsv(string filename) {
   ofstream OUTS(filename);
@@ -610,6 +626,7 @@ void calPixelQualityLM::writeCsv(string filename) {
   }
   OUTS.close();
 }
+
 
 // ----------------------------------------------------------------------
 calPixelQualityLM::Status calPixelQualityLM::getLinkStatus(unsigned int chipid, int ilink) {
