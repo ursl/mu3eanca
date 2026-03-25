@@ -27,6 +27,7 @@
 #include "calFibreQuality.hh"
 #include "calTileQuality.hh"
 #include "calDetSetupV1.hh"
+#include "calPixelMask.hh"
 #include "calEventStuffV1.hh"
 #include "calPixelTimeCalibration.hh"
 
@@ -1750,4 +1751,15 @@ void cdbPayloadWriter::createTileIDs(string inputfilename) {
     if ((cnt % 18) == 0) cout << endl << "    ";
   }
   cout << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writePixelMaskPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov) {
+  cout << "   ->cdbPayloadWriter::writePixelMaskPayloads> writing pixel mask payloads" << endl;
+}
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writePixelMaskIdealInput(std::string filename, std::string mode) {
+  cout << "   ->cdbPayloadWriter::writePixelMaskIdealInput> writing pixel mask ideal input" << endl;
 }
