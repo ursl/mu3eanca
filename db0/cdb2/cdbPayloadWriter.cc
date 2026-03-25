@@ -1755,11 +1755,30 @@ void cdbPayloadWriter::createTileIDs(string inputfilename) {
 
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writePixelMaskPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov) {
-  cout << "   ->cdbPayloadWriter::writePixelMaskPayloads> writing pixel mask payloads" << endl;
+void cdbPayloadWriter::writePixelMaskPayloads(std::string payloaddir, std::string gt, std::string binmaskfiledir, std::string annotation, int iov) {
+  cout << "   ->cdbPayloadWriter::writePixelMaskPayloads> writing pixel masks payload" << endl;
+
+  calPixelMask *cpm = new calPixelMask();
+  cpm->readAllMaskBinaryFiles(binmaskfiledir);
+  
+  string sblob = cpm->makeBLOB();
+  payload pl;
+  pl.fHash = "tag_pixelmask_" + gt + "_iov_" + to_string(iov);
+  pl.fComment = annotation;
+  pl.fSchema = cpm->getSchema();
+  pl.fBLOB = sblob;
+  cout << "######################################################################" << endl;
+  cout << "### createPayload" << endl;
+  cout <<  pl.printString(false) << endl;
+  cpm->printBLOB(sblob, 1);
+  cout << "######################################################################" << endl;
+  cpm->writePayloadToFile(pl.fHash, payloaddir, pl);    
+
 }
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writePixelMaskIdealInput(std::string filename, std::string mode) {
-  cout << "   ->cdbPayloadWriter::writePixelMaskIdealInput> writing pixel mask ideal input" << endl;
+  (void)filename;
+  (void)mode;
+  cout << "   ->cdbPayloadWriter::writePixelMaskIdealInput> ideal pixel masks are NOT written, they are simply absent from the GT!" << endl;
 }

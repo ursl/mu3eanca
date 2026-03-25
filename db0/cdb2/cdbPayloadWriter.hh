@@ -37,7 +37,7 @@ public:
   void writePixelTimeCalibrationPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   void writePixelTimeCalibrationIdealInput(std::string filename, std::string mode);
 
-  void writePixelMaskPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writePixelMaskPayloads(std::string payloaddir, std::string gt, std::string binmaskfiledir, std::string annotation, int iov);
   void writePixelMaskIdealInput(std::string filename, std::string mode);
 
   void run(int argc, const char* argv[]);
