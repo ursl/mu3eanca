@@ -30,6 +30,7 @@
 //           -a / --all  all runrecords (not only significant)
 //           -f -l -r    run number filters (unchanged)
 //           --rdb       RDB only
+//           --noreplace skip writes if tags/<tag> or payloads/<tag>/... already exists
 // ----------------------------------------------------------------------
 
 using namespace std;
@@ -57,6 +58,8 @@ static void printSyncJSONUsage(const char* prog) {
     "  -f <n> -l <n>    First / last run number (runrecord dump).\n"
     "  -r <file>        Comma-separated run list file (runrecord dump).\n"
     "  --rdb            Runrecords only (skip CDB sync).\n"
+    "  --noreplace      Do not overwrite existing tags/<tag> or payload files under\n"
+    "                   payloads/<tag>/ (skip those writes; globaltags/ still updated).\n"
     "  --help, -?       This message.\n"
     "\n"
     "--sync modes:\n"
@@ -86,17 +89,22 @@ static void mkdirParentsForFile(const string& filepath) {
 }
 
 // ----------------------------------------------------------------------
-static void writePayloadOne(cdbAbs* pDB, const string& dirPath, const string& hash) {
-  payload pl = pDB->getPayload(hash);
+static void writePayloadOne(cdbAbs* pDB, const string& dirPath, const string& hash,
+                            bool noReplace) {
   string subpath = payloadSubPathFromHash(hash);
   string filepath = pathJoin(pathJoin(dirPath, "payloads"), subpath);
+  if (noReplace && fileExists(filepath)) {
+    return;
+  }
+  payload pl = pDB->getPayload(hash);
   mkdirParentsForFile(filepath);
   ofstream ofs(filepath);
   ofs << pl.json() << endl;
 }
 
 // ----------------------------------------------------------------------
-static void writePayloadsForTag(cdbAbs* pDB, const string& dirPath, const string& tag) {
+static void writePayloadsForTag(cdbAbs* pDB, const string& dirPath, const string& tag,
+                                bool noReplace) {
   map<string, vector<int>> mIOVs = pDB->readIOVs(vector<string>{tag});
   auto it = mIOVs.find(tag);
   if (it == mIOVs.end()) {
@@ -105,13 +113,17 @@ static void writePayloadsForTag(cdbAbs* pDB, const string& dirPath, const string
   }
   for (int iov : it->second) {
     string h = "tag_" + tag + "_iov_" + to_string(iov);
-    writePayloadOne(pDB, dirPath, h);
+    writePayloadOne(pDB, dirPath, h, noReplace);
   }
 }
 
 // ----------------------------------------------------------------------
 static void writeTagFile(cdbAbs* pDB, const string& dirPath, const string& tag,
-                         const vector<int>& iovs) {
+                         const vector<int>& iovs, bool noReplace) {
+  string tf = pathJoin(pathJoin(dirPath, "tags"), tag);
+  if (noReplace && fileExists(tf)) {
+    return;
+  }
   stringstream sstr;
   sstr << "{ \"tag\" : \"" << tag << "\", \"iovs\" : ";
   sstr << jsFormat(iovs);
@@ -120,7 +132,6 @@ static void writeTagFile(cdbAbs* pDB, const string& dirPath, const string& tag,
     sstr << ", \"comment\" : \"" << escapeJsonString(tagComment) << "\"";
   }
   sstr << " }" << endl;
-  string tf = pathJoin(pathJoin(dirPath, "tags"), tag);
   mkdirParentsForFile(tf);
   ofstream ofs(tf);
   ofs << sstr.str();
@@ -150,7 +161,8 @@ static void syncGtShallow(cdbAbs* pDB, const string& dirPath, const string& gt) 
 }
 
 // ----------------------------------------------------------------------
-static void syncGtDeep(cdbAbs* pDB, const string& dirPath, const string& gt) {
+static void syncGtDeep(cdbAbs* pDB, const string& dirPath, const string& gt,
+                       bool noReplace) {
   syncGtShallow(pDB, dirPath, gt);
   vector<string> vTags = pDB->readTags(gt);
   for (const string& t : vTags) {
@@ -160,38 +172,41 @@ static void syncGtDeep(cdbAbs* pDB, const string& dirPath, const string& gt) {
       cerr << "syncJSON: skip tag \"" << t << "\" (no tag document / IOVs)" << endl;
       continue;
     }
-    writeTagFile(pDB, dirPath, t, it->second);
+    writeTagFile(pDB, dirPath, t, it->second, noReplace);
     for (int iov : it->second) {
       string h = "tag_" + t + "_iov_" + to_string(iov);
-      writePayloadOne(pDB, dirPath, h);
+      writePayloadOne(pDB, dirPath, h, noReplace);
     }
   }
 }
 
 // ----------------------------------------------------------------------
-static void syncTagShallow(cdbAbs* pDB, const string& dirPath, const string& tag) {
+static void syncTagShallow(cdbAbs* pDB, const string& dirPath, const string& tag,
+                           bool noReplace) {
   map<string, vector<int>> mIOVs = pDB->readIOVs(vector<string>{tag});
   auto it = mIOVs.find(tag);
   if (it == mIOVs.end()) {
     cerr << "syncJSON: cannot read tag \"" << tag << "\"" << endl;
     return;
   }
-  writeTagFile(pDB, dirPath, tag, it->second);
+  writeTagFile(pDB, dirPath, tag, it->second, noReplace);
 }
 
 // ----------------------------------------------------------------------
-static void syncTagDeep(cdbAbs* pDB, const string& dirPath, const string& tag) {
-  syncTagShallow(pDB, dirPath, tag);
-  writePayloadsForTag(pDB, dirPath, tag);
+static void syncTagDeep(cdbAbs* pDB, const string& dirPath, const string& tag,
+                        bool noReplace) {
+  syncTagShallow(pDB, dirPath, tag, noReplace);
+  writePayloadsForTag(pDB, dirPath, tag, noReplace);
 }
 
 // ----------------------------------------------------------------------
-static void syncPayloadSelection(cdbAbs* pDB, const string& dirPath, const string& name) {
+static void syncPayloadSelection(cdbAbs* pDB, const string& dirPath, const string& name,
+                                 bool noReplace) {
   if (isPayloadHashBasename(name)) {
-    writePayloadOne(pDB, dirPath, name);
+    writePayloadOne(pDB, dirPath, name, noReplace);
     return;
   }
-  writePayloadsForTag(pDB, dirPath, name);
+  writePayloadsForTag(pDB, dirPath, name, noReplace);
 }
 
 // ----------------------------------------------------------------------
@@ -211,6 +226,7 @@ int main(int argc, char* argv[]) {
   bool all(false);
   bool cdbOnly(false);
   bool rdbOnly(false);
+  bool noReplace(false);
   int firstRun(0), lastRun(-1);
 
   for (int i = 1; i < argc; ++i) {
@@ -252,6 +268,8 @@ int main(int argc, char* argv[]) {
       syncName = string(argv[++i]);
     } else if (!strcmp(argv[i], "--deep")) {
       deep = true;
+    } else if (!strcmp(argv[i], "--noreplace")) {
+      noReplace = true;
     }
   }
 
@@ -309,7 +327,7 @@ int main(int argc, char* argv[]) {
           continue;
         }
         cout << "global tag: " << gt << " (deep)" << endl;
-        syncGtDeep(pDB, dirPath, gt);
+        syncGtDeep(pDB, dirPath, gt, noReplace);
       }
     } else if (syncKind == "gt") {
       if (syncName.empty() || syncName == "unset") {
@@ -319,7 +337,7 @@ int main(int argc, char* argv[]) {
       }
       cout << "global tag: " << syncName << (deep ? " (deep)" : " (shallow)") << endl;
       if (deep) {
-        syncGtDeep(pDB, dirPath, syncName);
+        syncGtDeep(pDB, dirPath, syncName, noReplace);
       } else {
         syncGtShallow(pDB, dirPath, syncName);
       }
@@ -331,9 +349,9 @@ int main(int argc, char* argv[]) {
       }
       cout << "tag: " << syncName << (deep ? " (deep)" : " (shallow)") << endl;
       if (deep) {
-        syncTagDeep(pDB, dirPath, syncName);
+        syncTagDeep(pDB, dirPath, syncName, noReplace);
       } else {
-        syncTagShallow(pDB, dirPath, syncName);
+        syncTagShallow(pDB, dirPath, syncName, noReplace);
       }
     } else if (syncKind == "payload") {
       if (syncName.empty() || syncName == "unset") {
@@ -342,7 +360,7 @@ int main(int argc, char* argv[]) {
         return 1;
       }
       cout << "payload: " << syncName << endl;
-      syncPayloadSelection(pDB, dirPath, syncName);
+      syncPayloadSelection(pDB, dirPath, syncName, noReplace);
     } else if (!syncKind.empty()) {
       cerr << "syncJSON: unknown --sync " << syncKind << endl;
       delete pDB;
