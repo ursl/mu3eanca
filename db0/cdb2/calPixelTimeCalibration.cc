@@ -39,7 +39,8 @@ void calPixelTimeCalibration::calculate(string hash) {
 
   int globalChipID(0);
   fMapConstants.clear();
-  const size_t bytesPerChip = NSECTOR * NTOTBINS * (3 * sizeof(int) + 4 * sizeof(double));
+  // Wire format: each int2Blob / double2Blob is 8 bytes (cdbUtil getData), not sizeof(int).
+  const size_t bytesPerChip = static_cast<size_t>(NSECTOR) * static_cast<size_t>(NTOTBINS) * 7u * 8u;
   while (ibuffer != buffer.end()) {
     if (static_cast<size_t>(std::distance(ibuffer, buffer.end())) < bytesPerChip) break;
     std::array<std::array<constants, NTOTBINS>, NSECTOR> arr;
@@ -78,12 +79,12 @@ string calPixelTimeCalibration::printBLOBString(std::string sblob, int /*verbosi
 
   int c(0), s(0), b(0);
   bool allZero(true);
-  const size_t bytesPerChip = NSECTOR * NTOTBINS * (3 * sizeof(int) + 4 * sizeof(double));
+  const size_t bytesPerChip = static_cast<size_t>(NSECTOR) * static_cast<size_t>(NTOTBINS) * 7u * 8u;
   while (ibuffer != buffer.end()) {
     if (static_cast<size_t>(std::distance(ibuffer, buffer.end())) < bytesPerChip) break;
     for (uint sector = 0; sector < NSECTOR; sector++){
       for (uint tot = 0; tot < NTOTBINS; tot++){
-        constants a;  
+        constants a;
         c = blob2Int(getData(ibuffer));
         s = blob2Int(getData(ibuffer));
         b = blob2Int(getData(ibuffer));
@@ -91,9 +92,9 @@ string calPixelTimeCalibration::printBLOBString(std::string sblob, int /*verbosi
         a.meanerr = blob2Double(getData(ibuffer));
         a.sigma = blob2Double(getData(ibuffer));
         a.sigmaerr = blob2Double(getData(ibuffer));
-        ss << c << " " << s << " " << b << " " 
-           << setprecision(6) << fixed     
-           << a.mean << " " << a.meanerr << " " << a.sigma << " " << a.sigmaerr 
+        ss << c << " " << s << " " << b << " "
+           << setprecision(6) << fixed
+           << a.mean << " " << a.meanerr << " " << a.sigma << " " << a.sigmaerr
            << endl;
         if (a.mean > 1.e-8 || a.meanerr > 1.e-8 || a.sigma > 1.e-8 || a.sigmaerr > 1.e-8) {
           allZero = false;
@@ -101,8 +102,9 @@ string calPixelTimeCalibration::printBLOBString(std::string sblob, int /*verbosi
       }
     }
   }
-  ss << "nChips: " << fMapConstants.size() 
-  << " " << (allZero ? " perfect detector w/o time-walk corrections" : " detector with time-walk corrections") << endl;
+  ss << "nChips: " << fMapConstants.size()
+     << " " << (allZero ? " perfect detector w/o time-walk corrections" : " detector with time-walk corrections")
+     << endl;
 
   return ss.str();
 }
