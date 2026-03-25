@@ -101,10 +101,9 @@ int main(int argc, const char* argv[]) {
                "pixelqualitylm_datav6.5=2025V0", "fibrequality_datav6.3=2025V0", "tilequality_datav6.3=2025V0", 
                "pixelefficiency_datav6.5=2025V0", "pixeltimecalibration_", 
                "eventstuffv1_ideal", "detsetupv1_"},
-      .comment = "MC realistic 2025 detector conditions with *placeholder* MC smearing. Ideal 2025 geometries using MC truth from v6.5 (VTX + DS tiles + all fibres). Starting point for analysis of MC simulation data.",
+      .comment = "MC realistic 2025 detector conditions with *placeholder* MC (no) smearing. Ideal 2025 geometries using MC truth from v6.5 (VTX + DS tiles + all fibres). Starting point for analysis of MC simulation data.",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
     }}
-
   };
   
   // -- comments for tags. Since tags can be part of multiple GT, do not insert this into iniStructGT
@@ -210,7 +209,15 @@ int main(int argc, const char* argv[]) {
     for (auto it2 : its.second.tags) {
       tagLabel = it2.substr(it2.rfind('_') + 1);
       cout << "tagLabel = " << tagLabel << " it2 = " << it2 << " its.first = " << its.first << endl;
-      
+
+      // Do not overwrite an existing tag file or payloads/<fullTag>/ tree (shared tags across GTs,
+      // or re-run cdbInitGT for another GT that reuses the same calibration tag name).
+      if (cdbTagOrPayloadTreeExists(jsondir, payloaddir, it2)) {
+        cout << "cdbInitGT: skip tag \"" << it2 << "\" (existing " << jsondir << "/tags/" << it2
+             << " and/or " << payloaddir << "/" << it2 << "/)" << endl;
+        continue;
+      }
+
       bool RF(false); // RF = rootfile
       string asciiFilename("");
       if (string::npos != its.first.find("mcideal")) {
