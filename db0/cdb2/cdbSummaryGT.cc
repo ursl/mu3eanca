@@ -144,7 +144,9 @@ int main(int argc, char* argv[]) {
     string tagComment = pDB->getTagComment(tag);
 
     cout << setw(2) << cntTag++ << ") " << tag << endl;
-    cout << "    IOV length: " << iovLen << endl;
+    cout << "    IOV length: " << iovLen 
+    << (iovLen == 0 ? " XXXXXXXXXX ERROR XXXXXXXXXX" : " ")
+    << endl;
 
     // -- Alignment/quality payload size: read first payload and report detector units
     size_t payloadSize = 0;
@@ -217,22 +219,16 @@ int main(int argc, char* argv[]) {
           || tag.find("pixeltimecalibration") == 0
         ) {
         const char* alignPrefix = nullptr;
-        int granularity(0);
         if (tag.find("pixelqualitylm") == 0) {
           alignPrefix = "pixelalignment";
-          granularity = 1;
         } else if (tag.find("fibrequality") == 0) {
           alignPrefix = "fibrealignment";
-          granularity = 1;
         } else if (tag.find("tilequality") == 0) {
           alignPrefix = "tilealignment";
-          granularity = 1;
         } else if (tag.find("pixelefficiency") == 0) {
           alignPrefix = "pixelalignment";
-          granularity = 1;
         } else if (tag.find("pixeltimecalibration") == 0) {
           alignPrefix = "pixelalignment";
-          granularity = 1;
         }
         string alignTag;
         for (const auto& t : tags) {
