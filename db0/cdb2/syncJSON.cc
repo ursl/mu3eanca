@@ -167,6 +167,7 @@ static void syncGtDeep(cdbAbs* pDB, const string& dirPath, const string& gt,
   vector<string> vTags = pDB->readTags(gt);
   for (const string& t : vTags) {
     map<string, vector<int>> mIOVs = pDB->readIOVs(vector<string>{t});
+    cout << " tag " << t << " has " << mIOVs.size() << " IOVs" << endl;
     auto it = mIOVs.find(t);
     if (it == mIOVs.end()) {
       cerr << "syncJSON: skip tag \"" << t << "\" (no tag document / IOVs)" << endl;
@@ -174,9 +175,11 @@ static void syncGtDeep(cdbAbs* pDB, const string& dirPath, const string& gt,
     }
     writeTagFile(pDB, dirPath, t, it->second, noReplace);
     for (int iov : it->second) {
+      cout << "\r writing payload for tag " << t << " iov " << iov << flush;
       string h = "tag_" + t + "_iov_" + to_string(iov);
       writePayloadOne(pDB, dirPath, h, noReplace);
     }
+    cout << endl;
   }
 }
 
