@@ -344,6 +344,7 @@ static void printSyncMongoUsage(const char* prog) {
     "  --deep         With gt or tag: also upload member tags and/or all payload files\n"
     "                 under payloads/<tag>/ for each tag.\n"
     "  --del          Delete matching Mongo documents before insert (see below).\n"
+    "  --noupload     After optional --del, skip all inserts (delete-only / no re-upload).\n"
     "  --pat <re>     Legacy: regex when clearing/scanning a single collection directory.\n"
     "  -d             Debug (no insert; print parsed documents).\n"
     "  --help, -?     This message.\n"
@@ -367,6 +368,7 @@ static void printSyncMongoUsage(const char* prog) {
     "  " << prog << " --dir ~/cdb --host localhost --sync gt --name datav6.3=2025 --deep --del\n"
     "  " << prog << " --dir ~/cdb --host localhost --sync payload --name pixeltimecalibration_mcidealv6.5\n"
     "  " << prog << " --dir ~/cdb --host localhost --sync payload --name tag_foo_iov_1 --del\n"
+    "  " << prog << " --dir ~/cdb --host localhost --sync tag --name mytag --del --deep --noupload\n"
     "\n";
 }
 
@@ -388,6 +390,7 @@ int main(int argc, char* argv[]) {
   bool deep(false);
   bool all(false);
   bool noDeletion(true);
+  bool noUpload(false);
 
   for (int i = 1; i < argc; ++i) {
     if (!strcmp(argv[i], "-d")) {
@@ -408,6 +411,8 @@ int main(int argc, char* argv[]) {
       syncName = string(argv[++i]);
     } else if (!strcmp(argv[i], "--deep")) {
       deep = true;
+    } else if (!strcmp(argv[i], "--noupload")) {
+      noUpload = true;
     }
   }
 
@@ -446,23 +451,25 @@ int main(int argc, char* argv[]) {
         }
         deleteGtExact(db, syncName);
       }
-      if (!insertOneJsonFile(gtFile, "globaltags", db)) {
-        cerr << "syncMongo: failed to insert global tag file " << gtFile << endl;
-        return 1;
-      }
-      if (deep) {
-        vector<string> ttags = parseTagsFromGtJsonFile(gtFile);
-        for (const string& t : ttags) {
-          string tf = pathJoin(pathJoin(dirPath, "tags"), t);
-          if (fileExists(tf)) {
-            insertOneJsonFile(tf, "tags", db);
-          } else {
-            cerr << "syncMongo: missing tag file (skip): " << tf << endl;
-          }
-          string pdir = pathJoin(pathJoin(dirPath, "payloads"), t);
-          vector<string> pfiles = allPayloadPaths(pdir);
-          for (const string& pf : pfiles) {
-            insertOneJsonFile(pf, "payloads", db);
+      if (!noUpload) {
+        if (!insertOneJsonFile(gtFile, "globaltags", db)) {
+          cerr << "syncMongo: failed to insert global tag file " << gtFile << endl;
+          return 1;
+        }
+        if (deep) {
+          vector<string> ttags = parseTagsFromGtJsonFile(gtFile);
+          for (const string& t : ttags) {
+            string tf = pathJoin(pathJoin(dirPath, "tags"), t);
+            if (fileExists(tf)) {
+              insertOneJsonFile(tf, "tags", db);
+            } else {
+              cerr << "syncMongo: missing tag file (skip): " << tf << endl;
+            }
+            string pdir = pathJoin(pathJoin(dirPath, "payloads"), t);
+            vector<string> pfiles = allPayloadPaths(pdir);
+            for (const string& pf : pfiles) {
+              insertOneJsonFile(pf, "payloads", db);
+            }
           }
         }
       }
@@ -477,14 +484,16 @@ int main(int argc, char* argv[]) {
         }
         deleteTagExact(db, syncName);
       }
-      if (!insertOneJsonFile(tagFile, "tags", db)) {
-        cerr << "syncMongo: failed to insert tag file " << tagFile << endl;
-        return 1;
-      }
-      if (deep) {
-        string pdir = pathJoin(pathJoin(dirPath, "payloads"), syncName);
-        for (const string& pf : allPayloadPaths(pdir)) {
-          insertOneJsonFile(pf, "payloads", db);
+      if (!noUpload) {
+        if (!insertOneJsonFile(tagFile, "tags", db)) {
+          cerr << "syncMongo: failed to insert tag file " << tagFile << endl;
+          return 1;
+        }
+        if (deep) {
+          string pdir = pathJoin(pathJoin(dirPath, "payloads"), syncName);
+          for (const string& pf : allPayloadPaths(pdir)) {
+            insertOneJsonFile(pf, "payloads", db);
+          }
         }
       }
       return 0;
@@ -496,9 +505,11 @@ int main(int argc, char* argv[]) {
         if (!noDeletion) {
           deletePayloadHashExact(db, syncName);
         }
-        if (!insertOneJsonFile(pf, "payloads", db)) {
-          cerr << "syncMongo: failed to insert payload file " << pf << endl;
-          return 1;
+        if (!noUpload) {
+          if (!insertOneJsonFile(pf, "payloads", db)) {
+            cerr << "syncMongo: failed to insert payload file " << pf << endl;
+            return 1;
+          }
         }
         return 0;
       }
@@ -507,12 +518,14 @@ int main(int argc, char* argv[]) {
         deletePayloadsForTagDir(db, syncName);
       }
       vector<string> pfiles = allPayloadPaths(pdir);
-      if (pfiles.empty()) {
-        cerr << "syncMongo: no payload files under " << pdir << endl;
-        return 1;
-      }
-      for (const string& pf : pfiles) {
-        insertOneJsonFile(pf, "payloads", db);
+      if (!noUpload) {
+        if (pfiles.empty()) {
+          cerr << "syncMongo: no payload files under " << pdir << endl;
+          return 1;
+        }
+        for (const string& pf : pfiles) {
+          insertOneJsonFile(pf, "payloads", db);
+        }
       }
       return 0;
     }
@@ -529,9 +542,10 @@ int main(int argc, char* argv[]) {
     }
     string exe = argv[0];
     string h = " --host " + host;
-    int e1 = system((exe + " --dir " + pathJoin(dirPath, "globaltags") + h).c_str());
-    int e2 = system((exe + " --dir " + pathJoin(dirPath, "tags") + h).c_str());
-    int e3 = system((exe + " --dir " + pathJoin(dirPath, "payloads") + h).c_str());
+    string nu = noUpload ? " --noupload" : "";
+    int e1 = system((exe + " --dir " + pathJoin(dirPath, "globaltags") + h + nu).c_str());
+    int e2 = system((exe + " --dir " + pathJoin(dirPath, "tags") + h + nu).c_str());
+    int e3 = system((exe + " --dir " + pathJoin(dirPath, "payloads") + h + nu).c_str());
     return (e1 != 0 || e2 != 0 || e3 != 0) ? 1 : 0;
   }
 
@@ -569,11 +583,13 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  for (const string& it : vfiles) {
-    if (pattern != "unset" && string::npos == it.find(pattern)) {
-      continue;
+  if (!noUpload) {
+    for (const string& it : vfiles) {
+      if (pattern != "unset" && string::npos == it.find(pattern)) {
+        continue;
+      }
+      insertOneJsonFile(it, dirName, db);
     }
-    insertOneJsonFile(it, dirName, db);
   }
 
   return 0;
