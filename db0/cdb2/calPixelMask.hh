@@ -13,14 +13,14 @@ enum Masked {
   Unknown = 10
 };
 
-static std::string maskedToString(enum Masked maskedStatus) {
-  switch (maskedStatus) {
-    case Unmasked: return "Unmasked";
-    case Masked: return "Masked";
-    case Unknown: return "Unknown";
-    default: return "Unknown";
-  }
-}
+// static std::string maskedToString(enum Masked maskedStatus) {
+//   switch (maskedStatus) {
+//     case Unmasked: return "Unmasked";
+//     case Masked: return "Masked";
+//     case Unknown: return "Unknown";
+//     default: return "Unknown";
+//   }
+// }
 
 // ----------------------------------------------------------------------
 // pixel mask class 

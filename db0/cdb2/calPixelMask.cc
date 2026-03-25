@@ -111,11 +111,12 @@ string calPixelMask::printBLOBString(string sblob, int verbosity) {
   stringstream ss;
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   ss << "calPixelMask::printBLOB(string," << verbosity << ")" << endl;
-  ss << "   header: " << hex << header << dec << endl;
+  ss << "Header: " << hex << header << dec << endl;
+  ss << "The following pixels are masked:" << endl;
   if (0xdeadface != header) {
     ss << "XXXXX ERRROR in calPixelMask::printBLOB> header is wrong. Something is really messed up!" << endl;
   }
-
+  int nTotalMasked(0);
   while (ibuffer != buffer.end()) {
     unsigned int chipid = blob2UnsignedInt(getData(ibuffer));
     char mask[256*250];
@@ -132,7 +133,8 @@ string calPixelMask::printBLOBString(string sblob, int verbosity) {
       }
     }
     ss << "==> chipId: " << chipid ;
-    if (nMasked > 0) ss << " begin " << endl;
+    if (nMasked > 0) ss << " begin masked pixels" << endl;
+    nTotalMasked += nMasked;
     for (int i = 0; i < 256; ++i) {
       int lMasked(0); 
       for (int j = 0; j < 250; ++j) {
@@ -144,8 +146,9 @@ string calPixelMask::printBLOBString(string sblob, int verbosity) {
       if (lMasked > 0) ss << endl;
     }
    if (nMasked > 0) ss << "--> chipId: " << chipid;
-   ss << " nMasked: " << nMasked << endl;
+   ss << " end, " << nMasked << " pixels masked" << endl;
   }
+  ss << "Total pixels masked: " << nTotalMasked;
   return ss.str();
 }
 
