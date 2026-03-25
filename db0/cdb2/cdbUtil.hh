@@ -31,6 +31,14 @@ std::string jsFormat(std::vector<int>);
 // -- check if file exists
 bool fileExists(const std::string& filename);
 
+// True if path exists and is a directory
+bool isDirectory(const std::string& path);
+
+// True if <jsondir>/tags/<cdbTag> exists OR <payloaddir>/<cdbTag>/ is a directory.
+// cdbTag is the full conditions tag (e.g. pixelqualitylm_datav6.5=2025V0), matching payloads/<tag>/...
+bool cdbTagOrPayloadTreeExists(const std::string& jsondir, const std::string& payloaddir,
+                               const std::string& cdbTag);
+
 // -- payload path layout: payloads/<tag>/<block>/<hash>
 //    Hash format: tag_<tagname>_iov_<runnumber>
 //    Block: runnumber/1000 as 4-digit dir (0000=1-999, 0001=1000-1999, ...)

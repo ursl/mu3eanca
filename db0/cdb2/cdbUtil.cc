@@ -269,6 +269,33 @@ bool fileExists(const string& filename) {
 
 
 // ----------------------------------------------------------------------
+bool isDirectory(const string& path) {
+  struct stat st;
+  if (stat(path.c_str(), &st) != 0) {
+    return false;
+  }
+  return S_ISDIR(st.st_mode) != 0;
+}
+
+
+// ----------------------------------------------------------------------
+bool cdbTagOrPayloadTreeExists(const string& jsondir, const string& payloaddir, const string& cdbTag) {
+  if (cdbTag.empty()) {
+    return false;
+  }
+  string tagFile = pathJoin(pathJoin(jsondir, "tags"), cdbTag);
+  if (fileExists(tagFile)) {
+    return true;
+  }
+  string payloadTagDir = pathJoin(payloaddir, cdbTag);
+  if (isDirectory(payloadTagDir)) {
+    return true;
+  }
+  return false;
+}
+
+
+// ----------------------------------------------------------------------
 string payloadSubPathFromHash(const string& hash) {
   // Hash format: tag_<tagname>_iov_<runnumber>
   const string prefix("tag_");
