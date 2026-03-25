@@ -452,7 +452,7 @@ int main(int argc, char* argv[]) {
       for (int col = 0; col < 256; col++) {
         for (int row = 0; row < 250; row++) {
           enum Masked masked = cpm->getMasked(chipid, col, row);
-          cout << "col: " << col << " row: " << row << " masked: " << masked << " " << maskedToString(masked) << endl;
+          cout << "col: " << col << " row: " << row << " masked: " << masked << endl;
         }
       }
     }
