@@ -167,7 +167,7 @@ static void syncGtDeep(cdbAbs* pDB, const string& dirPath, const string& gt,
   vector<string> vTags = pDB->readTags(gt);
   for (const string& t : vTags) {
     map<string, vector<int>> mIOVs = pDB->readIOVs(vector<string>{t});
-    cout << " tag " << t << " has " << mIOVs.size() << " IOVs" << endl;
+    cout << " tag " << t << " has " << mIOVs.size() << " IOV(s)" << endl;
     auto it = mIOVs.find(t);
     if (it == mIOVs.end()) {
       cerr << "syncJSON: skip tag \"" << t << "\" (no tag document / IOVs)" << endl;
