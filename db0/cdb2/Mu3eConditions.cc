@@ -111,7 +111,7 @@ calAbs* Mu3eConditions::createClass(string name) {
   }
 
   if (string::npos != tag.find("nada")) {
-    cout << "Mu3eConditions::createClass> ERROR did not find tag containing " << name << endl;
+    cout << "Mu3eConditions::createClass> No tag " << name << " in GT " << fGT << ", not creating " << name << endl;
     return 0;
   }
 
@@ -204,7 +204,7 @@ void Mu3eConditions::setRunNumber(int runnumber) {
 vector<string> Mu3eConditions::getTags(string filter) {
   vector<string> result;
   for (auto it: fTags) {
-    if (fVerbose > 2) {
+    if (fVerbose > 10) {
       cout << "  Mu3eConditions::getTags(" << filter << ")> looking at " << it << endl;
     }
     if (filter != "unset") {
@@ -220,7 +220,7 @@ vector<string> Mu3eConditions::getTags(string filter) {
 // ----------------------------------------------------------------------
 calAbs* Mu3eConditions::getCalibration(std::string name) {
   for (auto it: fCalibrations) {
-    if (fVerbose > 2) cout << "  Mu3eConditions::getCalibration> looking at " << it.first << endl;
+    if (fVerbose > 10) cout << "  Mu3eConditions::getCalibration> looking at " << it.first << endl;
     if (string::npos != it.first.find(name)) return it.second;
   }
   return 0;
