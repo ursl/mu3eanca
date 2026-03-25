@@ -134,12 +134,14 @@ string calPixelMask::printBLOBString(string sblob, int verbosity) {
     ss << "==> chipId: " << chipid ;
     if (nMasked > 0) ss << " begin " << endl;
     for (int i = 0; i < 256; ++i) {
+      int lMasked(0); 
       for (int j = 0; j < 250; ++j) {
         if (mask[i*250 + j] == Masked::Masked) {
           ss << i << "/" << j << ":9,";
+          ++lMasked;
         } 
       }
-      if (nMasked > 0) ss << endl;
+      if (lMasked > 0) ss << endl;
     }
    if (nMasked > 0) ss << "--> chipId: " << chipid;
    ss << " nMasked: " << nMasked << endl;
