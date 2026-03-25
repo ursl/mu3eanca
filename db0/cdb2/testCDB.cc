@@ -66,9 +66,10 @@ int main(int argc, char* argv[]) {
   // -- command line arguments
   int mode(0), run(4001), verbose(0);
   string db("/Users/ursl/data/mu3e/cdb"), gt("mcidealv6.5");
-  string scals, sconfigs;
+  string scals, sconfigs, chipid("0");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-cal")) {scals = string(argv[++i]);}
+    if (!strcmp(argv[i], "-chipid")) {chipid = string(argv[++i]);}
     if (!strcmp(argv[i], "-cfg")) {sconfigs = string(argv[++i]);}
     if (!strcmp(argv[i], "-db"))  {db = string(argv[++i]);}
     if (!strcmp(argv[i], "-gt"))  {gt = string(argv[++i]);}
@@ -433,7 +434,7 @@ int main(int argc, char* argv[]) {
       }
     }
   } else if (20 == mode) {
-    cout << "Test pixel mask" << endl;
+    cout << "Test pixel mask (reading binary mask files and creating a payload)" << endl;
     calPixelMask *cpm = new calPixelMask();
     cpm->readAllMaskBinaryFiles("/Users/ursl/data/mu3e/masks/tdac_files_bu_06_21_bestsofar/");
     //cpm->readMaskBinaryFile(scals);
@@ -468,9 +469,25 @@ int main(int argc, char* argv[]) {
     cout <<  pl.printString(false) << endl;
     cpm->printBLOB(sblob, 1);
     cout << "######################################################################" << endl;
-    cpm->writePayloadToFile(pl.fHash, ".", pl);
+    cpm->writePayloadToFile(pl.fHash, ".", pl);    
+  } else if (21 == mode) {
+    cout << "Test pixel mask application " << endl;
+    calPixelQualityLM *cpq = dynamic_cast<calPixelQualityLM*>(pDC->getCalibration("pixelqualitylm_"));
+    int ichipid = ::stoi(chipid);
+    cout << "chipid: " << ichipid << endl;
+    for (int col = 0; col < 256; col++) {
+      for (int row = 0; row < 250; row++) {
+        calPixelQualityLM::Status status = cpq->getStatus(ichipid, col, row);
+        cout << "chipid: " << chipid << " col: " << col << " row: " << row 
+        << " status: " << status << " " << calPixelQualityLM::statusToString(status) << endl;
+      }
+    }
     
-    
+    cpq->resetIterator();
+    uint32_t uchipid;
+    while (cpq->getNextID(uchipid)) {
+      cout << "chipid: " << uchipid << " has " << cpq->getNpixWithStatus(uchipid, calPixelQualityLM::Masked) << " masked pixels" << endl;
+    }
   }
   return 0;
 }
