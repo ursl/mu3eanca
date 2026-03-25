@@ -261,6 +261,25 @@ void calPixelMask::readMaskBinaryFile(string filename) {
   cout << "nMasked: " << nMasked << endl;
 }
 
+
+// ----------------------------------------------------------------------
+void calPixelMask::fillCompletelyUnmasked(unsigned int chipid) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    constants cc;
+    cc.id = chipid;
+    for (int i = 0; i < 256*250; ++i) {
+      cc.mask[i] = Masked::Unmasked;
+    }
+    fMapConstants.insert(make_pair(chipid, cc));
+  } else {
+    fMapConstants[chipid].id = chipid;
+    for (int i = 0; i < 256*250; ++i) {
+      fMapConstants[chipid].mask[i] = Masked::Unmasked;
+    }
+  }
+}
+
+
 // ----------------------------------------------------------------------
 enum Masked calPixelMask::getMasked(unsigned int chipid, int icol, int irow) {
   if (fMapConstants.find(chipid) == fMapConstants.end()) {

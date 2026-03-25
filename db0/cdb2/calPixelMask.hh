@@ -45,6 +45,7 @@ public:
 
   void readAllMaskBinaryFiles(std::string directory);
   void readMaskBinaryFile(std::string filename); 
+  void fillCompletelyUnmasked(unsigned int chipid);
 
   enum Masked getMasked(unsigned int chipid, int icol, int irow);
 

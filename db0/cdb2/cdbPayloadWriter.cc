@@ -1755,7 +1755,7 @@ void cdbPayloadWriter::createTileIDs(string inputfilename) {
 
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writePixelMaskPayloads(std::string payloaddir, std::string gt, std::string binmaskfiledir, std::string annotation, int iov) {
+void cdbPayloadWriter::writePixelMaskPayloads(string payloaddir, string gt, string binmaskfiledir, string annotation, int iov) {
   cout << "   ->cdbPayloadWriter::writePixelMaskPayloads> writing pixel masks payload" << endl;
 
   calPixelMask *cpm = new calPixelMask();
@@ -1776,9 +1776,30 @@ void cdbPayloadWriter::writePixelMaskPayloads(std::string payloaddir, std::strin
 
 }
 
+
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writePixelMaskIdealInput(std::string filename, std::string mode) {
-  (void)filename;
-  (void)mode;
-  cout << "   ->cdbPayloadWriter::writePixelMaskIdealInput> ideal pixel masks are NOT written, they are simply absent from the GT!" << endl;
+void cdbPayloadWriter::writePixelMaskIdealPayload(string payloaddir, string gt, string annotation, string mode) {
+  cout << "   ->cdbPayloadWriter::writePixelMaskIdealPayload> writing pixel masks ideal payload" << endl;
+
+  vector<unsigned int> vChipIDs;
+  fillChipIDs(vChipIDs, mode);
+  cout << "   ->cdbPayloadWriter::writePixelMaskIdealPayload> filling " << vChipIDs.size() << " chip IDs" << endl;
+
+  calPixelMask *cpm = new calPixelMask();
+  for (auto &chipid : vChipIDs) {
+    cpm->fillCompletelyUnmasked(chipid);
+  }
+  string sblob = cpm->makeBLOB();
+
+  payload pl;
+  pl.fHash = "tag_pixelmask_" + gt + "_iov_1";
+  pl.fComment = annotation + string(". All pixels are unmasked");
+  pl.fSchema = cpm->getSchema();
+  pl.fBLOB = sblob;
+  cout << "######################################################################" << endl;
+  cout << "### createPayload" << endl;
+  cout <<  pl.printString(false) << endl;
+  cpm->printBLOB(sblob, 1);
+  cout << "######################################################################" << endl;
+  cpm->writePayloadToFile(pl.fHash, payloaddir, pl);    
 }

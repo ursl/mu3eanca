@@ -83,8 +83,8 @@ int main(int argc, const char* argv[]) {
     return 0;
   }
   
-  if (mode == "pixelmask") {
-    if (binmaskfiledir == "unset") {
+  if (mode.find("pixelmask") != string::npos) {
+    if (run > 1 && binmaskfiledir == "unset") {
       cout << "Error: binmaskfiledir is unset" << endl;
       cout << "Usage: cdbWriteIdealInputFiles -u <CDBPATH> -m pixelmask -d <binmaskfiledir>" << endl;
       return 0;
@@ -94,8 +94,13 @@ int main(int argc, const char* argv[]) {
       cout << "Usage: cdbWriteIdealInputFiles -u <CDBPATH> -m pixelmask -d <binmaskfiledir>" << endl;
       return 0;
     }
-     writer.writePixelMaskPayloads(uri+"/payloads/", tagname, binmaskfiledir, annotation, run);
+    if (run == 1) {
+      writer.writePixelMaskIdealPayload(uri+"/payloads/", tagname, annotation, mode);
      return 0;
+    } else {
+      writer.writePixelMaskPayloads(uri+"/payloads/", tagname, binmaskfiledir, annotation, run);
+      return 0;
+    }
   }
   
   return 0;
