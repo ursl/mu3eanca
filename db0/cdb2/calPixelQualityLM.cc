@@ -158,12 +158,6 @@ calPixelQualityLM::Status calPixelQualityLM::getColStatus(unsigned int chipid, i
   if (fMapConstants.find(chipid) == fMapConstants.end()) {
     return Status::ChipNotFound; // -- chip not found
   }
-  if (fCalPixelMask) {
-    if (fCalPixelMask->getMasked(chipid, icol, 0) == Masked::Masked) {
-      cout << "calPixelQualityLM::getColStatus> chipid = " << chipid << " icol = " << icol << " is masked" << endl;
-      return Status::Masked;
-    }
-  }
   return static_cast<Status>(fMapConstants[chipid].mcol[icol]);
 }
 
@@ -178,7 +172,7 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
   // -- check pixel status
   for (auto it: fMapConstants[chipid].mpixel) {
     if (fVerbose > 4) cout << "calPixelQualityLM::getNpixWithStatus> pixel = " << it.first << " status = " << static_cast<int>(it.second) << endl;
-    if (0 == status) {
+    if (Status::Good == status) {
       // -- count all pixels with bad status
       if (it.second != 0) n++;
     } else {
@@ -188,7 +182,7 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
   // -- check column status
   for (auto it: fMapConstants[chipid].mcol) {
     if (fVerbose > 4) cout << "calPixelQualityLM::getNpixWithStatus> column = " << it.first << " status = " << static_cast<int>(it.second)  << endl;
-    if (0 == status){
+    if (Status::Good == status){
       // -- count all columns with bad status
       if (it.second != 0) n += 250;
     } else {
@@ -197,7 +191,7 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
   }
 
   // -- check link status
-  if (0 == status) {
+  if (Status::Good == status) {
     if (fMapConstants[chipid].linkA != 0) {
       n += 250*89;
     }
@@ -221,7 +215,19 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
   }
 
 
-  if (0 == status) {
+  // -- check masked pixels
+  if (fCalPixelMask) {
+    for (int icol = 0; icol < 256; icol++) {
+      for (int irow = 0; irow < 250; irow++) {
+        if (fCalPixelMask->getMasked(chipid, icol, irow) == Masked::Masked) {
+          n++;
+        }
+      }
+    }
+    if (fVerbose > 0) cout << "calPixelQualityLM::getNpixWithStatus> chipID = " << chipid << " has " << n << " pixels masked" << endl;
+  }
+
+  if (Status::Good == status) {
     n = 256*250 - n;
     if (fVerbose > 0) cout << "calPixelQualityLM::getNpixWithStatus> chipID = " << chipid << " has " << n << " pixels with good status" << endl;
     //cout << "chipID = " << chipid << " has " << n << " pixels with good status" << endl;
@@ -248,6 +254,12 @@ calPixelQualityLM::Status calPixelQualityLM::getStatus(unsigned int chipid, int 
   if (fMapConstants[chipid].mcol.find(icol) != fMapConstants[chipid].mcol.end()) {
     return static_cast<Status>(fMapConstants[chipid].mcol[icol]);
   } 
+  // -- check if the pixel is masked
+  if (fCalPixelMask) {
+    if (fCalPixelMask->getMasked(chipid, icol, irow) == Masked::Masked) {
+      return Status::Masked;
+    }
+  }
 
   // -- finally check pixel status
   if (fMapConstants[chipid].mpixel.find(icol*250+irow) == fMapConstants[chipid].mpixel.end()) {
