@@ -60,6 +60,33 @@ void offloadLargePayloadBlobToGridFS(json& j, mongocxx::database& db) {
   j["blobSize"] = static_cast<std::int64_t>(blob.size());
 }
 
+// -- Remove GridFS file referenced by a payloads document (payloadBlobs bucket), if any.
+void deletePayloadGridFsBlobIfPresent(mongocxx::database& db, bsoncxx::document::view doc) {
+  auto bsIt = doc.find("blobStorage");
+  auto idIt = doc.find("blobGridFsId");
+  if (bsIt == doc.end() || idIt == doc.end()) return;
+  if (bsIt->type() != bsoncxx::type::k_string || idIt->type() != bsoncxx::type::k_string) return;
+  if (bsIt->get_string().value.to_string() != "gridfs") return;
+  std::string oidHex = idIt->get_string().value.to_string();
+  std::string hashInfo("?");
+  if (doc.find("hash") != doc.end() && doc["hash"].type() == bsoncxx::type::k_string) {
+    hashInfo = doc["hash"].get_string().value.to_string();
+  }
+  try {
+    bsoncxx::oid oid(oidHex);
+    bsoncxx::types::b_oid bid{oid};
+    bsoncxx::types::bson_value::value idwrap{bid};
+    mongocxx::options::gridfs::bucket bopts;
+    bopts.bucket_name(kPayloadGridFsBucketName);
+    mongocxx::gridfs::bucket bucket = db.gridfs_bucket(bopts);
+    bucket.delete_file(idwrap.view());
+    std::cout << "syncMongo: deleted GridFS blob id=" << oidHex << " hash=" << hashInfo << std::endl;
+  } catch (const std::exception& e) {
+    std::cerr << "syncMongo: GridFS delete failed id=" << oidHex << " hash=" << hashInfo << ": " << e.what()
+              << std::endl;
+  }
+}
+
 }  // namespace
 
 using bsoncxx::builder::basic::kvp;
@@ -226,10 +253,10 @@ static bool insertOneJsonFile(const string& filePath, const string& dirName, mon
     return true;
   }
 
-  cout << "start inserting " << filePath << endl;
   auto collection = db[dirName];
   auto insert_one_result = collection.insert_one(bsoncxx::from_json(collectionContents));
   bsoncxx::oid oid = insert_one_result->inserted_id().get_oid().value;
+  cout << "inserted " << filePath << " _id=" << oid.to_string() << endl;
   string sfilename = "./inserted/" + filePath.substr(filePath.rfind("/") + 1);
   ofstream ONS(sfilename);
   ONS << collectionContents << endl;
@@ -251,6 +278,7 @@ void clearCollection(string scollection, string pattern) {
     for (auto doc : gtCursor) {
       cout << "*********** Global Tags *** " << endl;
       cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      deletePayloadGridFsBlobIfPresent(db, doc);
       auto delete_one_result = collection.delete_one(doc);
       cout << "*** deleted" << endl;
     }
@@ -260,6 +288,7 @@ void clearCollection(string scollection, string pattern) {
     for (auto doc : tagCursor) {
       cout << "*********** Tags *** " << endl;
       cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      deletePayloadGridFsBlobIfPresent(db, doc);
       auto delete_one_result = collection.delete_one(doc);
       cout << "*** deleted" << endl;
     }
@@ -269,6 +298,7 @@ void clearCollection(string scollection, string pattern) {
       if (doc["hash"]) {
         cout << doc["hash"].get_string().value.to_string() << " ... deleted" << endl;
       }
+      deletePayloadGridFsBlobIfPresent(db, doc);
       auto delete_one_result = collection.delete_one(doc);
     }
     
@@ -276,6 +306,7 @@ void clearCollection(string scollection, string pattern) {
     for (auto doc : cfgHashCursor) {
       cout << "*********** cfgHash *** " << endl;
       cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
+      deletePayloadGridFsBlobIfPresent(db, doc);
       auto delete_one_result = collection.delete_one(doc);
       cout << "*** deleted" << endl;
     }
@@ -287,6 +318,7 @@ void clearCollection(string scollection, string pattern) {
       cout << bsoncxx::to_json(doc, bsoncxx::ExtendedJsonMode::k_relaxed) << endl;
       // string h = doc["cfgHash"].get_string().value.to_string();
       // cout << "** h = " << h << endl;
+      deletePayloadGridFsBlobIfPresent(db, doc);
       auto delete_one_result = collection.delete_one(doc);
       cout << "delete_one_result = " << delete_one_result->deleted_count() << endl;
     }
@@ -311,7 +343,12 @@ static void deleteTagExact(mongocxx::database& db, const string& tag) {
 
 // ----------------------------------------------------------------------
 static void deletePayloadHashExact(mongocxx::database& db, const string& hash) {
-  auto r = db["payloads"].delete_one(document{} << "hash" << hash << finalize);
+  auto c = db["payloads"];
+  auto existing = c.find_one(document{} << "hash" << hash << finalize);
+  if (existing) {
+    deletePayloadGridFsBlobIfPresent(db, existing->view());
+  }
+  auto r = c.delete_one(document{} << "hash" << hash << finalize);
   if (r) cout << "delete payloads hash=" << hash << " count=" << r->deleted_count() << endl;
 }
 
@@ -320,7 +357,12 @@ static void deletePayloadHashExact(mongocxx::database& db, const string& hash) {
 static void deletePayloadsForTagDir(mongocxx::database& db, const string& tagdir) {
   string rx = "^tag_" + mongoRegexEscape(tagdir) + "_iov_";
   auto c = db["payloads"];
-  auto r = c.delete_many(document{} << "hash" << open_document << "$regex" << rx << close_document << finalize);
+  auto filter = document{} << "hash" << open_document << "$regex" << rx << close_document << finalize;
+  bsoncxx::document::view fv = filter.view();
+  for (auto doc : c.find(fv)) {
+    deletePayloadGridFsBlobIfPresent(db, doc);
+  }
+  auto r = c.delete_many(fv);
   if (r) cout << "delete payloads for tag dir " << tagdir << " count=" << r->deleted_count() << endl;
 }
 
@@ -360,6 +402,7 @@ static void printSyncMongoUsage(const char* prog) {
     "  With --del: exact delete on gt / tag / hash, or all payloads with hash matching\n"
     "  ^tag_<name>_iov_ for a tag-directory payload sync. With --sync gt --deep --del,\n"
     "  deletes use the on-disk GT file to know which tags to clear.\n"
+    "  Payload deletes also remove large-BLOB GridFS files (bucket payloadBlobs) when present.\n"
     "\n"
     "Large BLOB: base64 larger than the inline limit is stored in GridFS (bucket payloadBlobs).\n"
     "\n"
