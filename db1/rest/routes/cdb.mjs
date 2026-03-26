@@ -472,6 +472,28 @@ router.get("/debug/payloads", async (req, res) => {
 });
 
 // --------------------------------------------------------------
+// -- List distinct detconfigs tags (one per line, plain text) for CLI tools
+//    curl -fsS "http://host:5050/cdb/detconfigTags"
+router.get("/detconfigTags", async (req, res) => {
+  try {
+    let detconfigsCollection = await db.collection("detconfigs");
+    let results = await detconfigsCollection
+      .aggregate([
+        { $group: { _id: "$tag" } },
+        { $sort: { _id: 1 } },
+      ])
+      .toArray();
+    const lines = results
+      .map((r) => r._id)
+      .filter((t) => t != null && t !== "");
+    res.type("text/plain; charset=utf-8").send(lines.join("\n") + (lines.length ? "\n" : ""));
+  } catch (error) {
+    console.error("Error in detconfigTags:", error);
+    res.status(500).type("text/plain").send("Error: " + error.message + "\n");
+  }
+});
+
+// --------------------------------------------------------------
 // -- Get summary of detconfigs tags and their counts
 router.get("/findAll/detconfigsSummary", async (req, res) => {
   try {
@@ -489,38 +511,42 @@ router.get("/findAll/detconfigsSummary", async (req, res) => {
 });
 
 // --------------------------------------------------------------
-// -- Delete all documents in detconfigs collection for a given tag
-router.delete("/deleteTag", async (req, res) => {
+// -- Delete all documents in detconfigs collection for a given tag (not CDB tags collection)
+async function deleteDetconfigsByTag(req, res) {
   const tag = req.query.tag;
-  
+
   if (!tag) {
-    return res.status(400).json({ success: false, message: 'Tag parameter is required' });
+    return res.status(400).json({ success: false, message: "Tag parameter is required" });
   }
-  
+
   try {
     let detconfigsCollection = await db.collection("detconfigs");
     const result = await detconfigsCollection.deleteMany({ tag });
-    
+
     if (result.deletedCount === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: `No documents found with tag: ${tag}` 
+      return res.status(404).json({
+        success: false,
+        message: `No documents found with tag: ${tag}`,
       });
     }
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: `Successfully deleted ${result.deletedCount} documents for tag: ${tag}`,
-      deletedCount: result.deletedCount
+      deletedCount: result.deletedCount,
     });
   } catch (error) {
-    console.error("Error deleting tag:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error deleting tag: ' + error.message 
+    console.error("Error deleting detconfigs tag:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting tag: " + error.message,
     });
   }
-});
+}
+
+router.delete("/deleteDetconfigTag", deleteDetconfigsByTag);
+// Legacy alias (ambiguous name vs conditions DB "tags" collection)
+router.delete("/deleteTag", deleteDetconfigsByTag);
 
 // Serve cdb.html for GET /cdb
 const __dirname = dirname(fileURLToPath(import.meta.url));

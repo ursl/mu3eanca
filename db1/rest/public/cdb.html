@@ -1044,7 +1044,7 @@
                             btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
 
                             try {
-                                const response = await fetch(`/cdb/deleteTag?tag=${encodeURIComponent(tag)}`, {
+                                const response = await fetch(`/cdb/deleteDetconfigTag?tag=${encodeURIComponent(tag)}`, {
                                     method: 'DELETE',
                                     headers: {
                                         'Accept': 'application/json'
