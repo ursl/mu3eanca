@@ -1,75 +1,97 @@
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/json.hpp>
-#include <bsoncxx/types.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/instance.hpp>
-#include <mongocxx/uri.hpp>
+
+#include <dirent.h>  /// for directory reading
 #include <fstream>
 #include <iostream>
-#include <vector>
+#include <algorithm>  // for std::sort
+#include <vector>     // for std::vector
+#include <string>     // for std::string
+#include <string.h>   // for strcmp
+#include "cdbUtil.hh"
 
-using bsoncxx::builder::stream::document;
-using bsoncxx::builder::stream::finalize;
+
 using namespace std;
 
-mongocxx::uri gUri;
-mongocxx::client gClient;
 
 // ----------------------------------------------------------------------
-void retrieve_files_from_mongo(const std::string& tag, mongocxx::collection& collection, string dir) {
-  // Query to find all documents with the given tag
-  bsoncxx::builder::stream::document filter_builder;
-  filter_builder << "tag" << tag;
-  
-  // Execute the query
-  auto cursor = collection.find(filter_builder.view());
-  
-  // Iterate over the documents and retrieve the files
-  for (auto&& doc : cursor) {
-    // Extract the filename
-    std::string filename = doc["filename"].get_string().value.to_string();
-    
-    // Extract the binary content
-    auto binary_content = doc["content"].get_binary();
-    
-    // Write the content to a file
-    string fullname = dir + "/" + filename;
-    cout << "Saving to ->" << fullname << "<-" << endl;
-    std::ofstream outfile(fullname, std::ios::binary);
-    if (!outfile.is_open()) {
-      std::cerr << "Failed to open file for writing: " << filename << std::endl;
-      continue;
-    }
-    
-    // Write the binary data to the file
-    outfile.write(reinterpret_cast<const char*>(binary_content.bytes), binary_content.size);
-    outfile.close();
-    
-    std::cout << "Retrieved and saved file: " << filename << std::endl;
-  }
-}
+// -- downloadDetConfig
+// ------------------
+//
+// -- download (binary) files to a directory, using a "tag" from the "C"DB (detconfigs collection)
+//
+// -- Usage:
+//    downloadDetConfig --host mu3edb0 --dir /Users/ursl/Downloads/tdac_files_bu_06_10 --tag tdac_files_bu_06_10
+//
+// -- Retrieval of all files corresponding to "tag" (zip written as <dir>/<tag>.zip, not PWD)
+//    curl -fSL --output /path/tag.zip "http://mu3edb0:5050/cdb/downloadTag?tag=..."
+//
+// -- List all detconfigs tags (one per line):
+//    downloadDetConfig --host mu3edb0 --listtags
+//    curl -fsS "http://mu3edb0:5050/cdb/detconfigTags"
+// ----------------------------------------------------------------------
+
 
 
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
-
-  string dirPath("."), tag("nada");
+  
+  string dirPath("."), tag("nada"), host("mu3edb0");
+  bool listtags(false);
   for (int i = 0; i < argc; i++) {
-    if (!strcmp(argv[i], "--dir")) {dirPath = string(argv[++i]);}
-    if (!strcmp(argv[i], "-dir"))  {dirPath = string(argv[++i]);}
-    if (!strcmp(argv[i], "--uri")) {gUri = bsoncxx::string::view_or_value(argv[++i]); gClient = gUri;}
-    if (!strcmp(argv[i], "-u"))    {gUri = bsoncxx::string::view_or_value(argv[++i]); gClient = gUri;}
-    if (!strcmp(argv[i], "-t"))    {tag = string(argv[++i]);}
-    if (!strcmp(argv[i], "--tag")) {tag = string(argv[++i]);}
+    if (!strcmp(argv[i], "--dir"))     {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "-d"))        {dirPath = string(argv[++i]);}
+    if (!strcmp(argv[i], "--host"))    {host = string(argv[++i]);}
+    if (!strcmp(argv[i], "-h"))        {host = string(argv[++i]);}
+    if (!strcmp(argv[i], "--listtags")) {listtags = true;}
+    if (!strcmp(argv[i], "-l"))        {listtags = true;}
+    if (!strcmp(argv[i], "--tag"))     {tag = string(argv[++i]);}
+    if (!strcmp(argv[i], "-t"))        {tag = string(argv[++i]);}
   }
 
-  // Access the database and collection
-  auto db = gClient["mu3e"];
-  mongocxx::collection collection = db["detconfigs"];
+  if (listtags) {
+    string url = "http://" + host + ":5050/cdb/detconfigTags";
+    string cmd = string("curl -fSs \"") + url + "\"";
+    int st = system(cmd.c_str());
+    if (st != 0) {
+      cerr << "downloadDetConfig: list tags failed (curl exit " << st << ")" << endl;
+      return 1;
+    }
+    return 0;
+  }
 
-  // Retrieve files with the specified tag
-  retrieve_files_from_mongo(tag, collection, dirPath);
+  // -- check if tag is specified
+  if ("nada" == tag) {
+    cout << "Tag is not specified" << endl;
+    cout << "Usage: downloadDetConfig --host <host> --dir <path> --tag <tagname>" << endl;
+    cout << "       downloadDetConfig --host <host> --listtags   (-l)" << endl;
+    return 1;
+  }
+
+  // -- Access the database and collection
+  // string url = "http://" + host + ":5050/cdb/uploadMany";
+  string url = "http://" + host + ":5050/cdb/downloadTag?tag=" + tag;
+  cout << "Downloading from ->" << url << "<-" << endl;
+  // -O writes to PWD; use --output so the zip lands under --dir (quote paths for spaces).
+  string outZip = dirPath + "/" + tag + ".zip";
+  string cmd = string("mkdir -p \"") + dirPath + "\" && curl -fSL --output \"" + outZip + "\" \"" + url + "\"";
+  cout << "cmd: " << cmd << endl;
+  system(cmd.c_str());
   
+  string tagdir = dirPath + "/" + tag;
+  // -- Check if the file was downloaded
+  if (!fileExists(outZip)) {
+    cout << "Error: Failed to download the file" << endl;
+    return 1;
+  } else {
+    cout << "File downloaded successfully" << endl;
+    cmd = string("mkdir -p \"") + tagdir + "\"";
+    cout << "cmd: " << cmd << endl;
+    system(cmd.c_str());
+      
+    // -- Unzip the file
+    cmd = string("unzip \"") + outZip + "\" -d \"" + tagdir + "\"";
+    cout << "cmd: " << cmd << endl;
+    system(cmd.c_str());
+  }  
   return 0;
 }
 

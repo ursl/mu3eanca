@@ -18,9 +18,7 @@ using namespace std;
 //
 // -- Usage:
 //    uploadDetConfig --dir /Users/ursl/Downloads/tdac_files_bu_06_10 -p mask_chip_ -t tdac_files_bu_06_10
-//
-// -- Retrieval of all files corresponding to "tag" (result will be in a zip file with name "tag".zip)
-//    curl -O -J "http://mu3edb0:5050/cdb/downloadTag?tag=tdac_files_bu_06_10"
+//    curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=testtag" http://mu3edb0:5050/cdb/upload
 // ----------------------------------------------------------------------
 
 
@@ -52,8 +50,7 @@ int main(int argc, char* argv[]) {
   // string url = "http://" + host + ":5050/cdb/uploadMany";
   string url = "http://" + host + ":5050/cdb/upload";
   cout << "Uploading to ->" << url << "<-" << endl;
-  string cmd = "curl -v -F ... -F \"tag=4\" " + url;
-  
+
   vector<string> vfiles;
   DIR *folder;
   struct dirent *entry;
@@ -82,6 +79,7 @@ int main(int argc, char* argv[]) {
     cout << "cmd: " << cmd << endl;
     system(cmd.c_str());
   }
+  cout << endl;
   
   return 0;
 }

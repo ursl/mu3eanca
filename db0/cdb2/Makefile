@@ -83,16 +83,16 @@ LBINARIES = testCDB anaPixelQuality anaEventStuff syncJSON \
             cdbPrintConfig \
             cdbInsertIovTag cdbCopyPayloads cdbSummaryGT diffRunnumbers cdbPurgePayloads diffPayloads correlatePixelPayloads
 
-MONGOBINARIES = syncMongo  syncRDB uploadDetConfig downloadDetConfig
+MONGOBINARIES = syncMongo  syncRDB uploadDetConfig downloadDetConfig deleteDetConfig
 
 ifneq (,$(or $(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
        $(info ************  MERLIN VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
-       BINARIES = $(filter-out fillDB syncCloud syncRDB syncMongo uploadDetConfig downloadDetConfig, $(LBINARIES))
+       BINARIES = $(filter-out fillDB syncCloud syncRDB syncMongo uploadDetConfig downloadDetConfig deleteDetConfig, $(LBINARIES))
 else ifneq (,$(findstring mu3ebe,$(LHOST)))
        $(info ************  MU3EBE VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
-       BINARIES = $(filter-out uploadDetConfig downloadDetConfig testCDB fillDB syncCloud syncMongo uploadDetConfig downloadDetConfig, $(LBINARIES))
+       BINARIES = $(filter-out uploadDetConfig downloadDetConfig deleteDetConfig testCDB fillDB syncCloud syncMongo uploadDetConfig downloadDetConfig deleteDetConfig, $(LBINARIES))
 else
        $(info ************  non-MERLIN VERSION ************)
        FILES = $(LFILES)
