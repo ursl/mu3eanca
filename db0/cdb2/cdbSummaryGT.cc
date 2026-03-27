@@ -119,19 +119,19 @@ int main(int argc, char* argv[]) {
         }
       }
       if (!hasExact) continue;
+      nmatch++;
       string gtComment = pDB->getGlobalTagComment(igt);
-      cout << igt << endl;
+      cout << setw(2) << nmatch << ") " << igt << endl;
       if (!gtComment.empty()) {
-        cout << "  comment: " << wrapComment(gtComment, 60, "           ") << endl;
+        cout << "    comment: " << wrapComment(gtComment, 60, "             ") << endl;
       }
       cout << endl;
-      nmatch++;
     }
     
 
     if (tagComment != "unset") {
       cout << "Found " << nmatch << " GTs containing tag '" << filterTag << "' (exact match)" << endl;
-      cout << "  comment: " << wrapComment(tagComment, 60, "           ") << endl;
+      cout << "    comment: " << wrapComment(tagComment, 60, "             ") << endl;
     }
 
     if (nmatch == 0) {
