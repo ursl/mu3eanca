@@ -57,7 +57,7 @@ public:
 
 private:
   std::string fPixelMaskTag{"pixelmask_"};
-  std::string fSchema{"ui_id,[ui_mask]"};
+  std::string fSchema{"ui_id,c_mask[64000]"};
 
   // -- local and private
   struct constants {
