@@ -550,9 +550,36 @@
             }
         }
 
+        // Infer value type from variable name prefix.
+        function inferVarType(name) {
+            // For struct-like names ("pixeldata.ull_startframe"), infer type from the leaf token.
+            const leaf = (name.includes(".") ? name.substring(name.lastIndexOf(".") + 1) : name);
+            if (leaf.startsWith("ull_") || leaf.startsWith("ul_") || leaf.startsWith("u64_")) return "uint64";
+            if (leaf.startsWith("ll_") || leaf.startsWith("l_") || leaf.startsWith("i64_")) return "int64";
+            if (leaf.startsWith("ui_")) return "uint";
+            if (leaf.startsWith("i_")) return "int";
+            if (leaf.startsWith("b_")) return "bool";
+            return "double";
+        }
+
+        // Expand struct-like schema groups:
+        //   target.(a,b) -> target.a,target.b
+        // so they can be decoded like flat variables.
+        function normalizeSchemaLine(line) {
+            let out = line;
+            let prev = "";
+            // Repeat to support nested groups.
+            while (out !== prev) {
+                prev = out;
+                out = out.replace(/([A-Za-z_]\w*)\.\s*\(([^()]+)\)/g, (_, prefix, inner) => {
+                    const parts = inner.split(",").map(s => s.trim()).filter(Boolean);
+                    return parts.map(p => `${prefix}.${p}`).join(",");
+                });
+            }
+            return out;
+        }
+
         // Parse schema into an array of lines, each with its original text and ordered variables.
-        // Variable types are inferred from prefixes:
-        //   "ui_" -> unsigned int, "i_" -> int, "b_" -> boolean, everything else -> double.
         function parseSchemaLines(schema) {
             if (!schema || typeof schema !== "string") return [];
             const rawLines = schema.split(/\r?\n/);
@@ -560,19 +587,12 @@
             for (const raw of rawLines) {
                 const line = raw.trim();
                 if (!line) continue;
-                const tokens = line.split(/[\s,;()]+/);
+                const normalized = normalizeSchemaLine(line);
+                const tokens = normalized.match(/[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*/g) || [];
                 const vars = [];
                 for (const tok of tokens) {
                     if (!tok) continue;
-                    if (tok.startsWith("ui_")) {
-                        vars.push({ name: tok, type: "uint" });
-                    } else if (tok.startsWith("i_")) {
-                        vars.push({ name: tok, type: "int" });
-                    } else if (tok.startsWith("b_")) {
-                        vars.push({ name: tok, type: "bool" });
-                    } else {
-                        vars.push({ name: tok, type: "double" });
-                    }
+                    vars.push({ name: tok, type: inferVarType(tok) });
                 }
                 result.push({ raw, vars });
             }
@@ -583,6 +603,82 @@
         // Layout assumption:
         //   - First 8 bytes: header block, with the first 4 bytes = 0xDEADFACE
         //   - Remaining data: 8-byte chunks, one per schema variable, in schema order.
+        function decodePixelMaskBlobField(base64, schema) {
+            const binaryStr = atob(base64);
+            const size = binaryStr.length;
+            const bytes = new Uint8Array(size);
+            for (let i = 0; i < size; ++i) bytes[i] = binaryStr.charCodeAt(i);
+            const dataView = new DataView(bytes.buffer);
+            const lines = [];
+
+            if (schema && schema.trim().length > 0) {
+                lines.push("Schema:");
+                lines.push(schema.trim());
+            } else {
+                lines.push("Schema: (none)");
+            }
+
+            if (size < 8) {
+                lines.push("");
+                lines.push("HEADER: (insufficient data, need at least 8 bytes)");
+                return { text: lines.join("\n"), size };
+            }
+
+            const headerVal = dataView.getUint32(0, true);
+            const headerHex = headerVal.toString(16).toUpperCase().padStart(8, "0");
+            const expectedHeader = 0xDEADFACE >>> 0;
+            lines.push("");
+            lines.push(headerVal === expectedHeader ? "HEADER: DEADFACE" : `HEADER: ${headerHex} (expected DEADFACE)`);
+
+            const nCols = 256;
+            const nRows = 250;
+            const maskBytes = nCols * nRows; // char mask[256*250]
+            const bytesPerRecord = 4 + maskBytes; // ui_id + mask bytes
+
+            lines.push("");
+            lines.push(`Decoded pixel mask records (record bytes: ${bytesPerRecord}):`);
+            lines.push("chip_id,masked_pixels,total_pixels,first_masked_pixels");
+
+            let offset = 8;
+            let recordCount = 0;
+            while (offset + bytesPerRecord <= size) {
+                const chipId = dataView.getUint32(offset, true);
+                offset += 4;
+
+                let nMasked = 0;
+                const firstMasked = [];
+                for (let i = 0; i < maskBytes; ++i) {
+                    const v = bytes[offset + i];
+                    // calPixelMask uses 9 for Masked, 0 for Unmasked.
+                    if (v === 9) {
+                        ++nMasked;
+                        if (firstMasked.length < 20) {
+                            const col = Math.floor(i / nRows);
+                            const row = i % nRows;
+                            firstMasked.push(`${col}/${row}`);
+                        }
+                    }
+                }
+                offset += maskBytes;
+                ++recordCount;
+
+                const firstMaskedStr = firstMasked.length ? firstMasked.join(" ") : "-";
+                lines.push(`${chipId},${nMasked},${maskBytes},${firstMaskedStr}`);
+            }
+
+            if (recordCount === 0) {
+                lines.push("(no complete records)");
+            }
+
+            const trailing = size - offset;
+            if (trailing > 0) {
+                lines.push("");
+                lines.push(`Note: ${trailing} trailing bytes ignored (incomplete record).`);
+            }
+
+            return { text: lines.join("\n"), size };
+        }
+
         function decodePayloadBlobField(blobField, schema) {
             if (!blobField) return { text: "(no BLOB field found)", size: 0 };
 
@@ -598,7 +694,26 @@
                 return { text: "(empty BLOB string)", size: 0 };
             }
 
+            // Special-case fixed-size pixel mask payload:
+            // ui_id + char mask[256*250]
+            // Accept both legacy "ui_mask" and new "c_mask[64000]" schema naming.
+            const isPixelMaskSchema = !!schema && schema.includes("ui_id") &&
+                (schema.includes("ui_mask") || schema.includes("c_mask"));
+            if (isPixelMaskSchema) {
+                try {
+                    return decodePixelMaskBlobField(base64, schema);
+                } catch (e) {
+                    console.warn("Failed pixelmask-specific decode, falling back to generic decoder", e);
+                }
+            }
+
             const schemaLines = parseSchemaLines(schema);
+            const normalizedSchema = (schema || "")
+                .split(/\r?\n/)
+                .map(s => s.trim())
+                .filter(Boolean)
+                .map(normalizeSchemaLine)
+                .join("\n");
 
             try {
                 // Decode base64 to raw bytes
@@ -616,6 +731,11 @@
                 if (schema && schema.trim().length > 0) {
                     lines.push("Schema:");
                     lines.push(schema.trim());
+                    if (normalizedSchema && normalizedSchema !== schema.trim()) {
+                        lines.push("");
+                        lines.push("Normalized schema:");
+                        lines.push(normalizedSchema);
+                    }
                 } else {
                     lines.push("Schema: (none)");
                 }
@@ -711,17 +831,10 @@
                         const regularVarStr = regularVarParts.join(",");
                         const regularVars = [];
                         if (regularVarStr) {
-                            const tokens = regularVarStr.split(/[\s,;()]+/).filter(Boolean);
+                            const normalizedRegularVarStr = normalizeSchemaLine(regularVarStr);
+                            const tokens = normalizedRegularVarStr.match(/[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*/g) || [];
                             for (const tok of tokens) {
-                                if (tok.startsWith("ui_")) {
-                                    regularVars.push({ name: tok, type: "uint" });
-                                } else if (tok.startsWith("i_")) {
-                                    regularVars.push({ name: tok, type: "int" });
-                                } else if (tok.startsWith("b_")) {
-                                    regularVars.push({ name: tok, type: "bool" });
-                                } else {
-                                    regularVars.push({ name: tok, type: "double" });
-                                }
+                                regularVars.push({ name: tok, type: inferVarType(tok) });
                             }
                         }
                         
@@ -797,12 +910,7 @@
                                 }
                                 
                                 // Derive types from names
-                                const innerVars = innerVarNames.map(name => {
-                                    if (name.startsWith("ui_")) return { name, type: "uint" };
-                                    if (name.startsWith("i_"))  return { name, type: "int" };
-                                    if (name.startsWith("b_"))  return { name, type: "bool" };
-                                    return { name, type: "double" };
-                                });
+                                const innerVars = innerVarNames.map(name => ({ name, type: inferVarType(name) }));
                                 
                                 // Decode countVal entries for this group and flatten all values
                                 const allValues = [];
@@ -813,10 +921,14 @@
                                     }
                                     for (const v of innerVars) {
                                         let value;
-                                        if (v.type === "uint") {
+                                    if (v.type === "uint") {
                                             value = dataView.getUint32(offset, true);
+                                    } else if (v.type === "uint64") {
+                                        value = dataView.getBigUint64(offset, true).toString();
                                         } else if (v.type === "int") {
                                             value = dataView.getInt32(offset, true);
+                                    } else if (v.type === "int64") {
+                                        value = dataView.getBigInt64(offset, true).toString();
                                         } else if (v.type === "bool") {
                                             const raw = dataView.getUint32(offset, true);
                                             value = raw !== 0;
@@ -860,8 +972,12 @@
                             let value;
                             if (v.type === "uint") {
                                 value = dataView.getUint32(offset, true); // first 4 bytes
+                            } else if (v.type === "uint64") {
+                                value = dataView.getBigUint64(offset, true).toString();
                             } else if (v.type === "int") {
                                 value = dataView.getInt32(offset, true); // first 4 bytes
+                            } else if (v.type === "int64") {
+                                value = dataView.getBigInt64(offset, true).toString();
                             } else if (v.type === "bool") {
                                 const raw = dataView.getUint32(offset, true);
                                 value = raw !== 0;
