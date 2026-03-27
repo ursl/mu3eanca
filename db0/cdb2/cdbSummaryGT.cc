@@ -166,6 +166,11 @@ int main(int argc, char* argv[]) {
     cout << "Available GTs:" << endl;
     for (size_t i = 0; i < allGTs.size(); i++) {
       cout << allGTs[i] << endl;
+      string gtComment = pDB->getGlobalTagComment(allGTs[i]);
+      if (!gtComment.empty()) {
+        cout << "    comment: " << wrapComment(gtComment, 60, "             ") << endl;
+      }
+      cout << endl;
     }
     return 0;
   }
