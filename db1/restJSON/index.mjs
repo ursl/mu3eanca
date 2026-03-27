@@ -20,10 +20,12 @@ app.use(bodyParser.json());
 
 app.use(express.static(path.join(__dirname, "public")));
 
-// File-backed CDB endpoints
-app.use("/cdb", cdb);
-// Optional alias to keep compatibility with backend=json URLs
+// File-backed CDB endpoints (preferred path)
+app.use("/cdbJSON", cdb);
+// Backward-compatible aliases
 app.use("/cdbjson", cdb);
+app.get("/cdb", (_req, res) => res.redirect("/cdbJSON"));
+app.use("/cdb", cdb);
 
 // Global error handling
 app.use((err, _req, res, _next) => {

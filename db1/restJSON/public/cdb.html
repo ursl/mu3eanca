@@ -1386,17 +1386,19 @@
                     const response = await fetch(`${CDB_API_BASE}/hostname`);
                     if (response.ok) {
                         const data = await response.json();
-                        hostnameDisplay.textContent = data.hostname || window.location.hostname;
+                        const host = data.hostname || window.location.hostname || "Unknown";
+                        const root = data.cdbRoot || "unset";
+                        hostnameDisplay.textContent = `${host} (CDBROOT: ${root})`;
                         return;
                     }
                 } catch (e) {
                     // Fall back to window.location.hostname if API call fails
                 }
                 // Fallback to window.location.hostname
-                hostnameDisplay.textContent = window.location.hostname || 'Unknown';
+                hostnameDisplay.textContent = `${window.location.hostname || 'Unknown'} (CDBROOT: unknown)`;
             } catch (error) {
                 console.error('Error loading hostname:', error);
-                hostnameDisplay.textContent = window.location.hostname || 'Unknown';
+                hostnameDisplay.textContent = `${window.location.hostname || 'Unknown'} (CDBROOT: unknown)`;
             }
         }
 

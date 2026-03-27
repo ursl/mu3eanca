@@ -9,7 +9,7 @@ const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function cdbRootDir() {
-  const root = process.env.CDBROOTDIR || "";
+  const root = process.env.CDBROOTDIR || process.env.CDBROOT || "";
   return root.trim();
 }
 
@@ -64,10 +64,7 @@ function checkRoot(res) {
   return root;
 }
 
-router.get("/", (req, res) => {
-  if ((req.query.backend || "").toLowerCase() !== "json") {
-    return res.redirect("/cdb?backend=json");
-  }
+router.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "../public/cdb.html"));
 });
 
@@ -216,7 +213,40 @@ router.get("/findAll/detconfigsSummary", async (_req, res) => {
 });
 
 router.get("/hostname", (_req, res) => {
-  res.status(200).json({ hostname: os.hostname() });
+  res.status(200).json({
+    hostname: os.hostname(),
+    cdbRoot: cdbRootDir()
+  });
+});
+
+router.get("/debugRoot", async (_req, res) => {
+  const root = cdbRootDir();
+  const out = {
+    CDBROOTDIR: process.env.CDBROOTDIR || "",
+    CDBROOT: process.env.CDBROOT || "",
+    resolvedRoot: root || "",
+    exists: false,
+    globaltagsCount: 0,
+    tagsCount: 0,
+    payloadTagDirCount: 0
+  };
+  try {
+    if (!root) return res.status(200).json(out);
+    const st = await fs.stat(root);
+    out.exists = st.isDirectory();
+    const [gts, tags, payloads] = await Promise.all([
+      listFilesInDir(path.join(root, "globaltags")).catch(() => []),
+      listFilesInDir(path.join(root, "tags")).catch(() => []),
+      fs.readdir(path.join(root, "payloads"), { withFileTypes: true }).catch(() => [])
+    ]);
+    out.globaltagsCount = gts.length;
+    out.tagsCount = tags.length;
+    out.payloadTagDirCount = payloads.filter(e => e.isDirectory()).length;
+    return res.status(200).json(out);
+  } catch (e) {
+    out.error = e.message;
+    return res.status(200).json(out);
+  }
 });
 
 export default router;

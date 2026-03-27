@@ -1,6 +1,21 @@
 # Simple REST server
 based on https://www.mongodb.com/languages/express-mongodb-rest-api-tutorial
 
+# IMPORTANT: rest vs restJSON sync reminder
+
+There is now a separate standalone JSON-backed browser in `db1/restJSON`.
+
+When you change CDB browser behavior in `db1/rest` (especially UI/API contracts), check whether
+the corresponding files in `db1/restJSON` should be updated as well. In particular:
+
+- `rest/public/cdb.html`  <->  `restJSON/public/cdb.html`
+- `rest/routes/*` CDB endpoint behavior  <->  `restJSON/routes/cdb.mjs`
+- startup/env assumptions in `rest/index.mjs`  <->  `restJSON/index.mjs`
+
+Code duplication is intentional for now, so manual synchronization is expected.
+Use `./sync-restjson.sh` (from `db1/rest`) to copy master files into `db1/restJSON`
+and re-apply `restJSON`-specific overlays.
+
 # Installation
 Install `node/npm/pm2` the correct way by using [nvm](https://github.com/nvm-sh/nvm). Follow the instructions there. If `pm2` is missing, install it with `npm install pm2 -g` after the `npm` installation. 
 
