@@ -1,0 +1,17 @@
+{
+  "name": "restjson",
+  "version": "1.0.0",
+  "description": "File-backed CDB browser service",
+  "main": "index.mjs",
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^8.6.0",
+    "express": "^4.18.2",
+    "express-async-errors": "^3.1.1"
+  },
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
