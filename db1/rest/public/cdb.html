@@ -241,6 +241,12 @@
                         </div>
                         <hr>
                         <h6>Decoded content</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="payloadPixelMaskFullDetails">
+                            <label class="form-check-label" for="payloadPixelMaskFullDetails">
+                                Full details for pixelmask payloads
+                            </label>
+                        </div>
                         <pre id="payloadDetailDecoded" style="max-height: 55vh; overflow: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;"></pre>
                     </div>
                     <div class="modal-footer">
@@ -603,7 +609,8 @@
         // Layout assumption:
         //   - First 8 bytes: header block, with the first 4 bytes = 0xDEADFACE
         //   - Remaining data: 8-byte chunks, one per schema variable, in schema order.
-        function decodePixelMaskBlobField(base64, schema) {
+        function decodePixelMaskBlobField(base64, schema, options = {}) {
+            const pixelMaskFullDetails = options.pixelMaskFullDetails === true;
             const binaryStr = atob(base64);
             const size = binaryStr.length;
             const bytes = new Uint8Array(size);
@@ -633,17 +640,21 @@
             const nCols = 256;
             const nRows = 250;
             const maskBytes = nCols * nRows; // char mask[256*250]
-            const bytesPerRecord = 4 + maskBytes; // ui_id + mask bytes
+            const idSlotBytes = 8; // cdb format stores uint/int in 8-byte slots (uint2Blob/int2Blob)
+            const bytesPerRecord = idSlotBytes + maskBytes; // ui_id(8-byte slot) + mask bytes
 
             lines.push("");
             lines.push(`Decoded pixel mask records (record bytes: ${bytesPerRecord}):`);
             lines.push("chip_id,masked_pixels,total_pixels,first_masked_pixels");
+            const detailedChipBlocks = [];
+            const maxDetailedChips = pixelMaskFullDetails ? Number.POSITIVE_INFINITY : 1;
 
             let offset = 8;
             let recordCount = 0;
             while (offset + bytesPerRecord <= size) {
                 const chipId = dataView.getUint32(offset, true);
-                offset += 4;
+                // Upper 4 bytes of the 8-byte slot are typically padding (zero) for ui_id.
+                offset += idSlotBytes;
 
                 let nMasked = 0;
                 const firstMasked = [];
@@ -659,6 +670,27 @@
                         }
                     }
                 }
+
+                // Build a cdbPrintPayload-like detailed view for the first chips.
+                if (detailedChipBlocks.length < maxDetailedChips) {
+                    const block = [];
+                    block.push(`==> chipId: ${chipId} begin masked pixels`);
+                    for (let col = 0; col < nCols; ++col) {
+                        const entries = [];
+                        const base = col * nRows;
+                        for (let row = 0; row < nRows; ++row) {
+                            if (bytes[offset + base + row] === 9) {
+                                entries.push(`${col}/${row}:9`);
+                            }
+                        }
+                        if (entries.length > 0) {
+                            block.push(`${entries.join(",")},`);
+                        }
+                    }
+                    block.push(`--> chipId: ${chipId} end, ${nMasked} pixels masked`);
+                    detailedChipBlocks.push(block.join("\n"));
+                }
+
                 offset += maskBytes;
                 ++recordCount;
 
@@ -676,10 +708,23 @@
                 lines.push(`Note: ${trailing} trailing bytes ignored (incomplete record).`);
             }
 
+            if (detailedChipBlocks.length > 0) {
+                lines.push("");
+                const detailScope = pixelMaskFullDetails ? "all chips" : `first ${detailedChipBlocks.length} chip(s)`;
+                lines.push(`Detailed masked pixel listing (${detailScope}):`);
+                lines.push("The following pixels are masked:");
+                lines.push(detailedChipBlocks.join("\n"));
+            }
+
             return { text: lines.join("\n"), size };
         }
 
-        function decodePayloadBlobField(blobField, schema) {
+        function isPixelMaskSchema(schema) {
+            return !!schema && schema.includes("ui_id") &&
+                (schema.includes("ui_mask") || schema.includes("c_mask"));
+        }
+
+        function decodePayloadBlobField(blobField, schema, options = {}) {
             if (!blobField) return { text: "(no BLOB field found)", size: 0 };
 
             if (typeof blobField !== "string") {
@@ -697,11 +742,9 @@
             // Special-case fixed-size pixel mask payload:
             // ui_id + char mask[256*250]
             // Accept both legacy "ui_mask" and new "c_mask[64000]" schema naming.
-            const isPixelMaskSchema = !!schema && schema.includes("ui_id") &&
-                (schema.includes("ui_mask") || schema.includes("c_mask"));
-            if (isPixelMaskSchema) {
+            if (isPixelMaskSchema(schema)) {
                 try {
-                    return decodePixelMaskBlobField(base64, schema);
+                    return decodePixelMaskBlobField(base64, schema, options);
                 } catch (e) {
                     console.warn("Failed pixelmask-specific decode, falling back to generic decoder", e);
                 }
@@ -1008,6 +1051,18 @@
             }
         }
 
+        let currentPayloadDecodeContext = null;
+
+        function renderPayloadDecoded() {
+            if (!currentPayloadDecodeContext) return;
+            const fullDetails = document.getElementById("payloadPixelMaskFullDetails").checked;
+            const { blobField, schema } = currentPayloadDecodeContext;
+            const { text, size } = decodePayloadBlobField(blobField, schema, { pixelMaskFullDetails: fullDetails });
+            document.getElementById("payloadDetailBlobSize").textContent =
+                size ? `${size} bytes (approx.)` : "(unknown)";
+            document.getElementById("payloadDetailDecoded").textContent = text;
+        }
+
         // Fetch a single payload document and show it in a modal
         async function showPayloadDetails(rowData) {
             const hash = rowData.hash;
@@ -1022,6 +1077,10 @@
             document.getElementById("payloadDetailComment").textContent = rowData.comment || "";
             document.getElementById("payloadDetailBlobSize").textContent = "";
             document.getElementById("payloadDetailDecoded").textContent = "Loading payload...";
+            const fullDetailsCheckbox = document.getElementById("payloadPixelMaskFullDetails");
+            fullDetailsCheckbox.checked = false;
+            fullDetailsCheckbox.disabled = true;
+            currentPayloadDecodeContext = null;
 
             const modalElement = document.getElementById("payloadModal");
             const modal = new bootstrap.Modal(modalElement);
@@ -1042,17 +1101,19 @@
                     payloadDoc.data ||
                     null;
                 const schema = payloadDoc.schema || rowData.schema || "";
-
-                const { text, size } = decodePayloadBlobField(blobField, schema);
-                document.getElementById("payloadDetailBlobSize").textContent =
-                    size ? `${size} bytes (approx.)` : "(unknown)";
-                document.getElementById("payloadDetailDecoded").textContent = text;
+                currentPayloadDecodeContext = { blobField, schema };
+                fullDetailsCheckbox.disabled = !isPixelMaskSchema(schema);
+                renderPayloadDecoded();
             } catch (error) {
                 console.error("Error loading payload document:", error);
                 document.getElementById("payloadDetailDecoded").textContent =
                     "Error loading payload document: " + error.message;
             }
         }
+
+        document.getElementById("payloadPixelMaskFullDetails").addEventListener("change", () => {
+            renderPayloadDecoded();
+        });
 
         // Fetch and display detconfigs summary
         async function loadDetconfigsSummary() {
