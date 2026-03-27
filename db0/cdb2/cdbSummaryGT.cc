@@ -17,6 +17,7 @@
 #include "calTileQuality.hh"
 #include "calPixelEfficiency.hh"
 #include "calPixelTimeCalibration.hh"
+#include "calPixelMask.hh"
 
 using namespace std;
 
@@ -27,18 +28,22 @@ using namespace std;
 // tag name, IOV length, comment.
 //
 // Usage: ./cdbSummaryGT -u <URI> -g <GT>
+//    or: ./cdbSummaryGT -u <URI> -t <tag>
 //
 //   -u, --uri   CDB URI: path for cdbJSON, or http(s) URL for cdbRest
-//   -g, --gt    Global tag name (required)
+//   -g, --gt    Global tag name (required unless -t is used)
+//   -t, --tag   List all global tags whose tag list contains <tag> (exact match)
 //
 // Examples:  ./bin/cdbSummaryGT -u http://mu3edb0/cdb
 //            ./bin/cdbSummaryGT -u ~/data/mu3e/cdb/ -g datav6.5=2025V0
+//            ./bin/cdbSummaryGT -u ~/data/mu3e/cdb/ -t pixelalignment_datav6.3=2025V0
 // ----------------------------------------------------------------------
 
 void printUsage(const char* progname) {
-  cerr << "Usage: " << progname << " -u <URI> -g <GT>" << endl;
+  cerr << "Usage: " << progname << " -u <URI> (-g <GT> | -t <tag>)" << endl;
   cerr << "  -u, --uri   CDB URI (path for JSON, http URL for REST)" << endl;
-  cerr << "  -g, --gt    Global tag name" << endl;
+  cerr << "  -g, --gt    Global tag name (summary for one GT)" << endl;
+  cerr << "  -t, --tag   List GT names + comments that include this tag (exact)" << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -71,12 +76,14 @@ int main(int argc, char* argv[]) {
   string uri;
   string gt("unset");
   int verbose = 0;
-
+  string filterTag("unset");
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-u") == 0 && i + 1 < argc) uri = argv[++i];
     else if (strcmp(argv[i], "--uri") == 0 && i + 1 < argc) uri = argv[++i];
     else if (strcmp(argv[i], "-g") == 0 && i + 1 < argc) gt = argv[++i];
     else if (strcmp(argv[i], "--gt") == 0 && i + 1 < argc) gt = argv[++i];
+    else if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) filterTag = argv[++i];
+    else if (strcmp(argv[i], "--tag") == 0 && i + 1 < argc) filterTag = argv[++i];
     else if (strcmp(argv[i], "-v") == 0 && i + 1 < argc) verbose = atoi(argv[++i]);
     else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
       printUsage(argv[0]);
@@ -84,8 +91,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (uri.empty() || gt.empty()) {
-    cerr << "Error: -u URI and -g GT are required" << endl;
+  if (uri.empty()) {
+    cerr << "Error: -u URI is required" << endl;
     printUsage(argv[0]);
     return 1;
   }
@@ -95,6 +102,43 @@ int main(int argc, char* argv[]) {
     pDB = new cdbRest(uri, verbose);
   } else {
     pDB = new cdbJSON(uri, verbose);
+  }
+
+  if (filterTag != "unset") {
+    vector<string> allGTs = pDB->readGlobalTags();
+    int nmatch = 0;
+    string tagComment("unset");
+    for (const auto& igt : allGTs) {
+      vector<string> tagsInGt = pDB->readTags(igt);
+      bool hasExact = false;
+      for (const auto& t : tagsInGt) {
+        if (t == filterTag) {
+          hasExact = true;
+          tagComment = pDB->getTagComment(t);
+          break;
+        }
+      }
+      if (!hasExact) continue;
+      string gtComment = pDB->getGlobalTagComment(igt);
+      cout << igt << endl;
+      if (!gtComment.empty()) {
+        cout << "  comment: " << wrapComment(gtComment, 60, "           ") << endl;
+      }
+      cout << endl;
+      nmatch++;
+    }
+    
+
+    if (tagComment != "unset") {
+      cout << "Found " << nmatch << " GTs containing tag '" << filterTag << "' (exact match)" << endl;
+      cout << "  comment: " << wrapComment(tagComment, 60, "           ") << endl;
+    }
+
+    if (nmatch == 0) {
+      cerr << "cdbSummaryGT: no global tag lists tag '" << filterTag << "' (exact match)" << endl;
+    }
+    delete pDB;
+    return (nmatch == 0) ? 1 : 0;
   }
 
   vector<string> allGTs = pDB->readGlobalTags();
@@ -163,6 +207,7 @@ int main(int argc, char* argv[]) {
       else if (tag.find("tilequality") == 0) cal = new calTileQuality(pDB);
       else if (tag.find("pixelefficiency") == 0) cal = new calPixelEfficiency(pDB);
       else if (tag.find("pixeltimecalibration") == 0) cal = new calPixelTimeCalibration(pDB);
+      else if (tag.find("pixelmask") == 0) cal = new calPixelMask(pDB);
       if (cal) {
         cal->update(hash);
         payloadSize = cal->getPayloadSize();
@@ -186,6 +231,7 @@ int main(int argc, char* argv[]) {
         else if (tag.find("tilequality") == 0) calIov = new calTileQuality(pDB);
         else if (tag.find("pixelefficiency") == 0) calIov = new calPixelEfficiency(pDB);
         else if (tag.find("pixeltimecalibration") == 0) calIov = new calPixelTimeCalibration(pDB);
+        else if (tag.find("pixelmask") == 0) calIov = new calPixelMask(pDB);
         if (calIov) {
           for (size_t i = 1; i < it->second.size(); i++) {
             int iov = it->second[i];
@@ -217,6 +263,7 @@ int main(int argc, char* argv[]) {
           || tag.find("tilequality") == 0
           || tag.find("pixelefficiency") == 0
           || tag.find("pixeltimecalibration") == 0
+          || tag.find("pixelmask") == 0
         ) {
         const char* alignPrefix = nullptr;
         if (tag.find("pixelqualitylm") == 0) {
@@ -228,6 +275,8 @@ int main(int argc, char* argv[]) {
         } else if (tag.find("pixelefficiency") == 0) {
           alignPrefix = "pixelalignment";
         } else if (tag.find("pixeltimecalibration") == 0) {
+          alignPrefix = "pixelalignment";
+        } else if (tag.find("pixelmask") == 0) {
           alignPrefix = "pixelalignment";
         }
         string alignTag;
