@@ -33,17 +33,23 @@ using namespace std;
 //   -u, --uri   CDB URI: path for cdbJSON, or http(s) URL for cdbRest
 //   -g, --gt    Global tag name (required unless -t is used)
 //   -t, --tag   List all global tags whose tag list contains <tag> (exact match)
+//   -p, --pat   Pattern to match GT names, when no -g or -t is used (summary for all GTs matching pattern)
 //
-// Examples:  ./bin/cdbSummaryGT -u http://mu3edb0/cdb
-//            ./bin/cdbSummaryGT -u ~/data/mu3e/cdb/ -g datav6.5=2025V0
-//            ./bin/cdbSummaryGT -u ~/data/mu3e/cdb/ -t pixelalignment_datav6.3=2025V0
 // ----------------------------------------------------------------------
 
 void printUsage(const char* progname) {
-  cerr << "Usage: " << progname << " -u <URI> (-g <GT> | -t <tag>)" << endl;
-  cerr << "  -u, --uri   CDB URI (path for JSON, http URL for REST)" << endl;
-  cerr << "  -g, --gt    Global tag name (summary for one GT)" << endl;
-  cerr << "  -t, --tag   List GT names + comments that include this tag (exact)" << endl;
+  cout << "Usage: " << progname << " -u <URI> (-g <GT> | -t <tag> | -p <pattern>)" << endl;
+  cout << "  -u, --uri   CDB URI (path for JSON, http URL for REST)" << endl;
+  cout << "  -g, --gt    Global tag name (summary for one GT)" << endl;
+  cout << "  -p, --pat   Pattern to match GT names, when no -g or -t is used (summary for all GTs matching pattern)" << endl;
+  cout << "  -t, --tag   List GT names + comments that include this tag (exact)" << endl;
+  cout << endl;
+  cout << "Examples:" << endl;
+  cout << "  cdbSummaryGT -u http://mu3edb0/cdb" << endl;
+  cout << "  cdbSummaryGT -u /data/project/mu3e/cdb/ -g datav6.5=2025V0" << endl;
+  cout << "  cdbSummaryGT -u /data/project/mu3e/cdb/ -t pixelalignment_datav6.3=2025V1" << endl;
+  cout << "  cdbSummaryGT -u /data/project/mu3e/cdb/ -p data" << endl;
+  cout << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -75,6 +81,7 @@ string wrapComment(const string& text, size_t width = 60, const string& indent =
 int main(int argc, char* argv[]) {
   string uri;
   string gt("unset");
+  string pattern("unset");
   int verbose = 0;
   string filterTag("unset");
   for (int i = 1; i < argc; i++) {
@@ -82,6 +89,8 @@ int main(int argc, char* argv[]) {
     else if (strcmp(argv[i], "--uri") == 0 && i + 1 < argc) uri = argv[++i];
     else if (strcmp(argv[i], "-g") == 0 && i + 1 < argc) gt = argv[++i];
     else if (strcmp(argv[i], "--gt") == 0 && i + 1 < argc) gt = argv[++i];
+    else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) pattern = argv[++i];
+    else if (strcmp(argv[i], "--pat") == 0 && i + 1 < argc) pattern = argv[++i];
     else if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) filterTag = argv[++i];
     else if (strcmp(argv[i], "--tag") == 0 && i + 1 < argc) filterTag = argv[++i];
     else if (strcmp(argv[i], "-v") == 0 && i + 1 < argc) verbose = atoi(argv[++i]);
@@ -102,6 +111,23 @@ int main(int argc, char* argv[]) {
     pDB = new cdbRest(uri, verbose);
   } else {
     pDB = new cdbJSON(uri, verbose);
+  }
+
+
+  if (pattern != "unset" && filterTag == "unset" && gt == "unset") {
+    vector<string> allGTs = pDB->readGlobalTags();
+    for (const auto& igt : allGTs) {
+      if (igt.find(pattern) != string::npos) {
+        cout << igt << endl;
+        string gtComment = pDB->getGlobalTagComment(igt);
+        if (!gtComment.empty()) {
+          cout << "    comment: " << wrapComment(gtComment, 60, "             ") << endl;
+        }
+        cout << endl;
+  
+      }
+    }
+    return 0;
   }
 
   if (filterTag != "unset") {
