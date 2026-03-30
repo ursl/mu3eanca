@@ -10,6 +10,12 @@
 //                     allows filtering on specific setups 
 //                       (in particular various pixel configurations 
 //                        and US/DS tiles)
+// Usage examples
+// ./bin/cdbRunPayloadWriter -m pixelmask -u /Users/ursl/data/mu3e/test-cdb -a "tune1 pixel masks (tdac_files_bu_tune1_refined)" -d /Users/ursl/data/mu3e/masks/tdac_files_bu_tune1_refined -t datav6.6=2025V0 -r 4763
+// ./bin/cdbRunPayloadWriter -m pixelmask -u /Users/ursl/data/mu3e/test-cdb -a "tune2 pixel masks (tdac_files_bu_06_21_bestsofar)" -d /Users/ursl/data/mu3e/masks/tdac_files_bu_06_21_bestsofar -t datav6.6=2025V0 -r 5592
+//
+//
+//
 // ----------------------------------------------------------------------
 class cdbPayloadWriter {
 public:
