@@ -10,6 +10,8 @@
 UTIL := ../../util
 CDB  := ../../db0/cdb2
 
+LHOST = $(shell hostname)
+
 ROOTCINT      = rootcling
 ROOTCFLAGS    = $(shell root-config --cflags)
 ROOTGLIBS     = $(shell root-config --glibs)
@@ -17,26 +19,30 @@ ROOTLDFLAGS   = $(shell root-config --ldflags)
 
 # -- ARGH!? But it works ...
 ifneq (,$(findstring merlin,$(LHOST)))
+  $(info ************  MERLIN VERSION ************)
   INCMONGODB    =
   LIBMONGODB    =
   LIBCURL       = -L/usr/lib64 -lcurl
   LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
   SOFLAGS       =
 else ifneq (,$(findstring mu3ebe,$(LHOST)))
+  $(info ************  MU3EBE VERSION ************)
   INCMONGODB    =
   LIBMONGODB    =
   LIBCURL       = -L/usr/lib64 -lcurl
   LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
   SOFLAGS       =
 else ifneq (,$(findstring moor,$(LHOST)))
+  $(info ************  MOOR VERSION ************)
   INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
   INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
   INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi/bsoncxx/third_party/mnmlstc
   LIBMONGODB    = -L/usr/local/lib -lmongocxx -lbsoncxx
   LIBCURL       = -L/opt/homebrew/lib -lcurl
-  LIBBOOST      = -L/usr/lib64 -lboost_serialization
+  LIBBOOST      = -L/usr/lib -lboost_serialization
   SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
 else ifneq (,$(findstring mu3ebe,$(LHOST)))
+  $(info ************  MU3EBE VERSION ???? ************)
   INCMONGODB    = -I/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/include/mongocxx/v_noabi
   INCMONGODB   += -I/home/mu3e/.ursl/mongo-cxx-driver-r3.9.0-install/include/bsoncxx/v_noabi
   INCMONGODB   += -I/home/mu3e/.ursl/include
@@ -45,6 +51,7 @@ else ifneq (,$(findstring mu3ebe,$(LHOST)))
   LIBBOOST      = -L/usr/lib64 -lboost_serialization
   SOFLAGS       = $(LIBMONGODB) $(LIBCURL)
 else
+  $(info ************  ELSE VERSION ************)
   INCMONGODB    = -I/usr/local/include/mongocxx/v_noabi
   INCMONGODB   += -I/usr/local/include/bsoncxx/v_noabi
   LIBMONGODB    = -lmongocxx -lbsoncxx
@@ -75,18 +82,11 @@ BINARIES = fillQualityPixels fillQualityTiles fillQualityFibres fillEfficiencyPi
 DICT = ${LFILES:.o=Dict.o}
 DICTHEADERS = ${LFILES:.o=Dict.h}
 DICTSOURCES = ${LFILES:.o=Dict.cc}
+BINARY_OBJS = $(addprefix obj/,$(addsuffix .o,$(BINARIES)))
 
 # -- Default rules
-$(addprefix obj/,%.o) : %.cc
-	$(CXX) $(CXXFLAGS) $(EXTHEADERS) -c $< -o $@
-
-$(addprefix obj/,%.o) : %.cc %.hh
-	$(CXX) $(CXXFLAGS) $(EXTHEADERS) -c $< -o $@
-
-$(addprefix obj/,%.o) : %.cc %.hh
-	$(CXX) $(CXXFLAGS) $(EXTHEADERS) -c $< -o $@
-
-$(addprefix obj/,%.o) : %.cc
+# Order-only dependency on prep avoids races for obj/bin/lib dir creation in parallel builds.
+obj/%.o: %.cc | prep
 	$(CXX) $(CXXFLAGS) $(EXTHEADERS) -c $< -o $@
 
 %Dict.cc : %.hh %LinkDef.h
@@ -96,12 +96,6 @@ $(addprefix obj/,%.o) : %.cc
 %Dict.cc : %.hh
 	$(ROOTCINT) -f $@ -c $(EXTHEADERS) $<
 	mv $(subst Dict.cc,Dict_rdict.pcm,$@) lib
-
-
-
-$(addprefix bin/,%) : $(addprefix obj/,%.o) lib/libRun2025Analysis.so
-	$(LD) $(LDFLAGS) -o $@  $<  lib/libRun2025Analysis.so $(GLIBS) $(OTHERLIBS)
- 
 
 $(addprefix lib/,%.pcm) :
 	cd lib && ln -s $< && cd -
@@ -113,7 +107,11 @@ all: vars prep lib bin
 lib: prep $(addprefix obj/,$(CSTUFF) $(LFILES)  $(DICT))
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(LFILES) $(CSTUFF) $(DICT)) -o lib/libRun2025Analysis.so  $(GLIBS) -lMinuit $(OTHERLIBS)
 
-bin: lib $(addprefix bin/,$(BINARIES) )
+bin: lib prep $(BINARY_OBJS)
+	@for b in $(BINARIES); do \
+	  echo "Linking bin/$$b"; \
+	  $(LD) $(LDFLAGS) -o bin/$$b obj/$$b.o lib/libRun2025Analysis.so $(GLIBS) $(OTHERLIBS); \
+	done
 
 
 # -- preparatory setup
