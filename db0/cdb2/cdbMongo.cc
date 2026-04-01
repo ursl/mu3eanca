@@ -149,9 +149,11 @@ string cdbMongo::getGlobalTagComment(string gt) {
   auto cursor = fDB["globaltags"].find(make_document(kvp("gt", gt)));
   for (auto doc : cursor) {
     if (doc.find("comment") != doc.end()) {
-      return doc["comment"].get_string().value.to_string();
+      string s = doc["comment"].get_string().value.to_string();
+      if (!s.empty()) {
+        return s;
+      }
     }
-    return "";
   }
   return "";
 }
@@ -162,9 +164,11 @@ string cdbMongo::getTagComment(string tag) {
   auto cursor = fDB["tags"].find(make_document(kvp("tag", tag)));
   for (auto doc : cursor) {
     if (doc.find("comment") != doc.end()) {
-      return doc["comment"].get_string().value.to_string();
+      string s = doc["comment"].get_string().value.to_string();
+      if (!s.empty()) {
+        return s;
+      }
     }
-    return "";
   }
   return "";
 }
