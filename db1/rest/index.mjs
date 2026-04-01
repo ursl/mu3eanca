@@ -9,7 +9,6 @@ import db from "./db/conn.mjs";
 
 // -- conditions database
 import cdb from "./routes/cdb.mjs";
-import cdbjson from "./routes/cdbjson.mjs";
 
 // -- run database
 import rdb from "./routes/rdb.mjs";
@@ -38,7 +37,6 @@ app.locals.isFiltered = false;
 
 // Load the /posts routes
 app.use("/cdb", cdb);
-app.use("/cdbjson", cdbjson);
 app.use("/rdb", rdb);
 app.use("/ddb", ddb);
 app.use("/dqm", dqm);
