@@ -25,6 +25,30 @@ import db from "../db/conn.mjs";
 
 const PAYLOAD_GRIDFS_BUCKET = "payloadBlobs";
 
+/**
+ * When several `tags` documents share the same `tag`, prefer one with a non-empty
+ * top-level string `comment`, then newest _id. History[].comment is ignored for this
+ * (cdb.html tag table shows only top-level comment).
+ */
+const TAG_TOP_LEVEL_COMMENT_STAGES = [
+  {
+    $addFields: {
+      __commentLen: {
+        $cond: [
+          { $eq: [{ $type: "$comment" }, "string"] },
+          { $strLenCP: "$comment" },
+          0,
+        ],
+      },
+    },
+  },
+  {
+    $addFields: {
+      __hasComment: { $cond: [{ $gt: ["$__commentLen", 0] }, 1, 0] },
+    },
+  },
+];
+
 /** If payload doc stores BLOB in GridFS, download and set BLOB (base64) for API clients. */
 async function mergePayloadBlobFromGridFS(database, result) {
   if (!result || result.blobStorage !== "gridfs" || !result.blobGridFsId) {
@@ -101,8 +125,21 @@ router.get("/findOne/globaltags/:id", async (req, res) => {
 router.get("/findOne/tags/:id", async (req, res) => {
   console.log("serving /findOne/tags/" + req.params.id);
   let collection = await db.collection("tags");
-  let query = {tag: req.params.id};
-  let result = await collection.findOne(query);
+  const rows = await collection
+    .aggregate([
+      { $match: { tag: req.params.id } },
+      ...TAG_TOP_LEVEL_COMMENT_STAGES,
+      { $sort: { __hasComment: -1, _id: -1 } },
+      { $limit: 1 },
+      {
+        $project: {
+          __commentLen: 0,
+          __hasComment: 0,
+        },
+      },
+    ])
+    .toArray();
+  const result = rows[0];
   if (!result) res.send("Not found").status(404);
   else res.send(result).status(200);
 });
@@ -342,7 +379,9 @@ router.get('/downloadJSON/:tag', async (req, res) => {
 });
 
 // --------------------------------------------------------------
-// -- Get tags for a specific globaltag
+// -- Get tags for a specific globaltag (slim rows for cdb.html).
+// NOTE: cdbSummaryGT / cdbRest::getTagComment use GET /findOne/tags/:id per tag, not this route.
+// Response always includes string fields tag, description, comment, iovs (comment may be "").
 router.get("/findTagsByGlobaltag/:globaltag", async (req, res) => {
   console.log("serving /findTagsByGlobaltag/" + req.params.globaltag);
   
@@ -360,28 +399,60 @@ router.get("/findTagsByGlobaltag/:globaltag", async (req, res) => {
     
     // Then get distinct tags that are in the globaltag's tags array
     let tagsCollection = await db.collection("tags");
+    // Multiple Mongo docs can share the same tag (re-sync). Prefer a non-empty
+    // top-level `comment`, then newest _id (History is not used for the table text).
     let results = await tagsCollection.aggregate([
       { $match: { tag: { $in: globaltag.tags } } },
-      { $group: { 
+      ...TAG_TOP_LEVEL_COMMENT_STAGES,
+      { $sort: { tag: 1, __hasComment: -1, _id: -1 } },
+      {
+        $group: {
           _id: "$tag",
           tag: { $first: "$tag" },
           description: { $first: "$description" },
-          iovs: { $first: "$iovs" }
-        }
+          comment: { $first: "$comment" },
+          iovs: { $first: "$iovs" },
+        },
       },
-      { $project: { 
+      {
+        $project: {
           _id: 0,
           tag: 1,
           description: 1,
-          iovs: 1
-        }
-      }
+          comment: 1,
+          iovs: 1,
+        },
+      },
     ]).toArray();
-    
+
+    // Plain objects + always set `comment` so JSON always contains the key (driver may omit
+    // undefined/null fields from aggregation output; browser console then hides `comment`).
+    results = results.map((r) => {
+      const c = r.comment != null && r.comment !== undefined ? String(r.comment) : "";
+      return {
+        tag: r.tag != null ? String(r.tag) : "",
+        description: r.description != null ? String(r.description) : "",
+        comment: c,
+        iovs: Array.isArray(r.iovs) ? r.iovs : [],
+      };
+    });
+
     console.log("Found distinct tags:", results.length);
     console.log("First tag (if any):", results.length > 0 ? JSON.stringify(results[0]) : "none");
+    if (process.env.CDB_DBX) {
+      for (const r of results) {
+        const c = r.comment != null ? String(r.comment) : "";
+        console.log(
+          "CDB_DBX findTagsByGlobaltag tag=",
+          r.tag,
+          " commentLen=",
+          c.length,
+          c.length ? " preview=" + JSON.stringify(c.slice(0, 120)) : ""
+        );
+      }
+    }
     
-    res.send(results).status(200);
+    res.status(200).json(results);
   } catch (error) {
     console.error("Error in findTagsByGlobaltag:", error);
     res.status(500).send({ error: error.message });
@@ -554,5 +625,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 router.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/cdb.html"));
 });
+
+console.log(
+  "[cdb routes] loaded: findTagsByGlobaltag returns { tag, description, comment, iovs } (comment always present)"
+);
 
 export default router;
