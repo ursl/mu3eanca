@@ -1403,7 +1403,14 @@
                         const data = await response.json();
                         const host = data.hostname || window.location.hostname || "Unknown";
                         const root = data.cdbRoot || "unset";
-                        hostnameDisplay.textContent = `${host} (CDBROOT: ${root})`;
+                        const m = data.cdbMount || {};
+                        let sshfsLine = "SSHFS: n/a";
+                        if (root && root !== "unset") {
+                            if (m.sshfs === true) sshfsLine = "SSHFS: yes";
+                            else if (m.sshfs === false) sshfsLine = "SSHFS: no" + (m.fstype ? ` (${m.fstype})` : "");
+                            else sshfsLine = "SSHFS: unknown" + (m.detail ? ` (${m.detail})` : "");
+                        }
+                        hostnameDisplay.textContent = `${host} (CDBROOT: ${root}) · ${sshfsLine}`;
                         return;
                     }
                 } catch (e) {

@@ -2,8 +2,12 @@ import express from "express";
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
+
+const execFileAsync = promisify(execFile);
 
 const router = express.Router();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -53,6 +57,103 @@ async function listFilesRecursive(dirPath) {
   await walk(dirPath);
   out.sort();
   return out;
+}
+
+/**
+ * Best-effort: is CDBROOTDIR resolved path on an sshfs (FUSE) mount?
+ * Linux: findmnt or /proc/mounts. macOS/BSD: parse `mount`.
+ */
+async function detectCdbRootMount(resolvedRoot) {
+  const out = { sshfs: false, fstype: "", method: "none", detail: "" };
+  if (!resolvedRoot || process.platform === "win32") {
+    out.method = "unsupported";
+    return out;
+  }
+  const norm = path.resolve(resolvedRoot).replace(/\/+$/, "") || "/";
+
+  if (process.platform === "linux") {
+    try {
+      const { stdout } = await execFileAsync("findmnt", ["-n", "-o", "FSTYPE", "--target", norm], {
+        timeout: 5000,
+      });
+      const fst = stdout.trim().toLowerCase();
+      out.fstype = fst || "";
+      out.method = "findmnt";
+      out.sshfs = fst.includes("sshfs");
+      return out;
+    } catch {
+      /* fall through */
+    }
+    try {
+      const text = await fs.readFile("/proc/mounts", "utf8");
+      let best = { len: -1, fstype: "", device: "" };
+      for (const line of text.split("\n")) {
+        if (!line) continue;
+        const parts = line.split(" ");
+        if (parts.length < 4) continue;
+        const device = parts[0];
+        const mountpoint = parts[1].replace(/\\040/g, " ");
+        const fstype = parts[2];
+        const mp = mountpoint.replace(/\/+$/, "") || "/";
+        if (norm === mp || norm.startsWith(mp + "/")) {
+          if (mp.length > best.len) best = { len: mp.length, fstype, device };
+        }
+      }
+      if (best.len < 0) {
+        out.method = "proc";
+        out.detail = "no matching mount";
+        return out;
+      }
+      out.fstype = best.fstype;
+      out.method = "proc";
+      const f = best.fstype.toLowerCase();
+      out.sshfs = f === "fuse.sshfs" || f.includes("sshfs");
+      if (!out.sshfs && f === "fuse" && /[:@]/.test(best.device)) out.sshfs = true;
+      return out;
+    } catch (e) {
+      out.method = "proc-error";
+      out.detail = e.message;
+      return out;
+    }
+  }
+
+  try {
+    const { stdout } = await execFileAsync("mount", [], { timeout: 8000 });
+    let best = { len: -1, line: "", opts: "" };
+    for (const line of stdout.split("\n")) {
+      const m = line.match(/\s+on\s+(.+?)\s+\(([^)]+)\)\s*$/);
+      if (!m) continue;
+      const mpRaw = m[1].trim();
+      const opts = m[2].toLowerCase();
+      let mpNorm;
+      try {
+        mpNorm = await fs.realpath(mpRaw);
+      } catch {
+        mpNorm = path.resolve(mpRaw);
+      }
+      mpNorm = path.resolve(mpNorm).replace(/\/+$/, "") || "/";
+      if (norm === mpNorm || norm.startsWith(mpNorm + "/")) {
+        if (mpNorm.length > best.len) best = { len: mpNorm.length, line, opts };
+      }
+    }
+    if (best.len < 0) {
+      out.method = "mount";
+      out.detail = "no matching mount";
+      return out;
+    }
+    out.method = "mount";
+    const low = best.line.toLowerCase();
+    const dev = best.line.split(" on ")[0].trim();
+    const fuseLike = best.opts.includes("macfuse") || best.opts.includes("osxfuse") || low.includes("fuse");
+    const sshLike = /@/.test(dev) && /:/.test(dev);
+    out.sshfs = (fuseLike && sshLike) || low.includes("sshfs");
+    out.fstype = best.opts.split(",")[0].trim() || "";
+    return out;
+  } catch (e) {
+    out.method = "mount-error";
+    out.detail = e.message;
+    return out;
+  }
 }
 
 function checkRoot(res) {
@@ -213,8 +314,34 @@ router.get("/findAll/detconfigsSummary", async (_req, res) => {
   res.status(200).json([]);
 });
 
-router.get("/hostname", (_req, res) => {
-  res.status(200).json({ hostname: os.hostname() });
+router.get("/hostname", async (_req, res) => {
+  const root = cdbRootDir();
+  let resolved = "";
+  const cdbMount = {
+    sshfs: false,
+    fstype: "",
+    method: "unconfigured",
+    detail: "",
+  };
+  try {
+    if (root) {
+      try {
+        resolved = await fs.realpath(root);
+      } catch {
+        resolved = root;
+      }
+      Object.assign(cdbMount, await detectCdbRootMount(resolved));
+    }
+  } catch (e) {
+    cdbMount.detail = e.message;
+    cdbMount.method = "error";
+  }
+  res.status(200).json({
+    hostname: os.hostname(),
+    cdbRoot: root,
+    cdbRootResolved: resolved,
+    cdbMount,
+  });
 });
 
 export default router;
