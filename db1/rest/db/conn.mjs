@@ -18,7 +18,7 @@ let db;
 if (conn) {
   db = conn.db("mu3e");
 } else {
-  // Keep server startup alive so non-Mongo routes (e.g. /cdbjson) can still work.
+  // Keep server startup alive so non-Mongo routes can still work where applicable.
   db = {
     collection() {
       throw new Error("MongoDB is not connected");

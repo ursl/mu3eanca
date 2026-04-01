@@ -8,10 +8,16 @@ import { GridFSBucket } from "mongodb";
 
 const router = express.Router();
 
-// Initialize GridFS bucket
-const bucket = new GridFSBucket(db, {
-    bucketName: 'uploads'
-});
+// Lazy GridFS: conn.mjs uses a stub `db` when Mongo is unreachable; GridFSBucket's
+// constructor calls db.collection() and would throw at import time and prevent app.listen().
+let uploadsBucket = null;
+function getUploadsBucket() {
+    if (!db?.databaseName) return null;
+    if (!uploadsBucket) {
+        uploadsBucket = new GridFSBucket(db, { bucketName: "uploads" });
+    }
+    return uploadsBucket;
+}
 
 // Configure multer for file uploads - store in memory
 const upload = multer({
@@ -715,6 +721,11 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
             return res.status(404).send('Run not found');
         }
 
+        const bucket = getUploadsBucket();
+        if (!bucket) {
+            return res.status(503).send("MongoDB file storage unavailable");
+        }
+
         // Upload to GridFS
         const uploadStream = bucket.openUploadStream(req.file.originalname, {
             metadata: {
@@ -815,6 +826,11 @@ router.get("/resource/:runNumber/:index", async (req, res) => {
             return res.status(400).send('Not a valid resource');
         }
 
+        const bucket = getUploadsBucket();
+        if (!bucket) {
+            return res.status(503).send("MongoDB file storage unavailable");
+        }
+
         // Get file metadata from GridFS
         const files = await bucket.find({ _id: new ObjectId(resource.fileId) }).toArray();
         if (files.length === 0) {
@@ -860,6 +876,11 @@ router.delete("/resource/:runNumber/:index", async (req, res) => {
         const resource = result.Resources[index];
         if (!resource.fileId) {
             return res.status(400).send('Not a valid resource');
+        }
+
+        const bucket = getUploadsBucket();
+        if (!bucket) {
+            return res.status(503).send("MongoDB file storage unavailable");
         }
 
         // Delete from GridFS
@@ -942,6 +963,11 @@ router.put("/removeResources/:id", async (req, res) => {
 
         if (!result) {
             return res.status(404).send('Run not found');
+        }
+
+        const bucket = getUploadsBucket();
+        if (!bucket) {
+            return res.status(503).send("MongoDB file storage unavailable");
         }
 
         // Get resources to be deleted for GridFS cleanup
