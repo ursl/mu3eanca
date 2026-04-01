@@ -427,6 +427,7 @@ int main(int argc, char* argv[]) {
       if (gt != "unset" && igt != gt) continue;
       string comment = pDB->getGlobalTagComment(igt);
       cout << "GT " << igt << (comment.empty() ? "" : ": " + comment) << endl;
+
       vector<string> tags = pDB->readTags(igt);
       for (auto itt : tags) {
         string tagComment = pDB->getTagComment(itt);
@@ -488,6 +489,25 @@ int main(int argc, char* argv[]) {
     while (cpq->getNextID(uchipid)) {
       cout << "chipid: " << uchipid << " has " << cpq->getNpixWithStatus(uchipid, calPixelQualityLM::Masked) << " masked pixels" << endl;
     }
+  } else if (22 == mode) {
+    cout << "Test pixel qualityLM/mask IOV chang " << endl;
+    calPixelQualityLM *cpq = dynamic_cast<calPixelQualityLM*>(pDC->getCalibration("pixelqualitylm_"));
+    calPixelMask *cpm = dynamic_cast<calPixelMask*>(pDC->getCalibration("pixelmask_"));
+    vector<int> vruns = {4541, 5103, 5992};
+    int ichipid = ::stoi(chipid);
+    cout << "chipid: " << ichipid << endl;
+    for (auto it : vruns) {
+      pDC->setRunNumber(it);
+      cout << "run: " << it << " " << cpq->getHash() << " / " << cpm->getHash() << endl;
+      cout << ichipid << "/0/0: " << cpq->getStatus(ichipid, 0, 0) << " "
+           << ichipid << "/10/11: " << cpq->getStatus(ichipid, 10, 11) << " "
+           << 1318 << "/11/249: " << cpq->getStatus(1318, 11, 249) << " "
+           << 1318 << "/89/249: " << cpq->getStatus(1318, 89, 249) << " "
+           << 1318 << "/72/249: " << cpq->getStatus(1318, 72, 249) 
+           << endl;
+  
+    }
+
   }
   return 0;
 }
