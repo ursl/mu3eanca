@@ -144,7 +144,8 @@ router.get("/findTagsByGlobaltag/:globaltag", async (req, res) => {
         results.push({
           tag: tdoc.tag || tag,
           description: tdoc.description || "",
-          iovs: Array.isArray(tdoc.iovs) ? tdoc.iovs : []
+          comment: typeof tdoc.comment === "string" ? tdoc.comment : "",
+          iovs: Array.isArray(tdoc.iovs) ? tdoc.iovs : [],
         });
       } catch (_e) {
         // Skip missing tag files

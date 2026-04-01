@@ -170,7 +170,8 @@
                         <table class="table table-hover" id="globaltags-table">
                             <thead>
                                 <tr>
-                                    <th>Global Tag</th>
+                                    <th style="width: 35%">Global Tag</th>
+                                    <th style="width: 65%">Comment</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -188,7 +189,8 @@
                         <table class="table table-hover" id="tags-table">
                             <thead>
                                 <tr>
-                                    <th>Tag</th>
+                                    <th style="width: 35%">Tag</th>
+                                    <th style="width: 65%">Comment</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -346,6 +348,15 @@
             document.querySelector(`#${tableId} tbody`).innerHTML = '';
         }
 
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // Fetch and display globaltags
         async function loadGlobaltags() {
             setLoading('globaltags-loading', true);
@@ -395,8 +406,10 @@
                 .forEach(gt => {
                     const tr = document.createElement('tr');
                     tr.setAttribute('data-gt', gt.gt); // Add data attribute for selection
+                    const gtComment = gt.comment || "";
                     tr.innerHTML = `
                         <td>${gt.gt || ''}</td>
+                        <td title="${escapeHtml(gtComment)}">${gtComment}</td>
                     `;
                     tr.addEventListener('click', () => {
                         document.querySelectorAll('#globaltags-table tr').forEach(row => row.classList.remove('selected'));
@@ -424,7 +437,7 @@
 
             try {
                 console.log('Fetching tags for globaltag:', globaltag);
-                const response = await fetch(`${CDB_API_BASE}/findTagsByGlobaltag/${globaltag}`);
+                const response = await fetch(`${CDB_API_BASE}/findTagsByGlobaltag/${encodeURIComponent(globaltag)}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -434,7 +447,7 @@
                 const tbody = document.querySelector('#tags-table tbody');
                 if (!tags || tags.length === 0) {
                     const tr = document.createElement('tr');
-                    tr.innerHTML = '<td class="text-center">No tags found</td>';
+                    tr.innerHTML = '<td colspan="2" class="text-center">No tags found</td>';
                     tbody.appendChild(tr);
                 } else {
                     const selectedTag = localStorage.getItem('selectedTag');
@@ -442,8 +455,10 @@
                     tags.forEach(tag => {
                         const tr = document.createElement('tr');
                         tr.setAttribute('data-tag', tag.tag); // Add data attribute for selection
+                        const tagComment = tag.comment || tag.description || "";
                         tr.innerHTML = `
                             <td>${tag.tag || ''}</td>
+                            <td title="${escapeHtml(tagComment)}">${tagComment}</td>
                         `;
                         tr.addEventListener('click', () => {
                             document.querySelectorAll('#tags-table tr').forEach(row => row.classList.remove('selected'));
