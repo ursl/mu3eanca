@@ -34,6 +34,7 @@ using namespace std;
 //   -g, --gt    Global tag name (required unless -t is used)
 //   -t, --tag   List all global tags whose tag list contains <tag> (exact match)
 //   -p, --pat   Pattern to match GT names, when no -g or -t is used (summary for all GTs matching pattern)
+//   -n          Do NOT read all payloads of a tag
 //
 // ----------------------------------------------------------------------
 
@@ -43,12 +44,14 @@ void printUsage(const char* progname) {
   cout << "  -g, --gt    Global tag name (summary for one GT)" << endl;
   cout << "  -p, --pat   Pattern to match GT names, when no -g or -t is used (summary for all GTs matching pattern)" << endl;
   cout << "  -t, --tag   List GT names + comments that include this tag (exact)" << endl;
+  cout << "  -n          Do NOT read all payloads of a tag" << endl;
   cout << endl;
   cout << "Examples:" << endl;
   cout << "  cdbSummaryGT -u http://mu3edb0/cdb" << endl;
+  cout << "  cdbSummaryGT -u http://127.0.0.1:5050/cdb (only if you know what you are doing on localhost)" << endl;
   cout << "  cdbSummaryGT -u /data/project/mu3e/cdb/ -g datav6.5=2025V0" << endl;
-  cout << "  cdbSummaryGT -u /data/project/mu3e/cdb/ -t pixelalignment_datav6.3=2025V1" << endl;
-  cout << "  cdbSummaryGT -u /data/project/mu3e/cdb/ -p data" << endl;
+  cout << "  cdbSummaryGT -u /data/project/mu3e/cdb/ -t pixelqualitylm_datav6.5=2025V0" << endl;
+  cout << "  cdbSummaryGT -u /data/project/mu3e/cdb/ -p mcrealistic" << endl;
   cout << endl;
 }
 
@@ -84,6 +87,7 @@ int main(int argc, char* argv[]) {
   string pattern("unset");
   int verbose = 0;
   string filterTag("unset");
+  bool noPayloads = false;
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-u") == 0 && i + 1 < argc) uri = argv[++i];
     else if (strcmp(argv[i], "--uri") == 0 && i + 1 < argc) uri = argv[++i];
@@ -94,6 +98,7 @@ int main(int argc, char* argv[]) {
     else if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) filterTag = argv[++i];
     else if (strcmp(argv[i], "--tag") == 0 && i + 1 < argc) filterTag = argv[++i];
     else if (strcmp(argv[i], "-v") == 0 && i + 1 < argc) verbose = atoi(argv[++i]);
+    else if (strcmp(argv[i], "-n") == 0) noPayloads = true;
     else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
       printUsage(argv[0]);
       return 0;
@@ -222,6 +227,13 @@ int main(int argc, char* argv[]) {
     cout << "    IOV length: " << iovLen 
     << (iovLen == 0 ? " XXXXXXXXXX ERROR XXXXXXXXXX" : " ")
     << endl;
+
+    if (noPayloads) {
+      if (!tagComment.empty()) {
+        cout << "    comment: " << wrapComment(tagComment, 60, "             ") << endl;
+      }
+      continue;
+    }
 
     // -- Alignment/quality payload size: read first payload and report detector units
     size_t payloadSize = 0;
