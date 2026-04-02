@@ -18,7 +18,7 @@ struct track {
 
   double fTrkMomentum;
   double fTrkChi2;
-  int   fTrkType;
+  int    fTrkType;
   double fTrkPhi;
   double fTrkLambda;  
   double fTrkK, fTrkKerr2;
