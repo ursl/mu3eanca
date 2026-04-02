@@ -253,12 +253,6 @@ void anaFrameTree::endAnalysis() {
 
 // ---------------------------------------------------------------------- 
 void anaFrameTree::fillPixelHit(pixelHit &hit, int hitIndex) {
-  hit.fPixelID = hitPixelID[hitIndex];
-  hit.fChipID = hitChipID[hitIndex];
-  hit.fCol = hitCol[hitIndex];
-  hit.fRow = hitRow[hitIndex];
-  hit.fTimeInt = hitTimeInt[hitIndex];
-  hit.fDebugSiData = hitDebugSiData[hitIndex];
 }
 
 // ---------------------------------------------------------------------- 
@@ -589,7 +583,7 @@ bool anaFrameTree::isGoodPixel(pixelHit &hit) {
   if (hit.fStatus > 0 && hit.fStatus < 10) {
     result = false;
   }
-  if (hit.fStatusBits & 0x1) {
+  if (hit.fStatus & 0x1) {
     result = false;
   }
   return result;
@@ -597,18 +591,18 @@ bool anaFrameTree::isGoodPixel(pixelHit &hit) {
 
 // ---------------------------------------------------------------------- 
 bool anaFrameTree::isLowToT(pixelHit &hit) {
-  return (hit.fBitToT <= 5);
+  return (hit.fRawToT <= 5);
 }
 
 // ---------------------------------------------------------------------- 
 bool anaFrameTree::isLowToT(int hitIndex) {
-  return (hitBitToT[hitIndex] <= 5);
+  return (hitRawToT[hitIndex] <= 5);
 }
 
 
 // ---------------------------------------------------------------------- 
 bool anaFrameTree::isEdgePixel(pixelHit &hit) {
-  return (hit.fCol <= 11 || hit.fCol >= 245 || hit.fRow <= 11 || hit.fRow >= 239);
+  return (hit.col() <= 11 || hit.col() >= 245 || hit.row() <= 11 || hit.row() >= 239);
 }
 
 // ---------------------------------------------------------------------- 
