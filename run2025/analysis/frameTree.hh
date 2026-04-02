@@ -13,6 +13,9 @@
 #include "pixelHit.hh"
 #include "track.hh"
 
+
+//class Hit;
+
 // ----------------------------------------------------------------------
 class frameTree {
 public:
@@ -31,11 +34,12 @@ public:
   void clearTrackTreeVariables();
   void fillPixelHit(pixelHit &hit);
   void fillTrack(track &trk);
+//  void fillSiHit(Hit *);
   void fillFrame();
   void saveTree();
   void closeFile();
 
-  int findHitIndex(uint32_t pixelID);
+  int findHitIndex(uint32_t hitID);
   unsigned long getFrameID() {return fFrameID;}
   int getRun() {return fRun;}
 
@@ -47,6 +51,7 @@ public:
 
 private:
   static frameTree* fInstance;
+
   int fVerbose, fRun, fRun0;
   std::string fFilename, fOutDir;
   TFile *fFile;
@@ -58,23 +63,15 @@ private:
   // -- hit tree variables
   int fHitsN;
   static const int NHITMAX = 10000, NTRKMAX = 1000, NTRKHITMAX = 20;
-  int fHitPixelID[NHITMAX];
-  int fHitToT[NHITMAX];
-  unsigned long fHitDebugSiData[NHITMAX];
-  int fHitChipID[NHITMAX];
-  int fHitCol[NHITMAX];
-  int fHitRow[NHITMAX];
-  int fHitTimeInt[NHITMAX];
-  double fHitTime[NHITMAX];
-  double fHitTimeNs[NHITMAX];
+  uint32_t fHitID[NHITMAX];
+  uint32_t fHitTS[NHITMAX];
+  uint32_t fHitRawToT[NHITMAX];
+  uint32_t fHitStatus[NHITMAX];
+  uint32_t fHitFrameID[NHITMAX];
   double fHitX[NHITMAX];
   double fHitY[NHITMAX];
   double fHitZ[NHITMAX];
-  int fHitRawToT[NHITMAX];
-  int fHitBitToT[NHITMAX];
-  int fHitStatus[NHITMAX];
-  int fHitStatusBits[NHITMAX];
-  Bool_t fHitValidHit[NHITMAX];
+  double fHitTime[NHITMAX];
 
   // -- track tree variables
   int fTrkN;

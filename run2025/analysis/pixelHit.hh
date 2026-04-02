@@ -1,28 +1,32 @@
 #ifndef PIXELHIT_HH
 #define PIXELHIT_HH
 
+#include <stdint.h>
+
 struct pixelHit {
-  // -- input
-  int fPixelID; 
-  int fHitToT;  
-  unsigned long fDebugSiData;
-  int fChipID, fCol, fRow, fTimeInt;
-  double fTime, fTimeNs;
-  double fX, fY, fZ;
-  
-  // -- not calculated in trirec
-  uint32_t fRawToT, fBitToT; 
-  int fStatus; // directly from pixelQualityLM
-  int fStatusBits; // from pixelHistograms
-  bool fValidHit;
- 
-  
-  uint32_t calcToT(int ckdivend2 = 31) {
-    int ckdivend(0);
-    uint32_t localTime = fTimeInt % (1 << 11);  // local pixel time is first 11 bits of the global time
-    fRawToT = ((fDebugSiData >> 27) & 0x1F);
-    fBitToT = ( ( (0x1F+1) + fRawToT -  ( (localTime * (ckdivend + 1) / (ckdivend2 + 1) ) & 0x1F) ) & 0x1F);
-    return fBitToT;
+  pixelHit() : fID(0), fTS(0), fRawToT(0), fStatus(0), 
+          fX(0), fY(0), fZ(0), fTime(0), fFrameID(0) {}
+  pixelHit(uint32_t id, uint32_t ts, uint32_t rawToT, uint32_t status, 
+          double x, double y, double z, double time, uint32_t frameID) : 
+          fID(id), fTS(ts), fRawToT(rawToT), fStatus(status), 
+          fX(x), fY(y), fZ(z), fTime(time), fFrameID(frameID) {}
+
+  // -- hit input
+  uint32_t fID, fTS, fRawToT, fStatus;
+  uint32_t fFrameID; /*lower 32bits*/
+  double fX, fY, fZ, fTime;
+
+
+  uint32_t row() {
+    return (fID >> 0) & 0xFF;
   }
+  uint32_t col() {
+    return (fID >> 8) & 0xFF;
+  }
+  uint32_t chipID() {
+    return (fID >> 16) & 0xFFFF;
+  }
+
 };
+
 #endif

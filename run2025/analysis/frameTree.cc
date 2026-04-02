@@ -45,24 +45,15 @@ void frameTree::init(std::string filename) {
   fHitsTree->Branch("frameID", &fFrameID);
   // -- pixel hits
   fHitsTree->Branch("hitN", &fHitsN, "hitN/I");
-  fHitsTree->Branch("hitPixelID", fHitPixelID, "hitPixelID[hitN]/I");
-  fHitsTree->Branch("hitToT", fHitToT, "hitToT[hitN]/I");
-  fHitsTree->Branch("hitDebugSiData", fHitDebugSiData, "hitDebugSiData[hitN]/l");
-  fHitsTree->Branch("hitChipID", fHitChipID, "hitChipID[hitN]/I");
-  fHitsTree->Branch("hitCol", fHitCol, "hitCol[hitN]/I");
-  fHitsTree->Branch("hitRow", fHitRow, "hitRow[hitN]/I");
-  fHitsTree->Branch("hitTimeInt", fHitTimeInt, "hitTimeInt[hitN]/I");
-  fHitsTree->Branch("hitTime", fHitTime, "hitTime[hitN]/D");
-  fHitsTree->Branch("hitTimeNs", fHitTimeNs, "hitTimeNs[hitN]/D");
+  fHitsTree->Branch("hitID", fHitID, "hitID[hitN]/U");
+  fHitsTree->Branch("hitTS", fHitTS, "hitTS[hitN]/U");
+  fHitsTree->Branch("hitRawToT", fHitRawToT, "hitRawToT[hitN]/U");
+  fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/U");
+  fHitsTree->Branch("hitFrameID", fHitFrameID, "hitFrameID[hitN]/U");
   fHitsTree->Branch("hitX", fHitX, "hitX[hitN]/D");
   fHitsTree->Branch("hitY", fHitY, "hitY[hitN]/D");
   fHitsTree->Branch("hitZ", fHitZ, "hitZ[hitN]/D");
-  fHitsTree->Branch("hitRawToT", fHitRawToT, "hitRawToT[hitN]/I");
-  fHitsTree->Branch("hitBitToT", fHitBitToT, "hitBitToT[hitN]/I");
-  fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/I");
-  fHitsTree->Branch("hitStatusBits", fHitStatusBits, "hitStatusBits[hitN]/I");
-  fHitsTree->Branch("hitValidHit", fHitValidHit, "hitValidHit[hitN]/O");
-
+  fHitsTree->Branch("hitTime", fHitTime, "hitTime[hitN]/D");
   // -- track tree
   fHitsTree->Branch("trkN", &fTrkN, "trkN/I");
   fHitsTree->Branch("trkMomentum", fTrkMomentum, "trkMomentum[trkN]/D");
@@ -106,43 +97,19 @@ frameTree::~frameTree() {
 
 // ---------------------------------------------------------------------- 
 void frameTree::fillPixelHit(pixelHit &hit) {
-  if (0) cout << "frameTree::fillPixelHit() fHitsN = " << fHitsN 
-       << " fPixelID = " << hit.fPixelID 
-       << " fHitToT = " << hit.fHitToT 
-       << " fDebugSiData = " << hit.fDebugSiData 
-       << " fChipID = " << hit.fChipID 
-       << " fCol = " << hit.fCol 
-       << " fRow = " << hit.fRow 
-       << " fTime = " << hit.fTime 
-       << " fTimeNs = " << hit.fTimeNs 
-       << " fRawToT = " << hit.fRawToT 
-       << " fBitToT = " << hit.fBitToT 
-       << " fStatus = " << hit.fStatus 
-       << " fStatusBits = " << hit.fStatusBits 
-       << endl;
 
   if (fHitsN == NHITMAX) {
     cout << "frameTree::fillPixelHit() fHitsN == NHITMAX  ...  NOT FILLING HITS ANYMORE" << endl;
     return;
   }
 
-  fHitPixelID[fHitsN] = hit.fPixelID;
-  fHitToT[fHitsN] = hit.fHitToT;
-  fHitDebugSiData[fHitsN] = hit.fDebugSiData;
-  fHitChipID[fHitsN] = hit.fChipID;
-  fHitCol[fHitsN] = hit.fCol;
-  fHitRow[fHitsN] = hit.fRow;
-  fHitTimeInt[fHitsN] = hit.fTimeInt;
+  fHitID[fHitsN] = hit.fID;
   fHitTime[fHitsN] = hit.fTime;
-  fHitTimeNs[fHitsN] = hit.fTimeNs;
+  fHitRawToT[fHitsN] = hit.fRawToT;
+  fHitStatus[fHitsN] = hit.fStatus;
   fHitX[fHitsN] = hit.fX;
   fHitY[fHitsN] = hit.fY;
   fHitZ[fHitsN] = hit.fZ;
-  fHitRawToT[fHitsN] = hit.fRawToT;
-  fHitBitToT[fHitsN] = hit.fBitToT;
-  fHitStatus[fHitsN] = hit.fStatus;
-  fHitStatusBits[fHitsN] = hit.fStatusBits;
-  fHitValidHit[fHitsN] = hit.fValidHit;
   fHitsN++;
 }
 
@@ -196,20 +163,10 @@ void frameTree::fillFrame() {
 void frameTree::clearHitsTreeVariables() {
   if (fHitsN < 0) fHitsN = NHITMAX;
   for (int i = 0; i < fHitsN; ++i) {
-    fHitPixelID[i] = 0;
-    fHitToT[i] = 0;
-    fHitDebugSiData[i] = 0;
-    fHitChipID[i] = 0;
-    fHitCol[i] = 0;
-    fHitRow[i] = 0;
-    fHitTimeInt[i] = 0;
-    fHitTime[i] = 0;
-    fHitTimeNs[i] = 0;
+    fHitID[i] = 0;
     fHitRawToT[i] = 0;
-    fHitBitToT[i] = 0;
+    fHitTime[i] = 0;
     fHitStatus[i] = 0;
-    fHitStatusBits[i] = 0;
-    fHitValidHit[i] = false;
     fHitX[i] = 0;
     fHitY[i] = 0;
     fHitZ[i] = 0;
@@ -268,9 +225,9 @@ void frameTree::closeFile() {
 }
 
 // ---------------------------------------------------------------------- 
-int frameTree::findHitIndex(uint32_t pixelID) {
+int frameTree::findHitIndex(uint32_t hitID) {
   for (int i = 0; i < fHitsN; ++i) {
-    if (fHitPixelID[i] == pixelID) {
+    if (fHitID[i] == hitID) {
       return i;
     }
   }
