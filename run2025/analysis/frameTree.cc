@@ -45,11 +45,11 @@ void frameTree::init(std::string filename) {
   fHitsTree->Branch("frameID", &fFrameID);
   // -- pixel hits
   fHitsTree->Branch("hitN", &fHitsN, "hitN/I");
-  fHitsTree->Branch("hitID", fHitID, "hitID[hitN]/U");
-  fHitsTree->Branch("hitTS", fHitTS, "hitTS[hitN]/U");
-  fHitsTree->Branch("hitRawToT", fHitRawToT, "hitRawToT[hitN]/U");
-  fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/U");
-  fHitsTree->Branch("hitFrameID", fHitFrameID, "hitFrameID[hitN]/U");
+  fHitsTree->Branch("hitID", fHitID, "hitID[hitN]/i");
+  fHitsTree->Branch("hitTS", fHitTS, "hitTS[hitN]/i");
+  fHitsTree->Branch("hitRawToT", fHitRawToT, "hitRawToT[hitN]/i");
+  fHitsTree->Branch("hitStatus", fHitStatus, "hitStatus[hitN]/i");
+  fHitsTree->Branch("hitFrameID", fHitFrameID, "hitFrameID[hitN]/i");
   fHitsTree->Branch("hitX", fHitX, "hitX[hitN]/D");
   fHitsTree->Branch("hitY", fHitY, "hitY[hitN]/D");
   fHitsTree->Branch("hitZ", fHitZ, "hitZ[hitN]/D");
