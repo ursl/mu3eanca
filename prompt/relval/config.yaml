@@ -1,0 +1,32 @@
+mu3e_relval_basedir: "/Users/ursl/data/mu3e/relval"
+
+mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
+mu3e_tag: "v6.5"
+mu3e_dir: "mu3e"
+make_jobs: 10
+
+relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
+
+run_id: 5461
+n_events: 1000
+
+geometries: ["twolayer", "threelayer"]
+
+sim_scenarios:
+  - id: "cosmic"
+    sim_conf: "sim_cosmic.json"
+    trirec_channel: "cosmic"
+  - id: "beam8"
+    sim_conf: "bvr2026/sim_conf8.json"
+    trirec_channel: "beam"
+  - id: "beam18"
+    sim_conf: "bvr2026/sim_conf18.json"
+    trirec_channel: "beam"
+
+sim_output_tpl: "output/sim-{scenario}-{geometry}.root"
+sort_output_tpl: "output/sort-{scenario}-{geometry}.root"
+trirec_conf_tpl: "trirec_{geometry}_{channel}.conf"
+trirec_output_tpl: "output/trirec-{scenario}-{geometry}.root"
+
+cdb_dbconn: "/Users/ursl/data/mu3e/cdb/"
+cdb_GT: "mcidealv6.5"

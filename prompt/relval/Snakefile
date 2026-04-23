@@ -1,0 +1,246 @@
+configfile: f"{workflow.basedir}/config.yaml"
+
+MU3E_RELVAL_BASEDIR = config["mu3e_relval_basedir"]
+MU3E_TAG = config.get("mu3e_tag", "master")
+MU3E_DIR_BASE = config["mu3e_dir"]
+MU3E_TAG_DIRSAFE = MU3E_TAG.replace("/", "_")
+MU3E_DIRNAME = f"{MU3E_DIR_BASE}-{MU3E_TAG_DIRSAFE}"
+MU3E_DIR = f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIRNAME}"
+workdir: MU3E_DIR
+
+MU3E_REPO = config["mu3e_repo"]
+MAKE_JOBS = config["make_jobs"]
+
+RUN_ID = config["run_id"]
+N_EVENTS = config["n_events"]
+
+RELINK_SCRIPT = config["relink_script"]
+
+GEOMETRIES = config["geometries"]
+SIM_SCENARIOS = config["sim_scenarios"]
+SCENARIO_IDS = [item["id"] for item in SIM_SCENARIOS]
+SCENARIO_BY_ID = {item["id"]: item for item in SIM_SCENARIOS}
+
+SIM_OUTPUT_TPL = config["sim_output_tpl"]
+
+SORT_OUTPUT_TPL = config["sort_output_tpl"]
+
+TRIREC_CONF_TPL = config["trirec_conf_tpl"]
+TRIREC_OUTPUT_TPL = config["trirec_output_tpl"]
+
+CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
+# Allow CLI override via --config cdb_GT=... (and accept lowercase alias).
+CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
+
+
+def sim_conf(scenario):
+    return SCENARIO_BY_ID[scenario]["sim_conf"]
+
+
+def trirec_channel(scenario):
+    return SCENARIO_BY_ID[scenario]["trirec_channel"]
+
+
+def sim_output(scenario, geometry):
+    return SIM_OUTPUT_TPL.format(scenario=scenario, geometry=geometry)
+
+
+def sort_output(scenario, geometry):
+    return SORT_OUTPUT_TPL.format(scenario=scenario, geometry=geometry)
+
+
+def trirec_conf(scenario, geometry):
+    channel = trirec_channel(scenario)
+    return TRIREC_CONF_TPL.format(channel=channel, geometry=geometry)
+
+
+def trirec_output(scenario, geometry):
+    return TRIREC_OUTPUT_TPL.format(scenario=scenario, geometry=geometry)
+
+
+wildcard_constraints:
+    scenario="|".join(SCENARIO_IDS),
+    geometry="|".join(GEOMETRIES)
+
+
+rule all:
+    input:
+        [
+            f"{MU3E_DIR}/run/{trirec_output(scenario, geometry)}"
+            for scenario in SCENARIO_IDS
+            for geometry in GEOMETRIES
+        ]
+
+
+rule clone_and_prepare_mu3e:
+    output:
+        ".markers/clone_and_prepare_mu3e.done"
+    params:
+        repo=MU3E_REPO,
+        tag=MU3E_TAG,
+        relval_basedir=MU3E_RELVAL_BASEDIR,
+        mu3e_dir=MU3E_DIR
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p .markers
+        mkdir -p "{params.relval_basedir}"
+
+        if [ ! -d "{params.mu3e_dir}/.git" ]; then
+            # workdir is MU3E_DIR, so it may already contain .snakemake/.markers.
+            # If directory is empty, clone normally; otherwise initialize in-place.
+            if [ -z "$(ls -A "{params.mu3e_dir}")" ]; then
+                git clone "{params.repo}" "{params.mu3e_dir}"
+            else
+                git -C "{params.mu3e_dir}" init
+                if ! git -C "{params.mu3e_dir}" remote get-url origin >/dev/null 2>&1; then
+                    git -C "{params.mu3e_dir}" remote add origin "{params.repo}"
+                fi
+            fi
+        fi
+
+        cd "{params.mu3e_dir}"
+        git fetch --force origin
+        git fetch --tags --force origin
+        git checkout "{params.tag}"
+        git submodule update --init --recursive
+
+        touch "{output}"
+        """
+
+
+rule build_mu3e:
+    input:
+        ".markers/clone_and_prepare_mu3e.done"
+    output:
+        ".markers/build_mu3e.done"
+    params:
+        mu3e_dir=MU3E_DIR,
+        marker_path=f"{MU3E_DIR}/.markers/build_mu3e.done",
+        jobs=MAKE_JOBS
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{params.mu3e_dir}/_build"
+        cd "{params.mu3e_dir}/_build"
+        cmake ..
+        make -j{params.jobs}
+        touch "{params.marker_path}"
+        """
+
+
+rule relink_bin_files:
+    input:
+        ".markers/build_mu3e.done"
+    output:
+        ".markers/relink_bin_files.done"
+    params:
+        mu3e_dir=MU3E_DIR,
+        marker_path=f"{MU3E_DIR}/.markers/relink_bin_files.done",
+        relink_script=RELINK_SCRIPT
+    shell:
+        r"""
+        set -euo pipefail
+        cd "{params.mu3e_dir}/run"
+        "{params.relink_script}"
+        if [ ! -d "bvr2026" ]; then
+            echo "[relval] run/bvr2026 missing; fetching from bitbucket v6.5"
+            tmpdir="$(mktemp -d)"
+            git clone --depth 1 --branch v6.5 https://bitbucket.org/mu3e/mu3e "$tmpdir/mu3e-v6.5"
+            if [ ! -d "$tmpdir/mu3e-v6.5/run/bvr2026" ]; then
+                echo "[relval] ERROR: fetched repo does not contain run/bvr2026" >&2
+                rm -rf "$tmpdir"
+                exit 1
+            fi
+            cp -R "$tmpdir/mu3e-v6.5/run/bvr2026" "./bvr2026"
+            rm -rf "$tmpdir"
+        fi
+        mkdir -p output
+
+        touch "{params.marker_path}"
+        """
+
+
+rule run_mu3e_sim:
+    input:
+        ".markers/relink_bin_files.done"
+    output:
+        f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
+    params:
+        mu3e_dir=MU3E_DIR,
+        run_id=RUN_ID,
+        n_events=N_EVENTS,
+        sim_conf=lambda wildcards: sim_conf(wildcards.scenario),
+        sim_output=lambda wildcards: sim_output(wildcards.scenario, wildcards.geometry)
+    shell:
+        r"""
+        set -euo pipefail
+        cd "{params.mu3e_dir}/run"
+        ../_build/mu3eSim/mu3eSim \
+            --run {params.run_id} \
+            -n {params.n_events} \
+            --conf "{params.sim_conf}" \
+            --output "{params.sim_output}"
+        """
+
+rule run_mu3e_sort:
+    input:
+        f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
+    output:
+        f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
+    params:
+        mu3e_dir=MU3E_DIR,
+        sim_output=lambda wildcards: sim_output(wildcards.scenario, wildcards.geometry),
+        sort_output=lambda wildcards: sort_output(wildcards.scenario, wildcards.geometry),
+        run_id=RUN_ID,
+        cdb_dbconn=CDB_DBCONN,
+        cdb_GT=CDB_GT
+    shell:
+        r"""
+        set -euo pipefail;
+        cd "{params.mu3e_dir}/run";
+        ../_build/mu3eSim/sort/mu3eSort \
+        "{params.sim_output}" \
+        --output "{params.sort_output}" \
+        --run {params.run_id} \
+        --cdb.dbconn="{params.cdb_dbconn}" \
+        --cdb.globalTag="{params.cdb_GT}"
+        """
+
+rule run_mu3e_trirec:
+    input:
+        f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
+    output:
+        f"{MU3E_DIR}/run/{TRIREC_OUTPUT_TPL}"
+    params:
+        mu3e_dir=MU3E_DIR,
+        sort_output=lambda wildcards: sort_output(wildcards.scenario, wildcards.geometry),
+        trirec_output=lambda wildcards: trirec_output(wildcards.scenario, wildcards.geometry),
+        trirec_conf=lambda wildcards: trirec_conf(wildcards.scenario, wildcards.geometry),
+        run_id=RUN_ID,
+        cdb_dbconn=CDB_DBCONN,
+        cdb_GT=CDB_GT
+    shell:
+        r"""
+        set -euo pipefail;
+        cd "{params.mu3e_dir}/run";
+        ../_build/mu3eTrirec/mu3eTriRec \
+        "{params.sort_output}" \
+        --conf "{params.trirec_conf}" \
+        --output "{params.trirec_output}" \
+        --run {params.run_id} \
+        --cdb.dbconn="{params.cdb_dbconn}" \
+        --cdb.globalTag="{params.cdb_GT}"
+        """
+
+localrules: clean
+
+rule clean:
+    shell:
+        r"""
+        set -euo pipefail
+        rm -rf .markers
+        rm -f "{MU3E_DIR}/run/output/sim-"*.root
+        rm -f "{MU3E_DIR}/run/output/sort-"*.root
+        rm -f "{MU3E_DIR}/run/output/trirec-"*.root
+        """
