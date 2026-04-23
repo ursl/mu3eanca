@@ -28,8 +28,8 @@ SORT_OUTPUT_TPL = config["sort_output_tpl"]
 TRIREC_CONF_TPL = config["trirec_conf_tpl"]
 TRIREC_OUTPUT_TPL = config["trirec_output_tpl"]
 
-CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
 # Allow CLI override via --config cdb_GT=... (and accept lowercase alias).
+CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
 CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
 
 
