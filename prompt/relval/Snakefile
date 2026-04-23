@@ -2,9 +2,14 @@ configfile: f"{workflow.basedir}/config.yaml"
 
 MU3E_RELVAL_BASEDIR = config["mu3e_relval_basedir"]
 MU3E_TAG = config.get("mu3e_tag", "master")
+MU3E_CHECKOUT_TAG = config.get("mu3e_checkout_tag", MU3E_TAG)
 MU3E_DIR_BASE = config["mu3e_dir"]
 MU3E_TAG_DIRSAFE = MU3E_TAG.replace("/", "_")
-MU3E_DIRNAME = f"{MU3E_DIR_BASE}-{MU3E_TAG_DIRSAFE}"
+MU3E_WORKDIR_NAME = config.get("mu3e_workdir_name")
+if MU3E_WORKDIR_NAME:
+    MU3E_DIRNAME = MU3E_WORKDIR_NAME
+else:
+    MU3E_DIRNAME = f"{MU3E_DIR_BASE}-{MU3E_TAG_DIRSAFE}"
 MU3E_DIR = f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIRNAME}"
 workdir: MU3E_DIR
 
@@ -77,7 +82,7 @@ rule clone_and_prepare_mu3e:
         ".markers/clone_and_prepare_mu3e.done"
     params:
         repo=MU3E_REPO,
-        tag=MU3E_TAG,
+        tag=MU3E_CHECKOUT_TAG,
         relval_basedir=MU3E_RELVAL_BASEDIR,
         mu3e_dir=MU3E_DIR
     shell:
