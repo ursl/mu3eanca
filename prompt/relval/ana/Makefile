@@ -3,8 +3,8 @@ CXXFLAGS := -O2 -g -Wall -Wextra -std=c++17
 ROOTCFLAGS := $(shell root-config --cflags)
 ROOTLIBS   := $(shell root-config --libs)
 
-SOURCES  := HistBooking.cc RelvalAnalyzer.cc runFillHistograms.cc
-OBJECTS  := obj/HistBooking.o obj/RelvalAnalyzer.o obj/runFillHistograms.o
+SOURCES  := runFillHistograms.cc fillHist.cc  # compareHist.cc
+OBJECTS  := obj/runFillHistograms.o obj/fillHist.o # obj/compareHist.o 
 TARGET   := bin/runFillHistograms
 
 .PHONY: all clean
