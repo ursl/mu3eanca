@@ -8,7 +8,7 @@ make_jobs: 10
 relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
 
 run_id: 5461
-n_events: 1000
+n_events: 2000
 
 geometries: ["twolayer", "threelayer"]
 
