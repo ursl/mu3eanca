@@ -1,136 +1,210 @@
-#!/usr/bin/env bash
+#! /usr/bin/perl
 
-set -euo pipefail
+# ----------------------------------------------------------------------
+# runRelval
+# =========
+#
+# Perl wrapper for relval Snakemake setup creation and execution.
+#
+# Usage:
+#   ./runRelval.sh [--setup-name NAME] [snakemake args...] --config mu3e_tag=<tag> [other overrides]
+#
+# Example:
+#   ./runRelval.sh --setup-name relval-v65 -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5
+#
+# ----------------------------------------------------------------------
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+use strict;
+use warnings;
+use Cwd qw(abs_path getcwd);
+use File::Basename qw(dirname);
+use File::Copy qw(copy);
+use File::Path qw(make_path);
 
-if [[ $# -lt 1 ]]; then
-  echo "Usage: $0 [--setup-name NAME] [snakemake args...] --config mu3e_tag=<tag> [other config overrides]"
-  echo "Example: $0 --setup-name relval-v65 -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5"
-  exit 1
-fi
+sub usage {
+    print "Usage: $0 [--setup-name NAME] [snakemake args...] --config mu3e_tag=<tag> [other config overrides]\n";
+    print "Example: $0 --setup-name relval-v65 -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5\n";
+}
 
-SETUP_NAME=""
-declare -a FORWARDED_ARGS=()
+sub prefix {
+    my ($long) = @_;
+    my $now = localtime;
+    $long .= "                         ";
+    my $shorter = substr($long, 0, 15);
+    return $now . "/" . $shorter . "/ ";
+}
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --setup-name)
-      if [[ $# -lt 2 ]]; then
-        echo "ERROR: --setup-name requires a value"
-        exit 1
-      fi
-      SETUP_NAME="$2"
-      shift 2
-      ;;
-    *)
-      FORWARDED_ARGS+=("$1")
-      shift
-      ;;
-  esac
-done
+sub read_yaml_quoted_value {
+    my ($path, $key) = @_;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    while (my $line = <$fh>) {
+        if ($line =~ /^$key:\s*"(.*)"/) {
+            close($fh);
+            return $1;
+        }
+    }
+    close($fh);
+    return "";
+}
 
-MU3E_TAG=""
-RAW_CDB_GT=""
-RAW_CDB_DBCONN=""
-for arg in "${FORWARDED_ARGS[@]}"; do
-  if [[ "$arg" == mu3e_tag=* ]]; then
-    MU3E_TAG="${arg#mu3e_tag=}"
-  elif [[ "$arg" == cdb_GT=* ]]; then
-    RAW_CDB_GT="${arg#cdb_GT=}"
-  elif [[ "$arg" == cdb_gt=* ]]; then
-    RAW_CDB_GT="${arg#cdb_gt=}"
-  elif [[ "$arg" == cdb_dbconn=* ]]; then
-    RAW_CDB_DBCONN="${arg#cdb_dbconn=}"
-  elif [[ "$arg" == cdb_db_conn=* ]]; then
-    RAW_CDB_DBCONN="${arg#cdb_db_conn=}"
-  fi
-done
+sub write_lines {
+    my ($path, $lines_ref) = @_;
+    open(my $out, ">", $path) or die "Cannot write $path: $!\n";
+    foreach my $line (@{$lines_ref}) {
+        print $out $line;
+    }
+    close($out);
+}
 
-if [[ -z "$MU3E_TAG" ]]; then
-  echo "ERROR: missing mu3e_tag in arguments."
-  echo "Please pass it as Snakemake config, e.g. --config mu3e_tag=v6.5"
-  exit 1
-fi
+sub run_cmd {
+    my (@cmd) = @_;
+    print(prefix("runRelval"), "cmd: @cmd\n");
+    system(@cmd);
+    if ($? != 0) {
+        die "Command failed: @cmd\n";
+    }
+}
 
-cd "$SCRIPT_DIR"
+sub run_cmd_to_file {
+    my ($outfile, @cmd) = @_;
+    print(prefix("runRelval"), "cmd: @cmd > $outfile\n");
+    open(my $out, ">", $outfile) or die "Cannot write $outfile: $!\n";
+    my $pid = open(my $ph, "-|");
+    if (!defined $pid) {
+        close($out);
+        die "open pipe failed for command: @cmd\n";
+    } elsif ($pid == 0) {
+        open(STDOUT, ">&", fileno($out)) or die "dup stdout failed\n";
+        open(STDERR, ">&", fileno($out)) or die "dup stderr failed\n";
+        exec @cmd or die "exec failed: @cmd\n";
+    }
+    close($out);
+    waitpid($pid, 0);
+    if ($? != 0) {
+        die "Command failed: @cmd\n";
+    }
+}
 
-# Derive workdir the same way as Snakefile:
-#   <mu3e_relval_basedir>/<mu3e_dir>-<mu3e_tag_with_slashes_replaced>
-BASE_DIR="$(sed -n 's/^mu3e_relval_basedir:[[:space:]]*"\(.*\)"/\1/p' config.yaml | head -n1)"
-MU3E_DIR_BASE="$(sed -n 's/^mu3e_dir:[[:space:]]*"\(.*\)"/\1/p' config.yaml | head -n1)"
+if ($#ARGV < 0) {
+    usage();
+    exit(1);
+}
 
-if [[ -z "$RAW_CDB_GT" ]]; then
-  RAW_CDB_GT="$(sed -n 's/^cdb_GT:[[:space:]]*"\(.*\)"/\1/p' config.yaml | head -n1)"
-fi
-if [[ -z "$RAW_CDB_DBCONN" ]]; then
-  RAW_CDB_DBCONN="$(sed -n 's/^cdb_dbconn:[[:space:]]*"\(.*\)"/\1/p' config.yaml | head -n1)"
-fi
+my $setup_name = "";
+my @forwarded_args = ();
 
-if [[ -z "$SETUP_NAME" ]]; then
-  SETUP_NAME="relval_${MU3E_DIR_BASE}-${MU3E_TAG}_${RAW_CDB_GT}"
-fi
+for (my $i = 0; $i <= $#ARGV; ++$i) {
+    if ($ARGV[$i] eq "--setup-name") {
+        if ($i + 1 > $#ARGV) {
+            die "ERROR: --setup-name requires a value\n";
+        }
+        $setup_name = $ARGV[$i + 1];
+        ++$i;
+    } else {
+        push(@forwarded_args, $ARGV[$i]);
+    }
+}
 
-SETUP_SAFE="${SETUP_NAME//\//_}"
-SETUP_SAFE="${SETUP_SAFE// /_}"
+my $mu3e_tag = "";
+my $raw_cdb_gt = "";
+my $raw_cdb_dbconn = "";
 
-SETUP_DIR="${BASE_DIR}/setups/${SETUP_SAFE}"
-mkdir -p "$SETUP_DIR"
+foreach my $arg (@forwarded_args) {
+    if ($arg =~ /^mu3e_tag=(.*)$/) {
+        $mu3e_tag = $1;
+    } elsif ($arg =~ /^cdb_GT=(.*)$/) {
+        $raw_cdb_gt = $1;
+    } elsif ($arg =~ /^cdb_gt=(.*)$/) {
+        $raw_cdb_gt = $1;
+    } elsif ($arg =~ /^cdb_dbconn=(.*)$/) {
+        $raw_cdb_dbconn = $1;
+    } elsif ($arg =~ /^cdb_db_conn=(.*)$/) {
+        $raw_cdb_dbconn = $1;
+    }
+}
 
-cp "$SCRIPT_DIR/Snakefile" "$SETUP_DIR/Snakefile"
-cp "$SCRIPT_DIR/config.yaml" "$SETUP_DIR/config.yaml"
+if ($mu3e_tag eq "") {
+    print "ERROR: missing mu3e_tag in arguments.\n";
+    print "Please pass it as Snakemake config, e.g. --config mu3e_tag=v6.5\n";
+    exit(1);
+}
 
-# Freeze key setup identity in the generated config for reproducibility and isolation.
-python3 - "$SETUP_DIR/config.yaml" "${MU3E_DIR_BASE}-${SETUP_SAFE}" "$MU3E_TAG" "$RAW_CDB_GT" "$RAW_CDB_DBCONN" <<'PY'
-import sys
-from pathlib import Path
+my $script_dir = abs_path(dirname($0));
+chdir($script_dir) or die "Cannot chdir to $script_dir: $!\n";
 
-cfg = Path(sys.argv[1])
-mu3e_workdir_name = sys.argv[2]
-mu3e_tag = sys.argv[3]
-cdb_gt = sys.argv[4]
-cdb_dbconn = sys.argv[5]
+my $base_dir = read_yaml_quoted_value("config.yaml", "mu3e_relval_basedir");
+my $mu3e_dir_base = read_yaml_quoted_value("config.yaml", "mu3e_dir");
+if ($base_dir eq "" || $mu3e_dir_base eq "") {
+    die "ERROR: could not parse mu3e_relval_basedir/mu3e_dir from config.yaml\n";
+}
 
-lines = cfg.read_text().splitlines()
-out = []
-seen_workdir_name = False
-seen_checkout_tag = False
-for line in lines:
-    if line.startswith("mu3e_workdir_name:"):
-        out.append(f'mu3e_workdir_name: "{mu3e_workdir_name}"')
-        seen_workdir_name = True
-    elif line.startswith("mu3e_checkout_tag:"):
-        out.append(f'mu3e_checkout_tag: "{mu3e_tag}"')
-        seen_checkout_tag = True
-    elif line.startswith("mu3e_tag:"):
-        out.append(f'mu3e_tag: "{mu3e_tag}"')
-    elif line.startswith("cdb_GT:"):
-        out.append(f'cdb_GT: "{cdb_gt}"')
-    elif line.startswith("cdb_dbconn:"):
-        out.append(f'cdb_dbconn: "{cdb_dbconn}"')
-    else:
-        out.append(line)
+if ($raw_cdb_gt eq "") {
+    $raw_cdb_gt = read_yaml_quoted_value("config.yaml", "cdb_GT");
+}
+if ($raw_cdb_dbconn eq "") {
+    $raw_cdb_dbconn = read_yaml_quoted_value("config.yaml", "cdb_dbconn");
+}
 
-if not seen_workdir_name:
-    out.append(f'mu3e_workdir_name: "{mu3e_workdir_name}"')
-if not seen_checkout_tag:
-    out.append(f'mu3e_checkout_tag: "{mu3e_tag}"')
+if ($setup_name eq "") {
+    $setup_name = "relval_" . $mu3e_dir_base . "-" . $mu3e_tag . "_" . $raw_cdb_gt;
+}
 
-cfg.write_text("\n".join(out) + "\n")
-PY
+my $setup_safe = $setup_name;
+$setup_safe =~ s/\//_/g;
+$setup_safe =~ s/ /_/g;
 
-WORKDIR="${BASE_DIR}/${MU3E_DIR_BASE}-${SETUP_SAFE}"
+my $setup_dir = "$base_dir/setups/$setup_safe";
+make_path($setup_dir);
 
-# Run workflow from the generated setup directory.
-cd "$SETUP_DIR"
-snakemake "${FORWARDED_ARGS[@]}"
+copy("$script_dir/Snakefile", "$setup_dir/Snakefile") or die "Copy Snakefile failed: $!\n";
+copy("$script_dir/config.yaml", "$setup_dir/config.yaml") or die "Copy config.yaml failed: $!\n";
 
-# Export status metadata into the corresponding workdir.
-STATUS_DIR="${WORKDIR}/status"
-mkdir -p "$STATUS_DIR"
+my $cfg_path = "$setup_dir/config.yaml";
+open(my $in, "<", $cfg_path) or die "Cannot open $cfg_path: $!\n";
+my @lines = <$in>;
+close($in);
 
-snakemake --summary "${FORWARDED_ARGS[@]}" > "$STATUS_DIR/summary.tsv"
-snakemake --detailed-summary "${FORWARDED_ARGS[@]}" > "$STATUS_DIR/detailed-summary.tsv"
+my $mu3e_workdir_name = $mu3e_dir_base . "-" . $setup_safe;
+my $seen_workdir_name = 0;
+my $seen_checkout_tag = 0;
+my @out = ();
 
-echo "Setup directory: $SETUP_DIR"
-echo "Status exported to: $STATUS_DIR"
+foreach my $line (@lines) {
+    if ($line =~ /^mu3e_workdir_name:/) {
+        push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
+        $seen_workdir_name = 1;
+    } elsif ($line =~ /^mu3e_checkout_tag:/) {
+        push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+        $seen_checkout_tag = 1;
+    } elsif ($line =~ /^mu3e_tag:/) {
+        push(@out, "mu3e_tag: \"$mu3e_tag\"\n");
+    } elsif ($line =~ /^cdb_GT:/) {
+        push(@out, "cdb_GT: \"$raw_cdb_gt\"\n");
+    } elsif ($line =~ /^cdb_dbconn:/) {
+        push(@out, "cdb_dbconn: \"$raw_cdb_dbconn\"\n");
+    } else {
+        push(@out, $line);
+    }
+}
+
+if (!$seen_workdir_name) {
+    push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
+}
+if (!$seen_checkout_tag) {
+    push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+}
+write_lines($cfg_path, \@out);
+
+my $workdir = "$base_dir/$mu3e_dir_base-$setup_safe";
+
+chdir($setup_dir) or die "Cannot chdir to $setup_dir: $!\n";
+run_cmd("snakemake", @forwarded_args);
+
+my $status_dir = "$workdir/status";
+make_path($status_dir);
+
+run_cmd_to_file("$status_dir/summary.tsv", "snakemake", "--summary", @forwarded_args);
+run_cmd_to_file("$status_dir/detailed-summary.tsv", "snakemake", "--detailed-summary", @forwarded_args);
+
+print "Setup directory: $setup_dir\n";
+print "Status exported to: $status_dir\n";
