@@ -21,11 +21,13 @@ use File::Basename qw(dirname);
 use File::Copy qw(copy);
 use File::Path qw(make_path);
 
+# ----------------------------------------------------------------------
 sub usage {
     print "Usage: $0 [--setup-name NAME] [snakemake args...] --config mu3e_tag=<tag> [other config overrides]\n";
     print "Example: $0 --setup-name relval-v65 -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5\n";
 }
 
+# ----------------------------------------------------------------------
 sub prefix {
     my ($long) = @_;
     my $now = localtime;
@@ -34,6 +36,7 @@ sub prefix {
     return $now . "/" . $shorter . "/ ";
 }
 
+# ----------------------------------------------------------------------
 sub read_yaml_quoted_value {
     my ($path, $key) = @_;
     open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
@@ -47,6 +50,7 @@ sub read_yaml_quoted_value {
     return "";
 }
 
+# ----------------------------------------------------------------------
 sub write_lines {
     my ($path, $lines_ref) = @_;
     open(my $out, ">", $path) or die "Cannot write $path: $!\n";
@@ -56,6 +60,7 @@ sub write_lines {
     close($out);
 }
 
+# ----------------------------------------------------------------------
 sub run_cmd {
     my (@cmd) = @_;
     print(prefix("runRelval"), "cmd: @cmd\n");
@@ -65,6 +70,7 @@ sub run_cmd {
     }
 }
 
+# ----------------------------------------------------------------------
 sub run_cmd_to_file {
     my ($outfile, @cmd) = @_;
     print(prefix("runRelval"), "cmd: @cmd > $outfile\n");
@@ -85,16 +91,21 @@ sub run_cmd_to_file {
     }
 }
 
+# ----------------------------------------------------------------------
 if ($#ARGV < 0) {
     usage();
     exit(1);
 }
 
+# ----------------------------------------------------------------------
 my $setup_name = "";
 my @forwarded_args = ();
+my $opt_all = 0;
 
 for (my $i = 0; $i <= $#ARGV; ++$i) {
-    if ($ARGV[$i] eq "--setup-name") {
+    if ($ARGV[$i] eq "--all") {
+        $opt_all = 1;
+    } elsif ($ARGV[$i] eq "--setup-name") {
         if ($i + 1 > $#ARGV) {
             die "ERROR: --setup-name requires a value\n";
         }
@@ -103,6 +114,16 @@ for (my $i = 0; $i <= $#ARGV; ++$i) {
     } else {
         push(@forwarded_args, $ARGV[$i]);
     }
+}
+
+# -- meta mode: launch the standard three relval setups
+if ($opt_all) {
+    my $self = abs_path($0);
+    print(prefix("runRelval"), "meta mode --all\n");
+    run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.6pre0", "cdb_GT=mcidealv6.5");
+    run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.5", "cdb_GT=mcidealv6.5");
+    run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.4.4", "cdb_GT=mcidealv6.5", "cdb_dbconn=http://mu3edb0/cdb");
+    exit(0);
 }
 
 my $mu3e_tag = "";
