@@ -7,7 +7,8 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 int main(int argc, char **argv) {
-  string outfile = "histograms.root";
+  string outdir = ".";
+  string outfile = "nada";
   string infile = "";
   string tree = "frames";
   string mode = "relval";
@@ -18,13 +19,22 @@ int main(int argc, char **argv) {
     if (!strcmp(argv[i], "--nevts")) { nevents = atoi(argv[++i]); }
     if (!strcmp(argv[i], "--in")) { infile = argv[++i]; }
     if (!strcmp(argv[i], "--out")) { outfile = argv[++i]; }
+    if (!strcmp(argv[i], "--outdir")) { outdir = argv[++i]; }
     if (!strcmp(argv[i], "--tree")) { tree = argv[++i]; }
   }
 
-  fillHist fh(tree, outfile);
-  fh.setupTree(infile);
-  fh.bookHist("relval");
-  fh.run(nevents);
-  
+  if (outfile == "nada") {
+    string baseinfilename = infile.substr(infile.find_last_of('/') + 1);
+    outfile = "histograms-" + baseinfilename.substr(0, baseinfilename.find_last_of('.')) + ".root";
+    outfile = outdir + "/" + outfile;
+    cout << "runFillHistograms() INFO: output file not specified, using default " << outfile << endl;
+    return 0; 
+  }
+
+  fillHist fhFrames(infile, outfile);
+  fhFrames.setupTree(tree);
+  fhFrames.bookHist("relval");
+  fhFrames.run(nevents);
+
   return 0;
 }
