@@ -1,5 +1,5 @@
 CXX      := g++
-CXXFLAGS := -O2 -g -Wall -Wextra -std=c++17
+CXXFLAGS := -O0 -g -Wall -Wextra -std=c++17
 ROOTCFLAGS := $(shell root-config --cflags)
 ROOTLIBS   := $(shell root-config --libs)
 
