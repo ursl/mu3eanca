@@ -10,15 +10,16 @@
 
 class fillHist {
   public:
-  fillHist(const std::string &treeName, const std::string &outfileName);
+  fillHist(const std::string &infile, const std::string &outfileName);
   ~fillHist();
-  void setupTree(std::string infile);
+  void setupTree(const std::string &treeName);
   void bookHist(std::string mode);
   void run(int nevents = -1);
+  bool checkVectorSizes();
   
   private:
   TTree *fTree;
-  TFile *fOutFile;
+  TFile *fInFile,*fOutFile;
   std::string fTreeName;
   std::string fOutFileName;
   int fNevents;
@@ -38,14 +39,13 @@ class fillHist {
   ULong64_t            frunId, fframeId;
   unsigned int         fflags;
 
-  std::vector<double>  *fx0, *fy0, *fz0, *ft0, *ft0_err, *ft0_tl, *ft0_fb, *ft0_si;
+  std::vector<double>  *fx0, *fy0, *fz0, *ft0, *ft0_err, *ft0_rms, *ft0_tl, *ft0_fb, *ft0_si;
   std::vector<double>  *ft0_tl_rms, *ft0_fb_rms, *ft0_si_rms;
   std::vector<double>  *fr, *frerr2, *fp, *fperr2, *fchi2, *ftan01, *flam01;
-  std::vector<int>     *fnhit, *fttype, *fn_shared_hits, *fn_shared_segs;
+  std::vector<int>     *fnhit, *fttype, *fn_shared_hits, *fn_shared_segs, *fsid0;
   std::vector<int>     *ffarm_status;
  
-  int                  fn, fn3, fn4, fn6, fn8;
-
+  int                  fn, fn4, fn6, fn8;
   std::vector<int>     *fmc, *fmc_prime, *fmc_type;
   std::vector<int>     *fmc_pid, *fmc_tid, *fmc_mid;
   std::vector<double>  *fmc_weight, *fmc_p, *fmc_pt, *fmc_phi, *fmc_lam, *fmc_theta;
