@@ -8,13 +8,13 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
-
+  cout << "fillHist::fillHist() infile = " << infile << " outfileName = " << outfileName << endl;
   fInFile = TFile::Open(infile.c_str());
   if (!fInFile) {
     cout << "fillHist::fillHist() ERROR: could not open input file " << infile.c_str() << endl;
     return;
   }
-  
+
   fOutFileName = outfileName;
   fOutFile = TFile::Open(fOutFileName.c_str(), "RECREATE");
   if (!fOutFile) {
@@ -27,15 +27,18 @@ fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
 
 // ----------------------------------------------------------------------
 fillHist::~fillHist() {
-  
-  for (auto &h : fHistograms) {
-    h.second->SetDirectory(fOutFile);
-    h.second->Write();
-    delete h.second;
-  }
-  
   if (fOutFile) {
+    fOutFile->cd();
+    for (auto &h : fHistograms) {
+      h.second->Write();
+      delete h.second;
+    }
+    fOutFile->Close();
     delete fOutFile;
+  }
+  if (fInFile) {
+    fInFile->Close();
+    delete fInFile;
   }
 }
 
@@ -43,6 +46,11 @@ fillHist::~fillHist() {
 // ----------------------------------------------------------------------
 void fillHist::bookHist(string mode) {
   if ("relval" == mode) {
+    // -- bookkeeping
+    fHistograms["hnevents"] = new TH1D("hnevents", "n_events", 10, 0., 10.);
+    fHistograms["hnevents"]->GetXaxis()->SetBinLabel(1, "n_events");
+    fHistograms["hnevents"]->GetXaxis()->SetBinLabel(2, "n_hi_tracks");
+
     fHistograms["hpall"] = new TH1D("hpall", "p (all tracks)", 100, -100., 100.);
     fHistograms["hp"] = new TH1D("hp", "p", 100, -100., 100.);
     fHistograms["hperr2"] = new TH1D("hperr2", "perr2", 100, 0., 10.);
@@ -81,7 +89,10 @@ void fillHist::bookHist(string mode) {
 void fillHist::run(int nevents) {
   fNevents = nevents;
   if (fNevents < 0) fNevents = fTree->GetEntries();
+  if (fInFile) fInFile->cd();
   cout << "fillHist::run() fNevents = " << fNevents << endl;
+  fHistograms["hnevents"]->SetBinContent(1, fNevents);
+  int nHiTracks(0); // number of hits > 20 GeV
   for (int i = 0; i < fNevents; ++i) {
     fTree->GetEntry(i);
     cout << "fillHist::run() i = " << i << " fp->size() = " << fp->size() << endl;
@@ -98,6 +109,7 @@ void fillHist::run(int nevents) {
       fHistograms["hpall"]->Fill(fp->at(j));
       
       if (TMath::Abs(fp->at(j)) > 20.) {
+        nHiTracks++;
         fHistograms["hx0"]->Fill(fx0->at(j));
         fHistograms["hy0"]->Fill(fy0->at(j));
         fHistograms["hz0"]->Fill(fz0->at(j));
@@ -125,6 +137,7 @@ void fillHist::run(int nevents) {
       }
     }
   }
+  fHistograms["hnevents"]->SetBinContent(2, nHiTracks);
 }
 
 
@@ -236,9 +249,12 @@ void fillHist::setupTree(const std::string &treeName) {
     cout << "fillHist::setupTree() ERROR: could not get tree " << treeName << endl;
     return;
   }
+
+  // Read only branches we explicitly bind below.
+  fTree->SetBranchStatus("*", 0);
   
   // -- NB: The following lines are essential. Else there will be a crash when compiler does not do default zeroing!
-  fx0 = fy0 = fz0 = ft0 = ft0_err = ft0_tl = ft0_fb = ft0_si = 0;
+  fx0 = fy0 = fz0 = ft0 = ft0_err = ft0_rms = ft0_tl = ft0_fb = ft0_si = 0;
   ft0_tl_rms = ft0_fb_rms = ft0_si_rms = 0;
   fr = frerr2 = fp = fperr2 = fchi2 = ftan01 = flam01 = 0;
   fnhit = fttype = fn_shared_hits = fn_shared_segs = ffarm_status = 0;
@@ -283,35 +299,42 @@ void fillHist::setupTree(const std::string &treeName) {
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, int* pvar) {
+  fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, float* pvar) {
+  fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, double* pvar) {
+  fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, string** pvar) {
   cout << "initBranch(" << name << "),  pvar = " << pvar << endl;
+  fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, vector<int>** pvect) {
+  fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvect);
 }
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, vector<unsigned int>** pvect) {
+  fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvect);
 }
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, vector<double>** pvect) {
+  fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvect);
 }

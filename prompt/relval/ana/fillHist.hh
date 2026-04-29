@@ -42,7 +42,8 @@ class fillHist {
   std::vector<double>  *fx0, *fy0, *fz0, *ft0, *ft0_err, *ft0_rms, *ft0_tl, *ft0_fb, *ft0_si;
   std::vector<double>  *ft0_tl_rms, *ft0_fb_rms, *ft0_si_rms;
   std::vector<double>  *fr, *frerr2, *fp, *fperr2, *fchi2, *ftan01, *flam01;
-  std::vector<int>     *fnhit, *fttype, *fn_shared_hits, *fn_shared_segs, *fsid0;
+  std::vector<int>     *fnhit, *fttype, *fn_shared_hits, *fn_shared_segs;
+  std::vector<unsigned int> *fsid0;
   std::vector<int>     *ffarm_status;
  
   int                  fn, fn4, fn6, fn8;
