@@ -8,25 +8,28 @@ make_jobs: 10
 relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
 
 run_id: 5461
-n_events: 2000
-
-geometries: ["twolayer", "threelayer"]
+n_events: 5000
 
 sim_scenarios:
-  - id: "cosmic"
+  - id: "cosmic_twolayer"
     sim_conf: "sim_cosmic.json"
-    trirec_channel: "cosmic"
-  - id: "beam8"
+    trirec_conf: "trirec_twolayer_cosmic.conf"
+  - id: "cosmic_threelayer"
+    sim_conf: "sim_cosmic.json"
+    trirec_conf: "trirec_threelayer_cosmic.conf"
+  - id: "conf8_twolayer"
     sim_conf: "bvr2026/sim_conf8.json"
-    trirec_channel: "beam"
-  - id: "beam18"
+    trirec_conf: "trirec_twolayer_beam.conf"
+  - id: "conf18_twolayer"
     sim_conf: "bvr2026/sim_conf18.json"
-    trirec_channel: "beam"
+    trirec_conf: "trirec_twolayer_beam.conf"
+  - id: "conf18_threelayer"
+    sim_conf: "bvr2026/sim_conf18.json"
+    trirec_conf: "trirec_threelayer_beam.conf"
 
-sim_output_tpl: "output/sim-{scenario}-{geometry}.root"
-sort_output_tpl: "output/sort-{scenario}-{geometry}.root"
-trirec_conf_tpl: "trirec_{geometry}_{channel}.conf"
-trirec_output_tpl: "output/trirec-{scenario}-{geometry}.root"
+sim_output_tpl: "output/sim-{scenario}.root"
+sort_output_tpl: "output/sort-{scenario}.root"
+trirec_output_tpl: "output/trirec-{scenario}.root"
 
 cdb_dbconn: "/Users/ursl/data/mu3e/cdb/"
 cdb_GT: "mcidealv6.5"

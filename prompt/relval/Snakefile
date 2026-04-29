@@ -21,7 +21,6 @@ N_EVENTS = config["n_events"]
 
 RELINK_SCRIPT = config["relink_script"]
 
-GEOMETRIES = config["geometries"]
 SIM_SCENARIOS = config["sim_scenarios"]
 SCENARIO_IDS = [item["id"] for item in SIM_SCENARIOS]
 SCENARIO_BY_ID = {item["id"]: item for item in SIM_SCENARIOS}
@@ -29,8 +28,6 @@ SCENARIO_BY_ID = {item["id"]: item for item in SIM_SCENARIOS}
 SIM_OUTPUT_TPL = config["sim_output_tpl"]
 
 SORT_OUTPUT_TPL = config["sort_output_tpl"]
-
-TRIREC_CONF_TPL = config["trirec_conf_tpl"]
 TRIREC_OUTPUT_TPL = config["trirec_output_tpl"]
 
 # Allow CLI override via --config cdb_GT=... (and accept lowercase alias).
@@ -42,38 +39,31 @@ def sim_conf(scenario):
     return SCENARIO_BY_ID[scenario]["sim_conf"]
 
 
-def trirec_channel(scenario):
-    return SCENARIO_BY_ID[scenario]["trirec_channel"]
+def trirec_conf(scenario):
+    return SCENARIO_BY_ID[scenario]["trirec_conf"]
 
 
-def sim_output(scenario, geometry):
-    return SIM_OUTPUT_TPL.format(scenario=scenario, geometry=geometry)
+def sim_output(scenario):
+    return SIM_OUTPUT_TPL.format(scenario=scenario)
 
 
-def sort_output(scenario, geometry):
-    return SORT_OUTPUT_TPL.format(scenario=scenario, geometry=geometry)
+def sort_output(scenario):
+    return SORT_OUTPUT_TPL.format(scenario=scenario)
 
 
-def trirec_conf(scenario, geometry):
-    channel = trirec_channel(scenario)
-    return TRIREC_CONF_TPL.format(channel=channel, geometry=geometry)
-
-
-def trirec_output(scenario, geometry):
-    return TRIREC_OUTPUT_TPL.format(scenario=scenario, geometry=geometry)
+def trirec_output(scenario):
+    return TRIREC_OUTPUT_TPL.format(scenario=scenario)
 
 
 wildcard_constraints:
-    scenario="|".join(SCENARIO_IDS),
-    geometry="|".join(GEOMETRIES)
+    scenario="|".join(SCENARIO_IDS)
 
 
 rule all:
     input:
         [
-            f"{MU3E_DIR}/run/{trirec_output(scenario, geometry)}"
+            f"{MU3E_DIR}/run/{trirec_output(scenario)}"
             for scenario in SCENARIO_IDS
-            for geometry in GEOMETRIES
         ]
 
 
@@ -176,7 +166,7 @@ rule run_mu3e_sim:
         run_id=RUN_ID,
         n_events=N_EVENTS,
         sim_conf=lambda wildcards: sim_conf(wildcards.scenario),
-        sim_output=lambda wildcards: sim_output(wildcards.scenario, wildcards.geometry)
+        sim_output=lambda wildcards: sim_output(wildcards.scenario)
     shell:
         r"""
         set -euo pipefail
@@ -195,8 +185,8 @@ rule run_mu3e_sort:
         f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
     params:
         mu3e_dir=MU3E_DIR,
-        sim_output=lambda wildcards: sim_output(wildcards.scenario, wildcards.geometry),
-        sort_output=lambda wildcards: sort_output(wildcards.scenario, wildcards.geometry),
+        sim_output=lambda wildcards: sim_output(wildcards.scenario),
+        sort_output=lambda wildcards: sort_output(wildcards.scenario),
         run_id=RUN_ID,
         cdb_dbconn=CDB_DBCONN,
         cdb_GT=CDB_GT
@@ -219,9 +209,9 @@ rule run_mu3e_trirec:
         f"{MU3E_DIR}/run/{TRIREC_OUTPUT_TPL}"
     params:
         mu3e_dir=MU3E_DIR,
-        sort_output=lambda wildcards: sort_output(wildcards.scenario, wildcards.geometry),
-        trirec_output=lambda wildcards: trirec_output(wildcards.scenario, wildcards.geometry),
-        trirec_conf=lambda wildcards: trirec_conf(wildcards.scenario, wildcards.geometry),
+        sort_output=lambda wildcards: sort_output(wildcards.scenario),
+        trirec_output=lambda wildcards: trirec_output(wildcards.scenario),
+        trirec_conf=lambda wildcards: trirec_conf(wildcards.scenario),
         run_id=RUN_ID,
         cdb_dbconn=CDB_DBCONN,
         cdb_GT=CDB_GT
