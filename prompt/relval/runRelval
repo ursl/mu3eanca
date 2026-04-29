@@ -7,10 +7,11 @@
 # Perl wrapper for relval Snakemake setup creation and execution.
 #
 # Usage:
-#   ./runRelval.sh [--setup-name NAME] [snakemake args...] --config mu3e_tag=<tag> [other overrides]
+#   ./runRelval [--setup-name NAME] [snakemake args...] --config mu3e_tag=<tag> [other overrides]
 #
 # Example:
-#   ./runRelval.sh --setup-name relval-v65 -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5
+#   ./runRelval --setup-name relval-v65 -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5
+#   ./runRelval --all --dry-run
 #
 # ----------------------------------------------------------------------
 
@@ -98,9 +99,12 @@ if ($#ARGV < 0) {
 }
 
 # ----------------------------------------------------------------------
+# -- command line parsing
+# ----------------------------------------------------------------------
 my $setup_name = "";
 my @forwarded_args = ();
 my $opt_all = 0;
+my $opt_dry_run = 0;
 
 for (my $i = 0; $i <= $#ARGV; ++$i) {
     if ($ARGV[$i] eq "--all") {
@@ -111,6 +115,8 @@ for (my $i = 0; $i <= $#ARGV; ++$i) {
         }
         $setup_name = $ARGV[$i + 1];
         ++$i;
+    } elsif ($ARGV[$i] eq "--dry-run") {
+        $opt_dry_run = 1;
     } else {
         push(@forwarded_args, $ARGV[$i]);
     }
@@ -118,12 +124,21 @@ for (my $i = 0; $i <= $#ARGV; ++$i) {
 
 # -- meta mode: launch the standard three relval setups
 if ($opt_all) {
-    my $self = abs_path($0);
-    print(prefix("runRelval"), "meta mode --all\n");
-    run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.6pre0", "cdb_GT=mcidealv6.5");
-    run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.5", "cdb_GT=mcidealv6.5");
-    run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.4.4", "cdb_GT=mcidealv6.5", "cdb_dbconn=http://mu3edb0/cdb");
-    exit(0);
+    if ($opt_dry_run) {
+        my $self = abs_path($0);
+        print(prefix("runRelval"), "meta mode --all --dry-run\n");
+        print($self, " -j4", " -p", " --config", " mu3e_tag=v6.6pre0", " cdb_GT=mcidealv6.5", "\n");
+        print($self, " -j4", " -p", " --config", " mu3e_tag=v6.5",     " cdb_GT=mcidealv6.5", "\n");
+        print($self, " -j4", " -p", " --config", " mu3e_tag=v6.4.4",   " cdb_GT=mcidealv6.5", " cdb_dbconn=http://mu3edb0/cdb", "\n");
+        exit(0);
+    } else {
+        my $self = abs_path($0);
+        print(prefix("runRelval"), "meta mode --all\n");
+        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.6pre0", "cdb_GT=mcidealv6.5");
+        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.5", "cdb_GT=mcidealv6.5");
+        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.4.4", "cdb_GT=mcidealv6.5", "cdb_dbconn=http://mu3edb0/cdb");
+        exit(0);
+    }
 }
 
 my $mu3e_tag = "";
