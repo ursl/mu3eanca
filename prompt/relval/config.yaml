@@ -8,7 +8,7 @@ make_jobs: 10
 relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
 
 run_id: 5461
-n_events: 5000
+n_events: 3000
 
 sim_scenarios:
   - id: "cosmic_twolayer"
@@ -30,6 +30,8 @@ sim_scenarios:
 sim_output_tpl: "output/sim-{scenario}.root"
 sort_output_tpl: "output/sort-{scenario}.root"
 trirec_output_tpl: "output/trirec-{scenario}.root"
+fillhist_output_tpl: "output/histograms-{scenario}.root"
 
 cdb_dbconn: "/Users/ursl/data/mu3e/cdb/"
 cdb_GT: "mcidealv6.5"
+run_fill_histograms_exe: "/Users/ursl/macros/ana/mu3eanca/prompt/relval/ana/bin/runFillHistograms"

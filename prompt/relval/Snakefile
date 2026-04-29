@@ -29,6 +29,8 @@ SIM_OUTPUT_TPL = config["sim_output_tpl"]
 
 SORT_OUTPUT_TPL = config["sort_output_tpl"]
 TRIREC_OUTPUT_TPL = config["trirec_output_tpl"]
+FILLHIST_OUTPUT_TPL = config["fillhist_output_tpl"]
+RUN_FILL_HISTOGRAMS_EXE = config["run_fill_histograms_exe"]
 
 # Allow CLI override via --config cdb_GT=... (and accept lowercase alias).
 CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
@@ -55,6 +57,10 @@ def trirec_output(scenario):
     return TRIREC_OUTPUT_TPL.format(scenario=scenario)
 
 
+def fillhist_output(scenario):
+    return FILLHIST_OUTPUT_TPL.format(scenario=scenario)
+
+
 wildcard_constraints:
     scenario="|".join(SCENARIO_IDS)
 
@@ -62,7 +68,7 @@ wildcard_constraints:
 rule all:
     input:
         [
-            f"{MU3E_DIR}/run/{trirec_output(scenario)}"
+            f"{MU3E_DIR}/run/{fillhist_output(scenario)}"
             for scenario in SCENARIO_IDS
         ]
 
@@ -228,6 +234,25 @@ rule run_mu3e_trirec:
         --cdb.globalTag="{params.cdb_GT}"
         """
 
+
+rule run_fill_histograms:
+    input:
+        f"{MU3E_DIR}/run/{TRIREC_OUTPUT_TPL}"
+    output:
+        f"{MU3E_DIR}/run/{FILLHIST_OUTPUT_TPL}"
+    params:
+        exe=RUN_FILL_HISTOGRAMS_EXE,
+        annotation=f"mu3e-{MU3E_TAG}_{CDB_GT}",
+        output_path=lambda wildcards: f"run/{fillhist_output(wildcards.scenario)}"
+    shell:
+        r"""
+        set -euo pipefail
+        "{params.exe}" \
+            --in "{input}" \
+            --ann "{params.annotation}" \
+            --out "{params.output_path}"
+        """
+
 localrules: clean
 
 rule clean:
@@ -238,4 +263,5 @@ rule clean:
         rm -f "{MU3E_DIR}/run/output/sim-"*.root
         rm -f "{MU3E_DIR}/run/output/sort-"*.root
         rm -f "{MU3E_DIR}/run/output/trirec-"*.root
+        rm -f "{MU3E_DIR}/run/output/histograms-"*.root
         """
