@@ -18,6 +18,7 @@ public:
 
   void setupHists(std::string mode = "relval");
   void run(std::string dirname = ".");
+  void makeSummaryPDF(std::string dirname = ".");
 
 private:
   struct plotInfo {
@@ -29,10 +30,20 @@ private:
     bool statsBox{false};
   };
 
+  struct histDeco {
+    int lineStyle;
+    Color_t lineColor;
+    int lineWidth;
+    int markerStyle;
+    int markerSize;
+  };
+
   // Skeleton plotting helpers to extend.
   void plotOverlay(const plotInfo &plot);
   void plotDifference(const plotInfo &plot);
   void plotRatio(const plotInfo &plot);
+  void decorateHist(TH1 *h, const histDeco &deco);
+  void addDoubleStatsBox(const plotInfo &plot);
 
   TH1 *getHist(TFile *f, const std::string &name);
 
@@ -47,8 +58,10 @@ private:
 
   double fEvents1, fEvents2;
   double fHiTracks1, fHiTracks2;
-  
+  std::string fSetup1, fSetup2;
+
   std::map<std::string, plotInfo> fPlots;
+  std::vector<histDeco> fHistDecos;
 };
 
 #endif

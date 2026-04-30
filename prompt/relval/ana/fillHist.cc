@@ -44,12 +44,13 @@ fillHist::~fillHist() {
 
 
 // ----------------------------------------------------------------------
-void fillHist::bookHist(string mode) {
+void fillHist::bookHist(string mode, string annotation) {
   if ("relval" == mode) {
     // -- bookkeeping
-    fHistograms["hnevents"] = new TH1D("hnevents", "n_events", 10, 0., 10.);
-    fHistograms["hnevents"]->GetXaxis()->SetBinLabel(1, "n_events");
-    fHistograms["hnevents"]->GetXaxis()->SetBinLabel(2, "n_hi_tracks");
+    fHistograms["hinfo"] = new TH1D("hinfo", "info", 10, 0., 10.);
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(1, annotation.c_str());
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(2, "n_events");
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(3, "n_hi_tracks");
 
     fHistograms["hpall"] = new TH1D("hpall", "p (all tracks)", 100, -100., 100.);
     fHistograms["hp"] = new TH1D("hp", "p", 100, -100., 100.);
@@ -91,11 +92,11 @@ void fillHist::run(int nevents) {
   if (fNevents < 0) fNevents = fTree->GetEntries();
   if (fInFile) fInFile->cd();
   cout << "fillHist::run() fNevents = " << fNevents << endl;
-  fHistograms["hnevents"]->SetBinContent(1, fNevents);
+  fHistograms["hinfo"]->SetBinContent(2, fNevents);
   int nHiTracks(0); // number of hits > 20 GeV
   for (int i = 0; i < fNevents; ++i) {
     fTree->GetEntry(i);
-    cout << "fillHist::run() i = " << i << " fp->size() = " << fp->size() << endl;
+    //cout << "fillHist::run() i = " << i << " fp->size() = " << fp->size() << endl;
     fHistograms["hn"]->Fill(fn);
     fHistograms["hn4"]->Fill(fn4);
     fHistograms["hn6"]->Fill(fn6);
@@ -137,7 +138,7 @@ void fillHist::run(int nevents) {
       }
     }
   }
-  fHistograms["hnevents"]->SetBinContent(2, nHiTracks);
+  fHistograms["hinfo"]->SetBinContent(3, nHiTracks);
 }
 
 

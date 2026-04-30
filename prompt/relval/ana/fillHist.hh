@@ -13,7 +13,7 @@ class fillHist {
   fillHist(const std::string &infile, const std::string &outfileName);
   ~fillHist();
   void setupTree(const std::string &treeName);
-  void bookHist(std::string mode);
+  void bookHist(std::string mode, std::string annotation);
   void run(int nevents = -1);
   bool checkVectorSizes();
   

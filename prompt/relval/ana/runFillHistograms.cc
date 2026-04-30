@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
   fillHist fhFrames(infile, outfile);
   fhFrames.setupTree(tree);
-  fhFrames.bookHist("relval");
+  fhFrames.bookHist("relval", annotation);
   fhFrames.run(nevents);
 
   return 0;
