@@ -16,6 +16,7 @@ class fillHist {
   void bookHist(std::string mode, std::string annotation);
   void run(int nevents = -1);
   bool checkVectorSizes();
+  int  getVtxL0Ladder(int sid0);
   
   private:
   TTree *fTree;

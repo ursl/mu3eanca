@@ -3,6 +3,9 @@
 #include <iostream> 
 #include <string>
 
+#include <TMath.h>
+#include <TH2D.h>
+
 using namespace std;
 
 
@@ -82,6 +85,18 @@ void fillHist::bookHist(string mode, string annotation) {
     fHistograms["hn4"] = new TH1D("hn4", "n4", 100, 0., 100.);
     fHistograms["hn6"] = new TH1D("hn6", "n6", 100, 0., 100.);
     fHistograms["hn8"] = new TH1D("hn8", "n8", 100, 0., 100.);
+
+    // -- hitmaps derived from hit positions
+    fHistograms["h2hitmapvtx0"] = new TH2D("h2hitmapvtx0", "hitmap vtx0", 24, -62., 62., 8, 0., 8.);
+
+    // -- hitmaps derived from hit positions for each vtx0 sensor
+    for (int i = 0; i < 231; ++i) {      
+      int ok = getVtxL0Ladder(i);
+      if (ok >= 0) {
+        string hname = Form("h2hitmapvtx0_sid%03d", i);
+        fHistograms[hname] = new TH2D(hname.c_str(), hname.c_str(), 48, -62., 62., 80, -3.15, 3.15);
+      }
+    }
   }
 }
 
@@ -108,7 +123,7 @@ void fillHist::run(int nevents) {
     // -- fill per-track histograms
     for (unsigned int j = 0; j < fp->size(); ++j) {
       fHistograms["hpall"]->Fill(fp->at(j));
-      
+  
       if (TMath::Abs(fp->at(j)) > 20.) {
         nHiTracks++;
         fHistograms["hx0"]->Fill(fx0->at(j));
@@ -135,10 +150,41 @@ void fillHist::run(int nevents) {
         fHistograms["hn_shared_hits"]->Fill(fn_shared_hits->at(j));
         fHistograms["hn_shared_segs"]->Fill(fn_shared_segs->at(j));
         fHistograms["hfarm_status"]->Fill(ffarm_status->at(j));
+
+        // -- fill hitmap vtx0
+        int vtxL0Ladder = getVtxL0Ladder(fsid0->at(j));
+        if (vtxL0Ladder >= 0) {
+          fHistograms["h2hitmapvtx0"]->Fill(fz0->at(j), vtxL0Ladder);
+          fHistograms[Form("h2hitmapvtx0_sid%03d", fsid0->at(j))]->Fill(fz0->at(j), TMath::ATan2(fy0->at(j), fx0->at(j)));
+        }
       }
     }
   }
   fHistograms["hinfo"]->SetBinContent(3, nHiTracks);
+}
+
+
+// ----------------------------------------------------------------------
+int fillHist::getVtxL0Ladder(int sid0) {
+  int vtxL0Ladder(-1);
+  if (sid0 >= 1 && sid0 <= 6) {
+    vtxL0Ladder = 0;
+  } else if (sid0 >= 33 && sid0 <= 38) {
+    vtxL0Ladder = 1;
+  } else if (sid0 >= 65 && sid0 <= 70) {
+    vtxL0Ladder = 2;
+  } else if (sid0 >= 97 && sid0 <= 102) {
+    vtxL0Ladder = 3;
+  } else if (sid0 >= 129 && sid0 <= 134) {
+    vtxL0Ladder = 4;
+  } else if (sid0 >= 161 && sid0 <= 166) {
+    vtxL0Ladder = 5;
+  } else if (sid0 >= 193 && sid0 <= 198) {
+    vtxL0Ladder = 6;
+  } else if (sid0 >= 225 && sid0 <= 230) {
+    vtxL0Ladder = 7;
+  }
+  return vtxL0Ladder;
 }
 
 
