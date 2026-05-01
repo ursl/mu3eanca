@@ -34,11 +34,11 @@ sort_output_tpl: "output/sort-{scenario}.root"
 trirec_output_tpl: "output/trirec-{scenario}.root"
 fillhist_output_tpl: "output/histograms-{scenario}.root"
 compare_marker_tpl: "output/compare-{scenario}.done"
+histocompare_marker_tpl: "output/histocompare-{scenario}.done"
 
 cdb_dbconn: "/Users/ursl/data/mu3e/cdb/"
 cdb_GT: "mcidealv6.5"
-run_fill_histograms_exe: "/Users/ursl/macros/ana/mu3eanca/prompt/relval/ana/bin/runFillHistograms"
-run_compare_histograms_exe: "/Users/ursl/macros/ana/mu3eanca/prompt/relval/ana/bin/runCompareHistograms"
+relval_code_basedir: "/Users/ursl/macros/ana/mu3eanca/prompt/relval"
 
 # Optional compare mode:
 # if compare_against_setup is non-empty, runCompareHistograms is executed

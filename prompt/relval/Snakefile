@@ -31,8 +31,11 @@ SORT_OUTPUT_TPL = config["sort_output_tpl"]
 TRIREC_OUTPUT_TPL = config["trirec_output_tpl"]
 FILLHIST_OUTPUT_TPL = config["fillhist_output_tpl"]
 COMPARE_MARKER_TPL = config.get("compare_marker_tpl", "output/compare-{scenario}.done")
-RUN_FILL_HISTOGRAMS_EXE = config["run_fill_histograms_exe"]
-RUN_COMPARE_HISTOGRAMS_EXE = config.get("run_compare_histograms_exe")
+HISTOCOMPARE_MARKER_TPL = config.get("histocompare_marker_tpl", "output/histocompare-{scenario}.done")
+RELVAL_CODE_BASEDIR = config.get("relval_code_basedir", workflow.basedir)
+RUN_FILL_HISTOGRAMS_EXE = f"{RELVAL_CODE_BASEDIR}/ana/bin/runFillHistograms"
+RUN_COMPARE_HISTOGRAMS_EXE = f"{RELVAL_CODE_BASEDIR}/ana/bin/runCompareHistograms"
+COMPARE_TEMPLATE_TEX = f"{RELVAL_CODE_BASEDIR}/ana/template-relval.tex"
 COMPARE_AGAINST_SETUP = config.get("compare_against_setup", "")
 COMPARE_ENABLED = bool(COMPARE_AGAINST_SETUP and RUN_COMPARE_HISTOGRAMS_EXE)
 
@@ -73,6 +76,14 @@ def compare_marker_output(scenario):
     return COMPARE_MARKER_TPL.format(scenario=scenario)
 
 
+def histocompare_marker_output(scenario):
+    return HISTOCOMPARE_MARKER_TPL.format(scenario=scenario)
+
+
+def compare_other_trirec(scenario):
+    return f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{trirec_output(scenario)}"
+
+
 def compare_other_hist(scenario):
     return f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{fillhist_output(scenario)}"
 
@@ -81,6 +92,22 @@ def compare_dir_name(scenario):
     this_setup = MU3E_DIRNAME
     other_setup = f"{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}"
     return f"{scenario}__{this_setup}__vs__{other_setup}"
+
+
+def compare_dir_rel(scenario):
+    return f"run/output/compare/{compare_dir_name(scenario)}"
+
+
+def compare_dir_host(scenario):
+    return f"{MU3E_DIR}/{compare_dir_rel(scenario)}"
+
+
+def compare_in1_data_path(scenario):
+    return f"/data/{MU3E_DIRNAME}/run/{trirec_output(scenario)}"
+
+
+def compare_in2_data_path(scenario):
+    return f"/data/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{trirec_output(scenario)}"
 
 
 wildcard_constraints:
@@ -94,6 +121,10 @@ ALL_TARGETS = [
 if COMPARE_ENABLED:
     ALL_TARGETS += [
         f"{MU3E_DIR}/run/{compare_marker_output(scenario)}"
+        for scenario in SCENARIO_IDS
+    ]
+    ALL_TARGETS += [
+        f"{MU3E_DIR}/run/{histocompare_marker_output(scenario)}"
         for scenario in SCENARIO_IDS
     ]
 
@@ -304,14 +335,43 @@ if COMPARE_ENABLED:
             f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}"
         params:
             exe=RUN_COMPARE_HISTOGRAMS_EXE,
-            out_dir=lambda wildcards: compare_dir_name(wildcards.scenario)
+            out_dir=lambda wildcards: compare_dir_rel(wildcards.scenario),
+            template_tex=COMPARE_TEMPLATE_TEX
         shell:
             r"""
             set -euo pipefail
+            cp "{params.template_tex}" "./template-relval.tex"
             "{params.exe}" \
                 --in1 "{input.in1}" \
                 --in2 "{input.in2}" \
                 --dir "{params.out_dir}"
+            touch "{output}"
+            """
+
+    rule run_histocompare:
+        input:
+            compare_done=f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}",
+            in1=f"{MU3E_DIR}/run/{TRIREC_OUTPUT_TPL}",
+            in2=lambda wildcards: compare_other_trirec(wildcards.scenario)
+        output:
+            f"{MU3E_DIR}/run/{HISTOCOMPARE_MARKER_TPL}"
+        params:
+            out_dir_host=lambda wildcards: compare_dir_host(wildcards.scenario),
+            in1_data=lambda wildcards: compare_in1_data_path(wildcards.scenario),
+            in2_data=lambda wildcards: compare_in2_data_path(wildcards.scenario),
+            out_name=lambda wildcards: f"histocompare-{wildcards.scenario}"
+        shell:
+            r"""
+            set -euo pipefail
+            mkdir -p "{params.out_dir_host}"
+            podman run --rm \
+                -v "{MU3E_RELVAL_BASEDIR}:/data:ro" \
+                -v "{params.out_dir_host}:/workdir" \
+                docker.io/mu3e/histocompare \
+                "{params.in1_data}" \
+                "{params.in2_data}" \
+                --custom -t 0.80 -D 1.0 --meanThr 2 --stdThr 3 \
+                -o "{params.out_name}" --pdf --ignoreResolution --ignoreNoSharedHits
             touch "{output}"
             """
 
@@ -327,4 +387,6 @@ rule clean:
         rm -f "{MU3E_DIR}/run/output/trirec-"*.root
         rm -f "{MU3E_DIR}/run/output/histograms-"*.root
         rm -f "{MU3E_DIR}/run/output/compare-"*.done
+        rm -f "{MU3E_DIR}/run/output/histocompare-"*.done
+        rm -rf "{MU3E_DIR}/run/output/compare"
         """
