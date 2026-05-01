@@ -23,8 +23,10 @@ class fillHist {
   TFile *fInFile,*fOutFile;
   std::string fTreeName;
   std::string fOutFileName;
+
   int fNevents;
   std::map<std::string, TH1*> fHistograms;
+  std::map<std::string, std::string> fConfigs;
   
 
   // -- these refer to the tree/chain passed in as "tree" in c'tor

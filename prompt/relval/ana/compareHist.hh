@@ -28,6 +28,8 @@ private:
     bool valid{false};
     bool logY{false};
     bool statsBox{false};
+    double ks{0.};
+    double ad{0.};
   };
 
   struct histDeco {
@@ -39,11 +41,12 @@ private:
   };
 
   // Skeleton plotting helpers to extend.
-  void plotOverlay(const plotInfo &plot);
-  void plotDifference(const plotInfo &plot);
-  void plotRatio(const plotInfo &plot);
+  void plotOverlay(plotInfo &plot);
+  void plotDifference(plotInfo &plot);
+  void plotRatio(plotInfo &plot);
   void decorateHist(TH1 *h, const histDeco &deco);
   void addDoubleStatsBox(const plotInfo &plot);
+  void replaceAll(std::string &str, const std::string &from, const std::string &to);
 
   TH1 *getHist(TFile *f, const std::string &name);
 
@@ -52,13 +55,24 @@ private:
 
   TCanvas *fCanvas = nullptr;
 
-  std::string fInFileName1;
-  std::string fInFileName2;
-  std::string fDirName;
+  std::string fInFileName1, fInFileName2;
+  std::string fDirName, fMode;
 
   double fEvents1, fEvents2;
   double fHiTracks1, fHiTracks2;
   std::string fSetup1, fSetup2;
+  std::string fSimVersion1, fSimVersion2;
+  std::string fSimConf1, fSimConf2;
+  std::string fTriRecVersion1, fTriRecVersion2;
+  std::string fTriRecConf1, fTriRecConf2;
+  std::string fCdbDbconn1, fCdbDbconn2;
+  std::string fCdbGlobalTag1, fCdbGlobalTag2;
+
+  int fKSPassed, fKSFailed;
+  double fKSThreshold;
+
+  int fADPassed, fADFailed;
+  double fADThreshold;
 
   std::map<std::string, plotInfo> fPlots;
   std::vector<histDeco> fHistDecos;

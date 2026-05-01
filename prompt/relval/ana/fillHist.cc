@@ -2,9 +2,13 @@
 
 #include <iostream> 
 #include <string>
+#include <regex>
 
 #include <TMath.h>
+#include <TObjString.h>
 #include <TH2D.h>
+
+#include "../../../common/json.h" // nlohmann
 
 using namespace std;
 
@@ -18,13 +22,74 @@ fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
     return;
   }
 
+  // -- get config from input file
+  string config = ((TObjString*)(fInFile->Get("config_all")))->GetString().Data();
+  nlohmann::json config_json = nlohmann::json::parse(config);
+
+  // -- extract CDB settings from top-level config JSON
+  string cdbDbconn = "";
+  string cdbGlobalTag = "";
+  if (config_json.contains("cdb") && config_json["cdb"].is_object()) {
+    const auto &cdb = config_json["cdb"];
+    if (cdb.contains("dbconn") && cdb["dbconn"].is_string()) {
+      cdbDbconn = cdb["dbconn"].get<string>();
+    }
+    if (cdb.contains("globalTag") && cdb["globalTag"].is_string()) {
+      cdbGlobalTag = cdb["globalTag"].get<string>();
+    }
+  }
+  fConfigs["cdb_dbconn"] = cdbDbconn;
+  fConfigs["cdb_globalTag"] = cdbGlobalTag;
+
+  for (size_t i = 0; i < config_json["cmds"].size(); ++i) {
+    string s = config_json["cmds"][i].get<string>();
+
+    // Extract --conf value from command strings like:
+    //   --conf trirec.conf
+    //   --conf=trirec.conf
+    string confValue;
+    static const regex confPattern(R"((?:^|\s)--conf(?:=|\s+)(\"[^\"]+\"|'[^']+'|[^\s]+))");
+    smatch match;
+    if (regex_search(s, match, confPattern) && match.size() > 1) {
+      confValue = match[1].str();
+      if (confValue.size() >= 2) {
+        const char first = confValue.front();
+        const char last = confValue.back();
+        if ((first == '"' && last == '"') || (first == '\'' && last == '\'')) {
+          confValue = confValue.substr(1, confValue.size() - 2);
+        }
+      }
+    }
+
+    if (!confValue.empty()) {
+      if (string::npos != s.find("mu3eSim")) {
+        fConfigs["sim_conf"] = confValue;
+      } else if (string::npos != s.find("mu3eSort")) {
+        fConfigs["sort_conf"] = confValue;
+      } else if (string::npos != s.find("mu3eTriRec")) {
+        fConfigs["trirec_conf"] = confValue;
+      } 
+    }
+
+    for (size_t i = 0; i < config_json["versions"].size(); ++i) {
+      string s = config_json["versions"][i].get<string>();
+      if (0 == i) fConfigs["sim_version"] = s;
+      else if (1 == i) fConfigs["sort_version"] = s;
+      else if (2 == i) fConfigs["trirec_version"] = s;
+    }
+  }
+
+  cout << "fillHist::fillHist() fConfigs = " << fConfigs.size() << endl;
+  for (auto &c : fConfigs) {
+    cout << "   " << c.first << ": " << c.second << endl;
+  }
+
   fOutFileName = outfileName;
   fOutFile = TFile::Open(fOutFileName.c_str(), "RECREATE");
   if (!fOutFile) {
     cout << "fillHist::fillHist() ERROR: could not open output file " << fOutFileName.c_str() << endl;
     return;
   }
-
 }
 
 
@@ -50,10 +115,19 @@ fillHist::~fillHist() {
 void fillHist::bookHist(string mode, string annotation) {
   if ("relval" == mode) {
     // -- bookkeeping
-    fHistograms["hinfo"] = new TH1D("hinfo", "info", 10, 0., 10.);
+    fHistograms["hinfo"] = new TH1D("hinfo", "info", 50, 0., 50.);
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(1, annotation.c_str());
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(2, "n_events");
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(3, "n_hi_tracks");
+
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(10, fConfigs["sim_conf"].c_str());
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(11, fConfigs["sim_version"].c_str());
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(20, fConfigs["sort_conf"].c_str());
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(21, fConfigs["sort_version"].c_str());
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(30, fConfigs["trirec_conf"].c_str());
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(31, fConfigs["trirec_version"].c_str());
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(35, fConfigs["cdb_dbconn"].c_str());
+    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(36, fConfigs["cdb_globalTag"].c_str());
 
     fHistograms["hpall"] = new TH1D("hpall", "p (all tracks)", 100, -100., 100.);
     fHistograms["hp"] = new TH1D("hp", "p", 100, -100., 100.);
@@ -135,9 +209,10 @@ void fillHist::run(int nevents) {
         fHistograms["ht0_tl"]->Fill(ft0_tl->at(j));
         fHistograms["ht0_fb"]->Fill(ft0_fb->at(j));
         fHistograms["ht0_si"]->Fill(ft0_si->at(j));
-        fHistograms["ht0_tl_rms"]->Fill(ft0_tl_rms->at(j));
-        fHistograms["ht0_fb_rms"]->Fill(ft0_fb_rms->at(j));
-        fHistograms["ht0_si_rms"]->Fill(ft0_si_rms->at(j));
+        // -- check required for v6.3.3
+        if (ft0_tl_rms) fHistograms["ht0_tl_rms"]->Fill(ft0_tl_rms->at(j));
+        if (ft0_fb_rms) fHistograms["ht0_fb_rms"]->Fill(ft0_fb_rms->at(j));
+        if (ft0_si_rms) fHistograms["ht0_si_rms"]->Fill(ft0_si_rms->at(j));
         fHistograms["hr"]->Fill(fr->at(j));
         fHistograms["hrerr2"]->Fill(frerr2->at(j));
         fHistograms["hp"]->Fill(fp->at(j));
@@ -222,15 +297,15 @@ bool fillHist::checkVectorSizes() {
     cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_si->size() " << fp->size() << " != " << ft0_si->size() << endl;
     return false;
   }
-  if (fp->size() != ft0_tl_rms->size()) {
+  if (ft0_tl_rms && fp->size() != ft0_tl_rms->size()) {
     cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_tl_rms->size() " << fp->size() << " != " << ft0_tl_rms->size() << endl;
     return false;
   }
-  if (fp->size() != ft0_fb_rms->size()) {
+  if (ft0_fb_rms && fp->size() != ft0_fb_rms->size()) {
     cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_fb_rms->size() " << fp->size() << " != " << ft0_fb_rms->size() << endl;
     return false;
   }
-  if (fp->size() != ft0_si_rms->size()) {
+  if (ft0_si_rms && fp->size() != ft0_si_rms->size()) {
     cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_si_rms->size() " << fp->size() << " != " << ft0_si_rms->size() << endl;
     return false;
   }
@@ -346,18 +421,30 @@ void fillHist::setupTree(const std::string &treeName) {
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, int* pvar) {
+  if (fTree->GetBranch(name.c_str()) == nullptr) {
+    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    return;
+  }
   fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, float* pvar) {
+  if (fTree->GetBranch(name.c_str()) == nullptr) {
+    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    return;
+  }
   fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, double* pvar) {
+  if (fTree->GetBranch(name.c_str()) == nullptr) {
+    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    return;
+  }
   fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvar);
 }
@@ -365,23 +452,39 @@ void fillHist::initBranch(string name, double* pvar) {
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, string** pvar) {
   cout << "initBranch(" << name << "),  pvar = " << pvar << endl;
+  if (fTree->GetBranch(name.c_str()) == nullptr) {
+    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    return;
+  }
   fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, vector<int>** pvect) {
+  if (fTree->GetBranch(name.c_str()) == nullptr) {
+    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    return;
+  }
   fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvect);
 }
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, vector<unsigned int>** pvect) {
+  if (fTree->GetBranch(name.c_str()) == nullptr) {
+    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    return;
+  }
   fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvect);
 }
 
 // ----------------------------------------------------------------------
 void fillHist::initBranch(string name, vector<double>** pvect) {
+  if (fTree->GetBranch(name.c_str()) == nullptr) {
+    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    return;
+  }
   fTree->SetBranchStatus(name.c_str(), 1);
   fTree->SetBranchAddress(name.c_str(), pvect);
 }

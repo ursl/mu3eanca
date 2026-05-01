@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
   compareHist cmp(infile1, infile2);
   cmp.setupHists(mode);
   cmp.run(dirname);
+  cmp.makeSummaryPDF(dirname);
 
   return 0;
 }
