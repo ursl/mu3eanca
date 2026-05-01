@@ -1,0 +1,92 @@
+\documentclass{article}
+\usepackage[a4paper,margin=0.2in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{xcolor}
+
+\begin{document}
+
+\section*{Summary trirec RelVal plots}
+
+{
+\noindent {\tt \textcolor{blue}{\bf SETUP1}\\
+\noindent {\bf mu3eSim}: ver={SIM_VERSION1}, conf={SIM_CONF1}\\
+\noindent {\bf mu3eTriRec}: ver={TRIREC_VERSION1}, conf={TRIREC_CONF1}, CDB={CDB_DBCONN1}, GT={CDB_GLOBALTAG1}}\\
+\noindent {\tt \textcolor{red}{\bf SETUP2}\\
+\noindent {\bf mu3eSim}: ver={SIM_VERSION2}, conf={SIM_CONF2}\\
+\noindent {\bf mu3eTriRec}: ver={TRIREC_VERSION2}, conf={TRIREC_CONF2}, CDB={CDB_DBCONN2}, GT={CDB_GLOBALTAG2}}\\ 
+\noindent KS passed: {KSPassed}, KS failed: {KSFailed} (KS threshold: {KSThreshold})\\
+}
+
+%% -- coordinates of hit in first pixel layer
+\begin{figure}[!htb]
+  \centering
+  \begin{tabular}{cc}
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hx0.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hy0.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hz0.pdf} &
+%    \includegraphics[width=0.47\textwidth]{DIRNAME/ht0.pdf}
+  \end{tabular}
+  \caption{Co-ordinates of hit in first pixel layer.}
+\end{figure}
+
+%% -- Tracks I
+\begin{figure}[!htb]
+  \centering
+  \begin{tabular}{cc}
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hpall.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hp.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hr.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hperr2.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/htan01.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hlam01.pdf} 
+  \end{tabular}
+  \caption{Track variables}
+\end{figure}
+
+%% -- Tracks II
+\begin{figure}[!htb]
+  \centering
+  \begin{tabular}{cc}
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hchi2.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hnhit.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/httype.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hn_shared_hits.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hn_shared_segs.pdf} 
+  \end{tabular}
+  \caption{Track variables II}
+\end{figure}
+
+
+%% -- Track characteristics per event
+\begin{figure}[!htb]
+  \centering
+  \begin{tabular}{cc}
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hn.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hn4.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/hn6.pdf} &
+  \end{tabular}
+  \caption{Track characteristics per event}
+\end{figure}
+
+\pagebreak
+
+%% -- timing plots
+\begin{figure}[!htb]
+  \centering
+  \begin{tabular}{ccc}
+    \includegraphics[width=0.31\textwidth]{DIRNAME/ht0.pdf} &
+    \includegraphics[width=0.31\textwidth]{DIRNAME/ht0_err.pdf} &
+    \includegraphics[width=0.31\textwidth]{DIRNAME/ht0_rms.pdf} \\
+    \includegraphics[width=0.31\textwidth]{DIRNAME/ht0_tl.pdf} &
+    \includegraphics[width=0.31\textwidth]{DIRNAME/ht0_fb.pdf} &
+    \includegraphics[width=0.31\textwidth]{DIRNAME/ht0_si.pdf} \\
+    \includegraphics[width=0.31\textwidth]{DIRNAME/ht0_tl_rms.pdf} &
+    \includegraphics[width=0.31\textwidth]{DIRNAME/ht0_fb_rms.pdf} &
+    \includegraphics[width=0.31\textwidth]{DIRNAME/ht0_si_rms.pdf} \\
+  \end{tabular}
+  \caption{Timing plots.}
+\end{figure}
+\pagebreak
+
+\end{document}
