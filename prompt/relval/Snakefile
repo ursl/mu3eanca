@@ -30,7 +30,11 @@ SIM_OUTPUT_TPL = config["sim_output_tpl"]
 SORT_OUTPUT_TPL = config["sort_output_tpl"]
 TRIREC_OUTPUT_TPL = config["trirec_output_tpl"]
 FILLHIST_OUTPUT_TPL = config["fillhist_output_tpl"]
+COMPARE_MARKER_TPL = config.get("compare_marker_tpl", "output/compare-{scenario}.done")
 RUN_FILL_HISTOGRAMS_EXE = config["run_fill_histograms_exe"]
+RUN_COMPARE_HISTOGRAMS_EXE = config.get("run_compare_histograms_exe")
+COMPARE_AGAINST_SETUP = config.get("compare_against_setup", "")
+COMPARE_ENABLED = bool(COMPARE_AGAINST_SETUP and RUN_COMPARE_HISTOGRAMS_EXE)
 
 # Allow CLI override via --config cdb_GT=... (and accept lowercase alias).
 CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
@@ -65,16 +69,38 @@ def fillhist_output(scenario):
     return FILLHIST_OUTPUT_TPL.format(scenario=scenario)
 
 
+def compare_marker_output(scenario):
+    return COMPARE_MARKER_TPL.format(scenario=scenario)
+
+
+def compare_other_hist(scenario):
+    return f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{fillhist_output(scenario)}"
+
+
+def compare_dir_name(scenario):
+    this_setup = MU3E_DIRNAME
+    other_setup = f"{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}"
+    return f"{scenario}__{this_setup}__vs__{other_setup}"
+
+
 wildcard_constraints:
     scenario="|".join(SCENARIO_IDS)
 
 
+ALL_TARGETS = [
+    f"{MU3E_DIR}/run/{fillhist_output(scenario)}"
+    for scenario in SCENARIO_IDS
+]
+if COMPARE_ENABLED:
+    ALL_TARGETS += [
+        f"{MU3E_DIR}/run/{compare_marker_output(scenario)}"
+        for scenario in SCENARIO_IDS
+    ]
+
+
 rule all:
     input:
-        [
-            f"{MU3E_DIR}/run/{fillhist_output(scenario)}"
-            for scenario in SCENARIO_IDS
-        ]
+        ALL_TARGETS
 
 
 rule clone_and_prepare_mu3e:
@@ -268,6 +294,27 @@ rule run_fill_histograms:
             --out "{params.output_path}"
         """
 
+
+if COMPARE_ENABLED:
+    rule run_compare_histograms:
+        input:
+            in1=f"{MU3E_DIR}/run/{FILLHIST_OUTPUT_TPL}",
+            in2=lambda wildcards: compare_other_hist(wildcards.scenario)
+        output:
+            f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}"
+        params:
+            exe=RUN_COMPARE_HISTOGRAMS_EXE,
+            out_dir=lambda wildcards: compare_dir_name(wildcards.scenario)
+        shell:
+            r"""
+            set -euo pipefail
+            "{params.exe}" \
+                --in1 "{input.in1}" \
+                --in2 "{input.in2}" \
+                --dir "{params.out_dir}"
+            touch "{output}"
+            """
+
 localrules: clean
 
 rule clean:
@@ -279,4 +326,5 @@ rule clean:
         rm -f "{MU3E_DIR}/run/output/sort-"*.root
         rm -f "{MU3E_DIR}/run/output/trirec-"*.root
         rm -f "{MU3E_DIR}/run/output/histograms-"*.root
+        rm -f "{MU3E_DIR}/run/output/compare-"*.done
         """
