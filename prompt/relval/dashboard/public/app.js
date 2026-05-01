@@ -74,9 +74,16 @@ function compareReleaseDesc(aRelease, bRelease) {
   return b.pre - a.pre;
 }
 
-function renderSetupLogs(setup) {
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function compareLogsMarkup(setup) {
   const details = document.getElementById("details");
-  const title = `<h3>Logs for ${setup.name}</h3>`;
+  void details;
   const sections = [];
   for (const s of setup.compare.scenarios) {
     const scenario = scenarioFromCompareDirName(s.dirName);
@@ -96,11 +103,38 @@ function renderSetupLogs(setup) {
       `);
     }
   }
+  return sections;
+}
+
+async function renderSetupLogs(setup) {
+  const details = document.getElementById("details");
+  const title = `<h3>Logs for ${setup.name}</h3>`;
+  details.innerHTML = `${title}<p>Loading Snakemake logs...</p>`;
+
+  let snakemakeSection = "<p><em>No Snakemake logs found.</em></p>";
+  try {
+    const res = await fetch(
+      `/api/setups/${encodeURIComponent(setup.name)}/snakemake-log`,
+    );
+    if (res.ok) {
+      const payload = await res.json();
+      if (payload.fileCount > 0 && payload.text) {
+        snakemakeSection = `
+          <h4>Snakemake logs (${payload.fileCount} files, concatenated)</h4>
+          <pre>${escapeHtml(payload.text)}</pre>
+        `;
+      }
+    }
+  } catch {
+    snakemakeSection = "<p><em>Failed to load Snakemake logs.</em></p>";
+  }
+
+  const sections = compareLogsMarkup(setup);
   if (sections.length === 0) {
-    details.innerHTML = `${title}<p><em>No compare logs available for this setup.</em></p>`;
+    details.innerHTML = `${title}${snakemakeSection}<p><em>No compare logs available for this setup.</em></p>`;
     return;
   }
-  details.innerHTML = `${title}${sections.join("")}`;
+  details.innerHTML = `${title}${snakemakeSection}${sections.join("")}`;
 }
 
 function renderSetupsTable(model) {
@@ -147,7 +181,9 @@ function renderSetupsTable(model) {
     tr.addEventListener("click", () => {
       for (const row of tbody.querySelectorAll("tr")) row.classList.remove("selected");
       tr.classList.add("selected");
-      renderSetupLogs(setup);
+      renderSetupLogs(setup).catch((err) => {
+        document.getElementById("details").textContent = err.stack || String(err);
+      });
     });
     tbody.appendChild(tr);
 
@@ -159,7 +195,9 @@ function renderSetupsTable(model) {
 
   if (firstRow && firstSetup) {
     firstRow.classList.add("selected");
-    renderSetupLogs(firstSetup);
+    renderSetupLogs(firstSetup).catch((err) => {
+      document.getElementById("details").textContent = err.stack || String(err);
+    });
   } else {
     document.getElementById("details").innerHTML =
       "<em>No setups found.</em>";

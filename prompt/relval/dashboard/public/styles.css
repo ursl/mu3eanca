@@ -109,3 +109,13 @@ button:hover {
 .details-box a:hover {
   text-decoration: underline;
 }
+
+.details-box pre {
+  background: #0a0a0a;
+  color: #eaeaea;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 10px;
+  overflow: auto;
+  max-height: 420px;
+}

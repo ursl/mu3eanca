@@ -73,6 +73,72 @@ function relToBase(absPath) {
   return path.relative(RELVAL_BASEDIR, absPath).replaceAll(path.sep, "/");
 }
 
+function collectSnakemakeLogs(setupDir, setupName) {
+  const candidateDirs = [];
+  candidateDirs.push(path.join(setupDir, ".snakemake", "log"));
+  if (setupName.startsWith("mu3e-")) {
+    const setupSafe = setupName.slice("mu3e-".length);
+    candidateDirs.push(path.join(RELVAL_BASEDIR, "setups", setupSafe, ".snakemake", "log"));
+  }
+
+  const logMap = new Map();
+  for (const logDir of candidateDirs) {
+    try {
+      for (const d of fs.readdirSync(logDir, { withFileTypes: true })) {
+        if (!d.isFile() || !d.name.endsWith(".snakemake.log")) continue;
+        const absPath = path.join(logDir, d.name);
+        let mtimeMs = 0;
+        try {
+          mtimeMs = fs.statSync(absPath).mtimeMs;
+        } catch {
+          mtimeMs = 0;
+        }
+        // Key by absolute path so we can merge from multiple dirs.
+        logMap.set(absPath, {
+          name: d.name,
+          relPath: relToBase(absPath),
+          mtimeMs,
+        });
+      }
+    } catch {
+      // ignore missing candidate dir
+    }
+  }
+
+  const files = [...logMap.values()].sort((a, b) => b.mtimeMs - a.mtimeMs);
+  return { logDirs: candidateDirs, files };
+}
+
+function buildCombinedSnakemakeLog(setupDir, setupName) {
+  const snk = collectSnakemakeLogs(setupDir, setupName);
+  if (!snk.files.length) {
+    return {
+      setupName,
+      fileCount: 0,
+      files: [],
+      text: "",
+    };
+  }
+
+  // Concatenate oldest -> newest for better chronology.
+  const files = [...snk.files].sort((a, b) => a.mtimeMs - b.mtimeMs);
+  const chunks = [];
+  for (const f of files) {
+    const absPath = safeJoin(RELVAL_BASEDIR, f.relPath);
+    if (!absPath) continue;
+    const content = readTextIfExists(absPath);
+    if (content == null) continue;
+    chunks.push(`===== ${f.relPath} =====\n${content}`);
+  }
+
+  return {
+    setupName,
+    fileCount: files.length,
+    files: files.map((f) => ({ name: f.name, relPath: f.relPath })),
+    text: chunks.join("\n\n"),
+  };
+}
+
 function collectCompareOutputs(setupDir) {
   const compareRoot = path.join(setupDir, "run", "output", "compare");
   let compareDirs = [];
@@ -175,6 +241,7 @@ function listSetups() {
       const summaryExists = fs.existsSync(summaryPath);
       const detailedExists = fs.existsSync(detailedPath);
       const compare = collectCompareOutputs(setupDir);
+      const snakemakeLogs = collectSnakemakeLogs(setupDir, name);
 
       return {
         name,
@@ -189,6 +256,7 @@ function listSetups() {
         },
         stats,
         compare,
+        snakemakeLogs,
         updatedAt: summaryExists
           ? fs.statSync(summaryPath).mtime.toISOString()
           : null,
@@ -277,7 +345,20 @@ const server = http.createServer((req, res) => {
   }
 
   if (urlObj.pathname.startsWith("/api/setups/")) {
-    const setupName = decodeURIComponent(urlObj.pathname.replace("/api/setups/", ""));
+    const tail = urlObj.pathname.replace("/api/setups/", "");
+    if (tail.endsWith("/snakemake-log")) {
+      const setupName = decodeURIComponent(tail.replace(/\/snakemake-log$/, ""));
+      const setup = listSetups().find((s) => s.name === setupName);
+      if (!setup) {
+        sendJson(res, 404, { error: `Unknown setup: ${setupName}` });
+        return;
+      }
+      const combined = buildCombinedSnakemakeLog(setup.setupDir, setup.name);
+      sendJson(res, 200, combined);
+      return;
+    }
+
+    const setupName = decodeURIComponent(tail);
     const setup = listSetups().find((s) => s.name === setupName);
     if (!setup) {
       sendJson(res, 404, { error: `Unknown setup: ${setupName}` });
