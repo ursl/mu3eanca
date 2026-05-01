@@ -127,16 +127,20 @@ if ($opt_all) {
     if ($opt_dry_run) {
         my $self = abs_path($0);
         print(prefix("runRelval"), "meta mode --all --dry-run\n");
-        print($self, " -j4", " -p", " --config", " mu3e_tag=v6.6pre0", " cdb_GT=mcidealv6.5", "\n");
+        print($self, " -j4", " -p", " --config", " mu3e_tag=v6.7pre0", " cdb_GT=mcidealv6.5", "\n");
+        print($self, " -j4", " -p", " --config", " mu3e_tag=v6.6",     " cdb_GT=mcidealv6.5", "\n");
         print($self, " -j4", " -p", " --config", " mu3e_tag=v6.5",     " cdb_GT=mcidealv6.5", "\n");
         print($self, " -j4", " -p", " --config", " mu3e_tag=v6.4.4",   " cdb_GT=mcidealv6.5", " cdb_dbconn=http://mu3edb0/cdb", "\n");
+        print($self, " -j4", " -p", " --config", " mu3e_tag=v6.3.3",   " cdb_GT=datav6.3=2025V1", " cdb_dbconn=http://mu3edb0/cdb", "\n");
         exit(0);
     } else {
         my $self = abs_path($0);
         print(prefix("runRelval"), "meta mode --all\n");
-        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.6pre0", "cdb_GT=mcidealv6.5");
-        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.5", "cdb_GT=mcidealv6.5");
-        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.4.4", "cdb_GT=mcidealv6.5", "cdb_dbconn=http://mu3edb0/cdb");
+        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.7pre0", "cdb_GT=mcidealv6.5");
+        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.6",     "cdb_GT=mcidealv6.5");
+        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.5",     "cdb_GT=mcidealv6.5");
+        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.4.4",   "cdb_GT=mcidealv6.5", "cdb_dbconn=http://mu3edb0/cdb");
+        run_cmd($self, "-j4", "-p", "--config", "mu3e_tag=v6.3.3",   "cdb_GT=datav6.3=2025V1", "cdb_dbconn=http://mu3edb0/cdb");
         exit(0);
     }
 }
