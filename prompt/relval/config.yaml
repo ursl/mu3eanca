@@ -7,26 +7,28 @@ make_jobs: 10
 
 relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
 
-run_id: 5461
-n_events: 3000
+run_id: 1234
+n_events: 4000
 
 sim_scenarios:
-  - id: "cosmic_twolayer"
-    sim_conf: "sim_cosmic.json"
-    trirec_conf: "trirec_twolayer_cosmic.conf"
-  - id: "cosmic_threelayer"
-    sim_conf: "sim_cosmic.json"
-    trirec_conf: "trirec_threelayer_cosmic.conf"
-  - id: "conf8_twolayer"
-    sim_conf: "bvr2026/sim_conf8.json"
+#  - id: "cosmic_twolayer"
+#    sim_conf: "sim_cosmic.json"
+#    trirec_conf: "trirec_twolayer_cosmic.conf"
+#  - id: "cosmic_threelayer"
+#    sim_conf: "sim_cosmic.json"
+#    trirec_conf: "trirec_threelayer_cosmic.conf"
+#  - id: "conf8_twolayer"
+#    sim_conf: "bvr2026/sim_conf8.json"
+#    trirec_conf: "trirec_twolayer_beam.conf"
+  - id: "conf10_twolayer"
+    sim_conf: "bvr2026/sim_conf10.json"
     trirec_conf: "trirec_twolayer_beam.conf"
-  - id: "conf18_twolayer"
-    sim_conf: "bvr2026/sim_conf18.json"
-    trirec_conf: "trirec_twolayer_beam.conf"
+    trirec_conf_fallback: "trirec.conf"
   - id: "conf18_threelayer"
     sim_conf: "bvr2026/sim_conf18.json"
     trirec_conf: "trirec_threelayer_beam.conf"
-
+    trirec_conf_fallback: "trirec.conf"
+ 
 sim_output_tpl: "output/sim-{scenario}.root"
 sort_output_tpl: "output/sort-{scenario}.root"
 trirec_output_tpl: "output/trirec-{scenario}.root"

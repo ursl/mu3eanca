@@ -45,6 +45,10 @@ def trirec_conf(scenario):
     return SCENARIO_BY_ID[scenario]["trirec_conf"]
 
 
+def trirec_conf_fallback(scenario):
+    return SCENARIO_BY_ID[scenario].get("trirec_conf_fallback", "")
+
+
 def sim_output(scenario):
     return SIM_OUTPUT_TPL.format(scenario=scenario)
 
@@ -218,6 +222,7 @@ rule run_mu3e_trirec:
         sort_output=lambda wildcards: sort_output(wildcards.scenario),
         trirec_output=lambda wildcards: trirec_output(wildcards.scenario),
         trirec_conf=lambda wildcards: trirec_conf(wildcards.scenario),
+        trirec_conf_fallback=lambda wildcards: trirec_conf_fallback(wildcards.scenario),
         run_id=RUN_ID,
         cdb_dbconn=CDB_DBCONN,
         cdb_GT=CDB_GT
@@ -225,9 +230,19 @@ rule run_mu3e_trirec:
         r"""
         set -euo pipefail;
         cd "{params.mu3e_dir}/run";
+        trirec_conf="{params.trirec_conf}";
+        if [ ! -f "$trirec_conf" ]; then
+            if [ -n "{params.trirec_conf_fallback}" ] && [ -f "{params.trirec_conf_fallback}" ]; then
+                echo "[relval] trirec conf '$trirec_conf' missing, using fallback '{params.trirec_conf_fallback}'";
+                trirec_conf="{params.trirec_conf_fallback}";
+            else
+                echo "[relval] ERROR: trirec conf '$trirec_conf' not found and no valid fallback configured" >&2;
+                exit 1;
+            fi
+        fi
         ../_build/mu3eTrirec/mu3eTriRec \
         "{params.sort_output}" \
-        --conf "{params.trirec_conf}" \
+        --conf "$trirec_conf" \
         --output "{params.trirec_output}" \
         --run {params.run_id} \
         --cdb.dbconn="{params.cdb_dbconn}" \
