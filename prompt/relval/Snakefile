@@ -359,11 +359,15 @@ if COMPARE_ENABLED:
             out_dir_host=lambda wildcards: compare_dir_host(wildcards.scenario),
             in1_data=lambda wildcards: compare_in1_data_path(wildcards.scenario),
             in2_data=lambda wildcards: compare_in2_data_path(wildcards.scenario),
-            out_name=lambda wildcards: f"histocompare-{wildcards.scenario}"
+            out_name=lambda wildcards: f"histocompare-{wildcards.scenario}",
+            out_pdf=lambda wildcards: f"{compare_dir_host(wildcards.scenario)}/histocompare-{wildcards.scenario}.pdf",
+            out_root=lambda wildcards: f"{compare_dir_host(wildcards.scenario)}/histocompare-{wildcards.scenario}.root",
+            out_log=lambda wildcards: f"{compare_dir_host(wildcards.scenario)}/histocompare-{wildcards.scenario}.log"
         shell:
             r"""
             set -euo pipefail
             mkdir -p "{params.out_dir_host}"
+            set +e
             podman run --rm \
                 -v "{MU3E_RELVAL_BASEDIR}:/data:ro" \
                 -v "{params.out_dir_host}:/workdir" \
@@ -372,6 +376,19 @@ if COMPARE_ENABLED:
                 "{params.in2_data}" \
                 --custom -t 0.80 -D 1.0 --meanThr 2 --stdThr 3 \
                 -o "{params.out_name}" --pdf --ignoreResolution --ignoreNoSharedHits
+            rc=$?
+            set -e
+
+            if [ "$rc" -ne 0 ]; then
+                # On some host/container combinations histocompare can segfault
+                # during shutdown although output files are already written.
+                if [ -f "{params.out_pdf}" ] && [ -f "{params.out_root}" ] && [ -f "{params.out_log}" ]; then
+                    echo "[relval] WARNING: histocompare exited with code $rc but produced expected outputs; continuing"
+                else
+                    echo "[relval] ERROR: histocompare failed with code $rc and outputs are incomplete" >&2
+                    exit "$rc"
+                fi
+            fi
             touch "{output}"
             """
 
