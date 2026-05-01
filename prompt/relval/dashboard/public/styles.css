@@ -1,0 +1,111 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0;
+  background: #f7f7fb;
+  color: #111;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+#setups-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0 24px 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#setups-table th,
+#setups-table td {
+  border-bottom: 1px solid #eee;
+  padding: 10px;
+  vertical-align: top;
+  text-align: left;
+  font-size: 14px;
+}
+
+#setups-table th {
+  background: #f2f4f8;
+}
+
+#setups-table tr:hover td {
+  background: #fafbff;
+}
+
+#setups-table tr.selected td {
+  background: #eaf2ff;
+}
+
+#setups-table tbody tr {
+  cursor: pointer;
+}
+
+.pdf-links a {
+  display: inline-block;
+  margin: 2px 8px 2px 0;
+  text-decoration: none;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ok {
+  background: #daf5df;
+  color: #145c2a;
+}
+
+.warn {
+  background: #fff0cc;
+  color: #805300;
+}
+
+.missing {
+  background: #fce1e1;
+  color: #8c1d1d;
+}
+
+button {
+  background: #0f62fe;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0b53d4;
+}
+
+.details-box {
+  background: #111;
+  color: #eaeaea;
+  border-radius: 8px;
+  padding: 12px;
+  overflow: auto;
+  max-height: 420px;
+}
+
+.details-box a {
+  color: #9ec8ff;
+  text-decoration: none;
+}
+
+.details-box a:hover {
+  text-decoration: underline;
+}

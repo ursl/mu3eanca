@@ -1,0 +1,9 @@
+{
+  "name": "mu3e-relval-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal web dashboard for Snakemake relval status",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MU3E RelVal Status</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>MU3E RelVal Status</h1>
+      <p id="base-dir"></p>
+      <button id="refresh-btn" type="button">Refresh</button>
+
+      <section>
+        <h2>Setup Compare Overview</h2>
+        <table id="setups-table">
+          <thead>
+            <tr>
+              <th>New Release</th>
+              <th>Reference Release</th>
+              <th>Status</th>
+              <th>Updated</th>
+              <th>Histocompare PDFs</th>
+              <th>RunCompare PDFs</th>
+            </tr>
+          </thead>
+          <tbody id="setups-tbody"></tbody>
+        </table>
+      </section>
+
+      <h2>Setup Logs</h2>
+      <p>Select a setup row to inspect log links.</p>
+      <div id="details" class="details-box"></div>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+  </html>
