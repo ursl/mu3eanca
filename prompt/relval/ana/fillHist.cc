@@ -16,6 +16,12 @@ using namespace std;
 // ----------------------------------------------------------------------
 fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
   cout << "fillHist::fillHist() infile = " << infile << " outfileName = " << outfileName << endl;
+  fFrames.name = "frames";
+  fFrames.tree = nullptr;
+  resetBranches(fFrames);
+  fMcFrames.name = "mc_frames";
+  fMcFrames.tree = nullptr;
+  resetBranches(fMcFrames);
   fInFile = TFile::Open(infile.c_str());
   if (!fInFile) {
     cout << "fillHist::fillHist() ERROR: could not open input file " << infile.c_str() << endl;
@@ -178,60 +184,77 @@ void fillHist::bookHist(string mode, string annotation) {
 // ----------------------------------------------------------------------
 void fillHist::run(int nevents) {
   fNevents = nevents;
-  if (fNevents < 0) fNevents = fTree->GetEntries();
+  if (!fFrames.tree) {
+    cout << "fillHist::run() ERROR: frames tree is not initialized" << endl;
+    return;
+  }
+  if (fNevents < 0) fNevents = fFrames.tree->GetEntries();
   if (fInFile) fInFile->cd();
   cout << "fillHist::run() fNevents = " << fNevents << endl;
   fHistograms["hinfo"]->SetBinContent(2, fNevents);
   int nHiTracks(0); // number of hits > 20 GeV
   for (int i = 0; i < fNevents; ++i) {
-    fTree->GetEntry(i);
+    fFrames.tree->GetEntry(i);
+    if (fMcFrames.tree) fMcFrames.tree->GetEntry(i);
     //cout << "fillHist::run() i = " << i << " fp->size() = " << fp->size() << endl;
-    fHistograms["hn"]->Fill(fn);
-    fHistograms["hn4"]->Fill(fn4);
-    fHistograms["hn6"]->Fill(fn6);
-    fHistograms["hn8"]->Fill(fn8);
+    fHistograms["hn"]->Fill(fFrames.n);
+    fHistograms["hn4"]->Fill(fFrames.n4);
+    fHistograms["hn6"]->Fill(fFrames.n6);
+    fHistograms["hn8"]->Fill(fFrames.n8);
 
     // -- check that the number of tracks is the same as the number of hits
-    if (!checkVectorSizes())  continue;
+    if (!checkVectorSizes(fFrames))  continue;
     
     // -- fill per-track histograms
-    for (unsigned int j = 0; j < fp->size(); ++j) {
-      fHistograms["hpall"]->Fill(fp->at(j));
+    for (unsigned int j = 0; j < fFrames.p->size(); ++j) {
+      fHistograms["hpall"]->Fill(fFrames.p->at(j));
   
-      if (TMath::Abs(fp->at(j)) > 20.) {
+      if (TMath::Abs(fFrames.p->at(j)) > 20.) {
         nHiTracks++;
-        fHistograms["hx0"]->Fill(fx0->at(j));
-        fHistograms["hy0"]->Fill(fy0->at(j));
-        fHistograms["hz0"]->Fill(fz0->at(j));
-        fHistograms["ht0"]->Fill(ft0->at(j));
-        fHistograms["ht0_err"]->Fill(ft0_err->at(j));
-        fHistograms["ht0_rms"]->Fill(ft0_rms->at(j));
-        fHistograms["ht0_tl"]->Fill(ft0_tl->at(j));
-        fHistograms["ht0_fb"]->Fill(ft0_fb->at(j));
-        fHistograms["ht0_si"]->Fill(ft0_si->at(j));
+        fHistograms["hx0"]->Fill(fFrames.x0->at(j));
+        fHistograms["hy0"]->Fill(fFrames.y0->at(j));
+        fHistograms["hz0"]->Fill(fFrames.z0->at(j));
+        fHistograms["ht0"]->Fill(fFrames.t0->at(j));
+        fHistograms["ht0_err"]->Fill(fFrames.t0_err->at(j));
+        fHistograms["ht0_rms"]->Fill(fFrames.t0_rms->at(j));
+        fHistograms["ht0_tl"]->Fill(fFrames.t0_tl->at(j));
+        fHistograms["ht0_fb"]->Fill(fFrames.t0_fb->at(j));
+        fHistograms["ht0_si"]->Fill(fFrames.t0_si->at(j));
         // -- check required for v6.3.3
-        if (ft0_tl_rms) fHistograms["ht0_tl_rms"]->Fill(ft0_tl_rms->at(j));
-        if (ft0_fb_rms) fHistograms["ht0_fb_rms"]->Fill(ft0_fb_rms->at(j));
-        if (ft0_si_rms) fHistograms["ht0_si_rms"]->Fill(ft0_si_rms->at(j));
-        fHistograms["hr"]->Fill(fr->at(j));
-        fHistograms["hrerr2"]->Fill(frerr2->at(j));
-        fHistograms["hp"]->Fill(fp->at(j));
-        fHistograms["hperr2"]->Fill(fperr2->at(j));
-        fHistograms["hchi2"]->Fill(fchi2->at(j));
-        fHistograms["htan01"]->Fill(ftan01->at(j));
-        fHistograms["hlam01"]->Fill(flam01->at(j));
-        fHistograms["hnhit"]->Fill(fnhit->at(j));
-        fHistograms["httype"]->Fill(fttype->at(j));
-        fHistograms["hn_shared_hits"]->Fill(fn_shared_hits->at(j));
-        fHistograms["hn_shared_segs"]->Fill(fn_shared_segs->at(j));
-        fHistograms["hfarm_status"]->Fill(ffarm_status->at(j));
+        if (fFrames.t0_tl_rms) fHistograms["ht0_tl_rms"]->Fill(fFrames.t0_tl_rms->at(j));
+        if (fFrames.t0_fb_rms) fHistograms["ht0_fb_rms"]->Fill(fFrames.t0_fb_rms->at(j));
+        if (fFrames.t0_si_rms) fHistograms["ht0_si_rms"]->Fill(fFrames.t0_si_rms->at(j));
+        fHistograms["hr"]->Fill(fFrames.r->at(j));
+        fHistograms["hrerr2"]->Fill(fFrames.rerr2->at(j));
+        fHistograms["hp"]->Fill(fFrames.p->at(j));
+        fHistograms["hperr2"]->Fill(fFrames.perr2->at(j));
+        fHistograms["hchi2"]->Fill(fFrames.chi2->at(j));
+        fHistograms["htan01"]->Fill(fFrames.tan01->at(j));
+        fHistograms["hlam01"]->Fill(fFrames.lam01->at(j));
+        fHistograms["hnhit"]->Fill(fFrames.nhit->at(j));
+        fHistograms["httype"]->Fill(fFrames.ttype->at(j));
+        fHistograms["hn_shared_hits"]->Fill(fFrames.n_shared_hits->at(j));
+        fHistograms["hn_shared_segs"]->Fill(fFrames.n_shared_segs->at(j));
+        fHistograms["hfarm_status"]->Fill(fFrames.farm_status->at(j));
 
         // -- fill hitmap vtx0
-        int vtxL0Ladder = getVtxL0Ladder(fsid0->at(j));
+        int vtxL0Ladder = getVtxL0Ladder(fFrames.sid0->at(j));
         if (vtxL0Ladder >= 0) {
-          fHistograms["h2hitmapvtx0"]->Fill(fz0->at(j), vtxL0Ladder);
-          fHistograms[Form("h2hitmapvtx0_sid%03d", fsid0->at(j))]->Fill(fz0->at(j), TMath::ATan2(fy0->at(j), fx0->at(j)));
+          fHistograms["h2hitmapvtx0"]->Fill(fFrames.z0->at(j), vtxL0Ladder);
+          fHistograms[Form("h2hitmapvtx0_sid%03d", fFrames.sid0->at(j))]->Fill(fFrames.z0->at(j), TMath::ATan2(fFrames.y0->at(j), fFrames.x0->at(j)));
         }
+
+        // -- comparison to MC 
+        // -- resolution in momentum 
+        // frames->Draw("TMath::Abs(p)-mc_p", "1==mc && 1==mc_prime && TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55", "")
+
+        // -- efficiency
+        // root [22] mc_frames->Draw("mc_lam:TMath::Abs(mc_p)>>hmc", "TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55 && ttype==42", "colz")
+        // (long long) 108677
+        // root [23] frames->Draw("mc_lam:TMath::Abs(mc_p)>>hrec", "1==mc && 1==mc_prime && TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55 && ttype==42", "colz")
+        // (long long) 66659
+        // root [24] heff->Divide(h1, h2)
+
       }
     }
   }
@@ -264,101 +287,101 @@ int fillHist::getVtxL0Ladder(int sid0) {
 
 
 // ----------------------------------------------------------------------
-bool fillHist::checkVectorSizes() {
-  if (fp->size() != fx0->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fx0->size() " << fp->size() << " != " << fx0->size() << endl;
+bool fillHist::checkVectorSizes(const fillHist::TreeData &b) {
+  if (b.p->size() != b.x0->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != x0->size() " << b.p->size() << " != " << b.x0->size() << endl;
     return false;
   }
-  if (fp->size() != fy0->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fy0->size() " << fp->size() << " != " << fy0->size() << endl;
+  if (b.p->size() != b.y0->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != y0->size() " << b.p->size() << " != " << b.y0->size() << endl;
     return false;
   }
-  if (fp->size() != fz0->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fz0->size() " << fp->size() << " != " << fz0->size() << endl;
+  if (b.p->size() != b.z0->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != z0->size() " << b.p->size() << " != " << b.z0->size() << endl;
     return false;
   }
-  if (fp->size() != ft0->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0->size() " << fp->size() << " != " << ft0->size() << endl;
+  if (b.p->size() != b.t0->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != t0->size() " << b.p->size() << " != " << b.t0->size() << endl;
     return false;
   }
-  if (fp->size() != ft0_err->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_err->size() " << fp->size() << " != " << ft0_err->size() << endl;
+  if (b.p->size() != b.t0_err->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != t0_err->size() " << b.p->size() << " != " << b.t0_err->size() << endl;
     return false;
   }
-  if (fp->size() != ft0_tl->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_tl->size() " << fp->size() << " != " << ft0_tl->size() << endl;
+  if (b.p->size() != b.t0_tl->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != t0_tl->size() " << b.p->size() << " != " << b.t0_tl->size() << endl;
     return false;
   }
-  if (fp->size() != ft0_fb->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_fb->size() " << fp->size() << " != " << ft0_fb->size() << endl;
+  if (b.p->size() != b.t0_fb->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != t0_fb->size() " << b.p->size() << " != " << b.t0_fb->size() << endl;
     return false;
   }
-  if (fp->size() != ft0_si->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_si->size() " << fp->size() << " != " << ft0_si->size() << endl;
+  if (b.p->size() != b.t0_si->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != t0_si->size() " << b.p->size() << " != " << b.t0_si->size() << endl;
     return false;
   }
-  if (ft0_tl_rms && fp->size() != ft0_tl_rms->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_tl_rms->size() " << fp->size() << " != " << ft0_tl_rms->size() << endl;
+  if (b.t0_tl_rms && b.p->size() != b.t0_tl_rms->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != t0_tl_rms->size() " << b.p->size() << " != " << b.t0_tl_rms->size() << endl;
     return false;
   }
-  if (ft0_fb_rms && fp->size() != ft0_fb_rms->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_fb_rms->size() " << fp->size() << " != " << ft0_fb_rms->size() << endl;
+  if (b.t0_fb_rms && b.p->size() != b.t0_fb_rms->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != t0_fb_rms->size() " << b.p->size() << " != " << b.t0_fb_rms->size() << endl;
     return false;
   }
-  if (ft0_si_rms && fp->size() != ft0_si_rms->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ft0_si_rms->size() " << fp->size() << " != " << ft0_si_rms->size() << endl;
+  if (b.t0_si_rms && b.p->size() != b.t0_si_rms->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != t0_si_rms->size() " << b.p->size() << " != " << b.t0_si_rms->size() << endl;
     return false;
   }
-  if (fp->size() != fr->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fr->size() " << fp->size() << " != " << fr->size() << endl;
+  if (b.p->size() != b.r->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != r->size() " << b.p->size() << " != " << b.r->size() << endl;
     return false;
   }
-  if (fp->size() != frerr2->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != frerr2->size() " << fp->size() << " != " << frerr2->size() << endl;
+  if (b.p->size() != b.rerr2->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != rerr2->size() " << b.p->size() << " != " << b.rerr2->size() << endl;
     return false;
   }
-  if (fp->size() != fperr2->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fperr2->size() " << fp->size() << " != " << fperr2->size() << endl;
+  if (b.p->size() != b.perr2->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != perr2->size() " << b.p->size() << " != " << b.perr2->size() << endl;
     return false;
   }
-  if (fp->size() != fchi2->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fchi2->size() " << fp->size() << " != " << fchi2->size() << endl;
+  if (b.p->size() != b.chi2->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != chi2->size() " << b.p->size() << " != " << b.chi2->size() << endl;
     return false;
   }
-  if (fp->size() != ftan01->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ftan01->size() " << fp->size() << " != " << ftan01->size() << endl;
+  if (b.p->size() != b.tan01->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != tan01->size() " << b.p->size() << " != " << b.tan01->size() << endl;
     return false;
   }
-  if (fp->size() != flam01->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != flam01->size() " << fp->size() << " != " << flam01->size() << endl;
+  if (b.p->size() != b.lam01->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != lam01->size() " << b.p->size() << " != " << b.lam01->size() << endl;
     return false;
   }
-  if (fp->size() != fsid0->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fsid0->size() " << fp->size() << " != " << fsid0->size() << endl;
+  if (b.p->size() != b.sid0->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != sid0->size() " << b.p->size() << " != " << b.sid0->size() << endl;
     return false;
   }
-  if (fp->size() != fnhit->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fnhit->size() " << fp->size() << " != " << fnhit->size() << endl;
+  if (b.p->size() != b.nhit->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != nhit->size() " << b.p->size() << " != " << b.nhit->size() << endl;
     return false;
   }
-  if (fp->size() != fttype->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fttype->size() " << fp->size() << " != " << fttype->size() << endl;
+  if (b.p->size() != b.ttype->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != ttype->size() " << b.p->size() << " != " << b.ttype->size() << endl;
     return false;
   }
-  if (fp->size() != fn_shared_hits->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fn_shared_hits->size() " << fp->size() << " != " << fn_shared_hits->size() << endl;
+  if (b.p->size() != b.n_shared_hits->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != n_shared_hits->size() " << b.p->size() << " != " << b.n_shared_hits->size() << endl;
     return false;
   }
-  if (fp->size() != fn_shared_segs->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fn_shared_segs->size() " << fp->size() << " != " << fn_shared_segs->size() << endl;
+  if (b.p->size() != b.n_shared_segs->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != n_shared_segs->size() " << b.p->size() << " != " << b.n_shared_segs->size() << endl;
     return false;
   }
-  if (fp->size() != ffarm_status->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != ffarm_status->size() " << fp->size() << " != " << ffarm_status->size() << endl;
+  if (b.p->size() != b.farm_status->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != farm_status->size() " << b.p->size() << " != " << b.farm_status->size() << endl;
     return false;
   }
-  if (fp->size() != fsid0->size()) {
-    cout << "fillHist::checkVectorSizes() ERROR: fp->size() != fsid0->size() " << fp->size() << " != " << fsid0->size() << endl;
+  if (b.p->size() != b.sid0->size()) {
+    cout << "fillHist::checkVectorSizes() ERROR: p->size() != sid0->size() " << b.p->size() << " != " << b.sid0->size() << endl;
     return false;
   }
   return true;
@@ -366,125 +389,165 @@ bool fillHist::checkVectorSizes() {
 
 // ----------------------------------------------------------------------
 void fillHist::setupTree(const std::string &treeName) {
-  fTree = fInFile->Get<TTree>(treeName.c_str());
-  if (!fTree) {
+  fTreeName = treeName;
+  fFrames.name = treeName;
+  fFrames.tree = fInFile->Get<TTree>(treeName.c_str());
+  if (!fFrames.tree) {
     cout << "fillHist::setupTree() ERROR: could not get tree " << treeName << endl;
     return;
   }
 
-  // Read only branches we explicitly bind below.
-  fTree->SetBranchStatus("*", 0);
-  
-  // -- NB: The following lines are essential. Else there will be a crash when compiler does not do default zeroing!
-  fx0 = fy0 = fz0 = ft0 = ft0_err = ft0_rms = ft0_tl = ft0_fb = ft0_si = 0;
-  ft0_tl_rms = ft0_fb_rms = ft0_si_rms = 0;
-  fr = frerr2 = fp = fperr2 = fchi2 = ftan01 = flam01 = 0;
-  fnhit = fttype = fn_shared_hits = fn_shared_segs = ffarm_status = 0;
-  fsid0 = 0;
-  fn = fn4 = fn6 = fn8 = 0;
-  fmc = fmc_prime = fmc_type = 0;
-  fmc_pid = fmc_tid = fmc_mid = 0;
-  fmc_weight = fmc_p = fmc_pt = fmc_phi = fmc_lam = fmc_theta = 0;
-  fmc_vx = fmc_vy = fmc_vz = fmc_vr = fmc_vt = fmc_t0 = 0;
-  
-  initBranch("x0", &fx0);
-  initBranch("y0", &fy0);
-  initBranch("z0", &fz0);
-  initBranch("t0", &ft0);
-  initBranch("t0_err", &ft0_err);
-  initBranch("t0_rms", &ft0_rms);
-  initBranch("t0_tl", &ft0_tl);
-  initBranch("t0_fb", &ft0_fb);
-  initBranch("t0_si", &ft0_si);
-  initBranch("t0_tl_rms", &ft0_tl_rms);
-  initBranch("t0_fb_rms", &ft0_fb_rms);
-  initBranch("t0_si_rms", &ft0_si_rms);
-  initBranch("r", &fr);
-  initBranch("rerr2", &frerr2);
-  initBranch("p", &fp);
-  initBranch("perr2", &fperr2);
-  initBranch("chi2", &fchi2);
-  initBranch("tan01", &ftan01);
-  initBranch("lam01", &flam01);
-  initBranch("nhit", &fnhit);
-  initBranch("ttype", &fttype);
-  initBranch("n_shared_hits", &fn_shared_hits);
-  initBranch("n_shared_segs", &fn_shared_segs);
-  initBranch("farm_status", &ffarm_status);
-  initBranch("sid0", &fsid0);
-  initBranch("n", &fn);
-  initBranch("n4", &fn4);
-  initBranch("n6", &fn6);
-  initBranch("n8", &fn8);
+  bindTreeBranches(fFrames);
+
+  fMcFrames.name = "mc_frames";
+  fMcFrames.tree = fInFile->Get<TTree>(fMcFrames.name.c_str());
+  if (!fMcFrames.tree) {
+    cout << "fillHist::setupTree() WARNING: could not get tree mc_frames" << endl;
+  } else {
+    bindTreeBranches(fMcFrames);
+  }
 }
 
 
 // ----------------------------------------------------------------------
-void fillHist::initBranch(string name, int* pvar) {
-  if (fTree->GetBranch(name.c_str()) == nullptr) {
+void fillHist::resetBranches(fillHist::TreeData &b) {
+  b.runId = b.frameId = 0;
+  b.flags = 0;
+  b.x0 = b.y0 = b.z0 = b.t0 = b.t0_err = b.t0_rms = b.t0_tl = b.t0_fb = b.t0_si = nullptr;
+  b.t0_tl_rms = b.t0_fb_rms = b.t0_si_rms = nullptr;
+  b.r = b.rerr2 = b.p = b.perr2 = b.chi2 = b.tan01 = b.lam01 = nullptr;
+  b.nhit = b.ttype = b.n_shared_hits = b.n_shared_segs = b.farm_status = nullptr;
+  b.sid0 = nullptr;
+  b.n = b.n4 = b.n6 = b.n8 = 0;
+  b.mc = b.mc_prime = b.mc_type = nullptr;
+  b.mc_pid = b.mc_tid = b.mc_mid = nullptr;
+  b.mc_weight = b.mc_p = b.mc_pt = b.mc_phi = b.mc_lam = b.mc_theta = nullptr;
+  b.mc_vx = b.mc_vy = b.mc_vz = b.mc_vr = b.mc_vt = b.mc_t0 = nullptr;
+}
+
+
+// ----------------------------------------------------------------------
+void fillHist::bindTreeBranches(fillHist::TreeData &data) {
+  if (!data.tree) return;
+  data.tree->SetBranchStatus("*", 0);
+  resetBranches(data);
+
+  initBranch(data.tree, "x0", &data.x0);
+  initBranch(data.tree, "y0", &data.y0);
+  initBranch(data.tree, "z0", &data.z0);
+  initBranch(data.tree, "t0", &data.t0);
+  initBranch(data.tree, "t0_err", &data.t0_err);
+  initBranch(data.tree, "t0_rms", &data.t0_rms);
+  initBranch(data.tree, "t0_tl", &data.t0_tl);
+  initBranch(data.tree, "t0_fb", &data.t0_fb);
+  initBranch(data.tree, "t0_si", &data.t0_si);
+  initBranch(data.tree, "t0_tl_rms", &data.t0_tl_rms);
+  initBranch(data.tree, "t0_fb_rms", &data.t0_fb_rms);
+  initBranch(data.tree, "t0_si_rms", &data.t0_si_rms);
+  initBranch(data.tree, "r", &data.r);
+  initBranch(data.tree, "rerr2", &data.rerr2);
+  initBranch(data.tree, "p", &data.p);
+  initBranch(data.tree, "perr2", &data.perr2);
+  initBranch(data.tree, "chi2", &data.chi2);
+  initBranch(data.tree, "tan01", &data.tan01);
+  initBranch(data.tree, "lam01", &data.lam01);
+  initBranch(data.tree, "nhit", &data.nhit);
+  initBranch(data.tree, "ttype", &data.ttype);
+  initBranch(data.tree, "n_shared_hits", &data.n_shared_hits);
+  initBranch(data.tree, "n_shared_segs", &data.n_shared_segs);
+  initBranch(data.tree, "farm_status", &data.farm_status);
+  initBranch(data.tree, "sid0", &data.sid0);
+  initBranch(data.tree, "n", &data.n);
+  initBranch(data.tree, "n4", &data.n4);
+  initBranch(data.tree, "n6", &data.n6);
+  initBranch(data.tree, "n8", &data.n8);
+  initBranch(data.tree, "mc", &data.mc);
+  initBranch(data.tree, "mc_prime", &data.mc_prime);
+  initBranch(data.tree, "mc_type", &data.mc_type);
+  initBranch(data.tree, "mc_pid", &data.mc_pid);
+  initBranch(data.tree, "mc_tid", &data.mc_tid);
+  initBranch(data.tree, "mc_mid", &data.mc_mid);
+  initBranch(data.tree, "mc_weight", &data.mc_weight);
+  initBranch(data.tree, "mc_p", &data.mc_p);
+  initBranch(data.tree, "mc_pt", &data.mc_pt);
+  initBranch(data.tree, "mc_phi", &data.mc_phi);
+  initBranch(data.tree, "mc_lam", &data.mc_lam);
+  initBranch(data.tree, "mc_theta", &data.mc_theta);
+  initBranch(data.tree, "mc_vx", &data.mc_vx);
+  initBranch(data.tree, "mc_vy", &data.mc_vy);
+  initBranch(data.tree, "mc_vz", &data.mc_vz);
+  initBranch(data.tree, "mc_vr", &data.mc_vr);
+  initBranch(data.tree, "mc_vt", &data.mc_vt);
+  initBranch(data.tree, "mc_t0", &data.mc_t0);
+}
+
+
+// ----------------------------------------------------------------------
+void fillHist::initBranch(TTree *tree, string name, int* pvar) {
+  if (tree->GetBranch(name.c_str()) == nullptr) {
     cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
     return;
   }
-  fTree->SetBranchStatus(name.c_str(), 1);
-  fTree->SetBranchAddress(name.c_str(), pvar);
+  tree->SetBranchStatus(name.c_str(), 1);
+  tree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
-void fillHist::initBranch(string name, float* pvar) {
-  if (fTree->GetBranch(name.c_str()) == nullptr) {
+void fillHist::initBranch(TTree *tree, string name, float* pvar) {
+  if (tree->GetBranch(name.c_str()) == nullptr) {
     cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
     return;
   }
-  fTree->SetBranchStatus(name.c_str(), 1);
-  fTree->SetBranchAddress(name.c_str(), pvar);
+  tree->SetBranchStatus(name.c_str(), 1);
+  tree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
-void fillHist::initBranch(string name, double* pvar) {
-  if (fTree->GetBranch(name.c_str()) == nullptr) {
+void fillHist::initBranch(TTree *tree, string name, double* pvar) {
+  if (tree->GetBranch(name.c_str()) == nullptr) {
     cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
     return;
   }
-  fTree->SetBranchStatus(name.c_str(), 1);
-  fTree->SetBranchAddress(name.c_str(), pvar);
+  tree->SetBranchStatus(name.c_str(), 1);
+  tree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
-void fillHist::initBranch(string name, string** pvar) {
+void fillHist::initBranch(TTree *tree, string name, string** pvar) {
   cout << "initBranch(" << name << "),  pvar = " << pvar << endl;
-  if (fTree->GetBranch(name.c_str()) == nullptr) {
+  if (tree->GetBranch(name.c_str()) == nullptr) {
     cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
     return;
   }
-  fTree->SetBranchStatus(name.c_str(), 1);
-  fTree->SetBranchAddress(name.c_str(), pvar);
+  tree->SetBranchStatus(name.c_str(), 1);
+  tree->SetBranchAddress(name.c_str(), pvar);
 }
 
 // ----------------------------------------------------------------------
-void fillHist::initBranch(string name, vector<int>** pvect) {
-  if (fTree->GetBranch(name.c_str()) == nullptr) {
+void fillHist::initBranch(TTree *tree, string name, vector<int>** pvect) {
+  if (tree->GetBranch(name.c_str()) == nullptr) {
     cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
     return;
   }
-  fTree->SetBranchStatus(name.c_str(), 1);
-  fTree->SetBranchAddress(name.c_str(), pvect);
+  tree->SetBranchStatus(name.c_str(), 1);
+  tree->SetBranchAddress(name.c_str(), pvect);
 }
 // ----------------------------------------------------------------------
-void fillHist::initBranch(string name, vector<unsigned int>** pvect) {
-  if (fTree->GetBranch(name.c_str()) == nullptr) {
+void fillHist::initBranch(TTree *tree, string name, vector<unsigned int>** pvect) {
+  if (tree->GetBranch(name.c_str()) == nullptr) {
     cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
     return;
   }
-  fTree->SetBranchStatus(name.c_str(), 1);
-  fTree->SetBranchAddress(name.c_str(), pvect);
+  tree->SetBranchStatus(name.c_str(), 1);
+  tree->SetBranchAddress(name.c_str(), pvect);
 }
 
 // ----------------------------------------------------------------------
-void fillHist::initBranch(string name, vector<double>** pvect) {
-  if (fTree->GetBranch(name.c_str()) == nullptr) {
+void fillHist::initBranch(TTree *tree, string name, vector<double>** pvect) {
+  if (tree->GetBranch(name.c_str()) == nullptr) {
     cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
     return;
   }
-  fTree->SetBranchStatus(name.c_str(), 1);
-  fTree->SetBranchAddress(name.c_str(), pvect);
+  tree->SetBranchStatus(name.c_str(), 1);
+  tree->SetBranchAddress(name.c_str(), pvect);
 }

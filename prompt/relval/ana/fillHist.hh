@@ -19,42 +19,47 @@ class fillHist {
   int  getVtxL0Ladder(int sid0);
   
   private:
-  TTree *fTree;
+  struct TreeData {
+    std::string name;
+    TTree *tree;
+
+    ULong64_t runId, frameId;
+    unsigned int flags;
+
+    std::vector<double>  *x0, *y0, *z0, *t0, *t0_err, *t0_rms, *t0_tl, *t0_fb, *t0_si;
+    std::vector<double>  *t0_tl_rms, *t0_fb_rms, *t0_si_rms;
+    std::vector<double>  *r, *rerr2, *p, *perr2, *chi2, *tan01, *lam01;
+    std::vector<int>     *nhit, *ttype, *n_shared_hits, *n_shared_segs;
+    std::vector<unsigned int> *sid0;
+    std::vector<int>     *farm_status;
+
+    int                  n, n4, n6, n8;
+    std::vector<int>     *mc, *mc_prime, *mc_type;
+    std::vector<int>     *mc_pid, *mc_tid, *mc_mid;
+    std::vector<double>  *mc_weight, *mc_p, *mc_pt, *mc_phi, *mc_lam, *mc_theta;
+    std::vector<double>  *mc_vx, *mc_vy, *mc_vz, *mc_vr, *mc_vt, *mc_t0;
+  };
+
   TFile *fInFile,*fOutFile;
-  std::string fTreeName;
   std::string fOutFileName;
+  std::string fTreeName;
 
   int fNevents;
   std::map<std::string, TH1*> fHistograms;
   std::map<std::string, std::string> fConfigs;
+  TreeData fFrames;
+  TreeData fMcFrames;
   
-
-  // -- these refer to the tree/chain passed in as "tree" in c'tor
-  virtual void       initBranch(std::string name, int* var);
-  virtual void       initBranch(std::string name, float* var);
-  virtual void       initBranch(std::string name, double* var);
-  virtual void       initBranch(std::string name, std::string** var);
-  virtual void       initBranch(std::string name, std::vector<int>** vect);
-  virtual void       initBranch(std::string name, std::vector<unsigned int>** vect);
-  virtual void       initBranch(std::string name, std::vector<double>** vect);
-
-  // -- tree variables: frames
-  ULong64_t            frunId, fframeId;
-  unsigned int         fflags;
-
-  std::vector<double>  *fx0, *fy0, *fz0, *ft0, *ft0_err, *ft0_rms, *ft0_tl, *ft0_fb, *ft0_si;
-  std::vector<double>  *ft0_tl_rms, *ft0_fb_rms, *ft0_si_rms;
-  std::vector<double>  *fr, *frerr2, *fp, *fperr2, *fchi2, *ftan01, *flam01;
-  std::vector<int>     *fnhit, *fttype, *fn_shared_hits, *fn_shared_segs;
-  std::vector<unsigned int> *fsid0;
-  std::vector<int>     *ffarm_status;
- 
-  int                  fn, fn4, fn6, fn8;
-  std::vector<int>     *fmc, *fmc_prime, *fmc_type;
-  std::vector<int>     *fmc_pid, *fmc_tid, *fmc_mid;
-  std::vector<double>  *fmc_weight, *fmc_p, *fmc_pt, *fmc_phi, *fmc_lam, *fmc_theta;
-  std::vector<double>  *fmc_vx, *fmc_vy, *fmc_vz, *fmc_vr, *fmc_vt, *fmc_t0;
-  
+  void resetBranches(TreeData &b);
+  void bindTreeBranches(TreeData &data);
+  virtual void       initBranch(TTree *tree, std::string name, int* var);
+  virtual void       initBranch(TTree *tree, std::string name, float* var);
+  virtual void       initBranch(TTree *tree, std::string name, double* var);
+  virtual void       initBranch(TTree *tree, std::string name, std::string** var);
+  virtual void       initBranch(TTree *tree, std::string name, std::vector<int>** vect);
+  virtual void       initBranch(TTree *tree, std::string name, std::vector<unsigned int>** vect);
+  virtual void       initBranch(TTree *tree, std::string name, std::vector<double>** vect);
+  bool checkVectorSizes(const TreeData &b);
 };
 
 #endif
