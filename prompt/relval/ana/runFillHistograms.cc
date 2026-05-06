@@ -13,11 +13,8 @@ int main(int argc, char **argv) {
   string tree = "frames";
   string mode = "relval";
   string annotation = "";
-  int nevents = -1;
   for (int i = 1; i < argc; ++i) {
     if (!strcmp(argv[i], "--mode")) { mode = argv[++i]; }
-    if (!strcmp(argv[i], "-n")) { nevents = atoi(argv[++i]); }
-    if (!strcmp(argv[i], "--nevts")) { nevents = atoi(argv[++i]); }
     if (!strcmp(argv[i], "--in")) { infile = argv[++i]; }
     if (!strcmp(argv[i], "--out")) { outfile = argv[++i]; }
     if (!strcmp(argv[i], "--outdir")) { outdir = argv[++i]; }
@@ -34,9 +31,9 @@ int main(int argc, char **argv) {
   }
 
   fillHist fhFrames(infile, outfile);
-  fhFrames.setupTree(tree);
+  fhFrames.setupTrees();
   fhFrames.bookHist("relval", annotation);
-  fhFrames.run(nevents);
+  fhFrames.run();
 
   return 0;
 }
