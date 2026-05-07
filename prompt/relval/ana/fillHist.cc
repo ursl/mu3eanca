@@ -606,7 +606,7 @@ bool fillHist::TreeData::goodReconstructibleTrack(int idx, int trkType) {
   
   if (ttype->at(idx) != trkType) return false;
   
-  if (mc_prime->at(idx) != 1) return false;
+  //  if (mc_prime->at(idx) != 1) return false;
   if (mc->at(idx) != 1) return false;
   
   return true;
