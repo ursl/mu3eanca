@@ -12,9 +12,9 @@ class fillHist {
   public:
   fillHist(const std::string &infile, const std::string &outfileName);
   ~fillHist();
-  void setupTree(const std::string &treeName);
+  void setupTrees();
   void bookHist(std::string mode, std::string annotation);
-  void run(int nevents = -1);
+  void run();
   bool checkVectorSizes();
   int  getVtxL0Ladder(int sid0);
   
@@ -22,6 +22,7 @@ class fillHist {
   struct TreeData {
     std::string name;
     TTree *tree;
+    int nEvents;
 
     ULong64_t runId, frameId;
     unsigned int flags;
@@ -38,13 +39,16 @@ class fillHist {
     std::vector<int>     *mc_pid, *mc_tid, *mc_mid;
     std::vector<double>  *mc_weight, *mc_p, *mc_pt, *mc_phi, *mc_lam, *mc_theta;
     std::vector<double>  *mc_vx, *mc_vy, *mc_vz, *mc_vr, *mc_vt, *mc_t0;
+
+    // -- reco
+    bool goodReconstructedTrack(int idx, int trkType);
+    // -- reco+sim
+    bool goodReconstructibleTrack(int idx, int trkType);
   };
 
   TFile *fInFile,*fOutFile;
   std::string fOutFileName;
-  std::string fTreeName;
 
-  int fNevents;
   std::map<std::string, TH1*> fHistograms;
   std::map<std::string, std::string> fConfigs;
   TreeData fFrames;

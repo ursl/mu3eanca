@@ -27,11 +27,11 @@ fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
     cout << "fillHist::fillHist() ERROR: could not open input file " << infile.c_str() << endl;
     return;
   }
-
+  
   // -- get config from input file
   string config = ((TObjString*)(fInFile->Get("config_all")))->GetString().Data();
   nlohmann::json config_json = nlohmann::json::parse(config);
-
+  
   // -- extract CDB settings from top-level config JSON
   string cdbDbconn = "";
   string cdbGlobalTag = "";
@@ -46,10 +46,10 @@ fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
   }
   fConfigs["cdb_dbconn"] = cdbDbconn;
   fConfigs["cdb_globalTag"] = cdbGlobalTag;
-
+  
   for (size_t i = 0; i < config_json["cmds"].size(); ++i) {
     string s = config_json["cmds"][i].get<string>();
-
+    
     // Extract --conf value from command strings like:
     //   --conf trirec.conf
     //   --conf=trirec.conf
@@ -66,7 +66,7 @@ fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
         }
       }
     }
-
+    
     if (!confValue.empty()) {
       if (string::npos != s.find("mu3eSim")) {
         fConfigs["sim_conf"] = confValue;
@@ -76,7 +76,7 @@ fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
         fConfigs["trirec_conf"] = confValue;
       } 
     }
-
+    
     for (size_t i = 0; i < config_json["versions"].size(); ++i) {
       string s = config_json["versions"][i].get<string>();
       if (0 == i) fConfigs["sim_version"] = s;
@@ -84,12 +84,12 @@ fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
       else if (2 == i) fConfigs["trirec_version"] = s;
     }
   }
-
+  
   cout << "fillHist::fillHist() fConfigs = " << fConfigs.size() << endl;
   for (auto &c : fConfigs) {
     cout << "   " << c.first << ": " << c.second << endl;
   }
-
+  
   fOutFileName = outfileName;
   fOutFile = TFile::Open(fOutFileName.c_str(), "RECREATE");
   if (!fOutFile) {
@@ -125,7 +125,7 @@ void fillHist::bookHist(string mode, string annotation) {
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(1, annotation.c_str());
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(2, "n_events");
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(3, "n_hi_tracks");
-
+    
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(10, fConfigs["sim_conf"].c_str());
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(11, fConfigs["sim_version"].c_str());
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(20, fConfigs["sort_conf"].c_str());
@@ -134,10 +134,10 @@ void fillHist::bookHist(string mode, string annotation) {
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(31, fConfigs["trirec_version"].c_str());
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(35, fConfigs["cdb_dbconn"].c_str());
     fHistograms["hinfo"]->GetXaxis()->SetBinLabel(36, fConfigs["cdb_globalTag"].c_str());
-
-    fHistograms["hpall"] = new TH1D("hpall", "p (all tracks)", 100, -100., 100.);
-    fHistograms["hp"] = new TH1D("hp", "p", 100, -100., 100.);
-    fHistograms["hperr2"] = new TH1D("hperr2", "perr2", 100, 0., 10.);
+    
+    fHistograms["hpall"] = new TH1D("hpall", "p (all tracks)", 40, 0., 80.);
+    fHistograms["hp"] = new TH1D("hp", "p", 40, 0., 80.);
+    fHistograms["hperr2"] = new TH1D("hperr2", "perr2", 50, 0., 2.);
     fHistograms["hx0"] = new TH1D("hx0", "x0", 160, -80., 80.);
     fHistograms["hy0"] = new TH1D("hy0", "y0", 160, -80., 80.);
     fHistograms["hz0"] = new TH1D("hz0", "z0", 100, -100., 100.);
@@ -165,10 +165,10 @@ void fillHist::bookHist(string mode, string annotation) {
     fHistograms["hn4"] = new TH1D("hn4", "n4", 100, 0., 100.);
     fHistograms["hn6"] = new TH1D("hn6", "n6", 100, 0., 100.);
     fHistograms["hn8"] = new TH1D("hn8", "n8", 100, 0., 100.);
-
+    
     // -- hitmaps derived from hit positions
     fHistograms["h2hitmapvtx0"] = new TH2D("h2hitmapvtx0", "hitmap vtx0", 24, -62., 62., 8, 0., 8.);
-
+    
     // -- hitmaps derived from hit positions for each vtx0 sensor
     for (int i = 0; i < 231; ++i) {      
       int ok = getVtxL0Ladder(i);
@@ -177,23 +177,32 @@ void fillHist::bookHist(string mode, string annotation) {
         fHistograms[hname] = new TH2D(hname.c_str(), hname.c_str(), 48, -62., 62., 80, -3.15, 3.15);
       }
     }
+    
+    // -- resolution plots
+    
+    // -- efficiency plots
+    fHistograms["h2lamvsprec"] = new TH2D("h2lamvsprec", "lam vs p", 30, 0., 60., 30, -1.5, 1.5);
+    fHistograms["h2lamvspsim"] = new TH2D("h2lamvspsim", "lam vs p", 30, 0., 60., 30, -1.5, 1.5);
+    fHistograms["h2lamvspeff"] = new TH2D("h2lamvspeff", "lam vs p", 30, 0., 60., 30, -1.5, 1.5);
+
+    fHistograms["h1lamvspreceff"] = new TH1D("h1lamvspreceff", "efficiency projection (lam vs p)", 51, 0., 1.02);
   }
 }
 
 
 // ----------------------------------------------------------------------
-void fillHist::run(int nevents) {
-  fNevents = nevents;
+void fillHist::run() {
   if (!fFrames.tree) {
     cout << "fillHist::run() ERROR: frames tree is not initialized" << endl;
     return;
   }
-  if (fNevents < 0) fNevents = fFrames.tree->GetEntries();
   if (fInFile) fInFile->cd();
-  cout << "fillHist::run() fNevents = " << fNevents << endl;
-  fHistograms["hinfo"]->SetBinContent(2, fNevents);
+  cout << "fillHist::run() nEvents = " << fFrames.nEvents << endl;
+  fHistograms["hinfo"]->SetBinContent(2, fFrames.nEvents);
   int nHiTracks(0); // number of hits > 20 GeV
-  for (int i = 0; i < fNevents; ++i) {
+  
+  // -- loop over frames tree
+  for (int i = 0; i < fFrames.nEvents; ++i) {
     fFrames.tree->GetEntry(i);
     if (fMcFrames.tree) fMcFrames.tree->GetEntry(i);
     //cout << "fillHist::run() i = " << i << " fp->size() = " << fp->size() << endl;
@@ -201,15 +210,16 @@ void fillHist::run(int nevents) {
     fHistograms["hn4"]->Fill(fFrames.n4);
     fHistograms["hn6"]->Fill(fFrames.n6);
     fHistograms["hn8"]->Fill(fFrames.n8);
-
+    
     // -- check that the number of tracks is the same as the number of hits
     if (!checkVectorSizes(fFrames))  continue;
     
     // -- fill per-track histograms
     for (unsigned int j = 0; j < fFrames.p->size(); ++j) {
-      fHistograms["hpall"]->Fill(fFrames.p->at(j));
-  
-      if (TMath::Abs(fFrames.p->at(j)) > 20.) {
+      fHistograms["hpall"]->Fill(TMath::Abs(fFrames.p->at(j)));
+      
+      // if (TMath::Abs(fFrames.p->at(j)) > 20.) {
+      if (fFrames.goodReconstructedTrack(j, 42)) {
         nHiTracks++;
         fHistograms["hx0"]->Fill(fFrames.x0->at(j));
         fHistograms["hy0"]->Fill(fFrames.y0->at(j));
@@ -226,7 +236,7 @@ void fillHist::run(int nevents) {
         if (fFrames.t0_si_rms) fHistograms["ht0_si_rms"]->Fill(fFrames.t0_si_rms->at(j));
         fHistograms["hr"]->Fill(fFrames.r->at(j));
         fHistograms["hrerr2"]->Fill(fFrames.rerr2->at(j));
-        fHistograms["hp"]->Fill(fFrames.p->at(j));
+        fHistograms["hp"]->Fill(TMath::Abs(fFrames.p->at(j)));
         fHistograms["hperr2"]->Fill(fFrames.perr2->at(j));
         fHistograms["hchi2"]->Fill(fFrames.chi2->at(j));
         fHistograms["htan01"]->Fill(fFrames.tan01->at(j));
@@ -236,31 +246,63 @@ void fillHist::run(int nevents) {
         fHistograms["hn_shared_hits"]->Fill(fFrames.n_shared_hits->at(j));
         fHistograms["hn_shared_segs"]->Fill(fFrames.n_shared_segs->at(j));
         fHistograms["hfarm_status"]->Fill(fFrames.farm_status->at(j));
-
+        
         // -- fill hitmap vtx0
         int vtxL0Ladder = getVtxL0Ladder(fFrames.sid0->at(j));
         if (vtxL0Ladder >= 0) {
           fHistograms["h2hitmapvtx0"]->Fill(fFrames.z0->at(j), vtxL0Ladder);
           fHistograms[Form("h2hitmapvtx0_sid%03d", fFrames.sid0->at(j))]->Fill(fFrames.z0->at(j), TMath::ATan2(fFrames.y0->at(j), fFrames.x0->at(j)));
         }
-
+        
         // -- comparison to MC 
         // -- resolution in momentum 
         // frames->Draw("TMath::Abs(p)-mc_p", "1==mc && 1==mc_prime && TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55", "")
-
+        
+        
+        fHistograms["h2lamvsprec"]->Fill(TMath::Abs(fFrames.p->at(j)), fFrames.lam01->at(j));
         // -- efficiency
         // root [22] mc_frames->Draw("mc_lam:TMath::Abs(mc_p)>>hmc", "TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55 && ttype==42", "colz")
         // (long long) 108677
         // root [23] frames->Draw("mc_lam:TMath::Abs(mc_p)>>hrec", "1==mc && 1==mc_prime && TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55 && ttype==42", "colz")
         // (long long) 66659
         // root [24] heff->Divide(h1, h2)
-
+        
       }
     }
   }
   fHistograms["hinfo"]->SetBinContent(3, nHiTracks);
-}
+    
+  // -- loop over mcframes tree
+  if (fMcFrames.tree) fMcFrames.nEvents = fMcFrames.tree->GetEntries();
+  for (int i = 0; i < fMcFrames.nEvents; ++i) {
+    fMcFrames.tree->GetEntry(i);
+    //cout << "fillHist::run() i = " << i << " fp->size() = " << fp->size() << endl;
+    fHistograms["hn"]->Fill(fMcFrames.n);
+    fHistograms["hn4"]->Fill(fMcFrames.n4);
+    fHistograms["hn6"]->Fill(fMcFrames.n6);
+    fHistograms["hn8"]->Fill(fMcFrames.n8);
+    
+   
+    // -- fill per-track histograms
+    for (unsigned int j = 0; j < fMcFrames.p->size(); ++j) {
+      if (fMcFrames.goodReconstructibleTrack(j, 42)) {
+        fHistograms["h2lamvspsim"]->Fill(TMath::Abs(fMcFrames.p->at(j)), fMcFrames.lam01->at(j));
+      }
+    }
+  }
+  fHistograms["h2lamvspeff"]->Divide(fHistograms["h2lamvsprec"], fHistograms["h2lamvspsim"]);
 
+  for (int ix = 1; ix <= fHistograms["h2lamvspeff"]->GetNbinsX(); ++ix) {
+    for (int iy = 1; iy <= fHistograms["h2lamvspeff"]->GetNbinsY(); ++iy) {
+      if (fHistograms["h2lamvspeff"]->GetBinContent(ix, iy) > 0) {  
+        fHistograms["h1lamvspreceff"]->Fill(fHistograms["h2lamvspeff"]->GetBinContent(ix, iy));
+      }
+      if (fHistograms["h2lamvspeff"]->GetBinContent(ix, iy) > 1.) {  
+        cout << "fillHist::run() ix = " << ix << " iy = " << iy << " bin content = " << fHistograms["h2lamvspeff"]->GetBinContent(ix, iy) << endl;
+      }
+    }
+  }
+}
 
 // ----------------------------------------------------------------------
 int fillHist::getVtxL0Ladder(int sid0) {
@@ -388,21 +430,22 @@ bool fillHist::checkVectorSizes(const fillHist::TreeData &b) {
 }
 
 // ----------------------------------------------------------------------
-void fillHist::setupTree(const std::string &treeName) {
-  fTreeName = treeName;
-  fFrames.name = treeName;
-  fFrames.tree = fInFile->Get<TTree>(treeName.c_str());
+void fillHist::setupTrees() {
+  fFrames.name = "frames";
+  fFrames.tree = fInFile->Get<TTree>(fFrames.name.c_str());
+  fFrames.nEvents = fFrames.tree->GetEntries();
   if (!fFrames.tree) {
-    cout << "fillHist::setupTree() ERROR: could not get tree " << treeName << endl;
+    cout << "fillHist::setupTrees() ERROR: could not get tree frames" << endl;
     return;
+  } else{
+    bindTreeBranches(fFrames);
   }
-
-  bindTreeBranches(fFrames);
-
+  
   fMcFrames.name = "mc_frames";
   fMcFrames.tree = fInFile->Get<TTree>(fMcFrames.name.c_str());
+  fMcFrames.nEvents = fMcFrames.tree->GetEntries();
   if (!fMcFrames.tree) {
-    cout << "fillHist::setupTree() WARNING: could not get tree mc_frames" << endl;
+    cout << "fillHist::setupTree() ERROR: could not get tree mc_frames" << endl;
   } else {
     bindTreeBranches(fMcFrames);
   }
@@ -431,7 +474,7 @@ void fillHist::bindTreeBranches(fillHist::TreeData &data) {
   if (!data.tree) return;
   data.tree->SetBranchStatus("*", 0);
   resetBranches(data);
-
+  
   initBranch(data.tree, "x0", &data.x0);
   initBranch(data.tree, "y0", &data.y0);
   initBranch(data.tree, "z0", &data.z0);
@@ -550,4 +593,39 @@ void fillHist::initBranch(TTree *tree, string name, vector<double>** pvect) {
   }
   tree->SetBranchStatus(name.c_str(), 1);
   tree->SetBranchAddress(name.c_str(), pvect);
+}
+
+// ----------------------------------------------------------------------
+bool fillHist::TreeData::goodReconstructibleTrack(int idx, int trkType) {
+  bool result(false);
+  if (TMath::Abs(mc_pid->at(idx)) != 11) return false;
+  
+  if (mc_vr->at(idx) > 22.) return false;
+  if (TMath::Abs(mc_vz->at(idx)) > 55.) return false;
+  if (TMath::Abs(mc_p->at(idx)) < 10.) return false;
+  
+  if (ttype->at(idx) != trkType) return false;
+  
+  if (mc_prime->at(idx) != 1) return false;
+  if (mc->at(idx) != 1) return false;
+  
+  return true;
+}
+
+// ----------------------------------------------------------------------
+bool fillHist::TreeData::goodReconstructedTrack(int idx, int trkType) {
+  bool result(false);
+  if (TMath::Abs(mc_pid->at(idx)) != 11) return false;
+  
+  if (mc_vr->at(idx) > 22.) return false;
+  if (TMath::Abs(mc_vz->at(idx)) > 55.) return false;
+  if (TMath::Abs(mc_p->at(idx)) < 10.) return false;
+
+  if (TMath::Abs(p->at(idx)) < 10.) return false;
+
+  if (ttype->at(idx) != trkType) return false;
+  
+  if (mc_prime->at(idx) != 1) return false;
+  if (mc->at(idx) != 1) return false; 
+  return true;
 }
