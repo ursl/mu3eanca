@@ -89,7 +89,9 @@ void compareHist::setupHists(string mode) {
     {"ht0_si_rms", nullptr, nullptr, false, false, true},
     {"hn", nullptr, nullptr, false, true, true},
     {"hn4", nullptr, nullptr, false, true, true},
-    {"hn6", nullptr, nullptr, false, true, true}
+    {"hn6", nullptr, nullptr, false, true, true},
+    {"h2lamvspeff", nullptr, nullptr, false, false, true, 0., 0., "box"},
+    {"h1lamvspreceff", nullptr, nullptr, false, false, true}
   };
 
   for (auto plot : plots) {
@@ -198,8 +200,8 @@ void compareHist::plotOverlay(plotInfo &plot) {
   }
 
   plot.h1->SetStats(0);
-  plot.h1->Draw();
-  plot.h2->Draw("same");
+  plot.h1->Draw(plot.opt.c_str());
+  plot.h2->Draw((string("same") + plot.opt).c_str());
   plot.ks = plot.h1->KolmogorovTest(plot.h2);
   cout << "compareHist::plotOverlay() KS = " << plot.ks << endl;
   if (plot.statsBox) addDoubleStatsBox(plot);

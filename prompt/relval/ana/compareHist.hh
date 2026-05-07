@@ -30,6 +30,7 @@ private:
     bool statsBox{false};
     double ks{0.};
     double ad{0.};
+    std::string opt{};
   };
 
   struct histDeco {
