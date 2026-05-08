@@ -15,6 +15,9 @@ workdir: MU3E_DIR
 
 MU3E_REPO = config["mu3e_repo"]
 MAKE_JOBS = config["make_jobs"]
+MU3E_UTIL_REPO = config.get("mu3e_util_repo", "git@bitbucket.org:mu3e/mu3eUtil")
+MU3E_VALIDATION_REPO = config.get("mu3e_validation_repo", "git@bitbucket.org:mu3e/mu3eValidation")
+MU3E_VALIDATION_MAKE_JOBS = int(config.get("mu3e_validation_make_jobs", 20))
 
 RUN_ID = config["run_id"]
 N_EVENTS = config["n_events"]
@@ -110,6 +113,26 @@ def compare_in2_data_path(scenario):
     return f"/data/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{trirec_output(scenario)}"
 
 
+def treedump_file_name(scenario):
+    return f"treedump-{scenario}-sensors.root"
+
+
+def current_treedump_host_path(scenario):
+    return f"{MU3E_DIR}/run/output/{treedump_file_name(scenario)}"
+
+
+def ref_treedump_host_path(scenario):
+    return f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output/{treedump_file_name(scenario)}"
+
+
+def current_treedump_container_path(scenario):
+    return f"/relval/{MU3E_DIRNAME}/run/output/{treedump_file_name(scenario)}"
+
+
+def ref_treedump_container_path(scenario):
+    return f"/relval/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output/{treedump_file_name(scenario)}"
+
+
 wildcard_constraints:
     scenario="|".join(SCENARIO_IDS)
 
@@ -134,7 +157,43 @@ rule all:
         ALL_TARGETS
 
 
+rule bootstrap_relval_tools:
+    output:
+        f"{MU3E_RELVAL_BASEDIR}/.bootstrap/mu3e_validation_tools.done"
+    params:
+        relval_basedir=MU3E_RELVAL_BASEDIR,
+        util_repo=MU3E_UTIL_REPO,
+        validation_repo=MU3E_VALIDATION_REPO,
+        jobs=MU3E_VALIDATION_MAKE_JOBS
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "{params.relval_basedir}"
+        mkdir -p "{params.relval_basedir}/.bootstrap"
+
+        if [ ! -d "{params.relval_basedir}/mu3eUtil/.git" ]; then
+            git clone "{params.util_repo}" "{params.relval_basedir}/mu3eUtil"
+        fi
+        mkdir -p "{params.relval_basedir}/mu3eUtil/_build"
+        cd "{params.relval_basedir}/mu3eUtil/_build"
+        cmake ..
+        make -j{params.jobs}
+
+        if [ ! -d "{params.relval_basedir}/mu3eValidation/.git" ]; then
+            git clone "{params.validation_repo}" "{params.relval_basedir}/mu3eValidation"
+        fi
+        mkdir -p "{params.relval_basedir}/mu3eValidation/_build"
+        cd "{params.relval_basedir}/mu3eValidation/_build"
+        cmake ..
+        make -j{params.jobs}
+
+        touch "{output}"
+        """
+
+
 rule clone_and_prepare_mu3e:
+    input:
+        f"{MU3E_RELVAL_BASEDIR}/.bootstrap/mu3e_validation_tools.done"
     output:
         ".markers/clone_and_prepare_mu3e.done"
     params:
@@ -351,44 +410,67 @@ if COMPARE_ENABLED:
     rule run_histocompare:
         input:
             compare_done=f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}",
-            in1=f"{MU3E_DIR}/run/{TRIREC_OUTPUT_TPL}",
-            in2=lambda wildcards: compare_other_trirec(wildcards.scenario)
+            sort1=f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}",
+            sort2=lambda wildcards: f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{SORT_OUTPUT_TPL.format(scenario=wildcards.scenario)}"
         output:
             f"{MU3E_DIR}/run/{HISTOCOMPARE_MARKER_TPL}"
         params:
             out_dir_host=lambda wildcards: compare_dir_host(wildcards.scenario),
-            in1_data=lambda wildcards: compare_in1_data_path(wildcards.scenario),
-            in2_data=lambda wildcards: compare_in2_data_path(wildcards.scenario),
-            out_name=lambda wildcards: f"histocompare-{wildcards.scenario}",
-            out_pdf=lambda wildcards: f"{compare_dir_host(wildcards.scenario)}/histocompare-{wildcards.scenario}.pdf",
-            out_root=lambda wildcards: f"{compare_dir_host(wildcards.scenario)}/histocompare-{wildcards.scenario}.root",
-            out_log=lambda wildcards: f"{compare_dir_host(wildcards.scenario)}/histocompare-{wildcards.scenario}.log"
+            treedumper_exe=f"{MU3E_RELVAL_BASEDIR}/mu3eUtil/_build/tools/treedump/mu3eTreeDumper",
+            treedump_cfg=f"{MU3E_RELVAL_BASEDIR}/mu3eValidation/scripts/treedump_and_histocompare/config.json",
+            dump1_host=lambda wildcards: current_treedump_host_path(wildcards.scenario),
+            dump2_host=lambda wildcards: ref_treedump_host_path(wildcards.scenario),
+            dump1_prefix=lambda wildcards: current_treedump_host_path(wildcards.scenario).rsplit(".", 1)[0],
+            dump2_prefix=lambda wildcards: ref_treedump_host_path(wildcards.scenario).rsplit(".", 1)[0],
+            dump1_data=lambda wildcards: current_treedump_container_path(wildcards.scenario),
+            dump2_data=lambda wildcards: ref_treedump_container_path(wildcards.scenario)
         shell:
             r"""
             set -euo pipefail
             mkdir -p "{params.out_dir_host}"
-            set +e
-            podman run --rm \
-                -v "{MU3E_RELVAL_BASEDIR}:/data:ro" \
-                -v "{params.out_dir_host}:/workdir" \
-                docker.io/mu3e/histocompare \
-                "{params.in1_data}" \
-                "{params.in2_data}" \
-                --custom -t 0.80 -D 1.0 --meanThr 2 --stdThr 3 \
-                -o "{params.out_name}" --pdf --ignoreResolution --ignoreNoSharedHits
-            rc=$?
-            set -e
+            mkdir -p "$(dirname "{params.dump1_host}")"
+            mkdir -p "$(dirname "{params.dump2_host}")"
+            align_objects="sensors fibres tiles mppcs"
 
-            if [ "$rc" -ne 0 ]; then
-                # On some host/container combinations histocompare can segfault
-                # during shutdown although output files are already written.
-                if [ -f "{params.out_pdf}" ] && [ -f "{params.out_root}" ] && [ -f "{params.out_log}" ]; then
-                    echo "[relval] WARNING: histocompare exited with code $rc but produced expected outputs; continuing"
-                else
-                    echo "[relval] ERROR: histocompare failed with code $rc and outputs are incomplete" >&2
-                    exit "$rc"
+            for obj in $align_objects; do
+                dump1_prefix_obj="{params.dump1_prefix}-$obj"
+                dump2_prefix_obj="{params.dump2_prefix}-$obj"
+                dump1_data_obj="{params.dump1_data}-$obj.root"
+                dump2_data_obj="{params.dump2_data}-$obj.root"
+                out_name_obj="histocompare-{wildcards.scenario}-$obj"
+                out_pdf_obj="{params.out_dir_host}/$out_name_obj.pdf"
+                out_root_obj="{params.out_dir_host}/$out_name_obj.root"
+                out_log_obj="{params.out_dir_host}/$out_name_obj.log"
+
+                "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort1}" "alignment/$obj" "$dump1_prefix_obj"
+                "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort2}" "alignment/$obj" "$dump2_prefix_obj"
+
+                cd "{MU3E_RELVAL_BASEDIR}/mu3eValidation"
+                set +e
+                podman run --rm \
+                    -v "{MU3E_RELVAL_BASEDIR}:/relval:ro" \
+                    -v "{params.out_dir_host}:/workdir" \
+                    docker.io/mu3e/histocompare \
+                    "$dump1_data_obj" \
+                    "$dump2_data_obj" \
+                    --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
+                    --pdf -o "$out_name_obj" --skip=eventWeight --skip=farm_status \
+                    --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
+                    --twoDimThreshold 1.0
+                rc=$?
+                set -e
+
+                if [ "$rc" -ne 0 ]; then
+                    # On some host/container combinations histocompare can segfault
+                    # during shutdown although output files are already written.
+                    if [ -f "$out_pdf_obj" ] && [ -f "$out_root_obj" ] && [ -f "$out_log_obj" ]; then
+                        echo "[relval] WARNING: histocompare($obj) exited with code $rc but produced expected outputs; continuing"
+                    else
+                        echo "[relval] ERROR: histocompare($obj) failed with code $rc and outputs are incomplete" >&2
+                        exit "$rc"
+                    fi
                 fi
-            fi
+            done
             touch "{output}"
             """
 
@@ -403,6 +485,7 @@ rule clean:
         rm -f "{MU3E_DIR}/run/output/sort-"*.root
         rm -f "{MU3E_DIR}/run/output/trirec-"*.root
         rm -f "{MU3E_DIR}/run/output/histograms-"*.root
+        rm -f "{MU3E_DIR}/run/output/treedump-"*.root
         rm -f "{MU3E_DIR}/run/output/compare-"*.done
         rm -f "{MU3E_DIR}/run/output/histocompare-"*.done
         rm -rf "{MU3E_DIR}/run/output/compare"
