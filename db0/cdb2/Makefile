@@ -92,7 +92,7 @@ LBINARIES = testCDB anaPixelQuality anaEventStuff syncJSON \
 MONGOBINARIES = syncMongo  syncRDB uploadDetConfig downloadDetConfig deleteDetConfig
 
 ifneq (,$(or $(findstring mu3edb0,$(LHOST)),$(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
-       $(info ************  MERLIN VERSION ************)
+       $(info ************  MERLIN/mu3edb0 VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
        BINARIES = $(filter-out fillDB syncCloud syncRDB syncMongo uploadDetConfig downloadDetConfig deleteDetConfig, $(LBINARIES))
 else ifneq (,$(findstring mu3ebe,$(LHOST)))
@@ -115,7 +115,7 @@ BINARY_OBJS = $(addprefix obj/,$(addsuffix .o,$(BINARIES)))
 bin: $(BINARY_OBJS) $(addprefix bin/,$(BINARIES))
 
 lib/libCDB.so: $(addprefix obj/,$(FILES))
-	$(CXX) $(SOFLAGS) $^ -o $@ $(GLIBS)
+	$(CXX) $(SOFLAGS) $^ -o $@ $(GLIBS) $(LIBMONGODB) $(LIBCURL)
 
 # -- Default rules
 $(addprefix obj/,%.o) : %.cc %.hh
