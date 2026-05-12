@@ -31,6 +31,8 @@ if ($hostname =~ /moor/) {
     $mapsdir = "/Users/ursl/data/mu3e/maps";
 } elsif ($hostname =~ /merlin7/) {
     $mapsdir = "/data/user/langenegger/maps";
+} elsif ($hostname =~ /mu3edb0/) {
+    $mapsdir = "/mnt/data2/maps";
 }
 print("mapsdir: $mapsdir\n");
 system("rm cryogenics.bin* field.bin* hauge1.bin* sig2.bin* sig.bin*");
