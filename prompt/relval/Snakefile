@@ -418,25 +418,24 @@ if COMPARE_ENABLED:
             out_dir_host=lambda wildcards: compare_dir_host(wildcards.scenario),
             treedumper_exe=f"{MU3E_RELVAL_BASEDIR}/mu3eUtil/_build/tools/treedump/mu3eTreeDumper",
             treedump_cfg=f"{MU3E_RELVAL_BASEDIR}/mu3eValidation/scripts/treedump_and_histocompare/config.json",
-            dump1_host=lambda wildcards: current_treedump_host_path(wildcards.scenario),
-            dump2_host=lambda wildcards: ref_treedump_host_path(wildcards.scenario),
-            dump1_prefix=lambda wildcards: current_treedump_host_path(wildcards.scenario).rsplit(".", 1)[0],
-            dump2_prefix=lambda wildcards: ref_treedump_host_path(wildcards.scenario).rsplit(".", 1)[0],
-            dump1_data=lambda wildcards: current_treedump_container_path(wildcards.scenario),
-            dump2_data=lambda wildcards: ref_treedump_container_path(wildcards.scenario)
+            dump1_host_dir=f"{MU3E_DIR}/run/output",
+            dump2_host_dir=lambda wildcards: f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output",
+            dump1_data_dir=lambda wildcards: f"/relval/{MU3E_DIRNAME}/run/output",
+            dump2_data_dir=lambda wildcards: f"/relval/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output"
         shell:
             r"""
             set -euo pipefail
             mkdir -p "{params.out_dir_host}"
-            mkdir -p "$(dirname "{params.dump1_host}")"
-            mkdir -p "$(dirname "{params.dump2_host}")"
+            mkdir -p "{params.dump1_host_dir}"
+            mkdir -p "{params.dump2_host_dir}"
             align_objects="sensors fibres tiles mppcs"
 
             for obj in $align_objects; do
-                dump1_prefix_obj="{params.dump1_prefix}-$obj"
-                dump2_prefix_obj="{params.dump2_prefix}-$obj"
-                dump1_data_obj="{params.dump1_data}-$obj.root"
-                dump2_data_obj="{params.dump2_data}-$obj.root"
+                dump_base="treedump-{wildcards.scenario}-$obj"
+                dump1_prefix_obj="{params.dump1_host_dir}/$dump_base"
+                dump2_prefix_obj="{params.dump2_host_dir}/$dump_base"
+                dump1_data_obj="{params.dump1_data_dir}/$dump_base.root"
+                dump2_data_obj="{params.dump2_data_dir}/$dump_base.root"
                 out_name_obj="histocompare-{wildcards.scenario}-$obj"
                 out_pdf_obj="{params.out_dir_host}/$out_name_obj.pdf"
                 out_root_obj="{params.out_dir_host}/$out_name_obj.root"
