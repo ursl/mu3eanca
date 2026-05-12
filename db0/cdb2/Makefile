@@ -9,10 +9,16 @@ LDIRECTORY = $(shell pwd)
 UTIL := ../../util
 
 # -- ARGH!? But it works ...
-ifneq (,$(or $(findstring mu3edb0,$(LHOST)),$(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
+ifneq (,$(or $(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
   INCMONGODB    =
   LIBMONGODB    =
   LIBCURL       = -L/usr/lib64 -lcurl
+  LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
+  SOFLAGS       =
+else ifneq (,$(findstring mu3edb0,$(LHOST)))
+  INCMONGODB    =
+  LIBMONGODB    =
+  LIBCURL       = -L/usr/lib/x86_64-linux-gnu -lcurl
   LIBBOOST      = -L$(BOOST_LIBRARY_DIR) -lboost_serialization
   SOFLAGS       =
 else ifneq (,$(findstring mu3ebe,$(LHOST)))
