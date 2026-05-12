@@ -85,7 +85,7 @@ LBINARIES = testCDB anaPixelQuality anaEventStuff syncJSON \
 
 MONGOBINARIES = syncMongo  syncRDB uploadDetConfig downloadDetConfig deleteDetConfig
 
-ifneq (,$(or $(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
+ifneq (,$(or $(findstring mu3edb0,$(LHOST)),$(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
        $(info ************  MERLIN VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
        BINARIES = $(filter-out fillDB syncCloud syncRDB syncMongo uploadDetConfig downloadDetConfig deleteDetConfig, $(LBINARIES))
