@@ -356,7 +356,7 @@ rule run_mu3e_trirec:
                 exit 1;
             fi
         fi
-        ../_build/mu3eTrirec/mu3eTriRec \
+        ../_build/mu3eTrirec/mu3eTrirec \
         "{params.sort_output}" \
         --conf "$trirec_conf" \
         --output "{params.trirec_output}" \
