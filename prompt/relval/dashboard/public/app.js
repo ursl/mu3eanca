@@ -39,6 +39,30 @@ function scenarioFromCompareDirName(dirName) {
   return scenario || dirName;
 }
 
+function histocompareLabelFromFilename(fileName, fallbackScenario) {
+  const stem = String(fileName).replace(/\.pdf$/i, "");
+  const m = stem.match(/^histocompare-(.+)$/);
+  return m ? m[1] : fallbackScenario;
+}
+
+function renderLinksWithScenarioBreaks(items) {
+  if (!items.length) return "<span>none</span>";
+  items.sort((a, b) => a.label.localeCompare(b.label));
+  let html = "";
+  let prevScenario = null;
+  for (const it of items) {
+    const scenario = it.label.split("-").slice(0, 2).join("-");
+    if (prevScenario !== null && scenario !== prevScenario) {
+      html += "<br>";
+    } else if (prevScenario !== null) {
+      html += " ";
+    }
+    html += pdfLink(it.relPath, it.label);
+    prevScenario = scenario;
+  }
+  return html;
+}
+
 function refReleaseFromCompareDirName(dirName) {
   // Example:
   // conf18_threelayer__mu3e-relval_mu3e-v6.5_mcidealv6.5__vs__mu3e-relval_mu3e-v6.4.4_mcidealv6.5
@@ -154,28 +178,34 @@ function renderSetupsTable(model) {
     const releases = parseReleasesFromSetup(setup.name);
     const firstCompareDir = setup.compare.scenarios?.[0]?.dirName || "";
     const refRelease = refReleaseFromCompareDirName(firstCompareDir) || "n/a";
-    const runCompareLinks = setup.compare.scenarios
+    const runCompareItems = setup.compare.scenarios
       .flatMap((s) =>
         s.runCompareSummaryPdfs.map((p) =>
-          pdfLink(p.relPath, scenarioFromCompareDirName(s.dirName)),
+          ({ relPath: p.relPath, label: scenarioFromCompareDirName(s.dirName) }),
         ),
       )
-      .join(" ");
-    const histocompareLinks = setup.compare.scenarios
+    const histocompareItems = setup.compare.scenarios
       .flatMap((s) =>
         s.histocomparePdfs.map((p) =>
-          pdfLink(p.relPath, scenarioFromCompareDirName(s.dirName)),
+          ({
+            relPath: p.relPath,
+            label: histocompareLabelFromFilename(
+              p.name,
+              scenarioFromCompareDirName(s.dirName),
+            ),
+          }),
         ),
       )
-      .join(" ");
+    const runCompareLinks = renderLinksWithScenarioBreaks(runCompareItems);
+    const histocompareLinks = renderLinksWithScenarioBreaks(histocompareItems);
 
     tr.innerHTML = `
       <td><strong>${releases.newRelease}</strong></td>
       <td>${refRelease}</td>
       <td><span class="badge ${badgeClass(setup)}">${badgeText(setup)}</span></td>
       <td>${setup.updatedAt ?? "n/a"}</td>
-      <td class="pdf-links">${histocompareLinks || "<span>none</span>"}</td>
-      <td class="pdf-links">${runCompareLinks || "<span>none</span>"}</td>
+      <td class="pdf-links">${histocompareLinks}</td>
+      <td class="pdf-links">${runCompareLinks}</td>
     `;
 
     tr.addEventListener("click", () => {
