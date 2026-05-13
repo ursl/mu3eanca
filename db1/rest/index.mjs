@@ -43,11 +43,15 @@ app.use("/rdb", rdb);
 app.use("/ddb", ddb);
 app.use("/dqm", dqm);
 
-const relvalBaseDir = process.env.RELVAL_BASEDIR;
-if (relvalBaseDir) {
-  const resolved = path.resolve(relvalBaseDir);
-  app.use("/relval", createRelvalRouter(resolved));
-}
+// RelVal UI: /relval/ must use a trailing slash so relative "api/setups" resolves correctly.
+app.get("/relval", (_req, res) => res.redirect(302, "/relval/"));
+
+const relvalRaw = process.env.RELVAL_BASEDIR;
+const relvalResolved =
+  relvalRaw != null && String(relvalRaw).trim() !== ""
+    ? path.resolve(String(relvalRaw).trim())
+    : null;
+app.use("/relval", createRelvalRouter(relvalResolved));
 
 app.set('view engine', 'ejs');
 app.set("views", path.join(__dirname, "views"));
@@ -60,9 +64,12 @@ app.use((err, _req, res, next) => {
 // start the Express server
 app.listen(PORT, () => {
   console.log(`Server is running on port: ${PORT}`);
-  if (relvalBaseDir) {
+  console.log(`RelVal dashboard: http://localhost:${PORT}/relval/`);
+  if (relvalResolved) {
+    console.log(`  RELVAL_BASEDIR=${relvalResolved}`);
+  } else {
     console.log(
-      `RelVal dashboard: http://localhost:${PORT}/relval/ (RELVAL_BASEDIR=${path.resolve(relvalBaseDir)})`,
+      "  RELVAL_BASEDIR not set — UI loads but API returns 503 until you set it in .env",
     );
   }
 });

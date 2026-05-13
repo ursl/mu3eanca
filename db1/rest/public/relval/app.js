@@ -1,12 +1,32 @@
-/** Base URL for API + file routes (works at / and when mounted under e.g. /relval). */
+/**
+ * Base URL for API + file routes.
+ * If the page URL is .../relval (no trailing slash), URL resolution would turn
+ * "api/setups" into .../api/setups (wrong). Force a trailing slash on the path.
+ */
 function relvalApiBase() {
-  return new URL(".", window.location.href);
+  const u = new URL(window.location.href);
+  if (!u.pathname.endsWith("/")) {
+    u.pathname += "/";
+  }
+  return u;
 }
 
 async function loadSetups() {
   const res = await fetch(new URL("api/setups", relvalApiBase()));
   if (!res.ok) {
-    throw new Error(`Failed to fetch setups: HTTP ${res.status}`);
+    let detail = `HTTP ${res.status}`;
+    try {
+      const j = await res.json();
+      if (j.error) {
+        detail = j.hint ? `${j.error} ${j.hint}` : j.error;
+      }
+    } catch {
+      if (res.status === 404) {
+        detail =
+          "HTTP 404 (open /relval/ with a trailing slash, or set RELVAL_BASEDIR and restart the server)";
+      }
+    }
+    throw new Error(`Failed to fetch setups: ${detail}`);
   }
   return res.json();
 }

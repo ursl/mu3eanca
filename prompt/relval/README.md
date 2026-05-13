@@ -111,7 +111,16 @@ If `--setup-name` is omitted, it defaults to:
 
 ## Web dashboard
 
-The RelVal UI is implemented under `db1/rest`: API + static assets (`lib/relvalCore.mjs`, `lib/relvalRouter.mjs`, `public/relval/`). With `RELVAL_BASEDIR` set, the main REST app serves it at **`/relval/`** (same port as the REST server).
+The RelVal UI is implemented under `db1/rest`: API + static assets (`lib/relvalCore.mjs`, `lib/relvalRouter.mjs`, `public/relval/`). The main REST app serves it at **`http://<host>:<PORT>/relval/`** (note the trailing slash, or you will be redirected).
+
+**Configure the data directory (each machine):** set `RELVAL_BASEDIR` to the **absolute path** of the relval root — the same directory as `mu3e_relval_basedir` in `prompt/relval/config.yaml` (the folder that contains `mu3e-*` setup workdirs). Easiest is `db1/rest/.env`:
+
+```bash
+cp .env.example .env
+# edit RELVAL_BASEDIR=/mnt/data2/relval   # example
+```
+
+Restart the REST server after changing `.env`. If `RELVAL_BASEDIR` is missing, the page still loads but the API answers with a clear 503 message.
 
 Standalone (port 8787 by default), from repo root:
 
