@@ -207,6 +207,9 @@ function renderSetupsTable(model) {
     const releases = parseReleasesFromSetup(setup.name);
     const firstCompareDir = setup.compare.scenarios?.[0]?.dirName || "";
     const refRelease = refReleaseFromCompareDirName(firstCompareDir) || "n/a";
+    if (refRelease === "n/a") {
+      continue;
+    }
     const runCompareItems = setup.compare.scenarios
       .flatMap((s) =>
         s.runCompareSummaryPdfs.map((p) =>
