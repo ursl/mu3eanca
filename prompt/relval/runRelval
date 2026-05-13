@@ -93,6 +93,46 @@ sub run_cmd_to_file {
 }
 
 # ----------------------------------------------------------------------
+# Snakemake (notably Debian/Ubuntu python3-snakemake 6.x): workflow cores
+# from "-jN" can end up as a string in workflow.global_resources.  When
+# "--summary" / "--detailed-summary" expand jobs, expand_resources does
+# min(global_res, res) and crashes if global_res is str and rule threads int.
+# Prefer explicit "--cores N", which is parsed as an integer.
+sub snakemake_forwarded_args_normalized {
+    my (@args) = @_;
+    my $has_explicit_cores = 0;
+    for (my $i = 0; $i <= $#args; ++$i) {
+        # One token (--cores=4) or first of two (--cores 4)
+        if ($args[$i] =~ /^--cores/) {
+            $has_explicit_cores = 1;
+            last;
+        }
+        if ($args[$i] =~ /^-c\d+$/) {
+            $has_explicit_cores = 1;
+            last;
+        }
+        if ($args[$i] eq '-c' && $i < $#args && $args[$i + 1] =~ /^\d+$/) {
+            $has_explicit_cores = 1;
+            last;
+        }
+    }
+    return @args if $has_explicit_cores;
+
+    my @out;
+    for (my $i = 0; $i <= $#args; ++$i) {
+        if ($args[$i] =~ /^-j(\d+)$/) {
+            push(@out, '--cores', $1);
+        } elsif ($args[$i] eq '-j' && $i < $#args && $args[$i + 1] =~ /^\d+$/) {
+            push(@out, '--cores', $args[$i + 1]);
+            ++$i;
+        } else {
+            push(@out, $args[$i]);
+        }
+    }
+    return @out;
+}
+
+# ----------------------------------------------------------------------
 if ($#ARGV < 0) {
     usage();
     exit(1);
@@ -254,13 +294,17 @@ write_lines($cfg_path, \@out);
 my $workdir = "$base_dir/$mu3e_dir_base-$setup_safe";
 
 chdir($setup_dir) or die "Cannot chdir to $setup_dir: $!\n";
-run_cmd("snakemake", @forwarded_args);
+my @snakemake_args = snakemake_forwarded_args_normalized(@forwarded_args);
+if ("@snakemake_args" ne "@forwarded_args") {
+    print(prefix("runRelval"), "note: replaced -jN with --cores N for Snakemake (avoids --summary crash on some Debian/Ubuntu builds)\n");
+}
+run_cmd("snakemake", @snakemake_args);
 
 my $status_dir = "$workdir/status";
 make_path($status_dir);
 
-run_cmd_to_file("$status_dir/summary.tsv", "snakemake", "--summary", @forwarded_args);
-run_cmd_to_file("$status_dir/detailed-summary.tsv", "snakemake", "--detailed-summary", @forwarded_args);
+run_cmd_to_file("$status_dir/summary.tsv", "snakemake", "--summary", @snakemake_args);
+run_cmd_to_file("$status_dir/detailed-summary.tsv", "snakemake", "--detailed-summary", @snakemake_args);
 
 print "Setup directory: $setup_dir\n";
 print "Status exported to: $status_dir\n";
