@@ -17,6 +17,7 @@
     },
     "scripts": {
         "start": "node index.mjs",
+        "relval-dashboard": "node scripts/serveRelvalDashboard.mjs",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "",

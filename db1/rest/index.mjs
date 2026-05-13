@@ -19,7 +19,9 @@ import ddb from "./routes/ddb.mjs";
 // -- provide access to DQM plots
 import dqm from "./routes/dqm.mjs";
 
-import { dirname } from 'path';
+import { createRelvalRouter } from "./lib/relvalRouter.mjs";
+
+import { dirname } from "path";
 import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -41,6 +43,12 @@ app.use("/rdb", rdb);
 app.use("/ddb", ddb);
 app.use("/dqm", dqm);
 
+const relvalBaseDir = process.env.RELVAL_BASEDIR;
+if (relvalBaseDir) {
+  const resolved = path.resolve(relvalBaseDir);
+  app.use("/relval", createRelvalRouter(resolved));
+}
+
 app.set('view engine', 'ejs');
 app.set("views", path.join(__dirname, "views"));
 
@@ -52,4 +60,9 @@ app.use((err, _req, res, next) => {
 // start the Express server
 app.listen(PORT, () => {
   console.log(`Server is running on port: ${PORT}`);
+  if (relvalBaseDir) {
+    console.log(
+      `RelVal dashboard: http://localhost:${PORT}/relval/ (RELVAL_BASEDIR=${path.resolve(relvalBaseDir)})`,
+    );
+  }
 });

@@ -109,25 +109,15 @@ If `--setup-name` is omitted, it defaults to:
 - `/` in tag names is replaced with `_` for directory safety.
 - Update `config.yaml` to add/remove scenarios or geometries.
 
-## Web dashboard (starter)
+## Web dashboard
 
-A minimal dashboard is available in `dashboard/`.
-It reads `<setup>/status/summary.tsv` for each `mu3e-*` setup under
-`/Users/ursl/data/mu3e/relval`.
+The RelVal UI is implemented under `db1/rest`: API + static assets (`lib/relvalCore.mjs`, `lib/relvalRouter.mjs`, `public/relval/`). With `RELVAL_BASEDIR` set, the main REST app serves it at **`/relval/`** (same port as the REST server).
 
-Start it:
+Standalone (port 8787 by default), from repo root:
 
 ```bash
-cd dashboard
-npm start
+cd db1/rest
+RELVAL_BASEDIR=/path/to/relval npm run relval-dashboard
 ```
 
-Open:
-
-- `http://localhost:8787`
-
-Optional alternate base directory:
-
-```bash
-RELVAL_BASEDIR=/some/other/relval npm start
-```
+Open `http://localhost:8787/` (or set `PORT`).
