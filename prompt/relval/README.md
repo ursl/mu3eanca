@@ -1,132 +1,178 @@
-# MU3E RelVal Snakemake workflow
+# MU3E RelVal (Snakemake)
 
-This workflow performs:
+Automated release validation: check out a MU3E tag, build, run simulation/reconstruction for configured scenarios, fill validation histograms, and optionally compare against a reference setup.
 
-1. clone/update MU3E checkout for a selected tag
-2. build MU3E in `_build`
-3. run `relinkBinFiles`
-4. run `mu3eSim`
-5. run `mu3eSort`
-6. run `mu3eTriRec`
+## What the workflow does
 
-for all configured scenario/geometry combinations.
+For each entry in `sim_scenarios` in `config.yaml`, Snakemake runs:
 
-## Current matrix
+1. **Bootstrap** — clone/build `mu3eUtil` and `mu3eValidation` under `mu3e_relval_basedir` (once).
+2. **Clone & prepare** — fetch/checkout the requested `mu3e_tag` (and submodules).
+3. **Build** — `cmake` + `make` in the MU3E checkout `_build`.
+4. **Relink** — `relinkBinFiles`; ensure `run/bvr2026` exists.
+5. **Sim** — `mu3eSim` → `run/output/sim-{scenario}.root`
+6. **Sort** — `mu3eSort` (uses `cdb_dbconn`, `cdb_GT`)
+7. **TriRec** — `mu3eTrirec` → `run/output/trirec-{scenario}.root`
+8. **Fill histograms** — `ana/bin/runFillHistograms` → `run/output/histograms-{scenario}.root`
 
-Defined in `config.yaml`:
+If `compare_against_setup` is set (see below), two more steps run per scenario:
 
-- scenarios:
-  - `cosmic` -> `sim_cosmic.json` -> trirec channel `cosmic`
-  - `beam8` -> `bvr2026/sim_conf8.json` -> trirec channel `beam`
-  - `beam18` -> `bvr2026/sim_conf18.json` -> trirec channel `beam`
-- geometries:
-  - `twolayer`
-  - `threelayer`
+9. **RunCompare** — PDF summaries from histogram diff (`runCompareHistograms`)
+10. **Histocompare** — alignment treedumps + `histocompare` container → PDFs under `run/output/compare/`
 
-This yields 6 branches (`3 scenarios x 2 geometries`) for sim/sort/trirec.
+Default targets are the histogram ROOT files; with compare enabled, compare/histocompare marker files are added.
 
-## Normal use cases
-Run from mu3eanca/prompt/relval (this simply runs the default v6.5)
-```bash
-cd .../mu3eanca/prompt/relval
-snakemake -j1 -p 
+## Layout on disk
+
+Configured in `config.yaml`:
+
+| Setting | Meaning |
+|--------|---------|
+| `mu3e_relval_basedir` | Root for all relval data (workdirs, `setups/`, bootstrap clones). |
+| `mu3e_dir` | Prefix for checkout directory names (usually `mu3e`). |
+| `mu3e_tag` | Default git tag (overridable on CLI). |
+
+**Checkout / workdir** (Snakemake `workdir`):
+
+```text
+<mu3e_relval_basedir>/<mu3e_workdir_name>/
 ```
 
-More realistic use cases:
-```bash
-cd .../mu3eanca/prompt/relval
-snakemake -j1 -p --config mu3e_tag=v6.6pre0 cdb_GT=mcidealv6.6
-snakemake -j1 -p --config mu3e_tag=v6.6pre0 cdb_GT=mcidealv6.6 cdb_dbconn=http://mu3edb0/cdb
+`runRelval` sets `mu3e_workdir_name` to `mu3e-<setup-name>` (e.g. `mu3e-relval_mu3e-v6.5_mcidealv6.5`). Slashes in tags are replaced by `_` in directory names.
+
+**Frozen setup** (copy of Snakefile + patched config for reproducibility):
+
+```text
+<mu3e_relval_basedir>/setups/<setup-name>/
 ```
 
-Run from anywhere (recommended form?):
-```bash
-snakemake -j1 -p \
-  -s "/Users/ursl/macros/ana/mu3eanca/prompt/relval/Snakefile" \
-  --configfile "/Users/ursl/macros/ana/mu3eanca/prompt/relval/config.yaml"
+**Status exports** (written by `runRelval` after a run):
+
+```text
+<workdir>/status/summary.tsv
+<workdir>/status/detailed-summary.tsv
 ```
 
-### Working directory behavior
+**Compare outputs** (when enabled):
 
-The `Snakefile` sets:
-
-- `workdir: <mu3e_relval_basedir>/<mu3e_dir>-<mu3e_tag>`
-
-so `.snakemake` metadata and `.markers` are stored in that checkout automatically.
-No manual `-d ...` is needed.
-
-### Dry-run (show commands without executing)
-
-```bash
-snakemake -n -p \
-  -s "/Users/ursl/macros/ana/mu3eanca/prompt/relval/Snakefile" \
-  --configfile "/Users/ursl/macros/ana/mu3eanca/prompt/relval/config.yaml"
+```text
+<workdir>/run/output/compare/<scenario>__<this>__vs__<reference>/
 ```
 
-### Clean generated ROOT outputs and markers
+## Configuration
+
+Edit `config.yaml` for machine-local paths and the scenario list. Each scenario has:
+
+- `id` — wildcard name (e.g. `conf10_twolayer`)
+- `sim_conf`, `trirec_conf` — paths under `run/`
+- optional `trirec_conf_fallback`
+
+Important keys:
+
+- `mu3e_relval_basedir`, `relink_script`, `cdb_dbconn`, `cdb_GT`
+- `relval_code_basedir` — path to this `prompt/relval` tree (for `ana/bin` tools)
+- `compare_against_setup` — empty = no compare; otherwise the **setup name suffix** of the reference (see `runRelval --compare-against-setup`)
+
+Build histogram tools once (or after code changes):
 
 ```bash
-snakemake clean -j1 -p \
-  -s "/Users/ursl/macros/ana/mu3eanca/prompt/relval/Snakefile" \
-  --configfile "/Users/ursl/macros/ana/mu3eanca/prompt/relval/config.yaml"
+cd ana && make
 ```
 
-### Get summary
+## Recommended: `runRelval`
+
+Wrapper that creates/updates a setup under `setups/`, runs Snakemake, and exports status TSVs.
 
 ```bash
-snakemake --summary  --config mu3e_tag=v6.6pre0
-snakemake --detailed-summary  --config mu3e_tag=v6.6pre0
+cd prompt/relval
+./runRelval -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5
 ```
 
-### Run and export status in one command
+Required on the command line: `mu3e_tag=...` (via `--config`). Optional overrides: `cdb_GT=...`, `cdb_dbconn=...`.
+
+| Option | Purpose |
+|--------|---------|
+| `--setup-name NAME` | Frozen setup folder name; default `relval_<mu3e_dir>-<tag>_<cdb_GT>` |
+| `--compare-against-setup NAME` | Reference setup name (same as `compare_against_setup` in config); enables compare rules |
+| `--all` | Run a predefined chain of releases (project-specific) |
+| `--dry-run` | With `--all`, print commands only |
+
+Examples:
 
 ```bash
-./runRelval.sh --setup-name relval-v65-gt2025 -j8 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5=2025
-./runRelval.sh -j8 -p --config mu3e_tag=v6.6pre0 cdb_GT=mcidealv6.5=2025
-./runRelval.sh -j8 -p --config mu3e_tag=v6.5     cdb_GT=mcidealv6.5=2025
-./runRelval.sh -j8 -p --config mu3e_tag=v6.4.4   cdb_GT=datav6.3=2025V1 cdb_dbconn=http://mu3edb0/cdb
+# Baseline setup (no histogram compare)
+./runRelval -j4 -p --config mu3e_tag=v6.3.3 cdb_GT=mcidealv6.1 cdb_dbconn=http://mu3edb0/cdb
+
+# Compare new release against an existing setup
+./runRelval -j4 -p \
+  --compare-against-setup relval_mu3e-v6.3.3_mcidealv6.1 \
+  --config mu3e_tag=v6.4.4 cdb_GT=mcidealv6.5 cdb_dbconn=http://mu3edb0/cdb
 ```
 
-This runs the workflow and writes:
+On Debian/Ubuntu Snakemake 6.x, `runRelval` rewrites `-jN` to `--cores N` so `--summary` works after the run.
 
-- `<workdir>/status/summary.tsv`
-- `<workdir>/status/detailed-summary.tsv`
+## Direct Snakemake use
 
-It also creates a setup directory with frozen files:
-
-- `<mu3e_relval_basedir>/setups/<setup-name>/Snakefile`
-- `<mu3e_relval_basedir>/setups/<setup-name>/config.yaml`
-
-If `--setup-name` is omitted, it defaults to:
-
-- `relval_<mu3e_dir>-<mu3e_tag>_<cdb_GT>`
-
-
-## Notes
-
-- Checkout directory is computed as:
-  - `<mu3e_relval_basedir>/<mu3e_dir>-<mu3e_tag>`
-- `/` in tag names is replaced with `_` for directory safety.
-- Update `config.yaml` to add/remove scenarios or geometries.
-
-## Web dashboard
-
-The RelVal UI is implemented under `db1/rest`: API + static assets (`lib/relvalCore.mjs`, `lib/relvalRouter.mjs`, `public/relval/`). The main REST app serves it at **`http://<host>:<PORT>/relval/`** (note the trailing slash, or you will be redirected).
-
-**Configure the data directory (each machine):** set `RELVAL_BASEDIR` to the **absolute path** of the relval root — the same directory as `mu3e_relval_basedir` in `prompt/relval/config.yaml` (the folder that contains `mu3e-*` setup workdirs). Easiest is `db1/rest/.env`:
+From `prompt/relval` (uses local `config.yaml` and default workdir naming):
 
 ```bash
+snakemake -j4 -p --config mu3e_tag=v6.6 cdb_GT=mcidealv6.5
+```
+
+Dry-run:
+
+```bash
+snakemake -n -p --config mu3e_tag=v6.6
+```
+
+Clean outputs and markers in the active workdir:
+
+```bash
+snakemake clean -j1 -p --config mu3e_tag=v6.6
+```
+
+Summary only:
+
+```bash
+snakemake --summary --cores 4 --config mu3e_tag=v6.6
+snakemake --detailed-summary --cores 4 --config mu3e_tag=v6.6
+```
+
+## Web dashboard (`db1/rest`)
+
+The UI is **not** a separate server under `prompt/relval`; it lives in **`db1/rest`**:
+
+- Logic: `db1/rest/lib/relvalCore.mjs`, `db1/rest/lib/relvalRouter.mjs`
+- Static UI: `db1/rest/public/relval/`
+
+It scans `RELVAL_BASEDIR` for directories named `mu3e-*`, reads each `status/summary.tsv`, lists compare PDFs, and serves files under that tree.
+
+### Configure per machine
+
+Set **`RELVAL_BASEDIR`** to the **same absolute path** as `mu3e_relval_basedir` in `config.yaml`:
+
+```bash
+cd db1/rest
 cp .env.example .env
-# edit RELVAL_BASEDIR=/mnt/data2/relval   # example
+# RELVAL_BASEDIR=/mnt/data2/relval
+npm start
 ```
 
-Restart the REST server after changing `.env`. If `RELVAL_BASEDIR` is missing, the page still loads but the API answers with a clear 503 message.
+Open **`http://<host>:<PORT>/relval/`** (trailing slash matters; `/relval` redirects).
 
-Standalone (port 8787 by default), from repo root:
+The table shows only setups that have a **reference release** from compare output (rows with reference `n/a` are hidden).
+
+Standalone dashboard (same code, default port 8787):
 
 ```bash
 cd db1/rest
 RELVAL_BASEDIR=/path/to/relval npm run relval-dashboard
 ```
 
-Open `http://localhost:8787/` (or set `PORT`).
+If `RELVAL_BASEDIR` is unset, the page loads but the API returns 503 with a short hint.
+
+## Notes
+
+- Snakemake metadata (`.snakemake`, `.markers`) lives inside the MU3E workdir; no manual `-d` is required.
+- Histocompare uses **podman** and `docker.io/mu3e/histocompare`; the host must allow that.
+- Update `sim_scenarios` in `config.yaml` to add or remove physics configurations.
