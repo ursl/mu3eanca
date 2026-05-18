@@ -9,7 +9,7 @@ For each entry in `sim_scenarios` in `config.yaml`, Snakemake runs:
 1. **Bootstrap** — clone/build `mu3eUtil` and `mu3eValidation` under `mu3e_relval_basedir` (once).
 2. **Clone & prepare** — fetch/checkout the requested `mu3e_tag` (and submodules).
 3. **Build** — `cmake` + `make` in the MU3E checkout `_build`.
-4. **Relink** — `relinkBinFiles`; ensure `run/bvr2026` exists.
+4. **Relink very large bin files** — `relinkBinFiles`; ensure `run/bvr2026` exists.
 5. **Sim** — `mu3eSim` → `run/output/sim-{scenario}.root`
 6. **Sort** — `mu3eSort` (uses `cdb_dbconn`, `cdb_GT`)
 7. **TriRec** — `mu3eTrirec` → `run/output/trirec-{scenario}.root`
