@@ -15,10 +15,13 @@ For each entry in `sim_scenarios` in `config.yaml`, Snakemake runs:
 7. **TriRec** — `mu3eTrirec` → `run/output/trirec-{scenario}.root`
 8. **Fill histograms** — `ana/bin/runFillHistograms` → `run/output/histograms-{scenario}.root`
 
-If `compare_against_setup` is set (see below), two more steps run per scenario:
+If `compare_against_setup` is set (see below), three more steps run per scenario:
 
-9. **RunCompare** — PDF summaries from histogram diff (`runCompareHistograms`)
-10. **Histocompare** — alignment treedumps + `histocompare` container → PDFs under `run/output/compare/`
+9. **RunCompare** — PDF summaries from histogram diff (`runCompareHistograms` on filled histogram ROOT files).
+10. **Alignment treedump** — for each alignment object (`sensors`, `fibres`, `tiles`, `mppcs`), `mu3eTreeDumper` reads the **sort** files of the new and reference setups and writes compact treedump ROOT files under `run/output/` (e.g. `treedump-{scenario}-sensors.root`). This is extraction only, not a comparison yet.
+11. **Histocompare** — the `histocompare` container compares each pair of treedump files (new vs reference) and writes PDFs (and related outputs) under `run/output/compare/`.
+
+Snakemake implements steps 10–11 in a single rule named `run_histocompare` (treedump first, then container per object). Step 9 is the separate rule `run_compare_histograms`.
 
 Default targets are the histogram ROOT files; with compare enabled, compare/histocompare marker files are added.
 
@@ -56,7 +59,10 @@ Configured in `config.yaml`:
 **Compare outputs** (when enabled):
 
 ```text
+<workdir>/run/output/treedump-<scenario>-<object>.root   # from mu3eTreeDumper (step 10)
 <workdir>/run/output/compare/<scenario>__<this>__vs__<reference>/
+    histocompare-<scenario>-<object>.pdf                   # from histocompare container (step 11)
+    summary-*.pdf                                          # from runCompareHistograms (step 9)
 ```
 
 ## Configuration
@@ -174,5 +180,6 @@ If `RELVAL_BASEDIR` is unset, the page loads but the API returns 503 with a shor
 ## Notes
 
 - Snakemake metadata (`.snakemake`, `.markers`) lives inside the MU3E workdir; no manual `-d` is required.
-- Histocompare uses **podman** and `docker.io/mu3e/histocompare`; the host must allow that.
+- Alignment treedumps use `mu3eUtil`’s `mu3eTreeDumper` and config from `mu3eValidation/scripts/treedump_and_histocompare/config.json`.
+- The **histocompare** step (step 11 only) uses **podman** and `docker.io/mu3e/histocompare`; the host must allow that.
 - Update `sim_scenarios` in `config.yaml` to add or remove physics configurations.
