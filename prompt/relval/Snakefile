@@ -401,7 +401,7 @@ rule run_treedump:
     input:
         f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
     output:
-        lambda wildcards: treedump_host_path(wildcards.scenario, wildcards.align_object),
+        f"{MU3E_DIR}/run/output/treedump-{{scenario}}-{{align_object}}.root",
     params:
         treedumper_exe=f"{MU3E_RELVAL_BASEDIR}/mu3eUtil/_build/tools/treedump/mu3eTreeDumper",
         treedump_cfg=f"{MU3E_RELVAL_BASEDIR}/mu3eValidation/scripts/treedump_and_histocompare/config.json",
