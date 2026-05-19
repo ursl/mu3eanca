@@ -448,14 +448,16 @@ if COMPARE_ENABLED:
                 "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort1}" "alignment/$obj" "$dump1_prefix_obj"
                 "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort2}" "alignment/$obj" "$dump2_prefix_obj"
 
-                # Phase 2: compare treedump pair in container
+                # Phase 2: compare treedump pair in container.
+                # Write to an empty temp dir so ROOT does not try to delete stale
+                # histocompare-*.root in the compare folder (often wrong owner from
+                # earlier podman :U runs on NFS). Do not use :U on volume mounts.
+                hc_tmp=$(mktemp -d)
                 set +e
-                # Do not use :U on the workdir mount — on NFS it can chown outputs to a
-                # subuid (e.g. 297608) that mu3e cannot delete. keep-id writes as the host user.
                 podman run --rm --userns=keep-id \
                     -w /workdir \
                     -v "{MU3E_RELVAL_BASEDIR}:/relval:ro,Z" \
-                    -v "{params.out_dir_host}:/workdir:Z" \
+                    -v "$hc_tmp:/workdir:Z" \
                     docker.io/mu3e/histocompare \
                     "$dump1_data_obj" \
                     "$dump2_data_obj" \
@@ -465,6 +467,22 @@ if COMPARE_ENABLED:
                     --twoDimThreshold 1.0
                 rc=$?
                 set -e
+
+                for dst in "$out_pdf_obj" "$out_root_obj" "$out_log_obj"; do
+                    if [ -e "$dst" ] && ! rm -f "$dst" 2>/dev/null; then
+                        rm -rf "$hc_tmp"
+                        echo "[relval] ERROR: cannot remove stale $(basename "$dst") (wrong owner from an earlier container run?)." >&2
+                        echo "[relval]        Fix once: sudo chown -R $(id -un):$(id -gn) \"{params.out_dir_host}\"" >&2
+                        exit 1
+                    fi
+                done
+                for ext in pdf root log; do
+                    src="$hc_tmp/$out_name_obj.$ext"
+                    if [ -f "$src" ]; then
+                        cp -f "$src" "{params.out_dir_host}/$out_name_obj.$ext"
+                    fi
+                done
+                rm -rf "$hc_tmp"
 
                 if [ "$rc" -ne 0 ]; then
                     # On some host/container combinations histocompare can segfault
