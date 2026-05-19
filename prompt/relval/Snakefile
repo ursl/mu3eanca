@@ -450,10 +450,12 @@ if COMPARE_ENABLED:
 
                 # Phase 2: compare treedump pair in container
                 set +e
+                # Do not use :U on the workdir mount — on NFS it can chown outputs to a
+                # subuid (e.g. 297608) that mu3e cannot delete. keep-id writes as the host user.
                 podman run --rm --userns=keep-id \
                     -w /workdir \
                     -v "{MU3E_RELVAL_BASEDIR}:/relval:ro,Z" \
-                    -v "{params.out_dir_host}:/workdir:Z,U" \
+                    -v "{params.out_dir_host}:/workdir:Z" \
                     docker.io/mu3e/histocompare \
                     "$dump1_data_obj" \
                     "$dump2_data_obj" \

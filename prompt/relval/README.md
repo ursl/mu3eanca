@@ -181,14 +181,22 @@ If `RELVAL_BASEDIR` is unset, the page loads but the API returns 503 with a shor
 
 - Snakemake metadata (`.snakemake`, `.markers`) lives inside the MU3E workdir; no manual `-d` is required.
 - Alignment treedumps use `mu3eUtil`’s `mu3eTreeDumper` and config from `mu3eValidation/scripts/treedump_and_histocompare/config.json`.
-- The **histocompare** step (step 11 only) uses **podman** and `docker.io/mu3e/histocompare` with `--userns=keep-id`, `-w /workdir`, `:Z,U` on the output mount, and `-o /workdir/...` (write access on Linux servers with rootless podman / SELinux / NFS). Do not `chmod` the compare dir on NFS — ownership is set when Snakemake/`runCompare` creates it.
+- The **histocompare** step (step 11 only) uses **podman** and `docker.io/mu3e/histocompare` with `--userns=keep-id`, `-w /workdir`, `:Z` on mounts (not `:U` — on NFS, `:U` can leave files owned by a podman subuid such as `297608`, which `mu3e` cannot delete).
 
-  To test container write access (the image has no shell entrypoint; override it):
+  To test container write access (override entrypoint; check owner is you):
 
   ```bash
   COMPARE_DIR=".../run/output/compare/<scenario-dir>"
   podman run --rm --userns=keep-id --entrypoint sh \
-    -w /workdir -v "$COMPARE_DIR:/workdir:Z,U" \
+    -w /workdir -v "$COMPARE_DIR:/workdir:Z" \
     docker.io/mu3e/histocompare -c 'touch _write_test && echo OK'
+  ls -l "$COMPARE_DIR/_write_test"   # should show your user, e.g. mu3e, not 297608
+  ```
+
+  **Cleanup** if files were already created with wrong ownership (`297608` etc.):
+
+  ```bash
+  sudo chown -R mu3e:users /mnt/data2/relval/
+  rm -rf /mnt/data2/relval/
   ```
 - Update `sim_scenarios` in `config.yaml` to add or remove physics configurations.
