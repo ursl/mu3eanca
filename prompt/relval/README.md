@@ -115,6 +115,24 @@ Examples:
 
 On Debian/Ubuntu Snakemake 6.x, `runRelval` rewrites `-jN` to `--cores N` so `--summary` works after the run.
 
+### When a rule fails (logs)
+
+Snakemake’s main log (`setups/.../.snakemake/log/...`) often only says `Error in rule …` without the shell output. Use:
+
+1. **Per-rule logs** (stdout+stderr from the shell), under the MU3E workdir, e.g.  
+   `logs/snakemake/run_histocompare-conf10_twolayer.log`  
+   For histocompare, each alignment object also writes  
+   `run/output/compare/.../histocompare-<scenario>-<obj>.podman.log`.
+
+2. **`--show-failed-logs`** (Snakemake 6+) — prints failed job logs to the terminal after the run:  
+   `./runRelval --show-failed-logs -j4 -p --config ...`
+
+3. **Job metadata** in `setups/<setup>/.snakemake/log/<timestamp>/` (cluster/job scripts if present).
+
+4. Re-run one job with print:  
+   `snakemake --cores 1 -p run_histocompare --config ...`  
+   (add scenario wildcard if needed via target file)
+
 ## Direct Snakemake use
 
 From `prompt/relval` (uses local `config.yaml` and default workdir naming):

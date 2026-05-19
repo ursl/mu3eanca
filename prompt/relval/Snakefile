@@ -402,6 +402,8 @@ rule run_treedump:
         f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
     output:
         f"{MU3E_DIR}/run/output/treedump-{{scenario}}-{{align_object}}.root",
+    log:
+        "logs/snakemake/run_treedump-{scenario}-{align_object}.log",
     params:
         treedumper_exe=f"{MU3E_RELVAL_BASEDIR}/mu3eUtil/_build/tools/treedump/mu3eTreeDumper",
         treedump_cfg=f"{MU3E_RELVAL_BASEDIR}/mu3eValidation/scripts/treedump_and_histocompare/config.json",
@@ -421,6 +423,8 @@ if COMPARE_ENABLED:
             in2=lambda wildcards: compare_other_hist(wildcards.scenario)
         output:
             f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}"
+        log:
+            "logs/snakemake/run_compare_histograms-{scenario}.log",
         params:
             exe=RUN_COMPARE_HISTOGRAMS_EXE,
             out_dir=lambda wildcards: compare_dir_rel(wildcards.scenario),
@@ -447,28 +451,49 @@ if COMPARE_ENABLED:
             ],
         output:
             f"{MU3E_DIR}/run/{HISTOCOMPARE_MARKER_TPL}"
+        log:
+            "logs/snakemake/run_histocompare-{scenario}.log",
         params:
             out_dir_host=lambda wildcards: compare_dir_host(wildcards.scenario),
+            compare_against=COMPARE_AGAINST_SETUP,
         shell:
             r"""
             set -euo pipefail
             mkdir -p "{params.out_dir_host}"
             align_objects="sensors fibres tiles mppcs"
 
+            echo "[relval] run_histocompare scenario={wildcards.scenario}"
+            echo "[relval]   compare dir: {params.out_dir_host}"
+            echo "[relval]   reference setup: {params.compare_against}"
+
             for obj in $align_objects; do
+                dump1_host="{MU3E_DIR}/run/output/treedump-{wildcards.scenario}-$obj.root"
+                dump2_host="{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output/treedump-{wildcards.scenario}-$obj.root"
                 dump1_data_obj="/relval/{MU3E_DIRNAME}/run/output/treedump-{wildcards.scenario}-$obj.root"
                 dump2_data_obj="/relval/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output/treedump-{wildcards.scenario}-$obj.root"
                 out_name_obj="histocompare-{wildcards.scenario}-$obj"
                 out_pdf_obj="{params.out_dir_host}/$out_name_obj.pdf"
                 out_root_obj="{params.out_dir_host}/$out_name_obj.root"
                 out_log_obj="{params.out_dir_host}/$out_name_obj.log"
+                podman_log="{params.out_dir_host}/$out_name_obj.podman.log"
 
-                # Compare treedump pair in container (treedumps built by run_treedump / run_treedump_reference).
+                echo "[relval] --- alignment object: $obj ---"
+                for f in "$dump1_host" "$dump2_host"; do
+                    if [ ! -f "$f" ]; then
+                        echo "[relval] ERROR: missing treedump input: $f" >&2
+                        exit 1
+                    fi
+                done
+                echo "[relval]   host ref : $dump2_host"
+                echo "[relval]   host new : $dump1_host"
+
+                # Compare treedump pair in container (treedumps from run_treedump on each setup).
                 # Write to an empty temp dir so ROOT does not try to delete stale
                 # histocompare-*.root in the compare folder (often wrong owner from
                 # earlier podman :U runs on NFS). Do not use :U on volume mounts.
                 hc_tmp=$(mktemp -d)
                 set +e
+                set -o pipefail
                 podman run --rm --userns=keep-id \
                     -w /workdir \
                     -v "{MU3E_RELVAL_BASEDIR}:/relval:ro,Z" \
@@ -479,9 +504,12 @@ if COMPARE_ENABLED:
                     --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
                     --pdf -o "/workdir/$out_name_obj" --skip=eventWeight --skip=farm_status \
                     --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
-                    --twoDimThreshold 1.0
+                    --twoDimThreshold 1.0 \
+                    2>&1 | tee "$podman_log"
                 rc=$?
+                set +o pipefail
                 set -e
+                echo "[relval]   podman exit code: $rc (full log: $podman_log)"
 
                 for dst in "$out_pdf_obj" "$out_root_obj" "$out_log_obj"; do
                     if [ -e "$dst" ] && ! rm -f "$dst" 2>/dev/null; then
@@ -506,6 +534,7 @@ if COMPARE_ENABLED:
                         echo "[relval] WARNING: histocompare($obj) exited with code $rc but produced expected outputs; continuing"
                     else
                         echo "[relval] ERROR: histocompare($obj) failed with code $rc and outputs are incomplete" >&2
+                        echo "[relval]        See $podman_log and logs/snakemake/run_histocompare-{wildcards.scenario}.log" >&2
                         exit "$rc"
                     fi
                 fi
