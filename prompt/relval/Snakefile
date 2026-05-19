@@ -449,16 +449,17 @@ if COMPARE_ENABLED:
                 "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort2}" "alignment/$obj" "$dump2_prefix_obj"
 
                 # Phase 2: compare treedump pair in container
-                cd "{MU3E_RELVAL_BASEDIR}/mu3eValidation"
+                chmod u+rwx "{params.out_dir_host}"
                 set +e
                 podman run --rm --userns=keep-id \
+                    -w /workdir \
                     -v "{MU3E_RELVAL_BASEDIR}:/relval:ro,Z" \
-                    -v "{params.out_dir_host}:/workdir:Z" \
+                    -v "{params.out_dir_host}:/workdir:Z,U" \
                     docker.io/mu3e/histocompare \
                     "$dump1_data_obj" \
                     "$dump2_data_obj" \
                     --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
-                    --pdf -o "$out_name_obj" --skip=eventWeight --skip=farm_status \
+                    --pdf -o "/workdir/$out_name_obj" --skip=eventWeight --skip=farm_status \
                     --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
                     --twoDimThreshold 1.0
                 rc=$?
