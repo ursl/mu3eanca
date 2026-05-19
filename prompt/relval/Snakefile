@@ -113,33 +113,45 @@ def compare_in2_data_path(scenario):
     return f"/data/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{trirec_output(scenario)}"
 
 
-def treedump_file_name(scenario):
-    return f"treedump-{scenario}-sensors.root"
+ALIGN_OBJECTS = ["sensors", "fibres", "tiles", "mppcs"]
 
 
-def current_treedump_host_path(scenario):
-    return f"{MU3E_DIR}/run/output/{treedump_file_name(scenario)}"
+def treedump_basename(scenario, align_object):
+    return f"treedump-{scenario}-{align_object}"
 
 
-def ref_treedump_host_path(scenario):
-    return f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output/{treedump_file_name(scenario)}"
+def treedump_output(scenario, align_object):
+    return f"output/{treedump_basename(scenario, align_object)}.root"
 
 
-def current_treedump_container_path(scenario):
-    return f"/relval/{MU3E_DIRNAME}/run/output/{treedump_file_name(scenario)}"
+def treedump_host_path(scenario, align_object):
+    return f"{MU3E_DIR}/run/{treedump_output(scenario, align_object)}"
 
 
-def ref_treedump_container_path(scenario):
-    return f"/relval/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output/{treedump_file_name(scenario)}"
+def treedump_container_path(scenario, align_object):
+    return f"/relval/{MU3E_DIRNAME}/run/{treedump_output(scenario, align_object)}"
+
+
+def ref_treedump_host_path(scenario, align_object):
+    return f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{treedump_output(scenario, align_object)}"
+
+
+def ref_treedump_container_path(scenario, align_object):
+    return f"/relval/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{treedump_output(scenario, align_object)}"
 
 
 wildcard_constraints:
-    scenario="|".join(SCENARIO_IDS)
+    scenario="|".join(SCENARIO_IDS),
+    align_object="|".join(ALIGN_OBJECTS),
 
 
 ALL_TARGETS = [
     f"{MU3E_DIR}/run/{fillhist_output(scenario)}"
     for scenario in SCENARIO_IDS
+] + [
+    treedump_host_path(scenario, obj)
+    for scenario in SCENARIO_IDS
+    for obj in ALIGN_OBJECTS
 ]
 if COMPARE_ENABLED:
     ALL_TARGETS += [
@@ -385,6 +397,23 @@ rule run_fill_histograms:
         """
 
 
+rule run_treedump:
+    input:
+        f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
+    output:
+        lambda wildcards: treedump_host_path(wildcards.scenario, wildcards.align_object),
+    params:
+        treedumper_exe=f"{MU3E_RELVAL_BASEDIR}/mu3eUtil/_build/tools/treedump/mu3eTreeDumper",
+        treedump_cfg=f"{MU3E_RELVAL_BASEDIR}/mu3eValidation/scripts/treedump_and_histocompare/config.json",
+        dump_prefix=lambda wildcards: f"run/output/{treedump_basename(wildcards.scenario, wildcards.align_object)}",
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p run/output
+        "{params.treedumper_exe}" "{params.treedump_cfg}" "{input}" "alignment/{wildcards.align_object}" "{params.dump_prefix}"
+        """
+
+
 if COMPARE_ENABLED:
     rule run_compare_histograms:
         input:
@@ -407,48 +436,34 @@ if COMPARE_ENABLED:
             touch "{output}"
             """
 
-    # Two phases in one rule (marker covers both):
-    # 1) mu3eTreeDumper: sort -> treedump ROOT per alignment object (new + reference)
-    # 2) histocompare container: treedump pair -> PDF under run/output/compare/
     rule run_histocompare:
         input:
             compare_done=f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}",
-            sort1=f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}",
-            sort2=lambda wildcards: f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{SORT_OUTPUT_TPL.format(scenario=wildcards.scenario)}"
+            treedumps_current=lambda wildcards: [
+                treedump_host_path(wildcards.scenario, obj) for obj in ALIGN_OBJECTS
+            ],
+            treedumps_reference=lambda wildcards: [
+                ref_treedump_host_path(wildcards.scenario, obj) for obj in ALIGN_OBJECTS
+            ],
         output:
             f"{MU3E_DIR}/run/{HISTOCOMPARE_MARKER_TPL}"
         params:
             out_dir_host=lambda wildcards: compare_dir_host(wildcards.scenario),
-            treedumper_exe=f"{MU3E_RELVAL_BASEDIR}/mu3eUtil/_build/tools/treedump/mu3eTreeDumper",
-            treedump_cfg=f"{MU3E_RELVAL_BASEDIR}/mu3eValidation/scripts/treedump_and_histocompare/config.json",
-            dump1_host_dir=f"{MU3E_DIR}/run/output",
-            dump2_host_dir=lambda wildcards: f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output",
-            dump1_data_dir=lambda wildcards: f"/relval/{MU3E_DIRNAME}/run/output",
-            dump2_data_dir=lambda wildcards: f"/relval/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output"
         shell:
             r"""
             set -euo pipefail
             mkdir -p "{params.out_dir_host}"
-            mkdir -p "{params.dump1_host_dir}"
-            mkdir -p "{params.dump2_host_dir}"
             align_objects="sensors fibres tiles mppcs"
 
             for obj in $align_objects; do
-                dump_base="treedump-{wildcards.scenario}-$obj"
-                dump1_prefix_obj="{params.dump1_host_dir}/$dump_base"
-                dump2_prefix_obj="{params.dump2_host_dir}/$dump_base"
-                dump1_data_obj="{params.dump1_data_dir}/$dump_base.root"
-                dump2_data_obj="{params.dump2_data_dir}/$dump_base.root"
+                dump1_data_obj="/relval/{MU3E_DIRNAME}/run/output/treedump-{wildcards.scenario}-$obj.root"
+                dump2_data_obj="/relval/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output/treedump-{wildcards.scenario}-$obj.root"
                 out_name_obj="histocompare-{wildcards.scenario}-$obj"
                 out_pdf_obj="{params.out_dir_host}/$out_name_obj.pdf"
                 out_root_obj="{params.out_dir_host}/$out_name_obj.root"
                 out_log_obj="{params.out_dir_host}/$out_name_obj.log"
 
-                # Phase 1: extract alignment branches from sort files (not comparison)
-                "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort1}" "alignment/$obj" "$dump1_prefix_obj"
-                "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort2}" "alignment/$obj" "$dump2_prefix_obj"
-
-                # Phase 2: compare treedump pair in container.
+                # Compare treedump pair in container (treedumps built by run_treedump / run_treedump_reference).
                 # Write to an empty temp dir so ROOT does not try to delete stale
                 # histocompare-*.root in the compare folder (often wrong owner from
                 # earlier podman :U runs on NFS). Do not use :U on volume mounts.

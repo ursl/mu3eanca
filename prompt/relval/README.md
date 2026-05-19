@@ -13,15 +13,13 @@ For each entry in `sim_scenarios` in `config.yaml`, Snakemake runs:
 5. **Sim** — `mu3eSim` → `run/output/sim-{scenario}.root`
 6. **Sort** — `mu3eSort` (uses `cdb_dbconn`, `cdb_GT`)
 7. **TriRec** — `mu3eTrirec` → `run/output/trirec-{scenario}.root`
-8. **Fill histograms** — `ana/bin/runFillHistograms` → `run/output/histograms-{scenario}.root`
+8. **Fill histograms** — `ana/bin/runFillHistograms` → `run/output/histograms-{scenario}.root` (from trirec).
+9. **Treedump** — rule `run_treedump`: after **sort**, `mu3eTreeDumper` writes `run/output/treedump-{scenario}-{object}.root` for each alignment object (`sensors`, `fibres`, `tiles`, `mppcs`). Always part of the default targets (not tied to compare mode). Runs in parallel with trirec / fill-hist once sort exists.
 
-If `compare_against_setup` is set (see below), three more steps run per scenario:
+If `compare_against_setup` is set (see below), two more steps run per scenario:
 
-9. **RunCompare** — PDF summaries from histogram diff (`runCompareHistograms` on filled histogram ROOT files).
-10. **Alignment treedump** — for each alignment object (`sensors`, `fibres`, `tiles`, `mppcs`), `mu3eTreeDumper` reads the **sort** files of the new and reference setups and writes compact treedump ROOT files under `run/output/` (e.g. `treedump-{scenario}-sensors.root`). This is extraction only, not a comparison yet.
-11. **Histocompare** — the `histocompare` container compares each pair of treedump files (new vs reference) and writes PDFs (and related outputs) under `run/output/compare/`.
-
-Snakemake implements steps 10–11 in a single rule named `run_histocompare` (treedump first, then container per object). Step 9 is the separate rule `run_compare_histograms`.
+10. **RunCompare** — PDF summaries from histogram diff (`runCompareHistograms` on filled histogram ROOT files).
+11. **Histocompare** — rule `run_histocompare`: `histocompare` container compares treedump pairs (new vs reference) → PDFs under `run/output/compare/`. Reference treedumps must already exist from a **previous relval run** of the reference setup (same `run_treedump` rule).
 
 Default targets are the histogram ROOT files; with compare enabled, compare/histocompare marker files are added.
 
