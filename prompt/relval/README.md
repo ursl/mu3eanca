@@ -181,7 +181,7 @@ If `RELVAL_BASEDIR` is unset, the page loads but the API returns 503 with a shor
 
 - Snakemake metadata (`.snakemake`, `.markers`) lives inside the MU3E workdir; no manual `-d` is required.
 - Alignment treedumps use `mu3eUtil`’s `mu3eTreeDumper` and config from `mu3eValidation/scripts/treedump_and_histocompare/config.json`.
-- The **histocompare** step (step 11 only) uses **podman** and `docker.io/mu3e/histocompare` with `--userns=keep-id`, `-w /workdir`, `:Z,U` on the output mount, and `-o /workdir/...` (write access on Linux servers with rootless podman / SELinux / NFS).
+- The **histocompare** step (step 11 only) uses **podman** and `docker.io/mu3e/histocompare` with `--userns=keep-id`, `-w /workdir`, `:Z,U` on the output mount, and `-o /workdir/...` (write access on Linux servers with rootless podman / SELinux / NFS). Do not `chmod` the compare dir on NFS — ownership is set when Snakemake/`runCompare` creates it.
 
   To test container write access (the image has no shell entrypoint; override it):
 

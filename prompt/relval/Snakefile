@@ -449,7 +449,6 @@ if COMPARE_ENABLED:
                 "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort2}" "alignment/$obj" "$dump2_prefix_obj"
 
                 # Phase 2: compare treedump pair in container
-                chmod u+rwx "{params.out_dir_host}"
                 set +e
                 podman run --rm --userns=keep-id \
                     -w /workdir \
