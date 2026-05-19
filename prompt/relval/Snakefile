@@ -407,6 +407,9 @@ if COMPARE_ENABLED:
             touch "{output}"
             """
 
+    # Two phases in one rule (marker covers both):
+    # 1) mu3eTreeDumper: sort -> treedump ROOT per alignment object (new + reference)
+    # 2) histocompare container: treedump pair -> PDF under run/output/compare/
     rule run_histocompare:
         input:
             compare_done=f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}",
@@ -441,14 +444,16 @@ if COMPARE_ENABLED:
                 out_root_obj="{params.out_dir_host}/$out_name_obj.root"
                 out_log_obj="{params.out_dir_host}/$out_name_obj.log"
 
+                # Phase 1: extract alignment branches from sort files (not comparison)
                 "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort1}" "alignment/$obj" "$dump1_prefix_obj"
                 "{params.treedumper_exe}" "{params.treedump_cfg}" "{input.sort2}" "alignment/$obj" "$dump2_prefix_obj"
 
+                # Phase 2: compare treedump pair in container
                 cd "{MU3E_RELVAL_BASEDIR}/mu3eValidation"
                 set +e
-                podman run --rm \
-                    -v "{MU3E_RELVAL_BASEDIR}:/relval:ro" \
-                    -v "{params.out_dir_host}:/workdir" \
+                podman run --rm --userns=keep-id \
+                    -v "{MU3E_RELVAL_BASEDIR}:/relval:ro,Z" \
+                    -v "{params.out_dir_host}:/workdir:Z" \
                     docker.io/mu3e/histocompare \
                     "$dump1_data_obj" \
                     "$dump2_data_obj" \
