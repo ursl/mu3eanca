@@ -7,6 +7,7 @@
 #include <TMath.h>
 #include <TObjString.h>
 #include <TH2D.h>
+#include <TProfile.h>
 
 #include "../../../common/json.h" // nlohmann
 
@@ -26,6 +27,10 @@ fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
   if (!fInFile) {
     cout << "fillHist::fillHist() ERROR: could not open input file " << infile.c_str() << endl;
     return;
+  }
+  fTrackTypes = {40, 42, 44};
+  for (auto trkType : fTrackTypes) {
+    fTrackTypeCounts[trkType] = 0;
   }
   
   // -- get config from input file
@@ -102,13 +107,36 @@ fillHist::fillHist(const std::string &infile, const std::string &outfileName) {
 // ----------------------------------------------------------------------
 fillHist::~fillHist() {
   if (fOutFile) {
-    fOutFile->cd();
     for (auto &h : fHistograms) {
-      h.second->Write();
-      delete h.second;
+      const size_t slash = h.first.find('/');
+      if (slash != string::npos) {
+        const string dir = h.first.substr(0, slash);
+        const string hname = h.first.substr(slash + 1);
+        TDirectory *dirObj = fOutFile->GetDirectory(dir.c_str());
+        if (!dirObj) {
+          dirObj = fOutFile->mkdir(dir.c_str());
+        }
+        if (!dirObj) {
+          cout << "fillHist::~fillHist() ERROR: cannot create directory " << dir << endl;
+          continue;
+        }
+        // Write() goes to gDirectory, not only to SetDirectory()'s mother dir.
+        dirObj->cd();
+        h.second->SetName(hname.c_str());
+        h.second->SetDirectory(nullptr);
+        h.second->Write();
+        delete h.second;
+      } else {
+        fOutFile->cd();
+        h.second->Write();
+        delete h.second;
+      }
     }
+    fOutFile->cd();
+    fOutFile->Write();
     fOutFile->Close();
     delete fOutFile;
+    fOutFile = nullptr;
   }
   if (fInFile) {
     fInFile->Close();
@@ -118,75 +146,81 @@ fillHist::~fillHist() {
 
 
 // ----------------------------------------------------------------------
-void fillHist::bookHist(string mode, string annotation) {
-  if ("relval" == mode) {
-    // -- bookkeeping
-    fHistograms["hinfo"] = new TH1D("hinfo", "info", 50, 0., 50.);
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(1, annotation.c_str());
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(2, "n_events");
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(3, "n_hi_tracks");
-    
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(10, fConfigs["sim_conf"].c_str());
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(11, fConfigs["sim_version"].c_str());
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(20, fConfigs["sort_conf"].c_str());
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(21, fConfigs["sort_version"].c_str());
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(30, fConfigs["trirec_conf"].c_str());
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(31, fConfigs["trirec_version"].c_str());
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(35, fConfigs["cdb_dbconn"].c_str());
-    fHistograms["hinfo"]->GetXaxis()->SetBinLabel(36, fConfigs["cdb_globalTag"].c_str());
-    
-    fHistograms["hpall"] = new TH1D("hpall", "p (all tracks)", 40, 0., 80.);
-    fHistograms["hp"] = new TH1D("hp", "p", 40, 0., 80.);
-    fHistograms["hperr2"] = new TH1D("hperr2", "perr2", 50, 0., 2.);
-    fHistograms["hx0"] = new TH1D("hx0", "x0", 160, -80., 80.);
-    fHistograms["hy0"] = new TH1D("hy0", "y0", 160, -80., 80.);
-    fHistograms["hz0"] = new TH1D("hz0", "z0", 100, -100., 100.);
-    fHistograms["ht0"] = new TH1D("ht0", "t0", 100, -100., 100.);
-    fHistograms["ht0_err"] = new TH1D("ht0_err", "t0_err", 100, -100., 100.);
-    fHistograms["ht0_rms"] = new TH1D("ht0_rms", "t0_rms", 100, -100., 100.);
-    fHistograms["ht0_tl"] = new TH1D("ht0_tl", "t0_tl", 100, -100., 100.);
-    fHistograms["ht0_fb"] = new TH1D("ht0_fb", "t0_fb", 100, -100., 100.);
-    fHistograms["ht0_si"] = new TH1D("ht0_si", "t0_si", 100, -100., 100.);
-    fHistograms["ht0_tl_rms"] = new TH1D("ht0_tl_rms", "t0_tl_rms", 100, 0., 100.);
-    fHistograms["ht0_fb_rms"] = new TH1D("ht0_fb_rms", "t0_fb_rms", 100, 0., 100.);
-    fHistograms["ht0_si_rms"] = new TH1D("ht0_si_rms", "t0_si_rms", 100, 0., 100.);
-    fHistograms["hr"] = new TH1D("hr", "r", 100, -250., 250.);
-    fHistograms["hrerr2"] = new TH1D("hrerr2", "rerr2", 100, 0., 100.);
-    fHistograms["hchi2"] = new TH1D("hchi2", "chi2", 100, 0., 100.);
-    fHistograms["htan01"] = new TH1D("htan01", "tan01", 63, -3.15, 3.15);
-    fHistograms["hlam01"] = new TH1D("hlam01", "lam01", 100, -1., 1.);
-    fHistograms["hnhit"] = new TH1D("hnhit", "nhit", 100, 0., 20.);
-    fHistograms["httype"] = new TH1D("httype", "ttype", 1000, -500., 500.);
-    fHistograms["hn_shared_hits"] = new TH1D("hn_shared_hits", "n_shared_hits", 50, 0., 50.);
-    fHistograms["hn_shared_segs"] = new TH1D("hn_shared_segs", "n_shared_segs", 50, 0., 50.);
-    fHistograms["hfarm_status"] = new TH1D("hfarm_status", "farm_status", 1000, -500., 500.);
-    fHistograms["hsid0"] = new TH1D("hsid0", "sid0", 20000, 0., 20000.);
-    fHistograms["hn"] = new TH1D("hn", "n", 100, 0., 100.);
-    fHistograms["hn4"] = new TH1D("hn4", "n4", 100, 0., 100.);
-    fHistograms["hn6"] = new TH1D("hn6", "n6", 100, 0., 100.);
-    fHistograms["hn8"] = new TH1D("hn8", "n8", 100, 0., 100.);
-    
+void fillHist::bookHist(string annotation) {
+  // -- bookkeeping
+  fHistograms["hinfo"] = new TH1D("hinfo", "info", 50, 0., 50.);
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(1, annotation.c_str());
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(2, "n_events");
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(3, "n_hi_tracks");
+  
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(10, fConfigs["sim_conf"].c_str());
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(11, fConfigs["sim_version"].c_str());
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(20, fConfigs["sort_conf"].c_str());
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(21, fConfigs["sort_version"].c_str());
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(30, fConfigs["trirec_conf"].c_str());
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(31, fConfigs["trirec_version"].c_str());
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(35, fConfigs["cdb_dbconn"].c_str());
+  fHistograms["hinfo"]->GetXaxis()->SetBinLabel(36, fConfigs["cdb_globalTag"].c_str());
+  
+  fHistograms["hpall"] = new TH1D("hpall", "p (all tracks)", 40, 0., 80.);
+  
+  fHistograms["hn"] = new TH1D("hn", "n (all tracks)", 100, 0., 100.);
+  fHistograms["hn4"] = new TH1D("hn4", "n4 (all tracks)", 100, 0., 100.);
+  fHistograms["hn6"] = new TH1D("hn6", "n6 (all tracks)", 100, 0., 100.);
+  fHistograms["hn8"] = new TH1D("hn8", "n8 (all tracks)", 100, 0., 100.);
+  
+  for (auto trkType : fTrackTypes) {
+    fHistograms[Form("ttype%d/ntrks", trkType)] = new TH1D(Form("ttype%d_ntrks", trkType), Form("ntrks (%d)", trkType), 50, 0., 50.);
+    fHistograms[Form("ttype%d/hp", trkType)] = new TH1D(Form("ttype%d_hp", trkType), Form("p (%d)", trkType), 40, 0., 80.);
+    fHistograms[Form("ttype%d/hperr2", trkType)] = new TH1D(Form("ttype%d_perr2", trkType), Form("perr2 (%d)", trkType), 50, 0., 2.);
+    fHistograms[Form("ttype%d/hx0", trkType)] = new TH1D(Form("ttype%d_hx0", trkType), Form("x0 (%d)", trkType), 40, -80., 80.);
+    fHistograms[Form("ttype%d/hy0", trkType)] = new TH1D(Form("ttype%d_hy0", trkType), Form("y0 (%d)", trkType), 40, -80., 80.);
+    fHistograms[Form("ttype%d/hz0", trkType)] = new TH1D(Form("ttype%d_hz0", trkType), Form("z0 (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/ht0", trkType)] = new TH1D(Form("ttype%d_ht0", trkType), Form("t0 (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/ht0_err", trkType)] = new TH1D(Form("ttype%d_ht0_err", trkType), Form("t0_err (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/ht0_rms", trkType)] = new TH1D(Form("ttype%d_ht0_rms", trkType), Form("t0_rms (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/ht0_tl", trkType)] = new TH1D(Form("ttype%d_ht0_tl", trkType), Form("t0_tl (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/ht0_tl_rms", trkType)] = new TH1D(Form("ttype%d_ht0_tl_rms", trkType), Form("t0_tl_rms (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/ht0_fb", trkType)] = new TH1D(Form("ttype%d_ht0_fb", trkType), Form("t0_fb (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/ht0_fb_rms", trkType)] = new TH1D(Form("ttype%d_ht0_fb_rms", trkType), Form("t0_fb_rms (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/ht0_si", trkType)] = new TH1D(Form("ttype%d_ht0_si", trkType), Form("t0_si (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/ht0_si_rms", trkType)] = new TH1D(Form("ttype%d_ht0_si_rms", trkType), Form("t0_si_rms (%d)", trkType), 50, -100., 100.);
+    fHistograms[Form("ttype%d/hrerr2", trkType)] = new TH1D(Form("ttype%d_rerr2", trkType), Form("rerr2 (%d)", trkType), 50, 0., 100.);
+    fHistograms[Form("ttype%d/hchi2", trkType)] = new TH1D(Form("ttype%d_chi2", trkType), Form("chi2 (%d)", trkType), 50, 0., 100.);
+    fHistograms[Form("ttype%d/htan01", trkType)] = new TH1D(Form("ttype%d_tan01", trkType), Form("tan01 (%d)", trkType), 63, -3.15, 3.15);
+    fHistograms[Form("ttype%d/hlam01", trkType)] = new TH1D(Form("ttype%d_lam01", trkType), Form("lam01 (%d)", trkType), 50, -1.5, 1.5);
+    fHistograms[Form("ttype%d/hnhit", trkType)] = new TH1D(Form("ttype%d_nhit", trkType), Form("nhit (%d)", trkType), 20, 0., 20.);
+    fHistograms[Form("ttype%d/httype", trkType)] = new TH1D(Form("ttype%d_ttype", trkType), Form("ttype (%d)", trkType), 1000, -500., 500.);
+    fHistograms[Form("ttype%d/hn_shared_hits", trkType)] = new TH1D(Form("ttype%d_n_shared_hits", trkType), Form("n_shared_hits (%d)", trkType), 50, 0., 50.);
+    fHistograms[Form("ttype%d/hn_shared_segs", trkType)] = new TH1D(Form("ttype%d_n_shared_segs", trkType), Form("n_shared_segs (%d)", trkType), 50, 0., 50.);
+    fHistograms[Form("ttype%d/hfarm_status", trkType)] = new TH1D(Form("ttype%d_farm_status", trkType), Form("farm_status (%d)", trkType), 100, -500., 500.);
+    fHistograms[Form("ttype%d/hsid0", trkType)] = new TH1D(Form("ttype%d_sid0", trkType), Form("sid0 (%d)", trkType), 20000, 0., 20000.);
     // -- hitmaps derived from hit positions
-    fHistograms["h2hitmapvtx0"] = new TH2D("h2hitmapvtx0", "hitmap vtx0", 24, -62., 62., 8, 0., 8.);
+    fHistograms[Form("ttype%d/h2hitmapvtx0", trkType)] = new TH2D(Form("ttype%d_h2hitmapvtx0", trkType), Form("hitmap vtx0 (%d)", trkType), 24, -62., 62., 8, 0., 8.);
     
     // -- hitmaps derived from hit positions for each vtx0 sensor
     for (int i = 0; i < 231; ++i) {      
       int ok = getVtxL0Ladder(i);
       if (ok >= 0) {
-        string hname = Form("h2hitmapvtx0_sid%03d", i);
-        fHistograms[hname] = new TH2D(hname.c_str(), hname.c_str(), 48, -62., 62., 80, -3.15, 3.15);
+        string hname = Form("ttype%d/h2hitmapvtx0_sid%03d", trkType, i);
+        string htitle = Form("hitmap vtx0 (%d) sid%03d", trkType, i);
+        fHistograms[hname] = new TH2D(hname.c_str(), htitle.c_str(), 48, -62., 62., 80, -3.15, 3.15);
       }
     }
     
     // -- resolution plots
-    
-    // -- efficiency plots
-    fHistograms["h2lamvsprec"] = new TH2D("h2lamvsprec", "lam vs p", 30, 0., 60., 30, -1.5, 1.5);
-    fHistograms["h2lamvspsim"] = new TH2D("h2lamvspsim", "lam vs p", 30, 0., 60., 30, -1.5, 1.5);
-    fHistograms["h2lamvspeff"] = new TH2D("h2lamvspeff", "lam vs p", 30, 0., 60., 30, -1.5, 1.5);
+    fHistograms[Form("ttype%d/res_p", trkType)] = new TH1D(Form("ttype%d/res_p", trkType), Form("resolution in momentum (%d)", trkType), 50, -2., 2.);
+    fHistograms[Form("ttype%d/pres_p_lam", trkType)] = new TProfile(Form("ttype%d_pres_p_lam", trkType), Form("resolution in p vs lam (%d)", trkType), 50, -1.5, 1.5, -2.0, 2.0, "S");
+    fHistograms[Form("ttype%d/pres_p_p", trkType)] = new TProfile(Form("ttype%d_pres_p_p", trkType), Form("p_{rec} - p_{sim} (%d)", trkType), 40, 0., 80., -2.0, 2.0, "S");
+    fHistograms[Form("ttype%d/hrms_p_p", trkType)] = new TH1D(Form("ttype%d_prms_p_p", trkType), Form("rms(p_{rec} - p_{sim}) vs p_{sim} (%d)", trkType), 40, 0., 80.);
 
-    fHistograms["h1lamvspreceff"] = new TH1D("h1lamvspreceff", "efficiency projection (lam vs p)", 51, 0., 1.02);
+    // -- efficiency plots
+    fHistograms[Form("ttype%d/h2lamvsprec", trkType)] = new TH2D(Form("ttype%d_h2lamvsprec", trkType), Form("mc_lam vs mc_p (%d)", trkType), 30, 0., 60., 30, -1.5, 1.5);
+    fHistograms[Form("ttype%d/h2lamvspsim", trkType)] = new TH2D(Form("ttype%d_h2lamvspsim", trkType), Form("mc_lam vs mc_p (%d)", trkType), 30, 0., 60., 30, -1.5, 1.5);
+    fHistograms[Form("ttype%d/h2lamvspeff", trkType)] = new TH2D(Form("ttype%d_h2lamvspeff", trkType), Form("mc_lam vs mc_p (%d)", trkType), 30, 0., 60., 30, -1.5, 1.5);
+    fHistograms[Form("ttype%d/h1lamvspreceff", trkType)] = new TH1D(Form("ttype%d_h1lamvspreceff", trkType), Form("efficiency projection (mc_lam vs mc_p) (%d)", trkType), 51, 0., 1.02);
   }
+  
 }
 
 
@@ -201,104 +235,150 @@ void fillHist::run() {
   fHistograms["hinfo"]->SetBinContent(2, fFrames.nEvents);
   int nHiTracks(0); // number of hits > 20 GeV
   
-  // -- loop over frames tree
+  int nframes0(0);
+  // -- loop over FRAMES tree
+  int prtCnt(0);
   for (int i = 0; i < fFrames.nEvents; ++i) {
     fFrames.tree->GetEntry(i);
-    if (fMcFrames.tree) fMcFrames.tree->GetEntry(i);
-    //cout << "fillHist::run() i = " << i << " fp->size() = " << fp->size() << endl;
+    ++nframes0;
     fHistograms["hn"]->Fill(fFrames.n);
     fHistograms["hn4"]->Fill(fFrames.n4);
     fHistograms["hn6"]->Fill(fFrames.n6);
     fHistograms["hn8"]->Fill(fFrames.n8);
     
+    for (auto trkType : fTrackTypes) {
+      fTrackTypeCounts[trkType] = 0;
+    }
+  
     // -- check that the number of tracks is the same as the number of hits
     if (!checkVectorSizes(fFrames))  continue;
     
     // -- fill per-track histograms
     for (unsigned int j = 0; j < fFrames.p->size(); ++j) {
       fHistograms["hpall"]->Fill(TMath::Abs(fFrames.p->at(j)));
-      
-      // if (TMath::Abs(fFrames.p->at(j)) > 20.) {
-      if (fFrames.goodReconstructedTrack(j, 42)) {
-        nHiTracks++;
-        fHistograms["hx0"]->Fill(fFrames.x0->at(j));
-        fHistograms["hy0"]->Fill(fFrames.y0->at(j));
-        fHistograms["hz0"]->Fill(fFrames.z0->at(j));
-        fHistograms["ht0"]->Fill(fFrames.t0->at(j));
-        fHistograms["ht0_err"]->Fill(fFrames.t0_err->at(j));
-        fHistograms["ht0_rms"]->Fill(fFrames.t0_rms->at(j));
-        fHistograms["ht0_tl"]->Fill(fFrames.t0_tl->at(j));
-        fHistograms["ht0_fb"]->Fill(fFrames.t0_fb->at(j));
-        fHistograms["ht0_si"]->Fill(fFrames.t0_si->at(j));
-        // -- check required for v6.3.3
-        if (fFrames.t0_tl_rms) fHistograms["ht0_tl_rms"]->Fill(fFrames.t0_tl_rms->at(j));
-        if (fFrames.t0_fb_rms) fHistograms["ht0_fb_rms"]->Fill(fFrames.t0_fb_rms->at(j));
-        if (fFrames.t0_si_rms) fHistograms["ht0_si_rms"]->Fill(fFrames.t0_si_rms->at(j));
-        fHistograms["hr"]->Fill(fFrames.r->at(j));
-        fHistograms["hrerr2"]->Fill(fFrames.rerr2->at(j));
-        fHistograms["hp"]->Fill(TMath::Abs(fFrames.p->at(j)));
-        fHistograms["hperr2"]->Fill(fFrames.perr2->at(j));
-        fHistograms["hchi2"]->Fill(fFrames.chi2->at(j));
-        fHistograms["htan01"]->Fill(fFrames.tan01->at(j));
-        fHistograms["hlam01"]->Fill(fFrames.lam01->at(j));
-        fHistograms["hnhit"]->Fill(fFrames.nhit->at(j));
-        fHistograms["httype"]->Fill(fFrames.ttype->at(j));
-        fHistograms["hn_shared_hits"]->Fill(fFrames.n_shared_hits->at(j));
-        fHistograms["hn_shared_segs"]->Fill(fFrames.n_shared_segs->at(j));
-        fHistograms["hfarm_status"]->Fill(fFrames.farm_status->at(j));
-        
-        // -- fill hitmap vtx0
-        int vtxL0Ladder = getVtxL0Ladder(fFrames.sid0->at(j));
-        if (vtxL0Ladder >= 0) {
-          fHistograms["h2hitmapvtx0"]->Fill(fFrames.z0->at(j), vtxL0Ladder);
-          fHistograms[Form("h2hitmapvtx0_sid%03d", fFrames.sid0->at(j))]->Fill(fFrames.z0->at(j), TMath::ATan2(fFrames.y0->at(j), fFrames.x0->at(j)));
+      int trkType(0);
+      for (unsigned int itt = 0;  itt < fTrackTypes.size(); ++itt) {
+        trkType = fTrackTypes[itt];
+        if (fFrames.ttype->at(j) != trkType) continue;
+        fTrackTypeCounts[trkType]++;
+        if (fFrames.goodReconstructedTrack(j, trkType)) {
+          // cout << "fillHist::run() filling track " << j << " of type " << trkType << endl;
+          nHiTracks++;
+          fTrackTypeCounts[trkType]++;
+          
+          fHistograms[Form("ttype%d/hp", trkType)]->Fill(TMath::Abs(fFrames.p->at(j)));
+          fHistograms[Form("ttype%d/hperr2", trkType)]->Fill(fFrames.perr2->at(j));
+          fHistograms[Form("ttype%d/hchi2", trkType)]->Fill(fFrames.chi2->at(j));
+          fHistograms[Form("ttype%d/htan01", trkType)]->Fill(fFrames.tan01->at(j));
+          fHistograms[Form("ttype%d/hlam01", trkType)]->Fill(fFrames.lam01->at(j));
+          fHistograms[Form("ttype%d/hx0", trkType) ]->Fill(fFrames.x0->at(j));
+          fHistograms[Form("ttype%d/hy0", trkType)]->Fill(fFrames.y0->at(j));
+          fHistograms[Form("ttype%d/hz0", trkType)]->Fill(fFrames.z0->at(j));
+          fHistograms[Form("ttype%d/ht0", trkType)]->Fill(fFrames.t0->at(j));
+          fHistograms[Form("ttype%d/ht0_err", trkType)]->Fill(fFrames.t0_err->at(j));
+          fHistograms[Form("ttype%d/ht0_rms", trkType)]->Fill(fFrames.t0_rms->at(j));
+          fHistograms[Form("ttype%d/ht0_tl", trkType)]->Fill(fFrames.t0_tl->at(j));
+          fHistograms[Form("ttype%d/ht0_fb", trkType)]->Fill(fFrames.t0_fb->at(j));
+          fHistograms[Form("ttype%d/ht0_si", trkType)]->Fill(fFrames.t0_si->at(j));
+          // -- check required for v6.3.3
+          if (fFrames.t0_tl_rms) fHistograms[Form("ttype%d/ht0_tl_rms", trkType)]->Fill(fFrames.t0_tl_rms->at(j));
+          if (fFrames.t0_fb_rms) fHistograms[Form("ttype%d/ht0_fb_rms", trkType)]->Fill(fFrames.t0_fb_rms->at(j));
+          if (fFrames.t0_si_rms) fHistograms[Form("ttype%d/ht0_si_rms", trkType)]->Fill(fFrames.t0_si_rms->at(j));
+          fHistograms[Form("ttype%d/hrerr2", trkType)]->Fill(fFrames.rerr2->at(j));
+          fHistograms[Form("ttype%d/hnhit", trkType)]->Fill(fFrames.nhit->at(j));
+          fHistograms[Form("ttype%d/httype", trkType)]->Fill(fFrames.ttype->at(j));
+          fHistograms[Form("ttype%d/hn_shared_hits", trkType)]->Fill(fFrames.n_shared_hits->at(j));
+          fHistograms[Form("ttype%d/hn_shared_segs", trkType)]->Fill(fFrames.n_shared_segs->at(j));
+          fHistograms[Form("ttype%d/hfarm_status", trkType)]->Fill(fFrames.farm_status->at(j));
+          // -- fill hitmap vtx0
+          fHistograms[Form("ttype%d/hsid0", trkType)]->Fill(fFrames.sid0->at(j));
+          int vtxL0Ladder = getVtxL0Ladder(fFrames.sid0->at(j));
+          if (vtxL0Ladder >= 0) {
+            fHistograms[Form("ttype%d/h2hitmapvtx0", trkType)]->Fill(fFrames.z0->at(j), vtxL0Ladder);
+            fHistograms[Form("ttype%d/h2hitmapvtx0_sid%03d", trkType, fFrames.sid0->at(j))]->Fill(fFrames.z0->at(j), TMath::ATan2(fFrames.y0->at(j), fFrames.x0->at(j)));
+          }
+          
+          // -- comparison to MC 
+          // -- resolution in momentum 
+          // frames->Draw("TMath::Abs(p)-mc_p", "1==mc && 1==mc_prime && TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55", "")
+          if (TMath::Abs(fFrames.mc_p->at(j)) > 46. && TMath::Abs(fFrames.mc_p->at(j)) < 48.) {
+            fHistograms[Form("ttype%d/res_p", trkType)]->Fill(TMath::Abs(fFrames.p->at(j)) - TMath::Abs(fFrames.mc_p->at(j)));
+          }
+
+          fHistograms[Form("ttype%d/pres_p_lam", trkType)]->Fill(fFrames.mc_lam->at(j), TMath::Abs(fFrames.p->at(j)) - TMath::Abs(fFrames.mc_p->at(j)));
+          fHistograms[Form("ttype%d/pres_p_p", trkType)]->Fill(fFrames.mc_p->at(j), TMath::Abs(fFrames.p->at(j)) - TMath::Abs(fFrames.mc_p->at(j)));
+
+          //if (nframes0 < 20) fFrames.printTrack(j);
+          if (TMath::Abs(fFrames.mc_p->at(j)) < 14. && fFrames.mc_lam->at(j) > 0. && fFrames.mc_lam->at(j) < 0.2) {
+            cout << prtCnt << ":"; 
+            fFrames.printTrack(j);
+            ++prtCnt;
+          }
+          
+          fHistograms[Form("ttype%d/h2lamvsprec", trkType)]->Fill(TMath::Abs(fFrames.mc_p->at(j)), fFrames.mc_lam->at(j));
+          // -- efficiency
+          // root [22] mc_frames->Draw("mc_lam:TMath::Abs(mc_p)>>hmc", "TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55 && ttype==42", "colz")
+          // (long long) 108677
+          // root [23] frames->Draw("mc_lam:TMath::Abs(mc_p)>>hrec", "1==mc && 1==mc_prime && TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55 && ttype==42", "colz")
+          // (long long) 66659
+          // root [24] heff->Divide(h1, h2)
         }
-        
-        // -- comparison to MC 
-        // -- resolution in momentum 
-        // frames->Draw("TMath::Abs(p)-mc_p", "1==mc && 1==mc_prime && TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55", "")
-        
-        
-        fHistograms["h2lamvsprec"]->Fill(TMath::Abs(fFrames.p->at(j)), fFrames.lam01->at(j));
-        // -- efficiency
-        // root [22] mc_frames->Draw("mc_lam:TMath::Abs(mc_p)>>hmc", "TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55 && ttype==42", "colz")
-        // (long long) 108677
-        // root [23] frames->Draw("mc_lam:TMath::Abs(mc_p)>>hrec", "1==mc && 1==mc_prime && TMath::Abs(mc_pid) == 11 && mc_vr < 22 && TMath::Abs(mc_vz) < 55 && ttype==42", "colz")
-        // (long long) 66659
-        // root [24] heff->Divide(h1, h2)
-        
       }
+    }
+    for (auto trkType : fTrackTypes) {
+      fHistograms[Form("ttype%d/ntrks", trkType)]->Fill(fTrackTypeCounts[trkType]);
     }
   }
   fHistograms["hinfo"]->SetBinContent(3, nHiTracks);
-    
-  // -- loop over mcframes tree
+  
+  // -- loop over MCFRAMES tree
+  prtCnt = 0;
   if (fMcFrames.tree) fMcFrames.nEvents = fMcFrames.tree->GetEntries();
+  int  nmcframes0(0); 
   for (int i = 0; i < fMcFrames.nEvents; ++i) {
     fMcFrames.tree->GetEntry(i);
-    //cout << "fillHist::run() i = " << i << " fp->size() = " << fp->size() << endl;
-    fHistograms["hn"]->Fill(fMcFrames.n);
-    fHistograms["hn4"]->Fill(fMcFrames.n4);
-    fHistograms["hn6"]->Fill(fMcFrames.n6);
-    fHistograms["hn8"]->Fill(fMcFrames.n8);
+    nmcframes0++;
     
-   
     // -- fill per-track histograms
     for (unsigned int j = 0; j < fMcFrames.p->size(); ++j) {
-      if (fMcFrames.goodReconstructibleTrack(j, 42)) {
-        fHistograms["h2lamvspsim"]->Fill(TMath::Abs(fMcFrames.p->at(j)), fMcFrames.lam01->at(j));
+      for (auto trkType : fTrackTypes) {  
+        if (fMcFrames.ttype->at(j) != trkType) continue;
+        
+        if (fMcFrames.goodReconstructibleTrack(j, trkType)) {
+          if (TMath::Abs(fMcFrames.mc_p->at(j)) < 14. && fMcFrames.mc_lam->at(j) > 0. && fMcFrames.mc_lam->at(j) < 0.2) {
+            cout << prtCnt << ":"; 
+            fMcFrames.printTrack(j);
+            ++prtCnt;
+          }
+          fHistograms[Form("ttype%d/h2lamvspsim", trkType)]->Fill(TMath::Abs(fMcFrames.mc_p->at(j)), fMcFrames.mc_lam->at(j));
+        }
       }
     }
   }
-  fHistograms["h2lamvspeff"]->Divide(fHistograms["h2lamvsprec"], fHistograms["h2lamvspsim"]);
-
-  for (int ix = 1; ix <= fHistograms["h2lamvspeff"]->GetNbinsX(); ++ix) {
-    for (int iy = 1; iy <= fHistograms["h2lamvspeff"]->GetNbinsY(); ++iy) {
-      if (fHistograms["h2lamvspeff"]->GetBinContent(ix, iy) > 0) {  
-        fHistograms["h1lamvspreceff"]->Fill(fHistograms["h2lamvspeff"]->GetBinContent(ix, iy));
+  
+  
+  // -- compute efficiency histograms
+  for (auto trkType : fTrackTypes) {  
+    fHistograms[Form("ttype%d/h2lamvspeff", trkType)]->Divide(fHistograms[Form("ttype%d/h2lamvsprec", trkType)], fHistograms[Form("ttype%d/h2lamvspsim", trkType)], 1., 1., "B");
+    for (int ix = 1; ix <= fHistograms[Form("ttype%d/h2lamvspeff", trkType)]->GetNbinsX(); ++ix) {
+      for (int iy = 1; iy <= fHistograms[Form("ttype%d/h2lamvspeff", trkType)]->GetNbinsY(); ++iy) {
+        if (fHistograms[Form("ttype%d/h2lamvspeff", trkType)]->GetBinContent(ix, iy) > 0) {  
+          fHistograms[Form("ttype%d/h1lamvspreceff", trkType)]->Fill(fHistograms[Form("ttype%d/h2lamvspeff", trkType)]->GetBinContent(ix, iy));
+        }
       }
-      if (fHistograms["h2lamvspeff"]->GetBinContent(ix, iy) > 1.) {  
-        cout << "fillHist::run() ix = " << ix << " iy = " << iy << " bin content = " << fHistograms["h2lamvspeff"]->GetBinContent(ix, iy) << endl;
+    }
+  }
+  
+  // -- compute rms of resolution in p vs p
+  for (auto trkType : fTrackTypes) {
+    for (int ix = 1; ix <= fHistograms[Form("ttype%d/pres_p_p", trkType)]->GetNbinsX(); ++ix) {
+      double binC = fHistograms[Form("ttype%d/pres_p_p", trkType)]->GetBinContent(ix);
+      double binE = fHistograms[Form("ttype%d/pres_p_p", trkType)]->GetBinError(ix);
+      fHistograms[Form("ttype%d/hrms_p_p", trkType)]->SetBinContent(ix, binE);
+      if (binE > 1.e-4) {
+        fHistograms[Form("ttype%d/hrms_p_p", trkType)]->SetBinError(ix, 0.01);
+      } else {
+        fHistograms[Form("ttype%d/hrms_p_p", trkType)]->SetBinError(ix, 0.);
       }
     }
   }
@@ -500,6 +580,7 @@ void fillHist::bindTreeBranches(fillHist::TreeData &data) {
   initBranch(data.tree, "n_shared_segs", &data.n_shared_segs);
   initBranch(data.tree, "farm_status", &data.farm_status);
   initBranch(data.tree, "sid0", &data.sid0);
+  initBranch(data.tree, "frameId", &data.frameId);
   initBranch(data.tree, "n", &data.n);
   initBranch(data.tree, "n4", &data.n4);
   initBranch(data.tree, "n6", &data.n6);
@@ -528,7 +609,17 @@ void fillHist::bindTreeBranches(fillHist::TreeData &data) {
 // ----------------------------------------------------------------------
 void fillHist::initBranch(TTree *tree, string name, int* pvar) {
   if (tree->GetBranch(name.c_str()) == nullptr) {
-    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    cout << "fillHist::initBranch() NOTE: branch " << name << " not found in tree" << endl;
+    return;
+  }
+  tree->SetBranchStatus(name.c_str(), 1);
+  tree->SetBranchAddress(name.c_str(), pvar);
+}
+
+// ----------------------------------------------------------------------
+void fillHist::initBranch(TTree *tree, string name, ULong64_t* pvar) {
+  if (tree->GetBranch(name.c_str()) == nullptr) {
+    cout << "fillHist::initBranch() NOTE: branch " << name << " not found in tree" << endl;
     return;
   }
   tree->SetBranchStatus(name.c_str(), 1);
@@ -538,7 +629,7 @@ void fillHist::initBranch(TTree *tree, string name, int* pvar) {
 // ----------------------------------------------------------------------
 void fillHist::initBranch(TTree *tree, string name, float* pvar) {
   if (tree->GetBranch(name.c_str()) == nullptr) {
-    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    cout << "fillHist::initBranch() NOTE: branch " << name << " not found in tree" << endl;
     return;
   }
   tree->SetBranchStatus(name.c_str(), 1);
@@ -548,7 +639,7 @@ void fillHist::initBranch(TTree *tree, string name, float* pvar) {
 // ----------------------------------------------------------------------
 void fillHist::initBranch(TTree *tree, string name, double* pvar) {
   if (tree->GetBranch(name.c_str()) == nullptr) {
-    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    cout << "fillHist::initBranch() NOTE: branch " << name << " not found in tree" << endl;
     return;
   }
   tree->SetBranchStatus(name.c_str(), 1);
@@ -559,7 +650,7 @@ void fillHist::initBranch(TTree *tree, string name, double* pvar) {
 void fillHist::initBranch(TTree *tree, string name, string** pvar) {
   cout << "initBranch(" << name << "),  pvar = " << pvar << endl;
   if (tree->GetBranch(name.c_str()) == nullptr) {
-    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    cout << "fillHist::initBranch() NOTE: branch " << name << " not found in tree" << endl;
     return;
   }
   tree->SetBranchStatus(name.c_str(), 1);
@@ -569,7 +660,7 @@ void fillHist::initBranch(TTree *tree, string name, string** pvar) {
 // ----------------------------------------------------------------------
 void fillHist::initBranch(TTree *tree, string name, vector<int>** pvect) {
   if (tree->GetBranch(name.c_str()) == nullptr) {
-    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    cout << "fillHist::initBranch() NOTE: branch " << name << " not found in tree" << endl;
     return;
   }
   tree->SetBranchStatus(name.c_str(), 1);
@@ -578,7 +669,7 @@ void fillHist::initBranch(TTree *tree, string name, vector<int>** pvect) {
 // ----------------------------------------------------------------------
 void fillHist::initBranch(TTree *tree, string name, vector<unsigned int>** pvect) {
   if (tree->GetBranch(name.c_str()) == nullptr) {
-    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    cout << "fillHist::initBranch() NOTE: branch " << name << " not found in tree" << endl;
     return;
   }
   tree->SetBranchStatus(name.c_str(), 1);
@@ -588,7 +679,7 @@ void fillHist::initBranch(TTree *tree, string name, vector<unsigned int>** pvect
 // ----------------------------------------------------------------------
 void fillHist::initBranch(TTree *tree, string name, vector<double>** pvect) {
   if (tree->GetBranch(name.c_str()) == nullptr) {
-    cout << "fillHist::initBranch() ERROR: branch " << name << " not found in tree" << endl;
+    cout << "fillHist::initBranch() NOTE: branch " << name << " not found in tree" << endl;
     return;
   }
   tree->SetBranchStatus(name.c_str(), 1);
@@ -596,18 +687,20 @@ void fillHist::initBranch(TTree *tree, string name, vector<double>** pvect) {
 }
 
 // ----------------------------------------------------------------------
-bool fillHist::TreeData::goodReconstructibleTrack(int idx, int trkType) {
-  bool result(false);
+bool fillHist::TreeData::baseTrackSelection(int idx) {
   if (TMath::Abs(mc_pid->at(idx)) != 11) return false;
-  
   if (mc_vr->at(idx) > 22.) return false;
   if (TMath::Abs(mc_vz->at(idx)) > 55.) return false;
+  return true;
+}
+
+// ----------------------------------------------------------------------
+bool fillHist::TreeData::goodReconstructibleTrack(int idx, int trkType) {
+  if (!baseTrackSelection(idx)) return false;
+  
   if (TMath::Abs(mc_p->at(idx)) < 10.) return false;
-  
+  if (mc_prime->at(idx) != 1) return false;
   if (ttype->at(idx) != trkType) return false;
-  
-  //  if (mc_prime->at(idx) != 1) return false;
-  if (mc->at(idx) != 1) return false;
   
   return true;
 }
@@ -615,17 +708,26 @@ bool fillHist::TreeData::goodReconstructibleTrack(int idx, int trkType) {
 // ----------------------------------------------------------------------
 bool fillHist::TreeData::goodReconstructedTrack(int idx, int trkType) {
   bool result(false);
-  if (TMath::Abs(mc_pid->at(idx)) != 11) return false;
+  double chi2Cut = 50.;
   
-  if (mc_vr->at(idx) > 22.) return false;
-  if (TMath::Abs(mc_vz->at(idx)) > 55.) return false;
+  if (!baseTrackSelection(idx)) return false;
+  
   if (TMath::Abs(mc_p->at(idx)) < 10.) return false;
-
-  if (TMath::Abs(p->at(idx)) < 10.) return false;
-
-  if (ttype->at(idx) != trkType) return false;
-  
   if (mc_prime->at(idx) != 1) return false;
-  if (mc->at(idx) != 1) return false; 
+  if (ttype->at(idx) != trkType) return false;
+  if (chi2->at(idx) > chi2Cut) return false;
+  
+  
+  
   return true;
+}
+
+// ----------------------------------------------------------------------
+void fillHist::TreeData::printTrack(int idx) {
+  cout << name << " frame=" << frameId 
+  << " mc=" << mc->at(idx) << " mc_prime=" << mc_prime->at(idx) 
+  << " mc_type=" << mc_type->at(idx) << " mc_tid=" << mc_tid->at(idx)  << mc_weight->at(idx) << " ttype=" << ttype->at(idx)  
+  << " nhit=" << nhit->at(idx) << " p=" << TMath::Abs(p->at(idx)) << " lam01=" << lam01->at(idx) << " chi2=" << chi2->at(idx) 
+  << " mc_p=" << mc_p->at(idx) << " mc_lam=" << mc_lam->at(idx) << " mc_phi=" << mc_phi->at(idx)
+  << endl;
 }

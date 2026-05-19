@@ -13,7 +13,7 @@ class fillHist {
   fillHist(const std::string &infile, const std::string &outfileName);
   ~fillHist();
   void setupTrees();
-  void bookHist(std::string mode, std::string annotation);
+  void bookHist(std::string annotation);
   void run();
   bool checkVectorSizes();
   int  getVtxL0Ladder(int sid0);
@@ -40,11 +40,21 @@ class fillHist {
     std::vector<double>  *mc_weight, *mc_p, *mc_pt, *mc_phi, *mc_lam, *mc_theta;
     std::vector<double>  *mc_vx, *mc_vy, *mc_vz, *mc_vr, *mc_vt, *mc_t0;
 
+    // -- print track
+    void printTrack(int idx);
+
+   // -- base
+   bool baseTrackSelection(int idx);
+
     // -- reco
     bool goodReconstructedTrack(int idx, int trkType);
     // -- reco+sim
     bool goodReconstructibleTrack(int idx, int trkType);
   };
+
+ std::vector<int> fTrackTypes;
+ std::map<int, int> fTrackTypeCounts;
+
 
   TFile *fInFile,*fOutFile;
   std::string fOutFileName;
@@ -57,6 +67,7 @@ class fillHist {
   void resetBranches(TreeData &b);
   void bindTreeBranches(TreeData &data);
   virtual void       initBranch(TTree *tree, std::string name, int* var);
+  virtual void       initBranch(TTree *tree, std::string name, ULong64_t* var);
   virtual void       initBranch(TTree *tree, std::string name, float* var);
   virtual void       initBranch(TTree *tree, std::string name, double* var);
   virtual void       initBranch(TTree *tree, std::string name, std::string** var);

@@ -11,10 +11,8 @@ int main(int argc, char **argv) {
   string outfile = "nada";
   string infile = "";
   string tree = "frames";
-  string mode = "relval";
   string annotation = "";
   for (int i = 1; i < argc; ++i) {
-    if (!strcmp(argv[i], "--mode")) { mode = argv[++i]; }
     if (!strcmp(argv[i], "--in")) { infile = argv[++i]; }
     if (!strcmp(argv[i], "--out")) { outfile = argv[++i]; }
     if (!strcmp(argv[i], "--outdir")) { outdir = argv[++i]; }
@@ -32,7 +30,7 @@ int main(int argc, char **argv) {
 
   fillHist fhFrames(infile, outfile);
   fhFrames.setupTrees();
-  fhFrames.bookHist("relval", annotation);
+  fhFrames.bookHist(annotation);
   fhFrames.run();
 
   return 0;
