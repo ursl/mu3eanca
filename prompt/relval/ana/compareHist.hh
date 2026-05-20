@@ -21,7 +21,21 @@ public:
   void makeSummaryPDF(std::string dirname = ".");
 
 private:
+  using string = std::string;
   struct plotInfo {
+    // mode: substring flags, e.g. "logy stats" or "logystats" (find "logy", "stats")
+    // opt: ROOT Draw() options only, e.g. "box" (not parsed here)
+    plotInfo(std::string name, std::string mode = "", std::string opt = "") {
+      this->name = name;
+      this->h1 = nullptr;
+      this->h2 = nullptr;
+      this->valid = false;
+      this->logY = (string::npos != mode.find("logy")) ? true : false;
+      this->statsBox = (string::npos != mode.find("stats")) ? true : false;
+      this->ks = 0.;
+      this->ad = 0.;
+      this->opt = opt;
+    }
     std::string name;
     TH1 *h1;
     TH1 *h2;

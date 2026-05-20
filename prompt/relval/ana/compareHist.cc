@@ -60,46 +60,43 @@ void compareHist::setupHists(string mode) {
          << " not implemented, using relval defaults" << endl;
   }
 
-  
-  const vector<plotInfo> plots = {
-    {"hpall", nullptr, nullptr, false, false, true},
-    {"hp", nullptr, nullptr, false, false, true},
-    {"hperr2", nullptr, nullptr, false, false, true},
-    {"hr", nullptr, nullptr, false, false, true},
-    {"hchi2", nullptr, nullptr, false, false, true},
-    {"hlam01", nullptr, nullptr, false, false, true},
-    {"htan01", nullptr, nullptr, false, false, true},
-    {"hchi2", nullptr, nullptr, false, false, true},
-    {"hlam01", nullptr, nullptr, false, false, true},
-    {"hnhit", nullptr, nullptr, false, true, true},
-    {"httype", nullptr, nullptr, false, true, true},
-    {"hn_shared_hits", nullptr, nullptr, false, true, true},
-    {"hn_shared_segs", nullptr, nullptr, false, true, true},
-    {"hx0", nullptr, nullptr, false, false, true},
-    {"hy0", nullptr, nullptr, false, false, true},
-    {"hz0", nullptr, nullptr, false, false, true},
-    {"ht0", nullptr, nullptr, false, false, true},
-    {"ht0_err", nullptr, nullptr, false, false, true},
-    {"ht0_rms", nullptr, nullptr, false, false, true},
-    {"ht0_tl", nullptr, nullptr, false, false, true},
-    {"ht0_fb", nullptr, nullptr, false, false, true},
-    {"ht0_si", nullptr, nullptr, false, false, true},
-    {"ht0_tl_rms", nullptr, nullptr, false, false, true},
-    {"ht0_fb_rms", nullptr, nullptr, false, false, true},
-    {"ht0_si_rms", nullptr, nullptr, false, false, true},
-    {"hn", nullptr, nullptr, false, true, true},
-    {"hn4", nullptr, nullptr, false, true, true},
-    {"hn6", nullptr, nullptr, false, true, true},
-    {"h2lamvspeff", nullptr, nullptr, false, false, true, 0., 0., "box"},
-    {"h1lamvspreceff", nullptr, nullptr, false, false, true}
-  };
 
-  for (auto plot : plots) {
+  vector<plotInfo> plots;
+  plots.emplace_back("hpall", "stats");
+  plots.emplace_back("hp", "stats");
+  plots.emplace_back("hperr2", "stats");
+  plots.emplace_back("hr", "stats");
+  plots.emplace_back("hchi2", "stats");
+  plots.emplace_back("hlam01", "stats");
+  plots.emplace_back("htan01", "stats");
+  plots.emplace_back("hnhit", "logy stats");
+  plots.emplace_back("httype", "logy stats");
+  plots.emplace_back("hn_shared_hits", "logy stats");
+  plots.emplace_back("hn_shared_segs", "logy stats");
+  plots.emplace_back("hx0", "stats");
+  plots.emplace_back("hy0", "stats");
+  plots.emplace_back("hz0", "stats");
+  plots.emplace_back("ht0", "stats");
+  plots.emplace_back("ht0_err", "stats");
+  plots.emplace_back("ht0_rms", "stats");
+  plots.emplace_back("ht0_tl", "stats");
+  plots.emplace_back("ht0_fb", "stats");
+  plots.emplace_back("ht0_si", "stats");
+  plots.emplace_back("ht0_tl_rms", "stats");
+  plots.emplace_back("ht0_fb_rms", "stats");
+  plots.emplace_back("ht0_si_rms", "stats");
+  plots.emplace_back("hn", "logy stats");
+  plots.emplace_back("hn4", "logy stats");
+  plots.emplace_back("hn6", "logy stats");
+  plots.emplace_back("h2lamvspeff", "stats", "box");
+  plots.emplace_back("h1lamvspreceff", "stats");
+
+  for (auto &plot : plots) {
     plot.h1 = getHist(fInFile1, plot.name);
     plot.h2 = getHist(fInFile2, plot.name);
     if (plot.h1 && plot.h2) {
       plot.valid = true;
-      fPlots[plot.name] = plot;
+      fPlots.insert({plot.name, plot});
     }
   }
 
@@ -145,8 +142,8 @@ void compareHist::run(std::string dirname) {
     }
   }
 
-  for (auto &kv : fPlots) {
-    plotInfo &plot = kv.second;
+  for (auto &[name, plot] : fPlots) {
+  //  plotInfo &plot = kv.second;
     if (!plot.valid) continue;
     plotOverlay(plot);
     // -- KS test
