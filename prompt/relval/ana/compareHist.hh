@@ -16,7 +16,7 @@ public:
   compareHist(const std::string &infile1, const std::string &infile2);
   ~compareHist();
 
-  void setupHists(std::string mode = "relval");
+  void setupHists();
   void run(std::string dirname = ".");
   void makeSummaryPDF(std::string dirname = ".");
 
@@ -63,7 +63,7 @@ private:
   void addDoubleStatsBox(const plotInfo &plot);
   void replaceAll(std::string &str, const std::string &from, const std::string &to);
 
-  TH1 *getHist(TFile *f, const std::string &name);
+  TH1 *getHist(TFile *f, const std::string &name, const std::string &dir = "");
 
   TFile *fInFile1 = nullptr;
   TFile *fInFile2 = nullptr;
@@ -71,7 +71,7 @@ private:
   TCanvas *fCanvas = nullptr;
 
   std::string fInFileName1, fInFileName2;
-  std::string fDirName, fMode;
+  std::string fDirName;
 
   double fEvents1, fEvents2;
   double fHiTracks1, fHiTracks2;
@@ -90,6 +90,7 @@ private:
   double fADThreshold;
 
   std::map<std::string, plotInfo> fPlots;
+  std::vector<std::string> fTrackTypes;
   std::vector<histDeco> fHistDecos;
 };
 
