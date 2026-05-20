@@ -191,8 +191,8 @@ void fillHist::bookHist(string annotation) {
     fHistograms[Form("ttype%d/hlam01", trkType)] = new TH1D(Form("ttype%d_lam01", trkType), Form("lam01 (%d)", trkType), 50, -1.5, 1.5);
     fHistograms[Form("ttype%d/hnhit", trkType)] = new TH1D(Form("ttype%d_nhit", trkType), Form("nhit (%d)", trkType), 20, 0., 20.);
     fHistograms[Form("ttype%d/httype", trkType)] = new TH1D(Form("ttype%d_ttype", trkType), Form("ttype (%d)", trkType), 1000, -500., 500.);
-    fHistograms[Form("ttype%d/hn_shared_hits", trkType)] = new TH1D(Form("ttype%d_n_shared_hits", trkType), Form("n_shared_hits (%d)", trkType), 50, 0., 50.);
-    fHistograms[Form("ttype%d/hn_shared_segs", trkType)] = new TH1D(Form("ttype%d_n_shared_segs", trkType), Form("n_shared_segs (%d)", trkType), 50, 0., 50.);
+    fHistograms[Form("ttype%d/hn_shared_hits", trkType)] = new TH1D(Form("ttype%d_n_shared_hits", trkType), Form("n_shared_hits (%d)", trkType), 20, 0., 20.);
+    fHistograms[Form("ttype%d/hn_shared_segs", trkType)] = new TH1D(Form("ttype%d_n_shared_segs", trkType), Form("n_shared_segs (%d)", trkType), 20, 0., 20.);
     fHistograms[Form("ttype%d/hfarm_status", trkType)] = new TH1D(Form("ttype%d_farm_status", trkType), Form("farm_status (%d)", trkType), 100, -500., 500.);
     fHistograms[Form("ttype%d/hsid0", trkType)] = new TH1D(Form("ttype%d_sid0", trkType), Form("sid0 (%d)", trkType), 20000, 0., 20000.);
     // -- hitmaps derived from hit positions

@@ -93,11 +93,9 @@ compareHist::~compareHist() {
 void compareHist::setupHists() {
   
   vector<plotInfo> plots;
-  plots.emplace_back("hpall", "stats");
   plots.emplace_back("hp", "stats");
-  plots.emplace_back("hperr2", "stats");
-  plots.emplace_back("hr", "stats");
-  plots.emplace_back("hchi2", "stats");
+  plots.emplace_back("hperr2", "logy stats");
+  plots.emplace_back("hchi2", "logy stats");
   plots.emplace_back("hlam01", "stats");
   plots.emplace_back("htan01", "stats");
   plots.emplace_back("hnhit", "logy stats");
@@ -116,9 +114,6 @@ void compareHist::setupHists() {
   plots.emplace_back("ht0_tl_rms", "stats");
   plots.emplace_back("ht0_fb_rms", "stats");
   plots.emplace_back("ht0_si_rms", "stats");
-  plots.emplace_back("hn", "logy stats");
-  plots.emplace_back("hn4", "logy stats");
-  plots.emplace_back("hn6", "logy stats");
   plots.emplace_back("h2lamvspeff", "stats", "box");
   plots.emplace_back("h1lamvspreceff", "stats");
   
@@ -127,10 +122,35 @@ void compareHist::setupHists() {
       plot.h1 = getHist(fInFile1, plot.name, dir);
       plot.h2 = getHist(fInFile2, plot.name, dir);
       if (plot.h1 && plot.h2) {
-        plot.valid = true;
-        fPlots.insert({dir + "_" + plot.name, plot});
+        plotInfo plotNew = plot;
+        plotNew.valid = true;
+        plotNew.name = dir + "_" + plot.name;
+        fPlots.insert({plotNew.name, plotNew});
       }
     }
+  }
+  
+  plots.clear(); 
+  plots.emplace_back("hpall", "stats");
+  plots.emplace_back("hr", "stats");
+  plots.emplace_back("hn", "logy stats");
+  plots.emplace_back("hn4", "logy stats");
+  plots.emplace_back("hn6", "logy stats");
+  
+  for (auto &plot : plots) {
+    plot.h1 = getHist(fInFile1, plot.name);
+    plot.h2 = getHist(fInFile2, plot.name);
+    if (plot.h1 && plot.h2) {
+      plot.valid = true;
+      plot.name = plot.name;
+      fPlots.insert({plot.name, plot});
+    }
+  }
+  
+  
+  cout << "compareHist::setupHists() fPlots.size() = " << fPlots.size() << endl;
+  for (auto &[name, plot] : fPlots) {
+    cout << "compareHist::setupHists() " << name << endl;
   }
   
   TH1 *hinfo1 = getHist(fInFile1, "hinfo");
@@ -200,7 +220,7 @@ TH1 *compareHist::getHist(TFile *f, const std::string &name, const std::string &
   string path = dir.empty() ? name : (dir + "/" + name);
   TH1 *h = dynamic_cast<TH1 *>(f->Get(path.c_str()));
   if (!h) {
-    cout << "compareHist::getHist() WARNING: missing histogram " << name
+    cout << "compareHist::getHist() WARNING: missing histogram " << path
     << " in " << f->GetName() << endl;
     return nullptr;
   }
@@ -385,12 +405,6 @@ void compareHist::addDoubleStatsBox(const plotInfo &plot) {
   tl->SetTextColor(fHistDecos[1].lineColor);
   tl->DrawLatexNDC(0.35, y_events, Form("%.0f", fEvents2));
   
-  tl->SetTextColor(kBlack);
-  tl->DrawLatexNDC(0.5, y_events, Form("Hi-tracks: "));
-  tl->SetTextColor(fHistDecos[0].lineColor);
-  tl->DrawLatexNDC(0.60, y_events, Form("%.0f ", fHiTracks1));
-  tl->SetTextColor(fHistDecos[1].lineColor);
-  tl->DrawLatexNDC(0.65, y_events, Form("%.0f ", fHiTracks2));
 }
 
 // ----------------------------------------------------------------------

@@ -4,6 +4,13 @@
 \usepackage{graphicx}
 \usepackage{xcolor}
 
+% -- Variables names without restrictions
+\def\vdef #1{\expandafter\def\csname #1\endcsname}
+\def\vuse #1{\csname #1\endcsname}
+\def\vu   #1{\csname #1\endcsname}
+ 
+\vdef{TTYPE}{ttype42}
+
 \begin{document}
 
 \section*{Summary trirec RelVal plots}
@@ -22,51 +29,76 @@
 \begin{figure}[!htb]
   \centering
   \begin{tabular}{cc}
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hx0.pdf} &
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hy0.pdf} \\
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hz0.pdf} &
-%    \includegraphics[width=0.47\textwidth]{DIRNAME/ht0.pdf}
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hx0.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hy0.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hz0.pdf} &
+%    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_ht0.pdf}
   \end{tabular}
-  \caption{Co-ordinates of hit in first pixel layer.}
+  \caption{Co-ordinates of hit in first pixel layer (TTYPE = \vu{TTYPE}).}
 \end{figure}
 
 %% -- Efficiency
 \begin{figure}[!htb]
   \centering
   \begin{tabular}{cc}
-    \includegraphics[width=0.47\textwidth]{DIRNAME/h2lamvspeff.pdf} 
-    \includegraphics[width=0.47\textwidth]{DIRNAME/h1lamvspreceff.pdf} 
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_h2lamvspeff.pdf} 
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_h1lamvspreceff.pdf} 
   \end{tabular}
-  \caption{Efficiency map (lam vs p) and projection.}
+  \caption{Efficiency map (lam vs p) and projection (TTYPE = \vu{TTYPE}).}
 \end{figure}
 
-%% -- Tracks I
+%% -- Tracks I: TTYPE=40
+\vdef{TTYPE}{ttype40}
 \begin{figure}[!htb]
   \centering
   \begin{tabular}{cc}
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hpall.pdf} &
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hp.pdf} \\
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hr.pdf} &
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hperr2.pdf} \\
-    \includegraphics[width=0.47\textwidth]{DIRNAME/htan01.pdf} &
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hlam01.pdf} 
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hp.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hperr2.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_htan01.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hlam01.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hchi2.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_ht0.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hn_shared_hits.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hn_shared_segs.pdf} 
   \end{tabular}
-  \caption{Track variables}
+  \caption{Track variables (TTYPE = \vu{TTYPE}).}
 \end{figure}
 
-%% -- Tracks II
+
+%% -- Tracks I: TTYPE=44
+\vdef{TTYPE}{ttype42}
 \begin{figure}[!htb]
   \centering
   \begin{tabular}{cc}
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hchi2.pdf} &
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hnhit.pdf} \\
-    \includegraphics[width=0.47\textwidth]{DIRNAME/httype.pdf} &
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hn_shared_hits.pdf} \\
-    \includegraphics[width=0.47\textwidth]{DIRNAME/hn_shared_segs.pdf} 
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hp.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hperr2.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_htan01.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hlam01.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hchi2.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_ht0.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hn_shared_hits.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hn_shared_segs.pdf} 
   \end{tabular}
-  \caption{Track variables II}
+  \caption{Track variables (TTYPE = \vu{TTYPE}).}
 \end{figure}
 
+
+%% -- Tracks I: TTYPE=40
+\vdef{TTYPE}{ttype44}
+\begin{figure}[!htb]
+  \centering
+  \begin{tabular}{cc}
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hp.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hperr2.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_htan01.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hlam01.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hchi2.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_ht0.pdf} \\
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hn_shared_hits.pdf} &
+    \includegraphics[width=0.47\textwidth]{DIRNAME/\vu{TTYPE}_hn_shared_segs.pdf} 
+  \end{tabular}
+  \caption{Track variables (TTYPE = \vu{TTYPE}).}
+\end{figure}
 
 %% -- Track characteristics per event
 \begin{figure}[!htb]
