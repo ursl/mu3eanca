@@ -523,28 +523,38 @@ if COMPARE_ENABLED:
                 echo "[relval]   host new : $dump1_host"
 
                 # Compare treedump pair in container (treedumps from run_treedump on each setup).
-                # Write to an empty temp dir so ROOT does not try to delete stale
-                # histocompare-*.root in the compare folder (often wrong owner from
-                # earlier podman :U runs on NFS). Do not use :U or :Z on the writable mount.
-                # cwd is /tmp so cppyy/ROOT can build caches; outputs go to /out (host mktemp).
+                # Outputs go to tmpfs /out inside the container (no bind-mount writes with
+                # keep-id/NFS), then podman cp extracts to host mktemp before copying to compare/.
                 hc_tmp=$(mktemp -d "${{TMPDIR:-/tmp}}/relval-histocompare.XXXXXX")
-                chmod u+rwx "$hc_tmp"
+                hc_cname="relval-hc-$$-$RANDOM"
                 set +e
                 set -o pipefail
-                podman run --rm {PODMAN_USERNS_FLAG} \
+                podman rm -f "$hc_cname" >/dev/null 2>&1 || true
+                podman create --name "$hc_cname" {PODMAN_USERNS_FLAG} \
                     -w /tmp \
                     -e CLING_STANDARD_PCH=0 \
                     -v "{MU3E_RELVAL_BASEDIR}:/relval:ro{PODMAN_RELABEL_SUFFIX}" \
-                    -v "$hc_tmp:/out:rw" \
+                    --mount type=tmpfs,destination=/out,tmpfs-size=2G \
                     docker.io/mu3e/histocompare \
                     "$dump1_data_obj" \
                     "$dump2_data_obj" \
                     --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
                     --pdf -o "/out/$out_name_obj" --skip=eventWeight --skip=farm_status \
                     --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
-                    --twoDimThreshold 1.0 \
-                    2>&1 | tee "$podman_log"
-                rc=$?
+                    --twoDimThreshold 1.0
+                create_rc=$?
+                if [ "$create_rc" -ne 0 ]; then
+                    rc=$create_rc
+                else
+                    podman start -a "$hc_cname" 2>&1 | tee "$podman_log"
+                    rc=$?
+                    podman cp "$hc_cname:/out/." "$hc_tmp/" 2>>"$podman_log"
+                    cp_rc=$?
+                    if [ "$cp_rc" -ne 0 ]; then
+                        echo "[relval] WARNING: podman cp from container failed (rc=$cp_rc)" >>"$podman_log"
+                    fi
+                fi
+                podman rm -f "$hc_cname" >/dev/null 2>&1 || true
                 set +o pipefail
                 set -e
                 echo "[relval]   podman exit code: $rc (full log: $podman_log)"
