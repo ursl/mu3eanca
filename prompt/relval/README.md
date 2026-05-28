@@ -197,22 +197,43 @@ If `RELVAL_BASEDIR` is unset, the page loads but the API returns 503 with a shor
 
 - Snakemake metadata (`.snakemake`, `.markers`) lives inside the MU3E workdir; no manual `-d` is required.
 - Alignment treedumps use `mu3eUtil`’s `mu3eTreeDumper` and config from `mu3eValidation/scripts/treedump_and_histocompare/config.json`.
-- The **histocompare** step (step 11 only) uses **podman** and `docker.io/mu3e/histocompare` with `--userns=keep-id`, writes to a **host `mktemp` directory** (so ROOT never has to delete stale `histocompare-*.root` in the compare folder), then copies results into `run/output/compare/`. Do not use `:U` on mounts — on NFS it can leave files owned by a podman subuid (e.g. `297608`).
+- **Supported hosts:** macOS (local dev) and Linux (Ubuntu on mu3edb0, etc.). The Snakefile picks Podman mount/user options from the OS (`:Z` and `--userns=keep-id` on Linux only).
 
-  To test container write access (override entrypoint; check owner is you):
+### Histocompare (Podman)
 
-  ```bash
-  COMPARE_DIR=".../run/output/compare/<scenario-dir>"
-  podman run --rm --userns=keep-id --entrypoint sh \
-    -w /workdir -v "$COMPARE_DIR:/workdir:Z" \
-    docker.io/mu3e/histocompare -c 'touch _write_test && echo OK'
-  ls -l "$COMPARE_DIR/_write_test"   # should show your user, e.g. mu3e, not 297608
-  ```
+Step 11 (`run_histocompare`) runs `docker.io/mu3e/histocompare` in Podman. It writes to a **host `mktemp` directory**, then copies PDF/ROOT/log into `run/output/compare/`. Do not use `:U` on mounts — on NFS it can leave files owned by a podman subuid.
 
-  **Cleanup** if files were already created with wrong ownership (`297608` etc.):
+**macOS** (Podman machine must be running before relval):
 
-  ```bash
-  sudo chown -R mu3e:users /mnt/data2/relval/
-  rm -rf /mnt/data2/relval/
-  ```
+```bash
+podman machine start          # once per login/reboot
+podman pull docker.io/mu3e/histocompare
+```
+
+If histocompare fails with exit **125**, check `run/output/compare/.../*.podman.log` — usually “Cannot connect to Podman” means the machine is stopped.
+
+**Ubuntu / Linux** (rootless podman):
+
+```bash
+systemctl --user start podman.socket   # if needed
+podman pull docker.io/mu3e/histocompare
+```
+
+On Linux/NFS, the workflow uses `:Z` on volume mounts for SELinux; macOS omits that suffix.
+
+To test container write access on **Linux** (override entrypoint; check owner is you):
+
+```bash
+COMPARE_DIR=".../run/output/compare/<scenario-dir>"
+podman run --rm --userns=keep-id --entrypoint sh \
+  -w /workdir -v "$COMPARE_DIR:/workdir:Z" \
+  docker.io/mu3e/histocompare -c 'touch _write_test && echo OK'
+ls -l "$COMPARE_DIR/_write_test"   # should show your user, e.g. mu3e, not 297608
+```
+
+**Cleanup** if files were already created with wrong ownership (`297608` etc. on NFS):
+
+```bash
+sudo chown -R mu3e:users /mnt/data2/relval/
+```
 - Update `sim_scenarios` in `config.yaml` to add or remove physics configurations.

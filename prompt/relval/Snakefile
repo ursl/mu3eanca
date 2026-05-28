@@ -1,5 +1,7 @@
 configfile: f"{workflow.basedir}/config.yaml"
 
+import platform
+
 MU3E_RELVAL_BASEDIR = config["mu3e_relval_basedir"]
 MU3E_TAG = config.get("mu3e_tag", "master")
 MU3E_CHECKOUT_TAG = config.get("mu3e_checkout_tag", MU3E_TAG)
@@ -45,6 +47,14 @@ COMPARE_ENABLED = bool(COMPARE_AGAINST_SETUP and RUN_COMPARE_HISTOGRAMS_EXE)
 # Allow CLI override via --config cdb_GT=... (and accept lowercase alias).
 CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
 CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
+
+# Podman / histocompare: macOS (Podman machine) and Linux (rootless on Ubuntu, etc.)
+IS_LINUX = platform.system() == "Linux"
+# :Z relabels volumes for SELinux (Linux/NFS). Not used on macOS Podman machine.
+PODMAN_RELABEL_SUFFIX = ",Z" if IS_LINUX else ""
+PODMAN_WORKDIR_SUFFIX = ":Z" if IS_LINUX else ""
+# keep-id maps host UID into the container (rootless Linux). Omit on macOS.
+PODMAN_USERNS_FLAG = "--userns=keep-id" if IS_LINUX else ""
 
 
 def sim_conf(scenario):
@@ -462,6 +472,13 @@ if COMPARE_ENABLED:
             mkdir -p "{params.out_dir_host}"
             align_objects="sensors fibres tiles mppcs"
 
+            if ! podman info >/dev/null 2>&1; then
+                echo "[relval] ERROR: podman is not reachable (histocompare needs a running Podman)." >&2
+                echo "[relval]        macOS: podman machine start   (then: podman machine list)" >&2
+                echo "[relval]        Linux: systemctl --user start podman.socket" >&2
+                exit 125
+            fi
+
             echo "[relval] run_histocompare scenario={wildcards.scenario}"
             echo "[relval]   compare dir: {params.out_dir_host}"
             echo "[relval]   reference setup: {params.compare_against}"
@@ -491,13 +508,14 @@ if COMPARE_ENABLED:
                 # Write to an empty temp dir so ROOT does not try to delete stale
                 # histocompare-*.root in the compare folder (often wrong owner from
                 # earlier podman :U runs on NFS). Do not use :U on volume mounts.
+                # Mount flags (:Z, --userns=keep-id) are set in Snakefile for Linux vs macOS.
                 hc_tmp=$(mktemp -d)
                 set +e
                 set -o pipefail
-                podman run --rm --userns=keep-id \
+                podman run --rm {PODMAN_USERNS_FLAG} \
                     -w /workdir \
-                    -v "{MU3E_RELVAL_BASEDIR}:/relval:ro,Z" \
-                    -v "$hc_tmp:/workdir:Z" \
+                    -v "{MU3E_RELVAL_BASEDIR}:/relval:ro{PODMAN_RELABEL_SUFFIX}" \
+                    -v "$hc_tmp:/workdir{PODMAN_WORKDIR_SUFFIX}" \
                     docker.io/mu3e/histocompare \
                     "$dump1_data_obj" \
                     "$dump2_data_obj" \

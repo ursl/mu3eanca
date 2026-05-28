@@ -1,6 +1,7 @@
 mu3e_relval_basedir: "/Users/ursl/data/mu3e/relval"
 
 mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
+#mu3e_repo: "https://bitbucket.org/mu3e/mu3e.git"
 mu3e_tag: "v6.5"
 mu3e_dir: "mu3e"
 make_jobs: 10
