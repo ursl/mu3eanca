@@ -65,17 +65,36 @@ Configured in `config.yaml`:
 
 ## Configuration
 
-Edit `config.yaml` for machine-local paths and the scenario list. Each scenario has:
+**Shared defaults:** `config.yaml` (scenarios, tags, output templates — same on all machines).
+
+**Host overrides:** `config-<hostname>.yaml` (paths only). Snakemake loads it automatically when the file exists:
+
+| File | When used |
+|------|-----------|
+| `config-moor.yaml` | hostname `moor` (Mac localhost) |
+| `config-mu3edb0.yaml` | hostname `mu3edb0` (Ubuntu server) |
+
+Resolution order: `config.yaml`, then `config-<host>.yaml` (later keys win). Host is:
+
+1. `RELVAL_HOST` environment variable, or
+2. short hostname (`moor`, `mu3edb0`, …), or
+3. `./runRelval --host moor` / `--host mu3edb0`
+
+`runRelval` merges base + host config into the frozen `setups/.../config.yaml` for that run.
+
+Add a new machine by copying a host file and editing four paths:
+
+- `mu3e_relval_basedir`, `relink_script`, `cdb_dbconn`, `relval_code_basedir`
+
+Each scenario in `config.yaml` has:
 
 - `id` — wildcard name (e.g. `conf10_twolayer`)
 - `sim_conf`, `trirec_conf` — paths under `run/`
 - optional `trirec_conf_fallback`
 
-Important keys:
+Other important keys:
 
-- `mu3e_relval_basedir`, `relink_script`, `cdb_dbconn`, `cdb_GT`
-- `relval_code_basedir` — path to this `prompt/relval` tree (for `ana/bin` tools)
-- `compare_against_setup` — empty = no compare; otherwise the **setup name suffix** of the reference (see `runRelval --compare-against-setup`)
+- `cdb_GT`, `compare_against_setup` — can still be overridden on the CLI via `--config`
 
 Build histogram tools once (or after code changes):
 
@@ -97,6 +116,7 @@ Required on the command line: `mu3e_tag=...` (via `--config`). Optional override
 | Option | Purpose |
 |--------|---------|
 | `--setup-name NAME` | Frozen setup folder name; default `relval_<mu3e_dir>-<tag>_<cdb_GT>` |
+| `--host HOST` | Force host config file `config-<HOST>.yaml` (default: hostname or `RELVAL_HOST`) |
 | `--compare-against-setup NAME` | Reference setup name (same as `compare_against_setup` in config); enables compare rules |
 | `--all` | Run a predefined chain of releases (project-specific) |
 | `--dry-run` | With `--all`, print commands only |

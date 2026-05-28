@@ -1,0 +1,6 @@
+# Mac localhost (hostname: moor). Loaded automatically if present.
+
+mu3e_relval_basedir: "/Users/ursl/data/mu3e/relval"
+relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
+cdb_dbconn: "/Users/ursl/data/mu3e/cdb/"
+relval_code_basedir: "/Users/ursl/macros/ana/mu3eanca/prompt/relval"

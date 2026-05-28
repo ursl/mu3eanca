@@ -1,12 +1,11 @@
-mu3e_relval_basedir: "/Users/ursl/data/mu3e/relval"
+# Shared relval defaults (machine-independent).
+# Host-specific paths: config-<hostname>.yaml (e.g. config-moor.yaml, config-mu3edb0.yaml).
+# Override host: RELVAL_HOST=moor  or  ./runRelval --host moor ...
 
 mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
-#mu3e_repo: "https://bitbucket.org/mu3e/mu3e.git"
 mu3e_tag: "v6.5"
 mu3e_dir: "mu3e"
 make_jobs: 10
-
-relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
 
 run_id: 1234
 n_events: 5000
@@ -33,7 +32,6 @@ sim_scenarios:
     sim_conf: "sim_signal.json"
     trirec_conf: "trirec.conf"
 
- 
 sim_output_tpl: "output/sim-{scenario}.root"
 sort_output_tpl: "output/sort-{scenario}.root"
 trirec_output_tpl: "output/trirec-{scenario}.root"
@@ -41,9 +39,7 @@ fillhist_output_tpl: "output/histograms-{scenario}.root"
 compare_marker_tpl: "output/compare-{scenario}.done"
 histocompare_marker_tpl: "output/histocompare-{scenario}.done"
 
-cdb_dbconn: "/Users/ursl/data/mu3e/cdb/"
 cdb_GT: "mcidealv6.5"
-relval_code_basedir: "/Users/ursl/macros/ana/mu3eanca/prompt/relval"
 
 # Optional compare mode:
 # if compare_against_setup is non-empty, runCompareHistograms is executed

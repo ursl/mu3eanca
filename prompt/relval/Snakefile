@@ -1,6 +1,25 @@
-configfile: f"{workflow.basedir}/config.yaml"
+import os
+import socket
+from pathlib import Path
 
 import platform
+import yaml
+
+_host = os.environ.get("RELVAL_HOST", socket.gethostname()).split(".")[0]
+_base = Path(workflow.basedir)
+_host_cfg = _base / f"config-{_host}.yaml"
+_merged_cfg = _base / ".snakemake" / f"config-{_host}.merged.yaml"
+_merged_cfg.parent.mkdir(parents=True, exist_ok=True)
+
+with open(_base / "config.yaml") as _fh:
+    _cfg = yaml.safe_load(_fh) or {}
+if _host_cfg.is_file():
+    with open(_host_cfg) as _fh:
+        _cfg.update(yaml.safe_load(_fh) or {})
+with open(_merged_cfg, "w") as _fh:
+    yaml.dump(_cfg, _fh, default_flow_style=False, sort_keys=False)
+
+configfile: str(_merged_cfg)
 
 MU3E_RELVAL_BASEDIR = config["mu3e_relval_basedir"]
 MU3E_TAG = config.get("mu3e_tag", "master")

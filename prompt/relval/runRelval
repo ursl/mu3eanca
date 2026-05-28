@@ -7,7 +7,7 @@
 # Perl wrapper for relval Snakemake setup creation and execution.
 #
 # Usage:
-#   ./runRelval [--setup-name NAME] [snakemake args...] --config mu3e_tag=<tag> [other overrides]
+#   ./runRelval [--setup-name NAME] [--host HOST] [snakemake args...] --config mu3e_tag=<tag> [other overrides]
 #
 # Example:
 #   ./runRelval --setup-name relval-v65 -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5
@@ -21,10 +21,11 @@ use Cwd qw(abs_path getcwd);
 use File::Basename qw(dirname);
 use File::Copy qw(copy);
 use File::Path qw(make_path);
+use Sys::Hostname qw(hostname);
 
 # ----------------------------------------------------------------------
 sub usage {
-    print "Usage: $0 [--setup-name NAME] [--compare-against-setup NAME] [snakemake args...] --config mu3e_tag=<tag> [other config overrides]\n";
+    print "Usage: $0 [--setup-name NAME] [--host HOST] [--compare-against-setup NAME] [snakemake args...] --config mu3e_tag=<tag> [other config overrides]\n";
     print "Example: $0 --setup-name relval-v65 -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5\n";
 }
 
@@ -49,6 +50,80 @@ sub read_yaml_quoted_value {
     }
     close($fh);
     return "";
+}
+
+# ----------------------------------------------------------------------
+sub relval_host {
+    my ($cli_host) = @_;
+    if (defined $cli_host && $cli_host ne "") {
+        return $cli_host;
+    }
+    if (defined $ENV{RELVAL_HOST} && $ENV{RELVAL_HOST} ne "") {
+        return $ENV{RELVAL_HOST};
+    }
+    my $h = hostname();
+    $h =~ s/\..*//;
+    return $h;
+}
+
+# ----------------------------------------------------------------------
+sub host_config_path {
+    my ($host) = @_;
+    return "config-$host.yaml";
+}
+
+# ----------------------------------------------------------------------
+sub read_yaml_quoted_overrides {
+    my ($path) = @_;
+    my %over = ();
+    return %over unless -f $path;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    while (my $line = <$fh>) {
+        if ($line =~ /^([A-Za-z0-9_]+):\s*"(.*)"/) {
+            $over{$1} = $2;
+        }
+    }
+    close($fh);
+    return %over;
+}
+
+# ----------------------------------------------------------------------
+sub read_config_value {
+    my ($host, $key) = @_;
+    my $hostpath = host_config_path($host);
+    if (-f $hostpath) {
+        my $v = read_yaml_quoted_value($hostpath, $key);
+        return $v if $v ne "";
+    }
+    return read_yaml_quoted_value("config.yaml", $key);
+}
+
+# ----------------------------------------------------------------------
+sub merge_config_lines {
+    my ($base_path, $host_path) = @_;
+    my %over = read_yaml_quoted_overrides($host_path);
+    open(my $in, "<", $base_path) or die "Cannot open $base_path: $!\n";
+    my @lines = <$in>;
+    close($in);
+
+    my @out = ();
+    my %seen = ();
+    foreach my $line (@lines) {
+        if ($line =~ /^([A-Za-z0-9_]+):/) {
+            my $key = $1;
+            if (exists $over{$key}) {
+                push(@out, "$key: \"$over{$key}\"\n");
+                $seen{$key} = 1;
+                next;
+            }
+        }
+        push(@out, $line);
+    }
+    foreach my $key (sort keys %over) {
+        next if $seen{$key};
+        push(@out, "$key: \"$over{$key}\"\n");
+    }
+    return @out;
 }
 
 # ----------------------------------------------------------------------
@@ -143,6 +218,7 @@ if ($#ARGV < 0) {
 # ----------------------------------------------------------------------
 my $setup_name = "";
 my $compare_against_setup = "";
+my $cli_host = "";
 my @forwarded_args = ();
 my $opt_all = 0;
 my $opt_dry_run = 0;
@@ -161,6 +237,12 @@ for (my $i = 0; $i <= $#ARGV; ++$i) {
             die "ERROR: --compare-against-setup requires a value\n";
         }
         $compare_against_setup = $ARGV[$i + 1];
+        ++$i;
+    } elsif ($ARGV[$i] eq "--host") {
+        if ($i + 1 > $#ARGV) {
+            die "ERROR: --host requires a value (e.g. moor, mu3edb0)\n";
+        }
+        $cli_host = $ARGV[$i + 1];
         ++$i;
     } elsif ($ARGV[$i] eq "--dry-run") {
         $opt_dry_run = 1;
@@ -219,17 +301,25 @@ if ($mu3e_tag eq "") {
 my $script_dir = abs_path(dirname($0));
 chdir($script_dir) or die "Cannot chdir to $script_dir: $!\n";
 
-my $base_dir = read_yaml_quoted_value("config.yaml", "mu3e_relval_basedir");
-my $mu3e_dir_base = read_yaml_quoted_value("config.yaml", "mu3e_dir");
+my $relval_host = relval_host($cli_host);
+my $host_cfg = host_config_path($relval_host);
+if (-f $host_cfg) {
+    print(prefix("runRelval"), "using host config: $host_cfg (host=$relval_host)\n");
+} else {
+    print(prefix("runRelval"), "warning: no $host_cfg; using config.yaml only (set --host or RELVAL_HOST if paths are wrong)\n");
+}
+
+my $base_dir = read_config_value($relval_host, "mu3e_relval_basedir");
+my $mu3e_dir_base = read_config_value($relval_host, "mu3e_dir");
 if ($base_dir eq "" || $mu3e_dir_base eq "") {
-    die "ERROR: could not parse mu3e_relval_basedir/mu3e_dir from config.yaml\n";
+    die "ERROR: could not parse mu3e_relval_basedir/mu3e_dir from config.yaml + $host_cfg\n";
 }
 
 if ($raw_cdb_gt eq "") {
-    $raw_cdb_gt = read_yaml_quoted_value("config.yaml", "cdb_GT");
+    $raw_cdb_gt = read_config_value($relval_host, "cdb_GT");
 }
 if ($raw_cdb_dbconn eq "") {
-    $raw_cdb_dbconn = read_yaml_quoted_value("config.yaml", "cdb_dbconn");
+    $raw_cdb_dbconn = read_config_value($relval_host, "cdb_dbconn");
 }
 
 if ($setup_name eq "") {
@@ -244,12 +334,9 @@ my $setup_dir = "$base_dir/setups/$setup_safe";
 make_path($setup_dir);
 
 copy("$script_dir/Snakefile", "$setup_dir/Snakefile") or die "Copy Snakefile failed: $!\n";
-copy("$script_dir/config.yaml", "$setup_dir/config.yaml") or die "Copy config.yaml failed: $!\n";
 
 my $cfg_path = "$setup_dir/config.yaml";
-open(my $in, "<", $cfg_path) or die "Cannot open $cfg_path: $!\n";
-my @lines = <$in>;
-close($in);
+my @lines = merge_config_lines("$script_dir/config.yaml", "$script_dir/$host_cfg");
 
 my $mu3e_workdir_name = $mu3e_dir_base . "-" . $setup_safe;
 my $seen_workdir_name = 0;
