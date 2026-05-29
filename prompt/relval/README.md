@@ -142,7 +142,7 @@ Snakemake’s main log (`setups/.../.snakemake/log/...`) often only says `Error 
 1. **Per-rule logs** (stdout+stderr from the shell), under the MU3E workdir, e.g.  
    `logs/snakemake/run_histocompare-conf10_twolayer.log`  
    For histocompare, each alignment object also writes  
-   `run/output/compare/.../histocompare-<scenario>-<obj>.podman.log`.
+   `run/output/compare/.../histocompare-<scenario>-<obj>.docker.log`.
 
 2. **`--show-failed-logs`** (Snakemake 6+) — prints failed job logs to the terminal after the run:  
    `./runRelval --show-failed-logs -j4 -p --config ...`
@@ -217,43 +217,48 @@ If `RELVAL_BASEDIR` is unset, the page loads but the API returns 503 with a shor
 
 - Snakemake metadata (`.snakemake`, `.markers`) lives inside the MU3E workdir; no manual `-d` is required.
 - Alignment treedumps use `mu3eUtil`’s `mu3eTreeDumper` and config from `mu3eValidation/scripts/treedump_and_histocompare/config.json`.
-- **Supported hosts:** macOS (local dev) and Linux (Ubuntu on mu3edb0, etc.). The Snakefile picks Podman mount/user options from the OS (`:Z` and `--userns=keep-id` on Linux only).
+- **Supported hosts:** macOS and Linux (Ubuntu on mu3edb0, etc.). Histocompare uses Docker with the same command on both.
 
-### Histocompare (Podman)
+### Histocompare (Docker)
 
-Step 11 (`run_histocompare`) runs `docker.io/mu3e/histocompare` in Podman. It writes to a **host `mktemp` directory**, then copies PDF/ROOT/log into `run/output/compare/`. Do not use `:U` on mounts — on NFS it can leave files owned by a podman subuid.
+Step 11 (`run_histocompare`) runs `docker.io/mu3e/histocompare` in Docker. It writes to a **host `mktemp` directory** bind-mounted at `/workdir`, then copies PDF/ROOT/log into `run/output/compare/`. The container runs as your user (`--user $(id -u):$(id -g)`).
 
-**macOS** (Podman machine must be running before relval):
-
-```bash
-podman machine start          # once per login/reboot
-podman pull docker.io/mu3e/histocompare
-```
-
-If histocompare fails with exit **125**, check `run/output/compare/.../*.podman.log` — usually “Cannot connect to Podman” means the machine is stopped.
-
-**Ubuntu / Linux** (rootless podman):
+**macOS** (Docker Desktop):
 
 ```bash
-systemctl --user start podman.socket   # if needed
-podman pull docker.io/mu3e/histocompare
+docker pull docker.io/mu3e/histocompare
 ```
 
-On Linux/NFS, histocompare writes to tmpfs `/workdir` and **`podman cp` runs while the container is still up** (tmpfs is gone after exit). On macOS, a host `mktemp` dir is bind-mounted at `/workdir`. Container cwd is `/tmp` on both.
+**Ubuntu / Linux:**
 
-To test container write access on **Linux** (override entrypoint; check owner is you):
+```bash
+docker pull docker.io/mu3e/histocompare
+# If "permission denied" on the socket, add your user to the docker group and re-login:
+# sudo usermod -aG docker $USER
+```
+
+If histocompare fails with exit **125**, check `run/output/compare/.../*.docker.log` — usually the Docker daemon is not running or not reachable.
+
+Optional overrides in host `config-*.yaml`:
+
+```yaml
+histocompare_docker_cmd: docker   # default
+histocompare_image: docker.io/mu3e/histocompare
+```
+
+To test container write access (override entrypoint):
 
 ```bash
 COMPARE_DIR=".../run/output/compare/<scenario-dir>"
-podman run --rm --userns=keep-id --entrypoint sh \
-  -w /workdir -v "$COMPARE_DIR:/workdir:Z" \
+docker run --rm --user "$(id -u):$(id -g)" --entrypoint sh \
+  -w /workdir -v "$COMPARE_DIR:/workdir" \
   docker.io/mu3e/histocompare -c 'touch _write_test && echo OK'
-ls -l "$COMPARE_DIR/_write_test"   # should show your user, e.g. mu3e, not 297608
+ls -l "$COMPARE_DIR/_write_test"
 ```
 
-**Cleanup** if files were already created with wrong ownership (`297608` etc. on NFS):
+**Cleanup** if files were created with wrong ownership from an earlier container run:
 
 ```bash
-sudo chown -R mu3e:users /mnt/data2/relval/
+sudo chown -R $(id -un):$(id -gn) /path/to/relval/
 ```
 - Update `sim_scenarios` in `config.yaml` to add or remove physics configurations.

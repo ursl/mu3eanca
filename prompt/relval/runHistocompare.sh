@@ -19,73 +19,38 @@ DUMP0_HOST="${MU3E_RELVAL_BASEDIR}/${MU3E_DIRNAME0}/run/output/treedump-${SCENAR
 DUMP1="/relval/${MU3E_DIRNAME1}/run/output/treedump-${SCENARIO}-${OBJ}.root"
 DUMP0="/relval/${MU3E_DIRNAME0}/run/output/treedump-${SCENARIO}-${OBJ}.root"
 
+DOCKER="${DOCKER:-docker}"
+IMAGE="${HISTOCOMPARE_IMAGE:-docker.io/mu3e/histocompare}"
+
 # --- sanity (host paths) ---
 ls -l "$DUMP0_HOST" "$DUMP1_HOST"
 mkdir -p "$COMPARE_DIR"
 
 HC_TMP=$(mktemp -d /tmp/relval-histocompare.XXXXXX)
 chmod u+rwx "$HC_TMP"
-PODMAN_LOG="$COMPARE_DIR/${OUT_NAME}.podman.log"
-
-PODMAN_USERNS=""
-if [ "$(uname -s)" = "Linux" ]; then
-  PODMAN_USERNS="--userns=keep-id"
-  RELABEL=",Z"
-else
-  RELABEL=""
-fi
+DOCKER_LOG="$COMPARE_DIR/${OUT_NAME}.docker.log"
 
 echo "[relval] container inputs: $DUMP1 (new)  $DUMP0 (reference)"
 
-if [ "$(uname -s)" = "Linux" ]; then
-  HC_CNAME="relval-hc-manual-$$-$RANDOM"
-  podman rm -f "$HC_CNAME" 2>/dev/null || true
-  podman create --name "$HC_CNAME" $PODMAN_USERNS \
-    -w /tmp \
-    -e CLING_STANDARD_PCH=0 \
-    -v "${MU3E_RELVAL_BASEDIR}:/relval:ro${RELABEL}" \
-    --mount type=tmpfs,destination=/workdir,tmpfs-size=2G \
-    docker.io/mu3e/histocompare \
-    "$DUMP1" \
-    "$DUMP0" \
-    --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
-    --pdf -o "/workdir/${OUT_NAME}" \
-    --skip=eventWeight --skip=farm_status \
-    --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
-    --twoDimThreshold 1.0
-  podman start "$HC_CNAME"
-  while true; do
-    running=$(podman inspect -f '{{.State.Running}}' "$HC_CNAME" 2>/dev/null || echo false)
-    podman cp "${HC_CNAME}:/workdir/." "$HC_TMP/" 2>/dev/null || true
-    if [ -f "$HC_TMP/${OUT_NAME}.pdf" ] && [ -f "$HC_TMP/${OUT_NAME}.root" ]; then
-      break
-    fi
-    if [ "$running" = "false" ]; then
-      break
-    fi
-    sleep 0.5
-  done
-  RC=$(podman inspect -f '{{.State.ExitCode}}' "$HC_CNAME" 2>/dev/null || echo 1)
-  podman logs "$HC_CNAME" 2>&1 | tee "$PODMAN_LOG"
-  podman rm -f "$HC_CNAME"
-else
-  podman run --rm $PODMAN_USERNS \
-    -w /tmp \
-    -e CLING_STANDARD_PCH=0 \
-    -v "${MU3E_RELVAL_BASEDIR}:/relval:ro${RELABEL}" \
-    -v "$HC_TMP:/workdir:rw" \
-    docker.io/mu3e/histocompare \
-    "$DUMP1" \
-    "$DUMP0" \
-    --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
-    --pdf -o "/workdir/${OUT_NAME}" \
-    --skip=eventWeight --skip=farm_status \
-    --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
-    --twoDimThreshold 1.0 \
-    2>&1 | tee "$PODMAN_LOG"
-  RC=${PIPESTATUS[0]}
-fi
-echo "podman run rc=$RC"
+set -o pipefail
+$DOCKER run --rm \
+  --user "$(id -u):$(id -g)" \
+  -w /tmp \
+  -e CLING_STANDARD_PCH=0 \
+  -v "${MU3E_RELVAL_BASEDIR}:/relval:ro" \
+  -v "$HC_TMP:/workdir" \
+  "$IMAGE" \
+  "$DUMP1" \
+  "$DUMP0" \
+  --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
+  --pdf -o "/workdir/${OUT_NAME}" \
+  --skip=eventWeight --skip=farm_status \
+  --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
+  --twoDimThreshold 1.0 \
+  2>&1 | tee "$DOCKER_LOG"
+RC=${PIPESTATUS[0]}
+set +o pipefail
+echo "docker run rc=$RC"
 
 echo "=== workdir $HC_TMP ==="
 ls -la "$HC_TMP"
@@ -98,4 +63,3 @@ cp -fv "$HC_TMP/${OUT_NAME}.log" "$COMPARE_DIR/" 2>/dev/null || echo "no log"
 rm -rf "$HC_TMP"
 echo "=== final compare dir ==="
 ls -la "$COMPARE_DIR/${OUT_NAME}."*
-
