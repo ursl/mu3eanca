@@ -38,30 +38,36 @@ fi
 echo "[relval] container inputs: $DUMP1 (new)  $DUMP0 (reference)"
 
 if [ "$(uname -s)" = "Linux" ]; then
-  HC_TAR="$HC_TMP/archive.tar"
-  podman run --rm $PODMAN_USERNS \
+  HC_CNAME="relval-hc-manual-$$-$RANDOM"
+  podman rm -f "$HC_CNAME" 2>/dev/null || true
+  podman create --name "$HC_CNAME" $PODMAN_USERNS \
     -w /tmp \
     -e CLING_STANDARD_PCH=0 \
     -v "${MU3E_RELVAL_BASEDIR}:/relval:ro${RELABEL}" \
     --mount type=tmpfs,destination=/workdir,tmpfs-size=2G \
-    --entrypoint sh \
     docker.io/mu3e/histocompare \
-    -c "rootcomp.py \"\$1\" \"\$2\" \
-        --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
-        --pdf -o \"/workdir/${OUT_NAME}\" \
-        --skip=eventWeight --skip=farm_status \
-        --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
-        --twoDimThreshold 1.0 \
-        && tar -C /workdir -cf - ." \
-    sh \
     "$DUMP1" \
     "$DUMP0" \
-    > "$HC_TAR" 2> >(tee "$PODMAN_LOG" >&2)
-  RC=${PIPESTATUS[0]}
-  if [ -f "$HC_TAR" ] && [ -s "$HC_TAR" ]; then
-    tar -C "$HC_TMP" -xf "$HC_TAR"
-    rm -f "$HC_TAR"
-  fi
+    --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
+    --pdf -o "/workdir/${OUT_NAME}" \
+    --skip=eventWeight --skip=farm_status \
+    --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
+    --twoDimThreshold 1.0
+  podman start "$HC_CNAME"
+  while true; do
+    running=$(podman inspect -f '{{.State.Running}}' "$HC_CNAME" 2>/dev/null || echo false)
+    podman cp "${HC_CNAME}:/workdir/." "$HC_TMP/" 2>/dev/null || true
+    if [ -f "$HC_TMP/${OUT_NAME}.pdf" ] && [ -f "$HC_TMP/${OUT_NAME}.root" ]; then
+      break
+    fi
+    if [ "$running" = "false" ]; then
+      break
+    fi
+    sleep 0.5
+  done
+  RC=$(podman inspect -f '{{.State.ExitCode}}' "$HC_CNAME" 2>/dev/null || echo 1)
+  podman logs "$HC_CNAME" 2>&1 | tee "$PODMAN_LOG"
+  podman rm -f "$HC_CNAME"
 else
   podman run --rm $PODMAN_USERNS \
     -w /tmp \
