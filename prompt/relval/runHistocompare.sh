@@ -10,6 +10,7 @@ OBJ="sensors"
 
 OUT_NAME="histocompare-${SCENARIO}-${OBJ}"
 COMPARE_DIR="${MU3E_RELVAL_BASEDIR}/${MU3E_DIRNAME1}/run/output/compare/${SCENARIO}__${MU3E_DIRNAME1}__vs__${MU3E_DIRNAME0}"
+echo "COMPARE_DIR: $COMPARE_DIR"
 
 DUMP1_HOST="${MU3E_RELVAL_BASEDIR}/${MU3E_DIRNAME1}/run/output/treedump-${SCENARIO}-${OBJ}.root"
 DUMP0_HOST="${MU3E_RELVAL_BASEDIR}/${MU3E_DIRNAME0}/run/output/treedump-${SCENARIO}-${OBJ}.root"
@@ -35,8 +36,8 @@ podman create --name "$HC_CNAME" --userns=keep-id \
   -v "${MU3E_RELVAL_BASEDIR}:/relval:ro,Z" \
   --mount type=tmpfs,destination=/out,tmpfs-size=2G \
   docker.io/mu3e/histocompare \
-  "$DUMP1" \
   "$DUMP0" \
+  "$DUMP1" \
   --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
   --pdf -o "/out/${OUT_NAME}" \
   --skip=eventWeight --skip=farm_status \
