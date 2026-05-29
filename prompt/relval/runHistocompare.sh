@@ -11,11 +11,14 @@ OBJ="sensors"
 OUT_NAME="histocompare-${SCENARIO}-${OBJ}"
 COMPARE_DIR="${MU3E_RELVAL_BASEDIR}/${MU3E_DIRNAME1}/run/output/compare/${SCENARIO}__${MU3E_DIRNAME1}__vs__${MU3E_DIRNAME0}"
 
-DUMP1="${MU3E_RELVAL_BASEDIR}/${MU3E_DIRNAME1}/run/output/treedump-${SCENARIO}-${OBJ}.root"
-DUMP0="${MU3E_RELVAL_BASEDIR}/${MU3E_DIRNAME0}/run/output/treedump-${SCENARIO}-${OBJ}.root"
+DUMP1_HOST="${MU3E_RELVAL_BASEDIR}/${MU3E_DIRNAME1}/run/output/treedump-${SCENARIO}-${OBJ}.root"
+DUMP0_HOST="${MU3E_RELVAL_BASEDIR}/${MU3E_DIRNAME0}/run/output/treedump-${SCENARIO}-${OBJ}.root"
+# Paths inside the container (/relval is the mount of MU3E_RELVAL_BASEDIR)
+DUMP1="/relval/${MU3E_DIRNAME1}/run/output/treedump-${SCENARIO}-${OBJ}.root"
+DUMP0="/relval/${MU3E_DIRNAME0}/run/output/treedump-${SCENARIO}-${OBJ}.root"
 
-# --- sanity ---
-ls -l "$DUMP0" "$DUMP1"
+# --- sanity (host paths) ---
+ls -l "$DUMP0_HOST" "$DUMP1_HOST"
 mkdir -p "$COMPARE_DIR"
 
 HC_TMP=$(mktemp -d /tmp/relval-histocompare.XXXXXX)
@@ -23,6 +26,8 @@ HC_CNAME="relval-hc-manual-$$"
 PODMAN_LOG="$COMPARE_DIR/${OUT_NAME}.podman.log"
 
 podman rm -f "$HC_CNAME" 2>/dev/null || true
+
+echo "[relval] container inputs: $DUMP1 (ref/new)  $DUMP0 (reference)"
 
 podman create --name "$HC_CNAME" --userns=keep-id \
   -w /tmp \
