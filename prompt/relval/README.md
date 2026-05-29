@@ -239,7 +239,7 @@ systemctl --user start podman.socket   # if needed
 podman pull docker.io/mu3e/histocompare
 ```
 
-On Linux/NFS, the workflow uses `:Z` on volume mounts for SELinux; macOS omits that suffix.
+On Linux/NFS, `:Z` is used only on the read-only relval mount. Histocompare writes to a host `mktemp` dir bind-mounted at `/workdir` (container cwd is `/tmp` for cppyy caches).
 
 To test container write access on **Linux** (override entrypoint; check owner is you):
 
