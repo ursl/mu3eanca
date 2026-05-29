@@ -73,6 +73,9 @@ IS_LINUX = platform.system() == "Linux"
 PODMAN_RELABEL_SUFFIX = ",Z" if IS_LINUX else ""
 # keep-id maps host UID into the container (rootless Linux). Omit on macOS.
 PODMAN_USERNS_FLAG = "--userns=keep-id" if IS_LINUX else ""
+# Linux: tmpfs + tar stream (bind-mount /workdir not writable with keep-id on NFS).
+# macOS: bind-mount host mktemp at /workdir (works with podman machine).
+HISTOCOMPARE_LINUX = 1 if IS_LINUX else 0
 
 
 def sim_conf(scenario):
@@ -522,27 +525,53 @@ if COMPARE_ENABLED:
                 echo "[relval]   host ref : $dump2_host"
                 echo "[relval]   host new : $dump1_host"
 
-                # Compare treedump pair in container (treedumps from run_treedump on each setup).
-                # Write to host mktemp via bind mount (survives container exit). cwd /tmp so
-                # cppyy/ROOT caches do not hit the output mount. No :Z on the writable mount.
+                # macOS: bind-mount host mktemp at /workdir.
+                # Linux: tmpfs /workdir + tar stream (keep-id cannot write bind mounts on NFS).
                 hc_tmp=$(mktemp -d "${{TMPDIR:-/tmp}}/relval-histocompare.XXXXXX")
                 chmod u+rwx "$hc_tmp"
                 set +e
                 set -o pipefail
-                podman run --rm {PODMAN_USERNS_FLAG} \
-                    -w /tmp \
-                    -e CLING_STANDARD_PCH=0 \
-                    -v "{MU3E_RELVAL_BASEDIR}:/relval:ro{PODMAN_RELABEL_SUFFIX}" \
-                    -v "$hc_tmp:/workdir:rw" \
-                    docker.io/mu3e/histocompare \
-                    "$dump1_data_obj" \
-                    "$dump2_data_obj" \
-                    --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
-                    --pdf -o "/workdir/$out_name_obj" --skip=eventWeight --skip=farm_status \
-                    --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
-                    --twoDimThreshold 1.0 \
-                    2>&1 | tee "$podman_log"
-                rc=$?
+                if [ {HISTOCOMPARE_LINUX} -eq 1 ]; then
+                    hc_tar="$hc_tmp/archive.tar"
+                    podman run --rm {PODMAN_USERNS_FLAG} \
+                        -w /tmp \
+                        -e CLING_STANDARD_PCH=0 \
+                        -v "{MU3E_RELVAL_BASEDIR}:/relval:ro{PODMAN_RELABEL_SUFFIX}" \
+                        --mount type=tmpfs,destination=/workdir,tmpfs-size=2G \
+                        --entrypoint sh \
+                        docker.io/mu3e/histocompare \
+                        -c "rootcomp.py \"\$1\" \"\$2\" \
+                            --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
+                            --pdf -o \"/workdir/$out_name_obj\" \
+                            --skip=eventWeight --skip=farm_status \
+                            --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
+                            --twoDimThreshold 1.0 \
+                            && tar -C /workdir -cf - ." \
+                        sh \
+                        "$dump1_data_obj" \
+                        "$dump2_data_obj" \
+                        > "$hc_tar" 2> >(tee "$podman_log" >&2)
+                    rc=$?
+                    if [ -f "$hc_tar" ] && [ -s "$hc_tar" ]; then
+                        tar -C "$hc_tmp" -xf "$hc_tar"
+                        rm -f "$hc_tar"
+                    fi
+                else
+                    podman run --rm {PODMAN_USERNS_FLAG} \
+                        -w /tmp \
+                        -e CLING_STANDARD_PCH=0 \
+                        -v "{MU3E_RELVAL_BASEDIR}:/relval:ro{PODMAN_RELABEL_SUFFIX}" \
+                        -v "$hc_tmp:/workdir:rw" \
+                        docker.io/mu3e/histocompare \
+                        "$dump1_data_obj" \
+                        "$dump2_data_obj" \
+                        --treedump --threshold 0.60 --wasserstein 0.60 --accFailFraction 0.05 \
+                        --pdf -o "/workdir/$out_name_obj" --skip=eventWeight --skip=farm_status \
+                        --skip=frameID --skip=runID --skip=mc_eventID --skip=mc_weight \
+                        --twoDimThreshold 1.0 \
+                        2>&1 | tee "$podman_log"
+                    rc=$?
+                fi
                 set +o pipefail
                 set -e
                 echo "[relval]   podman exit code: $rc (full log: $podman_log)"

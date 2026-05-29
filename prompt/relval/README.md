@@ -239,7 +239,7 @@ systemctl --user start podman.socket   # if needed
 podman pull docker.io/mu3e/histocompare
 ```
 
-On Linux/NFS, `:Z` is used only on the read-only relval mount. Histocompare writes to a host `mktemp` dir bind-mounted at `/workdir` (container cwd is `/tmp` for cppyy caches).
+On Linux/NFS, `:Z` is used only on the read-only relval mount. Histocompare writes to tmpfs `/workdir` inside the container and streams a tar archive to the host (bind-mount writes fail with `--userns=keep-id`). On macOS, a host `mktemp` dir is bind-mounted at `/workdir` instead. Container cwd is `/tmp` on both platforms.
 
 To test container write access on **Linux** (override entrypoint; check owner is you):
 
