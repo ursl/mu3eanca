@@ -221,11 +221,15 @@ If `RELVAL_BASEDIR` is unset, the page loads but the API returns 503 with a shor
 
 ### Histocompare (Docker)
 
-Step 11 (`run_histocompare`) runs `docker.io/mu3e/histocompare` in Docker. It writes to a **host `mktemp` directory** bind-mounted at `/workdir`, then copies PDF/ROOT/log into `run/output/compare/`. The container runs as your user (`--user $(id -u):$(id -g)`).
+Step 11 (`run_histocompare`) runs `docker.io/mu3e/histocompare` in Docker. It writes to a **host `mktemp` directory** bind-mounted at `/workdir`, then copies PDF/ROOT/log into `run/output/compare/`.
 
-**macOS** (Docker Desktop):
+- **Linux:** container runs as your user (`--user $(id -u):$(id -g)`) so outputs on NFS are owned correctly; scratch dir uses `$TMPDIR` or `/tmp`.
+- **macOS** (Docker Desktop / Colima): `--user` is omitted; scratch dir is **`$MU3E_RELVAL_BASEDIR/.relval-histocompare.*`** (Colima cannot write bind mounts from `/tmp` or Snakemake’s `$TMPDIR` under `/var/folders/…`). On Apple Silicon, `--platform linux/amd64` is added (image is amd64-only).
+
+**macOS** (Docker Desktop or Colima):
 
 ```bash
+colima start          # if using Colima
 docker pull docker.io/mu3e/histocompare
 ```
 
@@ -244,13 +248,20 @@ Optional overrides in host `config-*.yaml`:
 ```yaml
 histocompare_docker_cmd: docker   # default
 histocompare_image: docker.io/mu3e/histocompare
+histocompare_docker_user: auto     # auto | host | none
+histocompare_docker_platform: auto  # auto | linux/amd64 | ""
 ```
 
 To test container write access (override entrypoint):
 
 ```bash
 COMPARE_DIR=".../run/output/compare/<scenario-dir>"
+# Linux:
 docker run --rm --user "$(id -u):$(id -g)" --entrypoint sh \
+  -w /workdir -v "$COMPARE_DIR:/workdir" \
+  docker.io/mu3e/histocompare -c 'touch _write_test && echo OK'
+# macOS/Colima (no --user):
+docker run --rm --entrypoint sh \
   -w /workdir -v "$COMPARE_DIR:/workdir" \
   docker.io/mu3e/histocompare -c 'touch _write_test && echo OK'
 ls -l "$COMPARE_DIR/_write_test"

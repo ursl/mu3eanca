@@ -1,4 +1,5 @@
 import os
+import platform
 import socket
 from pathlib import Path
 
@@ -68,6 +69,33 @@ CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
 
 HISTOCOMPARE_DOCKER = config.get("histocompare_docker_cmd", "docker")
 HISTOCOMPARE_IMAGE = config.get("histocompare_image", "docker.io/mu3e/histocompare")
+
+# Linux: run as host user so outputs on NFS are owned correctly (mu3edb0).
+# macOS/Colima: omit --user; the image default user can write bind mounts only
+# under paths Colima shares from the host (not $TMPDIR / /var/folders / /tmp).
+_is_darwin = platform.system() == "Darwin"
+_user_cfg = config.get("histocompare_docker_user", "auto")
+if _user_cfg == "auto":
+    HISTOCOMPARE_DOCKER_USER = "" if _is_darwin else '--user "$(id -u):$(id -g)"'
+elif _user_cfg in ("none", "root", ""):
+    HISTOCOMPARE_DOCKER_USER = ""
+else:
+    HISTOCOMPARE_DOCKER_USER = '--user "$(id -u):$(id -g)"'
+
+_platform_cfg = config.get("histocompare_docker_platform", "auto")
+if _platform_cfg == "auto":
+    _arm_mac = _is_darwin and platform.machine().lower() in ("arm64", "aarch64")
+    HISTOCOMPARE_DOCKER_PLATFORM = "--platform linux/amd64" if _arm_mac else ""
+elif _platform_cfg:
+    HISTOCOMPARE_DOCKER_PLATFORM = f"--platform {_platform_cfg}"
+else:
+    HISTOCOMPARE_DOCKER_PLATFORM = ""
+
+# Colima/Docker Desktop: bind-mount writes to /tmp or $TMPDIR fail; use relval base.
+if _is_darwin:
+    HISTOCOMPARE_HC_TMP_MKTEMP = f"{MU3E_RELVAL_BASEDIR}/.relval-histocompare.XXXXXX"
+else:
+    HISTOCOMPARE_HC_TMP_MKTEMP = "${{TMPDIR:-/tmp}}/relval-histocompare.XXXXXX"
 
 
 def sim_conf(scenario):
@@ -516,12 +544,13 @@ if COMPARE_ENABLED:
                 echo "[relval]   host ref : $dump2_host"
                 echo "[relval]   host new : $dump1_host"
 
-                hc_tmp=$(mktemp -d "${{TMPDIR:-/tmp}}/relval-histocompare.XXXXXX")
+                hc_tmp=$(mktemp -d "{HISTOCOMPARE_HC_TMP_MKTEMP}")
                 chmod u+rwx "$hc_tmp"
                 set +e
                 set -o pipefail
                 {HISTOCOMPARE_DOCKER} run --rm \
-                    --user "$(id -u):$(id -g)" \
+                    {HISTOCOMPARE_DOCKER_PLATFORM} \
+                    {HISTOCOMPARE_DOCKER_USER} \
                     -w /tmp \
                     -e CLING_STANDARD_PCH=0 \
                     -v "{MU3E_RELVAL_BASEDIR}:/relval:ro" \
