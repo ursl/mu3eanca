@@ -26,15 +26,30 @@ IMAGE="${HISTOCOMPARE_IMAGE:-docker.io/mu3e/histocompare}"
 ls -l "$DUMP0_HOST" "$DUMP1_HOST"
 mkdir -p "$COMPARE_DIR"
 
-HC_TMP=$(mktemp -d /tmp/relval-histocompare.XXXXXX)
+if [ "$(uname -s)" = "Darwin" ]; then
+  HC_TMP=$(mktemp -d "${MU3E_RELVAL_BASEDIR}/.relval-histocompare.XXXXXX")
+else
+  HC_TMP=$(mktemp -d /tmp/relval-histocompare.XXXXXX)
+fi
 chmod u+rwx "$HC_TMP"
 DOCKER_LOG="$COMPARE_DIR/${OUT_NAME}.docker.log"
 
 echo "[relval] container inputs: $DUMP1 (new)  $DUMP0 (reference)"
 
+DOCKER_USER=()
+DOCKER_PLATFORM=()
+if [ "$(uname -s)" = "Darwin" ]; then
+  if [ "$(uname -m)" = "arm64" ]; then
+    DOCKER_PLATFORM=(--platform linux/amd64)
+  fi
+else
+  DOCKER_USER=(--user "$(id -u):$(id -g)")
+fi
+
 set -o pipefail
 $DOCKER run --rm \
-  --user "$(id -u):$(id -g)" \
+  "${DOCKER_PLATFORM[@]}" \
+  "${DOCKER_USER[@]}" \
   -w /tmp \
   -e CLING_STANDARD_PCH=0 \
   -v "${MU3E_RELVAL_BASEDIR}:/relval:ro" \
