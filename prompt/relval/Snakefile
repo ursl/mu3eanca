@@ -95,7 +95,7 @@ else:
 if _is_darwin:
     HISTOCOMPARE_HC_TMP_MKTEMP = f"{MU3E_RELVAL_BASEDIR}/.relval-histocompare.XXXXXX"
 else:
-    HISTOCOMPARE_HC_TMP_MKTEMP = "${{TMPDIR:-/tmp}}/relval-histocompare.XXXXXX"
+    HISTOCOMPARE_HC_TMP_MKTEMP = "${TMPDIR:-/tmp}/relval-histocompare.XXXXXX"
 
 
 def sim_conf(scenario):
