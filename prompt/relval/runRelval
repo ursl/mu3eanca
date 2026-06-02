@@ -256,7 +256,8 @@ if ($opt_all) {
     if ($opt_dry_run) {
         my $self = abs_path($0);
         print(prefix("runRelval"), "meta mode --all --dry-run\n");
-        print($self, " -j4", " -p", " --compare-against-setup", " relval_mu3e-v6.6_mcidealv6.5", " --config", " mu3e_tag=v6.7pre0", " cdb_GT=mcidealv6.5", "\n");
+        print($self, " -j4", " -p", " --compare-against-setup", " relval_mu3e-v6.7_mcidealv6.5", " --config", " mu3e_tag=v6.8pre0", " cdb_GT=mcidealv6.5", "\n");
+        print($self, " -j4", " -p", " --compare-against-setup", " relval_mu3e-v6.6_mcidealv6.5", " --config", " mu3e_tag=v6.7", " cdb_GT=mcidealv6.5", "\n");
         print($self, " -j4", " -p", " --compare-against-setup", " relval_mu3e-v6.5_mcidealv6.5", " --config", " mu3e_tag=v6.6",     " cdb_GT=mcidealv6.5", "\n");
         print($self, " -j4", " -p", " --compare-against-setup", " relval_mu3e-v6.4.4_mcidealv6.5", " --config", " mu3e_tag=v6.5",     " cdb_GT=mcidealv6.5", "\n");
         print($self, " -j4", " -p", " --compare-against-setup", " relval_mu3e-v6.3.3_mcidealv6.1", " --config", " mu3e_tag=v6.4.4",   " cdb_GT=mcidealv6.5", " cdb_dbconn=http://mu3edb0/cdb", "\n");
@@ -269,7 +270,8 @@ if ($opt_all) {
         run_cmd($self, "-j4", "-p", "--compare-against-setup", "relval_mu3e-v6.3.3_mcidealv6.1", "--config", "mu3e_tag=v6.4.4",   "cdb_GT=mcidealv6.5", "cdb_dbconn=http://mu3edb0/cdb");
         run_cmd($self, "-j4", "-p", "--compare-against-setup", "relval_mu3e-v6.4.4_mcidealv6.5", "--config", "mu3e_tag=v6.5",     "cdb_GT=mcidealv6.5");
         run_cmd($self, "-j4", "-p", "--compare-against-setup", "relval_mu3e-v6.5_mcidealv6.5", "--config", "mu3e_tag=v6.6",     "cdb_GT=mcidealv6.5");
-        run_cmd($self, "-j4", "-p", "--compare-against-setup", "relval_mu3e-v6.6_mcidealv6.5", "--config", "mu3e_tag=v6.7pre0", "cdb_GT=mcidealv6.5");
+        run_cmd($self, "-j4", "-p", "--compare-against-setup", "relval_mu3e-v6.6_mcidealv6.5", "--config", "mu3e_tag=v6.7", "cdb_GT=mcidealv6.5");
+        run_cmd($self, "-j4", "-p", "--compare-against-setup", "relval_mu3e-v6.7_mcidealv6.5", "--config", "mu3e_tag=v6.8pre0", "cdb_GT=mcidealv6.5");
         exit(0);
     }
 }
