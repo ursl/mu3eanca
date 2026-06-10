@@ -85,7 +85,7 @@ LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o cdbMongo.o \
 
 LBINARIES = testCDB anaPixelQuality anaEventStuff syncJSON \
             cdbInitGT cdbRunPayloadWriter \
-            cdbPrintPayload  cdbWritePayload \
+            cdbPrintPayload  \
             cdbPrintConfig \
             cdbInsertIovTag cdbCopyPayloads cdbSummaryGT diffRunnumbers cdbPurgePayloads diffPayloads correlatePixelPayloads
 
