@@ -181,6 +181,31 @@ static string mongoRegexEscape(const string& s) {
 
 
 // ----------------------------------------------------------------------
+static string pathBasename(const string& path) {
+  size_t p = path.rfind('/');
+  return (p == string::npos) ? path : path.substr(p + 1);
+}
+
+
+// ----------------------------------------------------------------------
+static bool jsonStringFieldMatchesBasename(const string& filePath, const json& j,
+                                           const string& field, string& err) {
+  if (!j.contains(field) || !j[field].is_string()) {
+    err = "missing or non-string field \"" + field + "\"";
+    return false;
+  }
+  string expected = pathBasename(filePath);
+  string actual = j[field].get<string>();
+  if (actual != expected) {
+    err = "filename \"" + expected + "\" does not match \"" + field
+          + "\" in file (\"" + actual + "\")";
+    return false;
+  }
+  return true;
+}
+
+
+// ----------------------------------------------------------------------
 static vector<string> parseTagsFromGtJsonFile(const string& path) {
   vector<string> tags;
   ifstream ins(path);
@@ -218,6 +243,15 @@ static bool insertOneJsonFile(const string& filePath, const string& dirName, mon
     cerr << "syncMongo: JSON parse error in " << filePath << ": " << e.what() << endl;
     return false;
   }
+
+  if (dirName == "globaltags") {
+    string err;
+    if (!jsonStringFieldMatchesBasename(filePath, j, "gt", err)) {
+      cerr << "syncMongo: global tag validation failed for " << filePath << ": " << err << endl;
+      return false;
+    }
+  }
+
   j.erase("_id");
   j["History"] = json::array({json::object({{"date", shortTimeStamp()}, {"comment", "Database entry inserted"}})});
 
