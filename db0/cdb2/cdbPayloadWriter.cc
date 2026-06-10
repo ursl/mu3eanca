@@ -4,6 +4,7 @@
 #include "base64.hh"
 
 #include <iostream>
+#include <ostream>
 #include <string.h>
 #include <stdio.h>
 #include <fstream>
@@ -858,20 +859,104 @@ cdbPayloadWriter::cdbPayloadWriter() {
     9720, 9721, 9722, 9723, 9724, 9725
   };
 
+  // Fibres and MPPCs for 2025, according to private communication Chen Xie
+  // https://mattermost.gitlab.rlp.net/mu3e/pl/xdq7ouyb37d1igbcp84gzh4pdw
+  // ribbon 2:
+  // layer 0: [256, 381] columns [0, 125]
+  // layer 1: [4352, 4476] clolumn [0, 124]
+  // layer 2: [8448, 8573］column [0, 125]
 
+  // ribbon 3
+  // layer 0: [384, 509] columns [0, 125]
+  // layer 1: [4480, 4604] clolumn [0, 124]
+  // layer 2: [8576, 8701］column [0, 125]
+  fFibre2025IDs = {
+    256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 
+    274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 
+    292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 
+    310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 
+    328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 
+    346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 
+    364, 365, 366, 367, 368, 369, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 
+
+    384, 385, 386, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401, 
+    402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 
+    420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 
+    438, 439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 
+    456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 
+    474, 475, 476, 477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 
+    492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 
+
+    4352, 4353, 
+    4354, 4355, 4356, 4357, 4358, 4359, 4360, 4361, 4362, 4363, 4364, 4365, 4366, 4367, 4368, 4369, 4370, 4371, 
+    4372, 4373, 4374, 4375, 4376, 4377, 4378, 4379, 4380, 4381, 4382, 4383, 4384, 4385, 4386, 4387, 4388, 4389, 
+    4390, 4391, 4392, 4393, 4394, 4395, 4396, 4397, 4398, 4399, 4400, 4401, 4402, 4403, 4404, 4405, 4406, 4407, 
+    4408, 4409, 4410, 4411, 4412, 4413, 4414, 4415, 4416, 4417, 4418, 4419, 4420, 4421, 4422, 4423, 4424, 4425, 
+    4426, 4427, 4428, 4429, 4430, 4431, 4432, 4433, 4434, 4435, 4436, 4437, 4438, 4439, 4440, 4441, 4442, 4443, 
+    4444, 4445, 4446, 4447, 4448, 4449, 4450, 4451, 4452, 4453, 4454, 4455, 4456, 4457, 4458, 4459, 4460, 4461, 
+    4462, 4463, 4464, 4465, 4466, 4467, 4468, 4469, 4470, 4471, 4472, 4473, 4474, 4475, 4476,
+
+    4480, 4481, 4482, 
+    4483, 4484, 4485, 4486, 4487, 4488, 4489, 4490, 4491, 4492, 4493, 4494, 4495, 4496, 4497, 4498, 4499, 4500, 
+    4501, 4502, 4503, 4504, 4505, 4506, 4507, 4508, 4509, 4510, 4511, 4512, 4513, 4514, 4515, 4516, 4517, 4518, 
+    4519, 4520, 4521, 4522, 4523, 4524, 4525, 4526, 4527, 4528, 4529, 4530, 4531, 4532, 4533, 4534, 4535, 4536, 
+    4537, 4538, 4539, 4540, 4541, 4542, 4543, 4544, 4545, 4546, 4547, 4548, 4549, 4550, 4551, 4552, 4553, 4554, 
+    4555, 4556, 4557, 4558, 4559, 4560, 4561, 4562, 4563, 4564, 4565, 4566, 4567, 4568, 4569, 4570, 4571, 4572, 
+    4573, 4574, 4575, 4576, 4577, 4578, 4579, 4580, 4581, 4582, 4583, 4584, 4585, 4586, 4587, 4588, 4589, 4590, 
+    4591, 4592, 4593, 4594, 4595, 4596, 4597, 4598, 4599, 4600, 4601, 4602, 4603, 4604, 
+
+    8448, 8449, 8450, 8451, 8452, 8453, 8454, 8455, 8456, 8457, 8458, 8459, 
+    8460, 8461, 8462, 8463, 8464, 8465, 8466, 8467, 8468, 8469, 8470, 8471, 8472, 8473, 8474, 8475, 8476, 8477, 
+    8478, 8479, 8480, 8481, 8482, 8483, 8484, 8485, 8486, 8487, 8488, 8489, 8490, 8491, 8492, 8493, 8494, 8495, 
+    8496, 8497, 8498, 8499, 8500, 8501, 8502, 8503, 8504, 8505, 8506, 8507, 8508, 8509, 8510, 8511, 8512, 8513, 
+    8514, 8515, 8516, 8517, 8518, 8519, 8520, 8521, 8522, 8523, 8524, 8525, 8526, 8527, 8528, 8529, 8530, 8531, 
+    8532, 8533, 8534, 8535, 8536, 8537, 8538, 8539, 8540, 8541, 8542, 8543, 8544, 8545, 8546, 8547, 8548, 8549, 
+    8550, 8551, 8552, 8553, 8554, 8555, 8556, 8557, 8558, 8559, 8560, 8561, 8562, 8563, 8564, 8565, 8566, 8567, 
+    8568, 8569, 8570, 8571, 8572, 8573,
+
+    8576, 8577, 8578, 8579, 8580, 8581, 8582, 8583, 8584, 8585, 8586, 8587, 
+    8588, 8589, 8590, 8591, 8592, 8593, 8594, 8595, 8596, 8597, 8598, 8599, 8600, 8601, 8602, 8603, 8604, 8605, 
+    8606, 8607, 8608, 8609, 8610, 8611, 8612, 8613, 8614, 8615, 8616, 8617, 8618, 8619, 8620, 8621, 8622, 8623, 
+    8624, 8625, 8626, 8627, 8628, 8629, 8630, 8631, 8632, 8633, 8634, 8635, 8636, 8637, 8638, 8639, 8640, 8641, 
+    8642, 8643, 8644, 8645, 8646, 8647, 8648, 8649, 8650, 8651, 8652, 8653, 8654, 8655, 8656, 8657, 8658, 8659, 
+    8660, 8661, 8662, 8663, 8664, 8665, 8666, 8667, 8668, 8669, 8670, 8671, 8672, 8673, 8674, 8675, 8676, 8677, 
+    8678, 8679, 8680, 8681, 8682, 8683, 8684, 8685, 8686, 8687, 8688, 8689, 8690, 8691, 8692, 8693, 8694, 8695, 
+    8696, 8697, 8698, 8699, 8700, 8701
+  };
+
+  fMppcIDs = {
+    0, 128, 256, 384, 512, 640, 768, 896,
+    1024, 1152, 1280, 1408, 2048, 2176, 2304, 2432, 
+    2560, 2688, 2816, 2944, 3072, 3200, 3328, 3456  
+  };
+
+  fMppc2025IDs = {
+    256, 384, 2304, 2432
+  };
 }
 
 
-
 // ----------------------------------------------------------------------
+// -- this used to be in cdbWritePayload (removed)
+//  -c pixelalignment    produce the pixelalignment payloads
+//  -c tilealignment     produce the tilealignment payloads
+//  -c fibrealignment   produce the fibrealignment payloads
+//  -c mppcalignment    produce the mppcalignment payloads
+//  -d inputfiledir
+//  -f filename         file to read in
+//  -g GT               the global tag for the payload
+//  -i RUN              the interval of validity
+//  -p payloaddir       the CDB directory (payloaddir/payloads/)
+//  -a annotation       comment for the payload
 void cdbPayloadWriter::run(int argc, const char* argv[]) {
-  string cal(""), payloaddir("."), inputfiledir(""), annotation(""), gt(""), filename("");
+  string cal(""), payloaddir("."), inputfiledir(""), annotation(""), gt(""), filename(""), mode("all");
   int iov(1);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-a"))  {annotation = argv[++i];}
     if (!strcmp(argv[i], "-c"))  {cal = argv[++i];}
     if (!strcmp(argv[i], "-d"))  {inputfiledir = argv[++i];}
     if (!strcmp(argv[i], "-i"))  {iov = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-m"))  {mode = argv[++i];}
     if (!strcmp(argv[i], "-g"))  {gt = argv[++i];}
     if (!strcmp(argv[i], "-f"))  {filename = argv[++i];}
     if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
@@ -884,7 +969,7 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
   cout << "== installing in directory " << payloaddir << endl;
   cout << "== filename " << filename << endl;
   cout << "== iov " << iov << endl;
-  cout << "== annotation " << annotation << endl << endl;
+  cout << "== annotation " << annotation << endl;
   
   if (inputfiledir != "") {
     vector<string> vfiles;
@@ -916,13 +1001,13 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
   }
   
   if (string::npos != cal.find("alignment")) {
-    writeAlignmentPayloads(payloaddir, gt, cal, filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, cal, filename, annotation, iov, mode);
   }
   if ("alignment" == cal) {
-    writeAlignmentPayloads(payloaddir, gt, "pixelalignment", filename, annotation, iov);
-    writeAlignmentPayloads(payloaddir, gt, "tilealignment", filename, annotation, iov);
-    writeAlignmentPayloads(payloaddir, gt, "fibrealignment", filename, annotation, iov);
-    writeAlignmentPayloads(payloaddir, gt, "mppcalignment", filename, annotation, iov);
+    writeAlignmentPayloads(payloaddir, gt, "pixelalignment", filename, annotation, iov, mode);
+    writeAlignmentPayloads(payloaddir, gt, "tilealignment", filename, annotation, iov, mode);
+    writeAlignmentPayloads(payloaddir, gt, "fibrealignment", filename, annotation, iov, mode);
+    writeAlignmentPayloads(payloaddir, gt, "mppcalignment", filename, annotation, iov, mode);
   }
   if (string::npos != cal.find("pixelqualitylm")) {
     writePixelQualityLMPayloads(payloaddir, gt, filename, annotation, iov);
@@ -1212,14 +1297,15 @@ void cdbPayloadWriter::writePixelTimeCalibrationPayloads(string payloaddir, stri
 
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, string type, string ifilename, string annotation, int iov) {
+void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, string type, string ifilename, string annotation, int iov, string mode) {
   cout << "   ->cdbWritePayload> writing alignment " << type << " from file " << ifilename 
   << " tag: " << gt << endl
   << " type: " << type << endl
   << " annotation: " << annotation << endl
   << " iov: " << iov << endl
   << " payloaddir: " << payloaddir << endl  
-  << " ifilename: " << ifilename 
+  << " ifilename: " << ifilename << endl
+  << " mode: " << mode
   << endl;
   
   string tmpFilename("");
@@ -1234,7 +1320,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
   if (string::npos != type.find("pixelalignment")) {
     bool doFilter(false);
     vector<unsigned int> vFilter;
-    fillChipIDs(vFilter, type);
+    fillChipIDs(vFilter, mode);
     if (vFilter.size() < fChipIDs.size()) {
       doFilter = true;
       cout << "   ->cdbWritePayload> filtering pixelalignment for " << type << endl;
@@ -1292,6 +1378,15 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
   }
   
   if (string::npos != type.find("mppcalignment")) {
+    bool doFilter(false);
+    vector<unsigned int> vFilter;
+    fillMppcIDs(vFilter, mode);
+    if (vFilter.size() < fMppcIDs.size()) {
+      doFilter = true;
+      cout << "   ->cdbWritePayload> filtering mppcalignment for " << type << endl;
+      cout << "   ->cdbWritePayload> number of mppcs to filter: " << vFilter.size() << endl;
+    }
+
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading mppcalignment from root file " << ifilename << endl;
       struct mppc { unsigned int mppc; double vx, vy, vz; double colx, coly, colz; int ncol; };
@@ -1309,6 +1404,9 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
       ta->SetBranchAddress("ncol", &m.ncol);
       for (int i = 0; i < ta->GetEntries(); ++i) { 
         ta->GetEntry(i); 
+        if (doFilter) {
+          if (find(vFilter.begin(), vFilter.end(), m.mppc) == vFilter.end()) continue;
+        }
         mppcs.insert(make_pair(m.mppc, m)); 
       }
       cout << "   ->cdbWritePayload> read " << mppcs.size() << " mppcs" << endl;
@@ -1339,7 +1437,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
       map<unsigned int, tile> tiles;
       bool doFilter(false);
       vector<unsigned int> vFilter;
-      fillTileIDs(vFilter, type);
+      fillTileIDs(vFilter, mode);
       if (vFilter.size() < fTileIDs.size()) {
         doFilter = true;
         cout << "   ->cdbWritePayload> filtering tilealignment for " << type << endl;
@@ -1385,6 +1483,14 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
   }
   
   if (string::npos != type.find("fibrealignment")) {
+    bool doFilter(false);
+    vector<unsigned int> vFilter;
+    fillFibreIDs(vFilter, mode);
+    if (vFilter.size() < fFibreIDs.size()) {
+      doFilter = true;
+      cout << "   ->cdbWritePayload> filtering fibrealignment for " << type << endl;
+      cout << "   ->cdbWritePayload> number of fibres to filter: " << vFilter.size() << endl;
+    }
     if (string::npos != ifilename.find(".root")) {
       cout << "   ->cdbWritePayload> reading fibrealignment from root file " << ifilename << endl;
       struct fibre { unsigned int fibre; double cx, cy, cz; double fx, fy, fz; bool round, square; double diameter; };
@@ -1404,6 +1510,9 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
       ta->SetBranchAddress("diameter", &f.diameter);
       for (int i = 0; i < ta->GetEntries(); ++i) { 
         ta->GetEntry(i); 
+        if (doFilter) {
+          if (find(vFilter.begin(), vFilter.end(), f.fibre) == vFilter.end()) continue;
+        }
         fibres.insert(make_pair(f.fibre, f)); 
       }
       cout << "   ->cdbWritePayload> read " << fibres.size() << " fibres" << endl;
@@ -1494,7 +1603,8 @@ void cdbPayloadWriter::fillFibreIDs(std::vector<unsigned int> &vFibreIDs, std::s
   if (mode == "all") {
     vFibreIDs.insert(vFibreIDs.end(), fFibreIDs.begin(), fFibreIDs.end());
   } else if (mode.find("2025") != string::npos) {
-    vFibreIDs.insert(vFibreIDs.end(), fFibreIDs.begin(), fFibreIDs.end());
+    cout << "   ->cdbPayloadWriter> filling fibre IDs for 2025" << endl;
+    vFibreIDs.insert(vFibreIDs.end(), fFibre2025IDs.begin(), fFibre2025IDs.end());
   } else if (mode.find("2026") != string::npos) {
     vFibreIDs.insert(vFibreIDs.end(), fFibreIDs.begin(), fFibreIDs.end());
   } else if (mode.find("ideal") != string::npos) {
@@ -1505,6 +1615,23 @@ void cdbPayloadWriter::fillFibreIDs(std::vector<unsigned int> &vFibreIDs, std::s
   }
 }
 
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::fillMppcIDs(std::vector<unsigned int> &vMppcIDs, std::string mode) {
+  vMppcIDs.clear();
+  if (mode == "all") {
+    vMppcIDs.insert(vMppcIDs.end(), fMppcIDs.begin(), fMppcIDs.end());
+  } else if (mode.find("2025") != string::npos) {
+    vMppcIDs.insert(vMppcIDs.end(), fMppc2025IDs.begin(), fMppc2025IDs.end());
+  } else if (mode.find("2026") != string::npos) {
+    vMppcIDs.insert(vMppcIDs.end(), fMppcIDs.begin(), fMppcIDs.end());
+  } else if (mode.find("ideal") != string::npos) {
+    vMppcIDs.insert(vMppcIDs.end(), fMppcIDs.begin(), fMppcIDs.end());
+  } else {
+    cout << "Error: invalid mode " << mode << endl;
+    return;
+  }
+}
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::createSensorIDs(string inputfilename) {

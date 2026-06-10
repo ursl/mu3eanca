@@ -8,8 +8,10 @@
 // CDB payload writer: produces payload files for various calibration types
 //                     also produces ideal bootstrap files (csv,json,...)
 //                     allows filtering on specific setups 
-//                       (in particular various pixel configurations 
-//                        and US/DS tiles)
+//                       (in particular various pixel configurations,
+//                        US/DS tiles,
+//                        fibres, and mppcs)
+//
 // Usage examples
 // ./bin/cdbRunPayloadWriter -m pixelmask -u /Users/ursl/data/mu3e/test-cdb -a "tune1 pixel masks (tdac_files_bu_tune1_refined)" -d /Users/ursl/data/mu3e/masks/tdac_files_bu_tune1_refined -t datav6.6=2025V0 -r 4763
 // ./bin/cdbRunPayloadWriter -m pixelmask -u /Users/ursl/data/mu3e/test-cdb -a "tune2 pixel masks (tdac_files_bu_06_21_bestsofar)" -d /Users/ursl/data/mu3e/masks/tdac_files_bu_06_21_bestsofar -t datav6.6=2025V0 -r 5592
@@ -22,7 +24,9 @@ public:
   cdbPayloadWriter();
   ~cdbPayloadWriter() = default;
 
-  void writeAlignmentPayloads(std::string payloaddir, std::string gt, std::string type, std::string ifilename, std::string annotation, int iov);
+  void writeAlignmentPayloads(std::string payloaddir, std::string gt, std::string type, std::string ifilename, 
+    std::string annotation, int iov, std::string mode = "all");
+  // -- there is NO writeAlignmentPayloadsIdealInput, that will always be extract directly from a root file with (modified) alignment information
 
   void writePixelQualityLMPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   void writePixelQualityLMIdealInput(std::string filename, std::string mode = "all");
@@ -60,6 +64,8 @@ public:
   // -- create code (for copy-pasting) with definitions of tile IDs
   void createTileIDs(std::string inputfilename);
 
+ // -- create code (for copy-pasting) with definitions of mppc IDs
+ void createMppcIDs(std::string inputfilename);
 
   // -- fill vector with (pixel) chip IDs based on mode
   void fillChipIDs(std::vector<unsigned int> &vChipIDs, std::string mode);
@@ -70,6 +76,8 @@ public:
   // -- fill vector with fibre IDs based on mode (no non-ideal mode available currently)
   void fillFibreIDs(std::vector<unsigned int> &vFibreIDs, std::string mode);
 
+  // -- fill vector with mppc IDs based on mode (no non-ideal mode available currently)
+  void fillMppcIDs(std::vector<unsigned int> &vMppcIDs, std::string mode);
 
   private:
   // -- pixels
@@ -81,7 +89,11 @@ public:
   std::vector<unsigned int> fTileIDs,
   fTileUS, fTileDS;
   // -- fibres
-  std::vector<unsigned int> fFibreIDs;
+  std::vector<unsigned int> fFibreIDs,
+  fFibre2025IDs;
+  // -- mppcs
+  std::vector<unsigned int> fMppcIDs,
+  fMppc2025IDs;
 };
 
 #endif
