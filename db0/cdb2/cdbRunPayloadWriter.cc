@@ -103,6 +103,8 @@ int main(int argc, const char* argv[]) {
     }
   }
   
+  // -- default case: run the main function of cdbPayloadWriter
+  writer.run(argc, argv);
   return 0;
 
 }
