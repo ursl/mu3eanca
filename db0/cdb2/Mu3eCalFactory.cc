@@ -7,6 +7,7 @@
 #include "calDetConfV1.hh"
 #include "calDetSetupV1.hh"
 #include "calEventStuffV1.hh"
+#include "calEventStuffV2.hh"
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
 #include "calTileQuality.hh"
@@ -90,6 +91,8 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
     a = new calDetSetupV1(db, tag);
   } else if (name.find("eventstuffv1_") != string::npos)  {
     a = new calEventStuffV1(db, tag);
+  } else if (name.find("eventstuffv2_") != string::npos)  {
+    a = new calEventStuffV2(db, tag);
   } else if (name.find("pixelqualitylm_") != string::npos)  {
     a = new calPixelQualityLM(db, tag);
   } else if (name.find("pixeltimecalibration_") != string::npos)  {
@@ -136,6 +139,8 @@ calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
     a = new calDetSetupV1();
   } else if (hash.find("eventstuffv1_") != string::npos)  {
     a = new calEventStuffV1();
+  } else if (hash.find("eventstuffv2_") != string::npos)  {
+    a = new calEventStuffV2();
   } else if (hash.find("pixelqualitylm_") != string::npos)  {
     a = new calPixelQualityLM();
   } else if (hash.find("pixeltimecalibration_") != string::npos)  {
