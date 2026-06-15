@@ -158,43 +158,51 @@ string calEventStuffV2::readJSON(string filename) {
 
   // -- figure out what type of JSON file this was
   // -- custom with "pixeldata" or midas meta data 
-  fConstants.eventData.startFrame = 0; 
-  fConstants.eventData.endFrame   = -1;
-  fConstants.eventData.firstFrameSkippedHeader = -1;
-  fConstants.pixelData.startFrame = 0; 
-  fConstants.pixelData.endFrame   = -1;
-  fConstants.tileData.startFrame = 0; 
-  fConstants.tileData.endFrame   = -1;
-  fConstants.fibreData.startFrame = 0; 
-  fConstants.fibreData.endFrame   = -1;
+  fConstants.eventData.startFrameGoodData = 0; 
+  fConstants.eventData.endFrameGoodData   = -1;
+  fConstants.eventData.firstFrameWithFEBProblems = -1;
+  fConstants.pixelData.startFrameGoodData = 0; 
+  fConstants.pixelData.endFrameGoodData   = -1;
+  fConstants.tileData.startFrameGoodData = 0; 
+  fConstants.tileData.endFrameGoodData   = -1;
+  fConstants.fibreData.startFrameGoodData = 0; 
+  fConstants.fibreData.endFrameGoodData   = -1;
   if (string::npos == filename.find(".mid.lz4.json")) {
-    fConstants.eventData.startFrame = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "startframe"}));
-    fConstants.eventData.endFrame   = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "endframe"}));
-    fConstants.eventData.firstFrameSkippedHeader = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "firstframeskippedheader"}));
-    fConstants.pixelData.startFrame = ::stoull(jsonGetValue(spl, vector<string>{"pixeldata", "startframe"}));
-    fConstants.pixelData.endFrame    = ::stoul(jsonGetValue(spl, vector<string>{"pixeldata", "endframe"}));
-    // fConstants.tileData.startFrame = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "startframe"}));
-    // fConstants.tileData.endFrame    = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "endframe"}));
-    // fConstants.fibreData.startFrame = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "startframe"}));
-    // fConstants.fibreData.endFrame    = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "endframe"}));
+    fConstants.eventData.startFrameGoodData = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "startframegooddata"}));
+    fConstants.eventData.endFrameGoodData   = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "endframegooddata"}));
+    fConstants.eventData.firstFrameWithFEBProblems = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "firstframewithfebproblems"}));
+    fConstants.pixelData.startFrameGoodData = ::stoull(jsonGetValue(spl, vector<string>{"pixeldata", "startframegooddata"}));
+    fConstants.pixelData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"pixeldata", "endframegooddata"}));
+    fConstants.pixelData.firstFrameWithFEBUnsortedHitData = ::stoul(jsonGetValue(spl, vector<string>{"pixeldata", "firstframewithfebunsortedhitdata"}));
+    // fConstants.tileData.startFrameGoodData = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "startframegooddata"}));
+    // fConstants.tileData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "endframegooddata"}));
+    // fConstants.tileData.firstFrameWithFEBUnsortedHitData = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "firstframewithfebunsortedhitdata"}));
+    // fConstants.fibreData.startFrameGoodData = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "startframegooddata"}));
+    // fConstants.fibreData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "endframegooddata"}));
+    // fConstants.fibreData.firstFrameWithFEBUnsortedHitData = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "firstframewithfebunsortedhitdata"}));
   } else {
-    string send_frame_event_data = jsonGetValue(spl, vector<string> {"stat", "last_frame"});
-    string first_frame_skipped_header = jsonGetValue(spl, vector<string> {"stat", "first_frame_skipped_header"});
+    string send_frame_event_data = jsonGetValue(spl, vector<string> {"stat", "last_frame_of_the_run"});
     string sstart_frame_good_pixel_data = jsonGetValue(spl, vector<string> {"stat", "start_frame_good_pixel_data"});
     string send_frame_good_pixel_data = jsonGetValue(spl, vector<string> {"stat", "end_frame_good_pixel_data"});
+    string first_frame_pixel_skipped_header = jsonGetValue(spl, vector<string> {"stat", "first_frame_at_least_one_pixel_FEB_had_unsorted_hit_data"});
     
     cout << "FIXME correct parsing for all data" << endl;
     cout << "start_frame_good_pixel_data ->" << sstart_frame_good_pixel_data << "<-" << endl;
     cout << "end_frame_good_pixel_data ->" << send_frame_good_pixel_data << "<-" << endl;
     cout << "last_frame ->" << send_frame_event_data << "<-" << endl;
+
+    if (send_frame_event_data != "parseError") {
+      fConstants.eventData.endFrameGoodData = ::stoull(send_frame_event_data);
+    }
+
     if (sstart_frame_good_pixel_data != "parseError") {
-      fConstants.pixelData.startFrame = ::stoull(sstart_frame_good_pixel_data);
+      fConstants.pixelData.startFrameGoodData = ::stoull(sstart_frame_good_pixel_data);
     }
     if (send_frame_good_pixel_data != "parseError") {
-      fConstants.pixelData.endFrame    = ::stoull(send_frame_good_pixel_data);
+      fConstants.pixelData.endFrameGoodData    = ::stoull(send_frame_good_pixel_data);
     }
-    if (send_frame_event_data != "parseError") {
-      fConstants.eventData.endFrame = ::stoull(send_frame_event_data);
+    if (first_frame_pixel_skipped_header != "parseError") {
+      fConstants.pixelData.firstFrameWithFEBUnsortedHitData = ::stoull(first_frame_pixel_skipped_header);
     }
   }
   return spl;
