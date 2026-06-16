@@ -1,0 +1,59 @@
+# Shared Snakemake pieces for `prompt/relval`, `prompt/rereco`, …
+
+## Layout
+
+```
+common/
+  mu3e_prepare.smk              clone / build / relink rules
+  mu3e_trirec.smk               shared run_mu3e_trirec rule
+  scripts/
+    clone_and_prepare_mu3e.sh   git checkout implementation
+```
+
+## Usage in a workflow Snakefile
+
+1. Resolve `prompt/common` (local `common/` copy in setup dir, or sibling `../common`).
+2. Set variables expected by `mu3e_prepare.smk`.
+3. `include:` the `.smk` file.
+
+```python
+_PROMPT_COMMON = _base / "common"
+if not _PROMPT_COMMON.is_dir():
+    _PROMPT_COMMON = _base.parent / "common"
+
+MU3E_WORK_BASEDIR = ...          # relval or rereco base dir
+MU3E_PREP_LOG_PREFIX = "relval"  # log tag for relink rule
+CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e.sh")
+CLONE_MU3E_INPUTS = [...]        # one prerequisite path
+
+include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
+```
+
+`runRelval` / `runRereco` copy this tree into each setup directory as `common/`.
+
+## `mu3e_trirec.smk`
+
+Include after workflow-specific helpers and **after** `CDB_DBCONN` / `CDB_GT` are set.
+
+| Callback | Purpose |
+|----------|---------|
+| `trirec_rule_inputs(wc)` | Snakemake input file list |
+| `trirec_sort_input(wc)` | Sort ROOT path for `mu3eTrirec` |
+| `trirec_output_rel(wc)` | Output path relative to `run/` |
+| `trirec_conf_for(wc)` / `trirec_conf_fallback_for(wc)` | Conf files under `run/` |
+| `trirec_run_id_for(wc)` | `--run` argument |
+| `trirec_item_label(wc)` | Id string for log lines |
+| `TRIREC_OUTPUT_TPL` / `TRIREC_LOG_TPL` | Output and log path templates |
+
+Relval uses wildcard `{scenario}`; rereco uses `{job}` — each workflow keeps its own template strings and maps them in the callbacks.
+
+## Required symbols (must exist before `include` of `mu3e_prepare.smk`)
+
+| Name | Meaning |
+|------|---------|
+| `MU3E_REPO`, `MU3E_CHECKOUT_TAG`, `MU3E_DIR` | MU3E checkout |
+| `MU3E_WORK_BASEDIR` | Parent data root (`mu3e_relval_basedir` / `mu3e_rereco_basedir`) |
+| `MAKE_JOBS`, `RELINK_SCRIPT` | build + relink |
+| `CLONE_MU3E_INPUTS` | Single-item list: bootstrap marker (relval) or local deps marker (rereco) |
+| `CLONE_MU3E_SCRIPT` | Path to `clone_and_prepare_mu3e.sh` |
+| `MU3E_PREP_LOG_PREFIX` | Short name in log lines |
