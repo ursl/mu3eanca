@@ -45,12 +45,15 @@ void calEventStuffV2::calculate(string hash) {
 
   fConstants.pixelData.startFrameGoodData = blob2Uint64(getData(ibuffer));
   fConstants.pixelData.endFrameGoodData = blob2Uint64(getData(ibuffer));
+  fConstants.pixelData.firstFrameWithFEBUnsortedHitData = blob2Uint64(getData(ibuffer));
 
   fConstants.tileData.startFrameGoodData = blob2Uint64(getData(ibuffer));
   fConstants.tileData.endFrameGoodData = blob2Uint64(getData(ibuffer));
+  fConstants.tileData.firstFrameWithFEBUnsortedHitData = blob2Uint64(getData(ibuffer));
 
   fConstants.fibreData.startFrameGoodData = blob2Uint64(getData(ibuffer));
   fConstants.fibreData.endFrameGoodData = blob2Uint64(getData(ibuffer));
+  fConstants.fibreData.firstFrameWithFEBUnsortedHitData = blob2Uint64(getData(ibuffer));
 }
 
 
@@ -186,18 +189,19 @@ string calEventStuffV2::readJSON(string filename) {
     fConstants.pixelData.startFrameGoodData = ::stoull(jsonGetValue(spl, vector<string>{"pixeldata", "startframegooddata"}));
     fConstants.pixelData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"pixeldata", "endframegooddata"}));
     fConstants.pixelData.firstFrameWithFEBUnsortedHitData = ::stoul(jsonGetValue(spl, vector<string>{"pixeldata", "firstframewithfebunsortedhitdata"}));
-    // fConstants.tileData.startFrameGoodData = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "startframegooddata"}));
-    // fConstants.tileData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "endframegooddata"}));
-    // fConstants.tileData.firstFrameWithFEBUnsortedHitData = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "firstframewithfebunsortedhitdata"}));
-    // fConstants.fibreData.startFrameGoodData = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "startframegooddata"}));
-    // fConstants.fibreData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "endframegooddata"}));
-    // fConstants.fibreData.firstFrameWithFEBUnsortedHitData = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "firstframewithfebunsortedhitdata"}));
+    fConstants.tileData.startFrameGoodData = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "startframegooddata"}));
+    fConstants.tileData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "endframegooddata"}));
+    fConstants.tileData.firstFrameWithFEBUnsortedHitData = ::stoul(jsonGetValue(spl, vector<string>{"tiledata", "firstframewithfebunsortedhitdata"}));
+    fConstants.fibreData.startFrameGoodData = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "startframegooddata"}));
+    fConstants.fibreData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "endframegooddata"}));
+    fConstants.fibreData.firstFrameWithFEBUnsortedHitData = ::stoul(jsonGetValue(spl, vector<string>{"fibredata", "firstframewithfebunsortedhitdata"}));
   } else {
     string send_frame_event_data = jsonGetValue(spl, vector<string> {"stat", "last_frame_of_the_run"});
     string sstart_frame_good_pixel_data = jsonGetValue(spl, vector<string> {"stat", "start_frame_good_pixel_data"});
     string send_frame_good_pixel_data = jsonGetValue(spl, vector<string> {"stat", "end_frame_good_pixel_data"});
     string first_frame_pixel_skipped_header = jsonGetValue(spl, vector<string> {"stat", "first_frame_at_least_one_pixel_FEB_had_unsorted_hit_data"});
-    
+    // -- FIXME add the remaining subsystems once they are in  mu3eUtil
+
     cout << "FIXME correct parsing for all data" << endl;
     cout << "start_frame_good_pixel_data ->" << sstart_frame_good_pixel_data << "<-" << endl;
     cout << "end_frame_good_pixel_data ->" << send_frame_good_pixel_data << "<-" << endl;
