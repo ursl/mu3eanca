@@ -1,0 +1,151 @@
+import os
+import socket
+from pathlib import Path
+
+import yaml
+
+_host = os.environ.get("REREC_HOST", socket.gethostname()).split(".")[0]
+_base = Path(workflow.basedir)
+_host_cfg = _base / f"config-{_host}.yaml"
+_merged_cfg = _base / ".snakemake" / f"config-{_host}.merged.yaml"
+_merged_cfg.parent.mkdir(parents=True, exist_ok=True)
+
+with open(_base / "config.yaml") as _fh:
+    _cfg = yaml.safe_load(_fh) or {}
+if _host_cfg.is_file():
+    with open(_host_cfg) as _fh:
+        _cfg.update(yaml.safe_load(_fh) or {})
+with open(_merged_cfg, "w") as _fh:
+    yaml.dump(_cfg, _fh, default_flow_style=False, sort_keys=False)
+
+configfile: str(_merged_cfg)
+
+_PROMPT_COMMON = _base / "common"
+if not _PROMPT_COMMON.is_dir():
+    _PROMPT_COMMON = _base.parent / "common"
+
+MU3E_REREC_BASEDIR = config["mu3e_rereco_basedir"]
+MU3E_TAG = config.get("mu3e_tag", "master")
+MU3E_CHECKOUT_TAG = config.get("mu3e_checkout_tag", MU3E_TAG)
+MU3E_DIR_BASE = config["mu3e_dir"]
+MU3E_TAG_DIRSAFE = MU3E_TAG.replace("/", "_")
+MU3E_WORKDIR_NAME = config.get("mu3e_workdir_name")
+if MU3E_WORKDIR_NAME:
+    MU3E_DIRNAME = MU3E_WORKDIR_NAME
+else:
+    MU3E_DIRNAME = f"{MU3E_DIR_BASE}-{MU3E_TAG_DIRSAFE}"
+MU3E_DIR = f"{MU3E_REREC_BASEDIR}/{MU3E_DIRNAME}"
+workdir: MU3E_DIR
+
+MU3E_REPO = config["mu3e_repo"]
+MAKE_JOBS = config["make_jobs"]
+RELINK_SCRIPT = config["relink_script"]
+SORT_INPUT_BASE = config.get("sort_input_base", "")
+
+REREC_JOBS = config["rereco_jobs"]
+JOB_IDS = [item["id"] for item in REREC_JOBS]
+JOB_BY_ID = {item["id"]: item for item in REREC_JOBS}
+
+TRIREC_OUTPUT_TPL = config["trirec_output_tpl"]
+
+CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
+CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
+
+MU3E_WORK_BASEDIR = MU3E_REREC_BASEDIR
+MU3E_PREP_LOG_PREFIX = "rereco"
+CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e.sh")
+CLONE_MU3E_INPUTS = [".markers/clone_mu3e_deps.done"]
+
+include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
+
+
+def trirec_output(job):
+    return TRIREC_OUTPUT_TPL.format(job=job)
+
+
+def sort_input_path(job):
+    item = JOB_BY_ID[job]
+    path = item["sort_input"]
+    if os.path.isabs(path):
+        return path
+    if SORT_INPUT_BASE:
+        return f"{SORT_INPUT_BASE}/{path}"
+    return path
+
+
+def job_run_id(job):
+    return JOB_BY_ID[job]["run_id"]
+
+
+def trirec_conf(job):
+    return JOB_BY_ID[job]["trirec_conf"]
+
+
+def trirec_conf_fallback(job):
+    return JOB_BY_ID[job].get("trirec_conf_fallback", "")
+
+
+TRIREC_LOG_TPL = "logs/snakemake/run_mu3e_trirec-{job}.log"
+
+
+def trirec_rule_inputs(wc):
+    return [".markers/relink_bin_files.done", sort_input_path(wc.job)]
+
+
+def trirec_sort_input(wc):
+    return sort_input_path(wc.job)
+
+
+def trirec_output_rel(wc):
+    return trirec_output(wc.job)
+
+
+def trirec_conf_for(wc):
+    return trirec_conf(wc.job)
+
+
+def trirec_conf_fallback_for(wc):
+    return trirec_conf_fallback(wc.job)
+
+
+def trirec_run_id_for(wc):
+    return job_run_id(wc.job)
+
+
+def trirec_item_label(wc):
+    return wc.job
+
+
+include: str(_PROMPT_COMMON / "mu3e_trirec.smk")
+
+
+wildcard_constraints:
+    job="|".join(JOB_IDS),
+
+
+ALL_TARGETS = [f"{MU3E_DIR}/run/{trirec_output(job)}" for job in JOB_IDS]
+
+
+rule all:
+    input:
+        ALL_TARGETS
+
+
+rule ensure_clone_mu3e_deps:
+    output:
+        ".markers/clone_mu3e_deps.done"
+    shell:
+        "mkdir -p .markers && touch {output}"
+
+
+localrules: clean, ensure_clone_mu3e_deps
+
+rule clean:
+    shell:
+        r"""
+        set -euo pipefail
+        rm -f "{MU3E_DIR}/run/output/trirec-"*.root
+        rm -f "{MU3E_DIR}/.markers/relink_bin_files.done"
+        rm -f "{MU3E_DIR}/.markers/build_mu3e.done"
+        rm -f "{MU3E_DIR}/.markers/clone_and_prepare_mu3e.done"
+        """

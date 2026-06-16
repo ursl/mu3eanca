@@ -1,0 +1,16 @@
+mu3e_repo: git@bitbucket.org:mu3e/mu3e
+mu3e_tag: master
+mu3e_dir: mu3e
+make_jobs: 10
+sort_input_base: ''
+trirec_output_tpl: output/trirec-{job}.root
+cdb_GT: mcidealv6.5
+rereco_jobs:
+- id: example
+  run_id: 5700
+  sort_input: /path/to/sort-run5700.root
+  trirec_conf: trirec.conf
+  trirec_conf_fallback: ''
+mu3e_rereco_basedir: /Users/ursl/data/mu3e/rereco
+relink_script: /Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles
+cdb_dbconn: http://mu3edb0/cdb/

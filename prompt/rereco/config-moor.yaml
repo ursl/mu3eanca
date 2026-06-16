@@ -1,0 +1,5 @@
+# Mac localhost (hostname: moor). Loaded automatically if present.
+
+mu3e_rereco_basedir: "/Users/ursl/data/mu3e/rereco"
+relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
+cdb_dbconn: "http://mu3edb0/cdb/"

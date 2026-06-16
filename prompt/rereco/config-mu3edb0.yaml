@@ -1,0 +1,5 @@
+# mu3edb0 (Ubuntu). Loaded automatically if hostname is mu3edb0.
+
+mu3e_rereco_basedir: "/mnt/data2/rereco"
+relink_script: "/home/mu3e/mu3eanca/perl/relinkBinFiles"
+cdb_dbconn: "http://mu3edb0/cdb/"

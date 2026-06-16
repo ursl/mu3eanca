@@ -1,0 +1,363 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# runRereco
+# =========
+#
+# Perl wrapper for rereco Snakemake setup creation and execution.
+#
+# Usage:
+#   ./runRereco [--setup-name NAME] [--host HOST] [snakemake args...] --config mu3e_tag=<tag> [other overrides]
+#
+# Example:
+#   ./runRereco --setup-name rereco-v67 -j4 -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1
+#   ./runRereco -n -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1
+#
+# ----------------------------------------------------------------------
+
+use strict;
+use warnings;
+use Cwd qw(abs_path getcwd);
+use File::Basename qw(dirname);
+use File::Copy qw(copy);
+use File::Path qw(make_path);
+use Sys::Hostname qw(hostname);
+
+# ----------------------------------------------------------------------
+sub usage {
+    print "Usage: $0 [--setup-name NAME] [--host HOST] [snakemake args...] --config mu3e_tag=<tag> [other config overrides]\n";
+    print "Example: $0 --setup-name rereco-v67 -j4 -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1\n";
+}
+
+# ----------------------------------------------------------------------
+sub prefix {
+    my ($long) = @_;
+    my $now = localtime;
+    $long .= "                         ";
+    my $shorter = substr($long, 0, 15);
+    return $now . "/" . $shorter . "/ ";
+}
+
+# ----------------------------------------------------------------------
+sub read_yaml_quoted_value {
+    my ($path, $key) = @_;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    while (my $line = <$fh>) {
+        if ($line =~ /^$key:\s*"(.*)"/) {
+            close($fh);
+            return $1;
+        }
+    }
+    close($fh);
+    return "";
+}
+
+# ----------------------------------------------------------------------
+sub rereco_host {
+    my ($cli_host) = @_;
+    if (defined $cli_host && $cli_host ne "") {
+        return $cli_host;
+    }
+    if (defined $ENV{REREC_HOST} && $ENV{REREC_HOST} ne "") {
+        return $ENV{REREC_HOST};
+    }
+    my $h = hostname();
+    $h =~ s/\..*//;
+    return $h;
+}
+
+# ----------------------------------------------------------------------
+sub host_config_path {
+    my ($host) = @_;
+    return "config-$host.yaml";
+}
+
+# ----------------------------------------------------------------------
+sub read_yaml_quoted_overrides {
+    my ($path) = @_;
+    my %over = ();
+    return %over unless -f $path;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    while (my $line = <$fh>) {
+        if ($line =~ /^([A-Za-z0-9_]+):\s*"(.*)"/) {
+            $over{$1} = $2;
+        }
+    }
+    close($fh);
+    return %over;
+}
+
+# ----------------------------------------------------------------------
+sub read_config_value {
+    my ($host, $key) = @_;
+    my $hostpath = host_config_path($host);
+    if (-f $hostpath) {
+        my $v = read_yaml_quoted_value($hostpath, $key);
+        return $v if $v ne "";
+    }
+    return read_yaml_quoted_value("config.yaml", $key);
+}
+
+# ----------------------------------------------------------------------
+sub merge_config_lines {
+    my ($base_path, $host_path) = @_;
+    my %over = read_yaml_quoted_overrides($host_path);
+    open(my $in, "<", $base_path) or die "Cannot open $base_path: $!\n";
+    my @lines = <$in>;
+    close($in);
+
+    my @out = ();
+    my %seen = ();
+    foreach my $line (@lines) {
+        if ($line =~ /^([A-Za-z0-9_]+):/) {
+            my $key = $1;
+            if (exists $over{$key}) {
+                push(@out, "$key: \"$over{$key}\"\n");
+                $seen{$key} = 1;
+                next;
+            }
+        }
+        push(@out, $line);
+    }
+    foreach my $key (sort keys %over) {
+        next if $seen{$key};
+        push(@out, "$key: \"$over{$key}\"\n");
+    }
+    return @out;
+}
+
+# ----------------------------------------------------------------------
+sub write_lines {
+    my ($path, $lines_ref) = @_;
+    open(my $out, ">", $path) or die "Cannot write $path: $!\n";
+    foreach my $line (@{$lines_ref}) {
+        print $out $line;
+    }
+    close($out);
+}
+
+# ----------------------------------------------------------------------
+sub run_cmd {
+    my (@cmd) = @_;
+    print(prefix("runRereco"), "cmd: @cmd\n");
+    system(@cmd);
+    if ($? != 0) {
+        die "Command failed: @cmd\n";
+    }
+}
+
+# ----------------------------------------------------------------------
+sub copy_prompt_common {
+    my ($script_dir, $setup_dir) = @_;
+    my $common_src = abs_path("$script_dir/../common");
+    my $common_dst = "$setup_dir/common";
+    if (!-d $common_src) {
+        die "ERROR: missing shared Snakemake common dir: $common_src\n";
+    }
+    if (-d $common_dst) {
+        system("rm", "-rf", $common_dst);
+        if ($? != 0) {
+            die "Command failed: rm -rf $common_dst\n";
+        }
+    }
+    run_cmd("cp", "-R", $common_src, $common_dst);
+}
+
+# ----------------------------------------------------------------------
+sub run_cmd_to_file {
+    my ($outfile, @cmd) = @_;
+    print(prefix("runRereco"), "cmd: @cmd > $outfile\n");
+    open(my $out, ">", $outfile) or die "Cannot write $outfile: $!\n";
+    my $pid = open(my $ph, "-|");
+    if (!defined $pid) {
+        close($out);
+        die "open pipe failed for command: @cmd\n";
+    } elsif ($pid == 0) {
+        open(STDOUT, ">&", fileno($out)) or die "dup stdout failed\n";
+        open(STDERR, ">&", fileno($out)) or die "dup stderr failed\n";
+        exec @cmd or die "exec failed: @cmd\n";
+    }
+    close($out);
+    waitpid($pid, 0);
+    if ($? != 0) {
+        die "Command failed: @cmd\n";
+    }
+}
+
+# ----------------------------------------------------------------------
+sub snakemake_forwarded_args_normalized {
+    my (@args) = @_;
+    my $has_explicit_cores = 0;
+    for (my $i = 0; $i <= $#args; ++$i) {
+        if ($args[$i] =~ /^--cores/) {
+            $has_explicit_cores = 1;
+            last;
+        }
+        if ($args[$i] =~ /^-c\d+$/) {
+            $has_explicit_cores = 1;
+            last;
+        }
+        if ($args[$i] eq '-c' && $i < $#args && $args[$i + 1] =~ /^\d+$/) {
+            $has_explicit_cores = 1;
+            last;
+        }
+    }
+    return @args if $has_explicit_cores;
+
+    my @out;
+    for (my $i = 0; $i <= $#args; ++$i) {
+        if ($args[$i] =~ /^-j(\d+)$/) {
+            push(@out, '--cores', $1);
+        } elsif ($args[$i] eq '-j' && $i < $#args && $args[$i + 1] =~ /^\d+$/) {
+            push(@out, '--cores', $args[$i + 1]);
+            ++$i;
+        } else {
+            push(@out, $args[$i]);
+        }
+    }
+    return @out;
+}
+
+# ----------------------------------------------------------------------
+if ($#ARGV < 0) {
+    usage();
+    exit(1);
+}
+
+# ----------------------------------------------------------------------
+my $setup_name = "";
+my $cli_host = "";
+my @forwarded_args = ();
+
+for (my $i = 0; $i <= $#ARGV; ++$i) {
+    if ($ARGV[$i] eq "--setup-name") {
+        if ($i + 1 > $#ARGV) {
+            die "ERROR: --setup-name requires a value\n";
+        }
+        $setup_name = $ARGV[$i + 1];
+        ++$i;
+    } elsif ($ARGV[$i] eq "--host") {
+        if ($i + 1 > $#ARGV) {
+            die "ERROR: --host requires a value (e.g. moor, mu3edb0)\n";
+        }
+        $cli_host = $ARGV[$i + 1];
+        ++$i;
+    } else {
+        push(@forwarded_args, $ARGV[$i]);
+    }
+}
+
+my $mu3e_tag = "";
+my $raw_cdb_gt = "";
+my $raw_cdb_dbconn = "";
+
+foreach my $arg (@forwarded_args) {
+    if ($arg =~ /^mu3e_tag=(.*)$/) {
+        $mu3e_tag = $1;
+    } elsif ($arg =~ /^cdb_GT=(.*)$/) {
+        $raw_cdb_gt = $1;
+    } elsif ($arg =~ /^cdb_gt=(.*)$/) {
+        $raw_cdb_gt = $1;
+    } elsif ($arg =~ /^cdb_dbconn=(.*)$/) {
+        $raw_cdb_dbconn = $1;
+    } elsif ($arg =~ /^cdb_db_conn=(.*)$/) {
+        $raw_cdb_dbconn = $1;
+    }
+}
+
+if ($mu3e_tag eq "") {
+    print "ERROR: missing mu3e_tag in arguments.\n";
+    print "Please pass it as Snakemake config, e.g. --config mu3e_tag=v6.7\n";
+    exit(1);
+}
+
+my $script_dir = abs_path(dirname($0));
+chdir($script_dir) or die "Cannot chdir to $script_dir: $!\n";
+
+my $rereco_host = rereco_host($cli_host);
+my $host_cfg = host_config_path($rereco_host);
+if (-f $host_cfg) {
+    print(prefix("runRereco"), "using host config: $host_cfg (host=$rereco_host)\n");
+} else {
+    print(prefix("runRereco"), "warning: no $host_cfg; using config.yaml only (set --host or REREC_HOST if paths are wrong)\n");
+}
+
+my $base_dir = read_config_value($rereco_host, "mu3e_rereco_basedir");
+my $mu3e_dir_base = read_config_value($rereco_host, "mu3e_dir");
+if ($base_dir eq "" || $mu3e_dir_base eq "") {
+    die "ERROR: could not parse mu3e_rereco_basedir/mu3e_dir from config.yaml + $host_cfg\n";
+}
+
+if ($raw_cdb_gt eq "") {
+    $raw_cdb_gt = read_config_value($rereco_host, "cdb_GT");
+}
+if ($raw_cdb_dbconn eq "") {
+    $raw_cdb_dbconn = read_config_value($rereco_host, "cdb_dbconn");
+}
+
+if ($setup_name eq "") {
+    $setup_name = "rereco_" . $mu3e_dir_base . "-" . $mu3e_tag . "_" . $raw_cdb_gt;
+}
+
+my $setup_safe = $setup_name;
+$setup_safe =~ s/\//_/g;
+$setup_safe =~ s/ /_/g;
+
+my $setup_dir = "$base_dir/setups/$setup_safe";
+make_path($setup_dir);
+
+copy("$script_dir/Snakefile", "$setup_dir/Snakefile") or die "Copy Snakefile failed: $!\n";
+copy_prompt_common($script_dir, $setup_dir);
+
+my $cfg_path = "$setup_dir/config.yaml";
+my @lines = merge_config_lines("$script_dir/config.yaml", "$script_dir/$host_cfg");
+
+my $mu3e_workdir_name = $mu3e_dir_base . "-" . $setup_safe;
+my $seen_workdir_name = 0;
+my $seen_checkout_tag = 0;
+my @out = ();
+
+foreach my $line (@lines) {
+    if ($line =~ /^mu3e_workdir_name:/) {
+        push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
+        $seen_workdir_name = 1;
+    } elsif ($line =~ /^mu3e_checkout_tag:/) {
+        push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+        $seen_checkout_tag = 1;
+    } elsif ($line =~ /^mu3e_tag:/) {
+        push(@out, "mu3e_tag: \"$mu3e_tag\"\n");
+    } elsif ($line =~ /^cdb_GT:/) {
+        push(@out, "cdb_GT: \"$raw_cdb_gt\"\n");
+    } elsif ($line =~ /^cdb_dbconn:/) {
+        push(@out, "cdb_dbconn: \"$raw_cdb_dbconn\"\n");
+    } else {
+        push(@out, $line);
+    }
+}
+
+if (!$seen_workdir_name) {
+    push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
+}
+if (!$seen_checkout_tag) {
+    push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+}
+write_lines($cfg_path, \@out);
+
+my $workdir = "$base_dir/$mu3e_workdir_name";
+
+chdir($setup_dir) or die "Cannot chdir to $setup_dir: $!\n";
+my @snakemake_args = snakemake_forwarded_args_normalized(@forwarded_args);
+if ("@snakemake_args" ne "@forwarded_args") {
+    print(prefix("runRereco"), "note: replaced -jN with --cores N for Snakemake (avoids --summary crash on some Debian/Ubuntu builds)\n");
+}
+run_cmd("snakemake", @snakemake_args);
+
+my $status_dir = "$workdir/status";
+make_path($status_dir);
+
+run_cmd_to_file("$status_dir/summary.tsv", "snakemake", "--summary", @snakemake_args);
+run_cmd_to_file("$status_dir/detailed-summary.tsv", "snakemake", "--detailed-summary", @snakemake_args);
+
+print "Setup directory: $setup_dir\n";
+print "Work directory:  $workdir\n";
+print "Status exported to: $status_dir\n";

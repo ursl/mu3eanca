@@ -1,0 +1,24 @@
+# Shared rereco defaults (machine-independent).
+# Host-specific paths: config-<hostname>.yaml (e.g. config-moor.yaml, config-mu3edb0.yaml).
+# Override host: REREC_HOST=moor  or  ./runRereco --host moor ...
+
+mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
+mu3e_tag: "master"
+mu3e_dir: "mu3e"
+make_jobs: 10
+
+# Optional prefix for sort_input paths that are not absolute.
+sort_input_base: ""
+
+trirec_output_tpl: "output/trirec-{job}.root"
+
+cdb_GT: "mcidealv6.5"
+
+# Each job re-runs trirec on an existing sort ROOT file.
+# sort_input: absolute path, or filename relative to sort_input_base.
+rereco_jobs:
+  - id: "example"
+    run_id: 5700
+    sort_input: "/path/to/sort-run5700.root"
+    trirec_conf: "trirec.conf"
+    trirec_conf_fallback: ""
