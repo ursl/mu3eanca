@@ -14,6 +14,7 @@
 #include "calMppcAlignment.hh"
 #include "calDetConfV1.hh"
 #include "calEventStuffV1.hh"
+#include "calEventStuffV2.hh"
 
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
@@ -506,7 +507,24 @@ int main(int argc, char* argv[]) {
            << 1318 << "/72/249: " << cpq->getStatus(1318, 72, 249) 
            << endl;
   
-    }
+    } 
+  } else if (23 == mode) {
+      cout << "Test event stuff V2" << endl;
+      calEventStuffV2 *ces = new calEventStuffV2();
+      ces->readJSON("/Users/ursl/data/mu3e/run2025/raw/run04756.mid.lz4.json");
+      string sblob = ces->makeBLOB();
+      ces->printBLOB(sblob, 1000);
+      payload pl;
+      pl.fHash = "tag_eventstuffv2_datav6.9=2025V0_iov_4756";
+      pl.fComment = "test run 4756";
+      pl.fSchema = ces->getSchema();
+      pl.fBLOB = sblob;
+      cout << "######################################################################" << endl;
+      cout << "### createPayload" << endl;
+      cout <<  pl.printString(false) << endl;
+      ces->printBLOB(sblob, 1);
+      cout << "######################################################################" << endl;
+      ces->writePayloadToFile(pl.fHash, ".", pl);
 
   }
   return 0;
