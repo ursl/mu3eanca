@@ -38,11 +38,15 @@ public:
   void writeTileQualityIdealInput(std::string filename, std::string mode = "all");
 
   void writeDetSetupV1Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writeDetSetupV2Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
 
   void writePixelEfficiencyPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   void writePixelEfficiencyIdealInput(std::string filename, std::string mode = "all");
 
   void writeEventStuffV1Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  
+  void writeEventStuffV2Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writeEventStuffV2IdealPayload(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov = 1);
 
   void writePixelTimeCalibrationPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   void writePixelTimeCalibrationIdealInput(std::string filename, std::string mode);

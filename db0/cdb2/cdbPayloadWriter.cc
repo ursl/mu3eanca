@@ -30,6 +30,7 @@
 #include "calDetSetupV1.hh"
 #include "calPixelMask.hh"
 #include "calEventStuffV1.hh"
+#include "calEventStuffV2.hh"
 #include "calPixelTimeCalibration.hh"
 
 using namespace std;
@@ -938,13 +939,13 @@ cdbPayloadWriter::cdbPayloadWriter() {
 
 // ----------------------------------------------------------------------
 // -- this used to be in cdbWritePayload (removed)
-//  -c pixelalignment    produce the pixelalignment payloads
-//  -c tilealignment     produce the tilealignment payloads
+//  -c pixelalignment   produce the pixelalignment payloads
+//  -c tilealignment    produce the tilealignment payloads
 //  -c fibrealignment   produce the fibrealignment payloads
 //  -c mppcalignment    produce the mppcalignment payloads
-//  -d inputfiledir
+//  -d inputfiledir     this ASSUMES that ONLY correct input files are in inputfiledir!!
 //  -f filename         file to read in
-//  -g GT               the global tag for the payload
+//  -t TAG              the tag for the payload
 //  -i RUN              the interval of validity
 //  -p payloaddir       the CDB directory (payloaddir/payloads/)
 //  -a annotation       comment for the payload
@@ -957,20 +958,21 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
     if (!strcmp(argv[i], "-d"))  {inputfiledir = argv[++i];}
     if (!strcmp(argv[i], "-i"))  {iov = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-m"))  {mode = argv[++i];}
-    if (!strcmp(argv[i], "-g"))  {gt = argv[++i];}
+    if (!strcmp(argv[i], "-t"))  {gt = argv[++i];}
     if (!strcmp(argv[i], "-f"))  {filename = argv[++i];}
     if (!strcmp(argv[i], "-p"))  {payloaddir = argv[++i];}
   }
   
-  cout << "======================" << endl;
-  cout << "== cdbPayloadWriter ==" << endl;
-  cout << "======================" << endl;
+  cout << "===========================" << endl;
+  cout << "== cdbPayloadWriter::run ==" << endl;
+  cout << "===========================" << endl;
   cout << "== writing payload " << cal << " for global tag " << gt << endl;
   cout << "== installing in directory " << payloaddir << endl;
   cout << "== filename " << filename << endl;
   cout << "== iov " << iov << endl;
   cout << "== annotation " << annotation << endl;
   
+  // -- bulk payload creation
   if (inputfiledir != "") {
     vector<string> vfiles;
     DIR *folder = opendir(inputfiledir.c_str());
@@ -981,21 +983,75 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
     struct dirent *entry;
     while ((entry = readdir(folder))) {
       if (entry->d_type == DT_REG) {
-        if ((cal == "eventstuffv1") && (string::npos == string(entry->d_name).find(".mid.lz4.json"))) continue;
         vfiles.push_back(inputfiledir + "/" + entry->d_name);
       }
     }
     closedir(folder);
+    bool didRunOne(false);
     for (auto it: vfiles) {
       filename = it;
+      cout << "filename = " << filename << endl;
       string srun = filename;
-      replaceAll(srun, ".mid.lz4.json", "");
-      replaceAll(srun, inputfiledir, "");
-      replaceAll(srun, "/", "");
-      replaceAll(srun, "run", "");
-      int irun = ::stoi(srun);
-      cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
-      writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, irun);
+      if (cal == "eventstuffv1") {
+        replaceAll(srun, ".mid.lz4.json", "");
+        replaceAll(srun, inputfiledir, "");
+        replaceAll(srun, "/", "");
+        replaceAll(srun, "run", "");
+        int irun = ::stoi(srun);
+        if (1 == irun) didRunOne = true;
+        cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
+        writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, irun);
+      } else if (cal == "eventstuffv2") {
+        replaceAll(srun, ".mid.lz4.json", "");
+        replaceAll(srun, inputfiledir, "");
+        replaceAll(srun, "/", "");
+        replaceAll(srun, "run", "");
+        int irun = ::stoi(srun);
+        if (1 == irun) didRunOne = true;
+        cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
+        writeEventStuffV2Payloads(payloaddir, gt, filename, annotation, irun);
+      } else if (cal == "pixelqualitylm") {
+        replaceAll(srun, ".csv", "");
+        replaceAll(srun, inputfiledir, "");
+        replaceAll(srun, "/", "");
+        replaceAll(srun, "run", "");
+        int irun = ::stoi(srun);
+        if (1 == irun) didRunOne = true;
+        cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
+        writePixelQualityLMPayloads(payloaddir, gt, filename, annotation, irun);
+      } else if (cal == "fibrequality") {
+        replaceAll(srun, ".csv", "");
+        replaceAll(srun, inputfiledir, "");
+        replaceAll(srun, "/", "");
+        replaceAll(srun, "run", "");
+        int irun = ::stoi(srun);
+        if (1 == irun) didRunOne = true;
+        cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
+        writeFibreQualityPayloads(payloaddir, gt, filename, annotation, irun);
+      } else if (cal == "tilequality") {
+        replaceAll(srun, ".json", "");
+        replaceAll(srun, inputfiledir, "");
+        replaceAll(srun, "/", "");
+        replaceAll(srun, "run", "");
+        int irun = ::stoi(srun);
+        if (1 == irun) didRunOne = true;
+        cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
+        writeTileQualityPayloads(payloaddir, gt, filename, annotation, irun);
+      } else if (cal == "pixelefficiency") {
+        replaceAll(srun, ".json", "");
+        replaceAll(srun, inputfiledir, "");
+        replaceAll(srun, "/", "");
+        replaceAll(srun, "run", "");
+        int irun = ::stoi(srun);
+        if (1 == irun) didRunOne = true;
+        cout << "filename = " << filename << " srun ->" << srun << "<- run = " << irun << endl;
+        writePixelEfficiencyPayloads(payloaddir, gt, filename, annotation, irun);
+      } 
+    }
+    if (!didRunOne) {
+      if (cal == "eventstuffv2") {
+        writeEventStuffV2IdealPayload(payloaddir, gt, "ascii/eventstuffv2-ideal.json", "all perfect", 1);
+      }
     }
     return;
   }
@@ -1023,6 +1079,9 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
   }
   if (string::npos != cal.find("eventstuffv1")) {
     writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, iov);
+  }
+  if (string::npos != cal.find("eventstuffv2")) {
+    writeEventStuffV2Payloads(payloaddir, gt, filename, annotation, iov);
   }
 }
 
@@ -1136,6 +1195,7 @@ void cdbPayloadWriter::writeDetSetupV1Payloads(string payloaddir, string gt, str
   delete cdc;
 }
 
+
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writeEventStuffV1Payloads(string payloaddir, string gt, string filename, string annotation, int iov) {
   cout << "   ->cdbInitGT> writing local template eventstuffv1 payloads" << endl;
@@ -1151,6 +1211,41 @@ void cdbPayloadWriter::writeEventStuffV1Payloads(string payloaddir, string gt, s
   cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and schema " << pl.fSchema << endl;
   delete ces;
 }
+
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writeEventStuffV2IdealPayload(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov) {
+  cout << "   ->cdbWritePayload::writeEventStuffV2IdealPayload> writing local template eventstuffv2 ideal payload to file " << filename 
+      << " for IOV " << iov
+       << endl;
+  calEventStuffV2 *ces = new calEventStuffV2();
+  ces->readJSON(filename);
+  string hash = "tag_eventstuffv2_" + gt + "_iov_" + to_string(iov);
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = annotation;
+  pl.fSchema  = ces->getSchema();
+  pl.fBLOB = ces->makeBLOB();
+  ces->writePayloadToFile(hash, payloaddir, pl);
+}
+
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writeEventStuffV2Payloads(string payloaddir, string gt, string filename, string annotation, int iov) {
+  cout << "   ->cdbInitGT> writing local template eventstuffv2 payloads" << endl;
+  calEventStuffV2 *ces = new calEventStuffV2();
+  ces->readJSON(filename);
+  string hash = "tag_eventstuffv2_" + gt + "_iov_" + to_string(iov);
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = annotation;
+  pl.fSchema  = ces->getSchema();
+  pl.fBLOB = ces->makeBLOB();
+  ces->writePayloadToFile(hash, payloaddir, pl);
+  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and schema " << pl.fSchema << endl;
+  delete ces;
+}
+
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writePixelQualityLMPayloads(string payloaddir, string tag, string filename, string annotation, int iov) {

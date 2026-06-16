@@ -16,13 +16,17 @@ using namespace std;
 // Furthermore
 // - pixelmask payloads
 //
+// Usage examples
+// ./bin/cdbRunPayloadWriter -m 2025 -c fibrealignment -f ascii/mu3e_alignment_mcidealv6.5.root -a "as installed in 2025" -p ~/data/mu3e/cdb/payloads -g datav6.5=2025V1
+// ./bin/cdbRunPayloadWriter -t datav6.9=2025V0 -a "all frames with perfect data for all subsystems" -p payloads -d /Users/ursl/data/mu3e/run2025/rawv2 -r 1 -c eventstuffv2
+// 
 // ----------------------------------------------------------------------
 
 
 // ----------------------------------------------------------------------
 int main(int argc, const char* argv[]) {
   // -- command line arguments 
-  string mode("pixeltimecalibration");
+  string mode("nada");
   string filename("unset");
 
   string uri("/Users/ursl/data/mu3e/test-cdb");
@@ -103,6 +107,17 @@ int main(int argc, const char* argv[]) {
     }
   }
   
+  if (string::npos != mode.find("eventstuffv2") && string::npos != mode.find("ideal")) {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbWriteIdealInputFiles -m eventstuffv2-ideal -f filename" << endl;
+      return 0;
+    }
+    writer.writeEventStuffV2IdealPayload(uri+"/payloads/", tagname, filename, annotation, run);
+    return 0;
+  }
+
+
   // -- default case: run the main function of cdbPayloadWriter
   writer.run(argc, argv);
   return 0;
