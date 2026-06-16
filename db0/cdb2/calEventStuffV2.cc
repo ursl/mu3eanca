@@ -39,18 +39,18 @@ void calEventStuffV2::calculate(string hash) {
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (fVerbose > 0) cout << " header: " << hex << header << dec << " BLOB size: " << buffer.size() << endl;
 
-  fConstants.eventData.startFrame = blob2Uint64(getData(ibuffer));
-  fConstants.eventData.endFrame = blob2Uint64(getData(ibuffer));
-  fConstants.eventData.firstFrameSkippedHeader = blob2Uint64(getData(ibuffer));
+  fConstants.eventData.startFrameGoodData = blob2Uint64(getData(ibuffer));
+  fConstants.eventData.endFrameGoodData = blob2Uint64(getData(ibuffer));
+  fConstants.eventData.firstFrameWithFEBProblems = blob2Uint64(getData(ibuffer));
 
-  fConstants.pixelData.startFrame = blob2Uint64(getData(ibuffer));
-  fConstants.pixelData.endFrame = blob2Uint64(getData(ibuffer));
+  fConstants.pixelData.startFrameGoodData = blob2Uint64(getData(ibuffer));
+  fConstants.pixelData.endFrameGoodData = blob2Uint64(getData(ibuffer));
 
-  fConstants.tileData.startFrame = blob2Uint64(getData(ibuffer));
-  fConstants.tileData.endFrame = blob2Uint64(getData(ibuffer));
+  fConstants.tileData.startFrameGoodData = blob2Uint64(getData(ibuffer));
+  fConstants.tileData.endFrameGoodData = blob2Uint64(getData(ibuffer));
 
-  fConstants.fibreData.startFrame = blob2Uint64(getData(ibuffer));
-  fConstants.fibreData.endFrame = blob2Uint64(getData(ibuffer));
+  fConstants.fibreData.startFrameGoodData = blob2Uint64(getData(ibuffer));
+  fConstants.fibreData.endFrameGoodData = blob2Uint64(getData(ibuffer));
 }
 
 
@@ -74,42 +74,51 @@ string calEventStuffV2::printBLOBString(std::string sblob, int verbosity) {
 
   uint64_t firstEventframe = blob2Uint64(getData(ibuffer));
   uint64_t lastEventframe = blob2Uint64(getData(ibuffer));
-  uint64_t firstframeskippedheader = blob2Uint64(getData(ibuffer));
+  uint64_t firstframewithfebproblems = blob2Uint64(getData(ibuffer));
 
   uint64_t startPixelframe = blob2Uint64(getData(ibuffer));
   uint64_t endPixelframe = blob2Uint64(getData(ibuffer));
+  uint64_t firstFrameWithFEBUnsortedHitDataPixel = blob2Uint64(getData(ibuffer));
 
   uint64_t startTileframe = blob2Uint64(getData(ibuffer));
   uint64_t endTileframe = blob2Uint64(getData(ibuffer));
+  uint64_t firstFrameWithFEBUnsortedHitDataTile = blob2Uint64(getData(ibuffer));
 
   uint64_t startFibreframe = blob2Uint64(getData(ibuffer));
   uint64_t endFibreframe = blob2Uint64(getData(ibuffer));
+  uint64_t firstFrameWithFEBUnsortedHitDataFibre = blob2Uint64(getData(ibuffer));
 
   ss << "eventdata "  << endl
-     << "  .firstframe = " << setw(22) << setfill(' ') << firstEventframe << " "
+     << "  .startframegooddata               = " << setw(22) << setfill(' ') << firstEventframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << firstEventframe << dec << endl
-     << "  .lastframe =  " << setw(22) << setfill(' ') << lastEventframe << " "
+     << "  .endframegooddata                 = " << setw(22) << setfill(' ') << lastEventframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << lastEventframe << dec << endl
-     << "  .firstframeskippedheader = " << setw(22) << setfill(' ') << firstframeskippedheader << " "
-     <<  hex << "0x" << setw(16) << setfill('0') << firstframeskippedheader << dec << endl
+     << "  .firstframewithfebproblems        = " << setw(22) << setfill(' ') << firstframewithfebproblems << " "
+     <<  hex << "0x" << setw(16) << setfill('0') << firstframewithfebproblems << dec << endl
      << endl;
   ss << "pixeldata"  << endl
-     << "  .startframe = " << setw(22) << setfill(' ') << startPixelframe << " "
+     << "  .startframegooddata               = " << setw(22) << setfill(' ') << startPixelframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << startPixelframe << dec << endl
-     << "  .endframe =   " << setw(22) << setfill(' ') << endPixelframe << " "
+     << "  .endframegooddata                 = " << setw(22) << setfill(' ') << endPixelframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << endPixelframe << dec << endl
+     << "  .firstframewithfebunsortedhitdata = " << setw(22) << setfill(' ') << firstFrameWithFEBUnsortedHitDataPixel << " "
+     <<  hex << "0x" << setw(16) << setfill('0') << firstFrameWithFEBUnsortedHitDataPixel << dec << endl
      << endl;
   ss << "tiledata"  << endl
-     << "  .startframe = " << setw(22) << setfill(' ') << startTileframe << " "
+     << "  .startframegooddata               = " << setw(22) << setfill(' ') << startTileframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << startTileframe << dec << endl
-     << "  .endframe =   " << setw(22) << setfill(' ') << endTileframe << " "
+     << "  .endframegooddata                 = " << setw(22) << setfill(' ') << endTileframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << endTileframe << dec << endl
+     << "  .firstframewithfebunsortedhitdata = " << setw(22) << setfill(' ') << firstFrameWithFEBUnsortedHitDataTile << " "
+     <<  hex << "0x" << setw(16) << setfill('0') << firstFrameWithFEBUnsortedHitDataTile << dec << endl
      << endl;
   ss << "fibredata"  << endl
-     << "  .startframe = " << setw(22) << setfill(' ') << startFibreframe << " "
+     << "  .startframegooddata               = " << setw(22) << setfill(' ') << startFibreframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << startFibreframe << dec << endl
-     << "  .endframe =   " << setw(22) << setfill(' ') << endFibreframe << " "
+     << "  .endframegooddata                 = " << setw(22) << setfill(' ') << endFibreframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << endFibreframe << dec << endl
+     << "  .firstframewithfebunsortedhitdata = " << setw(22) << setfill(' ') << firstFrameWithFEBUnsortedHitDataFibre << " "
+     <<  hex << "0x" << setw(16) << setfill('0') << firstFrameWithFEBUnsortedHitDataFibre << dec << endl
      << endl;
   return ss.str();
 }
@@ -121,15 +130,18 @@ string calEventStuffV2::makeBLOB() {
   unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
 
-  s << dumpArray(uint642Blob(fConstants.eventData.startFrame));
-  s << dumpArray(uint642Blob(fConstants.eventData.endFrame));
-  s << dumpArray(uint642Blob(fConstants.eventData.firstFrameSkippedHeader));
-  s << dumpArray(uint642Blob(fConstants.pixelData.startFrame));
-  s << dumpArray(uint642Blob(fConstants.pixelData.endFrame));
-  s << dumpArray(uint642Blob(fConstants.tileData.startFrame));
-  s << dumpArray(uint642Blob(fConstants.tileData.endFrame));
-  s << dumpArray(uint642Blob(fConstants.fibreData.startFrame));
-  s << dumpArray(uint642Blob(fConstants.fibreData.endFrame));
+  s << dumpArray(uint642Blob(fConstants.eventData.startFrameGoodData));
+  s << dumpArray(uint642Blob(fConstants.eventData.endFrameGoodData));
+  s << dumpArray(uint642Blob(fConstants.eventData.firstFrameWithFEBProblems));
+  s << dumpArray(uint642Blob(fConstants.pixelData.startFrameGoodData));
+  s << dumpArray(uint642Blob(fConstants.pixelData.endFrameGoodData));
+  s << dumpArray(uint642Blob(fConstants.pixelData.firstFrameWithFEBUnsortedHitData));
+  s << dumpArray(uint642Blob(fConstants.tileData.startFrameGoodData));
+  s << dumpArray(uint642Blob(fConstants.tileData.endFrameGoodData));
+  s << dumpArray(uint642Blob(fConstants.tileData.firstFrameWithFEBUnsortedHitData));
+  s << dumpArray(uint642Blob(fConstants.fibreData.startFrameGoodData));
+  s << dumpArray(uint642Blob(fConstants.fibreData.endFrameGoodData));
+  s << dumpArray(uint642Blob(fConstants.fibreData.firstFrameWithFEBUnsortedHitData));
   return s.str();
 }
 

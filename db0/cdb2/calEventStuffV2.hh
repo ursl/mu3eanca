@@ -18,10 +18,21 @@ public:
   ~calEventStuffV2();
 
   // -- direct accessors
-  uint64_t startFrameEventData() {return fConstants.eventData.startFrame;}
-  uint64_t endFrameEventData() {return fConstants.eventData.endFrame;}
-  uint64_t startFrameGoodPixelData() {return fConstants.pixelData.startFrame;}
-  uint64_t endFrameGoodPixelData() {return fConstants.pixelData.endFrame;}
+  uint64_t startFrameEventData() {return fConstants.eventData.startFrameGoodData;}
+  uint64_t endFrameEventData() {return fConstants.eventData.endFrameGoodData;}
+  uint64_t firstFrameWithFEBProblems() {return fConstants.eventData.firstFrameWithFEBProblems;}
+
+  uint64_t startFrameGoodPixelData() {return fConstants.pixelData.startFrameGoodData;}
+  uint64_t endFrameGoodPixelData() {return fConstants.pixelData.endFrameGoodData;}
+  uint64_t firstFrameWithFEBUnsortedPixelData() {return fConstants.pixelData.firstFrameWithFEBUnsortedHitData;}
+
+  uint64_t startFrameGoodTileData() {return fConstants.tileData.startFrameGoodData;}
+  uint64_t endFrameGoodTileData() {return fConstants.tileData.endFrameGoodData;}
+  uint64_t firstFrameWithFEBUnsortedTileData() {return fConstants.tileData.firstFrameWithFEBUnsortedHitData;}
+
+  uint64_t startFrameGoodFibreData() {return fConstants.fibreData.startFrameGoodData;}
+  uint64_t endFrameGoodFibreData() {return fConstants.fibreData.endFrameGoodData;}
+  uint64_t firstFrameWithFEBUnsortedFibreData() {return fConstants.fibreData.firstFrameWithFEBUnsortedHitData;}
 
   std::string getName() override {return fEventStuffTag;}
   void        calculate(std::string hash) override;
