@@ -1,7 +1,10 @@
 # Shared MU3E checkout / build / relink rules.
 #
 # Required in the including Snakefile (before include):
-#   MU3E_REPO, MU3E_CHECKOUT_TAG, MU3E_DIR, MU3E_WORK_BASEDIR, MAKE_JOBS, RELINK_SCRIPT
+#   MU3E_REPO, MU3E_DIR, MU3E_WORK_BASEDIR, MAKE_JOBS, RELINK_SCRIPT
+#   MU3E_CHECKOUT_REF        tag/ref when not using a branch (empty if branch mode)
+#   MU3E_CHECKOUT_BRANCH     branch name to track at origin/BRANCH HEAD (optional)
+#   MU3E_CHECKOUT_MERGES     list of commit hashes to git merge after checkout (optional)
 #   CLONE_MU3E_INPUTS       list with one prerequisite path (bootstrap or local marker)
 #   CLONE_MU3E_SCRIPT       path to scripts/clone_and_prepare_mu3e.sh
 #   MU3E_PREP_LOG_PREFIX    log tag, e.g. "relval" or "rereco"
@@ -14,19 +17,33 @@ rule clone_and_prepare_mu3e:
         ".markers/clone_and_prepare_mu3e.done"
     params:
         repo=MU3E_REPO,
-        tag=MU3E_CHECKOUT_TAG,
+        ref=MU3E_CHECKOUT_REF,
+        branch=MU3E_CHECKOUT_BRANCH,
+        merge_list=" ".join(MU3E_CHECKOUT_MERGES),
         work_basedir=MU3E_WORK_BASEDIR,
         mu3e_dir=MU3E_DIR,
         script=CLONE_MU3E_SCRIPT
     shell:
         r"""
         set -euo pipefail
-        bash "{params.script}" \
-            --repo "{params.repo}" \
-            --tag "{params.tag}" \
-            --work-basedir "{params.work_basedir}" \
-            --mu3e-dir "{params.mu3e_dir}" \
+        args=(
+            --repo "{params.repo}"
+            --work-basedir "{params.work_basedir}"
+            --mu3e-dir "{params.mu3e_dir}"
             --marker "{output}"
+        )
+        if [ -n "{params.branch}" ]; then
+            args+=(--branch "{params.branch}")
+        else
+            args+=(--ref "{params.ref}")
+        fi
+        if [ -n "{params.merge_list}" ]; then
+            read -r -a _merges <<< "{params.merge_list}"
+            for _m in "${{_merges[@]}}"; do
+                args+=(--merge "$_m")
+            done
+        fi
+        bash "{params.script}" "${{args[@]}}"
         """
 
 

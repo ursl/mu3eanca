@@ -7,7 +7,7 @@
 # Perl wrapper for rereco Snakemake setup creation and execution.
 #
 # Usage:
-#   ./runRereco [--setup-name NAME] [--host HOST] [snakemake args...] --config mu3e_tag=<tag> [other overrides]
+#   ./runRereco [--setup-name NAME] [--host HOST] [--minRun N] [--maxRun N] [snakemake args...] --config mu3e_tag=<tag> [other overrides]
 #
 # Example:
 #   ./runRereco --setup-name rereco-v67 -j4 -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1
@@ -25,7 +25,7 @@ use Sys::Hostname qw(hostname);
 
 # ----------------------------------------------------------------------
 sub usage {
-    print "Usage: $0 [--setup-name NAME] [--host HOST] [snakemake args...] --config mu3e_tag=<tag> [other config overrides]\n";
+    print "Usage: $0 [--setup-name NAME] [--host HOST] [--minRun N] [--maxRun N] [snakemake args...] --config mu3e_tag=<tag> [other config overrides]\n";
     print "Example: $0 --setup-name rereco-v67 -j4 -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1\n";
 }
 
@@ -44,6 +44,25 @@ sub read_yaml_quoted_value {
     open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
     while (my $line = <$fh>) {
         if ($line =~ /^$key:\s*"(.*)"/) {
+            close($fh);
+            return $1;
+        }
+    }
+    close($fh);
+    return "";
+}
+
+# ----------------------------------------------------------------------
+sub read_yaml_scalar_value {
+    my ($path, $key) = @_;
+    return "" unless -f $path;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    while (my $line = <$fh>) {
+        if ($line =~ /^$key:\s*"(.*)"/) {
+            close($fh);
+            return $1;
+        }
+        if ($line =~ /^$key:\s*(\S+)/) {
             close($fh);
             return $1;
         }
@@ -227,6 +246,8 @@ if ($#ARGV < 0) {
 # ----------------------------------------------------------------------
 my $setup_name = "";
 my $cli_host = "";
+my $cli_min_run = "";
+my $cli_max_run = "";
 my @forwarded_args = ();
 
 for (my $i = 0; $i <= $#ARGV; ++$i) {
@@ -242,18 +263,38 @@ for (my $i = 0; $i <= $#ARGV; ++$i) {
         }
         $cli_host = $ARGV[$i + 1];
         ++$i;
+    } elsif ($ARGV[$i] eq "--minRun") {
+        if ($i + 1 > $#ARGV) {
+            die "ERROR: --minRun requires a run number\n";
+        }
+        $cli_min_run = $ARGV[$i + 1];
+        ++$i;
+    } elsif ($ARGV[$i] eq "--maxRun") {
+        if ($i + 1 > $#ARGV) {
+            die "ERROR: --maxRun requires a run number\n";
+        }
+        $cli_max_run = $ARGV[$i + 1];
+        ++$i;
     } else {
         push(@forwarded_args, $ARGV[$i]);
     }
 }
 
 my $mu3e_tag = "";
+my $mu3e_checkout_branch = "";
+my $mu3e_checkout_merge = "";
 my $raw_cdb_gt = "";
 my $raw_cdb_dbconn = "";
+my $raw_min_run = "";
+my $raw_max_run = "";
 
 foreach my $arg (@forwarded_args) {
     if ($arg =~ /^mu3e_tag=(.*)$/) {
         $mu3e_tag = $1;
+    } elsif ($arg =~ /^mu3e_checkout_branch=(.*)$/) {
+        $mu3e_checkout_branch = $1;
+    } elsif ($arg =~ /^mu3e_checkout_merge=(.*)$/) {
+        $mu3e_checkout_merge = $1;
     } elsif ($arg =~ /^cdb_GT=(.*)$/) {
         $raw_cdb_gt = $1;
     } elsif ($arg =~ /^cdb_gt=(.*)$/) {
@@ -262,7 +303,18 @@ foreach my $arg (@forwarded_args) {
         $raw_cdb_dbconn = $1;
     } elsif ($arg =~ /^cdb_db_conn=(.*)$/) {
         $raw_cdb_dbconn = $1;
+    } elsif ($arg =~ /^min_run=(.*)$/) {
+        $raw_min_run = $1;
+    } elsif ($arg =~ /^max_run=(.*)$/) {
+        $raw_max_run = $1;
     }
+}
+
+if ($cli_min_run ne "") {
+    $raw_min_run = $cli_min_run;
+}
+if ($cli_max_run ne "") {
+    $raw_max_run = $cli_max_run;
 }
 
 if ($mu3e_tag eq "") {
@@ -294,6 +346,16 @@ if ($raw_cdb_gt eq "") {
 if ($raw_cdb_dbconn eq "") {
     $raw_cdb_dbconn = read_config_value($rereco_host, "cdb_dbconn");
 }
+if ($mu3e_checkout_branch eq "") {
+    $mu3e_checkout_branch = read_yaml_scalar_value("config.yaml", "mu3e_checkout_branch");
+    my $host_branch = read_yaml_scalar_value($host_cfg, "mu3e_checkout_branch");
+    $mu3e_checkout_branch = $host_branch if $host_branch ne "";
+}
+if ($mu3e_checkout_merge eq "") {
+    $mu3e_checkout_merge = read_yaml_scalar_value("config.yaml", "mu3e_checkout_merge");
+    my $host_merge = read_yaml_scalar_value($host_cfg, "mu3e_checkout_merge");
+    $mu3e_checkout_merge = $host_merge if $host_merge ne "";
+}
 
 if ($setup_name eq "") {
     $setup_name = "rereco_" . $mu3e_dir_base . "-" . $mu3e_tag . "_" . $raw_cdb_gt;
@@ -315,6 +377,10 @@ my @lines = merge_config_lines("$script_dir/config.yaml", "$script_dir/$host_cfg
 my $mu3e_workdir_name = $mu3e_dir_base . "-" . $setup_safe;
 my $seen_workdir_name = 0;
 my $seen_checkout_tag = 0;
+my $seen_checkout_branch = 0;
+my $seen_checkout_merge = 0;
+my $seen_min_run = 0;
+my $seen_max_run = 0;
 my @out = ();
 
 foreach my $line (@lines) {
@@ -322,14 +388,42 @@ foreach my $line (@lines) {
         push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
         $seen_workdir_name = 1;
     } elsif ($line =~ /^mu3e_checkout_tag:/) {
-        push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+        if ($mu3e_checkout_branch eq "") {
+            push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+        } else {
+            push(@out, "mu3e_checkout_tag: \"\"\n");
+        }
         $seen_checkout_tag = 1;
+    } elsif ($line =~ /^mu3e_checkout_branch:/) {
+        push(@out, "mu3e_checkout_branch: \"$mu3e_checkout_branch\"\n");
+        $seen_checkout_branch = 1;
+    } elsif ($line =~ /^mu3e_checkout_merge:/) {
+        if ($mu3e_checkout_merge ne "") {
+            push(@out, "mu3e_checkout_merge: \"$mu3e_checkout_merge\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen_checkout_merge = 1;
     } elsif ($line =~ /^mu3e_tag:/) {
         push(@out, "mu3e_tag: \"$mu3e_tag\"\n");
     } elsif ($line =~ /^cdb_GT:/) {
         push(@out, "cdb_GT: \"$raw_cdb_gt\"\n");
     } elsif ($line =~ /^cdb_dbconn:/) {
         push(@out, "cdb_dbconn: \"$raw_cdb_dbconn\"\n");
+    } elsif ($line =~ /^min_run:/) {
+        if ($raw_min_run ne "") {
+            push(@out, "min_run: $raw_min_run\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen_min_run = 1;
+    } elsif ($line =~ /^max_run:/) {
+        if ($raw_max_run ne "") {
+            push(@out, "max_run: $raw_max_run\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen_max_run = 1;
     } else {
         push(@out, $line);
     }
@@ -338,8 +432,20 @@ foreach my $line (@lines) {
 if (!$seen_workdir_name) {
     push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
 }
-if (!$seen_checkout_tag) {
+if (!$seen_checkout_tag && $mu3e_checkout_branch eq "") {
     push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+}
+if (!$seen_checkout_branch) {
+    push(@out, "mu3e_checkout_branch: \"$mu3e_checkout_branch\"\n");
+}
+if (!$seen_checkout_merge && $mu3e_checkout_merge ne "") {
+    push(@out, "mu3e_checkout_merge: \"$mu3e_checkout_merge\"\n");
+}
+if (!$seen_min_run && $raw_min_run ne "") {
+    push(@out, "min_run: $raw_min_run\n");
+}
+if (!$seen_max_run && $raw_max_run ne "") {
+    push(@out, "max_run: $raw_max_run\n");
 }
 write_lines($cfg_path, \@out);
 

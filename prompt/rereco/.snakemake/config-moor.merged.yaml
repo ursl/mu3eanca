@@ -2,15 +2,22 @@ mu3e_repo: git@bitbucket.org:mu3e/mu3e
 mu3e_tag: master
 mu3e_dir: mu3e
 make_jobs: 10
+mu3e_util_repo: git@bitbucket.org:mu3e/mu3eUtil
+mu3e_util_make_jobs: 10
 sort_input_base: ''
-trirec_output_tpl: output/trirec-{job}.root
+trirec_output_tpl: output/trirec-{task}.root
+midas_meta_marker_tpl: .markers/midas_meta-{task}.done
 cdb_GT: mcidealv6.5
-rereco_jobs:
-- id: example
+rereco_tasks:
+- id: run5700-trirec
+  action: trirec
   run_id: 5700
   sort_input: /path/to/sort-run5700.root
   trirec_conf: trirec.conf
   trirec_conf_fallback: ''
+- id: run5700-midas
+  action: midas_meta
+  input_dir: /path/to/raw/run5700
 mu3e_rereco_basedir: /Users/ursl/data/mu3e/rereco
 relink_script: /Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles
 cdb_dbconn: http://mu3edb0/cdb/

@@ -4,6 +4,12 @@
 
 mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
 mu3e_tag: "v6.5"
+# Optional: track origin/<branch> HEAD instead of a release tag (overrides mu3e_checkout_tag).
+# mu3e_checkout_branch: "dev"
+# Optional: merge PR / cherry-pick commits after checkout (repeatable; composes with branch or tag).
+# mu3e_checkout_merge: "75d8c48"
+# mu3e_checkout_merges:
+#   - "75d8c48"
 mu3e_dir: "mu3e"
 make_jobs: 10
 

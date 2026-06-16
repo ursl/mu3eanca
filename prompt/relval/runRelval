@@ -53,6 +53,25 @@ sub read_yaml_quoted_value {
 }
 
 # ----------------------------------------------------------------------
+sub read_yaml_scalar_value {
+    my ($path, $key) = @_;
+    return "" unless -f $path;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    while (my $line = <$fh>) {
+        if ($line =~ /^$key:\s*"(.*)"/) {
+            close($fh);
+            return $1;
+        }
+        if ($line =~ /^$key:\s*(\S+)/) {
+            close($fh);
+            return $1;
+        }
+    }
+    close($fh);
+    return "";
+}
+
+# ----------------------------------------------------------------------
 sub relval_host {
     my ($cli_host) = @_;
     if (defined $cli_host && $cli_host ne "") {
@@ -144,6 +163,23 @@ sub run_cmd {
     if ($? != 0) {
         die "Command failed: @cmd\n";
     }
+}
+
+# ----------------------------------------------------------------------
+sub copy_prompt_common {
+    my ($script_dir, $setup_dir) = @_;
+    my $common_src = abs_path("$script_dir/../common");
+    my $common_dst = "$setup_dir/common";
+    if (!-d $common_src) {
+        die "ERROR: missing shared Snakemake common dir: $common_src\n";
+    }
+    if (-d $common_dst) {
+        system("rm", "-rf", $common_dst);
+        if ($? != 0) {
+            die "Command failed: rm -rf $common_dst\n";
+        }
+    }
+    run_cmd("cp", "-R", $common_src, $common_dst);
 }
 
 # ----------------------------------------------------------------------
@@ -277,12 +313,18 @@ if ($opt_all) {
 }
 
 my $mu3e_tag = "";
+my $mu3e_checkout_branch = "";
+my $mu3e_checkout_merge = "";
 my $raw_cdb_gt = "";
 my $raw_cdb_dbconn = "";
 
 foreach my $arg (@forwarded_args) {
     if ($arg =~ /^mu3e_tag=(.*)$/) {
         $mu3e_tag = $1;
+    } elsif ($arg =~ /^mu3e_checkout_branch=(.*)$/) {
+        $mu3e_checkout_branch = $1;
+    } elsif ($arg =~ /^mu3e_checkout_merge=(.*)$/) {
+        $mu3e_checkout_merge = $1;
     } elsif ($arg =~ /^cdb_GT=(.*)$/) {
         $raw_cdb_gt = $1;
     } elsif ($arg =~ /^cdb_gt=(.*)$/) {
@@ -323,6 +365,16 @@ if ($raw_cdb_gt eq "") {
 if ($raw_cdb_dbconn eq "") {
     $raw_cdb_dbconn = read_config_value($relval_host, "cdb_dbconn");
 }
+if ($mu3e_checkout_branch eq "") {
+    $mu3e_checkout_branch = read_yaml_scalar_value("config.yaml", "mu3e_checkout_branch");
+    my $host_branch = read_yaml_scalar_value($host_cfg, "mu3e_checkout_branch");
+    $mu3e_checkout_branch = $host_branch if $host_branch ne "";
+}
+if ($mu3e_checkout_merge eq "") {
+    $mu3e_checkout_merge = read_yaml_scalar_value("config.yaml", "mu3e_checkout_merge");
+    my $host_merge = read_yaml_scalar_value($host_cfg, "mu3e_checkout_merge");
+    $mu3e_checkout_merge = $host_merge if $host_merge ne "";
+}
 
 if ($setup_name eq "") {
     $setup_name = "relval_" . $mu3e_dir_base . "-" . $mu3e_tag . "_" . $raw_cdb_gt;
@@ -336,6 +388,7 @@ my $setup_dir = "$base_dir/setups/$setup_safe";
 make_path($setup_dir);
 
 copy("$script_dir/Snakefile", "$setup_dir/Snakefile") or die "Copy Snakefile failed: $!\n";
+copy_prompt_common($script_dir, $setup_dir);
 
 my $cfg_path = "$setup_dir/config.yaml";
 my @lines = merge_config_lines("$script_dir/config.yaml", "$script_dir/$host_cfg");
@@ -343,6 +396,8 @@ my @lines = merge_config_lines("$script_dir/config.yaml", "$script_dir/$host_cfg
 my $mu3e_workdir_name = $mu3e_dir_base . "-" . $setup_safe;
 my $seen_workdir_name = 0;
 my $seen_checkout_tag = 0;
+my $seen_checkout_branch = 0;
+my $seen_checkout_merge = 0;
 my $seen_relval_code_basedir = 0;
 my @out = ();
 
@@ -351,8 +406,22 @@ foreach my $line (@lines) {
         push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
         $seen_workdir_name = 1;
     } elsif ($line =~ /^mu3e_checkout_tag:/) {
-        push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+        if ($mu3e_checkout_branch eq "") {
+            push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+        } else {
+            push(@out, "mu3e_checkout_tag: \"\"\n");
+        }
         $seen_checkout_tag = 1;
+    } elsif ($line =~ /^mu3e_checkout_branch:/) {
+        push(@out, "mu3e_checkout_branch: \"$mu3e_checkout_branch\"\n");
+        $seen_checkout_branch = 1;
+    } elsif ($line =~ /^mu3e_checkout_merge:/) {
+        if ($mu3e_checkout_merge ne "") {
+            push(@out, "mu3e_checkout_merge: \"$mu3e_checkout_merge\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen_checkout_merge = 1;
     } elsif ($line =~ /^mu3e_tag:/) {
         push(@out, "mu3e_tag: \"$mu3e_tag\"\n");
     } elsif ($line =~ /^cdb_GT:/) {
@@ -372,8 +441,14 @@ foreach my $line (@lines) {
 if (!$seen_workdir_name) {
     push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
 }
-if (!$seen_checkout_tag) {
+if (!$seen_checkout_tag && $mu3e_checkout_branch eq "") {
     push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+}
+if (!$seen_checkout_branch) {
+    push(@out, "mu3e_checkout_branch: \"$mu3e_checkout_branch\"\n");
+}
+if (!$seen_checkout_merge && $mu3e_checkout_merge ne "") {
+    push(@out, "mu3e_checkout_merge: \"$mu3e_checkout_merge\"\n");
 }
 if (!$seen_relval_code_basedir) {
     push(@out, "relval_code_basedir: \"$script_dir\"\n");

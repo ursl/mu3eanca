@@ -4,21 +4,54 @@
 
 mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
 mu3e_tag: "master"
+# Optional: track origin/<branch> HEAD instead of a release tag (overrides mu3e_checkout_tag).
+# mu3e_checkout_branch: "dev"
+# Optional: merge PR / cherry-pick commits after checkout (repeatable; composes with branch or tag).
+# mu3e_checkout_merge: "75d8c48"
+# mu3e_checkout_merges:
+#   - "75d8c48"
+#   - "a1b2c3d4"
 mu3e_dir: "mu3e"
 make_jobs: 10
 
-# Optional prefix for sort_input paths that are not absolute.
+mu3e_util_repo: "git@bitbucket.org:mu3e/mu3eUtil"
+mu3e_util_make_jobs: 10
+
+# Optional prefix for relative input paths (sort_input, input_dir, input_file).
 sort_input_base: ""
 
-trirec_output_tpl: "output/trirec-{job}.root"
+trirec_output_tpl: "output/trirec-{task}.root"
+midas_meta_marker_tpl: ".markers/midas_meta-{task}.done"
 
 cdb_GT: "mcidealv6.5"
 
-# Each job re-runs trirec on an existing sort ROOT file.
-# sort_input: absolute path, or filename relative to sort_input_base.
-rereco_jobs:
-  - id: "example"
+# --- Run-list mode (recommended for batch reprocessing) ---
+# Comma-separated run numbers in certification ASCII files under db0/cdb2/certification/.
+# When run_list_file is set, rereco_task_templates is expanded once per selected run.
+# min_run / max_run: keep runs with min_run <= run <= max_run (0 = no bound).
+# Override on CLI: ./runRereco --minRun 5700 --maxRun 5800 ...  or  --config min_run=5700 max_run=5800
+#
+# run_list_file: "../../db0/cdb2/certification/2025/2025-significant-V1.runs"
+# min_run: 0
+# max_run: 0
+#
+# rereco_task_templates:
+#   - action: midas_meta
+#     input_file_tpl: "/data/raw/run{run:05d}.mid.lz4"
+#   - action: trirec
+#     sort_input_tpl: "/data/sort/run{run}/sort.root"
+#     trirec_conf: "trirec.conf"
+#     trirec_conf_fallback: ""
+
+# --- Explicit tasks (alternative to run-list mode) ---
+rereco_tasks:
+  - id: "run5700-trirec"
+    action: trirec
     run_id: 5700
     sort_input: "/path/to/sort-run5700.root"
     trirec_conf: "trirec.conf"
     trirec_conf_fallback: ""
+
+  - id: "run5700-midas"
+    action: midas_meta
+    input_file: "/path/to/raw/run05570.mid.lz4"

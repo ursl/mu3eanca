@@ -31,7 +31,8 @@ Configured in `config.yaml`:
 |--------|---------|
 | `mu3e_relval_basedir` | Root for all relval data (workdirs, `setups/`, bootstrap clones). |
 | `mu3e_dir` | Prefix for checkout directory names (usually `mu3e`). |
-| `mu3e_tag` | Default git tag (overridable on CLI). |
+| `mu3e_tag` | Setup label and default git tag (overridable on CLI). |
+| `mu3e_checkout_branch` | If set (e.g. `dev`), track `origin/<branch>` HEAD instead of a tag. |
 
 **Checkout / workdir** (Snakemake `workdir`):
 
@@ -111,7 +112,21 @@ cd prompt/relval
 ./runRelval -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5
 ```
 
-Required on the command line: `mu3e_tag=...` (via `--config`). Optional overrides: `cdb_GT=...`, `cdb_dbconn=...`.
+Required on the command line: `mu3e_tag=...` (via `--config`). Optional overrides: `cdb_GT=...`, `cdb_dbconn=...`, `mu3e_checkout_branch=dev` (branch HEAD instead of tag).
+
+Example on `dev`:
+
+```tcsh
+./runRelval -j4 -p --config mu3e_tag=dev mu3e_checkout_branch=dev cdb_GT=mcidealv6.5
+```
+
+With a PR commit merged on top of `dev`:
+
+```tcsh
+./runRelval -j4 -p --config mu3e_tag=dev-pr49 mu3e_checkout_branch=dev mu3e_checkout_merge=75d8c48 cdb_GT=mcidealv6.5
+```
+
+(`mu3e_checkout_merge` / `mu3e_checkout_merges` run `git merge <hash>` after checkout; see `prompt/rereco/README.md` for fetch notes.)
 
 | Option | Purpose |
 |--------|---------|
