@@ -202,7 +202,7 @@ string calEventStuffV2::readJSON(string filename) {
     string first_frame_pixel_skipped_header = jsonGetValue(spl, vector<string> {"stat", "first_frame_at_least_one_pixel_FEB_had_unsorted_hit_data"});
     // -- FIXME add the remaining subsystems once they are in  mu3eUtil
 
-    cout << "FIXME correct parsing for all data" << endl;
+    cout << "FIXME correct parsing for all data (also fibres and tiles)" << endl;
     cout << "start_frame_good_pixel_data ->" << sstart_frame_good_pixel_data << "<-" << endl;
     cout << "end_frame_good_pixel_data ->" << send_frame_good_pixel_data << "<-" << endl;
     cout << "last_frame ->" << send_frame_event_data << "<-" << endl;
