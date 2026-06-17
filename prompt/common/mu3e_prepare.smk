@@ -1,12 +1,16 @@
 # Shared MU3E checkout / build / relink rules.
 #
+# clone_and_prepare_mu3e: git checkout + submodule update
+# build_mu3e: mkdir _build, cmake .., make  (module tools land in _build/modules/*)
+# relink_bin_files: symlinks in run/ for trirec etc.
+#
 # Required in the including Snakefile (before include):
 #   MU3E_REPO, MU3E_DIR, MU3E_WORK_BASEDIR, MAKE_JOBS, RELINK_SCRIPT
 #   MU3E_CHECKOUT_REF        tag/ref when not using a branch (empty if branch mode)
 #   MU3E_CHECKOUT_BRANCH     branch name to track at origin/BRANCH HEAD (optional)
 #   MU3E_CHECKOUT_MERGES     list of commit hashes to git merge after checkout (optional)
 #   CLONE_MU3E_INPUTS       list with one prerequisite path (bootstrap or local marker)
-#   CLONE_MU3E_SCRIPT       path to scripts/clone_and_prepare_mu3e.sh
+#   CLONE_MU3E_SCRIPT       path to scripts/clone_and_prepare_mu3e
 #   MU3E_PREP_LOG_PREFIX    log tag, e.g. "relval" or "rereco"
 
 
@@ -43,7 +47,7 @@ rule clone_and_prepare_mu3e:
                 args+=(--merge "$_m")
             done
         fi
-        bash "{params.script}" "${{args[@]}}"
+        perl "{params.script}" "${{args[@]}}"
         """
 
 
@@ -54,16 +58,20 @@ rule build_mu3e:
         ".markers/build_mu3e.done"
     params:
         mu3e_dir=MU3E_DIR,
-        marker_path=f"{MU3E_DIR}/.markers/build_mu3e.done",
         jobs=MAKE_JOBS
     shell:
         r"""
         set -euo pipefail
+        marker="{output}"
+        if [[ "$marker" != /* ]]; then
+            marker="$(pwd)/$marker"
+        fi
+        mkdir -p "$(dirname "$marker")"
         mkdir -p "{params.mu3e_dir}/_build"
         cd "{params.mu3e_dir}/_build"
         cmake ..
         make -j{params.jobs}
-        touch "{params.marker_path}"
+        touch "$marker"
         """
 
 
@@ -74,12 +82,16 @@ rule relink_bin_files:
         ".markers/relink_bin_files.done"
     params:
         mu3e_dir=MU3E_DIR,
-        marker_path=f"{MU3E_DIR}/.markers/relink_bin_files.done",
         relink_script=RELINK_SCRIPT,
         log_prefix=MU3E_PREP_LOG_PREFIX
     shell:
         r"""
         set -euo pipefail
+        marker="{output}"
+        if [[ "$marker" != /* ]]; then
+            marker="$(pwd)/$marker"
+        fi
+        mkdir -p "$(dirname "$marker")"
         cd "{params.mu3e_dir}/run"
         "{params.relink_script}"
         if [ ! -d "bvr2026" ]; then
@@ -95,5 +107,5 @@ rule relink_bin_files:
             rm -rf "$tmpdir"
         fi
         mkdir -p output
-        touch "{params.marker_path}"
+        touch "$marker"
         """

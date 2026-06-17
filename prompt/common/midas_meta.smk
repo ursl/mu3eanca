@@ -2,13 +2,14 @@
 #
 # Required before include:
 #   MU3E_PREP_LOG_PREFIX, MIDAS_META_EXE, MIDAS_META_SCRIPT, MIDAS_META_MARKER_TPL
+#   MIDAS_META_PREREQS          rule outputs required before midas_meta (e.g. build_mu3e marker)
 #   midas_meta_input_dir(task), midas_meta_input_file(task), midas_meta_marker_path(task)
 # Optional: MIDAS_META_FILE_SCRIPT (single-file mode)
 
 
 rule run_midas_meta:
     input:
-        f"{MU3E_WORK_BASEDIR}/.bootstrap/mu3e_util.done"
+        MIDAS_META_PREREQS
     output:
         MIDAS_META_MARKER_TPL
     log:
@@ -25,13 +26,13 @@ rule run_midas_meta:
         r"""
         set -euo pipefail
         if [ -n "{params.input_file}" ]; then
-            bash "{params.file_script}" \
+            perl "{params.file_script}" \
                 --exe "{params.exe}" \
                 --input-file "{params.input_file}" \
                 --marker "{params.marker_path}" \
                 --log-prefix "{params.log_prefix}"
         else
-            bash "{params.script}" \
+            perl "{params.script}" \
                 --exe "{params.exe}" \
                 --input-dir "{params.input_dir}" \
                 --marker "{params.marker_path}" \

@@ -17,9 +17,8 @@ More actions can be added later (same task list, new `action` values and rules).
 
 | Step | Used by | Description |
 |------|---------|-------------|
-| Bootstrap mu3eUtil | `midas_meta` | Clone/build `mu3eUtil` under `mu3e_rereco_basedir` |
-| Clone & prepare mu3e | `trirec` | Checkout `mu3e_tag` (+ submodules) |
-| Build mu3e | `trirec` | `cmake` + `make` in MU3E `_build` |
+| Clone & prepare mu3e | all actions | Checkout `mu3e_tag` / branch (+ submodules) |
+| Build mu3e | all actions | `cmake ..` + `make` in `mu3e/_build` (tools under `_build/modules/*`) |
 | Relink | `trirec` | `relinkBinFiles`; ensure `run/bvr2026` exists |
 
 **Per task** (from `rereco_tasks` in `config.yaml`):
@@ -33,19 +32,23 @@ Default target (`rule all`): all outputs/markers for every configured task.
 
 | Setting | Meaning |
 |--------|---------|
-| `mu3e_rereco_basedir` | Root for workdirs, `setups/`, shared `mu3eUtil` clone |
-| `mu3e_dir` | Prefix for MU3E checkout directory names |
-| `sort_input_base` | Optional prefix for relative `sort_input` / `input_dir` paths |
+| `mu3e_rereco_basedir` | Root for setup workdirs and `setups/` (Snakemake metadata) |
+| `mu3e_dir` | Name of the MU3E checkout subdirectory inside each setup (default: `mu3e`) |
+| `sort_input_base` | Optional prefix for relative `sort_input` / `input_dir` / `input_file` paths |
+| `raw_input_layout` | `flat` (default), `runblock3`, or `runblock4` — inserts a block subdir for relative midas paths |
+| `run_block_digits` | Width for bare `{runblock}` in templates (default `3`; use `4` for CDB-style paths) |
 
-After `./runRereco ...`:
+After `./runRereco --setup-name rereco-v67 ...`:
 
 ```
 $mu3e_rereco_basedir/
-  mu3eUtil/_build/tools/midasMeta/mu3e_midas_meta   # shared util build
-  setups/rereco_mu3e-v6.7_datav6.5=2025V1/          # copied Snakefile + common/
-  mu3e-rereco_mu3e-v6.7_datav6.5=2025V1/            # Snakemake workdir (MU3E checkout when trirec runs)
-    run/output/trirec-{task}.root
-    .markers/midas_meta-{task}.done
+  setups/rereco-v67/                         # copied Snakefile + common/ (not the workdir)
+  mu3e-rereco-v67/                           # Snakemake workdir (SETUP_ROOT)
+    .markers/                                # workflow markers
+    logs/snakemake/
+    mu3e/                                    # MU3E git checkout + submodules
+      _build/modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta
+      run/output/trirec-{task}.root
 ```
 
 ## Configuration
@@ -72,20 +75,29 @@ rereco_task_templates:
     trirec_conf_fallback: "trirec.conf"
 ```
 
-Template placeholders: `{run}` (plain number), `{run:05d}` (zero-padded). Optional `id_tpl` defaults to `run{run}-{action}`.
+Template placeholders: `{run}` (plain number), `{run:05d}` (zero-padded), `{runblock:03d}` / `{runblock:04d}` (run `// 1000`, zero-padded block index). Bare `{runblock}` uses `run_block_digits` (default 3). Optional `id_tpl` defaults to `run{run}-{action}`.
 
-When `run_list_file` is set, explicit `rereco_tasks` are ignored.
+**Run-block directories:** block index is always `run // 1000`. Non-CDB raw MID files use **3-digit** dirs (`000` = runs 0–999, `004` = 4000–4999). CDB payload trees under `db0/cdb2` use **4-digit** dirs (`0000`, `0004`, … — same block rule). Either put `{runblock:03d}/` in the template, or set `raw_input_layout: runblock3` with a relative `input_file_tpl` and `sort_input_base`.
 
-CLI (written into setup `config.yaml`):
+When `run_list_file` is set, or when **`min_run`** is set with **`rereco_task_templates`**, explicit `rereco_tasks` are ignored.
+
+**Single run** (no certification file; uses default `input_file_tpl` + `sort_input_base`):
 
 ```tcsh
-./runRereco -n -p --minRun 5700 --maxRun 5800 --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1
+./runRereco -s rereco-v67 -m 4756 -M 4756 -t dev -b dev -g datav6.5=2025V1 \
+  --config sort_input_base=/Users/ursl/data/mu3e/run2025 midas_meta_all
 ```
 
-Same via Snakemake config override:
+**Batch from certification file** (written into setup `config.yaml`):
 
 ```tcsh
-./runRereco -n -p --config min_run=5700 max_run=5800 mu3e_tag=v6.7 cdb_GT=...
+./runRereco -n -p -m 5700 -M 5800 -t v6.7 -g datav6.5=2025V1
+```
+
+Same bounds via Snakemake config override:
+
+```tcsh
+./runRereco -n -p --config min_run=5700 max_run=5800 -t v6.7 -g datav6.5=2025V1
 ```
 
 ### `trirec` task
@@ -106,10 +118,34 @@ rereco_tasks:
 
 Per-run (typical with run-list expansion):
 
+**Flat layout** (files directly under one directory, e.g. `run2025/`):
+
+```yaml
+sort_input_base: "/Users/ursl/data/mu3e/run2025"
+raw_input_layout: flat
+rereco_task_templates:
+  - action: midas_meta
+    input_file_tpl: "run{run:05d}.mid.lz4"
+```
+
+**3-digit run-block layout** (non-CDB raw, e.g. `raw/004/run04756.mid.lz4`):
+
+```yaml
+sort_input_base: "/Users/ursl/mu3e/raw"
+raw_input_layout: runblock3
+rereco_task_templates:
+  - action: midas_meta
+    input_file_tpl: "run{run:05d}.mid.lz4"
+```
+
+Equivalent explicit template (no `raw_input_layout` needed):
+
 ```yaml
   - action: midas_meta
-    input_file_tpl: "/data/raw/run{run:05d}.mid.lz4"
+    input_file_tpl: "{runblock:03d}/run{run:05d}.mid.lz4"
 ```
+
+For CDB payload paths (4-digit blocks), use `{runblock:04d}` or `raw_input_layout: runblock4`.
 
 Or a whole directory (all `*.mid.lz4` in that dir):
 
@@ -119,7 +155,7 @@ Or a whole directory (all `*.mid.lz4` in that dir):
     input_dir: "/data/raw/run5700"
 ```
 
-Single-file mode runs one `mu3e_midas_meta` invocation; directory mode processes every `*.mid.lz4` (same pattern as `run2025/scripts/slurm-midasMeta.csh`). Requires mu3eUtil bootstrap only — no MU3E checkout unless you also have `trirec` tasks.
+Single-file mode runs one `mu3e_midas_meta` invocation; directory mode processes every `*.mid.lz4` (same pattern as `run2025/scripts/slurm-midasMeta.csh`). Requires full MU3E checkout and build (`mu3e/_build/`); the executable defaults to `_build/modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta` (override with `midas_meta_exe` in config).
 
 Optional per-task override: `input_file_base` / `input_dir_base` if paths are relative to something other than `sort_input_base`.
 
@@ -139,7 +175,7 @@ mu3e_checkout_branch: "dev"
 ```
 
 ```tcsh
-./runRereco -n -p --config mu3e_tag=dev mu3e_checkout_branch=dev cdb_GT=datav6.5=2025V1
+./runRereco -n -p -t dev -b dev -g datav6.5=2025V1
 ```
 
 `mu3e_checkout_branch` runs `git fetch origin <branch>` and `git reset --hard origin/<branch>` (then submodules). It overrides tag checkout.
@@ -153,7 +189,7 @@ mu3e_checkout_merge: "75d8c48"
 ```
 
 ```tcsh
-./runRereco -n -p --config mu3e_tag=dev-pr49 mu3e_checkout_branch=dev mu3e_checkout_merge=75d8c48 cdb_GT=...
+./runRereco -n -p -t dev-pr49 -b dev --config mu3e_checkout_merge=75d8c48 -g ...
 ```
 
 If the hash is not yet in the local object database, fetch the PR ref first (Bitbucket example):
@@ -167,22 +203,31 @@ Then re-run Snakemake (or add the hash only after `git fetch` has made it reacha
 
 ## Running
 
-Host selection: `REREC_HOST=moor` or `./runRereco --host mu3edb0`
+Host selection: `REREC_HOST=moor` or `./runRereco -H mu3edb0`
 
 ```tcsh
 cd /path/to/mu3eanca/prompt/rereco
 
-./runRereco -n -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1
-./runRereco -j4 -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1
+./runRereco -n -p -t v6.7 -g datav6.5=2025V1
+./runRereco -j4 -p -t v6.7 -g datav6.5=2025V1
 ```
 
-Single task / action:
+`-p` is a **Snakemake** flag (`--printshellcmds`): print each shell command before it runs. `-n` is Snakemake dry-run.
+
+Single run / single action:
 
 ```tcsh
-cd $MU3E_REREC_BASEDIR/setups/rereco_mu3e-v6.7_...
-snakemake --cores 1 -p run/output/trirec-run5700-trirec.root
-snakemake --cores 1 -p .markers/midas_meta-run5700-midas.done
-snakemake --cores 1 -p run_midas_meta --config ...   # wildcard task=run5700-midas
+./runRereco -s rereco-v67 -j1 -p -m 4756 -M 4756 -t dev -b dev -g datav6.5=2025V1 midas_meta_all
+./runRereco -s rereco-v67 -j1 -p -m 4756 -M 4756 -t dev -b dev -g datav6.5=2025V1 \
+  .markers/midas_meta-run4756-midas_meta.done
+```
+
+From an existing setup directory:
+
+```tcsh
+cd $MU3E_REREC_BASEDIR/setups/rereco-v67
+snakemake --directory $MU3E_REREC_BASEDIR/mu3e-rereco-v67 --cores 1 -p midas_meta_all
+snakemake --directory $MU3E_REREC_BASEDIR/mu3e-rereco-v67 --cores 1 -p .markers/midas_meta-run4756-midas_meta.done
 ```
 
 ## Shared code with relval

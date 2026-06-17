@@ -4,13 +4,16 @@
 
 ```
 common/
+  RerecoRuns                    run-list / task template expansion (rereco)
+  load_rereco_tasks             JSON stdin → JSON task list (Snakemake helper)
   mu3e_prepare.smk              clone / build / relink rules (mu3e checkout)
-  mu3e_util_bootstrap.smk       clone / build mu3eUtil
+  mu3e_util_bootstrap.smk         standalone mu3eUtil build (legacy; not used by rereco)
   mu3e_trirec.smk               shared run_mu3e_trirec rule
-  midas_meta.smk                run mu3e_midas_meta on a directory of *.mid.lz4
+  midas_meta.smk                run mu3e_midas_meta on *.mid.lz4 inputs
   scripts/
-    clone_and_prepare_mu3e.sh   git checkout implementation
-    run_midas_meta_dir.sh       midas meta batch driver
+    clone_and_prepare_mu3e      git checkout implementation
+    run_midas_meta_dir          midas meta batch driver
+    run_midas_meta_file         midas meta single-file driver
 ```
 
 ## Usage in a workflow Snakefile
@@ -26,7 +29,7 @@ if not _PROMPT_COMMON.is_dir():
 
 MU3E_WORK_BASEDIR = ...          # relval or rereco base dir
 MU3E_PREP_LOG_PREFIX = "relval"  # log tag for relink rule
-CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e.sh")
+CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e")
 CLONE_MU3E_INPUTS = [...]        # one prerequisite path
 
 include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
@@ -55,8 +58,10 @@ Relval uses wildcard `{scenario}`; rereco uses `{job}` — each workflow keeps i
 | Name | Meaning |
 |------|---------|
 | `MU3E_REPO`, `MU3E_CHECKOUT_REF`, `MU3E_CHECKOUT_BRANCH`, `MU3E_CHECKOUT_MERGES`, `MU3E_DIR` | MU3E checkout |
-| `MU3E_WORK_BASEDIR` | Parent data root (`mu3e_relval_basedir` / `mu3e_rereco_basedir`) |
+| `MU3E_WORK_BASEDIR` | Snakemake workdir / setup root (rereco: `{basedir}/mu3e-{setup}`; relval: same as MU3E checkout) |
+| `MIDAS_META_PREREQS` | Inputs for `run_midas_meta` (rereco: `[.markers/build_mu3e.done]`) |
+| `MIDAS_META_EXE` | Path to `mu3e_midas_meta` under `mu3e/_build/` |
 | `MAKE_JOBS`, `RELINK_SCRIPT` | build + relink |
 | `CLONE_MU3E_INPUTS` | Single-item list: bootstrap marker (relval) or local deps marker (rereco) |
-| `CLONE_MU3E_SCRIPT` | Path to `clone_and_prepare_mu3e.sh` |
+| `CLONE_MU3E_SCRIPT` | Path to `clone_and_prepare_mu3e` |
 | `MU3E_PREP_LOG_PREFIX` | Short name in log lines |

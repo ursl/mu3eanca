@@ -14,11 +14,20 @@ mu3e_tag: "master"
 mu3e_dir: "mu3e"
 make_jobs: 10
 
-mu3e_util_repo: "git@bitbucket.org:mu3e/mu3eUtil"
-mu3e_util_make_jobs: 10
+# Path to mu3e_midas_meta relative to mu3e/_build/ (after full cmake build).
+# midas_meta_exe: "modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta"
 
 # Optional prefix for relative input paths (sort_input, input_dir, input_file).
 sort_input_base: ""
+
+# Raw MID input layout under sort_input_base (midas_meta relative paths only):
+#   flat       — files directly under the base dir (e.g. run2025/run04756.mid.lz4)
+#   runblock3  — 3-digit block subdirs: 000 = runs 0–999, 004 = 4000–4999 (non-CDB raw)
+#   runblock4  — 4-digit blocks (same run//1000 rule as CDB payloads under db0/cdb2)
+# Or embed {runblock:03d} / {runblock:04d} in input_file_tpl and leave this flat.
+raw_input_layout: "flat"
+# Default width for bare {runblock} in templates (3 = raw, 4 = CDB-style).
+run_block_digits: 3
 
 trirec_output_tpl: "output/trirec-{task}.root"
 midas_meta_marker_tpl: ".markers/midas_meta-{task}.done"
@@ -26,32 +35,30 @@ midas_meta_marker_tpl: ".markers/midas_meta-{task}.done"
 cdb_GT: "mcidealv6.5"
 
 # --- Run-list mode (recommended for batch reprocessing) ---
-# Comma-separated run numbers in certification ASCII files under db0/cdb2/certification/.
-# When run_list_file is set, rereco_task_templates is expanded once per selected run.
-# min_run / max_run: keep runs with min_run <= run <= max_run (0 = no bound).
-# Override on CLI: ./runRereco --minRun 5700 --maxRun 5800 ...  or  --config min_run=5700 max_run=5800
+# rereco_task_templates is expanded once per run. Runs come from either:
+#   run_list_file (+ optional min_run/max_run filter), or
+#   min_run/max_run alone (CLI: ./runRereco -m 4756 -M 4756 ...).
+# min_run / max_run with a file: filter only (0 = no bound on that side).
+# min_run / max_run without a file: build run list (max_run 0 → single run min_run).
 #
 # run_list_file: "../../db0/cdb2/certification/2025/2025-significant-V1.runs"
 # min_run: 0
 # max_run: 0
-#
-# rereco_task_templates:
-#   - action: midas_meta
-#     input_file_tpl: "/data/raw/run{run:05d}.mid.lz4"
-#   - action: trirec
-#     sort_input_tpl: "/data/sort/run{run}/sort.root"
+
+rereco_task_templates:
+  - action: midas_meta
+    input_file_tpl: "run{run:05d}.mid.lz4"
+  # - action: trirec
+  #   sort_input_tpl: "/data/sort/run{run}/sort.root"
+  #   trirec_conf: "trirec.conf"
+  #   trirec_conf_fallback: ""
+
+# --- Explicit tasks (alternative; ignored when templates + run_list or min_run) ---
+rereco_tasks: []
+# rereco_tasks:
+#   - id: "run5700-trirec"
+#     action: trirec
+#     run_id: 5700
+#     sort_input: "/path/to/sort-run5700.root"
 #     trirec_conf: "trirec.conf"
 #     trirec_conf_fallback: ""
-
-# --- Explicit tasks (alternative to run-list mode) ---
-rereco_tasks:
-  - id: "run5700-trirec"
-    action: trirec
-    run_id: 5700
-    sort_input: "/path/to/sort-run5700.root"
-    trirec_conf: "trirec.conf"
-    trirec_conf_fallback: ""
-
-  - id: "run5700-midas"
-    action: midas_meta
-    input_file: "/path/to/raw/run05570.mid.lz4"

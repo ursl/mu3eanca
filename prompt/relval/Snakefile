@@ -64,7 +64,7 @@ RELINK_SCRIPT = config["relink_script"]
 
 MU3E_WORK_BASEDIR = MU3E_RELVAL_BASEDIR
 MU3E_PREP_LOG_PREFIX = "relval"
-CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e.sh")
+CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e")
 CLONE_MU3E_INPUTS = [f"{MU3E_RELVAL_BASEDIR}/.bootstrap/mu3e_validation_tools.done"]
 
 include: str(_PROMPT_COMMON / "mu3e_prepare.smk")

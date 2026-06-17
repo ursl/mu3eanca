@@ -3,3 +3,5 @@
 mu3e_rereco_basedir: "/Users/ursl/data/mu3e/rereco"
 relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
 cdb_dbconn: "http://mu3edb0/cdb/"
+# Flat raw MID files for run2025 live under raw/ (not the run2025 top dir).
+sort_input_base: "/Users/ursl/data/mu3e/run2025/raw"

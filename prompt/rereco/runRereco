@@ -6,18 +6,42 @@
 #
 # Perl wrapper for rereco Snakemake setup creation and execution.
 #
-# Usage:
-#   ./runRereco [--setup-name NAME] [--host HOST] [--minRun N] [--maxRun N] [snakemake args...] --config mu3e_tag=<tag> [other overrides]
+# Usage: ./runRereco -t TAG [options] [snakemake args...] [snakemake targets...]
 #
-# Example:
-#   ./runRereco --setup-name rereco-v67 -j4 -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1
-#   ./runRereco -n -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1
+# Options (this script):
+#   -s setup-name   name under setups/ and mu3e-<setup-name> workdir
+#   -H host         host config file config-<host>.yaml (default: hostname)
+#   -m minRun       minimum run number (run-list mode; written to config.yaml)
+#   -M maxRun       maximum run number (run-list mode)
+#   -t mu3e_tag     MU3E tag / label (required)
+#   -g cdb_GT       CDB global tag
+#   -b branch       track origin/<branch> instead of tag checkout
+#   -h              help
 #
+# Arguments after options are passed to snakemake, for example:
+#   -n              dry run (do not execute rules)
+#   -p              print shell commands before running them (snakemake --printshellcmds)
+#   -j4             parallel jobs (normalized to snakemake --cores 4)
+#   --config k=v    setup overrides (merged into setup config.yaml, not passed to snakemake)
+#   midas_meta_all  concrete snakemake target
+#
+# Examples:
+#   ./runRereco -s rereco-v67 -j1 -p -t dev -b dev -g datav6.5=2025V1 -m 4756 -M 4756 midas_meta_all
+#   ./runRereco -n -p -t v6.7 -g datav6.5=2025V1
+#
+# History  2025/06/16 first shot
+#
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
 # ----------------------------------------------------------------------
 
 use strict;
 use warnings;
-use Cwd qw(abs_path getcwd);
+use Getopt::Std;
+use vars qw($opt_s $opt_H $opt_m $opt_M $opt_t $opt_g $opt_b $opt_h);
+use Cwd qw(abs_path);
 use File::Basename qw(dirname);
 use File::Copy qw(copy);
 use File::Path qw(make_path);
@@ -25,8 +49,23 @@ use Sys::Hostname qw(hostname);
 
 # ----------------------------------------------------------------------
 sub usage {
-    print "Usage: $0 [--setup-name NAME] [--host HOST] [--minRun N] [--maxRun N] [snakemake args...] --config mu3e_tag=<tag> [other config overrides]\n";
-    print "Example: $0 --setup-name rereco-v67 -j4 -p --config mu3e_tag=v6.7 cdb_GT=datav6.5=2025V1\n";
+    print "Usage: $0 -t TAG [options] [snakemake args...] [targets...]\n\n";
+    print "Options (runRereco):\n";
+    print "  -s setup-name   setup / workdir basename (default: derived from tag and GT)\n";
+    print "  -H host         use config-<host>.yaml (default: hostname or REREC_HOST)\n";
+    print "  -m minRun       minimum run number for run-list filtering\n";
+    print "  -M maxRun       maximum run number for run-list filtering\n";
+    print "  -t mu3e_tag     MU3E tag / label (required)\n";
+    print "  -g cdb_GT       CDB global tag\n";
+    print "  -b branch       checkout origin/<branch> instead of a release tag\n";
+    print "  -h              this help\n\n";
+    print "Remaining arguments go to snakemake. Common snakemake flags:\n";
+    print "  -n              dry run\n";
+    print "  -p              print shell commands (snakemake --printshellcmds)\n";
+    print "  -jN             run N jobs in parallel\n";
+    print "  --config k=v    extra config overrides for the Snakefile\n\n";
+    print "Example:\n";
+    print "  $0 -s rereco-v67 -j1 -p -t dev -b dev -g datav6.5=2025V1 -m 4756 -M 4756 midas_meta_all\n";
 }
 
 # ----------------------------------------------------------------------
@@ -41,6 +80,7 @@ sub prefix {
 # ----------------------------------------------------------------------
 sub read_yaml_quoted_value {
     my ($path, $key) = @_;
+    return "" unless -f $path;
     open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
     while (my $line = <$fh>) {
         if ($line =~ /^$key:\s*"(.*)"/) {
@@ -156,6 +196,111 @@ sub write_lines {
 }
 
 # ----------------------------------------------------------------------
+sub apply_config_kv {
+    my ($cfg, $kv) = @_;
+    return if !defined $kv || $kv eq "";
+    if ($kv =~ /^mu3e_tag=(.*)$/) {
+        $cfg->{mu3e_tag} = $1 unless defined $cfg->{mu3e_tag} && $cfg->{mu3e_tag} ne "";
+    } elsif ($kv =~ /^mu3e_checkout_branch=(.*)$/) {
+        $cfg->{mu3e_checkout_branch} = $1;
+    } elsif ($kv =~ /^mu3e_checkout_merge=(.*)$/) {
+        $cfg->{mu3e_checkout_merge} = $1;
+    } elsif ($kv =~ /^cdb_GT=(.*)$/ || $kv =~ /^cdb_gt=(.*)$/) {
+        $cfg->{cdb_GT} = $1;
+    } elsif ($kv =~ /^cdb_dbconn=(.*)$/ || $kv =~ /^cdb_db_conn=(.*)$/) {
+        $cfg->{cdb_dbconn} = $1;
+    } elsif ($kv =~ /^min_run=(.*)$/) {
+        $cfg->{min_run} = $1;
+    } elsif ($kv =~ /^max_run=(.*)$/) {
+        $cfg->{max_run} = $1;
+    } elsif ($kv =~ /^sort_input_base=(.*)$/) {
+        $cfg->{sort_input_base} = $1;
+    } elsif ($kv =~ /^raw_input_layout=(.*)$/) {
+        $cfg->{raw_input_layout} = $1;
+    } elsif ($kv =~ /^run_block_digits=(.*)$/) {
+        $cfg->{run_block_digits} = $1;
+    } elsif ($kv =~ /^run_list_file=(.*)$/) {
+        $cfg->{run_list_file} = $1;
+    }
+}
+
+# ----------------------------------------------------------------------
+sub is_config_kv {
+    my ($arg) = @_;
+    return defined $arg && $arg =~ /^[A-Za-z0-9_]+=/;
+}
+
+# ----------------------------------------------------------------------
+# Pull --config / key=value out of snakemake argv (persisted in setup config.yaml).
+sub extract_snakemake_config {
+    my ($argv_ref, $cfg_ref) = @_;
+    my @out = ();
+    my $i = 0;
+    while ($i <= $#$argv_ref) {
+        my $a = $argv_ref->[$i];
+        if ($a eq '--config') {
+            ++$i;
+            while ($i <= $#$argv_ref) {
+                my $tok = $argv_ref->[$i];
+                if (is_config_kv($tok)) {
+                    apply_config_kv($cfg_ref, $tok);
+                    ++$i;
+                } elsif ($tok =~ /\s/ && $tok =~ /=/) {
+                    foreach my $kv (split(/\s+/, $tok)) {
+                        apply_config_kv($cfg_ref, $kv) if is_config_kv($kv);
+                    }
+                    ++$i;
+                } else {
+                    last;
+                }
+            }
+            next;
+        }
+        if (is_config_kv($a)) {
+            apply_config_kv($cfg_ref, $a);
+        } else {
+            push(@out, $a);
+        }
+        ++$i;
+    }
+    @$argv_ref = @out;
+}
+
+# ----------------------------------------------------------------------
+sub snakemake_forwarded_args_normalized {
+    my (@args) = @_;
+    my $has_explicit_cores = 0;
+    for (my $i = 0; $i <= $#args; ++$i) {
+        if ($args[$i] =~ /^--cores/) {
+            $has_explicit_cores = 1;
+            last;
+        }
+        if ($args[$i] =~ /^-c\d+$/) {
+            $has_explicit_cores = 1;
+            last;
+        }
+        if ($args[$i] eq '-c' && $i < $#args && $args[$i + 1] =~ /^\d+$/) {
+            $has_explicit_cores = 1;
+            last;
+        }
+    }
+    return @args if $has_explicit_cores;
+
+    my @out;
+    for (my $i = 0; $i <= $#args; ++$i) {
+        if ($args[$i] =~ /^-j(\d+)$/) {
+            push(@out, '--cores', $1);
+        } elsif ($args[$i] eq '-j' && $i < $#args && $args[$i + 1] =~ /^\d+$/) {
+            push(@out, '--cores', $args[$i + 1]);
+            ++$i;
+        } else {
+            push(@out, $args[$i]);
+        }
+    }
+    return @out;
+}
+
+# ----------------------------------------------------------------------
 sub run_cmd {
     my (@cmd) = @_;
     print(prefix("runRereco"), "cmd: @cmd\n");
@@ -204,134 +349,84 @@ sub run_cmd_to_file {
 }
 
 # ----------------------------------------------------------------------
-sub snakemake_forwarded_args_normalized {
-    my (@args) = @_;
-    my $has_explicit_cores = 0;
-    for (my $i = 0; $i <= $#args; ++$i) {
-        if ($args[$i] =~ /^--cores/) {
-            $has_explicit_cores = 1;
-            last;
-        }
-        if ($args[$i] =~ /^-c\d+$/) {
-            $has_explicit_cores = 1;
-            last;
-        }
-        if ($args[$i] eq '-c' && $i < $#args && $args[$i + 1] =~ /^\d+$/) {
-            $has_explicit_cores = 1;
-            last;
-        }
-    }
-    return @args if $has_explicit_cores;
+sub is_snakemake_flag {
+    my ($arg) = @_;
+    return 1 if $arg =~ /^--(config|cores|dry-run|printshellcmds|quiet|reason|rerun-incomplete|keep-going|force|touch|summary|detailed-summary|help)/;
+    return 1 if $arg =~ /^-[nprRqklLKSTFUW]$/;
+    return 1 if $arg =~ /^-j\d+$/ || $arg =~ /^-c\d+$/;
+    return 0;
+}
 
-    my @out;
-    for (my $i = 0; $i <= $#args; ++$i) {
-        if ($args[$i] =~ /^-j(\d+)$/) {
-            push(@out, '--cores', $1);
-        } elsif ($args[$i] eq '-j' && $i < $#args && $args[$i + 1] =~ /^\d+$/) {
-            push(@out, '--cores', $args[$i + 1]);
-            ++$i;
+# ----------------------------------------------------------------------
+sub partition_argv {
+    my (@argv) = @_;
+    my @rereco = ();
+    my @snakemake = ();
+
+    for (my $i = 0; $i <= $#argv; ++$i) {
+        my $a = $argv[$i];
+        if ($a eq '--') {
+            push(@snakemake, @argv[($i + 1) .. $#argv]);
+            last;
+        } elsif ($a =~ /^-[sHmMtgbh]$/) {
+            push(@rereco, $a);
+            if ($a ne '-h' && $i + 1 <= $#argv && $argv[$i + 1] !~ /^-/) {
+                push(@rereco, $argv[++$i]);
+            }
+        } elsif ($a eq '--config' || $a eq '--cores' || $a eq '-j' || $a eq '-c') {
+            push(@snakemake, $a);
+            if ($i + 1 <= $#argv && $argv[$i + 1] !~ /^-/) {
+                push(@snakemake, $argv[++$i]);
+            }
+        } elsif (is_snakemake_flag($a) || $a =~ /^--/) {
+            push(@snakemake, $a);
+        } elsif ($a =~ /^-/) {
+            push(@snakemake, $a);
         } else {
-            push(@out, $args[$i]);
+            push(@snakemake, $a);
         }
     }
-    return @out;
+    return (\@rereco, \@snakemake);
 }
 
 # ----------------------------------------------------------------------
-if ($#ARGV < 0) {
+my @snakemake_argv = ();
+if ($#ARGV >= 0) {
+    my ($rereco_argv, $snakemake_argv_ref) = partition_argv(@ARGV);
+    @ARGV = @{$rereco_argv};
+    @snakemake_argv = @{$snakemake_argv_ref};
+}
+
+getopts('s:H:m:M:t:g:b:h');
+
+if ($opt_h) {
     usage();
-    exit(1);
+    exit(0);
 }
 
-# ----------------------------------------------------------------------
-my $setup_name = "";
-my $cli_host = "";
-my $cli_min_run = "";
-my $cli_max_run = "";
-my @forwarded_args = ();
+my %cfg = ();
+$cfg{mu3e_tag}           = $opt_t           if defined $opt_t;
+$cfg{cdb_GT}             = $opt_g           if defined $opt_g;
+$cfg{mu3e_checkout_branch} = $opt_b         if defined $opt_b;
+$cfg{min_run}            = $opt_m           if defined $opt_m;
+$cfg{max_run}            = $opt_M           if defined $opt_M;
 
-for (my $i = 0; $i <= $#ARGV; ++$i) {
-    if ($ARGV[$i] eq "--setup-name") {
-        if ($i + 1 > $#ARGV) {
-            die "ERROR: --setup-name requires a value\n";
-        }
-        $setup_name = $ARGV[$i + 1];
-        ++$i;
-    } elsif ($ARGV[$i] eq "--host") {
-        if ($i + 1 > $#ARGV) {
-            die "ERROR: --host requires a value (e.g. moor, mu3edb0)\n";
-        }
-        $cli_host = $ARGV[$i + 1];
-        ++$i;
-    } elsif ($ARGV[$i] eq "--minRun") {
-        if ($i + 1 > $#ARGV) {
-            die "ERROR: --minRun requires a run number\n";
-        }
-        $cli_min_run = $ARGV[$i + 1];
-        ++$i;
-    } elsif ($ARGV[$i] eq "--maxRun") {
-        if ($i + 1 > $#ARGV) {
-            die "ERROR: --maxRun requires a run number\n";
-        }
-        $cli_max_run = $ARGV[$i + 1];
-        ++$i;
-    } else {
-        push(@forwarded_args, $ARGV[$i]);
-    }
-}
+extract_snakemake_config(\@snakemake_argv, \%cfg);
 
-my $mu3e_tag = "";
-my $mu3e_checkout_branch = "";
-my $mu3e_checkout_merge = "";
-my $raw_cdb_gt = "";
-my $raw_cdb_dbconn = "";
-my $raw_min_run = "";
-my $raw_max_run = "";
-
-foreach my $arg (@forwarded_args) {
-    if ($arg =~ /^mu3e_tag=(.*)$/) {
-        $mu3e_tag = $1;
-    } elsif ($arg =~ /^mu3e_checkout_branch=(.*)$/) {
-        $mu3e_checkout_branch = $1;
-    } elsif ($arg =~ /^mu3e_checkout_merge=(.*)$/) {
-        $mu3e_checkout_merge = $1;
-    } elsif ($arg =~ /^cdb_GT=(.*)$/) {
-        $raw_cdb_gt = $1;
-    } elsif ($arg =~ /^cdb_gt=(.*)$/) {
-        $raw_cdb_gt = $1;
-    } elsif ($arg =~ /^cdb_dbconn=(.*)$/) {
-        $raw_cdb_dbconn = $1;
-    } elsif ($arg =~ /^cdb_db_conn=(.*)$/) {
-        $raw_cdb_dbconn = $1;
-    } elsif ($arg =~ /^min_run=(.*)$/) {
-        $raw_min_run = $1;
-    } elsif ($arg =~ /^max_run=(.*)$/) {
-        $raw_max_run = $1;
-    }
-}
-
-if ($cli_min_run ne "") {
-    $raw_min_run = $cli_min_run;
-}
-if ($cli_max_run ne "") {
-    $raw_max_run = $cli_max_run;
-}
-
-if ($mu3e_tag eq "") {
-    print "ERROR: missing mu3e_tag in arguments.\n";
-    print "Please pass it as Snakemake config, e.g. --config mu3e_tag=v6.7\n";
+if (!defined $cfg{mu3e_tag} || $cfg{mu3e_tag} eq "") {
+    usage();
     exit(1);
 }
 
 my $script_dir = abs_path(dirname($0));
 chdir($script_dir) or die "Cannot chdir to $script_dir: $!\n";
 
-my $rereco_host = rereco_host($cli_host);
+my $rereco_host = rereco_host($opt_H);
 my $host_cfg = host_config_path($rereco_host);
 if (-f $host_cfg) {
     print(prefix("runRereco"), "using host config: $host_cfg (host=$rereco_host)\n");
 } else {
-    print(prefix("runRereco"), "warning: no $host_cfg; using config.yaml only (set --host or REREC_HOST if paths are wrong)\n");
+    print(prefix("runRereco"), "warning: no $host_cfg; using config.yaml only (set -H or REREC_HOST if paths are wrong)\n");
 }
 
 my $base_dir = read_config_value($rereco_host, "mu3e_rereco_basedir");
@@ -340,25 +435,24 @@ if ($base_dir eq "" || $mu3e_dir_base eq "") {
     die "ERROR: could not parse mu3e_rereco_basedir/mu3e_dir from config.yaml + $host_cfg\n";
 }
 
-if ($raw_cdb_gt eq "") {
-    $raw_cdb_gt = read_config_value($rereco_host, "cdb_GT");
-}
-if ($raw_cdb_dbconn eq "") {
-    $raw_cdb_dbconn = read_config_value($rereco_host, "cdb_dbconn");
-}
-if ($mu3e_checkout_branch eq "") {
-    $mu3e_checkout_branch = read_yaml_scalar_value("config.yaml", "mu3e_checkout_branch");
+$cfg{cdb_GT} = read_config_value($rereco_host, "cdb_GT")
+    if !defined $cfg{cdb_GT} || $cfg{cdb_GT} eq "";
+$cfg{cdb_dbconn} = read_config_value($rereco_host, "cdb_dbconn")
+    if !defined $cfg{cdb_dbconn} || $cfg{cdb_dbconn} eq "";
+if (!defined $cfg{mu3e_checkout_branch} || $cfg{mu3e_checkout_branch} eq "") {
+    $cfg{mu3e_checkout_branch} = read_yaml_scalar_value("config.yaml", "mu3e_checkout_branch");
     my $host_branch = read_yaml_scalar_value($host_cfg, "mu3e_checkout_branch");
-    $mu3e_checkout_branch = $host_branch if $host_branch ne "";
+    $cfg{mu3e_checkout_branch} = $host_branch if $host_branch ne "";
 }
-if ($mu3e_checkout_merge eq "") {
-    $mu3e_checkout_merge = read_yaml_scalar_value("config.yaml", "mu3e_checkout_merge");
+if (!defined $cfg{mu3e_checkout_merge} || $cfg{mu3e_checkout_merge} eq "") {
+    $cfg{mu3e_checkout_merge} = read_yaml_scalar_value("config.yaml", "mu3e_checkout_merge");
     my $host_merge = read_yaml_scalar_value($host_cfg, "mu3e_checkout_merge");
-    $mu3e_checkout_merge = $host_merge if $host_merge ne "";
+    $cfg{mu3e_checkout_merge} = $host_merge if $host_merge ne "";
 }
 
+my $setup_name = defined $opt_s ? $opt_s : "";
 if ($setup_name eq "") {
-    $setup_name = "rereco_" . $mu3e_dir_base . "-" . $mu3e_tag . "_" . $raw_cdb_gt;
+    $setup_name = "rereco_" . $mu3e_dir_base . "-" . $cfg{mu3e_tag} . "_" . $cfg{cdb_GT};
 }
 
 my $setup_safe = $setup_name;
@@ -374,86 +468,111 @@ copy_prompt_common($script_dir, $setup_dir);
 my $cfg_path = "$setup_dir/config.yaml";
 my @lines = merge_config_lines("$script_dir/config.yaml", "$script_dir/$host_cfg");
 
-my $mu3e_workdir_name = $mu3e_dir_base . "-" . $setup_safe;
-my $seen_workdir_name = 0;
-my $seen_checkout_tag = 0;
-my $seen_checkout_branch = 0;
-my $seen_checkout_merge = 0;
-my $seen_min_run = 0;
-my $seen_max_run = 0;
+my $mu3e_workdir_name = "mu3e-" . $setup_safe;
+my %seen = ();
 my @out = ();
 
 foreach my $line (@lines) {
     if ($line =~ /^mu3e_workdir_name:/) {
         push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
-        $seen_workdir_name = 1;
+        $seen{mu3e_workdir_name} = 1;
     } elsif ($line =~ /^mu3e_checkout_tag:/) {
-        if ($mu3e_checkout_branch eq "") {
-            push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
+        if ($cfg{mu3e_checkout_branch} eq "") {
+            push(@out, "mu3e_checkout_tag: \"$cfg{mu3e_tag}\"\n");
         } else {
             push(@out, "mu3e_checkout_tag: \"\"\n");
         }
-        $seen_checkout_tag = 1;
+        $seen{mu3e_checkout_tag} = 1;
     } elsif ($line =~ /^mu3e_checkout_branch:/) {
-        push(@out, "mu3e_checkout_branch: \"$mu3e_checkout_branch\"\n");
-        $seen_checkout_branch = 1;
+        push(@out, "mu3e_checkout_branch: \"$cfg{mu3e_checkout_branch}\"\n");
+        $seen{mu3e_checkout_branch} = 1;
     } elsif ($line =~ /^mu3e_checkout_merge:/) {
-        if ($mu3e_checkout_merge ne "") {
-            push(@out, "mu3e_checkout_merge: \"$mu3e_checkout_merge\"\n");
+        if ($cfg{mu3e_checkout_merge} ne "") {
+            push(@out, "mu3e_checkout_merge: \"$cfg{mu3e_checkout_merge}\"\n");
         } else {
             push(@out, $line);
         }
-        $seen_checkout_merge = 1;
+        $seen{mu3e_checkout_merge} = 1;
     } elsif ($line =~ /^mu3e_tag:/) {
-        push(@out, "mu3e_tag: \"$mu3e_tag\"\n");
+        push(@out, "mu3e_tag: \"$cfg{mu3e_tag}\"\n");
+        $seen{mu3e_tag} = 1;
     } elsif ($line =~ /^cdb_GT:/) {
-        push(@out, "cdb_GT: \"$raw_cdb_gt\"\n");
+        push(@out, "cdb_GT: \"$cfg{cdb_GT}\"\n");
+        $seen{cdb_GT} = 1;
     } elsif ($line =~ /^cdb_dbconn:/) {
-        push(@out, "cdb_dbconn: \"$raw_cdb_dbconn\"\n");
+        push(@out, "cdb_dbconn: \"$cfg{cdb_dbconn}\"\n");
+        $seen{cdb_dbconn} = 1;
     } elsif ($line =~ /^min_run:/) {
-        if ($raw_min_run ne "") {
-            push(@out, "min_run: $raw_min_run\n");
+        if (defined $cfg{min_run} && $cfg{min_run} ne "") {
+            push(@out, "min_run: $cfg{min_run}\n");
         } else {
             push(@out, $line);
         }
-        $seen_min_run = 1;
+        $seen{min_run} = 1;
     } elsif ($line =~ /^max_run:/) {
-        if ($raw_max_run ne "") {
-            push(@out, "max_run: $raw_max_run\n");
+        if (defined $cfg{max_run} && $cfg{max_run} ne "") {
+            push(@out, "max_run: $cfg{max_run}\n");
         } else {
             push(@out, $line);
         }
-        $seen_max_run = 1;
+        $seen{max_run} = 1;
+    } elsif ($line =~ /^sort_input_base:/) {
+        if (defined $cfg{sort_input_base} && $cfg{sort_input_base} ne "") {
+            push(@out, "sort_input_base: \"$cfg{sort_input_base}\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{sort_input_base} = 1;
+    } elsif ($line =~ /^raw_input_layout:/) {
+        if (defined $cfg{raw_input_layout} && $cfg{raw_input_layout} ne "") {
+            push(@out, "raw_input_layout: \"$cfg{raw_input_layout}\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{raw_input_layout} = 1;
+    } elsif ($line =~ /^run_block_digits:/) {
+        if (defined $cfg{run_block_digits} && $cfg{run_block_digits} ne "") {
+            push(@out, "run_block_digits: $cfg{run_block_digits}\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{run_block_digits} = 1;
+    } elsif ($line =~ /^run_list_file:/) {
+        if (defined $cfg{run_list_file} && $cfg{run_list_file} ne "") {
+            push(@out, "run_list_file: \"$cfg{run_list_file}\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{run_list_file} = 1;
     } else {
         push(@out, $line);
     }
 }
 
-if (!$seen_workdir_name) {
-    push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
+push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n") if !$seen{mu3e_workdir_name};
+if (!$seen{mu3e_checkout_tag} && $cfg{mu3e_checkout_branch} eq "") {
+    push(@out, "mu3e_checkout_tag: \"$cfg{mu3e_tag}\"\n");
 }
-if (!$seen_checkout_tag && $mu3e_checkout_branch eq "") {
-    push(@out, "mu3e_checkout_tag: \"$mu3e_tag\"\n");
-}
-if (!$seen_checkout_branch) {
-    push(@out, "mu3e_checkout_branch: \"$mu3e_checkout_branch\"\n");
-}
-if (!$seen_checkout_merge && $mu3e_checkout_merge ne "") {
-    push(@out, "mu3e_checkout_merge: \"$mu3e_checkout_merge\"\n");
-}
-if (!$seen_min_run && $raw_min_run ne "") {
-    push(@out, "min_run: $raw_min_run\n");
-}
-if (!$seen_max_run && $raw_max_run ne "") {
-    push(@out, "max_run: $raw_max_run\n");
-}
+push(@out, "mu3e_checkout_branch: \"$cfg{mu3e_checkout_branch}\"\n") if !$seen{mu3e_checkout_branch};
+push(@out, "mu3e_checkout_merge: \"$cfg{mu3e_checkout_merge}\"\n")
+    if !$seen{mu3e_checkout_merge} && $cfg{mu3e_checkout_merge} ne "";
+push(@out, "min_run: $cfg{min_run}\n") if !$seen{min_run} && defined $cfg{min_run} && $cfg{min_run} ne "";
+push(@out, "max_run: $cfg{max_run}\n") if !$seen{max_run} && defined $cfg{max_run} && $cfg{max_run} ne "";
+push(@out, "sort_input_base: \"$cfg{sort_input_base}\"\n")
+    if !$seen{sort_input_base} && defined $cfg{sort_input_base} && $cfg{sort_input_base} ne "";
+push(@out, "raw_input_layout: \"$cfg{raw_input_layout}\"\n")
+    if !$seen{raw_input_layout} && defined $cfg{raw_input_layout} && $cfg{raw_input_layout} ne "";
+push(@out, "run_block_digits: $cfg{run_block_digits}\n")
+    if !$seen{run_block_digits} && defined $cfg{run_block_digits} && $cfg{run_block_digits} ne "";
+push(@out, "run_list_file: \"$cfg{run_list_file}\"\n")
+    if !$seen{run_list_file} && defined $cfg{run_list_file} && $cfg{run_list_file} ne "";
 write_lines($cfg_path, \@out);
 
 my $workdir = "$base_dir/$mu3e_workdir_name";
 
 chdir($setup_dir) or die "Cannot chdir to $setup_dir: $!\n";
-my @snakemake_args = snakemake_forwarded_args_normalized(@forwarded_args);
-if ("@snakemake_args" ne "@forwarded_args") {
+my @snakemake_args = snakemake_forwarded_args_normalized(@snakemake_argv);
+if ("@snakemake_args" ne "@snakemake_argv") {
     print(prefix("runRereco"), "note: replaced -jN with --cores N for Snakemake (avoids --summary crash on some Debian/Ubuntu builds)\n");
 }
 run_cmd("snakemake", @snakemake_args);

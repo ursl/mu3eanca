@@ -1,6 +1,7 @@
+import json
 import os
 import socket
-import sys
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -45,25 +46,37 @@ MU3E_DIR_BASE = config["mu3e_dir"]
 MU3E_TAG_DIRSAFE = MU3E_TAG.replace("/", "_")
 MU3E_WORKDIR_NAME = config.get("mu3e_workdir_name")
 if MU3E_WORKDIR_NAME:
-    MU3E_DIRNAME = MU3E_WORKDIR_NAME
+    SETUP_ROOT_NAME = MU3E_WORKDIR_NAME
 else:
-    MU3E_DIRNAME = f"{MU3E_DIR_BASE}-{MU3E_TAG_DIRSAFE}"
-MU3E_DIR = f"{MU3E_REREC_BASEDIR}/{MU3E_DIRNAME}"
-workdir: MU3E_DIR
+    SETUP_ROOT_NAME = f"mu3e-rereco-{MU3E_TAG_DIRSAFE}"
+SETUP_ROOT = f"{MU3E_REREC_BASEDIR}/{SETUP_ROOT_NAME}"
+MU3E_DIR = f"{SETUP_ROOT}/{MU3E_DIR_BASE}"
+workdir: SETUP_ROOT
 
 MU3E_REPO = config["mu3e_repo"]
 MAKE_JOBS = config["make_jobs"]
 RELINK_SCRIPT = config["relink_script"]
 SORT_INPUT_BASE = config.get("sort_input_base", "")
+RAW_INPUT_LAYOUT = config.get("raw_input_layout", "flat")
 
-MU3E_UTIL_REPO = config.get("mu3e_util_repo", "git@bitbucket.org:mu3e/mu3eUtil")
-MU3E_UTIL_MAKE_JOBS = int(config.get("mu3e_util_make_jobs", MAKE_JOBS))
+_midas_exe_rel = config.get(
+    "midas_meta_exe",
+    "modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta",
+)
 
-if str(_PROMPT_COMMON) not in sys.path:
-    sys.path.insert(0, str(_PROMPT_COMMON))
-from rereco_runs import load_rereco_tasks
-
-REREC_TASKS = load_rereco_tasks(config, _base)
+_load_tasks_script = _PROMPT_COMMON / "load_rereco_tasks"
+_proc = subprocess.run(
+    ["perl", str(_load_tasks_script), "--base", str(_base)],
+    input=json.dumps(dict(config)),
+    capture_output=True,
+    text=True,
+    check=False,
+)
+if _proc.returncode != 0:
+    raise RuntimeError(
+        _proc.stderr.strip() or f"load_rereco_tasks failed with exit {_proc.returncode}"
+    )
+REREC_TASKS = json.loads(_proc.stdout)
 if not REREC_TASKS:
     raise ValueError(
         "no rereco tasks configured; set rereco_tasks or run_list_file + rereco_task_templates"
@@ -80,16 +93,16 @@ MIDAS_META_MARKER_TPL = config.get("midas_meta_marker_tpl", ".markers/midas_meta
 CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
 CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
 
-MU3E_WORK_BASEDIR = MU3E_REREC_BASEDIR
+MU3E_WORK_BASEDIR = SETUP_ROOT
 MU3E_PREP_LOG_PREFIX = "rereco"
-CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e.sh")
+CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e")
 CLONE_MU3E_INPUTS = [".markers/clone_mu3e_deps.done"]
-MIDAS_META_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_dir.sh")
-MIDAS_META_FILE_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_file.sh")
-MIDAS_META_EXE = f"{MU3E_REREC_BASEDIR}/mu3eUtil/_build/tools/midasMeta/mu3e_midas_meta"
+MIDAS_META_PREREQS = [".markers/build_mu3e.done"]
+MIDAS_META_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_dir")
+MIDAS_META_FILE_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_file")
+MIDAS_META_EXE = f"{MU3E_DIR}/_build/{_midas_exe_rel}"
 
 include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
-include: str(_PROMPT_COMMON / "mu3e_util_bootstrap.smk")
 
 
 def trirec_output(task):
@@ -118,6 +131,15 @@ def trirec_conf_fallback(task):
     return TASK_BY_ID[task].get("trirec_conf_fallback", "")
 
 
+def _runblock_prefix(run_id, layout):
+    block = int(run_id) // 1000
+    if layout == "runblock3":
+        return f"{block:03d}/"
+    if layout == "runblock4":
+        return f"{block:04d}/"
+    return ""
+
+
 def _resolve_input_path(item, key, base_keys=("input_dir_base",)):
     path = (item.get(key) or "").strip()
     if not path:
@@ -131,8 +153,15 @@ def _resolve_input_path(item, key, base_keys=("input_dir_base",)):
             break
     if not base:
         base = SORT_INPUT_BASE
+    layout = item.get("raw_input_layout", RAW_INPUT_LAYOUT)
+    prefix = ""
+    run_id = item.get("run_id")
+    if run_id is not None and layout in ("runblock3", "runblock4"):
+        prefix = _runblock_prefix(run_id, layout)
     if base:
-        return f"{base}/{path}"
+        return f"{base}/{prefix}{path}"
+    if prefix:
+        return f"{prefix}{path}"
     return path
 
 
@@ -200,6 +229,18 @@ rule all:
         ALL_TARGETS
 
 
+rule midas_meta_all:
+    """Concrete target: all midas_meta markers for the configured run/task list."""
+    input:
+        [midas_meta_marker_path(task) for task in MIDAS_META_TASK_IDS]
+
+
+rule trirec_all:
+    """Concrete target: all trirec outputs for the configured run/task list."""
+    input:
+        [f"{MU3E_DIR}/run/{trirec_output(task)}" for task in TRIREC_TASK_IDS]
+
+
 rule ensure_clone_mu3e_deps:
     output:
         ".markers/clone_mu3e_deps.done"
@@ -214,9 +255,9 @@ rule clean:
         r"""
         set -euo pipefail
         rm -f "{MU3E_DIR}/run/output/trirec-"*.root
-        rm -f "{MU3E_DIR}/.markers/midas_meta-"*.done
-        rm -f "{MU3E_DIR}/.markers/relink_bin_files.done"
-        rm -f "{MU3E_DIR}/.markers/build_mu3e.done"
-        rm -f "{MU3E_DIR}/.markers/clone_and_prepare_mu3e.done"
-        rm -f "{MU3E_DIR}/.markers/clone_mu3e_deps.done"
+        rm -f "{SETUP_ROOT}/.markers/midas_meta-"*.done
+        rm -f "{SETUP_ROOT}/.markers/relink_bin_files.done"
+        rm -f "{SETUP_ROOT}/.markers/build_mu3e.done"
+        rm -f "{SETUP_ROOT}/.markers/clone_and_prepare_mu3e.done"
+        rm -f "{SETUP_ROOT}/.markers/clone_mu3e_deps.done"
         """

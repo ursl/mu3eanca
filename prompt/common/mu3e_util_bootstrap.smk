@@ -1,31 +1,34 @@
-# Clone and build mu3eUtil under MU3E_WORK_BASEDIR/mu3eUtil.
+# Clone and build mu3eUtil (expects checkout under MU3E via git submodules first).
 #
 # Required before include:
-#   MU3E_WORK_BASEDIR, MU3E_UTIL_REPO, MU3E_UTIL_MAKE_JOBS
+#   MU3E_WORK_BASEDIR, MU3E_UTIL_REPO, MU3E_UTIL_MAKE_JOBS, MU3E_UTIL_DIR
+#   MU3E_UTIL_BOOTSTRAP_INPUTS   prerequisite rule outputs (e.g. clone_and_prepare_mu3e marker)
 
 
 rule bootstrap_mu3e_util:
+    input:
+        MU3E_UTIL_BOOTSTRAP_INPUTS
     output:
         f"{MU3E_WORK_BASEDIR}/.bootstrap/mu3e_util.done"
     params:
-        work_basedir=MU3E_WORK_BASEDIR,
-        util_repo=MU3E_UTIL_REPO,
+        util_dir=MU3E_UTIL_DIR,
         jobs=MU3E_UTIL_MAKE_JOBS,
         log_prefix=MU3E_PREP_LOG_PREFIX
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{params.work_basedir}"
-        mkdir -p "{params.work_basedir}/.bootstrap"
+        mkdir -p "{MU3E_WORK_BASEDIR}/.bootstrap"
 
-        if [ ! -d "{params.work_basedir}/mu3eUtil/.git" ]; then
-            git clone "{params.util_repo}" "{params.work_basedir}/mu3eUtil"
+        if [ ! -f "{params.util_dir}/CMakeLists.txt" ]; then
+            echo "[{params.log_prefix}] ERROR: mu3eUtil missing at {params.util_dir}" >&2
+            echo "[{params.log_prefix}]        checkout mu3e first (clone_and_prepare_mu3e / git submodule update)" >&2
+            exit 1
         fi
-        mkdir -p "{params.work_basedir}/mu3eUtil/_build"
-        cd "{params.work_basedir}/mu3eUtil/_build"
+        mkdir -p "{params.util_dir}/_build"
+        cd "{params.util_dir}/_build"
         cmake ..
         make -j{params.jobs}
 
         touch "{output}"
-        echo "[{params.log_prefix}] mu3eUtil ready at {params.work_basedir}/mu3eUtil/_build"
+        echo "[{params.log_prefix}] mu3eUtil ready at {params.util_dir}/_build"
         """
