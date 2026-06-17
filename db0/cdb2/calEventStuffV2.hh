@@ -18,8 +18,8 @@ public:
   ~calEventStuffV2();
 
   // -- direct accessors
-  uint64_t startFrameEventData() {return fConstants.eventData.startFrameGoodData;}
-  uint64_t endFrameEventData() {return fConstants.eventData.endFrameGoodData;}
+  uint64_t startFrameEventData() {return fConstants.eventData.startFrameData;}
+  uint64_t endFrameEventData() {return fConstants.eventData.endFrameData;}
   uint64_t firstFrameWithFEBProblems() {return fConstants.eventData.firstFrameWithFEBProblems;}
 
   uint64_t startFrameGoodPixelData() {return fConstants.pixelData.startFrameGoodData;}
@@ -52,8 +52,8 @@ private:
   // -- local and private
   struct constants {
     struct EventData {
-      uint64_t startFrameGoodData{0};
-      uint64_t endFrameGoodData{0xffffffffffffffff};
+      uint64_t startFrameData{0};
+      uint64_t endFrameData{0xffffffffffffffff};
       uint64_t firstFrameWithFEBProblems{0xffffffffffffffff};
     } eventData;
     struct PixelData {

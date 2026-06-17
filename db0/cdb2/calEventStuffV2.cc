@@ -39,8 +39,8 @@ void calEventStuffV2::calculate(string hash) {
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (fVerbose > 0) cout << " header: " << hex << header << dec << " BLOB size: " << buffer.size() << endl;
 
-  fConstants.eventData.startFrameGoodData = blob2Uint64(getData(ibuffer));
-  fConstants.eventData.endFrameGoodData = blob2Uint64(getData(ibuffer));
+  fConstants.eventData.startFrameData = blob2Uint64(getData(ibuffer));
+  fConstants.eventData.endFrameData = blob2Uint64(getData(ibuffer));
   fConstants.eventData.firstFrameWithFEBProblems = blob2Uint64(getData(ibuffer));
 
   fConstants.pixelData.startFrameGoodData = blob2Uint64(getData(ibuffer));
@@ -92,9 +92,9 @@ string calEventStuffV2::printBLOBString(std::string sblob, int verbosity) {
   uint64_t firstFrameWithFEBUnsortedHitDataFibre = blob2Uint64(getData(ibuffer));
 
   ss << "eventdata "  << endl
-     << "  .startframegooddata               = " << setw(22) << setfill(' ') << firstEventframe << " "
+     << "  .startframedata                   = " << setw(22) << setfill(' ') << firstEventframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << firstEventframe << dec << endl
-     << "  .endframegooddata                 = " << setw(22) << setfill(' ') << lastEventframe << " "
+     << "  .endframedata                     = " << setw(22) << setfill(' ') << lastEventframe << " "
      <<  hex << "0x" << setw(16) << setfill('0') << lastEventframe << dec << endl
      << "  .firstframewithfebproblems        = " << setw(22) << setfill(' ') << firstframewithfebproblems << " "
      <<  hex << "0x" << setw(16) << setfill('0') << firstframewithfebproblems << dec << endl
@@ -133,8 +133,8 @@ string calEventStuffV2::makeBLOB() {
   unsigned int header(0xdeadface);
   s << dumpArray(uint2Blob(header));
 
-  s << dumpArray(uint642Blob(fConstants.eventData.startFrameGoodData));
-  s << dumpArray(uint642Blob(fConstants.eventData.endFrameGoodData));
+  s << dumpArray(uint642Blob(fConstants.eventData.startFrameData));
+  s << dumpArray(uint642Blob(fConstants.eventData.endFrameData));
   s << dumpArray(uint642Blob(fConstants.eventData.firstFrameWithFEBProblems));
   s << dumpArray(uint642Blob(fConstants.pixelData.startFrameGoodData));
   s << dumpArray(uint642Blob(fConstants.pixelData.endFrameGoodData));
@@ -173,8 +173,8 @@ string calEventStuffV2::readJSON(string filename) {
 
   // -- figure out what type of JSON file this was
   // -- custom with "pixeldata" or midas meta data 
-  fConstants.eventData.startFrameGoodData = 0; 
-  fConstants.eventData.endFrameGoodData   = -1;
+  fConstants.eventData.startFrameData = 0; 
+  fConstants.eventData.endFrameData   = -1;
   fConstants.eventData.firstFrameWithFEBProblems = -1;
   fConstants.pixelData.startFrameGoodData = 0; 
   fConstants.pixelData.endFrameGoodData   = -1;
@@ -183,8 +183,8 @@ string calEventStuffV2::readJSON(string filename) {
   fConstants.fibreData.startFrameGoodData = 0; 
   fConstants.fibreData.endFrameGoodData   = -1;
   if (string::npos == filename.find(".mid.lz4.json")) {
-    fConstants.eventData.startFrameGoodData = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "startframegooddata"}));
-    fConstants.eventData.endFrameGoodData   = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "endframegooddata"}));
+    fConstants.eventData.startFrameData = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "startframegooddata"}));
+    fConstants.eventData.endFrameData   = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "endframegooddata"}));
     fConstants.eventData.firstFrameWithFEBProblems = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "firstframewithfebproblems"}));
     fConstants.pixelData.startFrameGoodData = ::stoull(jsonGetValue(spl, vector<string>{"pixeldata", "startframegooddata"}));
     fConstants.pixelData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"pixeldata", "endframegooddata"}));
@@ -208,7 +208,7 @@ string calEventStuffV2::readJSON(string filename) {
     cout << "last_frame ->" << send_frame_event_data << "<-" << endl;
 
     if (send_frame_event_data != "parseError") {
-      fConstants.eventData.endFrameGoodData = ::stoull(send_frame_event_data);
+      fConstants.eventData.endFrameData = ::stoull(send_frame_event_data);
     }
 
     if (sstart_frame_good_pixel_data != "parseError") {
