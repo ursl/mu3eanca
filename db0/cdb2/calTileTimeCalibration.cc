@@ -309,3 +309,37 @@ void calTileTimeCalibration::readJSON(string filename) {
   fMapConstantsIt = fMapConstants.begin();
 }
   
+// ----------------------------------------------------------------------
+void calTileTimeCalibration::writeJSON(string filename) {
+  json j;
+  j["run_number"] = "run" + to_string(fRunNumber);
+  j["timestamp"] = fTimestamp;
+  j["modules"] = json::object();
+  j["modules"]["dnl_correction"] = json::object();
+  j["modules"]["dnl_correction"]["channels"] = json::object();
+
+  j["modules"]["time_alignment"] = json::object();
+  j["modules"]["time_alignment"]["channels"] = json::object();
+
+  j["modules"]["timewalk_correction"] = json::object();
+  j["modules"]["timewalk_correction"]["channels"] = json::object();
+
+  for (auto it: fMapConstants) {
+    j["modules"]["dnl_correction"]["channels"][to_string(it.first)] = json::object();
+    j["modules"]["dnl_correction"]["channels"][to_string(it.first)]["corrected_time_fraction"] = it.second.dnl_corrected_time_fraction;
+
+    j["modules"]["time_alignment"]["channels"][to_string(it.first)] = json::object();
+    j["modules"]["time_alignment"]["channels"][to_string(it.first)]["offset_ns"] = it.second.timeAlignment_offset_ns;
+    j["modules"]["time_alignment"]["channels"][to_string(it.first)]["is_valid"] = it.second.timeAlignment_offset_ns > -999.;
+
+    j["modules"]["timewalk_correction"]["channels"][to_string(it.first)] = json::object();
+    j["modules"]["timewalk_correction"]["channels"][to_string(it.first)]["correction_ns"] = it.second.timeWalk_correction_ns;
+    j["modules"]["timewalk_correction"]["channels"][to_string(it.first)]["energy"] = it.second.timeWalk_correction_energy;
+  }
+  ofstream ONS(filename);
+  ONS << j.dump(4) << endl;
+  ONS.close();
+  cout << "calTileTimeCalibration::writeJSON> wrote " << filename << endl;
+}
+
+

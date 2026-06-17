@@ -531,7 +531,14 @@ int main(int argc, char* argv[]) {
     cout << "Test tile time calibration" << endl;
     calTileTimeCalibration *ctt = new calTileTimeCalibration();
     ctt->readJSON("/Users/ursl/Downloads/calibration_run03274_config.json");
-    //    ctt->writeJSON("bla.json");
+    ctt->writeJSON("bla.json");
+    
+    // -- now read the written JSON and create a second one
+    calTileTimeCalibration *ctt2 = new calTileTimeCalibration();
+    ctt2->readJSON("bla.json");
+    ctt2->writeJSON("bla2.json");
+
+    
     //    string sblob = ctt->makeBLOB();
     //  ctt->printBLOB(sblob, 1000);
   }
