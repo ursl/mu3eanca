@@ -21,6 +21,8 @@
 #include "calPixelEfficiency.hh"
 
 #include "calTileQuality.hh"
+#include "calTileTimeCalibration.hh"
+
 #include "calFibreQuality.hh"
 
 #include "calPixelMask.hh"
@@ -525,7 +527,13 @@ int main(int argc, char* argv[]) {
       ces->printBLOB(sblob, 1);
       cout << "######################################################################" << endl;
       ces->writePayloadToFile(pl.fHash, ".", pl);
-
+  } else if (24 == mode) {
+    cout << "Test tile time calibration" << endl;
+    calTileTimeCalibration *ctt = new calTileTimeCalibration();
+    ctt->readJSON("/Users/ursl/Downloads/calibration_run03274_config.json");
+    //    ctt->writeJSON("bla.json");
+    //    string sblob = ctt->makeBLOB();
+    //  ctt->printBLOB(sblob, 1000);
   }
   return 0;
 }

@@ -56,9 +56,6 @@ private:
   int fRunNumber;
   int fTimestamp;
 
-  int fNBINS;
-  std::vector<double> fBinBoundaries;
-
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};
 };
