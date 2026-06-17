@@ -41,7 +41,7 @@ public:
 
 private:
   std::string fTileTimeCalibrationTag{"tiletimecalibration_"};
-  std::string fSchema{"ui_id,i_qual"};
+  std::string fSchema{"ui_id,d_dnl[32],d_timeAlignment,i_timeWalk_nbins[,d_timeWalk_ns][,d_timeWalk_energy]"};
 
   // -- local and private
   struct constants {
@@ -51,10 +51,6 @@ private:
     std::vector<double> timeWalk_correction_ns;
     std::vector<double> timeWalk_correction_energy;
   };
-
-  // -- Meta data
-  int fRunNumber;
-  int fTimestamp;
 
   std::map<uint32_t, constants> fMapConstants;
   std::map<uint32_t, constants>::iterator fMapConstantsIt{fMapConstants.end()};

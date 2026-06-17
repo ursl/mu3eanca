@@ -57,9 +57,6 @@ void calTileTimeCalibration::calculate(string hash) {
   
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (fVerbose > 0) cout << " header: " << hex << header << dec;
-  // -- read metadata
-  fRunNumber = blob2Int(getData(ibuffer));
-  fTimestamp = blob2Int(getData(ibuffer));
   // -- read constants
   while (ibuffer != buffer.end()) {
     constants ct;
@@ -90,15 +87,16 @@ string calTileTimeCalibration::makeBLOB() {
   s << dumpArray(uint2Blob(header));
   
   // -- format of fMapConstants
-  // tileID => [dnl_corrected_time_fraction, timeAlignment_offset_ns, timeWalk_correction_ns, timeWalk_correction_energy]
-  s << dumpArray(int2Blob(fRunNumber));
-  s << dumpArray(int2Blob(fTimestamp));
+  // tileID => {dnl_corrected_time_fraction[32], timeAlignment_offset_ns, [timeWalk_correction_ns], [timeWalk_correction_energy]}
   for (auto it: fMapConstants) {
     // -- dump id
     s << dumpArray(uint2Blob(it.first));
     // -- dump dnl_corrected_time_fraction
     for (int i = 0; i < 32; i++) {
-      s << dumpArray(double2Blob(it.second.dnl_corrected_time_fraction[i]));
+      double v = (i < static_cast<int>(it.second.dnl_corrected_time_fraction.size()))
+        ? it.second.dnl_corrected_time_fraction[i]
+        : 0.0;
+      s << dumpArray(double2Blob(v));
     }
     // -- dump time alignment offset  
     s << dumpArray(double2Blob(it.second.timeAlignment_offset_ns));
@@ -111,8 +109,11 @@ string calTileTimeCalibration::makeBLOB() {
     for (int i = 0; i < nbins; i++) {
       s << dumpArray(double2Blob(it.second.timeWalk_correction_energy[i]));
     }
+    if (fVerbose > 0) {
+      cout << "calTileTimeCalibration::makeBLOB> dumped id: " << it.first << endl;
+    }
   }
-  if (fVerbose > 0) cout << "calTileQuality::makeBLOB> made BLOB with " << fMapConstants.size() << " tiles" << endl;
+  if (fVerbose > 0) cout << "calTileTimeCalibration::makeBLOB> made BLOB with " << fMapConstants.size() << " channels" << endl;
   return s.str();
 }
 
@@ -129,51 +130,73 @@ void calTileTimeCalibration::printBLOB(std::string blob, int verbosity) {
 }
 
 // ----------------------------------------------------------------------
-string calTileTimeCalibration::printBLOBString(std::string blob, int verbosity) {
+string calTileTimeCalibration::printBLOBString(std::string blob, int /*verbosity*/) {
   stringstream ss;
-  
+
   std::vector<char> buffer(blob.begin(), blob.end());
   std::vector<char>::iterator ibuffer = buffer.begin();
-  
+
+  auto bytesLeft = [&]() -> size_t {
+    return static_cast<size_t>(buffer.end() - ibuffer);
+  };
+  auto needBytes = [&](size_t n, const char* what) -> bool {
+    if (bytesLeft() >= n) return true;
+    ss << "   ERROR: truncated BLOB reading " << what
+       << " (need " << n << " bytes, have " << bytesLeft() << ")\n";
+    return false;
+  };
+
+  if (!needBytes(8, "header")) return ss.str();
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   ss << "calTileTimeCalibration::printBLOB(string)" << endl;
   ss << "   header: " << hex << header << dec << endl;
-  int runNumber = blob2Int(getData(ibuffer));
-  ss << "   run number: " << runNumber << endl;
-  int timestamp = blob2Int(getData(ibuffer));
-  ss << "   timestamp: " << timestamp << endl;
-  int nbins = blob2Int(getData(ibuffer));
-  ss << "   nbins: " << nbins << endl;
-  for (int i = 0; i < nbins; i++) {
-    double boundary = blob2Double(getData(ibuffer));
-    ss << "   boundary: " << boundary << endl;
+  if (header != 0xdeadfaceU) {
+    ss << "   WARNING: unexpected header (expected 0xdeadface)\n";
   }
+
   int cnt(0);
   while (ibuffer != buffer.end()) {
+    if (!needBytes(8, "channel id")) break;
     uint32_t id = blob2UnsignedInt(getData(ibuffer));
+
+    if (!needBytes(32 * 8, "dnl_corrected_time_fraction[32]")) break;
     ss << "   id = " << id << endl;
     ss << "   dnl_corrected_time_fraction: ";
     for (int i = 0; i < 32; i++) {
-      double dnl_corrected_time_fraction = blob2Double(getData(ibuffer));
-      ss << dnl_corrected_time_fraction;
+      ss << blob2Double(getData(ibuffer)) << " ";
     }
     ss << endl;
+
+    if (!needBytes(8, "timeAlignment_offset_ns")) break;
     double timeAlignment_offset_ns = blob2Double(getData(ibuffer));
     ss << "   timeAlignment_offset_ns: " << timeAlignment_offset_ns << endl;
-    ss << "   timeWalk_correction_ns: ";
+
+    if (!needBytes(8, "timeWalk nbins")) break;
     int nbins = blob2Int(getData(ibuffer));
+    if (nbins < 0 || nbins > 10000) {
+      ss << "   ERROR: channel " << id << " has invalid timeWalk nbins=" << nbins << "\n";
+      break;
+    }
+    if (!needBytes(static_cast<size_t>(nbins) * 16, "timeWalk arrays")) break;
+
+    ss << "   timeWalk nbins: " << nbins << endl;
+    ss << "   timeWalk_correction_ns: ";
     for (int i = 0; i < nbins; i++) {
-      double timeWalk_correction_ns = blob2Double(getData(ibuffer));
-      ss << timeWalk_correction_ns;
+      ss << blob2Double(getData(ibuffer)) << " ";
     }
     ss << endl;
+
     ss << "   timeWalk_correction_energy: ";
     for (int i = 0; i < nbins; i++) {
-      double timeWalk_correction_energy = blob2Double(getData(ibuffer));
-      ss << timeWalk_correction_energy;
+      ss << blob2Double(getData(ibuffer)) << " ";
     }
     ss << endl;
+
+    ++cnt;
   }
+
+  ss << "calTileTimeCalibration::printBLOB(...) printed " << cnt << " channel(s)" << endl;
+  return ss.str();
 }
 
 
@@ -182,15 +205,6 @@ void calTileTimeCalibration::readJSON(string filename) {
   json j;
   ifstream INS(filename);
   j = json::parse(INS);
-
-  if (j.contains("run_number")) {
-    string strRunNumber = j["run_number"];
-    replaceAll(strRunNumber, "run", "");
-    fRunNumber = stoi(strRunNumber);
-  }
-  if (j.contains("timestamp")) {
-    fTimestamp = j["timestamp"];
-  }
 
   fMapConstants.clear();
 
@@ -292,8 +306,6 @@ void calTileTimeCalibration::readJSON(string filename) {
        << " channels" << endl;
 
   // -- print stuff
-  cout << "calTileTimeCalibration::readJSON> run number: " << fRunNumber << endl;
-  cout << "calTileTimeCalibration::readJSON> timestamp: " << fTimestamp << endl;
   for (auto it: fMapConstants) {
     cout << "calTileTimeCalibration::readJSON> id: " << it.first << endl;
     for (unsigned int i = 0; i < it.second.dnl_corrected_time_fraction.size(); i++) {
@@ -312,8 +324,6 @@ void calTileTimeCalibration::readJSON(string filename) {
 // ----------------------------------------------------------------------
 void calTileTimeCalibration::writeJSON(string filename) {
   json j;
-  j["run_number"] = "run" + to_string(fRunNumber);
-  j["timestamp"] = fTimestamp;
   j["modules"] = json::object();
   j["modules"]["dnl_correction"] = json::object();
   j["modules"]["dnl_correction"]["channels"] = json::object();

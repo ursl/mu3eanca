@@ -530,9 +530,23 @@ int main(int argc, char* argv[]) {
   } else if (24 == mode) {
     cout << "Test tile time calibration" << endl;
     calTileTimeCalibration *ctt = new calTileTimeCalibration();
+    ctt->setVerbosity(10);
     ctt->readJSON("/Users/ursl/Downloads/calibration_run03274_config.json");
     ctt->writeJSON("bla.json");
-    
+
+    string sblob = ctt->makeBLOB();
+    ctt->printBLOB(sblob, 1000);
+    cout << "######################################################################" << endl;
+    cout << "### createPayload" << endl;
+    ctt->printBLOB(sblob, 1);
+    cout << "######################################################################" << endl;
+    payload pl;
+    pl.fHash = "tag_tiletimecalibration_datav6.9=2025V0_iov_3274";
+    pl.fComment = "TileTimeCalibration";
+    pl.fSchema = ctt->getSchema();
+    pl.fBLOB = sblob;
+    ctt->writePayloadToFile(pl.fHash, ".", pl);
+
     // -- now read the written JSON and create a second one
     calTileTimeCalibration *ctt2 = new calTileTimeCalibration();
     ctt2->readJSON("bla.json");
