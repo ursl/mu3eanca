@@ -5,7 +5,6 @@
 #include <iostream>
 #include <sstream>
 #include <cctype>
-#include <algorithm>
 
 #include <nlohmann/json.hpp>
 
@@ -44,6 +43,50 @@ calTileTimeCalibration::~calTileTimeCalibration() {
   fMapConstants.clear();
   if (fVerbose > 0) cout << "this is the end of calTileTimeCalibration with tag ->" << fTag << "<-" << endl;
 }
+
+// ----------------------------------------------------------------------
+double calTileTimeCalibration::getTimeWalkCorrectionNS(uint32_t id, double energy) {
+  auto it = fMapConstants.find(id);
+  if (it == fMapConstants.end()) {
+    cout << "calTileTimeCalibration::getTimeWalkCorrectionNS> channel " << id << " not found" << endl;
+    return -999999.0;
+  }
+  const auto& edges = it->second.timeWalk_correction_energy;
+  const auto& corr = it->second.timeWalk_correction_ns;
+  int nbins = corr.size();
+  if (nbins == 0 || edges.size() != static_cast<size_t>(nbins)) {
+    cout << "calTileTimeCalibration::getTimeWalkCorrectionNS> channel " << id
+         << " has invalid timewalk arrays (nbins=" << nbins
+         << " energy.size=" << edges.size() << ")\n";
+    return -999999.0;
+  }
+
+  // energy[] = lower edge per bin (monotonic); last bin with edge <= energy
+  double loE = edges.front();
+  double hiE = edges.back();
+  int ibin = 0;
+  if (energy <= loE) {
+    ibin = 0;
+  } else if (energy >= hiE) {
+    ibin = nbins - 1;
+  } else if (hiE > loE) {
+    ibin = static_cast<int>((nbins - 1) * (energy - loE) / (hiE - loE));
+    if (ibin < 0) ibin = 0;
+    if (ibin >= nbins) ibin = nbins - 1;
+    while (ibin > 0 && edges[ibin] > energy) --ibin;
+    while (ibin < nbins - 1 && edges[ibin + 1] <= energy) ++ibin;
+  }
+
+  if (fVerbose > 0) {
+    cout << "calTileTimeCalibration::getTimeWalkCorrectionNS> channel " << id
+         << " energy " << energy << " ibin " << ibin
+         << " correction " << corr[ibin]
+         << " edge " << edges[ibin] << endl;
+  }
+  return corr[ibin];
+}
+
+
 
 
 // ----------------------------------------------------------------------

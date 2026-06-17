@@ -22,6 +22,17 @@ public:
   calTileTimeCalibration(cdbAbs *db, std::string tag);
   ~calTileTimeCalibration();
 
+  // -- getters
+  double getTimeAlignmentOffsetNS(uint32_t id)  {return fMapConstants[id].timeAlignment_offset_ns;}
+  double getDNLCorrectedTimeFraction(uint32_t id, int ibin) {return fMapConstants[id].dnl_corrected_time_fraction[ibin];}
+  // -- energy is in the same units as the "energy" in the "timewalk_correction" section of the JSON
+  double getTimeWalkCorrectionNS(uint32_t id, double energy);
+
+  std::vector<double> getTimeWalkCorrectionNS(uint32_t id) {return fMapConstants[id].timeWalk_correction_ns;}
+  std::vector<double> getTimeWalkCorrectionEnergy(uint32_t id) {return fMapConstants[id].timeWalk_correction_energy;}
+  std::vector<double> getDNLCorrectedTimeFraction(uint32_t id) {return fMapConstants[id].dnl_corrected_time_fraction;}
+
+  // -- CDB stuff
   std::string getName() override {return fTileTimeCalibrationTag;}
   void        calculate(std::string hash) override;
 

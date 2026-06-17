@@ -530,9 +530,18 @@ int main(int argc, char* argv[]) {
   } else if (24 == mode) {
     cout << "Test tile time calibration" << endl;
     calTileTimeCalibration *ctt = new calTileTimeCalibration();
-    ctt->setVerbosity(10);
     ctt->readJSON("/Users/ursl/Downloads/calibration_run03274_config.json");
+
+    cout << "corr for ID=7001, E= 90.7: " << ctt->getTimeWalkCorrectionNS(7001, 90.7) << endl;
+    cout << "corr for ID=7001, E= 90.9: " << ctt->getTimeWalkCorrectionNS(7001, 90.9) << endl;
+    cout << "corr for ID=7001, E= 98.9: " << ctt->getTimeWalkCorrectionNS(7001, 98.9) << endl;
+    cout << "corr for ID=7001, E=459.0: " << ctt->getTimeWalkCorrectionNS(7001, 459.0) << endl;
+
+    return 0;
+
     ctt->writeJSON("bla.json");
+
+
 
     string sblob = ctt->makeBLOB();
     ctt->printBLOB(sblob, 1000);
@@ -547,12 +556,9 @@ int main(int argc, char* argv[]) {
     pl.fBLOB = sblob;
     ctt->writePayloadToFile(pl.fHash, ".", pl);
 
-    // -- now read the written JSON and create a second one
-    calTileTimeCalibration *ctt2 = new calTileTimeCalibration();
-    ctt2->readJSON("bla.json");
-    ctt2->writeJSON("bla2.json");
 
     
+
     //    string sblob = ctt->makeBLOB();
     //  ctt->printBLOB(sblob, 1000);
   }
