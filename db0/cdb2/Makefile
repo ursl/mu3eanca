@@ -77,6 +77,7 @@ LFILES = cdbAbs.o  cdbJSON.o cdbRest.o calAbs.o cdbMongo.o \
          calPixelQualityLM.o calPixelMask.o \
          calTileQuality.o calFibreQuality.o \
          calPixelTimeCalibration.o calPixelEfficiency.o\
+         calTileTimeCalibration.o \
          calPixelCablingMap.o \
          calDetConfV1.o \
          calDetSetupV1.o \
