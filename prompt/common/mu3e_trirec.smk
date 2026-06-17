@@ -34,11 +34,11 @@ rule run_mu3e_trirec:
     shell:
         r"""
         set -euo pipefail
+        cd "{params.mu3e_dir}/run"
         if [ ! -f "{params.sort_input}" ]; then
             echo "[{params.log_prefix}] ERROR: sort input missing: {params.sort_input}" >&2
             exit 1
         fi
-        cd "{params.mu3e_dir}/run"
         trirec_conf="{params.trirec_conf}"
         if [ ! -f "$trirec_conf" ]; then
             if [ -n "{params.trirec_conf_fallback}" ] && [ -f "{params.trirec_conf_fallback}" ]; then

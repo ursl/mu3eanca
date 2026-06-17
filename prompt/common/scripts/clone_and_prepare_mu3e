@@ -67,6 +67,26 @@ sub dir_empty {
     return @entries == 0;
 }
 
+# Relval uses workdir == mu3e checkout dir; Snakemake may create these before clone.
+sub dir_only_workflow_metadata {
+    my ($dir) = @_;
+    opendir my $dh, $dir or return 1;
+    my @entries = grep { $_ !~ /^\.\.?$/ } readdir $dh;
+    closedir $dh;
+    my %ok = map { $_ => 1 } qw(.snakemake .markers logs status);
+    for my $e (@entries) {
+        return 0 unless $ok{$e};
+    }
+    return 1;
+}
+
+sub git_init_in_place {
+    my ($dir, $remote) = @_;
+    git_c($dir, 'init');
+    git_c($dir, 'remote', 'add', 'origin', $remote)
+      unless git_ok($dir, 'remote', 'get-url', 'origin');
+}
+
 sub ensure_commit {
     my ($dir, $hash) = @_;
     return if git_ok($dir, 'cat-file', '-e', "${hash}^{commit}");
@@ -83,13 +103,14 @@ my $git_dir = "$mu3e_dir/.git";
 if (!-d $git_dir && !-f $git_dir) {
     if (dir_empty($mu3e_dir)) {
         run_cmd('git', 'clone', $repo, $mu3e_dir);
-    } elsif (!-f "$mu3e_dir/CMakeLists.txt" && !-f "$mu3e_dir/.gitmodules") {
+    } elsif (dir_only_workflow_metadata($mu3e_dir)
+        || -f "$mu3e_dir/CMakeLists.txt"
+        || -f "$mu3e_dir/.gitmodules")
+    {
+        git_init_in_place($mu3e_dir, $repo);
+    } else {
         die "ERROR: $mu3e_dir exists but is not a mu3e checkout.\n"
           . "       Remove the directory and retry (e.g. rm -rf \"$mu3e_dir\").\n";
-    } else {
-        git_c($mu3e_dir, 'init');
-        git_c($mu3e_dir, 'remote', 'add', 'origin', $repo)
-          unless git_ok($mu3e_dir, 'remote', 'get-url', 'origin');
     }
 }
 

@@ -58,10 +58,12 @@ Relval uses wildcard `{scenario}`; rereco uses `{job}` — each workflow keeps i
 | Name | Meaning |
 |------|---------|
 | `MU3E_REPO`, `MU3E_CHECKOUT_REF`, `MU3E_CHECKOUT_BRANCH`, `MU3E_CHECKOUT_MERGES`, `MU3E_DIR` | MU3E checkout |
-| `MU3E_WORK_BASEDIR` | Snakemake workdir / setup root (rereco: `{basedir}/mu3e-{setup}`; relval: same as MU3E checkout) |
+| `MU3E_WORK_BASEDIR` | Snakemake workdir / setup root (rereco: `{basedir}/mu3e-{setup}`; relval: **same path as** `MU3E_DIR`) |
 | `MIDAS_META_PREREQS` | Inputs for `run_midas_meta` (rereco: `[.markers/build_mu3e.done]`) |
 | `MIDAS_META_EXE` | Path to `mu3e_midas_meta` under `mu3e/_build/` |
 | `MAKE_JOBS`, `RELINK_SCRIPT` | build + relink |
 | `CLONE_MU3E_INPUTS` | Single-item list: bootstrap marker (relval) or local deps marker (rereco) |
 | `CLONE_MU3E_SCRIPT` | Path to `clone_and_prepare_mu3e` |
 | `MU3E_PREP_LOG_PREFIX` | Short name in log lines |
+
+`clone_and_prepare_mu3e` treats a directory that only contains Snakemake metadata (`.snakemake`, `.markers`, `logs`, `status`) as unset and runs `git init` + fetch/checkout there. That case arises in **relval**, where the workdir is the MU3E tree itself.
