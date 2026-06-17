@@ -30,8 +30,11 @@ public:
   void printBLOB(std::string, int verbosity = 1) override;
   std::string printBLOBString(std::string blob, int verbosity = 1) override;
 
-  void writeJSON(std::string filename);
+  // -- read JSON file - either the one by Erik/Tiles or the result of writeJSON("bla.json")
   void readJSON(std::string filename);
+  // -- NOTE: The resulting JSON is NOT the full JSON as provided by Erik/Tiles 
+  //          but only the part that is needed for the CDB/payload!
+  void writeJSON(std::string filename);
 
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
   bool        getNextID(uint32_t &ID);
