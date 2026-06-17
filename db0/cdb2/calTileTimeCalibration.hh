@@ -55,7 +55,7 @@ public:
 
 private:
   std::string fTileTimeCalibrationTag{"tiletimecalibration_"};
-  std::string fSchema{"ui_id,d_dnl[32],d_timeAlignment,i_timeWalk_nbins[,d_timeWalk_ns][,d_timeWalk_energy]"};
+  std::string fSchema{"ui_id,d_dnl[32],d_ta,i_tw_nbins[,d_tw_ns][,d_tw_energy]"};
 
   // -- local and private
   struct constants {
