@@ -1,0 +1,42 @@
+#!/usr/bin/env perl
+# Run mu3e_midas_meta on a single *.mid.lz4 file.
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+use File::Path qw(make_path);
+use File::Basename qw(dirname);
+
+my ($exe, $input_file, $marker, $log_prefix);
+
+sub usage {
+    print STDERR "Usage: $0 --exe PATH --input-file FILE --marker FILE [--log-prefix NAME]\n";
+    exit 2;
+}
+
+GetOptions(
+    'exe=s'         => \$exe,
+    'input-file=s'  => \$input_file,
+    'marker=s'      => \$marker,
+    'log-prefix=s'  => \$log_prefix,
+    'help|h'        => sub { usage() },
+) or usage();
+
+$log_prefix = 'rereco' unless defined $log_prefix && $log_prefix ne '';
+die "missing required options\n" unless defined $exe && $exe ne ''
+  && defined $input_file && $input_file ne ''
+  && defined $marker && $marker ne '';
+
+if (!-x $exe) {
+    die "[$log_prefix] ERROR: mu3e_midas_meta not executable: $exe\n";
+}
+if (!-f $input_file) {
+    die "[$log_prefix] ERROR: input file missing: $input_file\n";
+}
+
+make_path(dirname($marker));
+print "[$log_prefix] midas_meta: $input_file\n";
+system($exe, $input_file) == 0
+  or die "[$log_prefix] ERROR: $exe failed on $input_file\n";
+
+open my $mk, '>', $marker or die "cannot touch marker $marker: $!\n";
+close $mk;

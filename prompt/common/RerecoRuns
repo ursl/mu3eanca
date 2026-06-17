@@ -1,0 +1,198 @@
+package RerecoRuns;
+
+use strict;
+use warnings;
+use Exporter qw(import);
+use File::Spec;
+use Cwd qw(abs_path);
+use JSON::PP ();
+
+our @EXPORT_OK = qw(
+    parse_runs_file
+    filter_runs
+    run_block
+    fmt_template
+    expand_tasks_from_run_list
+    runs_from_bounds
+    load_rereco_tasks
+);
+
+# ----------------------------------------------------------------------
+sub parse_runs_file {
+    my ($path) = @_;
+    open my $fh, '<', $path or die "cannot read run list $path: $!\n";
+    my $text = do { local $/; <$fh> };
+    close $fh;
+
+    $text =~ tr/{}//d;
+    my @runs;
+    my %seen;
+    for my $part (split /,/, $text) {
+        my $token = $part;
+        $token =~ s/^\s+|\s+$//g;
+        next if $token eq '';
+        die "invalid run token '$token' in $path\n" unless $token =~ /^\d+$/;
+        my $run = 0 + $token;
+        next if $seen{$run};
+        push @runs, $run;
+        $seen{$run} = 1;
+    }
+    die "no run numbers found in $path\n" unless @runs;
+    return @runs;
+}
+
+# ----------------------------------------------------------------------
+sub filter_runs {
+    my ($runs_ref, $min_run, $max_run) = @_;
+    $min_run ||= 0;
+    $max_run ||= 0;
+    my @out = @$runs_ref;
+    if ($min_run > 0) {
+        @out = grep { $_ >= $min_run } @out;
+    }
+    if ($max_run > 0) {
+        @out = grep { $_ <= $max_run } @out;
+    }
+    return @out;
+}
+
+# ----------------------------------------------------------------------
+sub run_block {
+    my ($run) = @_;
+    return int($run / 1000);
+}
+
+# ----------------------------------------------------------------------
+sub fmt_template {
+    my ($value, $run, $run_block_digits) = @_;
+    $run_block_digits = 3 unless defined $run_block_digits && $run_block_digits ne '';
+    my $block = run_block($run);
+    my $out = $value;
+    $out =~ s/\{runblock:04d\}/sprintf('%04d', $block)/ge;
+    $out =~ s/\{runblock:03d\}/sprintf('%03d', $block)/ge;
+    $out =~ s/\{run:05d\}/sprintf('%05d', $run)/ge;
+    $out =~ s/\{run\}/$run/g;
+    if ($out =~ /\{runblock\}/) {
+        my $rb = sprintf("%0${run_block_digits}d", $block);
+        $out =~ s/\{runblock\}/$rb/g;
+    }
+    return $out;
+}
+
+# ----------------------------------------------------------------------
+sub _template_field_key {
+    my ($key) = @_;
+    return $key =~ /_tpl$/ ? substr($key, 0, -4) : $key;
+}
+
+# ----------------------------------------------------------------------
+sub _expand_task_template {
+    my ($tpl, $run, $run_block_digits) = @_;
+    $run_block_digits = 3 unless defined $run_block_digits && $run_block_digits ne '';
+
+    my $action = $tpl->{action} // 'trirec';
+    my %task = (action => $action);
+    my $id_tpl = $tpl->{id_tpl} // "run{run}-$action";
+    $task{id} = fmt_template($id_tpl, $run, $run_block_digits);
+
+    for my $key (keys %$tpl) {
+        next if $key eq 'action' || $key eq 'id_tpl';
+        my $out_key = _template_field_key($key);
+        my $val = $tpl->{$key};
+        if (!ref $val) {
+            $task{$out_key} = fmt_template($val, $run, $run_block_digits);
+        } else {
+            $task{$out_key} = $val;
+        }
+    }
+
+    $task{run_id} = $run unless exists $task{run_id};
+    return \%task;
+}
+
+# ----------------------------------------------------------------------
+sub expand_tasks_from_run_list {
+    my ($templates_ref, $runs_ref, $run_block_digits) = @_;
+    $run_block_digits = 3 unless defined $run_block_digits && $run_block_digits ne '';
+    my @tasks;
+    for my $run (@$runs_ref) {
+        for my $tpl (@$templates_ref) {
+            push @tasks, _expand_task_template($tpl, $run, $run_block_digits);
+        }
+    }
+    return @tasks;
+}
+
+# ----------------------------------------------------------------------
+sub resolve_run_list_path {
+    my ($run_list_file, $base) = @_;
+    my $path = $run_list_file;
+    if (!File::Spec->file_name_is_absolute($path)) {
+        $path = File::Spec->catfile($base, $path);
+    }
+    return abs_path($path);
+}
+
+# ----------------------------------------------------------------------
+sub runs_from_bounds {
+    my ($min_run, $max_run) = @_;
+    $min_run ||= 0;
+    $max_run ||= 0;
+    return () if $min_run <= 0;
+    return ($min_run) if $max_run <= 0;
+    die "max_run ($max_run) < min_run ($min_run)\n" if $max_run < $min_run;
+    return ($min_run .. $max_run);
+}
+
+# ----------------------------------------------------------------------
+sub _expand_templates_for_runs {
+    my ($config, $templates_ref, $runs_ref) = @_;
+    die "no runs selected for rereco_task_templates expansion\n" unless @$runs_ref;
+    my $run_block_digits = $config->{run_block_digits} // 3;
+    $run_block_digits = 3 if $run_block_digits eq '';
+    my @tasks = expand_tasks_from_run_list($templates_ref, $runs_ref, $run_block_digits);
+    for my $task (@tasks) {
+        $task->{action} = 'trirec' unless defined $task->{action} && $task->{action} ne '';
+    }
+    return @tasks;
+}
+
+# ----------------------------------------------------------------------
+sub load_rereco_tasks {
+    my ($config, $base) = @_;
+    my $run_list_file = $config->{run_list_file} // '';
+    $run_list_file =~ s/^\s+|\s+$//g;
+    my $templates = $config->{rereco_task_templates} // [];
+    $templates = [] unless ref $templates eq 'ARRAY';
+    my $min_run = 0 + ($config->{min_run} // 0);
+    my $max_run = 0 + ($config->{max_run} // 0);
+
+    if ($run_list_file ne '') {
+        die "run_list_file is set but rereco_task_templates is empty; "
+          . "define at least one task template to expand per run.\n"
+          unless @$templates;
+        my $path = resolve_run_list_path($run_list_file, $base);
+        die "run list file not found: $path\n" unless -f $path;
+        my @runs = filter_runs([parse_runs_file($path)], $min_run, $max_run);
+        die "no runs selected from $path with min_run=$min_run max_run=$max_run\n"
+          unless @runs;
+        return [_expand_templates_for_runs($config, $templates, \@runs)];
+    }
+
+    if (@$templates && $min_run > 0) {
+        my @runs = runs_from_bounds($min_run, $max_run);
+        return [_expand_templates_for_runs($config, $templates, \@runs)];
+    }
+
+    my $raw = $config->{rereco_tasks} // $config->{rereco_jobs} // [];
+    $raw = [] unless ref $raw eq 'ARRAY';
+    my @tasks;
+    for my $item (@$raw) {
+        my %task = %$item;
+        $task{action} = 'trirec' unless defined $task{action} && $task{action} ne '';
+        push @tasks, \%task;
+    }
+    return \@tasks;
+}
+
+1;

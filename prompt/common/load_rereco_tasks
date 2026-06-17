@@ -1,0 +1,22 @@
+#!/usr/bin/env perl
+# Read JSON config on stdin; print JSON task list on stdout (for Snakemake).
+use strict;
+use warnings;
+use FindBin;
+use Getopt::Long qw(GetOptions);
+use JSON::PP ();
+use File::Spec;
+
+BEGIN {
+    do "$FindBin::Bin/RerecoRuns" or die $@ || "cannot load RerecoRuns";
+}
+
+my $base = File::Spec->rel2abs('.');
+GetOptions('base=s' => \$base) or exit 2;
+
+my $json = do { local $/; <STDIN> };
+die "load_rereco_tasks: empty stdin\n" unless defined $json && $json ne '';
+
+my $config = JSON::PP->new->utf8->decode($json);
+my $tasks = RerecoRuns::load_rereco_tasks($config, $base);
+print JSON::PP->new->utf8->canonical->encode($tasks);

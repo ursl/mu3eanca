@@ -1,0 +1,51 @@
+#!/usr/bin/env perl
+# Run mu3e_midas_meta on every *.mid.lz4 file in a directory.
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+use File::Path qw(make_path);
+use File::Basename qw(dirname);
+
+my ($exe, $input_dir, $marker, $log_prefix);
+
+sub usage {
+    print STDERR "Usage: $0 --exe PATH --input-dir DIR --marker FILE [--log-prefix NAME]\n";
+    exit 2;
+}
+
+GetOptions(
+    'exe=s'        => \$exe,
+    'input-dir=s'  => \$input_dir,
+    'marker=s'     => \$marker,
+    'log-prefix=s' => \$log_prefix,
+    'help|h'       => sub { usage() },
+) or usage();
+
+$log_prefix = 'rereco' unless defined $log_prefix && $log_prefix ne '';
+die "missing required options\n" unless defined $exe && $exe ne ''
+  && defined $input_dir && $input_dir ne ''
+  && defined $marker && $marker ne '';
+
+if (!-x $exe) {
+    die "[$log_prefix] ERROR: mu3e_midas_meta not executable: $exe\n";
+}
+if (!-d $input_dir) {
+    die "[$log_prefix] ERROR: input directory missing: $input_dir\n";
+}
+
+opendir my $dh, $input_dir or die "[$log_prefix] ERROR: cannot read $input_dir: $!\n";
+my @files = sort grep { /\.mid\.lz4\z/ } readdir $dh;
+closedir $dh;
+
+die "[$log_prefix] ERROR: no *.mid.lz4 files in $input_dir\n" unless @files;
+
+make_path(dirname($marker));
+for my $name (@files) {
+    my $path = "$input_dir/$name";
+    print "[$log_prefix] midas_meta: $path\n";
+    system($exe, $path) == 0
+      or die "[$log_prefix] ERROR: $exe failed on $path\n";
+}
+
+open my $mk, '>', $marker or die "cannot touch marker $marker: $!\n";
+close $mk;

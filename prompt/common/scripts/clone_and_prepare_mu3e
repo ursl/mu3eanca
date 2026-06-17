@@ -1,0 +1,134 @@
+#!/usr/bin/env perl
+# Clone or init-in-place, fetch, checkout a tag/ref or branch HEAD,
+# optionally merge extra commits (e.g. PR tips), update submodules.
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+use File::Path qw(make_path);
+use Cwd qw(abs_path);
+use File::Basename qw(dirname);
+
+my ($repo, $ref, $branch, $work_basedir, $mu3e_dir, $marker);
+my @merges;
+
+sub usage {
+    print STDERR "Usage: $0 --repo REPO --work-basedir DIR --mu3e-dir DIR --marker FILE \\\n";
+    print STDERR "         (--ref REF | --branch BRANCH) [--merge COMMIT ...]\n";
+    print STDERR "  --ref REF         Detached checkout of tag or other git ref.\n";
+    print STDERR "  --branch BRANCH   Track origin/BRANCH HEAD (reset --hard).\n";
+    print STDERR "  --merge COMMIT    After checkout, git merge COMMIT (repeatable).\n";
+    exit 2;
+}
+
+GetOptions(
+    'repo=s'         => \$repo,
+    'ref=s'          => \$ref,
+    'tag=s'          => \$ref,
+    'branch=s'       => \$branch,
+    'merge=s@'       => \@merges,
+    'work-basedir=s' => \$work_basedir,
+    'mu3e-dir=s'     => \$mu3e_dir,
+    'marker=s'       => \$marker,
+    'help|h'         => sub { usage() },
+) or usage();
+
+die "missing required options\n" unless defined $repo && $repo ne ''
+  && defined $work_basedir && $work_basedir ne ''
+  && defined $mu3e_dir && $mu3e_dir ne ''
+  && defined $marker && $marker ne '';
+die "specify --ref or --branch\n" if (!$ref || $ref eq '') && (!$branch || $branch eq '');
+die "use only one of --ref or --branch\n" if ($ref && $ref ne '') && ($branch && $branch ne '');
+
+# Marker is relative to Snakemake workdir; resolve before cd into MU3E_DIR.
+$marker = abs_path($marker) unless $marker =~ m{^/};
+make_path(dirname($marker));
+make_path($work_basedir);
+
+sub run_cmd {
+    my (@cmd) = @_;
+    system(@cmd) == 0 or die "command failed: @cmd\n";
+}
+
+sub git_c {
+    my ($dir, @args) = @_;
+    run_cmd('git', '-C', $dir, @args);
+}
+
+sub git_ok {
+    my ($dir, @args) = @_;
+    return system('git', '-C', $dir, @args) == 0;
+}
+
+sub dir_empty {
+    my ($dir) = @_;
+    opendir my $dh, $dir or return 1;
+    my @entries = grep { $_ !~ /^\.\.?$/ } readdir $dh;
+    closedir $dh;
+    return @entries == 0;
+}
+
+sub ensure_commit {
+    my ($dir, $hash) = @_;
+    return if git_ok($dir, 'cat-file', '-e', "${hash}^{commit}");
+    print "Commit $hash not found locally; fetching origin again...\n";
+    git_c($dir, 'fetch', '--force', 'origin');
+    git_c($dir, 'fetch', '--tags', '--force', 'origin');
+    return if git_ok($dir, 'cat-file', '-e', "${hash}^{commit}");
+    die "ERROR: commit $hash not available after fetch.\n"
+      . "       Fetch the PR branch into this clone first, e.g.:\n"
+      . "         git fetch origin refs/pull-requests/49/from:pr-49\n";
+}
+
+my $git_dir = "$mu3e_dir/.git";
+if (!-d $git_dir && !-f $git_dir) {
+    if (dir_empty($mu3e_dir)) {
+        run_cmd('git', 'clone', $repo, $mu3e_dir);
+    } elsif (!-f "$mu3e_dir/CMakeLists.txt" && !-f "$mu3e_dir/.gitmodules") {
+        die "ERROR: $mu3e_dir exists but is not a mu3e checkout.\n"
+          . "       Remove the directory and retry (e.g. rm -rf \"$mu3e_dir\").\n";
+    } else {
+        git_c($mu3e_dir, 'init');
+        git_c($mu3e_dir, 'remote', 'add', 'origin', $repo)
+          unless git_ok($mu3e_dir, 'remote', 'get-url', 'origin');
+    }
+}
+
+git_c($mu3e_dir, 'fetch', '--force', 'origin');
+git_c($mu3e_dir, 'fetch', '--tags', '--force', 'origin');
+
+if ($branch && $branch ne '') {
+    die "ERROR: failed to fetch origin/$branch\n"
+      unless git_ok($mu3e_dir, 'fetch', '--force', 'origin', $branch);
+    if (git_ok($mu3e_dir, 'show-ref', '--verify', '--quiet', "refs/heads/$branch")) {
+        git_c($mu3e_dir, 'checkout', $branch);
+    } else {
+        git_c($mu3e_dir, 'checkout', '-B', $branch, "origin/$branch");
+    }
+    git_c($mu3e_dir, 'reset', '--hard', "origin/$branch");
+    my $head = `git -C "$mu3e_dir" rev-parse --short HEAD`;
+    chomp $head;
+    print "Checked out branch $branch at $head (origin/$branch)\n";
+} else {
+    git_c($mu3e_dir, 'checkout', $ref);
+    my $head = `git -C "$mu3e_dir" rev-parse --short HEAD`;
+    chomp $head;
+    print "Checked out ref $ref at $head\n";
+}
+
+for my $hash (@merges) {
+    ensure_commit($mu3e_dir, $hash);
+    print "Merging $hash ...\n";
+    run_cmd(
+        'git', '-C', $mu3e_dir, 'merge', '--no-edit',
+        '-m', "prompt checkout: merge $hash for testing",
+        $hash,
+    ) or die "ERROR: git merge $hash failed (conflicts?). Resolve manually in $mu3e_dir\n";
+    my $head = `git -C "$mu3e_dir" rev-parse --short HEAD`;
+    chomp $head;
+    print "After merge $hash: $head\n";
+}
+
+git_c($mu3e_dir, 'submodule', 'update', '--init', '--recursive');
+
+open my $mk, '>', $marker or die "cannot touch marker $marker: $!\n";
+close $mk;
