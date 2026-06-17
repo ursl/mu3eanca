@@ -26,7 +26,13 @@ More actions can be added later (same task list, new `action` values and rules).
 - **`trirec`** — `mu3eTrirec` on a sort file → `run/output/trirec-{task}.root`
 - **`midas_meta`** — `mu3e_midas_meta` on every `*.mid.lz4` in `input_dir` → marker `.markers/midas_meta-{task}.done` (ROOT meta files are written by the tool next to the MID inputs)
 
-Default target (`rule all`): all outputs/markers for every configured task.
+Default target (`rule all`): all outputs/markers for every configured task. With no tasks configured, `all` is equivalent to **`mu3e_setup`**.
+
+| Target | Meaning |
+|--------|---------|
+| `mu3e_setup` | Clone/checkout MU3E, `cmake`+`make`, relink — no `midas_meta` or `trirec` |
+| `midas_meta_all` | All midas_meta markers for configured runs |
+| `trirec_all` | All trirec outputs for configured runs |
 
 ## Layout on disk
 
@@ -205,9 +211,28 @@ Then re-run Snakemake (or add the hash only after `git fetch` has made it reacha
 
 Host selection: `REREC_HOST=moor` or `./runRereco -H mu3edb0`
 
+### MU3E setup only (no reprocessing)
+
+Prepare the MU3E checkout, build, and relink without running any action. No `-m`/`-M` needed (omit run bounds so no tasks are expanded):
+
 ```tcsh
 cd /path/to/mu3eanca/prompt/rereco
 
+./runRereco -s rereco-v67 -j4 -p -t dev -b dev -g datav6.5=2025V1 mu3e_setup
+```
+
+Dry-run: add `-n`. Equivalent marker: `.markers/relink_bin_files.done`.
+
+**Then run actions** — `midas_meta_all` / `trirec_all` need runs on the command line (`-m`/`-M`) or in config; `mu3e_setup` alone does not configure any:
+
+```tcsh
+./runRereco -s 260617-rereco -j4 -p -t dev -b dev -g datav6.5=2025V1 \
+  -m 4756 -M 4756 midas_meta_all
+```
+
+### Full reprocessing
+
+```tcsh
 ./runRereco -n -p -t v6.7 -g datav6.5=2025V1
 ./runRereco -j4 -p -t v6.7 -g datav6.5=2025V1
 ```

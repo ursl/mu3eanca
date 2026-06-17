@@ -24,8 +24,10 @@
 #   -j4             parallel jobs (normalized to snakemake --cores 4)
 #   --config k=v    setup overrides (merged into setup config.yaml, not passed to snakemake)
 #   midas_meta_all  concrete snakemake target
+#   mu3e_setup      clone + build + relink only (no reprocessing actions)
 #
 # Examples:
+#   ./runRereco -s rereco-v67 -j4 -t dev -b dev -g datav6.5=2025V1 mu3e_setup
 #   ./runRereco -s rereco-v67 -j1 -p -t dev -b dev -g datav6.5=2025V1 -m 4756 -M 4756 midas_meta_all
 #   ./runRereco -n -p -t v6.7 -g datav6.5=2025V1
 #
@@ -64,7 +66,10 @@ sub usage {
     print "  -p              print shell commands (snakemake --printshellcmds)\n";
     print "  -jN             run N jobs in parallel\n";
     print "  --config k=v    extra config overrides for the Snakefile\n\n";
-    print "Example:\n";
+    print "  mu3e_setup       Snakemake target: clone + build + relink only\n\n";
+    print "Example (MU3E checkout/build only, no runs):\n";
+    print "  $0 -s rereco-v67 -j4 -t dev -b dev -g datav6.5=2025V1 mu3e_setup\n\n";
+    print "Example (single run midas_meta):\n";
     print "  $0 -s rereco-v67 -j1 -p -t dev -b dev -g datav6.5=2025V1 -m 4756 -M 4756 midas_meta_all\n";
 }
 

@@ -77,15 +77,6 @@ if _proc.returncode != 0:
         _proc.stderr.strip() or f"load_rereco_tasks failed with exit {_proc.returncode}"
     )
 REREC_TASKS = json.loads(_proc.stdout)
-if not REREC_TASKS:
-    raise ValueError(
-        "no rereco tasks configured; set rereco_tasks or run_list_file + rereco_task_templates"
-    )
-
-TASK_IDS = [item["id"] for item in REREC_TASKS]
-TASK_BY_ID = {item["id"]: item for item in REREC_TASKS}
-TRIREC_TASK_IDS = [item["id"] for item in REREC_TASKS if item["action"] == "trirec"]
-MIDAS_META_TASK_IDS = [item["id"] for item in REREC_TASKS if item["action"] == "midas_meta"]
 
 TRIREC_OUTPUT_TPL = config.get("trirec_output_tpl", "output/trirec-{task}.root")
 MIDAS_META_MARKER_TPL = config.get("midas_meta_marker_tpl", ".markers/midas_meta-{task}.done")
@@ -105,140 +96,145 @@ MIDAS_META_EXE = f"{MU3E_DIR}/_build/{_midas_exe_rel}"
 include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
 
 
-def trirec_output(task):
-    return TRIREC_OUTPUT_TPL.format(task=task)
+if REREC_TASKS:
+    TASK_IDS = [item["id"] for item in REREC_TASKS]
+    TASK_BY_ID = {item["id"]: item for item in REREC_TASKS}
+    TRIREC_TASK_IDS = [item["id"] for item in REREC_TASKS if item["action"] == "trirec"]
+    MIDAS_META_TASK_IDS = [item["id"] for item in REREC_TASKS if item["action"] == "midas_meta"]
 
+    def trirec_output(task):
+        return TRIREC_OUTPUT_TPL.format(task=task)
 
-def sort_input_path(task):
-    item = TASK_BY_ID[task]
-    path = item["sort_input"]
-    if os.path.isabs(path):
+    def sort_input_path(task):
+        item = TASK_BY_ID[task]
+        path = item["sort_input"]
+        if os.path.isabs(path):
+            return path
+        if SORT_INPUT_BASE:
+            return f"{SORT_INPUT_BASE}/{path}"
         return path
-    if SORT_INPUT_BASE:
-        return f"{SORT_INPUT_BASE}/{path}"
-    return path
 
+    def task_run_id(task):
+        return TASK_BY_ID[task]["run_id"]
 
-def task_run_id(task):
-    return TASK_BY_ID[task]["run_id"]
+    def trirec_conf(task):
+        return TASK_BY_ID[task]["trirec_conf"]
 
+    def trirec_conf_fallback(task):
+        return TASK_BY_ID[task].get("trirec_conf_fallback", "")
 
-def trirec_conf(task):
-    return TASK_BY_ID[task]["trirec_conf"]
-
-
-def trirec_conf_fallback(task):
-    return TASK_BY_ID[task].get("trirec_conf_fallback", "")
-
-
-def _runblock_prefix(run_id, layout):
-    block = int(run_id) // 1000
-    if layout == "runblock3":
-        return f"{block:03d}/"
-    if layout == "runblock4":
-        return f"{block:04d}/"
-    return ""
-
-
-def _resolve_input_path(item, key, base_keys=("input_dir_base",)):
-    path = (item.get(key) or "").strip()
-    if not path:
+    def _runblock_prefix(run_id, layout):
+        block = int(run_id) // 1000
+        if layout == "runblock3":
+            return f"{block:03d}/"
+        if layout == "runblock4":
+            return f"{block:04d}/"
         return ""
-    if os.path.isabs(path):
-        return path
-    base = ""
-    for bk in base_keys:
-        base = (item.get(bk) or "").strip()
+
+    def _resolve_input_path(item, key, base_keys=("input_dir_base",)):
+        path = (item.get(key) or "").strip()
+        if not path:
+            return ""
+        if os.path.isabs(path):
+            return path
+        base = ""
+        for bk in base_keys:
+            base = (item.get(bk) or "").strip()
+            if base:
+                break
+        if not base:
+            base = SORT_INPUT_BASE
+        layout = item.get("raw_input_layout", RAW_INPUT_LAYOUT)
+        prefix = ""
+        run_id = item.get("run_id")
+        if run_id is not None and layout in ("runblock3", "runblock4"):
+            prefix = _runblock_prefix(run_id, layout)
         if base:
-            break
-    if not base:
-        base = SORT_INPUT_BASE
-    layout = item.get("raw_input_layout", RAW_INPUT_LAYOUT)
-    prefix = ""
-    run_id = item.get("run_id")
-    if run_id is not None and layout in ("runblock3", "runblock4"):
-        prefix = _runblock_prefix(run_id, layout)
-    if base:
-        return f"{base}/{prefix}{path}"
-    if prefix:
-        return f"{prefix}{path}"
-    return path
+            return f"{base}/{prefix}{path}"
+        if prefix:
+            return f"{prefix}{path}"
+        return path
 
+    def midas_meta_input_dir(task):
+        return _resolve_input_path(TASK_BY_ID[task], "input_dir")
 
-def midas_meta_input_dir(task):
-    return _resolve_input_path(TASK_BY_ID[task], "input_dir")
+    def midas_meta_input_file(task):
+        return _resolve_input_path(
+            TASK_BY_ID[task],
+            "input_file",
+            base_keys=("input_file_base", "input_dir_base"),
+        )
 
+    def midas_meta_marker_path(task):
+        return MIDAS_META_MARKER_TPL.format(task=task)
 
-def midas_meta_input_file(task):
-    return _resolve_input_path(
-        TASK_BY_ID[task],
-        "input_file",
-        base_keys=("input_file_base", "input_dir_base"),
+    TRIREC_LOG_TPL = "logs/snakemake/run_mu3e_trirec-{task}.log"
+
+    def trirec_rule_inputs(wc):
+        return [".markers/relink_bin_files.done", sort_input_path(wc.task)]
+
+    def trirec_sort_input(wc):
+        return sort_input_path(wc.task)
+
+    def trirec_output_rel(wc):
+        return trirec_output(wc.task)
+
+    def trirec_conf_for(wc):
+        return trirec_conf(wc.task)
+
+    def trirec_conf_fallback_for(wc):
+        return trirec_conf_fallback(wc.task)
+
+    def trirec_run_id_for(wc):
+        return task_run_id(wc.task)
+
+    def trirec_item_label(wc):
+        return wc.task
+
+    include: str(_PROMPT_COMMON / "mu3e_trirec.smk")
+    include: str(_PROMPT_COMMON / "midas_meta.smk")
+
+    wildcard_constraints:
+        task="|".join(TASK_IDS),
+
+    ALL_TARGETS = [f"{MU3E_DIR}/run/{trirec_output(task)}" for task in TRIREC_TASK_IDS]
+    ALL_TARGETS += [midas_meta_marker_path(task) for task in MIDAS_META_TASK_IDS]
+
+    rule midas_meta_all:
+        """Concrete target: all midas_meta markers for the configured run/task list."""
+        input:
+            [midas_meta_marker_path(task) for task in MIDAS_META_TASK_IDS]
+
+    rule trirec_all:
+        """Concrete target: all trirec outputs for the configured run/task list."""
+        input:
+            [f"{MU3E_DIR}/run/{trirec_output(task)}" for task in TRIREC_TASK_IDS]
+else:
+    ALL_TARGETS = []
+
+    _NO_TASKS_MSG = (
+        "no reprocessing tasks configured; pass -m/-M on runRereco "
+        "(e.g. -m 4756 -M 4756) or set run_list_file + rereco_task_templates"
     )
 
+    rule midas_meta_all:
+        run:
+            raise ValueError(_NO_TASKS_MSG)
 
-def midas_meta_marker_path(task):
-    return MIDAS_META_MARKER_TPL.format(task=task)
-
-
-TRIREC_LOG_TPL = "logs/snakemake/run_mu3e_trirec-{task}.log"
-
-
-def trirec_rule_inputs(wc):
-    return [".markers/relink_bin_files.done", sort_input_path(wc.task)]
+    rule trirec_all:
+        run:
+            raise ValueError(_NO_TASKS_MSG)
 
 
-def trirec_sort_input(wc):
-    return sort_input_path(wc.task)
-
-
-def trirec_output_rel(wc):
-    return trirec_output(wc.task)
-
-
-def trirec_conf_for(wc):
-    return trirec_conf(wc.task)
-
-
-def trirec_conf_fallback_for(wc):
-    return trirec_conf_fallback(wc.task)
-
-
-def trirec_run_id_for(wc):
-    return task_run_id(wc.task)
-
-
-def trirec_item_label(wc):
-    return wc.task
-
-
-include: str(_PROMPT_COMMON / "mu3e_trirec.smk")
-include: str(_PROMPT_COMMON / "midas_meta.smk")
-
-
-wildcard_constraints:
-    task="|".join(TASK_IDS),
-
-
-ALL_TARGETS = [f"{MU3E_DIR}/run/{trirec_output(task)}" for task in TRIREC_TASK_IDS]
-ALL_TARGETS += [midas_meta_marker_path(task) for task in MIDAS_META_TASK_IDS]
+rule mu3e_setup:
+    """Clone, build, and relink MU3E; no midas_meta or trirec actions."""
+    input:
+        ".markers/relink_bin_files.done"
 
 
 rule all:
     input:
-        ALL_TARGETS
-
-
-rule midas_meta_all:
-    """Concrete target: all midas_meta markers for the configured run/task list."""
-    input:
-        [midas_meta_marker_path(task) for task in MIDAS_META_TASK_IDS]
-
-
-rule trirec_all:
-    """Concrete target: all trirec outputs for the configured run/task list."""
-    input:
-        [f"{MU3E_DIR}/run/{trirec_output(task)}" for task in TRIREC_TASK_IDS]
+        ALL_TARGETS if ALL_TARGETS else [".markers/relink_bin_files.done"]
 
 
 rule ensure_clone_mu3e_deps:
