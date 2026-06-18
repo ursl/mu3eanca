@@ -12,7 +12,7 @@ mu3e_tag: "master"
 #   - "75d8c48"
 #   - "a1b2c3d4"
 mu3e_dir: "mu3e"
-make_jobs: 10
+make_jobs: 20
 
 # Path to mu3e_midas_meta relative to mu3e/_build/ (after full cmake build).
 # midas_meta_exe: "modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta"
