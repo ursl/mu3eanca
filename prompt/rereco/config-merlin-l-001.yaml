@@ -3,3 +3,6 @@
 mu3e_rereco_basedir: "/data/experiment/mu3e/data/prompt/rereco"
 relink_script: "/psi/home/langenegger/mu3e/mu3eanca/perl/relinkBinFiles"
 cdb_dbconn: "http://mu3edb0/cdb/"
+# Raw MID: .../raw/004/run04756.mid.lz4 (3-digit run//1000 block under raw/)
+sort_input_base: "/data/experiment/mu3e/data/2025/raw"
+raw_input_layout: "runblock3"

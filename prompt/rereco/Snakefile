@@ -123,13 +123,24 @@ if REREC_TASKS:
     def trirec_conf_fallback(task):
         return TASK_BY_ID[task].get("trirec_conf_fallback", "")
 
-    def _runblock_prefix(run_id, layout):
+    def _runblock_dir(run_id, layout):
         block = int(run_id) // 1000
         if layout == "runblock3":
-            return f"{block:03d}/"
+            return f"{block:03d}"
         if layout == "runblock4":
-            return f"{block:04d}/"
+            return f"{block:04d}"
         return ""
+
+    def _runblock_prefix(run_id, layout):
+        rb = _runblock_dir(run_id, layout)
+        return f"{rb}/" if rb else ""
+
+    def _base_includes_runblock(base, run_id, layout):
+        rb = _runblock_dir(run_id, layout)
+        if not rb:
+            return False
+        norm = base.rstrip("/")
+        return norm.endswith(f"/{rb}")
 
     def _resolve_input_path(item, key, base_keys=("input_dir_base",)):
         path = (item.get(key) or "").strip()
@@ -148,7 +159,8 @@ if REREC_TASKS:
         prefix = ""
         run_id = item.get("run_id")
         if run_id is not None and layout in ("runblock3", "runblock4"):
-            prefix = _runblock_prefix(run_id, layout)
+            if not _base_includes_runblock(base, run_id, layout):
+                prefix = _runblock_prefix(run_id, layout)
         if base:
             return f"{base}/{prefix}{path}"
         if prefix:

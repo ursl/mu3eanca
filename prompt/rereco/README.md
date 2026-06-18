@@ -137,12 +137,21 @@ rereco_task_templates:
 **3-digit run-block layout** (non-CDB raw, e.g. `raw/004/run04756.mid.lz4`):
 
 ```yaml
-sort_input_base: "/Users/ursl/mu3e/raw"
+sort_input_base: "/data/experiment/mu3e/data/2025/raw"
 raw_input_layout: runblock3
 rereco_task_templates:
   - action: midas_meta
     input_file_tpl: "run{run:05d}.mid.lz4"
 ```
+
+On merlin, `config-merlin-l-001.yaml` sets `raw_input_layout: runblock3` by default. Override only `sort_input_base` on the CLI:
+
+```tcsh
+./runRereco -s 260618-rereco ... -m 4756 -M 4756 \
+  --config sort_input_base=/data/experiment/mu3e/data/2025/raw midas_meta_all
+```
+
+Without `runblock3` (or `{runblock:03d}/` in the template), paths resolve to `.../raw/run04756.mid.lz4` and fail. Putting the block in the base (`.../raw/004`) also works but must be changed per run block.
 
 Equivalent explicit template (no `raw_input_layout` needed):
 
