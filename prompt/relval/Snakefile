@@ -41,6 +41,17 @@ for _m in config.get("mu3e_checkout_merges") or []:
     _ms = str(_m).strip()
     if _ms and _ms not in MU3E_CHECKOUT_MERGES:
         MU3E_CHECKOUT_MERGES.append(_ms)
+
+MU3E_UTIL_CHECKOUT_MERGES = []
+_util_merge_one = (config.get("mu3eUtil_checkout_merge") or "").strip()
+if _util_merge_one:
+    MU3E_UTIL_CHECKOUT_MERGES.append(_util_merge_one)
+for _m in config.get("mu3eUtil_checkout_merges") or []:
+    _ms = str(_m).strip()
+    if _ms and _ms not in MU3E_UTIL_CHECKOUT_MERGES:
+        MU3E_UTIL_CHECKOUT_MERGES.append(_ms)
+MU3E_UTIL_SUBDIR = (config.get("mu3eUtil_subdir") or "modules/mu3eUtil").strip()
+
 MU3E_DIR_BASE = config["mu3e_dir"]
 MU3E_TAG_DIRSAFE = MU3E_TAG.replace("/", "_")
 MU3E_WORKDIR_NAME = config.get("mu3e_workdir_name")

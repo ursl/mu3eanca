@@ -1,6 +1,6 @@
 # Shared rereco defaults (machine-independent).
 # Host-specific paths: config-<hostname>.yaml (e.g. config-moor.yaml, config-mu3edb0.yaml).
-# Override host: REREC_HOST=moor  or  ./runRereco --host moor ...
+# Override host: REREC_HOST=moor
 
 mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
 mu3e_tag: "master"
@@ -10,6 +10,11 @@ mu3e_tag: "master"
 # mu3e_checkout_merge: "75d8c48"
 # mu3e_checkout_merges:
 #   - "75d8c48"
+# Optional: merge commits in mu3eUtil submodule (after submodule update).
+# mu3eUtil_checkout_merge: "a1b2c3d4"
+# mu3eUtil_checkout_merges:
+#   - "a1b2c3d4"
+# mu3eUtil_subdir: "modules/mu3eUtil"
 #   - "a1b2c3d4"
 mu3e_dir: "mu3e"
 make_jobs: 20
@@ -36,14 +41,14 @@ midas_meta_marker_tpl: ".markers/midas_meta-{task}.done"
 job_submit_mode: "local"
 # slurm_partition: "mu3e"
 # slurm_log_dir: ""   # default: <workdir>/logs/slurm
-# slurm_batch_script: ""  # absolute path; runRereco sets default from mu3eanca/slurm/
+# slurm_batch_script: ""  # absolute path; initRereco sets default from mu3eanca/slurm/
 
 cdb_GT: "mcidealv6.5"
 
 # --- Run-list mode (recommended for batch reprocessing) ---
 # rereco_task_templates is expanded once per run. Runs come from either:
 #   run_list_file (+ optional min_run/max_run filter), or
-#   min_run/max_run alone (CLI: ./runRereco -m 4756 -M 4756 ...).
+#   min_run/max_run alone (CLI: snakemake --config min_run=4756 max_run=4756 ...).
 # min_run / max_run with a file: filter only (0 = no bound on that side).
 # min_run / max_run without a file: build run list (max_run 0 → single run min_run).
 #

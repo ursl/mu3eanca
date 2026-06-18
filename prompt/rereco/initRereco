@@ -1,0 +1,364 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# initRereco — create or refresh a rereco Snakemake setup directory.
+#
+# Writes setups/<name>/config.yaml (template + host + CLI), copies Snakefile
+# and prompt/common/. Does not run snakemake.
+#
+# Usage:
+#   ./initRereco -s SETUP -t TAG [-b BRANCH] [-g GT] [-H HOST] [--config k=v ...]
+#
+# Then:
+#   cd $MU3E_REREC_BASEDIR/setups/SETUP
+#   snakemake --cores 4 -p mu3e_setup
+#   snakemake --cores 4 -p --config min_run=4756 max_run=4799 ... midas_meta_all
+#
+# Host: REREC_HOST or -H (default: hostname).
+# ----------------------------------------------------------------------
+
+use strict;
+use warnings;
+use Getopt::Std;
+use vars qw($opt_s $opt_H $opt_t $opt_g $opt_b $opt_h);
+use Cwd qw(abs_path);
+use File::Basename qw(dirname);
+use File::Copy qw(copy);
+use File::Path qw(make_path);
+use Sys::Hostname qw(hostname);
+
+sub usage {
+    print "Usage: $0 -s SETUP -t TAG [-b BRANCH] [-g GT] [-H HOST] [--config k=v ...]\n\n";
+    print "Creates or updates setups/SETUP/ (config.yaml, Snakefile, common/).\n";
+    print "Does not run snakemake — run mu3e_setup first, then operational targets.\n\n";
+    print "Example:\n";
+    print "  $0 -s 260618-midasMeta -t dev -b dev -g datav6.5=2025V1\n";
+    print "  cd .../setups/260618-midasMeta && snakemake --cores 4 -p mu3e_setup\n";
+    exit 2;
+}
+
+sub prefix {
+    my ($now) = localtime;
+    return "$now/initRereco      / ";
+}
+
+sub read_yaml_quoted_value {
+    my ($path, $key) = @_;
+    return "" unless -f $path;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    while (my $line = <$fh>) {
+        if ($line =~ /^$key:\s*"(.*)"/) {
+            close($fh);
+            return $1;
+        }
+    }
+    close($fh);
+    return "";
+}
+
+sub read_yaml_scalar_value {
+    my ($path, $key) = @_;
+    return "" unless -f $path;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    while (my $line = <$fh>) {
+        if ($line =~ /^$key:\s*"(.*)"/) {
+            close($fh);
+            return $1;
+        }
+        if ($line =~ /^$key:\s*(\S+)/) {
+            close($fh);
+            return $1;
+        }
+    }
+    close($fh);
+    return "";
+}
+
+sub rereco_host {
+    my ($cli_host) = @_;
+    return $cli_host if defined $cli_host && $cli_host ne "";
+    return $ENV{REREC_HOST} if defined $ENV{REREC_HOST} && $ENV{REREC_HOST} ne "";
+    my $h = hostname();
+    $h =~ s/\..*//;
+    return $h;
+}
+
+sub host_config_path {
+    my ($host) = @_;
+    return "config-$host.yaml";
+}
+
+sub read_yaml_quoted_overrides {
+    my ($path) = @_;
+    my %over = ();
+    return %over unless -f $path;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    while (my $line = <$fh>) {
+        if ($line =~ /^([A-Za-z0-9_]+):\s*"(.*)"/) {
+            $over{$1} = $2;
+        }
+    }
+    close($fh);
+    return %over;
+}
+
+sub read_config_value {
+    my ($host, $key) = @_;
+    my $hostpath = host_config_path($host);
+    if (-f $hostpath) {
+        my $v = read_yaml_quoted_value($hostpath, $key);
+        return $v if $v ne "";
+    }
+    return read_yaml_quoted_value("config.yaml", $key);
+}
+
+sub merge_config_lines {
+    my ($base_path, $host_path) = @_;
+    my %over = read_yaml_quoted_overrides($host_path);
+    open(my $in, "<", $base_path) or die "Cannot open $base_path: $!\n";
+    my @lines = <$in>;
+    close($in);
+    my @out = ();
+    my %seen = ();
+    foreach my $line (@lines) {
+        if ($line =~ /^([A-Za-z0-9_]+):/) {
+            my $key = $1;
+            if (exists $over{$key}) {
+                push(@out, "$key: \"$over{$key}\"\n");
+                $seen{$key} = 1;
+                next;
+            }
+        }
+        push(@out, $line);
+    }
+    foreach my $key (sort keys %over) {
+        next if $seen{$key};
+        push(@out, "$key: \"$over{$key}\"\n");
+    }
+    return @out;
+}
+
+sub write_lines {
+    my ($path, $lines_ref) = @_;
+    open(my $out, ">", $path) or die "Cannot write $path: $!\n";
+    print $out $_ foreach @{$lines_ref};
+    close($out);
+}
+
+sub apply_config_kv {
+    my ($cfg, $kv) = @_;
+    return if !defined $kv || $kv eq "";
+    if ($kv =~ /^([A-Za-z0-9_]+)=(.*)$/) {
+        $cfg->{$1} = $2;
+    }
+}
+
+sub is_config_kv {
+    my ($arg) = @_;
+    return defined $arg && $arg =~ /^[A-Za-z0-9_]+=/;
+}
+
+sub extract_config_argv {
+    my (@argv) = @_;
+    my %cfg = ();
+    my @out = ();
+    for (my $i = 0; $i <= $#argv; ++$i) {
+        my $a = $argv[$i];
+        if ($a eq '--config') {
+            while ($i + 1 <= $#argv) {
+                my $tok = $argv[$i + 1];
+                if (is_config_kv($tok)) {
+                    apply_config_kv(\%cfg, $tok);
+                    ++$i;
+                } else {
+                    last;
+                }
+            }
+        } elsif (is_config_kv($a)) {
+            apply_config_kv(\%cfg, $a);
+        } else {
+            push(@out, $a);
+        }
+    }
+    return (\@out, \%cfg);
+}
+
+sub copy_prompt_common {
+    my ($script_dir, $setup_dir) = @_;
+    my $common_src = abs_path("$script_dir/../common");
+    my $common_dst = "$setup_dir/common";
+    die "ERROR: missing $common_src\n" unless -d $common_src;
+    system("rm", "-rf", $common_dst) if -d $common_dst;
+    die "rm -rf $common_dst failed\n" if $? != 0;
+    system("cp", "-R", $common_src, $common_dst);
+    die "cp -R $common_src $common_dst failed\n" if $? != 0;
+}
+
+my ($argv_rest, $cfg_extra) = extract_config_argv(@ARGV);
+@ARGV = @{$argv_rest};
+
+getopts('s:H:t:g:b:h');
+usage() if $opt_h;
+usage() if !defined $opt_s || $opt_s eq "" || !defined $opt_t || $opt_t eq "";
+
+my %cfg = %{$cfg_extra};
+$cfg{mu3e_tag}             = $opt_t;
+$cfg{cdb_GT}               = $opt_g if defined $opt_g;
+$cfg{mu3e_checkout_branch} = $opt_b if defined $opt_b;
+
+my $script_dir = abs_path(dirname($0));
+chdir($script_dir) or die "Cannot chdir to $script_dir: $!\n";
+
+my $rereco_host = rereco_host($opt_H);
+my $host_cfg = host_config_path($rereco_host);
+print prefix(), "host config: $host_cfg (host=$rereco_host)\n" if -f $host_cfg;
+
+my $base_dir = read_config_value($rereco_host, "mu3e_rereco_basedir");
+die "ERROR: mu3e_rereco_basedir not found in config.yaml + $host_cfg\n" if $base_dir eq "";
+
+$cfg{cdb_GT} = read_config_value($rereco_host, "cdb_GT")
+    if !defined $cfg{cdb_GT} || $cfg{cdb_GT} eq "";
+$cfg{cdb_dbconn} = read_config_value($rereco_host, "cdb_dbconn")
+    if !defined $cfg{cdb_dbconn} || $cfg{cdb_dbconn} eq "";
+$cfg{mu3e_checkout_branch} = read_yaml_scalar_value("config.yaml", "mu3e_checkout_branch")
+    if !defined $cfg{mu3e_checkout_branch} || $cfg{mu3e_checkout_branch} eq "";
+my $host_branch = read_yaml_scalar_value($host_cfg, "mu3e_checkout_branch");
+$cfg{mu3e_checkout_branch} = $host_branch if $host_branch ne "";
+
+$cfg{job_submit_mode} = "local"
+    if !defined $cfg{job_submit_mode} || $cfg{job_submit_mode} eq "";
+$cfg{slurm_partition} = read_yaml_scalar_value($host_cfg, "slurm_partition")
+    if !defined $cfg{slurm_partition} || $cfg{slurm_partition} eq "";
+$cfg{slurm_partition} = "mu3e" if $cfg{slurm_partition} eq "";
+
+my $repo_root = abs_path("$script_dir/../..");
+my $default_slurm = "$repo_root/slurm/slurm-midas_meta.csh";
+if ((!defined $cfg{slurm_batch_script} || $cfg{slurm_batch_script} eq "") && -f $default_slurm) {
+    $cfg{slurm_batch_script} = $default_slurm;
+}
+my $host_slurm = read_yaml_scalar_value($host_cfg, "slurm_batch_script");
+$cfg{slurm_batch_script} = $host_slurm if $host_slurm ne "";
+
+my $setup_safe = $opt_s;
+$setup_safe =~ s/\//_/g;
+$setup_safe =~ s/ /_/g;
+
+my $setup_dir = "$base_dir/setups/$setup_safe";
+make_path($setup_dir);
+
+copy("$script_dir/Snakefile", "$setup_dir/Snakefile")
+    or die "Copy Snakefile failed: $!\n";
+copy_prompt_common($script_dir, $setup_dir);
+
+my @lines = merge_config_lines("$script_dir/config.yaml", "$script_dir/$host_cfg");
+my $mu3e_workdir_name = "mu3e-" . $setup_safe;
+my %seen = ();
+my @out = ();
+
+my %setup_keys = map { $_ => 1 } qw(
+    mu3e_workdir_name mu3e_checkout_tag mu3e_checkout_branch
+    mu3e_checkout_merge mu3eUtil_checkout_merge
+    mu3e_tag cdb_GT cdb_dbconn
+    slurm_partition slurm_batch_script job_submit_mode
+);
+
+foreach my $line (@lines) {
+    if ($line =~ /^mu3e_workdir_name:/) {
+        push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n");
+        $seen{mu3e_workdir_name} = 1;
+    } elsif ($line =~ /^mu3e_checkout_tag:/) {
+        if (($cfg{mu3e_checkout_branch} // "") eq "") {
+            push(@out, "mu3e_checkout_tag: \"$cfg{mu3e_tag}\"\n");
+        } else {
+            push(@out, "mu3e_checkout_tag: \"\"\n");
+        }
+        $seen{mu3e_checkout_tag} = 1;
+    } elsif ($line =~ /^mu3e_checkout_branch:/) {
+        push(@out, "mu3e_checkout_branch: \"$cfg{mu3e_checkout_branch}\"\n");
+        $seen{mu3e_checkout_branch} = 1;
+    } elsif ($line =~ /^mu3e_checkout_merge:/) {
+        if (defined $cfg{mu3e_checkout_merge} && $cfg{mu3e_checkout_merge} ne "") {
+            push(@out, "mu3e_checkout_merge: \"$cfg{mu3e_checkout_merge}\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{mu3e_checkout_merge} = 1;
+    } elsif ($line =~ /^mu3eUtil_checkout_merge:/) {
+        if (defined $cfg{mu3eUtil_checkout_merge} && $cfg{mu3eUtil_checkout_merge} ne "") {
+            push(@out, "mu3eUtil_checkout_merge: \"$cfg{mu3eUtil_checkout_merge}\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{mu3eUtil_checkout_merge} = 1;
+    } elsif ($line =~ /^mu3e_tag:/) {
+        push(@out, "mu3e_tag: \"$cfg{mu3e_tag}\"\n");
+        $seen{mu3e_tag} = 1;
+    } elsif ($line =~ /^cdb_GT:/) {
+        push(@out, "cdb_GT: \"$cfg{cdb_GT}\"\n");
+        $seen{cdb_GT} = 1;
+    } elsif ($line =~ /^cdb_dbconn:/) {
+        push(@out, "cdb_dbconn: \"$cfg{cdb_dbconn}\"\n");
+        $seen{cdb_dbconn} = 1;
+    } elsif ($line =~ /^job_submit_mode:/) {
+        push(@out, "job_submit_mode: \"$cfg{job_submit_mode}\"\n");
+        $seen{job_submit_mode} = 1;
+    } elsif ($line =~ /^slurm_partition:/) {
+        push(@out, "slurm_partition: \"$cfg{slurm_partition}\"\n");
+        $seen{slurm_partition} = 1;
+    } elsif ($line =~ /^slurm_batch_script:/) {
+        if (defined $cfg{slurm_batch_script} && $cfg{slurm_batch_script} ne "") {
+            push(@out, "slurm_batch_script: \"$cfg{slurm_batch_script}\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{slurm_batch_script} = 1;
+    } elsif ($line =~ /^([A-Za-z0-9_]+):/ && exists $cfg{$1}) {
+        my $key = $1;
+        my $val = $cfg{$key};
+        if ($val =~ /^\d+$/) {
+            push(@out, "$key: $val\n");
+        } else {
+            push(@out, "$key: \"$val\"\n");
+        }
+        $seen{$key} = 1;
+    } else {
+        push(@out, $line);
+    }
+}
+
+push(@out, "mu3e_workdir_name: \"$mu3e_workdir_name\"\n") if !$seen{mu3e_workdir_name};
+if (!$seen{mu3e_checkout_tag} && ($cfg{mu3e_checkout_branch} // "") eq "") {
+    push(@out, "mu3e_checkout_tag: \"$cfg{mu3e_tag}\"\n");
+}
+push(@out, "mu3e_checkout_branch: \"$cfg{mu3e_checkout_branch}\"\n") if !$seen{mu3e_checkout_branch};
+push(@out, "mu3e_checkout_merge: \"$cfg{mu3e_checkout_merge}\"\n")
+    if !$seen{mu3e_checkout_merge} && defined $cfg{mu3e_checkout_merge} && $cfg{mu3e_checkout_merge} ne "";
+push(@out, "mu3eUtil_checkout_merge: \"$cfg{mu3eUtil_checkout_merge}\"\n")
+    if !$seen{mu3eUtil_checkout_merge} && defined $cfg{mu3eUtil_checkout_merge} && $cfg{mu3eUtil_checkout_merge} ne "";
+push(@out, "job_submit_mode: \"$cfg{job_submit_mode}\"\n") if !$seen{job_submit_mode};
+push(@out, "slurm_partition: \"$cfg{slurm_partition}\"\n") if !$seen{slurm_partition};
+push(@out, "slurm_batch_script: \"$cfg{slurm_batch_script}\"\n")
+    if !$seen{slurm_batch_script} && defined $cfg{slurm_batch_script} && $cfg{slurm_batch_script} ne "";
+
+for my $key (sort keys %cfg) {
+    next if $seen{$key};
+    next if $setup_keys{$key};
+    my $val = $cfg{$key};
+    next if !defined $val || $val eq "";
+    if ($val =~ /^\d+$/) {
+        push(@out, "$key: $val\n");
+    } else {
+        push(@out, "$key: \"$val\"\n");
+    }
+}
+
+my $cfg_path = "$setup_dir/config.yaml";
+write_lines($cfg_path, \@out);
+
+my $workdir = "$base_dir/$mu3e_workdir_name";
+print prefix(), "setup dir:  $setup_dir\n";
+print prefix(), "config:     $cfg_path\n";
+print prefix(), "workdir:    $workdir\n";
+print "\nNext:\n";
+print "  cd $setup_dir\n";
+print "  snakemake --cores 4 -p mu3e_setup\n";

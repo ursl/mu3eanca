@@ -10,6 +10,9 @@ mu3e_tag: "v6.5"
 # mu3e_checkout_merge: "75d8c48"
 # mu3e_checkout_merges:
 #   - "75d8c48"
+# mu3eUtil_checkout_merge: "a1b2c3d4"
+# mu3eUtil_checkout_merges:
+#   - "a1b2c3d4"
 mu3e_dir: "mu3e"
 make_jobs: 10
 

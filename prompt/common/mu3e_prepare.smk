@@ -9,6 +9,8 @@
 #   MU3E_CHECKOUT_REF        tag/ref when not using a branch (empty if branch mode)
 #   MU3E_CHECKOUT_BRANCH     branch name to track at origin/BRANCH HEAD (optional)
 #   MU3E_CHECKOUT_MERGES     list of commit hashes to git merge after checkout (optional)
+#   MU3E_UTIL_CHECKOUT_MERGES  git merge in mu3eUtil submodule after submodule update (optional)
+#   MU3E_UTIL_SUBDIR         path to mu3eUtil under MU3E_DIR (default: modules/mu3eUtil)
 #   CLONE_MU3E_INPUTS       list with one prerequisite path (bootstrap or local marker)
 #   CLONE_MU3E_SCRIPT       path to scripts/clone_and_prepare_mu3e
 #   MU3E_PREP_LOG_PREFIX    log tag, e.g. "relval" or "rereco"
@@ -24,6 +26,8 @@ rule clone_and_prepare_mu3e:
         ref=MU3E_CHECKOUT_REF,
         branch=MU3E_CHECKOUT_BRANCH,
         merge_list=" ".join(MU3E_CHECKOUT_MERGES),
+        util_merge_list=" ".join(MU3E_UTIL_CHECKOUT_MERGES),
+        util_subdir=MU3E_UTIL_SUBDIR,
         work_basedir=MU3E_WORK_BASEDIR,
         mu3e_dir=MU3E_DIR,
         script=CLONE_MU3E_SCRIPT
@@ -46,6 +50,15 @@ rule clone_and_prepare_mu3e:
             for _m in "${{_merges[@]}}"; do
                 args+=(--merge "$_m")
             done
+        fi
+        if [ -n "{params.util_merge_list}" ]; then
+            read -r -a _util_merges <<< "{params.util_merge_list}"
+            for _m in "${{_util_merges[@]}}"; do
+                args+=(--util-merge "$_m")
+            done
+        fi
+        if [ -n "{params.util_subdir}" ]; then
+            args+=(--util-subdir "{params.util_subdir}")
         fi
         perl "{params.script}" "${{args[@]}}"
         """

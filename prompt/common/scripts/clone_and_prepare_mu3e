@@ -8,15 +8,19 @@ use File::Path qw(make_path);
 use Cwd qw(abs_path);
 use File::Basename qw(dirname);
 
-my ($repo, $ref, $branch, $work_basedir, $mu3e_dir, $marker);
+my ($repo, $ref, $branch, $work_basedir, $mu3e_dir, $marker, $util_subdir);
 my @merges;
+my @util_merges;
 
 sub usage {
     print STDERR "Usage: $0 --repo REPO --work-basedir DIR --mu3e-dir DIR --marker FILE \\\n";
     print STDERR "         (--ref REF | --branch BRANCH) [--merge COMMIT ...]\n";
+    print STDERR "         [--util-merge COMMIT ...] [--util-subdir PATH]\n";
     print STDERR "  --ref REF         Detached checkout of tag or other git ref.\n";
     print STDERR "  --branch BRANCH   Track origin/BRANCH HEAD (reset --hard).\n";
-    print STDERR "  --merge COMMIT    After checkout, git merge COMMIT (repeatable).\n";
+    print STDERR "  --merge COMMIT    After checkout, git merge COMMIT in mu3e (repeatable).\n";
+    print STDERR "  --util-merge COMMIT  After submodules, git merge COMMIT in mu3eUtil (repeatable).\n";
+    print STDERR "  --util-subdir PATH   mu3eUtil path under mu3e checkout (default: modules/mu3eUtil).\n";
     exit 2;
 }
 
@@ -25,7 +29,9 @@ GetOptions(
     'ref=s'          => \$ref,
     'tag=s'          => \$ref,
     'branch=s'       => \$branch,
-    'merge=s@'       => \@merges,
+    'merge=s@'         => \@merges,
+    'util-merge=s@'    => \@util_merges,
+    'util-subdir=s'    => \$util_subdir,
     'work-basedir=s' => \$work_basedir,
     'mu3e-dir=s'     => \$mu3e_dir,
     'marker=s'       => \$marker,
@@ -150,6 +156,27 @@ for my $hash (@merges) {
 }
 
 git_c($mu3e_dir, 'submodule', 'update', '--init', '--recursive');
+
+$util_subdir = 'modules/mu3eUtil' unless defined $util_subdir && $util_subdir ne '';
+if (@util_merges) {
+    my $util_dir = "$mu3e_dir/$util_subdir";
+    die "ERROR: mu3eUtil submodule missing at $util_dir (after submodule update)\n"
+      unless -d "$util_dir/.git" || -f "$util_dir/.git";
+    git_c($util_dir, 'fetch', '--force', 'origin');
+    git_c($util_dir, 'fetch', '--tags', '--force', 'origin');
+    for my $hash (@util_merges) {
+        ensure_commit($util_dir, $hash);
+        print "Merging $hash in $util_subdir ...\n";
+        run_cmd(
+            'git', '-C', $util_dir, 'merge', '--no-edit',
+            '-m', "prompt checkout: merge $hash in mu3eUtil",
+            $hash,
+        ) or die "ERROR: git merge $hash failed in $util_dir (conflicts?). Resolve manually\n";
+        my $head = `git -C "$util_dir" rev-parse --short HEAD`;
+        chomp $head;
+        print "After util merge $hash: $head\n";
+    }
+}
 
 open my $mk, '>', $marker or die "cannot touch marker $marker: $!\n";
 close $mk;

@@ -35,7 +35,7 @@ CLONE_MU3E_INPUTS = [...]        # one prerequisite path
 include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
 ```
 
-`runRelval` / `runRereco` copy this tree into each setup directory as `common/`.
+`initRereco` / `runRelval` copy this tree into each setup directory as `common/`.
 
 ## `mu3e_trirec.smk`
 
