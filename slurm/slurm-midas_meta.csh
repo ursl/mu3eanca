@@ -20,6 +20,23 @@ date
 hostname
 limit coredumpsize 0
 
+# -- basic environment
+setenv SW "/data/experiment/mu3e/code/software"
+
+setenv Boost_DIR ${SW}
+setenv Eigen3_DIR ${SW}
+setenv LZ4_ROOT ${SW}
+
+setenv PATH ${SW}/bin:${PATH}
+setenv LD_LIBRARY_PATH ${SW}/lib:${LD_LIBRARY_PATH}
+
+setenv Geant4_ROOT ${SW}
+setenv Geant4_PREFIX `geant4-config --prefix`
+setenv ROOT_ROOT ${SW}
+setenv ROOTSYS ${SW}
+
+
+
 cd $RUNDIR || exit 1
 pwd
 
