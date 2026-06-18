@@ -8,10 +8,11 @@
 #SBATCH -n 1
 
 # Filled in by your submit wrapper (or set by hand):
-setenv RUNDIR  /data/experiment/mu3e/data/prompt/rereco/mu3e-260618-rereco
-setenv SETUP   /data/experiment/mu3e/data/prompt/rereco/setups/260618-rereco
-setenv RUN     4758
-setenv TASK    run${RUN}-midas_meta
+# sbatch -p mu3e --export=RUNDIR,SETUP,RUN,TASK slurm-midas_meta.csh
+if (! $?RUNDIR) setenv RUNDIR /data/experiment/mu3e/data/prompt/rereco/mu3e-260618-rereco
+if (! $?SETUP)  setenv SETUP  /data/experiment/mu3e/data/prompt/rereco/setups/260618-rereco
+if (! $?RUN)    setenv RUN    4758
+if (! $?TASK)   setenv TASK   run${RUN}-midas_meta
 
 echo "================================="
 echo "====> SLURM midas_meta job  <===="
