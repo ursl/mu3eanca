@@ -1,0 +1,107 @@
+#!/usr/bin/env perl
+# Dispatch midas_meta: run locally or via sbatch --wait (Snakemake orchestrates parallelism).
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+use File::Path qw(make_path);
+
+my (
+    $mode, $exe, $input_file, $input_dir, $marker, $log_prefix,
+    $rundir, $setup, $task, $run,
+    $slurm_partition, $slurm_logdir, $slurm_script,
+    $file_script, $dir_script,
+);
+
+sub usage {
+    print STDERR "Usage: $0 --mode local|batch --exe PATH --marker FILE \\\n";
+    print STDERR "  (--input-file FILE | --input-dir DIR) [options]\n";
+    exit 2;
+}
+
+GetOptions(
+    'mode=s'             => \$mode,
+    'exe=s'              => \$exe,
+    'input-file=s'       => \$input_file,
+    'input-dir=s'        => \$input_dir,
+    'marker=s'           => \$marker,
+    'log-prefix=s'       => \$log_prefix,
+    'rundir=s'           => \$rundir,
+    'setup=s'            => \$setup,
+    'task=s'             => \$task,
+    'run=s'              => \$run,
+    'slurm-partition=s'  => \$slurm_partition,
+    'slurm-logdir=s'     => \$slurm_logdir,
+    'slurm-script=s'     => \$slurm_script,
+    'file-script=s'      => \$file_script,
+    'dir-script=s'       => \$dir_script,
+    'help|h'             => sub { usage() },
+) or usage();
+
+$mode = 'local' unless defined $mode && $mode ne '';
+$log_prefix = 'rereco' unless defined $log_prefix && $log_prefix ne '';
+
+die "missing --exe\n" unless defined $exe && $exe ne '';
+die "missing --marker\n" unless defined $marker && $marker ne '';
+die "missing --file-script\n" unless defined $file_script && $file_script ne '';
+die "missing --dir-script\n" unless defined $dir_script && $dir_script ne '';
+
+my $has_file = defined $input_file && $input_file ne '';
+my $has_dir  = defined $input_dir && $input_dir ne '';
+die "specify exactly one of --input-file or --input-dir\n" if $has_file == $has_dir;
+
+if ($mode eq 'batch') {
+    die "batch mode supports --input-file only (not --input-dir)\n" unless $has_file;
+    die "missing --rundir for batch mode\n" unless defined $rundir && $rundir ne '';
+    die "missing --slurm-script for batch mode\n" unless defined $slurm_script && $slurm_script ne '';
+    die "missing --slurm-partition for batch mode\n" unless defined $slurm_partition && $slurm_partition ne '';
+    die "missing --slurm-logdir for batch mode\n" unless defined $slurm_logdir && $slurm_logdir ne '';
+    die "slurm batch script not found: $slurm_script\n" unless -f $slurm_script;
+
+    make_path($slurm_logdir);
+
+    $ENV{RUNDIR}      = $rundir;
+    $ENV{SETUP}       = $setup if defined $setup && $setup ne '';
+    $ENV{EXE}         = $exe;
+    $ENV{MID_FILE}    = $input_file;
+    $ENV{MARKER}      = $marker;
+    $ENV{SCRIPT}      = $file_script;
+    $ENV{LOG_PREFIX}  = $log_prefix;
+    $ENV{TASK}        = $task if defined $task && $task ne '';
+    $ENV{RUN}         = $run if defined $run && $run ne '';
+
+    my $label = (defined $run && $run ne '') ? $run : ((defined $task && $task ne '') ? $task : 'midas');
+    my $stdout = "$slurm_logdir/midas-${label}.%j.out";
+    my $stderr = "$slurm_logdir/midas-${label}.%j.err";
+
+    print "[rereco] batch submit: partition=$slurm_partition input=$input_file\n";
+    my @cmd = (
+        'sbatch', '--wait', '--export=ALL',
+        '-p', $slurm_partition,
+        '-o', $stdout,
+        '-e', $stderr,
+        $slurm_script,
+    );
+    system(@cmd) == 0
+      or die "[rereco] ERROR: sbatch failed for $input_file (exit $?)\n";
+    exit 0;
+}
+
+if ($has_file) {
+    exec(
+        'perl', $file_script,
+        '--exe', $exe,
+        '--input-file', $input_file,
+        '--marker', $marker,
+        '--log-prefix', $log_prefix,
+    );
+}
+
+exec(
+    'perl', $dir_script,
+    '--exe', $exe,
+    '--input-dir', $input_dir,
+    '--marker', $marker,
+    '--log-prefix', $log_prefix,
+);
+
+die "exec failed: $!\n";

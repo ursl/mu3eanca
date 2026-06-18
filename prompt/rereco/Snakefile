@@ -91,7 +91,20 @@ CLONE_MU3E_INPUTS = [".markers/clone_mu3e_deps.done"]
 MIDAS_META_PREREQS = [".markers/build_mu3e.done"]
 MIDAS_META_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_dir")
 MIDAS_META_FILE_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_file")
+MIDAS_META_SUBMIT_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_submit")
 MIDAS_META_EXE = f"{MU3E_DIR}/_build/{_midas_exe_rel}"
+
+JOB_SUBMIT_MODE = config.get("job_submit_mode", "local")
+SLURM_PARTITION = config.get("slurm_partition", "mu3e")
+SLURM_LOG_DIR = (config.get("slurm_log_dir") or "").strip() or f"{SETUP_ROOT}/logs/slurm"
+_slurm_batch = (config.get("slurm_batch_script") or "").strip()
+if _slurm_batch:
+    SLURM_BATCH_SCRIPT = (
+        _slurm_batch if os.path.isabs(_slurm_batch) else str((_base / _slurm_batch).resolve())
+    )
+else:
+    SLURM_BATCH_SCRIPT = ""
+SETUP_DIR = str(_base)
 
 include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
 
@@ -179,6 +192,12 @@ if REREC_TASKS:
 
     def midas_meta_marker_path(task):
         return MIDAS_META_MARKER_TPL.format(task=task)
+
+    def midas_meta_task_run_id(task):
+        return TASK_BY_ID[task].get("run_id", "")
+
+    def midas_meta_task_label(task):
+        return task
 
     TRIREC_LOG_TPL = "logs/snakemake/run_mu3e_trirec-{task}.log"
 

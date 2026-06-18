@@ -1,18 +1,15 @@
 #! /bin/csh -f
 
-#SBATCH --job-name=midas4758
-#SBATCH -e %x.%j.err
-#SBATCH -o %x.%j.out
+#SBATCH --job-name=midas_meta
+#SBATCH -e
+#SBATCH -o
 #SBATCH --time=01:00:00
 #SBATCH --mem=4G
 #SBATCH -n 1
 
-# Filled in by your submit wrapper (or set by hand):
-# sbatch -p mu3e --export=RUNDIR,SETUP,RUN,TASK slurm-midas_meta.csh
-if (! $?RUNDIR) setenv RUNDIR /data/experiment/mu3e/data/prompt/rereco/mu3e-260618-rereco
-if (! $?SETUP)  setenv SETUP  /data/experiment/mu3e/data/prompt/rereco/setups/260618-rereco
-if (! $?RUN)    setenv RUN    4758
-if (! $?TASK)   setenv TASK   run${RUN}-midas_meta
+# Required env (set by run_midas_meta_submit before sbatch):
+#   RUNDIR, EXE, MID_FILE, MARKER, SCRIPT
+# Optional: SETUP, TASK, RUN, LOG_PREFIX
 
 echo "================================="
 echo "====> SLURM midas_meta job  <===="
@@ -21,7 +18,29 @@ date
 hostname
 limit coredumpsize 0
 
-# -- basic environment
+if (! $?LOG_PREFIX) setenv LOG_PREFIX rereco
+if (! $?RUNDIR) then
+    echo "[$LOG_PREFIX] ERROR: RUNDIR not set" >&2
+    exit 1
+endif
+if (! $?EXE) then
+    echo "[$LOG_PREFIX] ERROR: EXE not set" >&2
+    exit 1
+endif
+if (! $?MID_FILE) then
+    echo "[$LOG_PREFIX] ERROR: MID_FILE not set" >&2
+    exit 1
+endif
+if (! $?MARKER) then
+    echo "[$LOG_PREFIX] ERROR: MARKER not set" >&2
+    exit 1
+endif
+if (! $?SCRIPT) then
+    echo "[$LOG_PREFIX] ERROR: SCRIPT not set" >&2
+    exit 1
+endif
+
+# -- basic environment (merlin batch nodes)
 setenv SW "/data/experiment/mu3e/code/software"
 
 setenv Boost_DIR ${SW}
@@ -36,15 +55,8 @@ setenv Geant4_PREFIX `geant4-config --prefix`
 setenv ROOT_ROOT ${SW}
 setenv ROOTSYS ${SW}
 
-
-
 cd $RUNDIR || exit 1
 pwd
-
-set MID_FILE = /data/experiment/mu3e/data/2025/raw/004/run0${RUN}.mid.lz4
-set EXE      = $RUNDIR/mu3e/_build/modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta
-set SCRIPT   = $SETUP/common/scripts/run_midas_meta_file
-set MARKER   = .markers/midas_meta-${TASK}.done
 
 echo "--> input:  $MID_FILE"
 echo "--> exe:    $EXE"
@@ -54,15 +66,15 @@ perl "$SCRIPT" \
     --exe "$EXE" \
     --input-file "$MID_FILE" \
     --marker "$MARKER" \
-    --log-prefix rereco
+    --log-prefix "$LOG_PREFIX"
 
 set st = $status
 date
 if ( $st != 0 ) then
-    echo "run: FAILED with exit $st"
+    echo "[$LOG_PREFIX] FAILED with exit $st"
     exit $st
 endif
 
-echo "run: done, marker:"
+echo "[$LOG_PREFIX] done, marker:"
 ls -l $MARKER
-echo "run: This is the end, my friend"
+echo "[$LOG_PREFIX] This is the end, my friend"

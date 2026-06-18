@@ -32,6 +32,12 @@ run_block_digits: 3
 trirec_output_tpl: "output/trirec-{task}.root"
 midas_meta_marker_tpl: ".markers/midas_meta-{task}.done"
 
+# midas_meta execution: local (default) or batch (sbatch --wait per run; setup stays local).
+job_submit_mode: "local"
+# slurm_partition: "mu3e"
+# slurm_log_dir: ""   # default: <workdir>/logs/slurm
+# slurm_batch_script: ""  # absolute path; runRereco sets default from mu3eanca/slurm/
+
 cdb_GT: "mcidealv6.5"
 
 # --- Run-list mode (recommended for batch reprocessing) ---

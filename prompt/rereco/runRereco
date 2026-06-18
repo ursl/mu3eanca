@@ -16,6 +16,10 @@
 #   -t mu3e_tag     MU3E tag / label (required)
 #   -g cdb_GT       CDB global tag
 #   -b branch       track origin/<branch> instead of tag checkout
+#   --submit MODE   midas_meta backend: local (default) or batch (sbatch --wait)
+#   --slurm-partition PART   SLURM partition for --submit batch (default: mu3e or host config)
+#   --slurm-logdir PATH      SLURM stdout/stderr directory (default: <workdir>/logs/slurm)
+#   --slurm-script PATH      batch wrapper script (default: mu3eanca/slurm/slurm-midas_meta.csh)
 #   -h              help
 #
 # Arguments after options are passed to snakemake, for example:
@@ -29,6 +33,7 @@
 # Examples:
 #   ./runRereco -s rereco-v67 -j4 -t dev -b dev -g datav6.5=2025V1 mu3e_setup
 #   ./runRereco -s rereco-v67 -j1 -p -t dev -b dev -g datav6.5=2025V1 -m 4756 -M 4756 midas_meta_all
+#   ./runRereco -s rereco-v67 -j20 --submit batch -t dev -b dev -g datav6.5=2025V1 -m 4756 -M 4799 midas_meta_all
 #   ./runRereco -n -p -t v6.7 -g datav6.5=2025V1
 #
 # History  2025/06/16 first shot
@@ -60,6 +65,10 @@ sub usage {
     print "  -t mu3e_tag     MU3E tag / label (required)\n";
     print "  -g cdb_GT       CDB global tag\n";
     print "  -b branch       checkout origin/<branch> instead of a release tag\n";
+    print "  --submit MODE  midas_meta: local (default) or batch (sbatch --wait; setup stays local)\n";
+    print "  --slurm-partition PART  SLURM partition for --submit batch\n";
+    print "  --slurm-logdir PATH     SLURM log directory (default: <workdir>/logs/slurm)\n";
+    print "  --slurm-script PATH     SLURM batch wrapper (default: mu3eanca/slurm/slurm-midas_meta.csh)\n";
     print "  -h              this help\n\n";
     print "Remaining arguments go to snakemake. Common snakemake flags:\n";
     print "  -n              dry run\n";
@@ -71,6 +80,8 @@ sub usage {
     print "  $0 -s rereco-v67 -j4 -t dev -b dev -g datav6.5=2025V1 mu3e_setup\n\n";
     print "Example (single run midas_meta):\n";
     print "  $0 -s rereco-v67 -j1 -p -t dev -b dev -g datav6.5=2025V1 -m 4756 -M 4756 midas_meta_all\n";
+    print "Example (batch midas_meta, 20 jobs in flight):\n";
+    print "  $0 -s rereco-v67 -j20 --submit batch -t dev -b dev -g datav6.5=2025V1 -m 4756 -M 4799 midas_meta_all\n";
 }
 
 # ----------------------------------------------------------------------
@@ -226,6 +237,14 @@ sub apply_config_kv {
         $cfg->{run_block_digits} = $1;
     } elsif ($kv =~ /^run_list_file=(.*)$/) {
         $cfg->{run_list_file} = $1;
+    } elsif ($kv =~ /^job_submit_mode=(.*)$/) {
+        $cfg->{job_submit_mode} = $1;
+    } elsif ($kv =~ /^slurm_partition=(.*)$/) {
+        $cfg->{slurm_partition} = $1;
+    } elsif ($kv =~ /^slurm_log_dir=(.*)$/) {
+        $cfg->{slurm_log_dir} = $1;
+    } elsif ($kv =~ /^slurm_batch_script=(.*)$/) {
+        $cfg->{slurm_batch_script} = $1;
     }
 }
 
@@ -353,6 +372,27 @@ sub run_cmd_to_file {
     }
 }
 
+# Pull runRereco-only long options out of argv before getopts / snakemake parsing.
+sub extract_rereco_long_opts {
+    my ($argv_ref, $cfg_ref) = @_;
+    my @out = ();
+    for (my $i = 0; $i <= $#$argv_ref; ++$i) {
+        my $a = $argv_ref->[$i];
+        if ($a eq '--submit' && $i < $#$argv_ref) {
+            $cfg_ref->{job_submit_mode} = $argv_ref->[++$i];
+        } elsif ($a eq '--slurm-partition' && $i < $#$argv_ref) {
+            $cfg_ref->{slurm_partition} = $argv_ref->[++$i];
+        } elsif ($a eq '--slurm-logdir' && $i < $#$argv_ref) {
+            $cfg_ref->{slurm_log_dir} = $argv_ref->[++$i];
+        } elsif ($a eq '--slurm-script' && $i < $#$argv_ref) {
+            $cfg_ref->{slurm_batch_script} = $argv_ref->[++$i];
+        } else {
+            push(@out, $a);
+        }
+    }
+    @$argv_ref = @out;
+}
+
 # ----------------------------------------------------------------------
 sub is_snakemake_flag {
     my ($arg) = @_;
@@ -376,6 +416,11 @@ sub partition_argv {
         } elsif ($a =~ /^-[sHmMtgbh]$/) {
             push(@rereco, $a);
             if ($a ne '-h' && $i + 1 <= $#argv && $argv[$i + 1] !~ /^-/) {
+                push(@rereco, $argv[++$i]);
+            }
+        } elsif ($a eq '--submit' || $a eq '--slurm-partition' || $a eq '--slurm-logdir' || $a eq '--slurm-script') {
+            push(@rereco, $a);
+            if ($i + 1 <= $#argv && $argv[$i + 1] !~ /^-/) {
                 push(@rereco, $argv[++$i]);
             }
         } elsif ($a eq '--config' || $a eq '--cores' || $a eq '-j' || $a eq '-c') {
@@ -402,6 +447,9 @@ if ($#ARGV >= 0) {
     @snakemake_argv = @{$snakemake_argv_ref};
 }
 
+my %cfg = ();
+extract_rereco_long_opts(\@ARGV, \%cfg);
+
 getopts('s:H:m:M:t:g:b:h');
 
 if ($opt_h) {
@@ -409,7 +457,6 @@ if ($opt_h) {
     exit(0);
 }
 
-my %cfg = ();
 $cfg{mu3e_tag}           = $opt_t           if defined $opt_t;
 $cfg{cdb_GT}             = $opt_g           if defined $opt_g;
 $cfg{mu3e_checkout_branch} = $opt_b         if defined $opt_b;
@@ -453,6 +500,48 @@ if (!defined $cfg{mu3e_checkout_merge} || $cfg{mu3e_checkout_merge} eq "") {
     $cfg{mu3e_checkout_merge} = read_yaml_scalar_value("config.yaml", "mu3e_checkout_merge");
     my $host_merge = read_yaml_scalar_value($host_cfg, "mu3e_checkout_merge");
     $cfg{mu3e_checkout_merge} = $host_merge if $host_merge ne "";
+}
+
+if (!defined $cfg{job_submit_mode} || $cfg{job_submit_mode} eq "") {
+    $cfg{job_submit_mode} = read_yaml_scalar_value("config.yaml", "job_submit_mode");
+    my $host_submit = read_yaml_scalar_value($host_cfg, "job_submit_mode");
+    $cfg{job_submit_mode} = $host_submit if $host_submit ne "";
+}
+$cfg{job_submit_mode} = "local" if !defined $cfg{job_submit_mode} || $cfg{job_submit_mode} eq "";
+if ($cfg{job_submit_mode} !~ /^(local|batch)$/) {
+    die "ERROR: --submit / job_submit_mode must be 'local' or 'batch', got '$cfg{job_submit_mode}'\n";
+}
+
+if (!defined $cfg{slurm_partition} || $cfg{slurm_partition} eq "") {
+    $cfg{slurm_partition} = read_yaml_scalar_value("config.yaml", "slurm_partition");
+    my $host_part = read_yaml_scalar_value($host_cfg, "slurm_partition");
+    $cfg{slurm_partition} = $host_part if $host_part ne "";
+}
+$cfg{slurm_partition} = "mu3e" if !defined $cfg{slurm_partition} || $cfg{slurm_partition} eq "";
+
+if (!defined $cfg{slurm_log_dir}) {
+    $cfg{slurm_log_dir} = read_yaml_scalar_value("config.yaml", "slurm_log_dir");
+    my $host_log = read_yaml_scalar_value($host_cfg, "slurm_log_dir");
+    $cfg{slurm_log_dir} = $host_log if $host_log ne "";
+}
+$cfg{slurm_log_dir} = "" if !defined $cfg{slurm_log_dir};
+
+my $repo_root = abs_path("$script_dir/../..");
+my $default_slurm_script = "$repo_root/slurm/slurm-midas_meta.csh";
+if (!defined $cfg{slurm_batch_script} || $cfg{slurm_batch_script} eq "") {
+    $cfg{slurm_batch_script} = read_yaml_scalar_value("config.yaml", "slurm_batch_script");
+    my $host_script = read_yaml_scalar_value($host_cfg, "slurm_batch_script");
+    $cfg{slurm_batch_script} = $host_script if $host_script ne "";
+}
+if ((!defined $cfg{slurm_batch_script} || $cfg{slurm_batch_script} eq "") && -f $default_slurm_script) {
+    $cfg{slurm_batch_script} = $default_slurm_script;
+}
+if ($cfg{job_submit_mode} eq "batch") {
+    if ($cfg{slurm_batch_script} eq "" || !-f $cfg{slurm_batch_script}) {
+        die "ERROR: batch mode requires slurm batch script (default $default_slurm_script not found); "
+          . "use --slurm-script PATH\n";
+    }
+    $cfg{slurm_batch_script} = abs_path($cfg{slurm_batch_script});
 }
 
 my $setup_name = defined $opt_s ? $opt_s : "";
@@ -549,6 +638,26 @@ foreach my $line (@lines) {
             push(@out, $line);
         }
         $seen{run_list_file} = 1;
+    } elsif ($line =~ /^job_submit_mode:/) {
+        push(@out, "job_submit_mode: \"$cfg{job_submit_mode}\"\n");
+        $seen{job_submit_mode} = 1;
+    } elsif ($line =~ /^slurm_partition:/) {
+        push(@out, "slurm_partition: \"$cfg{slurm_partition}\"\n");
+        $seen{slurm_partition} = 1;
+    } elsif ($line =~ /^slurm_log_dir:/) {
+        if (defined $cfg{slurm_log_dir} && $cfg{slurm_log_dir} ne "") {
+            push(@out, "slurm_log_dir: \"$cfg{slurm_log_dir}\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{slurm_log_dir} = 1;
+    } elsif ($line =~ /^slurm_batch_script:/) {
+        if (defined $cfg{slurm_batch_script} && $cfg{slurm_batch_script} ne "") {
+            push(@out, "slurm_batch_script: \"$cfg{slurm_batch_script}\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{slurm_batch_script} = 1;
     } else {
         push(@out, $line);
     }
@@ -571,7 +680,17 @@ push(@out, "run_block_digits: $cfg{run_block_digits}\n")
     if !$seen{run_block_digits} && defined $cfg{run_block_digits} && $cfg{run_block_digits} ne "";
 push(@out, "run_list_file: \"$cfg{run_list_file}\"\n")
     if !$seen{run_list_file} && defined $cfg{run_list_file} && $cfg{run_list_file} ne "";
+push(@out, "job_submit_mode: \"$cfg{job_submit_mode}\"\n") if !$seen{job_submit_mode};
+push(@out, "slurm_partition: \"$cfg{slurm_partition}\"\n") if !$seen{slurm_partition};
+push(@out, "slurm_log_dir: \"$cfg{slurm_log_dir}\"\n")
+    if !$seen{slurm_log_dir} && defined $cfg{slurm_log_dir} && $cfg{slurm_log_dir} ne "";
+push(@out, "slurm_batch_script: \"$cfg{slurm_batch_script}\"\n")
+    if !$seen{slurm_batch_script} && defined $cfg{slurm_batch_script} && $cfg{slurm_batch_script} ne "";
 write_lines($cfg_path, \@out);
+
+if ($cfg{job_submit_mode} eq "batch") {
+    print(prefix("runRereco"), "midas_meta submit mode: batch (partition=$cfg{slurm_partition})\n");
+}
 
 my $workdir = "$base_dir/$mu3e_workdir_name";
 
