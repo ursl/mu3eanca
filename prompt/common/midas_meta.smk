@@ -7,7 +7,7 @@
 # Optional: MIDAS_META_FILE_SCRIPT (single-file mode)
 # Optional submit (defaults: local via run_midas_meta_submit):
 #   JOB_SUBMIT_MODE, MIDAS_META_SUBMIT_SCRIPT, SETUP_DIR, SETUP_ROOT
-#   SLURM_PARTITION, SLURM_LOG_DIR, SLURM_BATCH_SCRIPT
+#   SLURM_PARTITION, SLURM_LOG_DIR, SLURM_BATCH_SCRIPT, SLURM_MEM
 #   midas_meta_task_run_id(task), midas_meta_task_label(task)
 
 
@@ -33,6 +33,7 @@ rule run_midas_meta:
         task_run=lambda wc: midas_meta_task_run_id(wc.task),
         task_label=lambda wc: midas_meta_task_label(wc.task),
         slurm_partition=SLURM_PARTITION,
+        slurm_mem=SLURM_MEM,
         slurm_logdir=SLURM_LOG_DIR,
         slurm_script=SLURM_BATCH_SCRIPT,
     shell:
@@ -50,6 +51,7 @@ rule run_midas_meta:
                 --task "{params.task_label}" \
                 --run "{params.task_run}" \
                 --slurm-partition "{params.slurm_partition}" \
+                --slurm-mem "{params.slurm_mem}" \
                 --slurm-logdir "{params.slurm_logdir}" \
                 --slurm-script "{params.slurm_script}" \
                 --file-script "{params.file_script}" \

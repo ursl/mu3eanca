@@ -230,6 +230,8 @@ $cfg{job_submit_mode} = "local"
 $cfg{slurm_partition} = read_yaml_scalar_value($host_cfg, "slurm_partition")
     if !defined $cfg{slurm_partition} || $cfg{slurm_partition} eq "";
 $cfg{slurm_partition} = "mu3e" if $cfg{slurm_partition} eq "";
+$cfg{slurm_mem} = read_yaml_scalar_value($host_cfg, "slurm_mem")
+    if !defined $cfg{slurm_mem} || $cfg{slurm_mem} eq "";
 
 my $repo_root = abs_path("$script_dir/../..");
 my $default_slurm = "$repo_root/slurm/slurm-midas_meta.csh";
@@ -259,7 +261,7 @@ my %setup_keys = map { $_ => 1 } qw(
     mu3e_workdir_name mu3e_checkout_tag mu3e_checkout_branch
     mu3e_checkout_merge mu3eUtil_checkout_merge
     mu3e_tag cdb_GT cdb_dbconn
-    slurm_partition slurm_batch_script job_submit_mode
+    slurm_partition slurm_batch_script slurm_mem job_submit_mode
 );
 
 foreach my $line (@lines) {
@@ -305,6 +307,13 @@ foreach my $line (@lines) {
     } elsif ($line =~ /^slurm_partition:/) {
         push(@out, "slurm_partition: \"$cfg{slurm_partition}\"\n");
         $seen{slurm_partition} = 1;
+    } elsif ($line =~ /^slurm_mem:/) {
+        if (defined $cfg{slurm_mem} && $cfg{slurm_mem} ne "") {
+            push(@out, "slurm_mem: \"$cfg{slurm_mem}\"\n");
+        } else {
+            push(@out, $line);
+        }
+        $seen{slurm_mem} = 1;
     } elsif ($line =~ /^slurm_batch_script:/) {
         if (defined $cfg{slurm_batch_script} && $cfg{slurm_batch_script} ne "") {
             push(@out, "slurm_batch_script: \"$cfg{slurm_batch_script}\"\n");
@@ -337,6 +346,8 @@ push(@out, "mu3eUtil_checkout_merge: \"$cfg{mu3eUtil_checkout_merge}\"\n")
     if !$seen{mu3eUtil_checkout_merge} && defined $cfg{mu3eUtil_checkout_merge} && $cfg{mu3eUtil_checkout_merge} ne "";
 push(@out, "job_submit_mode: \"$cfg{job_submit_mode}\"\n") if !$seen{job_submit_mode};
 push(@out, "slurm_partition: \"$cfg{slurm_partition}\"\n") if !$seen{slurm_partition};
+push(@out, "slurm_mem: \"$cfg{slurm_mem}\"\n")
+    if !$seen{slurm_mem} && defined $cfg{slurm_mem} && $cfg{slurm_mem} ne "";
 push(@out, "slurm_batch_script: \"$cfg{slurm_batch_script}\"\n")
     if !$seen{slurm_batch_script} && defined $cfg{slurm_batch_script} && $cfg{slurm_batch_script} ne "";
 

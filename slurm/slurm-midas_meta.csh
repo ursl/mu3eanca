@@ -4,8 +4,8 @@
 #SBATCH -e
 #SBATCH -o
 #SBATCH --time=01:00:00
-#SBATCH --mem=4G
 #SBATCH -n 1
+# memory: set via sbatch --mem from run_midas_meta_submit (config slurm_mem)
 
 # Required env (set by run_midas_meta_submit before sbatch):
 #   RUNDIR, EXE, MID_FILE, MARKER, SCRIPT

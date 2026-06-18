@@ -8,7 +8,7 @@ use File::Path qw(make_path);
 my (
     $mode, $exe, $input_file, $input_dir, $marker, $log_prefix,
     $rundir, $setup, $task, $run,
-    $slurm_partition, $slurm_logdir, $slurm_script,
+    $slurm_partition, $slurm_mem, $slurm_logdir, $slurm_script,
     $file_script, $dir_script,
 );
 
@@ -30,6 +30,7 @@ GetOptions(
     'task=s'             => \$task,
     'run=s'              => \$run,
     'slurm-partition=s'  => \$slurm_partition,
+    'slurm-mem=s'        => \$slurm_mem,
     'slurm-logdir=s'     => \$slurm_logdir,
     'slurm-script=s'     => \$slurm_script,
     'file-script=s'      => \$file_script,
@@ -73,14 +74,18 @@ if ($mode eq 'batch') {
     my $stdout = "$slurm_logdir/midas-${label}.%j.out";
     my $stderr = "$slurm_logdir/midas-${label}.%j.err";
 
-    print "[rereco] batch submit: partition=$slurm_partition input=$input_file\n";
+    print "[rereco] batch submit: partition=$slurm_partition input=$input_file";
+    print " mem=$slurm_mem" if defined $slurm_mem && $slurm_mem ne '';
+    print "\n";
     my @cmd = (
         'sbatch', '--wait', '--export=ALL',
         '-p', $slurm_partition,
+    );
+    push @cmd, ('--mem', $slurm_mem) if defined $slurm_mem && $slurm_mem ne '';
+    push @cmd,
         '-o', $stdout,
         '-e', $stderr,
-        $slurm_script,
-    );
+        $slurm_script;
     system(@cmd) == 0
       or die "[rereco] ERROR: sbatch failed for $input_file (exit $?)\n";
     exit 0;

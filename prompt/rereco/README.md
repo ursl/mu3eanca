@@ -151,10 +151,11 @@ In setup config or per run:
 ```yaml
 job_submit_mode: "batch"    # or "local" (default)
 slurm_partition: "mu3e"
+slurm_mem: "16G"              # per-job RAM (sbatch --mem); raise if OOM
 slurm_batch_script: "/path/to/mu3eanca/slurm/slurm-midas_meta.csh"
 ```
 
-Override per run: `--config job_submit_mode=batch` (use `--` before the target if it follows other `--config` values).
+Override per run: `--config job_submit_mode=batch slurm_mem=32G` (use `--` before the target if it follows other `--config` values).
 
 When passing several `--config key=value` entries, put the snakemake target after `--` so it is not parsed as config:
 

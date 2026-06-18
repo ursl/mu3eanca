@@ -40,6 +40,7 @@ midas_meta_marker_tpl: ".markers/midas_meta-{task}.done"
 # midas_meta execution: local (default) or batch (sbatch --wait per run; setup stays local).
 job_submit_mode: "local"
 # slurm_partition: "mu3e"
+# slurm_mem: "16G"        # sbatch --mem for midas_meta batch jobs
 # slurm_log_dir: ""   # default: <workdir>/logs/slurm
 # slurm_batch_script: ""  # absolute path; initRereco sets default from mu3eanca/slurm/
 

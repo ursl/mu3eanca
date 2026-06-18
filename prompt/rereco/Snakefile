@@ -107,6 +107,7 @@ MIDAS_META_EXE = f"{MU3E_DIR}/_build/{_midas_exe_rel}"
 
 JOB_SUBMIT_MODE = config.get("job_submit_mode", "local")
 SLURM_PARTITION = config.get("slurm_partition", "mu3e")
+SLURM_MEM = (config.get("slurm_mem") or "").strip()
 SLURM_LOG_DIR = (config.get("slurm_log_dir") or "").strip() or f"{SETUP_ROOT}/logs/slurm"
 _slurm_batch = (config.get("slurm_batch_script") or "").strip()
 if _slurm_batch:
