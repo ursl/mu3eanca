@@ -1,0 +1,5 @@
+# merlin6. Loaded automatically if hostname is merlin-l-001.
+
+mu3e_rereco_basedir: "/data/experiment/mu3e/data/prompt/rereco"
+relink_script: "/psi/home/langenegger/mu3e/mu3eanca/perl/relinkBinFiles"
+cdb_dbconn: "http://mu3edb0/cdb/"
