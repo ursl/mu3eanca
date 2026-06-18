@@ -12,7 +12,7 @@
 # Then:
 #   cd $MU3E_REREC_BASEDIR/setups/SETUP
 #   snakemake --cores 4 -p mu3e_setup
-#   snakemake --cores 4 -p --config min_run=4756 max_run=4799 ... midas_meta_all
+#   snakemake --cores 4 -p --config min_run=4756 max_run=4799 ... -- midas_meta_all
 #
 # Host: REREC_HOST or -H (default: hostname).
 # ----------------------------------------------------------------------

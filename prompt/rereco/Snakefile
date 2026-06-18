@@ -256,7 +256,7 @@ else:
 
     _NO_TASKS_MSG = (
         "no reprocessing tasks configured; set min_run/max_run or run_list_file "
-        "(e.g. snakemake --config min_run=4756 max_run=4756 midas_meta_all)"
+        "(e.g. snakemake --config min_run=4756 max_run=4756 -- midas_meta_all)"
     )
 
     rule midas_meta_all:

@@ -87,7 +87,7 @@ cd $WF
 snakemake --cores 4 -p \
   --config min_run=4756 max_run=4799 \
   run_list_file=/psi/home/langenegger/mu3e/mu3eanca/db0/cdb2/certification/2025/2025-Beam-v1-significant.run \
-  midas_meta_all
+  -- midas_meta_all
 ```
 
 ### 4. Operational: midas_meta (batch / SLURM)
@@ -96,7 +96,7 @@ snakemake --cores 4 -p \
 snakemake --cores 10 -p \
   --config min_run=4756 max_run=4799 job_submit_mode=batch \
   run_list_file=/psi/home/langenegger/mu3e/mu3eanca/db0/cdb2/certification/2025/2025-Beam-v1-significant.run \
-  midas_meta_all
+  -- midas_meta_all
 ```
 
 `--cores N` = up to N concurrent jobs (local perl or `sbatch --wait`). SLURM logs: `<workdir>/logs/slurm/`.
@@ -124,7 +124,7 @@ rereco_task_templates:
     input_file_tpl: "run{run:05d}.mid.lz4"
 ```
 
-Or pass bounds on the CLI: `--config min_run=4756 max_run=4799 run_list_file=/abs/path`.
+Or pass bounds on the CLI: `--config min_run=4756 max_run=4799 run_list_file=/abs/path -- midas_meta_all`.
 
 Template placeholders: `{run}`, `{run:05d}`, `{runblock:03d}`, `{runblock:04d}`. Set `raw_input_layout: runblock3` for merlin raw paths (`raw/004/run04756.mid.lz4`).
 
@@ -154,7 +154,13 @@ slurm_partition: "mu3e"
 slurm_batch_script: "/path/to/mu3eanca/slurm/slurm-midas_meta.csh"
 ```
 
-Override per run: `--config job_submit_mode=batch`.
+Override per run: `--config job_submit_mode=batch` (use `--` before the target if it follows other `--config` values).
+
+When passing several `--config key=value` entries, put the snakemake target after `--` so it is not parsed as config:
+
+```tcsh
+snakemake --cores 4 -p --config min_run=4756 max_run=4799 -- midas_meta_all
+```
 
 ## Shared code with relval
 
