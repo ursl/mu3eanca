@@ -1,6 +1,6 @@
 # MU3E ReReco (Snakemake)
 
-Offline reprocessing workflows on **existing data** with a configurable MU3E tag and/or CDB global tag. Unlike `prompt/relval/`, there is no simulation or sort step — each **task** runs a chosen **action** on inputs you point at.
+Offline reprocessing workflows on **existing data** with a configurable MU3E tag and/or CDB global tag. Unlike `prod/relval/`, there is no simulation or sort step — each **task** runs a chosen **action** on inputs you point at.
 
 Actions are pluggable; today:
 
@@ -57,7 +57,7 @@ Host paths: `config-<hostname>.yaml` (e.g. `config-merlin-l-001.yaml`). Override
 ### 1. Create setup (once)
 
 ```tcsh
-cd /path/to/mu3eanca/prompt/rereco
+cd /path/to/mu3eanca/prod/rereco
 
 ./initRereco -s 260618-midasMeta -t dev -b dev -g datav6.5=2025V1
 
@@ -178,7 +178,7 @@ snakemake --cores 4 -p --config min_run=4756 max_run=4799 -- midas_meta_all
 
 ## Shared code with relval
 
-MU3E checkout/build/relink live under `prompt/common/`. `initRereco` copies `common/` into each setup directory.
+MU3E checkout/build/relink live under `prod/common/`. `initRereco` copies `common/` into each setup directory.
 
 ## Logs
 

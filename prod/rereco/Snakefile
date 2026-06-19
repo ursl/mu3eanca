@@ -22,9 +22,9 @@ with open(_merged_cfg, "w") as _fh:
 
 configfile: str(_merged_cfg)
 
-_PROMPT_COMMON = _base / "common"
-if not _PROMPT_COMMON.is_dir():
-    _PROMPT_COMMON = _base.parent / "common"
+_PROD_COMMON = _base / "common"
+if not _PROD_COMMON.is_dir():
+    _PROD_COMMON = _base.parent / "common"
 
 MU3E_REREC_BASEDIR = config["mu3e_rereco_basedir"]
 MU3E_TAG = config.get("mu3e_tag", "master")
@@ -75,7 +75,7 @@ _midas_exe_rel = config.get(
     "modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta",
 )
 
-_load_tasks_script = _PROMPT_COMMON / "load_rereco_tasks"
+_load_tasks_script = _PROD_COMMON / "load_rereco_tasks"
 _proc = subprocess.run(
     ["perl", str(_load_tasks_script), "--base", str(_base)],
     input=json.dumps(dict(config)),
@@ -98,12 +98,12 @@ CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
 
 MU3E_WORK_BASEDIR = SETUP_ROOT
 MU3E_PREP_LOG_PREFIX = "rereco"
-CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e")
+CLONE_MU3E_SCRIPT = str(_PROD_COMMON / "scripts" / "clone_and_prepare_mu3e")
 CLONE_MU3E_INPUTS = [f"{MARKER_DIR}/clone_mu3e_deps.done"]
 MIDAS_META_PREREQS = [f"{MARKER_DIR}/build_mu3e.done"]
-MIDAS_META_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_dir")
-MIDAS_META_FILE_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_file")
-MIDAS_META_SUBMIT_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_submit")
+MIDAS_META_SCRIPT = str(_PROD_COMMON / "scripts" / "run_midas_meta_dir")
+MIDAS_META_FILE_SCRIPT = str(_PROD_COMMON / "scripts" / "run_midas_meta_file")
+MIDAS_META_SUBMIT_SCRIPT = str(_PROD_COMMON / "scripts" / "run_midas_meta_submit")
 MIDAS_META_EXE = f"{MU3E_DIR}/_build/{_midas_exe_rel}"
 
 JOB_SUBMIT_MODE = config.get("job_submit_mode", "local")
@@ -119,7 +119,7 @@ else:
     SLURM_BATCH_SCRIPT = ""
 SETUP_DIR = str(_base)
 
-include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
+include: str(_PROD_COMMON / "mu3e_prepare.smk")
 
 
 if REREC_TASKS:
@@ -235,8 +235,8 @@ if REREC_TASKS:
     def trirec_item_label(wc):
         return wc.task
 
-    include: str(_PROMPT_COMMON / "mu3e_trirec.smk")
-    include: str(_PROMPT_COMMON / "midas_meta.smk")
+    include: str(_PROD_COMMON / "mu3e_trirec.smk")
+    include: str(_PROD_COMMON / "midas_meta.smk")
 
     wildcard_constraints:
         task="|".join(TASK_IDS),

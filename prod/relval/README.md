@@ -108,7 +108,7 @@ cd ana && make
 Wrapper that creates/updates a setup under `setups/`, runs Snakemake, and exports status TSVs.
 
 ```bash
-cd prompt/relval
+cd prod/relval
 ./runRelval -j4 -p --config mu3e_tag=v6.5 cdb_GT=mcidealv6.5
 ```
 
@@ -126,7 +126,7 @@ With a PR commit merged on top of `dev`:
 ./runRelval -j4 -p --config mu3e_tag=dev-pr49 mu3e_checkout_branch=dev mu3e_checkout_merge=75d8c48 cdb_GT=mcidealv6.5
 ```
 
-(`mu3e_checkout_merge` / `mu3e_checkout_merges` run `git merge <hash>` after checkout; see `prompt/rereco/README.md` for fetch notes.)
+(`mu3e_checkout_merge` / `mu3e_checkout_merges` run `git merge <hash>` after checkout; see `prod/rereco/README.md` for fetch notes.)
 
 | Option | Purpose |
 |--------|---------|
@@ -170,7 +170,7 @@ Snakemake’s main log (`setups/.../.snakemake/log/...`) often only says `Error 
 
 ## Direct Snakemake use
 
-From `prompt/relval` (uses local `config.yaml` and default workdir naming):
+From `prod/relval` (uses local `config.yaml` and default workdir naming):
 
 ```bash
 snakemake -j4 -p --config mu3e_tag=v6.6 cdb_GT=mcidealv6.5
@@ -197,7 +197,7 @@ snakemake --detailed-summary --cores 4 --config mu3e_tag=v6.6
 
 ## Web dashboard (`db1/rest`)
 
-The UI is **not** a separate server under `prompt/relval`; it lives in **`db1/rest`**:
+The UI is **not** a separate server under `prod/relval`; it lives in **`db1/rest`**:
 
 - Logic: `db1/rest/lib/relvalCore.mjs`, `db1/rest/lib/relvalRouter.mjs`
 - Static UI: `db1/rest/public/relval/`

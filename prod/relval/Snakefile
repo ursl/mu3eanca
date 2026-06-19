@@ -21,9 +21,9 @@ with open(_merged_cfg, "w") as _fh:
 
 configfile: str(_merged_cfg)
 
-_PROMPT_COMMON = _base / "common"
-if not _PROMPT_COMMON.is_dir():
-    _PROMPT_COMMON = _base.parent / "common"
+_PROD_COMMON = _base / "common"
+if not _PROD_COMMON.is_dir():
+    _PROD_COMMON = _base.parent / "common"
 
 MU3E_RELVAL_BASEDIR = config["mu3e_relval_basedir"]
 MU3E_TAG = config.get("mu3e_tag", "master")
@@ -77,10 +77,10 @@ MARKER_DIR = (config.get("marker_dir") or "markers").strip().strip("/")
 
 MU3E_WORK_BASEDIR = MU3E_RELVAL_BASEDIR
 MU3E_PREP_LOG_PREFIX = "relval"
-CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e")
+CLONE_MU3E_SCRIPT = str(_PROD_COMMON / "scripts" / "clone_and_prepare_mu3e")
 CLONE_MU3E_INPUTS = [f"{MU3E_RELVAL_BASEDIR}/.bootstrap/mu3e_validation_tools.done"]
 
-include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
+include: str(_PROD_COMMON / "mu3e_prepare.smk")
 
 SIM_SCENARIOS = config["sim_scenarios"]
 SCENARIO_IDS = [item["id"] for item in SIM_SCENARIOS]
@@ -190,7 +190,7 @@ def trirec_item_label(wc):
     return wc.scenario
 
 
-include: str(_PROMPT_COMMON / "mu3e_trirec.smk")
+include: str(_PROD_COMMON / "mu3e_trirec.smk")
 
 
 def fillhist_output(scenario):

@@ -1,4 +1,4 @@
-# Shared Snakemake pieces for `prompt/relval`, `prompt/rereco`, …
+# Shared Snakemake pieces for `prod/relval`, `prod/rereco`, …
 
 ## Layout
 
@@ -18,22 +18,22 @@ common/
 
 ## Usage in a workflow Snakefile
 
-1. Resolve `prompt/common` (local `common/` copy in setup dir, or sibling `../common`).
+1. Resolve `prod/common` (local `common/` copy in setup dir, or sibling `../common`).
 2. Set variables expected by `mu3e_prepare.smk`.
 3. `include:` the `.smk` file.
 
 ```python
-_PROMPT_COMMON = _base / "common"
-if not _PROMPT_COMMON.is_dir():
-    _PROMPT_COMMON = _base.parent / "common"
+_PROD_COMMON = _base / "common"
+if not _PROD_COMMON.is_dir():
+    _PROD_COMMON = _base.parent / "common"
 
 MU3E_WORK_BASEDIR = ...          # relval or rereco base dir
 MU3E_PREP_LOG_PREFIX = "relval"  # log tag for relink rule
-CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e")
+CLONE_MU3E_SCRIPT = str(_PROD_COMMON / "scripts" / "clone_and_prepare_mu3e")
 CLONE_MU3E_INPUTS = [...]        # one prerequisite path
 MARKER_DIR = "markers"           # or from config["marker_dir"]
 
-include: str(_PROMPT_COMMON / "mu3e_prepare.smk")
+include: str(_PROD_COMMON / "mu3e_prepare.smk")
 ```
 
 `initRereco` / `runRelval` copy this tree into each setup directory as `common/`.

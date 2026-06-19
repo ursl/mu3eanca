@@ -4,7 +4,7 @@
 # initRereco — create or refresh a rereco Snakemake setup directory.
 #
 # Writes setups/<name>/config.yaml (template + host + CLI), copies Snakefile
-# and prompt/common/. Does not run snakemake.
+# and prod/common/. Does not run snakemake.
 #
 # Usage:
 #   ./initRereco -s SETUP -t TAG [-b BRANCH] [-g GT] [-H HOST] [--config k=v ...]
@@ -183,7 +183,7 @@ sub extract_config_argv {
     return (\@out, \%cfg);
 }
 
-sub copy_prompt_common {
+sub copy_common {
     my ($script_dir, $setup_dir) = @_;
     my $common_src = abs_path("$script_dir/../common");
     my $common_dst = "$setup_dir/common";
@@ -250,7 +250,7 @@ make_path($setup_dir);
 
 copy("$script_dir/Snakefile", "$setup_dir/Snakefile")
     or die "Copy Snakefile failed: $!\n";
-copy_prompt_common($script_dir, $setup_dir);
+copy_common($script_dir, $setup_dir);
 
 my @lines = merge_config_lines("$script_dir/config.yaml", "$script_dir/$host_cfg");
 my $mu3e_workdir_name = "mu3e-" . $setup_safe;
