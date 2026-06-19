@@ -230,7 +230,7 @@ If `RELVAL_BASEDIR` is unset, the page loads but the API returns 503 with a shor
 
 ## Notes
 
-- Snakemake metadata (`.snakemake`, `.markers`) lives inside the MU3E workdir; no manual `-d` is required.
+- Snakemake metadata (`.snakemake`, `markers`) lives inside the MU3E workdir; no manual `-d` is required.
 - Alignment treedumps use `mu3eUtil`’s `mu3eTreeDumper` and config from `mu3eValidation/scripts/treedump_and_histocompare/config.json`.
 - **Supported hosts:** macOS and Linux (Ubuntu on mu3edb0, etc.). Histocompare uses Docker with the same command on both.
 

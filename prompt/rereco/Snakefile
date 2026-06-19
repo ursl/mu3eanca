@@ -90,7 +90,8 @@ if _proc.returncode != 0:
 REREC_TASKS = json.loads(_proc.stdout)
 
 TRIREC_OUTPUT_TPL = config.get("trirec_output_tpl", "output/trirec-{task}.root")
-MIDAS_META_MARKER_TPL = config.get("midas_meta_marker_tpl", ".markers/midas_meta-{task}.done")
+MARKER_DIR = (config.get("marker_dir") or "markers").strip().strip("/")
+MIDAS_META_MARKER_TPL = config.get("midas_meta_marker_tpl") or f"{MARKER_DIR}/midas_meta-{{task}}.done"
 
 CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
 CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
@@ -98,8 +99,8 @@ CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
 MU3E_WORK_BASEDIR = SETUP_ROOT
 MU3E_PREP_LOG_PREFIX = "rereco"
 CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e")
-CLONE_MU3E_INPUTS = [".markers/clone_mu3e_deps.done"]
-MIDAS_META_PREREQS = [".markers/build_mu3e.done"]
+CLONE_MU3E_INPUTS = [f"{MARKER_DIR}/clone_mu3e_deps.done"]
+MIDAS_META_PREREQS = [f"{MARKER_DIR}/build_mu3e.done"]
 MIDAS_META_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_dir")
 MIDAS_META_FILE_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_file")
 MIDAS_META_SUBMIT_SCRIPT = str(_PROMPT_COMMON / "scripts" / "run_midas_meta_submit")
@@ -214,7 +215,7 @@ if REREC_TASKS:
     TRIREC_LOG_TPL = "logs/snakemake/run_mu3e_trirec-{task}.log"
 
     def trirec_rule_inputs(wc):
-        return [".markers/relink_bin_files.done", sort_input_path(wc.task)]
+        return [f"{MARKER_DIR}/relink_bin_files.done", sort_input_path(wc.task)]
 
     def trirec_sort_input(wc):
         return sort_input_path(wc.task)
@@ -272,19 +273,19 @@ else:
 rule mu3e_setup:
     """Clone, build, and relink MU3E; no midas_meta or trirec actions."""
     input:
-        ".markers/relink_bin_files.done"
+        f"{MARKER_DIR}/relink_bin_files.done"
 
 
 rule all:
     input:
-        ALL_TARGETS if ALL_TARGETS else [".markers/relink_bin_files.done"]
+        ALL_TARGETS if ALL_TARGETS else [f"{MARKER_DIR}/relink_bin_files.done"]
 
 
 rule ensure_clone_mu3e_deps:
     output:
-        ".markers/clone_mu3e_deps.done"
+        f"{MARKER_DIR}/clone_mu3e_deps.done"
     shell:
-        "mkdir -p .markers && touch {output}"
+        f"mkdir -p {MARKER_DIR} && touch {{output}}"
 
 
 localrules: clean, ensure_clone_mu3e_deps
@@ -294,9 +295,10 @@ rule clean:
         r"""
         set -euo pipefail
         rm -f "{MU3E_DIR}/run/output/trirec-"*.root
-        rm -f "{SETUP_ROOT}/.markers/midas_meta-"*.done
-        rm -f "{SETUP_ROOT}/.markers/relink_bin_files.done"
-        rm -f "{SETUP_ROOT}/.markers/build_mu3e.done"
-        rm -f "{SETUP_ROOT}/.markers/clone_and_prepare_mu3e.done"
-        rm -f "{SETUP_ROOT}/.markers/clone_mu3e_deps.done"
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/midas_meta-"*.done
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/relink_bin_files.done"
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/build_mu3e.done"
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/clone_and_prepare_mu3e.done"
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/clone_mu3e_deps.done"
+        rm -rf "{SETUP_ROOT}/.markers"
         """

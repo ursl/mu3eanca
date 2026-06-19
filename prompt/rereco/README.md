@@ -30,7 +30,7 @@ Setup parameters (`mu3e_tag`, branch, GT, paths, templates) live in `setups/<nam
 **Per task** (from `rereco_task_templates` + run list):
 
 - **`trirec`** — `mu3eTrirec` on a sort file → `run/output/trirec-{task}.root`
-- **`midas_meta`** — `mu3e_midas_meta` on each `*.mid.lz4` → marker `.markers/midas_meta-{task}.done`
+- **`midas_meta`** — `mu3e_midas_meta` on each `*.mid.lz4` → marker `markers/midas_meta-{task}.done`
 
 | Target | Meaning |
 |--------|---------|
@@ -43,7 +43,7 @@ Setup parameters (`mu3e_tag`, branch, GT, paths, templates) live in `setups/<nam
 ```
 $mu3e_rereco_basedir/
   setups/260618-midasMeta/          # Snakemake cwd: Snakefile, config.yaml, common/
-  mu3e-260618-midasMeta/            # workdir (SETUP_ROOT): mu3e/, .markers/, logs/
+  mu3e-260618-midasMeta/            # workdir (SETUP_ROOT): mu3e/, markers/, logs/
     mu3e/
       _build/modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta
       run/output/trirec-{task}.root
@@ -156,6 +156,19 @@ slurm_batch_script: "/path/to/mu3eanca/slurm/slurm-midas_meta.csh"
 ```
 
 Override per run: `--config job_submit_mode=batch slurm_mem=32G` (use `--` before the target if it follows other `--config` values).
+
+### Completion markers (`marker_dir`)
+
+Setup and task completion files live under **`markers/`** (config key `marker_dir`, default `markers`). They show up with plain `ls`; only Snakemake’s own `.snakemake/` stays hidden.
+
+Existing workdirs that still use `.markers/`: refresh `common/` from git, add `marker_dir: "markers"` to setup `config.yaml` if missing, then either migrate progress or start fresh:
+
+```tcsh
+cd /path/to/mu3e-260618-midasMeta
+mv .markers markers
+```
+
+Setup markers (`build_mu3e.done`, etc.) must be under `markers/` as well; if only midas_meta markers existed in `.markers/`, re-run `snakemake mu3e_setup` once (fast if mu3e is already built).
 
 When passing several `--config key=value` entries, put the snakemake target after `--` so it is not parsed as config:
 

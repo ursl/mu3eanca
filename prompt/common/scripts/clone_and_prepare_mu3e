@@ -79,7 +79,7 @@ sub dir_only_workflow_metadata {
     opendir my $dh, $dir or return 1;
     my @entries = grep { $_ !~ /^\.\.?$/ } readdir $dh;
     closedir $dh;
-    my %ok = map { $_ => 1 } qw(.snakemake .markers logs status);
+    my %ok = map { $_ => 1 } qw(.snakemake .markers markers logs status);
     for my $e (@entries) {
         return 0 unless $ok{$e};
     }

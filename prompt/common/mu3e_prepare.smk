@@ -14,13 +14,14 @@
 #   CLONE_MU3E_INPUTS       list with one prerequisite path (bootstrap or local marker)
 #   CLONE_MU3E_SCRIPT       path to scripts/clone_and_prepare_mu3e
 #   MU3E_PREP_LOG_PREFIX    log tag, e.g. "relval" or "rereco"
+#   MARKER_DIR              completion marker directory under workdir (e.g. "markers")
 
 
 rule clone_and_prepare_mu3e:
     input:
         CLONE_MU3E_INPUTS
     output:
-        ".markers/clone_and_prepare_mu3e.done"
+        f"{MARKER_DIR}/clone_and_prepare_mu3e.done"
     params:
         repo=MU3E_REPO,
         ref=MU3E_CHECKOUT_REF,
@@ -66,9 +67,9 @@ rule clone_and_prepare_mu3e:
 
 rule build_mu3e:
     input:
-        ".markers/clone_and_prepare_mu3e.done"
+        f"{MARKER_DIR}/clone_and_prepare_mu3e.done"
     output:
-        ".markers/build_mu3e.done"
+        f"{MARKER_DIR}/build_mu3e.done"
     params:
         mu3e_dir=MU3E_DIR,
         jobs=MAKE_JOBS
@@ -90,9 +91,9 @@ rule build_mu3e:
 
 rule relink_bin_files:
     input:
-        ".markers/build_mu3e.done"
+        f"{MARKER_DIR}/build_mu3e.done"
     output:
-        ".markers/relink_bin_files.done"
+        f"{MARKER_DIR}/relink_bin_files.done"
     params:
         mu3e_dir=MU3E_DIR,
         relink_script=RELINK_SCRIPT,

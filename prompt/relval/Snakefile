@@ -73,6 +73,8 @@ N_EVENTS = config["n_events"]
 
 RELINK_SCRIPT = config["relink_script"]
 
+MARKER_DIR = (config.get("marker_dir") or "markers").strip().strip("/")
+
 MU3E_WORK_BASEDIR = MU3E_RELVAL_BASEDIR
 MU3E_PREP_LOG_PREFIX = "relval"
 CLONE_MU3E_SCRIPT = str(_PROMPT_COMMON / "scripts" / "clone_and_prepare_mu3e")
@@ -325,7 +327,7 @@ rule bootstrap_relval_tools:
 
 rule run_mu3e_sim:
     input:
-        ".markers/relink_bin_files.done"
+        f"{MARKER_DIR}/relink_bin_files.done"
     output:
         f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
     params:
@@ -545,7 +547,7 @@ rule clean:
     shell:
         r"""
         set -euo pipefail
-        rm -rf .markers
+        rm -rf "{MARKER_DIR}" .markers
         rm -f "{MU3E_DIR}/run/output/sim-"*.root
         rm -f "{MU3E_DIR}/run/output/sort-"*.root
         rm -f "{MU3E_DIR}/run/output/trirec-"*.root

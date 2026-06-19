@@ -35,7 +35,11 @@ raw_input_layout: "flat"
 run_block_digits: 3
 
 trirec_output_tpl: "output/trirec-{task}.root"
-midas_meta_marker_tpl: ".markers/midas_meta-{task}.done"
+
+# Completion markers under workdir (visible with plain ls; not hidden like .markers).
+marker_dir: "markers"
+# Optional override for midas_meta marker paths only:
+# midas_meta_marker_tpl: "markers/midas_meta-{task}.done"
 
 # midas_meta execution: local (default) or batch (sbatch --wait per run; setup stays local).
 job_submit_mode: "local"
