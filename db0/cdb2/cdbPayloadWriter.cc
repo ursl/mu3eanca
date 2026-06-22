@@ -1051,7 +1051,7 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
     }
     if (!didRunOne) {
       if (cal == "eventstuffv2") {
-        writeEventStuffV2IdealPayload(payloaddir, gt, "ascii/eventstuffv2-ideal.json", "all perfect", 1);
+        writeEventStuffV2Payloads(payloaddir, gt, string(LOCALDIR) + "/ascii/eventstuffv2-ideal.json", "all perfect", 1);
       }
     }
     return;
@@ -1266,19 +1266,39 @@ void cdbPayloadWriter::writeEventStuffV1Payloads(string payloaddir, string gt, s
 
 
 // ----------------------------------------------------------------------
-void cdbPayloadWriter::writeEventStuffV2IdealPayload(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov) {
-  cout << "   ->cdbWritePayload::writeEventStuffV2IdealPayload> writing local template eventstuffv2 ideal payload to file " << filename 
-      << " for IOV " << iov
+void cdbPayloadWriter::writeEventStuffV2IdealInput(std::string filename, std::string mode) {
+  cout << "   ->cdbWritePayload::writeEventStuffV2IdealInput> writing local template eventstuffv2 ideal JSON to file " << filename
+       << " for mode " << mode
        << endl;
-  calEventStuffV2 *ces = new calEventStuffV2();
-  ces->readJSON(filename);
-  string hash = "tag_eventstuffv2_" + gt + "_iov_" + to_string(iov);
-  payload pl;
-  pl.fHash = hash;
-  pl.fComment = annotation;
-  pl.fSchema  = ces->getSchema();
-  pl.fBLOB = ces->makeBLOB();
-  ces->writePayloadToFile(hash, payloaddir, pl);
+  (void)mode;
+  ofstream ONS(filename);
+  if (!ONS.is_open()) {
+    cerr << "   ->cdbWritePayload::writeEventStuffV2IdealInput> ERROR: cannot open " << filename << endl;
+    return;
+  }
+  ONS << "{ " << endl
+      << "  \"eventdata\" : {" << endl
+      << "    \"startframedata\" : 0," << endl
+      << "    \"endframedata\" : -1," << endl
+      << "    \"firstframewithfebproblems\" : -1" << endl
+      << "  }," << endl
+      << "  \"pixeldata\" : {" << endl
+      << "    \"startframegooddata\" : 0," << endl
+      << "    \"endframegooddata\" : -1," << endl
+      << "    \"firstframewithfebunsortedhitdata\" : -1" << endl
+      << "  }, " << endl
+      << "  \"tiledata\" : {" << endl
+      << "    \"startframegooddata\" : 0," << endl
+      << "    \"endframegooddata\" : -1," << endl
+      << "    \"firstframewithfebunsortedhitdata\" : -1" << endl
+      << "  }," << endl
+      << "  \"fibredata\" : {" << endl
+      << "    \"startframegooddata\" : 0," << endl
+      << "    \"endframegooddata\" : -1," << endl
+      << "    \"firstframewithfebunsortedhitdata\" : -1" << endl
+      << "  }" << endl
+      << "}" << endl;
+  ONS.close();
 }
 
 
@@ -2047,7 +2067,6 @@ void cdbPayloadWriter::writePixelMaskPayloads(string payloaddir, string gt, stri
   cpm->printBLOB(sblob, 1);
   cout << "######################################################################" << endl;
   cpm->writePayloadToFile(pl.fHash, payloaddir, pl);    
-
 }
 
 
