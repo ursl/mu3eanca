@@ -525,6 +525,8 @@ int main(int argc, char* argv[]) {
       cout << "### createPayload" << endl;
       cout <<  pl.printString(false) << endl;
       ces->printBLOB(sblob, 1);
+      cout << "is valid? for run 4756 ->" << ces->isValid(4756) << "<- and for run 4757 ->" << ces->isValid(4757) << "<-"  
+           << endl;
       cout << "######################################################################" << endl;
       ces->writePayloadToFile(pl.fHash, ".", pl);
   } else if (24 == mode) {
@@ -555,12 +557,16 @@ int main(int argc, char* argv[]) {
     pl.fSchema = ctt->getSchema();
     pl.fBLOB = sblob;
     ctt->writePayloadToFile(pl.fHash, ".", pl);
-
-
-    
-
     //    string sblob = ctt->makeBLOB();
     //  ctt->printBLOB(sblob, 1000);
+  } else if (25 == mode) {
+    // moor>./bin/testCDB -m 25 -gt datav6.9=2025V0 -r 4756
+    // moor>./bin/testCDB -m 25 -gt datav6.9=2025V0 -r 4757
+    cout << "Test event stuff V2" << endl;
+    calEventStuffV2* ces = dynamic_cast<calEventStuffV2*>(pDC->getCalibration("eventstuffv2_"));
+    cout << "is valid? for run 4756 ->" << ces->isValid(4756) << "<- and for run 4757 ->" << ces->isValid(4757) << "<-"  
+         << endl;
+    cout << "IOV run ->" << ces->getIovRun() << "<-" << endl;
   }
   return 0;
 }
