@@ -24,36 +24,48 @@ public:
   cdbPayloadWriter();
   ~cdbPayloadWriter() = default;
 
+  // -- ALIGNMENT payloads
   void writeAlignmentPayloads(std::string payloaddir, std::string gt, std::string type, std::string ifilename, 
     std::string annotation, int iov, std::string mode = "all");
-  // -- there is NO writeAlignmentPayloadsIdealInput, that will always be extract directly from a root file with (modified) alignment information
+  // there is NO writeAlignmentPayloadsIdealInput, that will always be extract directly from a root file with (modified) alignment information
 
-  void writePixelQualityLMPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
-  void writePixelQualityLMIdealInput(std::string filename, std::string mode = "all");
 
-  void writeFibreQualityPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
-  void writeFibreQualityIdealInput(std::string filename, std::string mode = "all");
-
-  void writeTileQualityPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
-  void writeTileQualityIdealInput(std::string filename, std::string mode = "all");
-
+  // -- DETECTOR and EVENTSTUFF payloads
   void writeDetSetupV1Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   void writeDetSetupV2Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
-
-  void writePixelEfficiencyPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
-  void writePixelEfficiencyIdealInput(std::string filename, std::string mode = "all");
 
   void writeEventStuffV1Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   
   void writeEventStuffV2Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   void writeEventStuffV2IdealPayload(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov = 1);
 
-  void writePixelTimeCalibrationPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
-  void writePixelTimeCalibrationIdealInput(std::string filename, std::string mode);
+  // -- QUALITY/MASK payloads
+  void writeFibreQualityPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writeFibreQualityIdealInput(std::string filename, std::string mode = "all");
+
+  void writePixelQualityLMPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writePixelQualityLMIdealInput(std::string filename, std::string mode = "all");
+
+  void writeTileQualityPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writeTileQualityIdealInput(std::string filename, std::string mode = "all");
 
   void writePixelMaskPayloads(std::string payloaddir, std::string gt, std::string binmaskfiledir, std::string annotation, int iov);
   void writePixelMaskIdealPayload(std::string payloaddir, std::string gt, std::string annotation, std::string mode);
 
+
+  // -- EFFICIENCY payloads
+  void writePixelEfficiencyPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writePixelEfficiencyIdealInput(std::string filename, std::string mode = "all");
+
+
+  // -- TIME calibration payloads
+  void writePixelTimeCalibrationPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writePixelTimeCalibrationIdealInput(std::string filename, std::string mode);
+
+  void writeTileTimeCalibrationPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writeTileTimeCalibrationIdealInput(std::string filename, std::string mode);
+
+  // -- main handler for transferal of CLI args from cdbRunPayloadWriter
   void run(int argc, const char* argv[]);
 
   // -------------------

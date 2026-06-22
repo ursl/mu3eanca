@@ -47,10 +47,11 @@ int main(int argc, const char* argv[]) {
 
   cdbPayloadWriter writer;
 
+  // -- first filter out the ID writing (not payloads!)
   if (mode == "createsensorids") {
     if (filename == "unset") {
       cout << "Error: filename is unset" << endl;
-      cout << "Usage: cdbWriteIdealInputFiles -m createsensorids -f filename" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m createsensorids -f filename" << endl;
       return 0;
     }
     writer.createSensorIDs(filename);
@@ -60,7 +61,7 @@ int main(int argc, const char* argv[]) {
   if (mode == "createtileids") {
     if (filename == "unset") {
       cout << "Error: filename is unset" << endl;
-      cout << "Usage: cdbWriteIdealInputFiles -m createtileids -f filename" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m createtileids -f filename" << endl;
       return 0;
     }
     writer.createTileIDs(filename);
@@ -70,32 +71,34 @@ int main(int argc, const char* argv[]) {
   if (mode == "createfibreids") {
     if (filename == "unset") {
       cout << "Error: filename is unset" << endl;
-      cout << "Usage: cdbWriteIdealInputFiles -m createfibreids -f filename" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m createfibreids -f filename" << endl;
       return 0;
     }
     writer.createFibreIDs(filename);
     return 0;
   }
 
+  // -- pixeltimecalibration
   if (mode == "pixeltimecalibration") {
     if (filename == "unset") {
       cout << "Error: filename is unset" << endl;
-      cout << "Usage: cdbWriteIdealInputFiles -m pixeltimecalibration -f filename" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m pixeltimecalibration -f filename" << endl;
       return 0;
     }
     writer.writePixelTimeCalibrationIdealInput(filename, mode);
     return 0;
   }
   
+  // -- pixelmask
   if (mode.find("pixelmask") != string::npos) {
     if (run > 1 && binmaskfiledir == "unset") {
       cout << "Error: binmaskfiledir is unset" << endl;
-      cout << "Usage: cdbWriteIdealInputFiles -u <CDBPATH> -m pixelmask -d <binmaskfiledir>" << endl;
+      cout << "Usage: cdbRunPayloadWriter -u <CDBPATH> -m pixelmask -d <binmaskfiledir>" << endl;
       return 0;
     }
     if (uri == "unset") {
       cout << "Error: uri is unset" << endl;
-      cout << "Usage: cdbWriteIdealInputFiles -u <CDBPATH> -m pixelmask -d <binmaskfiledir>" << endl;
+      cout << "Usage: cdbRunPayloadWriter -u <CDBPATH> -m pixelmask -d <binmaskfiledir>" << endl;
       return 0;
     }
     if (run == 1) {
@@ -107,16 +110,27 @@ int main(int argc, const char* argv[]) {
     }
   }
   
+  // -- IDEAL eventstuffv2 
   if (string::npos != mode.find("eventstuffv2") && string::npos != mode.find("ideal")) {
     if (filename == "unset") {
       cout << "Error: filename is unset" << endl;
-      cout << "Usage: cdbWriteIdealInputFiles -m eventstuffv2-ideal -f filename" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m eventstuffv2-ideal -f filename" << endl;
       return 0;
     }
     writer.writeEventStuffV2IdealPayload(uri+"/payloads/", tagname, filename, annotation, run);
     return 0;
   }
 
+  // -- IDEAL tiletimecalibration 
+  if (string::npos != mode.find("tiletimecalibration") && string::npos != mode.find("ideal")) {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m tiletimecalibration-ideal -f filename" << endl;
+      return 0;
+    }
+    writer.writeTileTimeCalibrationIdealInput(filename, mode);
+    return 0;
+  }
 
   // -- default case: run the main function of cdbPayloadWriter
   writer.run(argc, argv);

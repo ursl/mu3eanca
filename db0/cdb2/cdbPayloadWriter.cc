@@ -19,19 +19,20 @@
 #include <TTree.h>
 #include <map>
 
-#include "calPixelAlignment.hh"
-#include "calFibreAlignment.hh"
-#include "calMppcAlignment.hh"
-#include "calTileAlignment.hh"
-#include "calPixelQualityLM.hh"
-#include "calPixelEfficiency.hh"
-#include "calFibreQuality.hh"
-#include "calTileQuality.hh"
 #include "calDetSetupV1.hh"
-#include "calPixelMask.hh"
 #include "calEventStuffV1.hh"
 #include "calEventStuffV2.hh"
+#include "calFibreAlignment.hh"
+#include "calFibreQuality.hh"
+#include "calMppcAlignment.hh"
+#include "calPixelAlignment.hh"
+#include "calPixelQualityLM.hh"
+#include "calPixelEfficiency.hh"
+#include "calPixelMask.hh"
 #include "calPixelTimeCalibration.hh"
+#include "calTileAlignment.hh"
+#include "calTileQuality.hh"
+#include "calTileTimeCalibration.hh"
 
 using namespace std;
 
@@ -1065,8 +1066,11 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
     writeAlignmentPayloads(payloaddir, gt, "fibrealignment", filename, annotation, iov, mode);
     writeAlignmentPayloads(payloaddir, gt, "mppcalignment", filename, annotation, iov, mode);
   }
-  if (string::npos != cal.find("pixelqualitylm")) {
-    writePixelQualityLMPayloads(payloaddir, gt, filename, annotation, iov);
+  if (string::npos != cal.find("eventstuffv1")) {
+    writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, iov);
+  }
+  if (string::npos != cal.find("eventstuffv2")) {
+    writeEventStuffV2Payloads(payloaddir, gt, filename, annotation, iov);
   }
   if (string::npos != cal.find("fibrequality")) {
     writeFibreQualityPayloads(payloaddir, gt, filename, annotation, iov);
@@ -1074,14 +1078,17 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
   if (string::npos != cal.find("tilequality")) {
     writeTileQualityPayloads(payloaddir, gt, filename, annotation, iov);
   }
+  if (string::npos != cal.find("tiletimecalibration")) {
+    writeTileTimeCalibrationPayloads(payloaddir, gt, filename, annotation, iov);
+  }
   if (string::npos != cal.find("pixelefficiency")) {
     writePixelEfficiencyPayloads(payloaddir, gt, filename, annotation, iov);
   }
-  if (string::npos != cal.find("eventstuffv1")) {
-    writeEventStuffV1Payloads(payloaddir, gt, filename, annotation, iov);
+  if (string::npos != cal.find("pixelqualitylm")) {
+    writePixelQualityLMPayloads(payloaddir, gt, filename, annotation, iov);
   }
-  if (string::npos != cal.find("eventstuffv2")) {
-    writeEventStuffV2Payloads(payloaddir, gt, filename, annotation, iov);
+  if (string::npos != cal.find("pixeltimecalibration")) {
+    writePixelTimeCalibrationPayloads(payloaddir, gt, filename, annotation, iov);
   }
 }
 
@@ -1104,6 +1111,51 @@ void cdbPayloadWriter::writePixelTimeCalibrationIdealInput(string filename, stri
     }
   }
   ONS.close();
+}
+
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writeTileTimeCalibrationIdealInput(string filename, string mode) {
+  cout << "   ->cdbInitGT> writing local template tiletimecalibration ideal input for mode = " << mode << endl;
+  ofstream ONS;
+  ONS.open(filename);
+
+  vector<unsigned int> vTileIDs;
+  fillTileIDs(vTileIDs, mode);
+
+  cout << "   ->cdbPayloadWriter::writeTileTimeCalibrationIdealInput> writing " << vTileIDs.size() << " tileIDs to file " << filename << endl;
+  ONS << "{" << endl;
+  ONS << " \"modules\": {" << endl;
+  ONS << "   \"time_alignment\": {" << endl;
+  ONS << "     \"channels\": {" << endl;
+  for (auto &id : vTileIDs) {
+    ONS << "       \"" << id << "\": {" << endl;
+    ONS << "         \"corrected_time_fraction\": [ " << endl;
+    for (int i = 0; i < 32; i++) {
+      ONS << "            " << 0. + i*0.03125 + 0.5*0.03125;
+      if (i < 31) ONS << ", " << endl;  
+      else ONS << "]" << endl;
+    }
+    ONS << "        }," << endl;
+  } 
+  ONS << "}" << endl;
+  ONS.close();
+}
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writeTileTimeCalibrationPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov) {
+  cout << "   ->cdbInitGT> writing local template tiletimecalibration payloads" << endl;
+  calTileTimeCalibration *ctt = new calTileTimeCalibration();
+  ctt->readJSON(filename);
+  string hash = "tag_tiletimecalibration_" + gt + "_iov_" + to_string(iov);
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = annotation;
+  pl.fSchema  = ctt->getSchema();
+  pl.fBLOB = ctt->makeBLOB();
+  ctt->writePayloadToFile(hash, payloaddir, pl);
+  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and schema " << pl.fSchema << endl;
+  delete ctt;
 }
 
 
