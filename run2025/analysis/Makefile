@@ -3,7 +3,11 @@
 # -----
 #
 # ======================================================================
-.PHONY: prep clean vars
+.PHONY: prep clean vars all
+
+.DEFAULT_GOAL := all
+
+all: vars prep lib bin
 
 # -- create a link to an external dependency (https://github.com/ursl/util)
 #    no submodule because of constant changes in util
@@ -14,6 +18,8 @@ LHOST = $(shell hostname)
 
 ROOTCINT      = rootcling
 ROOTCFLAGS    = $(shell root-config --cflags)
+# rootcling mis-parses -m64 from root-config --cflags as -m (module dependency).
+ROOTCLINGFLAGS = -I$(shell root-config --incdir)
 ROOTGLIBS     = $(shell root-config --glibs)
 ROOTLDFLAGS   = $(shell root-config --ldflags)
 
@@ -60,7 +66,7 @@ else
   SOFLAGS       =
 endif
 
-CXXFLAGS      = -std=c++1z -g -O0 -Wall -fPIC -pipe
+CXXFLAGS      = -std=c++1z -g -O0 -Wall -fPIC -pipe -Druntime_cxxmodules=Off
 LD            = $(CXX)
 LDFLAGS       = -g -pthread #?? -Wl -rpath$(ROOTSYS)
 SOFLAGS       = -g -shared  #?? -Wl -rpath
@@ -80,8 +86,8 @@ BINARIES = fillQualityPixels fillQualityTiles fillQualityFibres fillEfficiencyPi
            movieMakerVtx overlaySingleChip lvdsVsGlobalChipID produceMatrixNamesAndOffset dumpMidasMetaTree printMidasMetaFile
 
 DICT = ${LFILES:.o=Dict.o}
-DICTHEADERS = ${LFILES:.o=Dict.h}
 DICTSOURCES = ${LFILES:.o=Dict.cc}
+.SECONDARY: $(DICTSOURCES)
 BINARY_OBJS = $(addprefix obj/,$(addsuffix .o,$(BINARIES)))
 
 # -- Default rules
@@ -89,22 +95,17 @@ BINARY_OBJS = $(addprefix obj/,$(addsuffix .o,$(BINARIES)))
 obj/%.o: %.cc | prep
 	$(CXX) $(CXXFLAGS) $(EXTHEADERS) -c $< -o $@
 
+# Classic ROOT dictionaries (no -cxxmodule); each class needs *LinkDef.h.
 %Dict.cc : %.hh %LinkDef.h
-	$(ROOTCINT) -f $@ -c $(EXTHEADERS) $^
-	mv $(subst Dict.cc,Dict_rdict.pcm,$@) lib
-
-%Dict.cc : %.hh
-	$(ROOTCINT) -f $@ -c $(EXTHEADERS) $<
-	mv $(subst Dict.cc,Dict_rdict.pcm,$@) lib
+	$(ROOTCINT) -f $@ $(ROOTCLINGFLAGS) $(EXTHEADERS) $^
+	-[ -f $(subst Dict.cc,Dict_rdict.pcm,$@) ] && mv $(subst Dict.cc,Dict_rdict.pcm,$@) lib
 
 $(addprefix lib/,%.pcm) :
 	cd lib && ln -s $< && cd -
 
 
 # -- Targets
-all: vars prep lib bin
-
-lib: prep $(addprefix obj/,$(CSTUFF) $(LFILES)  $(DICT))
+lib: prep $(addprefix obj/,$(CSTUFF) $(LFILES) $(DICT))
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(LFILES) $(CSTUFF) $(DICT)) -o lib/libRun2025Analysis.so  $(GLIBS) -lMinuit $(OTHERLIBS)
 
 bin: lib prep $(BINARY_OBJS)
@@ -122,11 +123,12 @@ prep:
 
 # -- clean up
 clean:
-	rm -f $(addprefix obj/,$(LFILES ) $(DICT) $(CSTUFF) runHitDataAna.o runTreeLFILES .o runPlot.o runPlotFrameTreeResults.o runMovieMakerVtx.o overlaySingleChip.o )
-	rm -f $(DICTHEADERS)  $(DICTSOURCES)
+	rm -f $(addprefix obj/,$(LFILES) $(DICT) $(CSTUFF) runHitDataAna.o runTreeLFILES .o runPlot.o runPlotFrameTreeResults.o runMovieMakerVtx.o overlaySingleChip.o )
+	rm -f $(DICTSOURCES)
 	rm -f bin/*
 	rm -f lib/*
 	rm -f obj/*
+	rm -f *Dict.cc *Dict.pcm module.modulemap *Dict.cc_tmp_*
 
 cleanresults:
 	rm -f results/*.root results/*.pdf results/*.tex results/*.tex.old
