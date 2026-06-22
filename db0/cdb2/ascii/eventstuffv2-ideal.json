@@ -1,0 +1,22 @@
+{ 
+  "eventdata" : {
+    "startframedata" : 0,
+    "endframedata" : -1,
+    "firstframewithfebproblems" : -1
+  },
+  "pixeldata" : {
+    "startframegooddata" : 0,
+    "endframegooddata" : -1,
+    "firstframewithfebunsortedhitdata" : -1
+  }, 
+  "tiledata" : {
+    "startframegooddata" : 0,
+    "endframegooddata" : -1,
+    "firstframewithfebunsortedhitdata" : -1
+  },
+  "fibredata" : {
+    "startframegooddata" : 0,
+    "endframegooddata" : -1,
+    "firstframewithfebunsortedhitdata" : -1
+  }
+}
