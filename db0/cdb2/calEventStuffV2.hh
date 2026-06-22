@@ -17,6 +17,12 @@ public:
   calEventStuffV2(cdbAbs *db, std::string tag);
   ~calEventStuffV2();
 
+  // -- For this payload, the only IOVs that make sense are ONE PAYLOAD PER RUN (because the 
+  //    payload contain per-run information, e.g. EventData:endFrameData)
+  // 
+  // -- IMPORTANT: Before using this payload make sure that it is valid for the run you are looking at!  
+  bool        isValid(int run) override {return run == fIovRun;}
+
   // -- direct accessors
   uint64_t startFrameEventData() {return fConstants.eventData.startFrameData;}
   uint64_t endFrameEventData() {return fConstants.eventData.endFrameData;}
@@ -73,7 +79,7 @@ private:
     } fibreData;
   };
 
-  std::string fSchema{"eventdata.(ull_startframegooddata,ull_endframegooddata,ull_firstframewithfebproblems),pixeldata.(ull_startframegooddata,ull_endframegooddata,ull_firstframewithfebunsortedhitdata),tiledata.(ull_startframegooddata,ull_endframegooddata,ull_firstframewithfebunsortedhitdata),fibredata.(ull_startframegooddata,ull_endframegooddata,ull_firstframewithfebunsortedhitdata)"};
+  std::string fSchema{"eventdata.(ull_startframedata,ull_endframedata,ull_firstframewithfebproblems),pixeldata.(ull_startframegooddata,ull_endframegooddata,ull_firstframewithfebunsortedhitdata),tiledata.(ull_startframegooddata,ull_endframegooddata,ull_firstframewithfebunsortedhitdata),fibredata.(ull_startframegooddata,ull_endframegooddata,ull_firstframewithfebunsortedhitdata)"};
 
   constants fConstants;
 };

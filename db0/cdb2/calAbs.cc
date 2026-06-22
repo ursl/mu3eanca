@@ -31,6 +31,18 @@ calAbs::~calAbs() {
 
 
 // ----------------------------------------------------------------------
+int calAbs::runFromHash(std::string hash) {
+  string::size_type pos = hash.rfind("_iov_") + 5;
+  if (pos == string::npos) {
+    cout << "calAbs::runFromHash> ERROR: hash " << hash << " does not contain _iov_" << endl;
+    return -1;
+  }
+  string iovstr = hash.substr(pos);
+  int iov = stoi(iovstr);
+  return iov;
+}
+
+// ----------------------------------------------------------------------
 void calAbs::update(string hash) {
   if (!fDB) {
     cout << "ERROR: no database handle provided" << endl;
@@ -51,6 +63,7 @@ void calAbs::update(string hash) {
                              << endl;
 
     fTagIOVPayloadMap.insert(make_pair(hash, pl));
+    fIovRun = runFromHash(hash);
     calculate(hash);
     fHash = hash;
   } else {
@@ -59,6 +72,7 @@ void calAbs::update(string hash) {
                              << endl;
   }
   if (hash != fHash) {
+    fIovRun = runFromHash(hash);
     calculate(hash);
   }
 }
@@ -179,6 +193,7 @@ void calAbs::writePayloadToFile(string hash, string dir, payload &pl) {
 void calAbs::insertPayload(string hash, payload pl) {
   if (fTagIOVPayloadMap.find(hash) == fTagIOVPayloadMap.end()) {
     fTagIOVPayloadMap.insert(make_pair(hash, pl));
+    fIovRun = runFromHash(hash);
     calculate(hash);
     fHash = hash;
     cout << "hash ->" << hash << "<- inserted into fTagIOVPayloadMap" << endl;

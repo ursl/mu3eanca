@@ -39,6 +39,8 @@ void calEventStuffV2::calculate(string hash) {
   unsigned int header = blob2UnsignedInt(getData(ibuffer));
   if (fVerbose > 0) cout << " header: " << hex << header << dec << " BLOB size: " << buffer.size() << endl;
 
+  fIovRun = runFromHash(hash);
+
   fConstants.eventData.startFrameData = blob2Uint64(getData(ibuffer));
   fConstants.eventData.endFrameData = blob2Uint64(getData(ibuffer));
   fConstants.eventData.firstFrameWithFEBProblems = blob2Uint64(getData(ibuffer));
@@ -183,8 +185,8 @@ string calEventStuffV2::readJSON(string filename) {
   fConstants.fibreData.startFrameGoodData = 0; 
   fConstants.fibreData.endFrameGoodData   = -1;
   if (string::npos == filename.find(".mid.lz4.json")) {
-    fConstants.eventData.startFrameData = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "startframegooddata"}));
-    fConstants.eventData.endFrameData   = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "endframegooddata"}));
+    fConstants.eventData.startFrameData = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "startframedata"}));
+    fConstants.eventData.endFrameData   = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "endframedata"}));
     fConstants.eventData.firstFrameWithFEBProblems = ::stoul(jsonGetValue(spl, vector<string>{"eventdata", "firstframewithfebproblems"}));
     fConstants.pixelData.startFrameGoodData = ::stoull(jsonGetValue(spl, vector<string>{"pixeldata", "startframegooddata"}));
     fConstants.pixelData.endFrameGoodData    = ::stoul(jsonGetValue(spl, vector<string>{"pixeldata", "endframegooddata"}));

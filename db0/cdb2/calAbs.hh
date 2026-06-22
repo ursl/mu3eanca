@@ -26,6 +26,7 @@ public:
   virtual std::string getName() { return "blurp"; }
   virtual std::string getHash() {return fHash;}
   virtual void        calculate(std::string hash) = 0;
+  virtual bool        isValid(int run) {return run >= fIovRun;}
 
   // -- BLOB creation from fMapConstants. This is base-class dependent and hence needs to be overridden.
   virtual std::string makeBLOB() = 0;
@@ -55,6 +56,10 @@ public:
   // -- payload string parsing/extraction
   std::string getValue(std::string key);
 
+  // -- set the IOV run
+  int                 runFromHash(std::string hash);
+  int                 getIovRun() {return fIovRun;}
+
 protected:
   cdbAbs                            *fDB;
   std::string                        fTag{"unset"}, fHash{"unset"}, fError{"unset"};
@@ -62,6 +67,7 @@ protected:
   std::vector<int>                   fIOVs;  // set it up initially
   std::map<std::string, payload>     fTagIOVPayloadMap;  // cache
   std::string                        fPayloadString{""};
+  int                                fIovRun{-1};
 };
 
 #endif
