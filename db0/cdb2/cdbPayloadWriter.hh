@@ -103,7 +103,8 @@ public:
   fLayer4Station0ChipIDs, fLayer4Station1ChipIDs, fLayer4Station2ChipIDs;
   // -- tiles
   std::vector<unsigned int> fTileIDs,
-  fTileUS, fTileDS;
+  fTileUS, fTileDS,
+  fTile2025IDs;
   // -- fibres
   std::vector<unsigned int> fFibreIDs,
   fFibre2025IDs;
