@@ -101,8 +101,8 @@ string calTileAlignment::printBLOBString(std::string sblob, int verbosity) {
 
   int cnt(0);
   while (ibuffer != buffer.end()) {
-    if (verbosity > 0) ++cnt;
-    if (cnt > verbosity) break;
+    ++cnt;
+    if (verbosity > 0 && cnt > verbosity) break;
     ss << "   id = " << blob2UnsignedInt(getData(ibuffer))
        << " sensor = " << blob2Int(getData(ibuffer))
        << " pos = "
@@ -115,6 +115,7 @@ string calTileAlignment::printBLOBString(std::string sblob, int verbosity) {
        << blob2Double(getData(ibuffer)) << " "
        << endl;
   }
+  ss << "   " << cnt << " elements in payload" << endl;
   return ss.str();
 }
 

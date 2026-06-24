@@ -104,8 +104,8 @@ string calMppcAlignment::printBLOBString(std::string sblob, int verbosity) {
 
   int cnt(0);
   while (ibuffer != buffer.end()) {
-    if (verbosity > 0) ++cnt;
-    if (cnt > verbosity) break;
+    ++cnt;
+    if (verbosity > 0 && cnt > verbosity) break;
     ss << "   mppc = "
        << blob2UnsignedInt(getData(ibuffer))
        << " v = "
@@ -119,6 +119,7 @@ string calMppcAlignment::printBLOBString(std::string sblob, int verbosity) {
        << "ncol = " << blob2Int(getData(ibuffer))
        << endl;
   }
+  ss << "   " << cnt << " elements in payload" << endl;
   return ss.str();
 }
 

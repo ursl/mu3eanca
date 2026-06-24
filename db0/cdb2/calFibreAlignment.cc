@@ -103,8 +103,8 @@ string calFibreAlignment::printBLOBString(std::string sblob, int verbosity) {
 
   int cnt(0);
   while (ibuffer != buffer.end()) {
-    if (verbosity > 0) ++cnt;
-    if (cnt > verbosity) break;
+    ++cnt;
+    if (verbosity > 0 && cnt > verbosity) break;
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
     ss << "   sensor = " << chipID
@@ -121,6 +121,7 @@ string calFibreAlignment::printBLOBString(std::string sblob, int verbosity) {
        << "diameter = " << blob2Double(getData(ibuffer))
        << endl;
   }
+  ss << "   " << cnt << " elements in payload" << endl;
   return ss.str();
 }
 

@@ -107,9 +107,9 @@ string calPixelAlignment::printBLOBString(std::string sblob, int verbosity) {
 
   int cnt(0);
   while (ibuffer != buffer.end()) {
-    if (verbosity > 0) ++cnt;
+    ++cnt;
     // -- NOTE: prints out only "verbosity" number of lines!
-    if (cnt > verbosity) break;
+    if (verbosity > 0 && cnt > verbosity) break;
     // -- chipID
     unsigned int chipID = blob2UnsignedInt(getData(ibuffer));
     ss << "   sensor = " << chipID
@@ -135,6 +135,7 @@ string calPixelAlignment::printBLOBString(std::string sblob, int verbosity) {
        << blob2Double(getData(ibuffer))
        << endl;
   }
+  ss << "   " << cnt << " elements in payload" << endl;
   return ss.str();
 }
 
