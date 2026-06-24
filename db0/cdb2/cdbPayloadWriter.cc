@@ -1167,6 +1167,7 @@ void cdbPayloadWriter::writeTileTimeCalibrationIdealInput(string filename, strin
     else ONS << "        }" << endl;
     icnt++;
   } 
+  ONS << "     }" << endl;
   ONS << "   }," << endl;
 
   ONS << "   \"timewalk_correction\": {" << endl;
@@ -1192,6 +1193,7 @@ void cdbPayloadWriter::writeTileTimeCalibrationIdealInput(string filename, strin
   } 
   ONS << "     }" << endl;
   ONS << "   }" << endl;
+  ONS << " }" << endl;
   ONS << "}" << endl;
 
   ONS.close();
