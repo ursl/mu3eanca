@@ -190,7 +190,7 @@ vector<string> cdbRest::getAllRunNumbers() {
 vector<string> cdbRest::getAllRunNumbers(string selection, string det) {
   doCurl("runNumbers", "nada", "findAll");
   
-  if (0) cout << "fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << endl;
+  if (0) cout << "fCurlReadBuffer ->" << fCurlReadBuffer << "<-" << selection << " " << det << endl;
   replaceAll(fCurlReadBuffer, "[", "");
   replaceAll(fCurlReadBuffer, "]", "");
   // FIXME add filtering!
