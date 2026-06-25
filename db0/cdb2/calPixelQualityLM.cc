@@ -248,6 +248,18 @@ int calPixelQualityLM::getNpixWithStatus(unsigned int chipid, Status status) {
 
 
 // ----------------------------------------------------------------------
+int calPixelQualityLM::getNcolWithStatus(unsigned int chipid, Status status) {
+  if (fMapConstants.find(chipid) == fMapConstants.end()) {
+    return -1; // -- chip not found
+  }
+  int n(0);
+  for (int icol = 0; icol < 256; icol++) {
+    if (getColStatus(chipid, icol) == status) n++;
+  }
+  return n;
+}
+
+// ----------------------------------------------------------------------
 calPixelQualityLM::Status calPixelQualityLM::getStatus(unsigned int chipid, int icol, int irow) {
   // -- first check link status (any non-zero status, including dead links 7,8,9)
   if (fMapConstants[chipid].linkA > 0 && icol >= 0 && icol <= 87) {
@@ -394,8 +406,10 @@ double calPixelQualityLM::getLVDSOverflowRate(unsigned int chipid) {
 
 
 // ----------------------------------------------------------------------
-void calPixelQualityLM::printPixelQuality(unsigned int chipid, int minimumStatus) {
-  // FIXME
+void calPixelQualityLM::printPixelQuality(unsigned int chipid, Status desiredStatus) {
+  int cols = getNcolWithStatus(chipid, desiredStatus);
+  int pixels = getNpixWithStatus(chipid, desiredStatus);
+  cout << "chipID: " << chipid << " Status (" << desiredStatus << ") ncol: " << cols << " npix: " << pixels << endl;
 }
 
 

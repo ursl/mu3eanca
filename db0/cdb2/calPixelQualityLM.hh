@@ -68,11 +68,12 @@ public:
   int getCkdivend2(unsigned int chipid);
 
   int         getNpixWithStatus(unsigned int chipid, Status status);
+  int         getNcolWithStatus(unsigned int chipid, Status status);
 
   bool        getNextID(uint32_t &ID);
   void        resetIterator() {fMapConstantsIt = fMapConstants.begin();}
 
-  void        printPixelQuality(unsigned int chipid, int minimumStatus = 0);
+  void        printPixelQuality(unsigned int chipid, Status desiredStatus = Good);
 
   std::string getSchema() override {return fSchema;}
   size_t      getPayloadSize() const override {return fMapConstants.size();}
