@@ -1140,7 +1140,7 @@ void cdbPayloadWriter::writeTileTimeCalibrationIdealInput(string filename, strin
 
   ONS << "   \"time_alignment\": {" << endl;
   ONS << "     \"channels\": {" << endl;
-  int  icnt(0);
+  unsigned int  icnt(0);
   for (auto &id : vTileIDs) {
     ONS << "       \"" << id << "\": {" << endl;
     ONS << "         \"is_valid\": true," << endl;
