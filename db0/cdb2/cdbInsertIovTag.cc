@@ -21,7 +21,7 @@ using namespace std;
 //          cdbInsertIovTag -j jsondir -t tag -c
 //          cdbInsertIovTag -j jsondir -t tag -init
 //          cdbInsertIovTag -j jsondir -t tag -d payloaddir -p pat
-//          ./bin/cdbInsertIovTag -t pixelqualitylm_datav6.5=2025V0 -j /Users/ursl/data/mu3e/test-cdb \
+//          ./bin/cdbInsertIovTag -t pixelqualitylm_datav6.5=2025V0 -j /Users/ursl/data/mu3e/test-cdb 
 //            -d ~/data/mu3e/test-cdb/payloads/pixelqualitylm_datav6.5=2025V0/ -p pixelqualitylm_datav6.5=2025V0
 //
 // History
