@@ -65,31 +65,38 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
   int verbose(0);
   calAbs *cal(0);
   cout << "Mu3eConditions::Mu3eConditions> creating basic classes" << endl;
-  cal = createClass("pixelalignment_");
-  if (cal) cal->setVerbosity(verbose);
-  cal = createClass("fibrealignment_");
-  if (cal) cal->setVerbosity(verbose);
-  cal = createClass("mppcalignment_");
-  if (cal) cal->setVerbosity(verbose);
-  cal = createClass("tilealignment_");
-  if (cal) cal->setVerbosity(verbose);
-  cal = createClass("pixelqualitylm_");
-  if (cal) cal->setVerbosity(verbose);
   cal = createClass("detsetupv1_");
   if (cal) cal->setVerbosity(verbose);
+
   cal = createClass("eventstuffv1_");
   if (cal) cal->setVerbosity(verbose);
   cal = createClass("eventstuffv2_");
   if (cal) cal->setVerbosity(verbose);
-  cal = createClass("pixeltimecalibration_");
-  if (cal) cal->setVerbosity(verbose);
-  cal = createClass("tilequality_");
-  if (cal) cal->setVerbosity(verbose);
-  cal = createClass("pixelefficiency_");
+
+  cal = createClass("fibrealignment_");
   if (cal) cal->setVerbosity(verbose);
   cal = createClass("fibrequality_");
   if (cal) cal->setVerbosity(verbose);
+
+  cal = createClass("mppcalignment_");
+  if (cal) cal->setVerbosity(verbose);
+
+  cal = createClass("pixelalignment_");
+  if (cal) cal->setVerbosity(verbose);
+  cal = createClass("pixelefficiency_");
+  if (cal) cal->setVerbosity(verbose);
   cal = createClass("pixelmask_");
+  if (cal) cal->setVerbosity(verbose);
+  cal = createClass("pixelqualitylm_");
+  if (cal) cal->setVerbosity(verbose);
+  cal = createClass("pixeltimecalibration_");
+  if (cal) cal->setVerbosity(verbose);
+
+  cal = createClass("tilealignment_");
+  if (cal) cal->setVerbosity(verbose);
+  cal = createClass("tiletimecalibration_");
+  if (cal) cal->setVerbosity(verbose);
+  cal = createClass("tilequality_");
   if (cal) cal->setVerbosity(verbose);
 }
 
