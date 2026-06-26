@@ -1061,7 +1061,8 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
     }
     if (!didRunOne) {
       if (cal == "eventstuffv2") {
-        writeEventStuffV2Payloads(payloaddir, gt, string(LOCALDIR) + "/ascii/eventstuffv2-ideal.json", "all perfect", 1);
+        // -- this will fail if called from the wrong directory ... Sorry!
+        writeEventStuffV2Payloads(payloaddir, gt, "ascii/eventstuffv2-ideal.json", "all perfect", 1);
       }
     }
     return;
