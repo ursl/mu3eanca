@@ -68,8 +68,6 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
   cal = createClass("detsetupv1_");
   if (cal) cal->setVerbosity(verbose);
 
-  cal = createClass("eventstuffv1_");
-  if (cal) cal->setVerbosity(verbose);
   cal = createClass("eventstuffv2_");
   if (cal) cal->setVerbosity(verbose);
 
