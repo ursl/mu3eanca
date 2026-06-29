@@ -8,16 +8,21 @@
 
 #include "cdbJSON.hh"
 #include "cdbRest.hh"
-#include "calPixelAlignment.hh"
+#include "calDetConfV1.hh"
+#include "calDetSetupV1.hh"
+#include "calEventStuffV1.hh"
+#include "calEventStuffV2.hh"
 #include "calFibreAlignment.hh"
-#include "calMppcAlignment.hh"
-#include "calTileAlignment.hh"
-#include "calPixelQualityLM.hh"
 #include "calFibreQuality.hh"
-#include "calTileQuality.hh"
+#include "calMppcAlignment.hh"
+#include "calPixelAlignment.hh"
 #include "calPixelEfficiency.hh"
-#include "calPixelTimeCalibration.hh"
 #include "calPixelMask.hh"
+#include "calPixelQualityLM.hh"
+#include "calPixelTimeCalibration.hh"
+#include "calTileAlignment.hh"
+#include "calTileQuality.hh"
+#include "calTileTimeCalibration.hh"
 
 using namespace std;
 
@@ -78,6 +83,31 @@ string wrapComment(const string& text, size_t width = 60, const string& indent =
     first = false;
   }
   return result;
+}
+
+// ----------------------------------------------------------------------
+calAbs* getCalClass(string tag, cdbAbs* pDB) {
+  calAbs* cal = nullptr;
+  if (tag.find("detconfv1") == 0) cal = new calDetConfV1(pDB);
+  else if (tag.find("detsetupv1") == 0) cal = new calDetSetupV1(pDB);
+  else if (tag.find("eventstuffv1") == 0) cal = new calEventStuffV1(pDB);
+  else if (tag.find("eventstuffv2") == 0) cal = new calEventStuffV2(pDB);
+  else if (tag.find("fibrealignment") == 0) cal = new calFibreAlignment(pDB);
+  else if (tag.find("fibrequality") == 0) cal = new calFibreQuality(pDB);
+  else if (tag.find("mppcalignment") == 0) cal = new calMppcAlignment(pDB);
+  else if (tag.find("pixelalignment") == 0) cal = new calPixelAlignment(pDB);
+  else if (tag.find("pixelqualitylm") == 0) cal = new calPixelQualityLM(pDB);
+  else if (tag.find("pixelefficiency") == 0) cal = new calPixelEfficiency(pDB);
+  else if (tag.find("pixelmask") == 0) cal = new calPixelMask(pDB); 
+  else if (tag.find("pixeltimecalibration") == 0) cal = new calPixelTimeCalibration(pDB);
+  else if (tag.find("tilealignment") == 0) cal = new calTileAlignment(pDB);
+  else if (tag.find("tilequality") == 0) cal = new calTileQuality(pDB);
+  else if (tag.find("tiletimecalibration") == 0) cal = new calTileTimeCalibration(pDB);
+  else {
+    cout << "ERROR: unknown tag: " << tag << endl;
+    return nullptr;
+  }
+  return cal;
 }
 
 // ----------------------------------------------------------------------
@@ -228,6 +258,23 @@ int main(int argc, char* argv[]) {
     << (iovLen == 0 ? " XXXXXXXXXX ERROR XXXXXXXXXX" : " ")
     << endl;
 
+    // -- Alignment/quality payload size: read first payload and report detector units
+    size_t payloadSize = 0;
+    if (it != iovs.end() && !it->second.empty()) {
+      int firstIov = it->second[0];
+      string hash = "tag_" + tag + "_iov_" + to_string(firstIov);
+      calAbs* cal = nullptr;
+      cal = getCalClass(tag, pDB);
+      if (cal) {
+        cal->update(hash);
+        payloadSize = cal->getPayloadSize();
+        delete cal;
+      }
+    }
+ 
+    cout << "    detector units: " << payloadSize << endl;
+
+    // -- skip the rest in case -n is specified
     if (noPayloads) {
       if (!tagComment.empty()) {
         cout << "    comment: " << wrapComment(tagComment, 60, "             ") << endl;
@@ -235,46 +282,13 @@ int main(int argc, char* argv[]) {
       continue;
     }
 
-    // -- Alignment/quality payload size: read first payload and report detector units
-    size_t payloadSize = 0;
-    if (it != iovs.end() && !it->second.empty()) {
-      int firstIov = it->second[0];
-      string hash = "tag_" + tag + "_iov_" + to_string(firstIov);
-      calAbs* cal = nullptr;
-      if (tag.find("pixelalignment") == 0) cal = new calPixelAlignment(pDB);
-      else if (tag.find("fibrealignment") == 0) cal = new calFibreAlignment(pDB);
-      else if (tag.find("mppcalignment") == 0) cal = new calMppcAlignment(pDB);
-      else if (tag.find("tilealignment") == 0) cal = new calTileAlignment(pDB);
-      else if (tag.find("pixelqualitylm") == 0) cal = new calPixelQualityLM(pDB);
-      else if (tag.find("fibrequality") == 0) cal = new calFibreQuality(pDB);
-      else if (tag.find("tilequality") == 0) cal = new calTileQuality(pDB);
-      else if (tag.find("pixelefficiency") == 0) cal = new calPixelEfficiency(pDB);
-      else if (tag.find("pixeltimecalibration") == 0) cal = new calPixelTimeCalibration(pDB);
-      else if (tag.find("pixelmask") == 0) cal = new calPixelMask(pDB);
-      if (cal) {
-        cal->update(hash);
-        payloadSize = cal->getPayloadSize();
-        delete cal;
-      }
-    }
     if (payloadSize > 0) {
       cout << "    size: " << payloadSize << " detector units";
-
       // -- If multiple IOVs: check all payload sizes are the same
       if (it != iovs.end() && it->second.size() > 1) {
         bool allSame = true;
         size_t firstSize = payloadSize;
-        calAbs* calIov = nullptr;
-        if (tag.find("pixelalignment") == 0) calIov = new calPixelAlignment(pDB);
-        else if (tag.find("fibrealignment") == 0) calIov = new calFibreAlignment(pDB);
-        else if (tag.find("mppcalignment") == 0) calIov = new calMppcAlignment(pDB);
-        else if (tag.find("tilealignment") == 0) calIov = new calTileAlignment(pDB);
-        else if (tag.find("pixelqualitylm") == 0) calIov = new calPixelQualityLM(pDB);
-        else if (tag.find("fibrequality") == 0) calIov = new calFibreQuality(pDB);
-        else if (tag.find("tilequality") == 0) calIov = new calTileQuality(pDB);
-        else if (tag.find("pixelefficiency") == 0) calIov = new calPixelEfficiency(pDB);
-        else if (tag.find("pixeltimecalibration") == 0) calIov = new calPixelTimeCalibration(pDB);
-        else if (tag.find("pixelmask") == 0) calIov = new calPixelMask(pDB);
+        calAbs* calIov = getCalClass(tag, pDB);
         if (calIov) {
           for (size_t i = 1; i < it->second.size(); i++) {
             int iov = it->second[i];
@@ -337,6 +351,7 @@ int main(int argc, char* argv[]) {
             calAbs* calAlign = nullptr;
             if (alignTag.find("pixelalignment") == 0) calAlign = new calPixelAlignment(pDB);
             else if (alignTag.find("fibrealignment") == 0) calAlign = new calFibreAlignment(pDB);
+            else if (alignTag.find("mppcalignment") == 0) calAlign = new calMppcAlignment(pDB);
             else if (alignTag.find("tilealignment") == 0) calAlign = new calTileAlignment(pDB);
             if (calAlign) {
               calAlign->update(hashAlign);
