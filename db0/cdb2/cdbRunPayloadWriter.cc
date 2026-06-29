@@ -28,6 +28,7 @@ using namespace std;
 // ./bin/cdbRunPayloadWriter -c eventstuffv2 -a "ideal tag, for inclusion of skipped header bug for pixels" -t mcidealv6.9 -r 1 
 // ./bin/cdbRunPayloadWriter -c eventstuffv2 -d ~/data/mu3e/run2025/rawv2 -a "includes skipped header bug for pixels, but nothing on fibres of tiles" -t datav6.9=2025V0 
 // 
+// ./bin/cdbRunPayloadWriter -m pixelmask-ideal -a "ideal tag, for completeness only" -t mcidealv6.9 -r 1
 // ----------------------------------------------------------------------
 
 

@@ -1102,6 +1102,9 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
   if (string::npos != cal.find("pixeltimecalibration")) {
     writePixelTimeCalibrationPayloads(payloaddir, gt, filename, annotation, iov);
   }
+  if (string::npos != cal.find("pixelmask")) {
+    writePixelMaskPayloads(payloaddir, gt, filename, annotation, iov);
+  }
 }
 
 
@@ -2127,7 +2130,7 @@ void cdbPayloadWriter::writePixelMaskPayloads(string payloaddir, string gt, stri
   pl.fSchema = cpm->getSchema();
   pl.fBLOB = sblob;
   cout << "######################################################################" << endl;
-  cout << "### createPayload" << endl;
+  cout << "### createPayload, writing to " << payloaddir  << endl;
   cout <<  pl.printString(false) << endl;
   cpm->printBLOB(sblob, 1);
   cout << "######################################################################" << endl;
@@ -2155,7 +2158,7 @@ void cdbPayloadWriter::writePixelMaskIdealPayload(string payloaddir, string gt, 
   pl.fSchema = cpm->getSchema();
   pl.fBLOB = sblob;
   cout << "######################################################################" << endl;
-  cout << "### createPayload" << endl;
+  cout << "### createPayload, writing to " << payloaddir << endl;
   cout <<  pl.printString(false) << endl;
   cpm->printBLOB(sblob, 1);
   cout << "######################################################################" << endl;
