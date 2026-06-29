@@ -272,7 +272,9 @@ int main(int argc, char* argv[]) {
       }
     }
  
-    cout << "    detector units: " << payloadSize << endl;
+    if (payloadSize > 0) {
+      cout << "    detector units: " << payloadSize << endl;
+    } 
 
     // -- skip the rest in case -n is specified
     if (noPayloads) {
