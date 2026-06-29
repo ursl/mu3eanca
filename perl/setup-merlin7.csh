@@ -39,6 +39,7 @@ if ("$MU3E_TAG" != "-") then
     setenv LD_LIBRARY_PATH "${MU3E_PREFIX}/lib64:${LD_LIBRARY_PATH}"
 endif
 
+setenv CDB "/data/project/mu3e/cdb"
 
 setenv MIDASSYS        /data/user/langenegger/midas/250904/midas
 setenv MIDAS_DIR       /data/user/langenegger/midas/250904/midas
