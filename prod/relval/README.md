@@ -1,27 +1,116 @@
 # MU3E RelVal (Snakemake)
 
-Automated release validation: check out a MU3E tag, build, run simulation/reconstruction for configured scenarios, fill validation histograms, and optionally compare against a reference setup.
+Automated release validation: check out a MU3E tag, build, run simulation or data reprocessing tasks, fill validation histograms, and optionally compare against a reference setup.
+
+## Workflow overview
+
+1. **`initRelval`** — once per setup: write `setups/<name>/config.yaml`, copy Snakefile + `common/`.
+2. **`snakemake mu3e_setup`** — clone/checkout MU3E, build, relink.
+3. **`snakemake relval_all`** (or `compare_all` / `histocompare_all`) — run configured tasks.
+
+Like `prod/rereco/`, setup parameters live in `setups/<name>/config.yaml`; operational overrides (`compare_against_setup`, …) via `--config` on the snakemake command line.
 
 ## What the workflow does
 
-For each entry in `sim_scenarios` in `config.yaml`, Snakemake runs:
+For each entry in **`relval_tasks`** (see `config.yaml`):
 
-1. **Bootstrap** — clone/build `mu3eUtil` and `mu3eValidation` under `mu3e_relval_basedir` (once).
-2. **Clone & prepare** — fetch/checkout the requested `mu3e_tag` (and submodules).
-3. **Build** — `cmake` + `make` in the MU3E checkout `_build`.
-4. **Relink very large bin files** — `relinkBinFiles`; ensure `run/bvr2026` exists.
-5. **Sim** — `mu3eSim` → `run/output/sim-{scenario}.root`
-6. **Sort** — `mu3eSort` (uses `cdb_dbconn`, `cdb_GT`)
-7. **TriRec** — `mu3eTrirec` → `run/output/trirec-{scenario}.root`
-8. **Fill histograms** — `ana/bin/runFillHistograms` → `run/output/histograms-{scenario}.root` (from trirec).
-9. **Treedump** — rule `run_treedump`: after **sort**, `mu3eTreeDumper` writes `run/output/treedump-{scenario}-{object}.root` for each alignment object (`sensors`, `fibres`, `tiles`, `mppcs`). Always part of the default targets (not tied to compare mode). Runs in parallel with trirec / fill-hist once sort exists.
+| `mode` | Pipeline |
+|--------|----------|
+| `sim` | mu3eSim → mu3eSort → mu3eTrirec → fill histograms → treedump → [compare, histocompare] |
+| `data` | existing `sort_input` → mu3eTrirec → fill histograms → treedump → [compare, histocompare] |
 
-If `compare_against_setup` is set (see below), two more steps run per scenario:
+Shared steps (once per setup):
 
-10. **RunCompare** — PDF summaries from histogram diff (`runCompareHistograms` on filled histogram ROOT files).
-11. **Histocompare** — rule `run_histocompare`: `histocompare` container compares treedump pairs (new vs reference) → PDFs under `run/output/compare/`. Reference treedumps must already exist from a **previous relval run** of the reference setup (same `run_treedump` rule).
+1. **Bootstrap** — clone/build `mu3eUtil` and `mu3eValidation` under `mu3e_relval_basedir`.
+2. **Clone & prepare / build / relink** — `mu3e_setup` target.
 
-Default targets are the histogram ROOT files; with compare enabled, compare/histocompare marker files are added.
+Each task has its own **`cdb_GT`**, **`trirec_conf`**, and (for sim) **`sim_conf`**. Example tasks in the default config:
+
+| id | mode | GT (example) | trirec conf |
+|----|------|--------------|-------------|
+| `signal` | sim | `mcidealv6.9` | `trirec.conf` |
+| `conf8` | sim | `mcrealisticv6.9=2025V0` | `trirec_twolayer_beam.conf` |
+| `run06232` | data | `datav6.9=2025V0` | `trirec_twolayer_beam.conf` |
+
+If `compare_against_setup` is set (reference setup name, e.g. `relval-v6.8`):
+
+- **`run_compare_histograms`** — PDF summaries from histogram diff.
+- **`run_histocompare`** — Docker histocompare on treedump pairs (new vs reference).
+
+### Snakemake targets
+
+| Target | Meaning |
+|--------|---------|
+| `mu3e_setup` | Clone, build, relink — **run first** |
+| `relval_all` | Full pipeline for all tasks (default `all`) |
+| `compare_all` | All `run_compare_histograms` markers (needs `compare_against_setup`) |
+| `histocompare_all` | All histocompare markers |
+
+## Running
+
+### 1. Create setup (once)
+
+```tcsh
+cd /path/to/mu3eanca/prod/relval
+
+./initRelval -s relval-v6.9pre -t v6.9pre
+
+# optional overrides:
+./initRelval -s relval-v6.9pre -t v6.9pre --config compare_against_setup=relval-v6.8
+```
+
+**MU3E checkout** (pick one base, then optional merges):
+
+| Goal | `initRelval` |
+|------|----------------|
+| Release tag | `-t v6.9pre` (no `-b`) → `git checkout v6.9pre` |
+| Branch HEAD | `-t <label> -b dev` → `git checkout dev` + reset to `origin/dev` |
+| PR on top of `dev` | `-b dev` + `--config mu3e_checkout_merge=<commit>` |
+| PR in mu3eUtil | add `--config mu3eUtil_checkout_merge=<commit>` |
+
+Example before merging a PR (mu3e + mu3eUtil):
+
+```tcsh
+./initRelval -s relval-dev-pr49 -t dev-pr49 -b dev \
+  --config mu3e_checkout_merge=75d8c48 \
+  --config mu3eUtil_checkout_merge=a1b2c3d4
+```
+
+`-t` is always required (setup label / `mu3e_tag` in outputs). With `-b dev`, git uses the branch, not the tag. Merges run after checkout (`mu3e`) and after `submodule update` (`modules/mu3eUtil`). If the commit is not local yet, fetch the PR branch first (see `clone_and_prepare_mu3e` error hint or `prod/rereco/README.md`).
+
+Re-run `initRelval` to refresh `Snakefile`/`common/` and patch setup config.
+
+Set **`sort_input_base`** in `config-<host>.yaml` for data tasks (e.g. `run06232`).
+
+### 2. MU3E setup
+
+```tcsh
+set WF = /path/to/relval/setups/relval-v6.9pre
+cd $WF
+
+snakemake --cores 4 -p mu3e_setup
+```
+
+### 3. Full relval (with compare)
+
+```tcsh
+cd $WF
+
+snakemake --cores 4 -p --config compare_against_setup=relval-v6.8 -- relval_all
+```
+
+Compare/histocompare only:
+
+```tcsh
+snakemake --cores 4 -p --config compare_against_setup=relval-v6.8 -- compare_all
+snakemake --cores 4 -p --config compare_against_setup=relval-v6.8 -- histocompare_all
+```
+
+### Legacy: `runRelval`
+
+`runRelval` still init+runs in one step (creates `setups/relval_<tag>/`, runs snakemake). Prefer `initRelval` + direct snakemake for rereco-style workflows.
+
+---
 
 ## Layout on disk
 
@@ -40,7 +129,7 @@ Configured in `config.yaml`:
 <mu3e_relval_basedir>/<mu3e_workdir_name>/
 ```
 
-`runRelval` sets `mu3e_workdir_name` to `mu3e-<setup-name>` (e.g. `mu3e-relval_mu3e-v6.5_mcidealv6.5`). Slashes in tags are replaced by `_` in directory names.
+`initRelval` / `runRelval` set `mu3e_workdir_name` to `mu3e-<setup-name>` (e.g. `mu3e-relval-v6.9pre`).
 
 **Frozen setup** (copy of Snakefile + patched config for reproducibility):
 
@@ -87,11 +176,17 @@ Add a new machine by copying a host file and editing four paths:
 
 - `mu3e_relval_basedir`, `relink_script`, `cdb_dbconn`, `relval_code_basedir`
 
-Each scenario in `config.yaml` has:
+Each task in **`relval_tasks`** has:
 
-- `id` — wildcard name (e.g. `conf10_twolayer`)
-- `sim_conf`, `trirec_conf` — paths under `run/`
-- optional `trirec_conf_fallback`
+- `id` — task name (wildcard, e.g. `signal`, `conf8`, `run06232`)
+- `mode` — `sim` or `data`
+- `cdb_GT` — global tag for sort/trirec on this task
+- `trirec_conf` — path under `run/`
+- `sim_conf` — required for `mode: sim`
+- `sort_input` — required for `mode: data` (absolute or relative to `sort_input_base`)
+- optional `run_id`, `n_events`, `trirec_conf_fallback`
+
+Legacy **`sim_scenarios`** is still supported when `relval_tasks` is empty.
 
 Other important keys:
 

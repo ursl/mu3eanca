@@ -11,6 +11,7 @@
 #   trirec_conf_fallback_for(wc)
 #   trirec_run_id_for(wc)      -> run number for --run
 #   trirec_item_label(wc)      -> wildcard value for log lines (scenario id or job id)
+#   trirec_cdb_gt_for(wc)      -> optional; default CDB_GT
 
 
 rule run_mu3e_trirec:
@@ -29,7 +30,7 @@ rule run_mu3e_trirec:
         run_id=lambda wc: trirec_run_id_for(wc),
         item_label=lambda wc: trirec_item_label(wc),
         cdb_dbconn=CDB_DBCONN,
-        cdb_GT=CDB_GT,
+        cdb_gt=lambda wc: trirec_cdb_gt_for(wc) if "trirec_cdb_gt_for" in globals() else CDB_GT,
         log_prefix=MU3E_PREP_LOG_PREFIX
     shell:
         r"""
@@ -56,5 +57,5 @@ rule run_mu3e_trirec:
             --output "{params.trirec_output}" \
             --run {params.run_id} \
             --cdb.dbconn="{params.cdb_dbconn}" \
-            --cdb.globalTag="{params.cdb_GT}"
+            --cdb.globalTag="{params.cdb_gt}"
         """

@@ -1,6 +1,8 @@
+import json
 import os
 import platform
 import socket
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -82,17 +84,31 @@ CLONE_MU3E_INPUTS = [f"{MU3E_RELVAL_BASEDIR}/.bootstrap/mu3e_validation_tools.do
 
 include: str(_PROD_COMMON / "mu3e_prepare.smk")
 
-SIM_SCENARIOS = config["sim_scenarios"]
-SCENARIO_IDS = [item["id"] for item in SIM_SCENARIOS]
-SCENARIO_BY_ID = {item["id"]: item for item in SIM_SCENARIOS}
+_load_tasks_script = _PROD_COMMON / "load_relval_tasks"
+_proc = subprocess.run(
+    ["perl", str(_load_tasks_script)],
+    input=json.dumps(dict(config)),
+    capture_output=True,
+    text=True,
+    check=False,
+)
+if _proc.returncode != 0:
+    raise RuntimeError(
+        _proc.stderr.strip() or f"load_relval_tasks failed with exit {_proc.returncode}"
+    )
+RELVAL_TASKS = json.loads(_proc.stdout)
+TASK_IDS = [item["id"] for item in RELVAL_TASKS]
+TASK_BY_ID = {item["id"]: item for item in RELVAL_TASKS}
+SIM_TASK_IDS = [item["id"] for item in RELVAL_TASKS if item["mode"] == "sim"]
+DATA_TASK_IDS = [item["id"] for item in RELVAL_TASKS if item["mode"] == "data"]
 
 SIM_OUTPUT_TPL = config["sim_output_tpl"]
-
 SORT_OUTPUT_TPL = config["sort_output_tpl"]
 TRIREC_OUTPUT_TPL = config["trirec_output_tpl"]
 FILLHIST_OUTPUT_TPL = config["fillhist_output_tpl"]
-COMPARE_MARKER_TPL = config.get("compare_marker_tpl", "output/compare-{scenario}.done")
-HISTOCOMPARE_MARKER_TPL = config.get("histocompare_marker_tpl", "output/histocompare-{scenario}.done")
+COMPARE_MARKER_TPL = config.get("compare_marker_tpl", "output/compare-{task}.done")
+HISTOCOMPARE_MARKER_TPL = config.get("histocompare_marker_tpl", "output/histocompare-{task}.done")
+SORT_INPUT_BASE = config.get("sort_input_base", "")
 RELVAL_CODE_BASEDIR = config.get("relval_code_basedir", workflow.basedir)
 RUN_FILL_HISTOGRAMS_EXE = f"{RELVAL_CODE_BASEDIR}/ana/bin/runFillHistograms"
 RUN_COMPARE_HISTOGRAMS_EXE = f"{RELVAL_CODE_BASEDIR}/ana/bin/runCompareHistograms"
@@ -100,7 +116,6 @@ COMPARE_TEMPLATE_TEX = f"{RELVAL_CODE_BASEDIR}/ana/template-relval.tex"
 COMPARE_AGAINST_SETUP = config.get("compare_against_setup", "")
 COMPARE_ENABLED = bool(COMPARE_AGAINST_SETUP and RUN_COMPARE_HISTOGRAMS_EXE)
 
-# Allow CLI override via --config cdb_GT=... (and accept lowercase alias).
 CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
 CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
 
@@ -135,160 +150,205 @@ else:
     HISTOCOMPARE_HC_TMP_MKTEMP = "${TMPDIR:-/tmp}/relval-histocompare.XXXXXX"
 
 
-def sim_conf(scenario):
-    return SCENARIO_BY_ID[scenario]["sim_conf"]
+def _fmt_tpl(tpl, task):
+    return tpl.format(task=task, scenario=task)
 
 
-def trirec_conf(scenario):
-    return SCENARIO_BY_ID[scenario]["trirec_conf"]
+def task_cdb_gt(task):
+    return TASK_BY_ID[task]["cdb_GT"]
 
 
-def trirec_conf_fallback(scenario):
-    return SCENARIO_BY_ID[scenario].get("trirec_conf_fallback", "")
+def task_mode(task):
+    return TASK_BY_ID[task]["mode"]
 
 
-def sim_output(scenario):
-    return SIM_OUTPUT_TPL.format(scenario=scenario)
+def sim_conf(task):
+    return TASK_BY_ID[task]["sim_conf"]
 
 
-def sort_output(scenario):
-    return SORT_OUTPUT_TPL.format(scenario=scenario)
+def trirec_conf(task):
+    return TASK_BY_ID[task]["trirec_conf"]
 
 
-def trirec_output(scenario):
-    return TRIREC_OUTPUT_TPL.format(scenario=scenario)
+def trirec_conf_fallback(task):
+    return TASK_BY_ID[task].get("trirec_conf_fallback", "")
 
 
-TRIREC_LOG_TPL = "logs/snakemake/run_mu3e_trirec-{scenario}.log"
+def sim_output(task):
+    return _fmt_tpl(SIM_OUTPUT_TPL, task)
+
+
+def sort_output(task):
+    return _fmt_tpl(SORT_OUTPUT_TPL, task)
+
+
+def trirec_output(task):
+    return _fmt_tpl(TRIREC_OUTPUT_TPL, task)
+
+
+def sort_input_path(task):
+    path = TASK_BY_ID[task]["sort_input"] if task_mode(task) == "data" else sort_output(task)
+    if task_mode(task) == "sim":
+        return path
+    if os.path.isabs(path):
+        return path
+    if SORT_INPUT_BASE:
+        return f"{SORT_INPUT_BASE}/{path}"
+    return path
+
+
+TRIREC_LOG_TPL = "logs/snakemake/run_mu3e_trirec-{task}.log"
 
 
 def trirec_rule_inputs(wc):
-    return [f"{MU3E_DIR}/run/{sort_output(wc.scenario)}"]
+    if task_mode(wc.task) == "data":
+        return [f"{MARKER_DIR}/relink_bin_files.done", sort_input_path(wc.task)]
+    return [f"{MU3E_DIR}/run/{sort_output(wc.task)}"]
 
 
 def trirec_sort_input(wc):
-    return sort_output(wc.scenario)
+    if task_mode(wc.task) == "data":
+        return sort_input_path(wc.task)
+    return sort_output(wc.task)
 
 
 def trirec_output_rel(wc):
-    return trirec_output(wc.scenario)
+    return trirec_output(wc.task)
 
 
 def trirec_conf_for(wc):
-    return trirec_conf(wc.scenario)
+    return trirec_conf(wc.task)
 
 
 def trirec_conf_fallback_for(wc):
-    return trirec_conf_fallback(wc.scenario)
+    return trirec_conf_fallback(wc.task)
 
 
 def trirec_run_id_for(wc):
-    return RUN_ID
+    return TASK_BY_ID[wc.task]["run_id"]
+
+
+def trirec_cdb_gt_for(wc):
+    return task_cdb_gt(wc.task)
 
 
 def trirec_item_label(wc):
-    return wc.scenario
+    return wc.task
 
 
 include: str(_PROD_COMMON / "mu3e_trirec.smk")
 
 
-def fillhist_output(scenario):
-    return FILLHIST_OUTPUT_TPL.format(scenario=scenario)
+def fillhist_output(task):
+    return _fmt_tpl(FILLHIST_OUTPUT_TPL, task)
 
 
-def compare_marker_output(scenario):
-    return COMPARE_MARKER_TPL.format(scenario=scenario)
+def compare_marker_output(task):
+    return _fmt_tpl(COMPARE_MARKER_TPL, task)
 
 
-def histocompare_marker_output(scenario):
-    return HISTOCOMPARE_MARKER_TPL.format(scenario=scenario)
+def histocompare_marker_output(task):
+    return _fmt_tpl(HISTOCOMPARE_MARKER_TPL, task)
 
 
-def compare_other_trirec(scenario):
-    return f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{trirec_output(scenario)}"
+def ref_workdir_name():
+    return f"mu3e-{COMPARE_AGAINST_SETUP}"
 
 
-def compare_other_hist(scenario):
-    return f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{fillhist_output(scenario)}"
+def compare_other_trirec(task):
+    return f"{MU3E_RELVAL_BASEDIR}/{ref_workdir_name()}/run/{trirec_output(task)}"
 
 
-def compare_dir_name(scenario):
+def compare_other_hist(task):
+    return f"{MU3E_RELVAL_BASEDIR}/{ref_workdir_name()}/run/{fillhist_output(task)}"
+
+
+def compare_dir_name(task):
     this_setup = MU3E_DIRNAME
-    other_setup = f"{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}"
-    return f"{scenario}__{this_setup}__vs__{other_setup}"
+    other_setup = ref_workdir_name()
+    return f"{task}__{this_setup}__vs__{other_setup}"
 
 
-def compare_dir_rel(scenario):
-    return f"run/output/compare/{compare_dir_name(scenario)}"
+def compare_dir_rel(task):
+    return f"run/output/compare/{compare_dir_name(task)}"
 
 
-def compare_dir_host(scenario):
-    return f"{MU3E_DIR}/{compare_dir_rel(scenario)}"
+def compare_dir_host(task):
+    return f"{MU3E_DIR}/{compare_dir_rel(task)}"
 
 
-def compare_in1_data_path(scenario):
-    return f"/data/{MU3E_DIRNAME}/run/{trirec_output(scenario)}"
-
-
-def compare_in2_data_path(scenario):
-    return f"/data/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{trirec_output(scenario)}"
+def treedump_sort_input(wc):
+    return sort_input_path(wc.task)
 
 
 ALIGN_OBJECTS = ["sensors", "fibres", "tiles", "mppcs"]
 
 
-def treedump_basename(scenario, align_object):
-    return f"treedump-{scenario}-{align_object}"
+def treedump_basename(task, align_object):
+    return f"treedump-{task}-{align_object}"
 
 
-def treedump_output(scenario, align_object):
-    return f"output/{treedump_basename(scenario, align_object)}.root"
+def treedump_output(task, align_object):
+    return f"output/{treedump_basename(task, align_object)}.root"
 
 
-def treedump_host_path(scenario, align_object):
-    return f"{MU3E_DIR}/run/{treedump_output(scenario, align_object)}"
+def treedump_host_path(task, align_object):
+    return f"{MU3E_DIR}/run/{treedump_output(task, align_object)}"
 
 
-def treedump_container_path(scenario, align_object):
-    return f"/relval/{MU3E_DIRNAME}/run/{treedump_output(scenario, align_object)}"
-
-
-def ref_treedump_host_path(scenario, align_object):
-    return f"{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{treedump_output(scenario, align_object)}"
-
-
-def ref_treedump_container_path(scenario, align_object):
-    return f"/relval/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/{treedump_output(scenario, align_object)}"
+def ref_treedump_host_path(task, align_object):
+    return f"{MU3E_RELVAL_BASEDIR}/{ref_workdir_name()}/run/{treedump_output(task, align_object)}"
 
 
 wildcard_constraints:
-    scenario="|".join(SCENARIO_IDS),
+    task="|".join(TASK_IDS),
     align_object="|".join(ALIGN_OBJECTS),
 
 
 ALL_TARGETS = [
-    f"{MU3E_DIR}/run/{fillhist_output(scenario)}"
-    for scenario in SCENARIO_IDS
+    f"{MU3E_DIR}/run/{fillhist_output(task)}"
+    for task in TASK_IDS
 ] + [
-    treedump_host_path(scenario, obj)
-    for scenario in SCENARIO_IDS
+    treedump_host_path(task, obj)
+    for task in TASK_IDS
     for obj in ALIGN_OBJECTS
 ]
 if COMPARE_ENABLED:
     ALL_TARGETS += [
-        f"{MU3E_DIR}/run/{compare_marker_output(scenario)}"
-        for scenario in SCENARIO_IDS
+        f"{MU3E_DIR}/run/{compare_marker_output(task)}"
+        for task in TASK_IDS
     ]
     ALL_TARGETS += [
-        f"{MU3E_DIR}/run/{histocompare_marker_output(scenario)}"
-        for scenario in SCENARIO_IDS
+        f"{MU3E_DIR}/run/{histocompare_marker_output(task)}"
+        for task in TASK_IDS
     ]
 
 
 rule all:
     input:
         ALL_TARGETS
+
+
+rule mu3e_setup:
+    """Clone, build, and relink MU3E; no sim/sort/trirec/compare actions."""
+    input:
+        f"{MARKER_DIR}/relink_bin_files.done"
+
+
+rule relval_all:
+    """Full relval pipeline for all configured tasks."""
+    input:
+        ALL_TARGETS
+
+
+if COMPARE_ENABLED:
+    rule compare_all:
+        input:
+            [f"{MU3E_DIR}/run/{compare_marker_output(task)}" for task in TASK_IDS]
+
+    rule histocompare_all:
+        input:
+            [f"{MU3E_DIR}/run/{histocompare_marker_output(task)}" for task in TASK_IDS]
 
 
 rule bootstrap_relval_tools:
@@ -325,51 +385,52 @@ rule bootstrap_relval_tools:
         """
 
 
-rule run_mu3e_sim:
-    input:
-        f"{MARKER_DIR}/relink_bin_files.done"
-    output:
-        f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
-    params:
-        mu3e_dir=MU3E_DIR,
-        run_id=RUN_ID,
-        n_events=N_EVENTS,
-        sim_conf=lambda wildcards: sim_conf(wildcards.scenario),
-        sim_output=lambda wildcards: sim_output(wildcards.scenario)
-    shell:
-        r"""
-        set -euo pipefail
-        cd "{params.mu3e_dir}/run"
-        ../_build/mu3eSim/mu3eSim \
-            --run {params.run_id} \
-            -n {params.n_events} \
-            --conf "{params.sim_conf}" \
-            --output "{params.sim_output}"
-        """
+if SIM_TASK_IDS:
+    rule run_mu3e_sim:
+        input:
+            f"{MARKER_DIR}/relink_bin_files.done"
+        output:
+            f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
+        params:
+            mu3e_dir=MU3E_DIR,
+            run_id=lambda wc: TASK_BY_ID[wc.task]["run_id"],
+            n_events=lambda wc: TASK_BY_ID[wc.task]["n_events"],
+            sim_conf=lambda wc: sim_conf(wc.task),
+            sim_output=lambda wc: sim_output(wc.task)
+        shell:
+            r"""
+            set -euo pipefail
+            cd "{params.mu3e_dir}/run"
+            ../_build/mu3eSim/mu3eSim \
+                --run {params.run_id} \
+                -n {params.n_events} \
+                --conf "{params.sim_conf}" \
+                --output "{params.sim_output}"
+            """
 
-rule run_mu3e_sort:
-    input:
-        f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
-    output:
-        f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
-    params:
-        mu3e_dir=MU3E_DIR,
-        sim_output=lambda wildcards: sim_output(wildcards.scenario),
-        sort_output=lambda wildcards: sort_output(wildcards.scenario),
-        run_id=RUN_ID,
-        cdb_dbconn=CDB_DBCONN,
-        cdb_GT=CDB_GT
-    shell:
-        r"""
-        set -euo pipefail;
-        cd "{params.mu3e_dir}/run";
-        ../_build/mu3eSim/sort/mu3eSort \
-        "{params.sim_output}" \
-        --output "{params.sort_output}" \
-        --run {params.run_id} \
-        --cdb.dbconn="{params.cdb_dbconn}" \
-        --cdb.globalTag="{params.cdb_GT}"
-        """
+    rule run_mu3e_sort:
+        input:
+            f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
+        output:
+            f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
+        params:
+            mu3e_dir=MU3E_DIR,
+            sim_output=lambda wc: sim_output(wc.task),
+            sort_output=lambda wc: sort_output(wc.task),
+            run_id=lambda wc: TASK_BY_ID[wc.task]["run_id"],
+            cdb_dbconn=CDB_DBCONN,
+            cdb_gt=lambda wc: task_cdb_gt(wc.task)
+        shell:
+            r"""
+            set -euo pipefail;
+            cd "{params.mu3e_dir}/run";
+            ../_build/mu3eSim/sort/mu3eSort \
+            "{params.sim_output}" \
+            --output "{params.sort_output}" \
+            --run {params.run_id} \
+            --cdb.dbconn="{params.cdb_dbconn}" \
+            --cdb.globalTag="{params.cdb_gt}"
+            """
 
 rule run_fill_histograms:
     input:
@@ -378,8 +439,8 @@ rule run_fill_histograms:
         f"{MU3E_DIR}/run/{FILLHIST_OUTPUT_TPL}"
     params:
         exe=RUN_FILL_HISTOGRAMS_EXE,
-        annotation=f"mu3e-{MU3E_TAG}_{CDB_GT}",
-        output_path=lambda wildcards: f"run/{fillhist_output(wildcards.scenario)}"
+        annotation=lambda wc: f"mu3e-{MU3E_TAG}_{task_cdb_gt(wc.task)}",
+        output_path=lambda wc: f"run/{fillhist_output(wc.task)}"
     shell:
         r"""
         set -euo pipefail
@@ -390,17 +451,23 @@ rule run_fill_histograms:
         """
 
 
+def treedump_input(wc):
+    if task_mode(wc.task) == "data":
+        return sort_input_path(wc.task)
+    return f"{MU3E_DIR}/run/{sort_output(wc.task)}"
+
+
 rule run_treedump:
     input:
-        f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
+        treedump_input
     output:
-        f"{MU3E_DIR}/run/output/treedump-{{scenario}}-{{align_object}}.root",
+        f"{MU3E_DIR}/run/output/treedump-{{task}}-{{align_object}}.root",
     log:
-        "logs/snakemake/run_treedump-{scenario}-{align_object}.log",
+        "logs/snakemake/run_treedump-{task}-{align_object}.log",
     params:
         treedumper_exe=f"{MU3E_RELVAL_BASEDIR}/mu3eUtil/_build/tools/treedump/mu3eTreeDumper",
         treedump_cfg=f"{MU3E_RELVAL_BASEDIR}/mu3eValidation/scripts/treedump_and_histocompare/config.json",
-        dump_prefix=lambda wildcards: f"run/output/{treedump_basename(wildcards.scenario, wildcards.align_object)}",
+        dump_prefix=lambda wc: f"run/output/{treedump_basename(wc.task, wc.align_object)}",
     shell:
         r"""
         set -euo pipefail
@@ -413,14 +480,14 @@ if COMPARE_ENABLED:
     rule run_compare_histograms:
         input:
             in1=f"{MU3E_DIR}/run/{FILLHIST_OUTPUT_TPL}",
-            in2=lambda wildcards: compare_other_hist(wildcards.scenario)
+            in2=lambda wc: compare_other_hist(wc.task)
         output:
             f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}"
         log:
-            "logs/snakemake/run_compare_histograms-{scenario}.log",
+            "logs/snakemake/run_compare_histograms-{task}.log",
         params:
             exe=RUN_COMPARE_HISTOGRAMS_EXE,
-            out_dir=lambda wildcards: compare_dir_rel(wildcards.scenario),
+            out_dir=lambda wc: compare_dir_rel(wc.task),
             template_tex=COMPARE_TEMPLATE_TEX
         shell:
             r"""
@@ -436,18 +503,18 @@ if COMPARE_ENABLED:
     rule run_histocompare:
         input:
             compare_done=f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}",
-            treedumps_current=lambda wildcards: [
-                treedump_host_path(wildcards.scenario, obj) for obj in ALIGN_OBJECTS
+            treedumps_current=lambda wc: [
+                treedump_host_path(wc.task, obj) for obj in ALIGN_OBJECTS
             ],
-            treedumps_reference=lambda wildcards: [
-                ref_treedump_host_path(wildcards.scenario, obj) for obj in ALIGN_OBJECTS
+            treedumps_reference=lambda wc: [
+                ref_treedump_host_path(wc.task, obj) for obj in ALIGN_OBJECTS
             ],
         output:
             f"{MU3E_DIR}/run/{HISTOCOMPARE_MARKER_TPL}"
         log:
-            "logs/snakemake/run_histocompare-{scenario}.log",
+            "logs/snakemake/run_histocompare-{task}.log",
         params:
-            out_dir_host=lambda wildcards: compare_dir_host(wildcards.scenario),
+            out_dir_host=lambda wc: compare_dir_host(wc.task),
             compare_against=COMPARE_AGAINST_SETUP,
         shell:
             r"""
@@ -461,16 +528,16 @@ if COMPARE_ENABLED:
                 exit 125
             fi
 
-            echo "[relval] run_histocompare scenario={wildcards.scenario}"
+            echo "[relval] run_histocompare task={wildcards.task}"
             echo "[relval]   compare dir: {params.out_dir_host}"
             echo "[relval]   reference setup: {params.compare_against}"
 
             for obj in $align_objects; do
-                dump1_host="{MU3E_DIR}/run/output/treedump-{wildcards.scenario}-$obj.root"
-                dump2_host="{MU3E_RELVAL_BASEDIR}/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output/treedump-{wildcards.scenario}-$obj.root"
-                dump1_data_obj="/relval/{MU3E_DIRNAME}/run/output/treedump-{wildcards.scenario}-$obj.root"
-                dump2_data_obj="/relval/{MU3E_DIR_BASE}-{COMPARE_AGAINST_SETUP}/run/output/treedump-{wildcards.scenario}-$obj.root"
-                out_name_obj="histocompare-{wildcards.scenario}-$obj"
+                dump1_host="{MU3E_DIR}/run/output/treedump-{wildcards.task}-$obj.root"
+                dump2_host="{MU3E_RELVAL_BASEDIR}/{ref_workdir_name()}/run/output/treedump-{wildcards.task}-$obj.root"
+                dump1_data_obj="/relval/{MU3E_DIRNAME}/run/output/treedump-{wildcards.task}-$obj.root"
+                dump2_data_obj="/relval/{ref_workdir_name()}/run/output/treedump-{wildcards.task}-$obj.root"
+                out_name_obj="histocompare-{wildcards.task}-$obj"
                 out_pdf_obj="{params.out_dir_host}/$out_name_obj.pdf"
                 out_root_obj="{params.out_dir_host}/$out_name_obj.root"
                 out_log_obj="{params.out_dir_host}/$out_name_obj.log"
@@ -527,13 +594,11 @@ if COMPARE_ENABLED:
                 rm -rf "$hc_tmp"
 
                 if [ "$rc" -ne 0 ]; then
-                    # On some host/container combinations histocompare can segfault
-                    # during shutdown although output files are already written.
                     if [ -f "$out_pdf_obj" ] && [ -f "$out_root_obj" ] && [ -f "$out_log_obj" ]; then
                         echo "[relval] WARNING: histocompare($obj) exited with code $rc but produced expected outputs; continuing"
                     else
                         echo "[relval] ERROR: histocompare($obj) failed with code $rc and outputs are incomplete" >&2
-                        echo "[relval]        See $docker_log and logs/snakemake/run_histocompare-{wildcards.scenario}.log" >&2
+                        echo "[relval]        See $docker_log and logs/snakemake/run_histocompare-{wildcards.task}.log" >&2
                         exit "$rc"
                     fi
                 fi

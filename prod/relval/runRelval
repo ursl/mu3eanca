@@ -377,7 +377,8 @@ if ($mu3e_checkout_merge eq "") {
 }
 
 if ($setup_name eq "") {
-    $setup_name = "relval_" . $mu3e_dir_base . "-" . $mu3e_tag . "_" . $raw_cdb_gt;
+    $setup_name = "relval_" . $mu3e_tag;
+    $setup_name =~ s/\//_/g;
 }
 
 my $setup_safe = $setup_name;
@@ -393,7 +394,7 @@ copy_common($script_dir, $setup_dir);
 my $cfg_path = "$setup_dir/config.yaml";
 my @lines = merge_config_lines("$script_dir/config.yaml", "$script_dir/$host_cfg");
 
-my $mu3e_workdir_name = $mu3e_dir_base . "-" . $setup_safe;
+my $mu3e_workdir_name = "mu3e-" . $setup_safe;
 my $seen_workdir_name = 0;
 my $seen_checkout_tag = 0;
 my $seen_checkout_branch = 0;
@@ -455,7 +456,7 @@ if (!$seen_relval_code_basedir) {
 }
 write_lines($cfg_path, \@out);
 
-my $workdir = "$base_dir/$mu3e_dir_base-$setup_safe";
+my $workdir = "$base_dir/$mu3e_workdir_name";
 
 chdir($setup_dir) or die "Cannot chdir to $setup_dir: $!\n";
 my @snakemake_args = snakemake_forwarded_args_normalized(@forwarded_args);

@@ -1,6 +1,6 @@
 # Shared relval defaults (machine-independent).
 # Host-specific paths: config-<hostname>.yaml (e.g. config-moor.yaml, config-mu3edb0.yaml).
-# Override host: RELVAL_HOST=moor  or  ./runRelval --host moor ...
+# Override host: RELVAL_HOST=moor  or  ./initRelval --host moor ...
 
 mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
 mu3e_tag: "v6.5"
@@ -19,42 +19,54 @@ make_jobs: 10
 # Completion markers under workdir (visible with plain ls).
 marker_dir: "markers"
 
+# Defaults for sim tasks (overridable per task).
 run_id: 1234
 n_events: 5000
 
-sim_scenarios:
-#  - id: "cosmic_twolayer"
-#    sim_conf: "sim_cosmic.json"
-#    trirec_conf: "trirec_twolayer_cosmic.conf"
-#  - id: "cosmic_threelayer"
-#    sim_conf: "sim_cosmic.json"
-#    trirec_conf: "trirec_threelayer_cosmic.conf"
-#  - id: "conf8_twolayer"
-#    sim_conf: "bvr2026/sim_conf8.json"
-#    trirec_conf: "trirec_twolayer_beam.conf"
+# Optional prefix for relative sort_input paths on data tasks (set on host config).
+sort_input_base: ""
 
-#  - id: "conf10_twolayer"
-#    sim_conf: "bvr2026/sim_conf10.json"
-#    trirec_conf: "trirec_twolayer_beam.conf"
-#    trirec_conf_fallback: "trirec.conf"
-#  - id: "conf18_threelayer"
-#    sim_conf: "bvr2026/sim_conf18.json"
-#    trirec_conf: "trirec_threelayer_beam.conf"
-#    trirec_conf_fallback: "trirec.conf"
-  - id: "signal"
-    sim_conf: "sim_signal.json"
-    trirec_conf: "trirec.conf"
+# Output templates ({task} or legacy {scenario}).
+sim_output_tpl: "output/sim-{task}.root"
+sort_output_tpl: "output/sort-{task}.root"
+trirec_output_tpl: "output/trirec-{task}.root"
+fillhist_output_tpl: "output/histograms-{task}.root"
+compare_marker_tpl: "output/compare-{task}.done"
+histocompare_marker_tpl: "output/histocompare-{task}.done"
 
-sim_output_tpl: "output/sim-{scenario}.root"
-sort_output_tpl: "output/sort-{scenario}.root"
-trirec_output_tpl: "output/trirec-{scenario}.root"
-fillhist_output_tpl: "output/histograms-{scenario}.root"
-compare_marker_tpl: "output/compare-{scenario}.done"
-histocompare_marker_tpl: "output/histocompare-{scenario}.done"
-
+# Fallback GT when a task omits cdb_GT (each task should set its own).
 cdb_GT: "mcidealv6.5"
 
-# Optional compare mode:
-# if compare_against_setup is non-empty, runCompareHistograms is executed
-# against histogram files from that setup.
+# Reference setup name (directory suffix under mu3e_relval_basedir) for compare/histocompare.
 compare_against_setup: ""
+
+# --- Relval tasks (recommended) ---
+# mode: sim  -> mu3eSim, mu3eSort, mu3eTrirec, fillhist, treedump, [compare, histocompare]
+# mode: data -> existing sort_input, mu3eTrirec, fillhist, treedump, [compare, histocompare]
+relval_tasks:
+  - id: signal
+    mode: sim
+    sim_conf: sim_signal.json
+    trirec_conf: trirec.conf
+    cdb_GT: mcidealv6.9
+    run_id: 1234
+    n_events: 5000
+
+  - id: conf8
+    mode: sim
+    sim_conf: bvr2026/sim_conf8.json
+    trirec_conf: trirec_twolayer_beam.conf
+    cdb_GT: mcrealisticv6.9=2025V0
+    run_id: 1234
+    n_events: 5000
+
+  - id: run06232
+    mode: data
+    run_id: 6232
+    trirec_conf: trirec_twolayer_beam.conf
+    cdb_GT: datav6.9=2025V0
+    # Absolute path or relative to sort_input_base (host config):
+    sort_input: "run06232/sort.root"
+
+# Legacy alias (used only when relval_tasks is empty):
+sim_scenarios: []
