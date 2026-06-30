@@ -8,7 +8,7 @@
 #   MU3E_REPO, MU3E_DIR, MU3E_WORK_BASEDIR, MAKE_JOBS, RELINK_SCRIPT
 #   MU3E_CHECKOUT_REF        tag/ref when not using a branch (empty if branch mode)
 #   MU3E_CHECKOUT_BRANCH     branch name to track at origin/BRANCH HEAD (optional)
-#   MU3E_CHECKOUT_MERGES     list of commit hashes to git merge after checkout (optional)
+#   MU3E_CHECKOUT_MERGES     list of refs to git merge after checkout (branch, tag, or commit)
 #   MU3E_UTIL_CHECKOUT_MERGES  git merge in mu3eUtil submodule after submodule update (optional)
 #   MU3E_UTIL_SUBDIR         path to mu3eUtil under MU3E_DIR (default: modules/mu3eUtil)
 #   CLONE_MU3E_INPUTS       list with one prerequisite path (bootstrap or local marker)

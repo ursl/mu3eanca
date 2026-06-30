@@ -42,6 +42,13 @@ for _m in config.get("mu3e_checkout_merges") or []:
     _ms = str(_m).strip()
     if _ms and _ms not in MU3E_CHECKOUT_MERGES:
         MU3E_CHECKOUT_MERGES.append(_ms)
+_checkout_merge_branch = (config.get("mu3e_checkout_merge_branch") or "").strip()
+if _checkout_merge_branch and _checkout_merge_branch not in MU3E_CHECKOUT_MERGES:
+    MU3E_CHECKOUT_MERGES.append(_checkout_merge_branch)
+for _b in config.get("mu3e_checkout_merge_branches") or []:
+    _bs = str(_b).strip()
+    if _bs and _bs not in MU3E_CHECKOUT_MERGES:
+        MU3E_CHECKOUT_MERGES.append(_bs)
 
 MU3E_UTIL_CHECKOUT_MERGES = []
 _util_merge_one = (config.get("mu3eUtil_checkout_merge") or "").strip()
@@ -51,6 +58,13 @@ for _m in config.get("mu3eUtil_checkout_merges") or []:
     _ms = str(_m).strip()
     if _ms and _ms not in MU3E_UTIL_CHECKOUT_MERGES:
         MU3E_UTIL_CHECKOUT_MERGES.append(_ms)
+_util_merge_branch = (config.get("mu3eUtil_checkout_merge_branch") or "").strip()
+if _util_merge_branch and _util_merge_branch not in MU3E_UTIL_CHECKOUT_MERGES:
+    MU3E_UTIL_CHECKOUT_MERGES.append(_util_merge_branch)
+for _b in config.get("mu3eUtil_checkout_merge_branches") or []:
+    _bs = str(_b).strip()
+    if _bs and _bs not in MU3E_UTIL_CHECKOUT_MERGES:
+        MU3E_UTIL_CHECKOUT_MERGES.append(_bs)
 MU3E_UTIL_SUBDIR = (config.get("mu3eUtil_subdir") or "modules/mu3eUtil").strip()
 
 MU3E_DIR_BASE = config["mu3e_dir"]

@@ -43,6 +43,13 @@ for _m in config.get("mu3e_checkout_merges") or []:
     _ms = str(_m).strip()
     if _ms and _ms not in MU3E_CHECKOUT_MERGES:
         MU3E_CHECKOUT_MERGES.append(_ms)
+_checkout_merge_branch = (config.get("mu3e_checkout_merge_branch") or "").strip()
+if _checkout_merge_branch and _checkout_merge_branch not in MU3E_CHECKOUT_MERGES:
+    MU3E_CHECKOUT_MERGES.append(_checkout_merge_branch)
+for _b in config.get("mu3e_checkout_merge_branches") or []:
+    _bs = str(_b).strip()
+    if _bs and _bs not in MU3E_CHECKOUT_MERGES:
+        MU3E_CHECKOUT_MERGES.append(_bs)
 
 MU3E_UTIL_CHECKOUT_MERGES = []
 _util_merge_one = (config.get("mu3eUtil_checkout_merge") or "").strip()
@@ -52,6 +59,13 @@ for _m in config.get("mu3eUtil_checkout_merges") or []:
     _ms = str(_m).strip()
     if _ms and _ms not in MU3E_UTIL_CHECKOUT_MERGES:
         MU3E_UTIL_CHECKOUT_MERGES.append(_ms)
+_util_merge_branch = (config.get("mu3eUtil_checkout_merge_branch") or "").strip()
+if _util_merge_branch and _util_merge_branch not in MU3E_UTIL_CHECKOUT_MERGES:
+    MU3E_UTIL_CHECKOUT_MERGES.append(_util_merge_branch)
+for _b in config.get("mu3eUtil_checkout_merge_branches") or []:
+    _bs = str(_b).strip()
+    if _bs and _bs not in MU3E_UTIL_CHECKOUT_MERGES:
+        MU3E_UTIL_CHECKOUT_MERGES.append(_bs)
 MU3E_UTIL_SUBDIR = (config.get("mu3eUtil_subdir") or "modules/mu3eUtil").strip()
 
 MU3E_DIR_BASE = config["mu3e_dir"]
@@ -108,7 +122,8 @@ TRIREC_OUTPUT_TPL = config["trirec_output_tpl"]
 FILLHIST_OUTPUT_TPL = config["fillhist_output_tpl"]
 COMPARE_MARKER_TPL = config.get("compare_marker_tpl", "output/compare-{task}.done")
 HISTOCOMPARE_MARKER_TPL = config.get("histocompare_marker_tpl", "output/histocompare-{task}.done")
-SORT_INPUT_BASE = config.get("sort_input_base", "")
+RAW_INPUT_BASE = config.get("raw_input_base", config.get("sort_input_base", ""))
+RAW_INPUT_LAYOUT = config.get("raw_input_layout", "flat")
 RELVAL_CODE_BASEDIR = config.get("relval_code_basedir", workflow.basedir)
 RUN_FILL_HISTOGRAMS_EXE = f"{RELVAL_CODE_BASEDIR}/ana/bin/runFillHistograms"
 RUN_COMPARE_HISTOGRAMS_EXE = f"{RELVAL_CODE_BASEDIR}/ana/bin/runCompareHistograms"
@@ -186,29 +201,41 @@ def trirec_output(task):
     return _fmt_tpl(TRIREC_OUTPUT_TPL, task)
 
 
-def sort_input_path(task):
-    path = TASK_BY_ID[task]["sort_input"] if task_mode(task) == "data" else sort_output(task)
-    if task_mode(task) == "sim":
-        return path
+def _runblock_dir(run_id, layout):
+    block = int(run_id) // 1000
+    if layout == "runblock3":
+        return f"{block:03d}"
+    if layout == "runblock4":
+        return f"{block:04d}"
+    return ""
+
+
+def raw_input_path(task):
+    item = TASK_BY_ID[task]
+    path = (item.get("raw_input") or item.get("sort_input") or "").strip()
+    if not path:
+        raise ValueError(f"raw_input missing for task {task}")
     if os.path.isabs(path):
         return path
-    if SORT_INPUT_BASE:
-        return f"{SORT_INPUT_BASE}/{path}"
-    return path
+    if not RAW_INPUT_BASE:
+        return path
+    layout = item.get("raw_input_layout", RAW_INPUT_LAYOUT)
+    run_id = item["run_id"]
+    rb = _runblock_dir(run_id, layout)
+    prefix = ""
+    if rb and not path.startswith(f"{rb}/"):
+        prefix = f"{rb}/"
+    return f"{RAW_INPUT_BASE}/{prefix}{path}"
 
 
 TRIREC_LOG_TPL = "logs/snakemake/run_mu3e_trirec-{task}.log"
 
 
 def trirec_rule_inputs(wc):
-    if task_mode(wc.task) == "data":
-        return [f"{MARKER_DIR}/relink_bin_files.done", sort_input_path(wc.task)]
     return [f"{MU3E_DIR}/run/{sort_output(wc.task)}"]
 
 
 def trirec_sort_input(wc):
-    if task_mode(wc.task) == "data":
-        return sort_input_path(wc.task)
     return sort_output(wc.task)
 
 
@@ -275,10 +302,6 @@ def compare_dir_rel(task):
 
 def compare_dir_host(task):
     return f"{MU3E_DIR}/{compare_dir_rel(task)}"
-
-
-def treedump_sort_input(wc):
-    return sort_input_path(wc.task)
 
 
 ALIGN_OBJECTS = ["sensors", "fibres", "tiles", "mppcs"]
@@ -391,6 +414,8 @@ if SIM_TASK_IDS:
             f"{MARKER_DIR}/relink_bin_files.done"
         output:
             f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
+        wildcard_constraints:
+            task="|".join(SIM_TASK_IDS),
         params:
             mu3e_dir=MU3E_DIR,
             run_id=lambda wc: TASK_BY_ID[wc.task]["run_id"],
@@ -413,6 +438,8 @@ if SIM_TASK_IDS:
             f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
         output:
             f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
+        wildcard_constraints:
+            task="|".join(SIM_TASK_IDS),
         params:
             mu3e_dir=MU3E_DIR,
             sim_output=lambda wc: sim_output(wc.task),
@@ -430,6 +457,37 @@ if SIM_TASK_IDS:
             --run {params.run_id} \
             --cdb.dbconn="{params.cdb_dbconn}" \
             --cdb.globalTag="{params.cdb_gt}"
+            """
+
+if DATA_TASK_IDS:
+    rule run_mu3e_sort_from_raw:
+        input:
+            f"{MARKER_DIR}/relink_bin_files.done"
+        output:
+            f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
+        wildcard_constraints:
+            task="|".join(DATA_TASK_IDS),
+        params:
+            mu3e_dir=MU3E_DIR,
+            raw_input=lambda wc: raw_input_path(wc.task),
+            sort_output=lambda wc: sort_output(wc.task),
+            run_id=lambda wc: TASK_BY_ID[wc.task]["run_id"],
+            cdb_dbconn=CDB_DBCONN,
+            cdb_gt=lambda wc: task_cdb_gt(wc.task)
+        shell:
+            r"""
+            set -euo pipefail
+            if [ ! -f "{params.raw_input}" ]; then
+                echo "[relval] ERROR: raw input missing: {params.raw_input}" >&2
+                exit 1
+            fi
+            cd "{params.mu3e_dir}/run"
+            ../_build/mu3eSim/sort/mu3eSort \
+                "{params.raw_input}" \
+                --output "{params.sort_output}" \
+                --run {params.run_id} \
+                --cdb.dbconn="{params.cdb_dbconn}" \
+                --cdb.globalTag="{params.cdb_gt}"
             """
 
 rule run_fill_histograms:
@@ -452,9 +510,7 @@ rule run_fill_histograms:
 
 
 def treedump_input(wc):
-    if task_mode(wc.task) == "data":
-        return sort_input_path(wc.task)
-    return f"{MU3E_DIR}/run/{sort_output(wc.task)}"
+    return f"{MU3E_DIR}/run/{trirec_output(wc.task)}"
 
 
 rule run_treedump:

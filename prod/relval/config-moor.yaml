@@ -1,9 +1,10 @@
 # Mac localhost (hostname: moor). Loaded automatically if present.
 
-mu3e_relval_basedir: "/Users/ursl/data/mu3e/relval"
+mu3e_relval_basedir: "/Users/ursl/data/mu3e/prod/relval"
 relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
-#cdb_dbconn: "/Users/ursl/data/mu3e/cdb/"
-cdb_dbconn: "http://mu3edb0/cdb/"
+cdb_dbconn: "/Users/ursl/data/mu3e/cdb/"
+#cdb_dbconn: "http://mu3edb0/cdb/"
 relval_code_basedir: "/Users/ursl/macros/ana/mu3eanca/prod/relval"
-# Optional prefix for data-task sort files (run06232 etc.); only if sort_input in config is relative:
-# sort_input_base: "/Users/ursl/data/mu3e/sort"
+# Raw MID files for data tasks (run06232 etc.); only if raw_input in config is relative:
+raw_input_base: "/Users/ursl/data/mu3e/run2025/raw"
+raw_input_layout: "flat"

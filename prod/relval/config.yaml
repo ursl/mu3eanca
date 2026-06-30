@@ -6,10 +6,12 @@ mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
 mu3e_tag: "v6.5"
 # Optional: track origin/<branch> HEAD instead of a release tag (overrides mu3e_checkout_tag).
 # mu3e_checkout_branch: "dev"
-# Optional: merge PR / cherry-pick commits after checkout (repeatable; composes with branch or tag).
+# Optional: merge branch/tag/commit after checkout (repeatable; composes with branch or tag).
+# mu3e_checkout_merge_branch: "CDB-v6.9pre"
 # mu3e_checkout_merge: "75d8c48"
 # mu3e_checkout_merges:
-#   - "75d8c48"
+#   - "CDB-v6.9pre"
+# mu3eUtil_checkout_merge_branch: "my-util-branch"
 # mu3eUtil_checkout_merge: "a1b2c3d4"
 # mu3eUtil_checkout_merges:
 #   - "a1b2c3d4"
@@ -23,8 +25,10 @@ marker_dir: "markers"
 run_id: 1234
 n_events: 5000
 
-# Optional prefix for relative sort_input paths on data tasks (set on host config).
-sort_input_base: ""
+# Optional prefix for relative raw_input paths on data tasks (set on host config).
+raw_input_base: ""
+# Raw MID layout under raw_input_base: flat | runblock3 | runblock4 (see prod/rereco).
+raw_input_layout: "flat"
 
 # Output templates ({task} or legacy {scenario}).
 sim_output_tpl: "output/sim-{task}.root"
@@ -42,7 +46,7 @@ compare_against_setup: ""
 
 # --- Relval tasks (recommended) ---
 # mode: sim  -> mu3eSim, mu3eSort, mu3eTrirec, fillhist, treedump, [compare, histocompare]
-# mode: data -> existing sort_input, mu3eTrirec, fillhist, treedump, [compare, histocompare]
+# mode: data -> raw_input (host) -> mu3eSort -> local output/sort-{task}.root -> ...
 relval_tasks:
   - id: signal
     mode: sim
@@ -65,8 +69,8 @@ relval_tasks:
     run_id: 6232
     trirec_conf: trirec_twolayer_beam.conf
     cdb_GT: datav6.9=2025V0
-    # Absolute path or relative to sort_input_base (host config):
-    sort_input: "run06232/sort.root"
+    # Relative to raw_input_base (host config), or absolute path:
+    raw_input: "run06232.mid.lz4"
 
 # Legacy alias (used only when relval_tasks is empty):
 sim_scenarios: []

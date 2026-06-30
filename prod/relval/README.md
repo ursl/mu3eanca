@@ -16,8 +16,8 @@ For each entry in **`relval_tasks`** (see `config.yaml`):
 
 | `mode` | Pipeline |
 |--------|----------|
-| `sim` | mu3eSim → mu3eSort → mu3eTrirec → fill histograms → treedump → [compare, histocompare] |
-| `data` | existing `sort_input` → mu3eTrirec → fill histograms → treedump → [compare, histocompare] |
+| `sim` | mu3eSim → mu3eSort → mu3eTrirec → fill histograms + treedump → [compare, histocompare] |
+| `data` | raw MID → mu3eSort → mu3eTrirec → fill histograms + treedump → [compare, histocompare] |
 
 Shared steps (once per setup):
 
@@ -65,22 +65,21 @@ cd /path/to/mu3eanca/prod/relval
 |------|----------------|
 | Release tag | `-t v6.9pre` (no `-b`) → `git checkout v6.9pre` |
 | Branch HEAD | `-t <label> -b dev` → `git checkout dev` + reset to `origin/dev` |
-| PR on top of `dev` | `-b dev` + `--config mu3e_checkout_merge=<commit>` |
-| PR in mu3eUtil | add `--config mu3eUtil_checkout_merge=<commit>` |
+| PR / branch on top of `dev` | `-b dev` + `--config mu3e_checkout_merge_branch=BRANCH` |
+| PR in mu3eUtil | add `--config mu3eUtil_checkout_merge_branch=BRANCH` |
 
 Example before merging a PR (mu3e + mu3eUtil):
 
 ```tcsh
 ./initRelval -s relval-dev-pr49 -t dev-pr49 -b dev \
-  --config mu3e_checkout_merge=75d8c48 \
-  --config mu3eUtil_checkout_merge=a1b2c3d4
+  --config mu3e_checkout_merge_branch=CDB-v6.9pre
 ```
 
 `-t` is always required (setup label / `mu3e_tag` in outputs). With `-b dev`, git uses the branch, not the tag. Merges run after checkout (`mu3e`) and after `submodule update` (`modules/mu3eUtil`). If the commit is not local yet, fetch the PR branch first (see `clone_and_prepare_mu3e` error hint or `prod/rereco/README.md`).
 
 Re-run `initRelval` to refresh `Snakefile`/`common/` and patch setup config.
 
-Set **`sort_input_base`** in `config-<host>.yaml` for data tasks (e.g. `run06232`).
+Set **`raw_input_base`** (and optionally **`raw_input_layout`**) in `config-<host>.yaml` for data tasks (e.g. `run06232`). Sort output is always local under `run/output/sort-{task}.root`.
 
 ### 2. MU3E setup
 
@@ -183,7 +182,7 @@ Each task in **`relval_tasks`** has:
 - `cdb_GT` — global tag for sort/trirec on this task
 - `trirec_conf` — path under `run/`
 - `sim_conf` — required for `mode: sim`
-- `sort_input` — required for `mode: data` (absolute or relative to `sort_input_base`)
+- `raw_input` — required for `mode: data` (absolute or relative to `raw_input_base`; typically `run{run:05d}.mid.lz4`)
 - optional `run_id`, `n_events`, `trirec_conf_fallback`
 
 Legacy **`sim_scenarios`** is still supported when `relval_tasks` is empty.
@@ -221,7 +220,7 @@ With a PR commit merged on top of `dev`:
 ./runRelval -j4 -p --config mu3e_tag=dev-pr49 mu3e_checkout_branch=dev mu3e_checkout_merge=75d8c48 cdb_GT=mcidealv6.5
 ```
 
-(`mu3e_checkout_merge` / `mu3e_checkout_merges` run `git merge <hash>` after checkout; see `prod/rereco/README.md` for fetch notes.)
+(`mu3e_checkout_merge_branch` / `mu3e_checkout_merge` run `git merge origin/BRANCH` or merge the given ref after checkout.)
 
 | Option | Purpose |
 |--------|---------|

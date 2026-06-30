@@ -130,7 +130,17 @@ Template placeholders: `{run}`, `{run:05d}`, `{runblock:03d}`, `{runblock:04d}`.
 
 ### MU3E checkout merges
 
-**mu3e** (main repo), after checkout:
+After the base checkout (`-t TAG` or `-b BRANCH`), optional merges run in **mu3e** (main repo) and **mu3eUtil** (submodule).
+
+**Merge a remote branch** (preferred — fetches `origin/BRANCH` automatically):
+
+```yaml
+mu3e_checkout_merge_branch: "CDB-v6.9pre"
+```
+
+Or via CLI: `--config mu3e_checkout_merge_branch=CDB-v6.9pre`
+
+**Merge a commit or tag** (must exist on origin after fetch):
 
 ```yaml
 mu3e_checkout_merge: "75d8c48"
@@ -139,10 +149,11 @@ mu3e_checkout_merge: "75d8c48"
 **mu3eUtil** (submodule at `modules/mu3eUtil`), after `git submodule update`:
 
 ```yaml
-mu3eUtil_checkout_merge: "a1b2c3d4"
+mu3eUtil_checkout_merge_branch: "my-util-branch"
+# mu3eUtil_checkout_merge: "a1b2c3d4"
 ```
 
-Repeatable lists: `mu3e_checkout_merges` / `mu3eUtil_checkout_merges`.
+Repeatable lists: `mu3e_checkout_merge_branches` / `mu3e_checkout_merges` (and util equivalents). `mu3e_checkout_merge` also accepts branch names.
 
 ### midas_meta batch mode
 

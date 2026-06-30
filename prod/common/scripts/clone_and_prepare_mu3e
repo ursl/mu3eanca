@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # Clone or init-in-place, fetch, checkout a tag/ref or branch HEAD,
-# optionally merge extra commits (e.g. PR tips), update submodules.
+# optionally merge extra refs (branch, tag, or commit) after checkout, update submodules.
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
@@ -14,12 +14,13 @@ my @util_merges;
 
 sub usage {
     print STDERR "Usage: $0 --repo REPO --work-basedir DIR --mu3e-dir DIR --marker FILE \\\n";
-    print STDERR "         (--ref REF | --branch BRANCH) [--merge COMMIT ...]\n";
-    print STDERR "         [--util-merge COMMIT ...] [--util-subdir PATH]\n";
+    print STDERR "         (--ref REF | --branch BRANCH) [--merge REF ...]\n";
+    print STDERR "         [--util-merge REF ...] [--util-subdir PATH]\n";
     print STDERR "  --ref REF         Detached checkout of tag or other git ref.\n";
     print STDERR "  --branch BRANCH   Track origin/BRANCH HEAD (reset --hard).\n";
-    print STDERR "  --merge COMMIT    After checkout, git merge COMMIT in mu3e (repeatable).\n";
-    print STDERR "  --util-merge COMMIT  After submodules, git merge COMMIT in mu3eUtil (repeatable).\n";
+    print STDERR "  --merge REF       After checkout, git merge REF in mu3e (repeatable).\n";
+    print STDERR "                    REF may be a branch name (fetches origin/BRANCH), tag, or commit.\n";
+    print STDERR "  --util-merge REF  After submodules, git merge REF in mu3eUtil (repeatable).\n";
     print STDERR "  --util-subdir PATH   mu3eUtil path under mu3e checkout (default: modules/mu3eUtil).\n";
     exit 2;
 }
@@ -93,16 +94,33 @@ sub git_init_in_place {
       unless git_ok($dir, 'remote', 'get-url', 'origin');
 }
 
-sub ensure_commit {
-    my ($dir, $hash) = @_;
-    return if git_ok($dir, 'cat-file', '-e', "${hash}^{commit}");
-    print "Commit $hash not found locally; fetching origin again...\n";
+sub resolve_merge_ref {
+    my ($dir, $spec) = @_;
+    $spec =~ s/^\s+|\s+$//g;
+    die "ERROR: empty merge ref\n" unless $spec ne '';
+
     git_c($dir, 'fetch', '--force', 'origin');
     git_c($dir, 'fetch', '--tags', '--force', 'origin');
-    return if git_ok($dir, 'cat-file', '-e', "${hash}^{commit}");
-    die "ERROR: commit $hash not available after fetch.\n"
-      . "       Fetch the PR branch into this clone first, e.g.:\n"
-      . "         git fetch origin refs/pull-requests/49/from:pr-49\n";
+
+    if (git_ok($dir, 'rev-parse', '--verify', '--quiet', "${spec}^{commit}")) {
+        return $spec;
+    }
+
+    git_ok($dir, 'fetch', '--force', 'origin', "${spec}:refs/remotes/origin/${spec}");
+    if (git_ok($dir, 'rev-parse', '--verify', '--quiet', "origin/${spec}^{commit}")) {
+        return "origin/$spec";
+    }
+
+    git_ok($dir, 'fetch', '--force', 'origin', "refs/heads/${spec}:refs/remotes/origin/${spec}");
+    if (git_ok($dir, 'rev-parse', '--verify', '--quiet', "origin/${spec}^{commit}")) {
+        return "origin/$spec";
+    }
+
+    die "ERROR: merge ref '$spec' not available after fetch.\n"
+      . "       Use a branch name (merged as origin/BRANCH), tag, or a commit on origin.\n"
+      . "       For Bitbucket PRs not on origin yet:\n"
+      . "         git fetch origin refs/pull-requests/N/from:pr-N\n"
+      . "       then set mu3e_checkout_merge: pr-N (or the branch name).\n";
 }
 
 my $git_dir = "$mu3e_dir/.git";
@@ -142,17 +160,17 @@ if ($branch && $branch ne '') {
     print "Checked out ref $ref at $head\n";
 }
 
-for my $hash (@merges) {
-    ensure_commit($mu3e_dir, $hash);
-    print "Merging $hash ...\n";
+for my $spec (@merges) {
+    my $merge_ref = resolve_merge_ref($mu3e_dir, $spec);
+    print "Merging $merge_ref ($spec) ...\n";
     run_cmd(
         'git', '-C', $mu3e_dir, 'merge', '--no-edit',
-        '-m', "prompt checkout: merge $hash for testing",
-        $hash,
-    ) or die "ERROR: git merge $hash failed (conflicts?). Resolve manually in $mu3e_dir\n";
+        '-m', "prompt checkout: merge $spec for testing",
+        $merge_ref,
+    ) or die "ERROR: git merge $merge_ref failed (conflicts?). Resolve manually in $mu3e_dir\n";
     my $head = `git -C "$mu3e_dir" rev-parse --short HEAD`;
     chomp $head;
-    print "After merge $hash: $head\n";
+    print "After merge $spec: $head\n";
 }
 
 git_c($mu3e_dir, 'submodule', 'update', '--init', '--recursive');
@@ -164,17 +182,17 @@ if (@util_merges) {
       unless -d "$util_dir/.git" || -f "$util_dir/.git";
     git_c($util_dir, 'fetch', '--force', 'origin');
     git_c($util_dir, 'fetch', '--tags', '--force', 'origin');
-    for my $hash (@util_merges) {
-        ensure_commit($util_dir, $hash);
-        print "Merging $hash in $util_subdir ...\n";
+    for my $spec (@util_merges) {
+        my $merge_ref = resolve_merge_ref($util_dir, $spec);
+        print "Merging $merge_ref ($spec) in $util_subdir ...\n";
         run_cmd(
             'git', '-C', $util_dir, 'merge', '--no-edit',
-            '-m', "prompt checkout: merge $hash in mu3eUtil",
-            $hash,
-        ) or die "ERROR: git merge $hash failed in $util_dir (conflicts?). Resolve manually\n";
+            '-m', "prompt checkout: merge $spec in mu3eUtil",
+            $merge_ref,
+        ) or die "ERROR: git merge $merge_ref failed in $util_dir (conflicts?). Resolve manually\n";
         my $head = `git -C "$util_dir" rev-parse --short HEAD`;
         chomp $head;
-        print "After util merge $hash: $head\n";
+        print "After util merge $spec: $head\n";
     }
 }
 

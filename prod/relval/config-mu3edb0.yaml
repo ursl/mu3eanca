@@ -4,5 +4,6 @@ mu3e_relval_basedir: "/mnt/data2/relval"
 relink_script: "/home/mu3e/mu3eanca/perl/relinkBinFiles"
 cdb_dbconn: "http://mu3edb0/cdb/"
 relval_code_basedir: "/home/mu3e/mu3eanca/prod/relval"
-# Optional prefix for data-task sort files:
-# sort_input_base: "/mnt/data2/sort"
+# Raw MID files for data tasks:
+# raw_input_base: "/mnt/data2/raw"
+# raw_input_layout: "runblock3"

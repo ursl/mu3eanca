@@ -1,0 +1,17 @@
+#!/usr/bin/env perl
+# Read JSON config on stdin; print JSON task list on stdout (for Snakemake).
+use strict;
+use warnings;
+use FindBin;
+use JSON::PP ();
+
+BEGIN {
+    do "$FindBin::Bin/RelvalTasks.pm" or die $@ || "cannot load RelvalTasks.pm";
+}
+
+my $json = do { local $/; <STDIN> };
+die "load_relval_tasks: empty stdin\n" unless defined $json && $json ne '';
+
+my $config = JSON::PP->new->utf8->decode($json);
+my $tasks = RelvalTasks::load_relval_tasks($config);
+print JSON::PP->new->utf8->canonical->encode($tasks);
