@@ -9,7 +9,7 @@ rule bootstrap_mu3e_util:
     input:
         MU3E_UTIL_BOOTSTRAP_INPUTS
     output:
-        f"{MU3E_WORK_BASEDIR}/.bootstrap/mu3e_util.done"
+        f"{MU3E_WORK_BASEDIR}/bootstrap/mu3e_util.done"
     params:
         util_dir=MU3E_UTIL_DIR,
         jobs=MU3E_UTIL_MAKE_JOBS,
@@ -17,7 +17,7 @@ rule bootstrap_mu3e_util:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p "{MU3E_WORK_BASEDIR}/.bootstrap"
+        mkdir -p "{MU3E_WORK_BASEDIR}/bootstrap"
 
         if [ ! -f "{params.util_dir}/CMakeLists.txt" ]; then
             echo "[{params.log_prefix}] ERROR: mu3eUtil missing at {params.util_dir}" >&2

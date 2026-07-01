@@ -46,7 +46,7 @@ compare_against_setup: ""
 
 # --- Relval tasks (recommended) ---
 # mode: sim  -> mu3eSim, mu3eSort, mu3eTrirec, fillhist, treedump, [compare, histocompare]
-# mode: data -> raw_input (host) -> mu3eSort -> local output/sort-{task}.root -> ...
+# mode: data -> raw_input -> mu3eSort -> mu3eTrirec -> fillhist, [compare] (no treedump/histocompare by default)
 relval_tasks:
   - id: signal
     mode: sim
@@ -71,6 +71,7 @@ relval_tasks:
     cdb_GT: datav6.9=2025V0
     # Relative to raw_input_base (host config), or absolute path:
     raw_input: "run06232.mid.lz4"
+    treedump: false
 
 # Legacy alias (used only when relval_tasks is empty):
 sim_scenarios: []

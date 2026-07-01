@@ -94,7 +94,7 @@ MARKER_DIR = (config.get("marker_dir") or "markers").strip().strip("/")
 MU3E_WORK_BASEDIR = MU3E_RELVAL_BASEDIR
 MU3E_PREP_LOG_PREFIX = "relval"
 CLONE_MU3E_SCRIPT = str(_PROD_COMMON / "scripts" / "clone_and_prepare_mu3e")
-CLONE_MU3E_INPUTS = [f"{MU3E_RELVAL_BASEDIR}/.bootstrap/mu3e_validation_tools.done"]
+CLONE_MU3E_INPUTS = [f"{MU3E_RELVAL_BASEDIR}/bootstrap/mu3e_validation_tools.done"]
 
 include: str(_PROD_COMMON / "mu3e_prepare.smk")
 
@@ -175,6 +175,21 @@ def task_cdb_gt(task):
 
 def task_mode(task):
     return TASK_BY_ID[task]["mode"]
+
+
+def task_treedump_enabled(task):
+    item = TASK_BY_ID[task]
+    if "treedump" in item:
+        val = item["treedump"]
+        if isinstance(val, bool):
+            return val
+        s = str(val).strip().lower()
+        return s not in ("0", "false", "no", "")
+    return task_mode(task) == "sim"
+
+
+TREEDUMP_TASK_IDS = [t for t in TASK_IDS if task_treedump_enabled(t)]
+HISTOCOMPARE_TASK_IDS = list(TREEDUMP_TASK_IDS)
 
 
 def sim_conf(task):
@@ -282,6 +297,9 @@ def ref_workdir_name():
     return f"mu3e-{COMPARE_AGAINST_SETUP}"
 
 
+REF_WORKDIR_NAME = ref_workdir_name()
+
+
 def compare_other_trirec(task):
     return f"{MU3E_RELVAL_BASEDIR}/{ref_workdir_name()}/run/{trirec_output(task)}"
 
@@ -333,7 +351,7 @@ ALL_TARGETS = [
     for task in TASK_IDS
 ] + [
     treedump_host_path(task, obj)
-    for task in TASK_IDS
+    for task in TREEDUMP_TASK_IDS
     for obj in ALIGN_OBJECTS
 ]
 if COMPARE_ENABLED:
@@ -343,7 +361,7 @@ if COMPARE_ENABLED:
     ]
     ALL_TARGETS += [
         f"{MU3E_DIR}/run/{histocompare_marker_output(task)}"
-        for task in TASK_IDS
+        for task in HISTOCOMPARE_TASK_IDS
     ]
 
 
@@ -371,12 +389,17 @@ if COMPARE_ENABLED:
 
     rule histocompare_all:
         input:
-            [f"{MU3E_DIR}/run/{histocompare_marker_output(task)}" for task in TASK_IDS]
+            [
+                f"{MU3E_DIR}/run/{histocompare_marker_output(task)}"
+                for task in HISTOCOMPARE_TASK_IDS
+            ]
 
 
 rule bootstrap_relval_tools:
     output:
-        f"{MU3E_RELVAL_BASEDIR}/.bootstrap/mu3e_validation_tools.done"
+        f"{MU3E_RELVAL_BASEDIR}/bootstrap/mu3e_validation_tools.done"
+    log:
+        "logs/snakemake/bootstrap_relval_tools.log"
     params:
         relval_basedir=MU3E_RELVAL_BASEDIR,
         util_repo=MU3E_UTIL_REPO,
@@ -384,9 +407,11 @@ rule bootstrap_relval_tools:
         jobs=MU3E_VALIDATION_MAKE_JOBS
     shell:
         r"""
+        mkdir -p "$(dirname "{log}")"
+        exec > >(tee "{log}") 2>&1
         set -euo pipefail
         mkdir -p "{params.relval_basedir}"
-        mkdir -p "{params.relval_basedir}/.bootstrap"
+        mkdir -p "{params.relval_basedir}/bootstrap"
 
         if [ ! -d "{params.relval_basedir}/mu3eUtil/.git" ]; then
             git clone "{params.util_repo}" "{params.relval_basedir}/mu3eUtil"
@@ -414,6 +439,8 @@ if SIM_TASK_IDS:
             f"{MARKER_DIR}/relink_bin_files.done"
         output:
             f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
+        log:
+            "logs/snakemake/run_mu3e_sim-{task}.log",
         wildcard_constraints:
             task="|".join(SIM_TASK_IDS),
         params:
@@ -424,6 +451,8 @@ if SIM_TASK_IDS:
             sim_output=lambda wc: sim_output(wc.task)
         shell:
             r"""
+            mkdir -p "$(dirname "{log}")"
+            exec > >(tee "{log}") 2>&1
             set -euo pipefail
             cd "{params.mu3e_dir}/run"
             ../_build/mu3eSim/mu3eSim \
@@ -438,6 +467,8 @@ if SIM_TASK_IDS:
             f"{MU3E_DIR}/run/{SIM_OUTPUT_TPL}"
         output:
             f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
+        log:
+            "logs/snakemake/run_mu3e_sort-{task}.log",
         wildcard_constraints:
             task="|".join(SIM_TASK_IDS),
         params:
@@ -449,6 +480,8 @@ if SIM_TASK_IDS:
             cdb_gt=lambda wc: task_cdb_gt(wc.task)
         shell:
             r"""
+            mkdir -p "$(dirname "{log}")"
+            exec > >(tee "{log}") 2>&1
             set -euo pipefail;
             cd "{params.mu3e_dir}/run";
             ../_build/mu3eSim/sort/mu3eSort \
@@ -465,6 +498,8 @@ if DATA_TASK_IDS:
             f"{MARKER_DIR}/relink_bin_files.done"
         output:
             f"{MU3E_DIR}/run/{SORT_OUTPUT_TPL}"
+        log:
+            "logs/snakemake/run_mu3e_sort_from_raw-{task}.log",
         wildcard_constraints:
             task="|".join(DATA_TASK_IDS),
         params:
@@ -476,6 +511,8 @@ if DATA_TASK_IDS:
             cdb_gt=lambda wc: task_cdb_gt(wc.task)
         shell:
             r"""
+            mkdir -p "$(dirname "{log}")"
+            exec > >(tee "{log}") 2>&1
             set -euo pipefail
             if [ ! -f "{params.raw_input}" ]; then
                 echo "[relval] ERROR: raw input missing: {params.raw_input}" >&2
@@ -495,12 +532,16 @@ rule run_fill_histograms:
         f"{MU3E_DIR}/run/{TRIREC_OUTPUT_TPL}"
     output:
         f"{MU3E_DIR}/run/{FILLHIST_OUTPUT_TPL}"
+    log:
+        "logs/snakemake/run_fill_histograms-{task}.log",
     params:
         exe=RUN_FILL_HISTOGRAMS_EXE,
         annotation=lambda wc: f"mu3e-{MU3E_TAG}_{task_cdb_gt(wc.task)}",
         output_path=lambda wc: f"run/{fillhist_output(wc.task)}"
     shell:
         r"""
+        mkdir -p "$(dirname "{log}")"
+        exec > >(tee "{log}") 2>&1
         set -euo pipefail
         "{params.exe}" \
             --in "{input}" \
@@ -509,27 +550,32 @@ rule run_fill_histograms:
         """
 
 
-def treedump_input(wc):
-    return f"{MU3E_DIR}/run/{trirec_output(wc.task)}"
+if TREEDUMP_TASK_IDS:
+    def treedump_input(wc):
+        return f"{MU3E_DIR}/run/{trirec_output(wc.task)}"
 
 
-rule run_treedump:
-    input:
-        treedump_input
-    output:
-        f"{MU3E_DIR}/run/output/treedump-{{task}}-{{align_object}}.root",
-    log:
-        "logs/snakemake/run_treedump-{task}-{align_object}.log",
-    params:
-        treedumper_exe=f"{MU3E_RELVAL_BASEDIR}/mu3eUtil/_build/tools/treedump/mu3eTreeDumper",
-        treedump_cfg=f"{MU3E_RELVAL_BASEDIR}/mu3eValidation/scripts/treedump_and_histocompare/config.json",
-        dump_prefix=lambda wc: f"run/output/{treedump_basename(wc.task, wc.align_object)}",
-    shell:
-        r"""
-        set -euo pipefail
-        mkdir -p run/output
-        "{params.treedumper_exe}" "{params.treedump_cfg}" "{input}" "alignment/{wildcards.align_object}" "{params.dump_prefix}"
-        """
+    rule run_treedump:
+        input:
+            treedump_input
+        output:
+            f"{MU3E_DIR}/run/output/treedump-{{task}}-{{align_object}}.root",
+        log:
+            "logs/snakemake/run_treedump-{task}-{align_object}.log",
+        wildcard_constraints:
+            task="|".join(TREEDUMP_TASK_IDS),
+        params:
+            treedumper_exe=f"{MU3E_RELVAL_BASEDIR}/mu3eUtil/_build/tools/treedump/mu3eTreeDumper",
+            treedump_cfg=f"{MU3E_RELVAL_BASEDIR}/mu3eValidation/scripts/treedump_and_histocompare/config.json",
+            dump_prefix=lambda wc: f"run/output/{treedump_basename(wc.task, wc.align_object)}",
+        shell:
+            r"""
+            mkdir -p "$(dirname "{log}")"
+            exec > >(tee "{log}") 2>&1
+            set -euo pipefail
+            mkdir -p run/output
+            "{params.treedumper_exe}" "{params.treedump_cfg}" "{input}" "alignment/{wildcards.align_object}" "{params.dump_prefix}"
+            """
 
 
 if COMPARE_ENABLED:
@@ -547,6 +593,8 @@ if COMPARE_ENABLED:
             template_tex=COMPARE_TEMPLATE_TEX
         shell:
             r"""
+            mkdir -p "$(dirname "{log}")"
+            exec > >(tee "{log}") 2>&1
             set -euo pipefail
             cp "{params.template_tex}" "./template-relval.tex"
             "{params.exe}" \
@@ -556,6 +604,7 @@ if COMPARE_ENABLED:
             touch "{output}"
             """
 
+if COMPARE_ENABLED and HISTOCOMPARE_TASK_IDS:
     rule run_histocompare:
         input:
             compare_done=f"{MU3E_DIR}/run/{COMPARE_MARKER_TPL}",
@@ -569,11 +618,15 @@ if COMPARE_ENABLED:
             f"{MU3E_DIR}/run/{HISTOCOMPARE_MARKER_TPL}"
         log:
             "logs/snakemake/run_histocompare-{task}.log",
+        wildcard_constraints:
+            task="|".join(HISTOCOMPARE_TASK_IDS),
         params:
             out_dir_host=lambda wc: compare_dir_host(wc.task),
             compare_against=COMPARE_AGAINST_SETUP,
         shell:
             r"""
+            mkdir -p "$(dirname "{log}")"
+            exec > >(tee "{log}") 2>&1
             set -euo pipefail
             mkdir -p "{params.out_dir_host}"
             align_objects="sensors fibres tiles mppcs"
@@ -590,9 +643,9 @@ if COMPARE_ENABLED:
 
             for obj in $align_objects; do
                 dump1_host="{MU3E_DIR}/run/output/treedump-{wildcards.task}-$obj.root"
-                dump2_host="{MU3E_RELVAL_BASEDIR}/{ref_workdir_name()}/run/output/treedump-{wildcards.task}-$obj.root"
+                dump2_host="{MU3E_RELVAL_BASEDIR}/{REF_WORKDIR_NAME}/run/output/treedump-{wildcards.task}-$obj.root"
                 dump1_data_obj="/relval/{MU3E_DIRNAME}/run/output/treedump-{wildcards.task}-$obj.root"
-                dump2_data_obj="/relval/{ref_workdir_name()}/run/output/treedump-{wildcards.task}-$obj.root"
+                dump2_data_obj="/relval/{REF_WORKDIR_NAME}/run/output/treedump-{wildcards.task}-$obj.root"
                 out_name_obj="histocompare-{wildcards.task}-$obj"
                 out_pdf_obj="{params.out_dir_host}/$out_name_obj.pdf"
                 out_root_obj="{params.out_dir_host}/$out_name_obj.root"

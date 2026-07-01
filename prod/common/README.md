@@ -65,6 +65,8 @@ Relval uses wildcard `{scenario}`; rereco uses `{job}` — each workflow keeps i
 | `MIDAS_META_EXE` | Path to `mu3e_midas_meta` under `mu3e/_build/` |
 | `MAKE_JOBS`, `RELINK_SCRIPT` | build + relink |
 | `CLONE_MU3E_INPUTS` | Single-item list: bootstrap marker (relval) or local deps marker (rereco) |
+
+Shell rules with a `log:` directive use `exec > >(tee "{log}") 2>&1` so **stdout and stderr** are copied to the Snakemake log file (under `<workdir>/logs/snakemake/` for relval).
 | `CLONE_MU3E_SCRIPT` | Path to `clone_and_prepare_mu3e` |
 | `MU3E_PREP_LOG_PREFIX` | Short name in log lines |
 

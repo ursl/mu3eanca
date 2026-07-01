@@ -34,6 +34,8 @@ rule run_mu3e_trirec:
         log_prefix=MU3E_PREP_LOG_PREFIX
     shell:
         r"""
+        mkdir -p "$(dirname "{log}")"
+        exec > >(tee "{log}") 2>&1
         set -euo pipefail
         cd "{params.mu3e_dir}/run"
         if [ ! -f "{params.sort_input}" ]; then

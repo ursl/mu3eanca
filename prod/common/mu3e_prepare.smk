@@ -22,6 +22,8 @@ rule clone_and_prepare_mu3e:
         CLONE_MU3E_INPUTS
     output:
         f"{MARKER_DIR}/clone_and_prepare_mu3e.done"
+    log:
+        "logs/snakemake/clone_and_prepare_mu3e.log"
     params:
         repo=MU3E_REPO,
         ref=MU3E_CHECKOUT_REF,
@@ -34,6 +36,8 @@ rule clone_and_prepare_mu3e:
         script=CLONE_MU3E_SCRIPT
     shell:
         r"""
+        mkdir -p "$(dirname "{log}")"
+        exec > >(tee "{log}") 2>&1
         set -euo pipefail
         args=(
             --repo "{params.repo}"
@@ -70,11 +74,15 @@ rule build_mu3e:
         f"{MARKER_DIR}/clone_and_prepare_mu3e.done"
     output:
         f"{MARKER_DIR}/build_mu3e.done"
+    log:
+        "logs/snakemake/build_mu3e.log"
     params:
         mu3e_dir=MU3E_DIR,
         jobs=MAKE_JOBS
     shell:
         r"""
+        mkdir -p "$(dirname "{log}")"
+        exec > >(tee "{log}") 2>&1
         set -euo pipefail
         marker="{output}"
         if [[ "$marker" != /* ]]; then
@@ -94,12 +102,16 @@ rule relink_bin_files:
         f"{MARKER_DIR}/build_mu3e.done"
     output:
         f"{MARKER_DIR}/relink_bin_files.done"
+    log:
+        "logs/snakemake/relink_bin_files.log"
     params:
         mu3e_dir=MU3E_DIR,
         relink_script=RELINK_SCRIPT,
         log_prefix=MU3E_PREP_LOG_PREFIX
     shell:
         r"""
+        mkdir -p "$(dirname "{log}")"
+        exec > >(tee "{log}") 2>&1
         set -euo pipefail
         marker="{output}"
         if [[ "$marker" != /* ]]; then

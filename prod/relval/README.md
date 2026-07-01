@@ -16,8 +16,8 @@ For each entry in **`relval_tasks`** (see `config.yaml`):
 
 | `mode` | Pipeline |
 |--------|----------|
-| `sim` | mu3eSim → mu3eSort → mu3eTrirec → fill histograms + treedump → [compare, histocompare] |
-| `data` | raw MID → mu3eSort → mu3eTrirec → fill histograms + treedump → [compare, histocompare] |
+| `sim` | mu3eSim → mu3eSort → mu3eTrirec → fill histograms → treedump → [compare, histocompare] |
+| `data` | raw MID → mu3eSort → mu3eTrirec → fill histograms → [compare] (no treedump / histocompare by default) |
 
 Shared steps (once per setup):
 
@@ -35,7 +35,7 @@ Each task has its own **`cdb_GT`**, **`trirec_conf`**, and (for sim) **`sim_conf
 If `compare_against_setup` is set (reference setup name, e.g. `relval-v6.8`):
 
 - **`run_compare_histograms`** — PDF summaries from histogram diff.
-- **`run_histocompare`** — Docker histocompare on treedump pairs (new vs reference).
+- **`run_histocompare`** — Docker histocompare on treedump pairs (new vs reference); only for tasks with `treedump: true` (sim by default)
 
 ### Snakemake targets
 
@@ -136,6 +136,16 @@ Configured in `config.yaml`:
 <mu3e_relval_basedir>/setups/<setup-name>/
 ```
 
+**Shared bootstrap** (once per `mu3e_relval_basedir`; visible with plain `ls`):
+
+```text
+<mu3e_relval_basedir>/bootstrap/mu3e_validation_tools.done
+<mu3e_relval_basedir>/mu3eUtil/
+<mu3e_relval_basedir>/mu3eValidation/
+```
+
+Re-run `snakemake bootstrap_relval_tools` after removing `bootstrap/` (or the marker) to rebuild standalone util/validation. A full wipe: `rm -rf bootstrap setups mu3e-* mu3eUtil mu3eValidation` under the relval base dir.
+
 **Status exports** (written by `runRelval` after a run):
 
 ```text
@@ -183,6 +193,7 @@ Each task in **`relval_tasks`** has:
 - `trirec_conf` — path under `run/`
 - `sim_conf` — required for `mode: sim`
 - `raw_input` — required for `mode: data` (absolute or relative to `raw_input_base`; typically `run{run:05d}.mid.lz4`)
+- `treedump` — optional; default `true` for `mode: sim`, `false` for `mode: data`. When false, skips mu3eTreeDumper and histocompare for that task.
 - optional `run_id`, `n_events`, `trirec_conf_fallback`
 
 Legacy **`sim_scenarios`** is still supported when `relval_tasks` is empty.
