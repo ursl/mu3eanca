@@ -1,0 +1,82 @@
+# Shared prompt defaults (machine-independent).
+# Host-specific paths: config-<hostname>.yaml (e.g. config-moor.yaml, config-mu3edb0.yaml).
+# Override host: PROMPT_HOST=moor
+
+mu3e_repo: "git@bitbucket.org:mu3e/mu3e"
+mu3e_tag: "master"
+# Optional: track origin/<branch> HEAD instead of a release tag (overrides mu3e_checkout_tag).
+# mu3e_checkout_branch: "dev"
+# Optional: merge PR / cherry-pick commits after checkout (repeatable; composes with branch or tag).
+# mu3e_checkout_merge: "75d8c48"
+# mu3e_checkout_merges:
+#   - "75d8c48"
+# Optional: merge commits in mu3eUtil submodule (after submodule update).
+# mu3eUtil_checkout_merge: "a1b2c3d4"
+# mu3eUtil_checkout_merges:
+#   - "a1b2c3d4"
+# mu3eUtil_subdir: "modules/mu3eUtil"
+mu3e_dir: "mu3e"
+make_jobs: 20
+
+# Auxiliary tools (mu3eUtil, mu3eValidation) live under the setup workdir,
+# parallel to mu3e/ (see bootstrap_prompt_tools in Snakefile).
+# Layout: <mu3e_prompt_basedir>/<setup_name>/{mu3e,mu3eUtil,mu3eValidation,bootstrap,markers,...}
+mu3e_util_repo: "git@bitbucket.org:mu3e/mu3eUtil"
+mu3e_validation_repo: "git@bitbucket.org:mu3e/mu3eValidation"
+prompt_tools_make_jobs: 20
+
+# -- override in machine-dependent config files!
+raw_input_base: ""
+
+# Raw MID input layout under raw_input_base (midas_meta relative paths only):
+#   flat       — files directly under the base dir (e.g. run2025/run04756.mid.lz4)
+#   runblock3  — 3-digit block subdirs: 000 = runs 0–999, 004 = 4000–4999 (non-CDB raw)
+#   runblock4  — 4-digit blocks (same run//1000 rule as CDB payloads under db0/cdb2)
+# Or embed {runblock:03d} / {runblock:04d} in input_file_tpl and leave this flat.
+raw_input_layout: "flat"
+# Default width for bare {runblock} in templates (3 = raw, 4 = CDB-style).
+run_block_digits: 3
+
+# Completion markers under workdir (visible with plain ls; not hidden like .markers).
+marker_dir: "markers"
+# Optional override for midas_meta marker paths only:
+# midas_meta_marker_tpl: "markers/midas_meta-{task}.done"
+
+# midas_meta execution: local (default) or batch (sbatch --wait per run; setup stays local).
+job_submit_mode: "local"
+# slurm_partition: "mu3e"
+# slurm_mem: "16G"        # sbatch --mem for midas_meta batch jobs
+# slurm_log_dir: ""   # default: <workdir>/logs/slurm
+# slurm_batch_script: ""  # absolute path; initPrompt sets default from mu3eanca/slurm/
+
+cdb_GT: "datav6.9=2025V0"
+
+# --- Run discovery (default for prompt operations) ---
+# Scan raw_input_base for new *.mid.lz4 files and run the pipeline for runs
+# without a post_process marker (see pipeline_complete_stage).
+discover_new_runs: true
+pipeline_complete_stage: "post_process"
+
+# --- Run-list mode (alternative to discovery) ---
+# prompt_task_templates is expanded once per run. Runs come from either:
+#   run_list_file (+ optional min_run/max_run filter), or
+#   min_run/max_run alone (CLI: snakemake --config min_run=4756 max_run=4756 ...).
+# min_run / max_run with a file: filter only (0 = no bound on that side).
+# min_run / max_run without a file: build run list (max_run 0 → single run min_run).
+#
+# run_list_file: "../../db0/cdb2/certification/2025/2025-significant-V1.runs"
+# min_run: 0
+# max_run: 0
+
+prompt_task_templates:
+  - action: midas_meta
+    id_tpl: "run{run}"
+    input_file_tpl: "run{run:05d}.mid.lz4"
+
+# --- Explicit tasks (alternative; used when discover_new_runs is false and no run list) ---
+prompt_tasks: []
+# prompt_tasks:
+#   - id: "run5700"
+#     action: midas_meta
+#     run_id: 5700
+#     input_file: "/path/to/run05700.mid.lz4"

@@ -1,0 +1,439 @@
+import json
+import os
+import socket
+import subprocess
+from pathlib import Path
+
+import yaml
+
+_host = os.environ.get("PROMPT_HOST", socket.gethostname()).split(".")[0]
+_base = Path(workflow.basedir)
+_host_cfg = _base / f"config-{_host}.yaml"
+_merged_cfg = _base / ".snakemake" / f"config-{_host}.merged.yaml"
+_merged_cfg.parent.mkdir(parents=True, exist_ok=True)
+
+with open(_base / "config.yaml") as _fh:
+    _cfg = yaml.safe_load(_fh) or {}
+if _host_cfg.is_file():
+    with open(_host_cfg) as _fh:
+        _cfg.update(yaml.safe_load(_fh) or {})
+with open(_merged_cfg, "w") as _fh:
+    yaml.dump(_cfg, _fh, default_flow_style=False, sort_keys=False)
+
+configfile: str(_merged_cfg)
+
+_PROD_COMMON = _base / "common"
+if not _PROD_COMMON.is_dir():
+    _PROD_COMMON = _base.parent / "common"
+
+MU3E_PROMPT_BASEDIR = config["mu3e_prompt_basedir"]
+MU3E_TAG = config.get("mu3e_tag", "master")
+MU3E_CHECKOUT_BRANCH = (config.get("mu3e_checkout_branch") or "").strip()
+if MU3E_CHECKOUT_BRANCH:
+    MU3E_CHECKOUT_REF = ""
+else:
+    MU3E_CHECKOUT_REF = config.get("mu3e_checkout_tag", MU3E_TAG)
+
+MU3E_CHECKOUT_MERGES = []
+_checkout_merge_one = (config.get("mu3e_checkout_merge") or "").strip()
+if _checkout_merge_one:
+    MU3E_CHECKOUT_MERGES.append(_checkout_merge_one)
+for _m in config.get("mu3e_checkout_merges") or []:
+    _ms = str(_m).strip()
+    if _ms and _ms not in MU3E_CHECKOUT_MERGES:
+        MU3E_CHECKOUT_MERGES.append(_ms)
+_checkout_merge_branch = (config.get("mu3e_checkout_merge_branch") or "").strip()
+if _checkout_merge_branch and _checkout_merge_branch not in MU3E_CHECKOUT_MERGES:
+    MU3E_CHECKOUT_MERGES.append(_checkout_merge_branch)
+for _b in config.get("mu3e_checkout_merge_branches") or []:
+    _bs = str(_b).strip()
+    if _bs and _bs not in MU3E_CHECKOUT_MERGES:
+        MU3E_CHECKOUT_MERGES.append(_bs)
+
+MU3E_UTIL_CHECKOUT_MERGES = []
+_util_merge_one = (config.get("mu3eUtil_checkout_merge") or "").strip()
+if _util_merge_one:
+    MU3E_UTIL_CHECKOUT_MERGES.append(_util_merge_one)
+for _m in config.get("mu3eUtil_checkout_merges") or []:
+    _ms = str(_m).strip()
+    if _ms and _ms not in MU3E_UTIL_CHECKOUT_MERGES:
+        MU3E_UTIL_CHECKOUT_MERGES.append(_ms)
+_util_merge_branch = (config.get("mu3eUtil_checkout_merge_branch") or "").strip()
+if _util_merge_branch and _util_merge_branch not in MU3E_UTIL_CHECKOUT_MERGES:
+    MU3E_UTIL_CHECKOUT_MERGES.append(_util_merge_branch)
+for _b in config.get("mu3eUtil_checkout_merge_branches") or []:
+    _bs = str(_b).strip()
+    if _bs and _bs not in MU3E_UTIL_CHECKOUT_MERGES:
+        MU3E_UTIL_CHECKOUT_MERGES.append(_bs)
+MU3E_UTIL_SUBDIR = (config.get("mu3eUtil_subdir") or "modules/mu3eUtil").strip()
+
+MU3E_DIR_BASE = config["mu3e_dir"]
+MU3E_TAG_DIRSAFE = MU3E_TAG.replace("/", "_")
+MU3E_WORKDIR_NAME = config.get("mu3e_workdir_name")
+if MU3E_WORKDIR_NAME:
+    SETUP_ROOT_NAME = MU3E_WORKDIR_NAME
+else:
+    SETUP_ROOT_NAME = f"prompt-{MU3E_TAG_DIRSAFE}"
+SETUP_ROOT = f"{MU3E_PROMPT_BASEDIR}/{SETUP_ROOT_NAME}"
+MU3E_DIR = f"{SETUP_ROOT}/{MU3E_DIR_BASE}"
+MU3E_UTIL_DIR = f"{SETUP_ROOT}/mu3eUtil"
+MU3E_VALIDATION_DIR = f"{SETUP_ROOT}/mu3eValidation"
+workdir: SETUP_ROOT
+
+MU3E_REPO = config["mu3e_repo"]
+MAKE_JOBS = config["make_jobs"]
+RELINK_SCRIPT = config["relink_script"]
+RAW_INPUT_BASE = config.get("raw_input_base", config.get("sort_input_base", ""))
+RAW_INPUT_LAYOUT = config.get("raw_input_layout", "flat")
+
+MU3E_UTIL_REPO = config.get("mu3e_util_repo", "git@bitbucket.org:mu3e/mu3eUtil")
+MU3E_VALIDATION_REPO = config.get(
+    "mu3e_validation_repo", "git@bitbucket.org:mu3e/mu3eValidation"
+)
+PROMPT_TOOLS_MAKE_JOBS = int(config.get("prompt_tools_make_jobs", config.get("make_jobs", 20)))
+
+_midas_exe_rel = config.get(
+    "midas_meta_exe",
+    "modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta",
+)
+
+MARKER_DIR = (config.get("marker_dir") or "markers").strip().strip("/")
+MIDAS_META_MARKER_TPL = config.get("midas_meta_marker_tpl") or f"{MARKER_DIR}/midas_meta-{{task}}.done"
+CDB_UPDATE_MARKER_TPL = config.get("cdb_update_marker_tpl") or f"{MARKER_DIR}/cdb_update-run{{run}}.done"
+MINALYZER_MARKER_TPL = config.get("minalyzer_marker_tpl") or f"{MARKER_DIR}/minalyzer-run{{run}}.done"
+POST_PROCESS_MARKER_TPL = config.get("post_process_marker_tpl") or f"{MARKER_DIR}/post_process-run{{run}}.done"
+PIPELINE_COMPLETE_STAGE = config.get("pipeline_complete_stage", "post_process")
+
+CDB_DBCONN = config.get("cdb_dbconn", config.get("cdb_db_conn"))
+CDB_GT = config.get("cdb_GT", config.get("cdb_gt"))
+
+MU3E_WORK_BASEDIR = SETUP_ROOT
+MU3E_PREP_LOG_PREFIX = "prompt"
+CLONE_MU3E_SCRIPT = str(_PROD_COMMON / "scripts" / "clone_and_prepare_mu3e")
+CLONE_MU3E_INPUTS = [f"{MARKER_DIR}/clone_mu3e_deps.done"]
+MIDAS_META_PREREQS = [f"{MARKER_DIR}/build_mu3e.done"]
+MIDAS_META_SCRIPT = str(_PROD_COMMON / "scripts" / "run_midas_meta_dir")
+MIDAS_META_FILE_SCRIPT = str(_PROD_COMMON / "scripts" / "run_midas_meta_file")
+MIDAS_META_SUBMIT_SCRIPT = str(_PROD_COMMON / "scripts" / "run_midas_meta_submit")
+MIDAS_META_EXE = f"{MU3E_DIR}/_build/{_midas_exe_rel}"
+
+CDB_UPDATE_SCRIPT = str(_PROD_COMMON / "scripts" / "run_cdb_update")
+MINALYZER_SCRIPT = str(_PROD_COMMON / "scripts" / "run_minalyzer")
+POST_PROCESS_SCRIPT = str(_PROD_COMMON / "scripts" / "run_post_process")
+
+JOB_SUBMIT_MODE = config.get("job_submit_mode", "local")
+SLURM_PARTITION = config.get("slurm_partition", "mu3e")
+SLURM_MEM = (config.get("slurm_mem") or "").strip()
+SLURM_LOG_DIR = (config.get("slurm_log_dir") or "").strip() or f"{SETUP_ROOT}/logs/slurm"
+_slurm_batch = (config.get("slurm_batch_script") or "").strip()
+if _slurm_batch:
+    SLURM_BATCH_SCRIPT = (
+        _slurm_batch if os.path.isabs(_slurm_batch) else str((_base / _slurm_batch).resolve())
+    )
+else:
+    SLURM_BATCH_SCRIPT = ""
+SETUP_DIR = str(_base)
+
+_load_cfg = dict(config)
+_load_cfg["setup_root"] = SETUP_ROOT
+_load_tasks_script = _PROD_COMMON / "load_prompt_tasks"
+_proc = subprocess.run(
+    ["perl", str(_load_tasks_script), "--base", str(_base)],
+    input=json.dumps(_load_cfg),
+    capture_output=True,
+    text=True,
+    check=False,
+)
+if _proc.returncode != 0:
+    raise RuntimeError(
+        _proc.stderr.strip() or f"load_prompt_tasks failed with exit {_proc.returncode}"
+    )
+PROMPT_TASKS = json.loads(_proc.stdout)
+
+include: str(_PROD_COMMON / "mu3e_prepare.smk")
+
+
+rule bootstrap_prompt_tools:
+    """Clone/build auxiliary tools (mu3eUtil, mu3eValidation); placeholders for minalyzer/treedumper/histocompare."""
+    input:
+        f"{MARKER_DIR}/relink_bin_files.done"
+    output:
+        f"{SETUP_ROOT}/bootstrap/prompt_tools.done"
+    log:
+        "logs/snakemake/bootstrap_prompt_tools.log"
+    params:
+        setup_root=SETUP_ROOT,
+        util_dir=MU3E_UTIL_DIR,
+        validation_dir=MU3E_VALIDATION_DIR,
+        util_repo=MU3E_UTIL_REPO,
+        validation_repo=MU3E_VALIDATION_REPO,
+        jobs=PROMPT_TOOLS_MAKE_JOBS,
+        gt=CDB_GT,
+    shell:
+        r"""
+        mkdir -p "$(dirname "{log}")"
+        exec > >(tee "{log}") 2>&1
+        set -euo pipefail
+        mkdir -p "{params.setup_root}/bootstrap"
+
+        echo "[prompt] release GT: {params.gt}"
+
+        if [ ! -d "{params.util_dir}/.git" ]; then
+            git clone "{params.util_repo}" "{params.util_dir}"
+        fi
+        mkdir -p "{params.util_dir}/_build"
+        cd "{params.util_dir}/_build"
+        cmake ..
+        make -j{params.jobs}
+
+        if [ ! -d "{params.validation_dir}/.git" ]; then
+            git clone "{params.validation_repo}" "{params.validation_dir}"
+        fi
+        mkdir -p "{params.validation_dir}/_build"
+        cd "{params.validation_dir}/_build"
+        cmake ..
+        make -j{params.jobs}
+
+        echo "[prompt] minalyzer placeholder (replace with real build)"
+        echo "[prompt] treedumper available at {params.util_dir}/_build/tools/treedump/mu3eTreeDumper"
+        echo "[prompt] histocompare placeholder (replace with docker or local build)"
+
+        touch "{output}"
+        """
+
+
+if PROMPT_TASKS:
+    TASK_IDS = [item["id"] for item in PROMPT_TASKS]
+    TASK_BY_ID = {item["id"]: item for item in PROMPT_TASKS}
+    RUN_IDS = sorted({item["run_id"] for item in PROMPT_TASKS if "run_id" in item})
+    RUN_TO_TASK = {item["run_id"]: item["id"] for item in PROMPT_TASKS if "run_id" in item}
+    MIDAS_META_TASK_IDS = [item["id"] for item in PROMPT_TASKS if item.get("action") == "midas_meta"]
+
+    def _task_for_run(run):
+        return RUN_TO_TASK[int(run)]
+
+    def _runblock_dir(run_id, layout):
+        block = int(run_id) // 1000
+        if layout == "runblock3":
+            return f"{block:03d}"
+        if layout == "runblock4":
+            return f"{block:04d}"
+        return ""
+
+    def _runblock_prefix(run_id, layout):
+        rb = _runblock_dir(run_id, layout)
+        return f"{rb}/" if rb else ""
+
+    def _base_includes_runblock(base, run_id, layout):
+        rb = _runblock_dir(run_id, layout)
+        if not rb:
+            return False
+        norm = base.rstrip("/")
+        return norm.endswith(f"/{rb}")
+
+    def _resolve_input_path(item, key, base_keys=("input_dir_base",)):
+        path = (item.get(key) or "").strip()
+        if not path:
+            return ""
+        if os.path.isabs(path):
+            return path
+        base = ""
+        for bk in base_keys:
+            base = (item.get(bk) or "").strip()
+            if base:
+                break
+        if not base:
+            base = RAW_INPUT_BASE
+        layout = item.get("raw_input_layout", RAW_INPUT_LAYOUT)
+        prefix = ""
+        run_id = item.get("run_id")
+        if run_id is not None and layout in ("runblock3", "runblock4"):
+            if not _base_includes_runblock(base, run_id, layout):
+                prefix = _runblock_prefix(run_id, layout)
+        if base:
+            return f"{base}/{prefix}{path}"
+        if prefix:
+            return f"{prefix}{path}"
+        return path
+
+    def midas_meta_input_dir(task):
+        return _resolve_input_path(TASK_BY_ID[task], "input_dir")
+
+    def midas_meta_input_file(task):
+        return _resolve_input_path(
+            TASK_BY_ID[task],
+            "input_file",
+            base_keys=("input_file_base", "input_dir_base"),
+        )
+
+    def midas_meta_marker_path(task):
+        return MIDAS_META_MARKER_TPL.format(task=task)
+
+    def cdb_update_marker_path(task):
+        run_id = midas_meta_task_run_id(task)
+        return CDB_UPDATE_MARKER_TPL.format(run=run_id)
+
+    def minalyzer_marker_path(task):
+        run_id = midas_meta_task_run_id(task)
+        return MINALYZER_MARKER_TPL.format(run=run_id)
+
+    def post_process_marker_path(task):
+        run_id = midas_meta_task_run_id(task)
+        return POST_PROCESS_MARKER_TPL.format(run=run_id)
+
+    def midas_meta_task_run_id(task):
+        return TASK_BY_ID[task].get("run_id", "")
+
+    def midas_meta_task_label(task):
+        return task
+
+    include: str(_PROD_COMMON / "midas_meta.smk")
+
+    wildcard_constraints:
+        task="|".join(TASK_IDS),
+        run="|".join(str(r) for r in RUN_IDS),
+
+    rule run_cdb_update:
+        input:
+            lambda wc: midas_meta_marker_path(_task_for_run(wc.run))
+        output:
+            CDB_UPDATE_MARKER_TPL
+        log:
+            "logs/snakemake/run_cdb_update-run{run}.log"
+        params:
+            run_id=lambda wc: int(wc.run),
+            marker_path=lambda wc: CDB_UPDATE_MARKER_TPL.format(run=wc.run),
+            script=CDB_UPDATE_SCRIPT,
+            gt=CDB_GT,
+            dbconn=CDB_DBCONN,
+        shell:
+            r"""
+            mkdir -p "$(dirname "{log}")"
+            exec > >(tee "{log}") 2>&1
+            set -euo pipefail
+            perl "{params.script}" \
+                --run {params.run_id} \
+                --gt "{params.gt}" \
+                --dbconn "{params.dbconn}" \
+                --marker "{params.marker_path}"
+            """
+
+    rule run_minalyzer:
+        input:
+            lambda wc: cdb_update_marker_path(_task_for_run(wc.run))
+        output:
+            MINALYZER_MARKER_TPL
+        log:
+            "logs/snakemake/run_minalyzer-run{run}.log"
+        params:
+            run_id=lambda wc: int(wc.run),
+            marker_path=lambda wc: MINALYZER_MARKER_TPL.format(run=wc.run),
+            script=MINALYZER_SCRIPT,
+            mu3e_dir=MU3E_DIR,
+        shell:
+            r"""
+            mkdir -p "$(dirname "{log}")"
+            exec > >(tee "{log}") 2>&1
+            set -euo pipefail
+            perl "{params.script}" \
+                --run {params.run_id} \
+                --mu3e-dir "{params.mu3e_dir}" \
+                --marker "{params.marker_path}"
+            """
+
+    rule run_post_process:
+        input:
+            lambda wc: minalyzer_marker_path(_task_for_run(wc.run))
+        output:
+            POST_PROCESS_MARKER_TPL
+        log:
+            "logs/snakemake/run_post_process-run{run}.log"
+        params:
+            run_id=lambda wc: int(wc.run),
+            marker_path=lambda wc: POST_PROCESS_MARKER_TPL.format(run=wc.run),
+            script=POST_PROCESS_SCRIPT,
+            mu3e_dir=MU3E_DIR,
+        shell:
+            r"""
+            mkdir -p "$(dirname "{log}")"
+            exec > >(tee "{log}") 2>&1
+            set -euo pipefail
+            perl "{params.script}" \
+                --run {params.run_id} \
+                --mu3e-dir "{params.mu3e_dir}" \
+                --marker "{params.marker_path}"
+            """
+
+    ALL_TARGETS = [POST_PROCESS_MARKER_TPL.format(run=r) for r in RUN_IDS]
+
+    rule midas_meta_all:
+        """All midas_meta markers for pending runs."""
+        input:
+            [midas_meta_marker_path(task) for task in MIDAS_META_TASK_IDS]
+
+    rule prompt_pipeline_all:
+        """Full per-run pipeline for all pending runs (discovered or configured)."""
+        input:
+            ALL_TARGETS
+
+    rule prompt_new_runs:
+        """Alias: process newly discovered runs through the full pipeline."""
+        input:
+            ALL_TARGETS
+else:
+    ALL_TARGETS = []
+
+    _NO_TASKS_MSG = (
+        "no prompt tasks configured; set raw_input_base and discover_new_runs, "
+        "or min_run/max_run / run_list_file "
+        "(e.g. snakemake --cores 4 -p prompt_new_runs)"
+    )
+
+    rule midas_meta_all:
+        run:
+            raise ValueError(_NO_TASKS_MSG)
+
+    rule prompt_pipeline_all:
+        run:
+            raise ValueError(_NO_TASKS_MSG)
+
+    rule prompt_new_runs:
+        run:
+            raise ValueError(_NO_TASKS_MSG)
+
+
+rule mu3e_setup:
+    """Clone, build, relink MU3E, and bootstrap prompt auxiliary tools."""
+    input:
+        f"{SETUP_ROOT}/bootstrap/prompt_tools.done"
+
+
+rule all:
+    input:
+        ALL_TARGETS if ALL_TARGETS else [f"{SETUP_ROOT}/bootstrap/prompt_tools.done"]
+
+
+rule ensure_clone_mu3e_deps:
+    output:
+        f"{MARKER_DIR}/clone_mu3e_deps.done"
+    shell:
+        f"mkdir -p {MARKER_DIR} && touch {{output}}"
+
+
+localrules: clean, ensure_clone_mu3e_deps
+
+
+rule clean:
+    shell:
+        r"""
+        set -euo pipefail
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/midas_meta-"*.done
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/cdb_update-"*.done
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/minalyzer-"*.done
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/post_process-"*.done
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/relink_bin_files.done"
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/build_mu3e.done"
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/clone_and_prepare_mu3e.done"
+        rm -f "{SETUP_ROOT}/{MARKER_DIR}/clone_mu3e_deps.done"
+        rm -f "{SETUP_ROOT}/bootstrap/prompt_tools.done"
+        """

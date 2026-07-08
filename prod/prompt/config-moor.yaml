@@ -1,0 +1,7 @@
+# Mac localhost (hostname: moor). Loaded automatically if present.
+
+mu3e_prompt_basedir: "/Users/ursl/data/mu3e/prod/prompt"
+relink_script: "/Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles"
+cdb_dbconn: "http://mu3edb0/cdb/"
+raw_input_base: "/Users/ursl/data/mu3e/run2025/raw"
+raw_input_layout: "flat"

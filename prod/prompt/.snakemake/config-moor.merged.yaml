@@ -1,0 +1,23 @@
+mu3e_repo: git@bitbucket.org:mu3e/mu3e
+mu3e_tag: master
+mu3e_dir: mu3e
+make_jobs: 20
+mu3e_util_repo: git@bitbucket.org:mu3e/mu3eUtil
+mu3e_validation_repo: git@bitbucket.org:mu3e/mu3eValidation
+prompt_tools_make_jobs: 20
+raw_input_base: /Users/ursl/data/mu3e/run2025/raw
+raw_input_layout: flat
+run_block_digits: 3
+marker_dir: markers
+job_submit_mode: local
+cdb_GT: datav6.9=2025V0
+discover_new_runs: true
+pipeline_complete_stage: post_process
+prompt_task_templates:
+- action: midas_meta
+  id_tpl: run{run}
+  input_file_tpl: run{run:05d}.mid.lz4
+prompt_tasks: []
+mu3e_prompt_basedir: /Users/ursl/data/mu3e/prod/prompt
+relink_script: /Users/ursl/mu3e/mu3eanca/perl/relinkBinFiles
+cdb_dbconn: http://mu3edb0/cdb/
