@@ -1,0 +1,256 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# relval
+# ======
+#
+# Perl framework for MU3E release validation (replacement for snakemake/relval).
+# Steered by config files (see config.cfg, config-setup-*.cfg).
+#
+# Usage:   ./relval [-c FILE] [-H host] [-n] [-j N] [target]
+#
+# Target comes from (first wins):
+#   1) CLI:  ./relval -c FILE setup
+#   2) config key "target:" (or "action:")
+#   3) default: list
+#
+# Setup examples:
+#   ./relval -c config-setup-v6.5.cfg
+#   ./relval -c config-setup-all.cfg -n
+#   ./relval -c config-setup-v6.5.cfg status   # CLI overrides config target
+#
+# Targets: setup          clone/checkout/[build]/[relink] for repos in config
+#          status         show setup paths / HEAD
+#          all            full relval for all configured tasks (stub)
+#          compare        histogram compare against reference (stub)
+#          histocompare   docker histocompare (stub)
+#          list           print resolved config + repos + tasks
+#
+# Options: -c FILE   config file (default: config.cfg)
+#          -H HOST   force host config config-HOST.cfg
+#          -s NAME   workdir override (single-repo setup configs only)
+#          -j N      parallel make jobs for builds
+#          -n        dry-run
+#          -h        help
+#
+# History
+#         2026/07/13 first shot
+#         2026/07/13 multi-repo setup + meta include
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use strict;
+use warnings;
+
+use Getopt::Std;
+use vars qw($opt_c $opt_H $opt_s $opt_j $opt_n $opt_h);
+
+use Cwd qw(abs_path);
+use File::Basename qw(dirname);
+
+use lib abs_path(dirname($0)) . "/lib";
+use RelvalConfig qw(load_config load_setup_units host_name);
+use Setup qw(setup_run_config setup_status_config);
+
+# ----------------------------------------------------------------------
+sub usage {
+    print <<"END";
+Usage: $0 [-c FILE] [-H host] [-s NAME] [-n] [-j N] [target]
+
+Target (optional on CLI): CLI > config "target:" > list
+
+Targets:
+  setup          clone/checkout/merge/[submodules]/[build]/[relink]
+  status         show setup paths / HEAD
+  all            full relval for all configured tasks (stub)
+  compare        histogram compare against reference (stub)
+  histocompare   docker histocompare (stub)
+  list           print resolved config + repos + tasks
+
+Examples:
+  ./relval -c config-setup-v6.5.cfg
+  ./relval -c config-setup-all.cfg -n
+  ./relval -c config-relval.cfg list
+
+Options:
+  -c FILE   config file (default: config.cfg)
+  -H HOST   host config overlay config-HOST.cfg
+  -s NAME   workdir override (single-repo setup only)
+  -j N      parallel make jobs
+  -n        dry-run
+  -h        help
+END
+    exit($opt_h ? 0 : 1);
+}
+
+# ----------------------------------------------------------------------
+sub prefix {
+    my ($long) = @_;
+    $long = "relval" unless defined $long && $long ne "";
+    my $now = localtime;
+    $long .= "                         ";
+    my $shorter = substr($long, 0, 15);
+    return $now . "/" . $shorter . "/ ";
+}
+
+# ----------------------------------------------------------------------
+sub _setup_opts {
+    my %opts = (dry_run => ($opt_n ? 1 : 0));
+    $opts{setup_name} = $opt_s if defined $opt_s && $opt_s ne "";
+    $opts{jobs} = $opt_j if defined $opt_j && $opt_j ne "";
+    return %opts;
+}
+
+# ----------------------------------------------------------------------
+sub do_setup {
+    my ($cfg_file, $host) = @_;
+    my @units = load_setup_units($cfg_file, $host);
+    my %opts = _setup_opts();
+    print(prefix(), "setup units: ", scalar(@units), "\n");
+    for my $cfg (@units) {
+        print(prefix(), "--- ", ($cfg->{_config_path} // "?"), " ---\n");
+        setup_run_config($cfg, %opts);
+    }
+}
+
+# ----------------------------------------------------------------------
+sub do_status {
+    my ($cfg_file, $host) = @_;
+    my @units = load_setup_units($cfg_file, $host);
+    my %opts = _setup_opts();
+    for my $cfg (@units) {
+        print(prefix(), "--- ", ($cfg->{_config_path} // "?"), " ---\n");
+        setup_status_config($cfg, %opts);
+    }
+}
+
+# ----------------------------------------------------------------------
+sub do_task {
+    my ($cfg, $task) = @_;
+    my $id   = $task->{id}   // "?";
+    my $mode = $task->{mode} // "?";
+    print(prefix(), "task $id mode=$mode (stub)\n");
+    if ($mode eq "sim") {
+        print(prefix(), "  sim_conf=$task->{sim_conf}  trirec_conf=$task->{trirec_conf}  cdb_GT=$task->{cdb_GT}\n");
+    } elsif ($mode eq "data") {
+        print(prefix(), "  raw_input=$task->{raw_input}  trirec_conf=$task->{trirec_conf}  cdb_GT=$task->{cdb_GT}\n");
+    } else {
+        die "unknown task mode '$mode' for id=$id\n";
+    }
+}
+
+# ----------------------------------------------------------------------
+sub do_all {
+    my ($cfg) = @_;
+    print(prefix(), "target all (stub)\n");
+    my $tasks = $cfg->{relval_tasks} // [];
+    for my $task (@$tasks) {
+        do_task($cfg, $task);
+    }
+}
+
+# ----------------------------------------------------------------------
+sub do_compare {
+    my ($cfg) = @_;
+    print(prefix(), "target compare (stub)\n");
+    print(prefix(), "  compare_against_setup: ", ($cfg->{compare_against_setup} // ""), "\n");
+}
+
+# ----------------------------------------------------------------------
+sub do_histocompare {
+    my ($cfg) = @_;
+    print(prefix(), "target histocompare (stub)\n");
+    print(prefix(), "  compare_against_setup: ", ($cfg->{compare_against_setup} // ""), "\n");
+}
+
+# ----------------------------------------------------------------------
+sub do_list {
+    my ($cfg) = @_;
+    print(prefix(), "config ", ($cfg->{_config_path} // ""), "\n");
+    for my $key (sort keys %$cfg) {
+        next if $key eq "relval_tasks" || $key eq "setup_repos" || $key eq "includes" || $key =~ /^_/;
+        my $val = $cfg->{$key};
+        next unless defined $val;
+        next if ref($val);
+        print("  $key: $val\n");
+    }
+    my $includes = $cfg->{includes} // [];
+    if (@$includes) {
+        print(prefix(), "includes (", scalar(@$includes), ")\n");
+        print("  - $_\n") for @$includes;
+    }
+    my $repos = $cfg->{setup_repos} // [];
+    print(prefix(), "repos (", scalar(@$repos), ")\n");
+    for my $r (@$repos) {
+        my $co = $r->{branch} ne "" ? "branch=$r->{branch}" : "tag=$r->{tag}";
+        print("  - id=$r->{id} $co workdir=$r->{workdir}"
+            . " build=" . ($r->{build} ? "yes" : "no")
+            . " relink=" . ($r->{relink} ? "yes" : "no")
+            . "\n");
+    }
+    my $tasks = $cfg->{relval_tasks} // [];
+    print(prefix(), "tasks (", scalar(@$tasks), ")\n");
+    for my $task (@$tasks) {
+        my $line = "  - id=$task->{id} mode=$task->{mode} cdb_GT=$task->{cdb_GT}";
+        $line .= " sim_conf=$task->{sim_conf}" if defined $task->{sim_conf} && $task->{sim_conf} ne "";
+        $line .= " raw_input=$task->{raw_input}" if defined $task->{raw_input} && $task->{raw_input} ne "";
+        print("$line\n");
+    }
+}
+
+# ----------------------------------------------------------------------
+# -- main
+# ----------------------------------------------------------------------
+getopts('c:H:s:j:nh');
+usage() if $opt_h;
+
+my $script_dir = abs_path(dirname($0));
+chdir($script_dir) or die "Cannot chdir to $script_dir: $!\n";
+
+my $cfg_file = $opt_c // "config.cfg";
+my $host     = host_name($opt_H);
+
+# Target: CLI arg wins; else config "target:"; else "list"
+my $target = $ARGV[0] // "";
+if ($target eq "") {
+    my $peek = load_config($cfg_file, $host);
+    $target = $peek->{target} // $peek->{action} // "list";
+    $target =~ s/^\s+|\s+$//g;
+}
+$target = "list" if $target eq "";
+
+print(prefix(), "config=$cfg_file host=$host target=$target", ($opt_n ? " (dry-run)" : ""), "\n");
+
+if ($target eq "setup") {
+    do_setup($cfg_file, $host);
+} elsif ($target eq "status") {
+    do_status($cfg_file, $host);
+} else {
+    my $cfg = load_config($cfg_file, $host);
+    if ($target eq "list") {
+        do_list($cfg);
+        # If meta, also list each include unit
+        my $includes = $cfg->{includes} // [];
+        if (@$includes) {
+            for my $unit (load_setup_units($cfg_file, $host)) {
+                print(prefix(), "==== included unit ====\n");
+                do_list($unit);
+            }
+        }
+    } elsif ($target eq "all") {
+        do_all($cfg);
+    } elsif ($target eq "compare") {
+        do_compare($cfg);
+    } elsif ($target eq "histocompare") {
+        do_histocompare($cfg);
+    } else {
+        print "ERROR: unknown target '$target'\n";
+        usage();
+    }
+}
+
+print(prefix(), "done\n");
+exit(0);
