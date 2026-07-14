@@ -21,14 +21,14 @@
 #
 # Targets: setup          clone/checkout/[build]/[relink] for repos in config
 #          status         show setup paths / HEAD
-#          all            full relval for all configured tasks (stub)
+#          all            run all configured relval tasks (sim/sort/trirec/fillhist/…)
 #          compare        histogram compare against reference (stub)
 #          histocompare   docker histocompare (stub)
 #          list           print resolved config + repos + tasks
 #
 # Options: -c FILE   config file (default: config.cfg)
 #          -H HOST   force host config config-HOST.cfg
-#          -s NAME   workdir override (single-repo setup configs only)
+#          -s NAME   workdir override (setup: single-repo; all: mu3e_workdir)
 #          -j N      parallel make jobs for builds
 #          -n        dry-run
 #          -h        help
@@ -36,6 +36,7 @@
 # History
 #         2026/07/13 first shot
 #         2026/07/13 multi-repo setup + meta include
+#         2026/07/14 implement target all via Relval.pm
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the
 #
@@ -54,6 +55,7 @@ use File::Basename qw(dirname);
 use lib abs_path(dirname($0)) . "/lib";
 use RelvalConfig qw(load_config load_setup_units host_name);
 use Setup qw(setup_run_config setup_status_config);
+use Relval qw(relval_run_all relval_run_compare);
 
 # ----------------------------------------------------------------------
 sub usage {
@@ -65,15 +67,17 @@ Target (optional on CLI): CLI > config "target:" > list
 Targets:
   setup          clone/checkout/merge/[submodules]/[build]/[relink]
   status         show setup paths / HEAD
-  all            full relval for all configured tasks (stub)
+  all            run all configured relval tasks
   compare        histogram compare against reference (stub)
   histocompare   docker histocompare (stub)
   list           print resolved config + repos + tasks
 
 Examples:
-  ./relval -c config-setup-v6.5.cfg
-  ./relval -c config-setup-all.cfg -n
-  ./relval -c config-relval.cfg list
+  ./relval -c config-setup-v6.9pre0.cfg
+  ./relval -c config-relval.cfg
+  ./relval -c config-relval.cfg -s mu3e-v6.5
+  ./relval -c config-relval.cfg compare compare_against_setup=mu3e-v6.5
+  ./relval -c config-relval.cfg mu3e_workdir=mu3e-v6.5
 
 Options:
   -c FILE   config file (default: config.cfg)
@@ -105,6 +109,43 @@ sub _setup_opts {
 }
 
 # ----------------------------------------------------------------------
+# Pull key=value tokens from @ARGV (e.g. compare_against_setup=mu3e-v6.5).
+sub apply_cli_overrides {
+    my ($cfg) = @_;
+    my @rest = ();
+    for my $a (@ARGV) {
+        if ($a =~ /^([A-Za-z0-9_]+)=(.*)$/) {
+            $cfg->{$1} = $2;
+            print(prefix(), "override $1=$2\n");
+        } else {
+            push @rest, $a;
+        }
+    }
+    @ARGV = @rest;
+}
+
+# ----------------------------------------------------------------------
+sub do_all {
+    my ($cfg) = @_;
+    my %opts = _setup_opts();
+    relval_run_all($cfg, %opts);
+}
+
+# ----------------------------------------------------------------------
+sub do_compare {
+    my ($cfg) = @_;
+    my %opts = _setup_opts();
+    relval_run_compare($cfg, %opts);
+}
+
+# ----------------------------------------------------------------------
+sub do_histocompare {
+    my ($cfg) = @_;
+    print(prefix(), "target histocompare not implemented yet (use target compare for PDF diffs)\n");
+    print(prefix(), "  compare_against_setup: ", ($cfg->{compare_against_setup} // ""), "\n");
+}
+
+# ----------------------------------------------------------------------
 sub do_setup {
     my ($cfg_file, $host) = @_;
     my @units = load_setup_units($cfg_file, $host);
@@ -132,7 +173,7 @@ sub do_task {
     my ($cfg, $task) = @_;
     my $id   = $task->{id}   // "?";
     my $mode = $task->{mode} // "?";
-    print(prefix(), "task $id mode=$mode (stub)\n");
+    print(prefix(), "task $id mode=$mode\n");
     if ($mode eq "sim") {
         print(prefix(), "  sim_conf=$task->{sim_conf}  trirec_conf=$task->{trirec_conf}  cdb_GT=$task->{cdb_GT}\n");
     } elsif ($mode eq "data") {
@@ -140,30 +181,6 @@ sub do_task {
     } else {
         die "unknown task mode '$mode' for id=$id\n";
     }
-}
-
-# ----------------------------------------------------------------------
-sub do_all {
-    my ($cfg) = @_;
-    print(prefix(), "target all (stub)\n");
-    my $tasks = $cfg->{relval_tasks} // [];
-    for my $task (@$tasks) {
-        do_task($cfg, $task);
-    }
-}
-
-# ----------------------------------------------------------------------
-sub do_compare {
-    my ($cfg) = @_;
-    print(prefix(), "target compare (stub)\n");
-    print(prefix(), "  compare_against_setup: ", ($cfg->{compare_against_setup} // ""), "\n");
-}
-
-# ----------------------------------------------------------------------
-sub do_histocompare {
-    my ($cfg) = @_;
-    print(prefix(), "target histocompare (stub)\n");
-    print(prefix(), "  compare_against_setup: ", ($cfg->{compare_against_setup} // ""), "\n");
 }
 
 # ----------------------------------------------------------------------
@@ -214,7 +231,21 @@ my $cfg_file = $opt_c // "config.cfg";
 my $host     = host_name($opt_H);
 
 # Target: CLI arg wins; else config "target:"; else "list"
-my $target = $ARGV[0] // "";
+# Also allow key=value overrides on the command line.
+my $target = "";
+my @argv_kv = ();
+my @argv_rest = ();
+for my $a (@ARGV) {
+    if ($a =~ /^([A-Za-z0-9_]+)=(.*)$/) {
+        push @argv_kv, $a;
+    } elsif ($target eq "" && $a !~ /^-/) {
+        $target = $a;
+    } else {
+        push @argv_rest, $a;
+    }
+}
+@ARGV = (@argv_kv, @argv_rest);
+
 if ($target eq "") {
     my $peek = load_config($cfg_file, $host);
     $target = $peek->{target} // $peek->{action} // "list";
@@ -230,9 +261,9 @@ if ($target eq "setup") {
     do_status($cfg_file, $host);
 } else {
     my $cfg = load_config($cfg_file, $host);
+    apply_cli_overrides($cfg);
     if ($target eq "list") {
         do_list($cfg);
-        # If meta, also list each include unit
         my $includes = $cfg->{includes} // [];
         if (@$includes) {
             for my $unit (load_setup_units($cfg_file, $host)) {
