@@ -13,12 +13,6 @@ import cdb from "./routes/cdb.mjs";
 // -- run database
 import rdb from "./routes/rdb.mjs";
 
-// -- provide access to detConfigs
-import ddb from "./routes/ddb.mjs";
-
-// -- provide access to DQM plots
-import dqm from "./routes/dqm.mjs";
-
 import { createRelvalRouter } from "./lib/relvalRouter.mjs";
 
 import { dirname } from "path";
@@ -40,8 +34,6 @@ app.locals.isFiltered = false;
 // Load the /posts routes
 app.use("/cdb", cdb);
 app.use("/rdb", rdb);
-app.use("/ddb", ddb);
-app.use("/dqm", dqm);
 
 // RelVal UI: /relval/ must use a trailing slash so relative "api/setups" resolves correctly.
 app.get("/relval", (_req, res) => res.redirect(302, "/relval/"));
