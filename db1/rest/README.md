@@ -100,6 +100,7 @@ moor>curl -X POST -F "name=pixelpedestal" -F "run=7600" -F "file=@cal.root" http
 moor>curl -OJ "http://localhost:5050/cal/pixelpedestal/7580"
 moor>curl "http://localhost:5050/cal/pixelpedestal/7580/meta"
 moor>curl "http://localhost:5050/cal/pixelpedestal"
+moor>curl -X DELETE "http://localhost:5050/cal/pixelpedestal/7559"
 
 
 ```
