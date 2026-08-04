@@ -32,10 +32,10 @@ def apply_cdb_html_overlay(path: Path) -> None:
         ),
         ("fetch(`/cdb/findPayloadsByTag/${tag}`)", "fetch(`${CDB_API_BASE}/findPayloadsByTag/${tag}`)"),
         ("fetch(`/cdb/findOne/payloads/${encodeURIComponent(hash)}`)", "fetch(`${CDB_API_BASE}/findOne/payloads/${encodeURIComponent(hash)}`)"),
-        ("fetch('/cdb/findAll/detconfigsSummary')", "fetch(`${CDB_API_BASE}/findAll/detconfigsSummary`)"),
-        ("fetch(`/cdb/downloadTag?tag=${encodeURIComponent(tag)}`)", "fetch(`${CDB_API_BASE}/downloadTag?tag=${encodeURIComponent(tag)}`)"),
-        ("fetch(`/cdb/deleteDetconfigTag?tag=${encodeURIComponent(tag)}`, {", "fetch(`${CDB_API_BASE}/deleteDetconfigTag?tag=${encodeURIComponent(tag)}`, {"),
-        ("fetch('/cdb/uploadMany', {", "fetch(`${CDB_API_BASE}/uploadMany`, {"),
+        ("fetch('/detconfigs/findAll/detconfigsSummary')", "fetch(`${CDB_API_BASE}/findAll/detconfigsSummary`)"),
+        ("fetch(`/detconfigs/downloadTag?tag=${encodeURIComponent(tag)}`)", "fetch(`${CDB_API_BASE}/downloadTag?tag=${encodeURIComponent(tag)}`)"),
+        ("fetch(`/detconfigs/deleteDetconfigTag?tag=${encodeURIComponent(tag)}`, {", "fetch(`${CDB_API_BASE}/deleteDetconfigTag?tag=${encodeURIComponent(tag)}`, {"),
+        ("fetch('/detconfigs/uploadMany', {", "fetch(`${CDB_API_BASE}/uploadMany`, {"),
         ("fetch('/cdb/hostname')", "fetch(`${CDB_API_BASE}/hostname`)"),
     ]
     for old, new in replacements:

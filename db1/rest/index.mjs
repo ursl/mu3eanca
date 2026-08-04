@@ -10,6 +10,9 @@ import db from "./db/conn.mjs";
 // -- conditions database
 import cdb from "./routes/cdb.mjs";
 
+// -- detector configs (Mongo detconfigs collection)
+import detconfigs from "./routes/detconfigs.mjs";
+
 // -- detector calibrations (Mongo collection + GridFS; mounted under /detcal)
 import detcal from "./routes/detcal.mjs";
 
@@ -36,6 +39,10 @@ app.locals.isFiltered = false;
 
 // Load the /posts routes
 app.use("/cdb", cdb);
+// Preferred path for detconfigs; also mounted under /cdb below for legacy clients
+// (uploadDetConfig etc. use /cdb/... and often curl without -L, so HTTP redirects are not used).
+app.use("/detconfigs", detconfigs);
+app.use("/cdb", detconfigs);
 app.use("/detcal", detcal);
 app.use("/rdb", rdb);
 

@@ -80,16 +80,14 @@ moor>curl http://pc11740.psi.ch/cdb/findOne/payloads/tag_mppcalignment_mcidealv5
 {"_id":"659bc2d672ec635e5d0cad04","hash":"tag_mppcalignment_mcidealv5.1_iov_1","comment":"mcidealv5.1 MPPC detector initialization","schema":"define this","date":"2024-01-05 10:49:09","BLOB":"zvqt3gAAAAAAAAAAAAAAANMAkhp1Iz/AV8buw ...
 
 
-moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=5" http://localhost:5050/cdb/upload
-moor>curl -O -J "http://pc11740:5050/cdb/downloadTag?tag=5"
-
-
-moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "file=@mask_408_1_12_DS_chip5.bin" -F "file=@mask_408_1_12_DS_chip6.bin" -F "tag=4" http://localhost:5050/cdb/uploadMany
-
-
-moor>curl -X POST -F "tag=j1" -F "filename=j1/root.json" -F "file=@j1/root.json" http://localhost:5050/cdb/uploadJSON
-
-moor>curl http://localhost:5050/cdb/downloadJSON/j1 -o root.json
+# Detector configs (Mongo `detconfigs`; also still available under /cdb/... for legacy clients)
+moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=5" http://localhost:5050/detconfigs/upload
+moor>curl -O -J "http://localhost:5050/detconfigs/downloadTag?tag=5"
+moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "file=@mask_408_1_12_DS_chip5.bin" -F "file=@mask_408_1_12_DS_chip6.bin" -F "tag=4" http://localhost:5050/detconfigs/uploadMany
+moor>curl -X POST -F "tag=j1" -F "filename=j1/root.json" -F "file=@j1/root.json" http://localhost:5050/detconfigs/uploadJSON
+moor>curl http://localhost:5050/detconfigs/downloadJSON/j1 -o root.json
+moor>curl -fsS "http://localhost:5050/detconfigs/detconfigTags"
+moor>curl -X DELETE "http://localhost:5050/detconfigs/deleteDetconfigTag?tag=j1"
 
 curl -X PUT -H "Content-Type: application/json" --data-binary @/Users/ursl/tmp/maskfiles/dqm101.json http://pc11740/rdb/addAttribute/7559
 
