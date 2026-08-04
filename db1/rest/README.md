@@ -93,14 +93,14 @@ moor>curl http://localhost:5050/cdb/downloadJSON/j1 -o root.json
 
 curl -X PUT -H "Content-Type: application/json" --data-binary @/Users/ursl/tmp/maskfiles/dqm101.json http://pc11740/rdb/addAttribute/7559
 
-# Calibrations (Mongo `calibrations` + GridFS `calibrationBlobs`)
+# Detector calibrations (Mongo `detcal` + GridFS `detcalBlobs`)
 # Upload any file; indexed by (name, run). Download uses IOV-style lookup: most recent run <= RUN.
-moor>curl -X POST -F "name=pixelpedestal" -F "run=7559" -F "file=@cal.json" http://localhost:5050/cal/upload
-moor>curl -X POST -F "name=pixelpedestal" -F "run=7600" -F "file=@cal.root" http://localhost:5050/cal/upload
-moor>curl -OJ "http://localhost:5050/cal/pixelpedestal/7580"
-moor>curl "http://localhost:5050/cal/pixelpedestal/7580/meta"
-moor>curl "http://localhost:5050/cal/pixelpedestal"
-moor>curl -X DELETE "http://localhost:5050/cal/pixelpedestal/7559"
+moor>curl -X POST -F "name=pixelpedestal" -F "run=7559" -F "file=@pedestal.json" http://localhost:5050/detcal/upload
+moor>curl -X POST -F "name=pixelpedestal" -F "run=7600" -F "file=@pedestal.root" http://localhost:5050/detcal/upload
+moor>curl -OJ "http://localhost:5050/detcal/pixelpedestal/7580"
+moor>curl "http://localhost:5050/detcal/pixelpedestal/7580/meta"
+moor>curl "http://localhost:5050/detcal/pixelpedestal"
+moor>curl -X DELETE "http://localhost:5050/detcal/pixelpedestal/7559"
 
 
 ```

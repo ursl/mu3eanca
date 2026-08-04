@@ -6,10 +6,10 @@ import db from "../db/conn.mjs";
 
 const router = express.Router();
 
-const COLLECTION = "calibrations";
-const GRIDFS_BUCKET = "calibrationBlobs";
+const COLLECTION = "detcal";
+const GRIDFS_BUCKET = "detcalBlobs";
 
-// Always GridFS (parallel to payloads / payloadBlobs). Metadata lives in `calibrations`;
+// Always GridFS (parallel to payloads / payloadBlobs). Metadata lives in `detcal`;
 // file bytes live in GridFS — no need to split the collection for Mongo.
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -18,13 +18,13 @@ const upload = multer({
   },
 });
 
-let calibrationsBucket = null;
+let detcalBucket = null;
 function getBucket() {
   if (!db?.databaseName) return null;
-  if (!calibrationsBucket) {
-    calibrationsBucket = new GridFSBucket(db, { bucketName: GRIDFS_BUCKET });
+  if (!detcalBucket) {
+    detcalBucket = new GridFSBucket(db, { bucketName: GRIDFS_BUCKET });
   }
-  return calibrationsBucket;
+  return detcalBucket;
 }
 
 let indexReady = false;
@@ -56,7 +56,7 @@ async function deleteGridFsFile(bucket, id) {
   }
 }
 
-async function findCalibration(name, run, { exact = false } = {}) {
+async function findDetcal(name, run, { exact = false } = {}) {
   const collection = db.collection(COLLECTION);
   if (exact) {
     return collection.findOne({ name, run });
@@ -81,12 +81,12 @@ function metaResponse(doc) {
 }
 
 // ----------------------------------------------------------------------
-// Upload a calibration file into Mongo + GridFS (any content; no payload validation).
+// Upload a detector-calibration file into Mongo + GridFS (any content; no payload validation).
 //
-// curl -X POST -F "name=pixelpedestal" -F "run=7559" -F "file=@cal.json" \
-//   http://localhost:5050/cal/upload
+// curl -X POST -F "name=pixelpedestal" -F "run=7559" -F "file=@pedestal.json" \
+//   http://localhost:5050/detcal/upload
 // curl -X POST -F "name=pixelpedestal" -F "run=7559" \
-//   -F "file=@cal.root" -F "replace=1" http://localhost:5050/cal/upload
+//   -F "file=@pedestal.root" -F "replace=1" http://localhost:5050/detcal/upload
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -96,7 +96,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     const name = (req.body.name || "").trim();
     const run = parseInt(req.body.run, 10);
     if (!name) {
-      return res.status(400).send("Missing calibration 'name'");
+      return res.status(400).send("Missing detcal 'name'");
     }
     if (!Number.isFinite(run) || run < 0) {
       return res.status(400).send("Missing or invalid 'run' (non-negative integer)");
@@ -118,7 +118,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     if (existing && !replace) {
       return res
         .status(409)
-        .send(`Calibration '${name}' for run ${run} already exists (pass replace=1 to overwrite)`);
+        .send(`Detcal '${name}' for run ${run} already exists (pass replace=1 to overwrite)`);
     }
 
     const filename = req.file.originalname || `${name}_${run}`;
@@ -148,18 +148,18 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     }
 
     res.status(200).json({
-      message: existing ? "Calibration replaced" : "Calibration uploaded",
-      calibration: metaResponse(doc),
+      message: existing ? "Detcal replaced" : "Detcal uploaded",
+      detcal: metaResponse(doc),
     });
   } catch (error) {
-    console.error("cal/upload:", error);
-    res.status(500).send("Error uploading calibration: " + error.message);
+    console.error("detcal/upload:", error);
+    res.status(500).send("Error uploading detcal: " + error.message);
   }
 });
 
 // ----------------------------------------------------------------------
-// Metadata for the most recent calibration with run <= :run (or exact with ?exact=1).
-// curl http://localhost:5050/cal/pixelpedestal/7559/meta
+// Metadata for the most recent detcal with run <= :run (or exact with ?exact=1).
+// curl http://localhost:5050/detcal/pixelpedestal/7559/meta
 router.get("/:name/:run/meta", async (req, res) => {
   try {
     const name = req.params.name;
@@ -169,23 +169,23 @@ router.get("/:name/:run/meta", async (req, res) => {
     }
     await ensureIndexes();
     const exact = req.query.exact === "1" || req.query.exact === "true";
-    const doc = await findCalibration(name, run, { exact });
+    const doc = await findDetcal(name, run, { exact });
     if (!doc) {
       return res.status(404).send("Not found");
     }
     res.status(200).json(metaResponse(doc));
   } catch (error) {
-    console.error("cal meta:", error);
-    res.status(500).send("Error reading calibration metadata: " + error.message);
+    console.error("detcal meta:", error);
+    res.status(500).send("Error reading detcal metadata: " + error.message);
   }
 });
 
 // ----------------------------------------------------------------------
-// Download calibration bytes for most recent run <= :run (IOV-style, like C++ whichIOV).
+// Download detcal bytes for most recent run <= :run (IOV-style, like C++ whichIOV).
 // Use ?exact=1 for an exact run match.
 //
-// curl -OJ "http://localhost:5050/cal/pixelpedestal/7559"
-// curl -OJ "http://localhost:5050/cal/pixelpedestal/7559?exact=1"
+// curl -OJ "http://localhost:5050/detcal/pixelpedestal/7559"
+// curl -OJ "http://localhost:5050/detcal/pixelpedestal/7559?exact=1"
 router.get("/:name/:run", async (req, res) => {
   try {
     const name = req.params.name;
@@ -201,12 +201,12 @@ router.get("/:name/:run", async (req, res) => {
 
     await ensureIndexes();
     const exact = req.query.exact === "1" || req.query.exact === "true";
-    const doc = await findCalibration(name, run, { exact });
+    const doc = await findDetcal(name, run, { exact });
     if (!doc) {
       return res.status(404).send("Not found");
     }
     if (doc.blobStorage !== "gridfs" || !doc.blobGridFsId) {
-      return res.status(500).send("Calibration has no GridFS blob");
+      return res.status(500).send("Detcal has no GridFS blob");
     }
 
     const oid = new ObjectId(doc.blobGridFsId);
@@ -216,22 +216,22 @@ router.get("/:name/:run", async (req, res) => {
     }
 
     res.setHeader("Content-Disposition", `attachment; filename="${doc.filename}"`);
-    res.setHeader("X-Calibration-Name", doc.name);
-    res.setHeader("X-Calibration-Run", String(doc.run));
+    res.setHeader("X-Detcal-Name", doc.name);
+    res.setHeader("X-Detcal-Run", String(doc.run));
     res.setHeader("Content-Length", files[0].length);
 
     bucket.openDownloadStream(oid).pipe(res);
   } catch (error) {
-    console.error("cal download:", error);
+    console.error("detcal download:", error);
     if (!res.headersSent) {
-      res.status(500).send("Error downloading calibration: " + error.message);
+      res.status(500).send("Error downloading detcal: " + error.message);
     }
   }
 });
 
 // ----------------------------------------------------------------------
-// List stored runs for a calibration name (newest first).
-// curl http://localhost:5050/cal/pixelpedestal
+// List stored runs for a detcal name (newest first).
+// curl http://localhost:5050/detcal/pixelpedestal
 router.get("/:name", async (req, res) => {
   try {
     await ensureIndexes();
@@ -251,14 +251,14 @@ router.get("/:name", async (req, res) => {
       })),
     );
   } catch (error) {
-    console.error("cal list:", error);
-    res.status(500).send("Error listing calibrations: " + error.message);
+    console.error("detcal list:", error);
+    res.status(500).send("Error listing detcal: " + error.message);
   }
 });
 
 // ----------------------------------------------------------------------
 // Delete exact (name, run). Removes metadata + GridFS blob.
-// curl -X DELETE http://localhost:5050/cal/pixelpedestal/7559
+// curl -X DELETE http://localhost:5050/detcal/pixelpedestal/7559
 router.delete("/:name/:run", async (req, res) => {
   try {
     const name = req.params.name;
@@ -282,10 +282,10 @@ router.delete("/:name/:run", async (req, res) => {
       await deleteGridFsFile(bucket, doc.blobGridFsId);
     }
     await collection.deleteOne({ _id: doc._id });
-    res.status(200).json({ message: "Calibration deleted", name, run });
+    res.status(200).json({ message: "Detcal deleted", name, run });
   } catch (error) {
-    console.error("cal delete:", error);
-    res.status(500).send("Error deleting calibration: " + error.message);
+    console.error("detcal delete:", error);
+    res.status(500).send("Error deleting detcal: " + error.message);
   }
 });
 

@@ -10,8 +10,8 @@ import db from "./db/conn.mjs";
 // -- conditions database
 import cdb from "./routes/cdb.mjs";
 
-// -- calibrations (Mongo collection + GridFS; mounted under /cal)
-import cal from "./routes/cal.mjs";
+// -- detector calibrations (Mongo collection + GridFS; mounted under /detcal)
+import detcal from "./routes/detcal.mjs";
 
 // -- run database
 import rdb from "./routes/rdb.mjs";
@@ -36,7 +36,7 @@ app.locals.isFiltered = false;
 
 // Load the /posts routes
 app.use("/cdb", cdb);
-app.use("/cal", cal);
+app.use("/detcal", detcal);
 app.use("/rdb", rdb);
 
 // RelVal UI: /relval/ must use a trailing slash so relative "api/setups" resolves correctly.
