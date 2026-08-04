@@ -1145,7 +1145,7 @@
             setLoading('detconfigs-loading', true);
             clearTable('detconfigs-table');
             try {
-                const response = await fetch(`${CDB_API_BASE}/findAll/detconfigsSummary`);
+                const response = await fetch('/detconfigs/findAll/detconfigsSummary');
                 const detconfigs = await response.json();
                 const tbody = document.querySelector('#detconfigs-table tbody');
                 if (!detconfigs || detconfigs.length === 0) {
@@ -1186,7 +1186,7 @@
 
                             try {
                                 // Fetch the file as a blob
-                                const response = await fetch(`${CDB_API_BASE}/downloadTag?tag=${encodeURIComponent(tag)}`);
+                                const response = await fetch(`/detconfigs/downloadTag?tag=${encodeURIComponent(tag)}`);
                                 if (!response.ok) {
                                     throw new Error(`HTTP error! status: ${response.status}`);
                                 }
@@ -1246,7 +1246,7 @@
                             btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
 
                             try {
-                                const response = await fetch(`${CDB_API_BASE}/deleteDetconfigTag?tag=${encodeURIComponent(tag)}`, {
+                                const response = await fetch(`/detconfigs/deleteDetconfigTag?tag=${encodeURIComponent(tag)}`, {
                                     method: 'DELETE',
                                     headers: {
                                         'Accept': 'application/json'
@@ -1333,7 +1333,7 @@
                 progressBar.style.width = '0%';
 
                 // Upload files
-                const response = await fetch(`${CDB_API_BASE}/uploadMany`, {
+                const response = await fetch('/detconfigs/uploadMany', {
                     method: 'POST',
                     body: formData
                 });

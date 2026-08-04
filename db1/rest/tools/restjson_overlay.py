@@ -24,6 +24,9 @@ def apply_cdb_html_overlay(path: Path) -> None:
         "insert backend switch block",
     )
 
+    # Keep /detconfigs/* as-is (own Express mount on the Mongo REST server).
+    # JSON backend disables detconfigs UI via isJsonBackend below — do not rewrite
+    # those fetches onto CDB_API_BASE (/cdb), which no longer owns detconfigs.
     replacements = [
         ("fetch('/cdb/findAll/globaltags')", "fetch(`${CDB_API_BASE}/findAll/globaltags`)"),
         (
@@ -32,10 +35,6 @@ def apply_cdb_html_overlay(path: Path) -> None:
         ),
         ("fetch(`/cdb/findPayloadsByTag/${tag}`)", "fetch(`${CDB_API_BASE}/findPayloadsByTag/${tag}`)"),
         ("fetch(`/cdb/findOne/payloads/${encodeURIComponent(hash)}`)", "fetch(`${CDB_API_BASE}/findOne/payloads/${encodeURIComponent(hash)}`)"),
-        ("fetch('/detconfigs/findAll/detconfigsSummary')", "fetch(`${CDB_API_BASE}/findAll/detconfigsSummary`)"),
-        ("fetch(`/detconfigs/downloadTag?tag=${encodeURIComponent(tag)}`)", "fetch(`${CDB_API_BASE}/downloadTag?tag=${encodeURIComponent(tag)}`)"),
-        ("fetch(`/detconfigs/deleteDetconfigTag?tag=${encodeURIComponent(tag)}`, {", "fetch(`${CDB_API_BASE}/deleteDetconfigTag?tag=${encodeURIComponent(tag)}`, {"),
-        ("fetch('/detconfigs/uploadMany', {", "fetch(`${CDB_API_BASE}/uploadMany`, {"),
         ("fetch('/cdb/hostname')", "fetch(`${CDB_API_BASE}/hostname`)"),
     ]
     for old, new in replacements:
