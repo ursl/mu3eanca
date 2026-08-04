@@ -39,10 +39,7 @@ app.locals.isFiltered = false;
 
 // Load the /posts routes
 app.use("/cdb", cdb);
-// Preferred path for detconfigs; also mounted under /cdb below for legacy clients
-// (uploadDetConfig etc. use /cdb/... and often curl without -L, so HTTP redirects are not used).
 app.use("/detconfigs", detconfigs);
-app.use("/cdb", detconfigs);
 app.use("/detcal", detcal);
 app.use("/rdb", rdb);
 
