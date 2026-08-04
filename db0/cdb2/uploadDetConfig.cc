@@ -6,6 +6,7 @@
 #include <vector>     // for std::vector
 #include <string>     // for std::string
 #include <string.h>   // for strcmp
+#include "cdbUtil.hh"
 
 using namespace std;
 
@@ -14,11 +15,12 @@ using namespace std;
 // -- uploadDetConfig
 // ------------------
 //
-// -- upload (binary) files from a directory with a "tag" to the CDB (detconfigs collection)
+// -- upload (binary) files from a directory with a "tag" to the detconfigs collection
 //
 // -- Usage:
 //    uploadDetConfig --dir /Users/ursl/Downloads/tdac_files_bu_06_10 -p mask_chip_ -t tdac_files_bu_06_10
-//    curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=testtag" http://mu3edb0:5050/cdb/upload
+//    curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=testtag" http://mu3edb0.psi.ch/detconfigs/upload
+//    uploadDetConfig --host localhost --port 5050 ...   (direct to Node, bypass nginx)
 // ----------------------------------------------------------------------
 
 
@@ -26,12 +28,14 @@ using namespace std;
 // ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
   
-  string dirPath("."), tag("nada"), host("mu3edb0"), pattern("mask_chip_");
+  string dirPath("."), tag("nada"), host("mu3edb0.psi.ch"), pattern("mask_chip_");
+  int port(0);
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "--dir"))     {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "-d"))        {dirPath = string(argv[++i]);}
     if (!strcmp(argv[i], "--host"))    {host = string(argv[++i]);}
     if (!strcmp(argv[i], "-h"))        {host = string(argv[++i]);}
+    if (!strcmp(argv[i], "--port") && i + 1 < argc) {port = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-t"))        {tag = string(argv[++i]);}
     if (!strcmp(argv[i], "--tag"))     {tag = string(argv[++i]);}
     if (!strcmp(argv[i], "--pattern")) {pattern = string(argv[++i]);}
@@ -41,14 +45,11 @@ int main(int argc, char* argv[]) {
     // -- check if tag is specified
   if ("nada" == tag) {
     cout << "Tag is not specified" << endl;
-    cout << "Usage: uploadDetConfig --dir /path/to/directory -p mask_chip_ -t tag" << endl;
+    cout << "Usage: uploadDetConfig --dir /path/to/directory -p mask_chip_ -t tag [--host mu3edb0.psi.ch] [--port 5050]" << endl;
     return 1;
   }
 
-
-  // -- Access the database and collection
-  // string url = "http://" + host + ":5050/cdb/uploadMany";
-  string url = "http://" + host + ":5050/cdb/upload";
+  string url = detconfigsRestBase(host, port) + "/upload";
   cout << "Uploading to ->" << url << "<-" << endl;
 
   vector<string> vfiles;

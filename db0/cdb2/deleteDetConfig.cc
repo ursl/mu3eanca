@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <string.h>
+#include "cdbUtil.hh"
 
 using namespace std;
 
@@ -9,16 +10,19 @@ using namespace std;
 // deleteDetConfig — remove all documents in MongoDB detconfigs for a tag (via REST).
 //
 // Usage:
-//   deleteDetConfig --host mu3edb0 --tag <tagname>
-//   deleteDetConfig --host mu3edb0 --listtags    (-l)
+//   deleteDetConfig --tag <tagname>
+//   deleteDetConfig --listtags    (-l)
 //
-// REST:
-//   curl -fS -X DELETE "http://host:5050/cdb/deleteDetconfigTag?tag=..."
-//   curl -fsS "http://host:5050/cdb/detconfigTags"
+// REST (via nginx on port 80):
+//   curl -fS -X DELETE "http://mu3edb0.psi.ch/detconfigs/deleteDetconfigTag?tag=..."
+//   curl -fsS "http://mu3edb0.psi.ch/detconfigs/detconfigTags"
+//
+// Direct to Node: --host localhost --port 5050
 // ----------------------------------------------------------------------
 
 int main(int argc, char* argv[]) {
-  string tag("nada"), host("mu3edb0");
+  string tag("nada"), host("mu3edb0.psi.ch");
+  int port(0);
   bool listtags(false);
 
   for (int i = 1; i < argc; ++i) {
@@ -26,6 +30,8 @@ int main(int argc, char* argv[]) {
       host = string(argv[++i]);
     } else if (!strcmp(argv[i], "-h") && i + 1 < argc) {
       host = string(argv[++i]);
+    } else if (!strcmp(argv[i], "--port") && i + 1 < argc) {
+      port = atoi(argv[++i]);
     } else if (!strcmp(argv[i], "--listtags")) {
       listtags = true;
     } else if (!strcmp(argv[i], "-l")) {
@@ -37,8 +43,10 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  string restBase = detconfigsRestBase(host, port);
+
   if (listtags) {
-    string url = "http://" + host + ":5050/cdb/detconfigTags";
+    string url = restBase + "/detconfigTags";
     string cmd = string("curl -fSs \"") + url + "\"";
     int st = system(cmd.c_str());
     if (st != 0) {
@@ -50,12 +58,12 @@ int main(int argc, char* argv[]) {
 
   if (tag == "nada") {
     cerr << "deleteDetConfig: --tag <name> is required" << endl;
-    cerr << "Usage: deleteDetConfig --host <host> --tag <tagname>" << endl;
-    cerr << "       deleteDetConfig --host <host> --listtags  (-l)" << endl;
+    cerr << "Usage: deleteDetConfig [--host mu3edb0.psi.ch] [--port 5050] --tag <tagname>" << endl;
+    cerr << "       deleteDetConfig [--host mu3edb0.psi.ch] --listtags  (-l)" << endl;
     return 1;
   }
 
-  string url = "http://" + host + ":5050/cdb/deleteDetconfigTag?tag=" + tag;
+  string url = restBase + "/deleteDetconfigTag?tag=" + tag;
   string cmd = string("curl -fS -X DELETE \"") + url + "\"";
   cout << "Deleting detconfigs tag ->" << tag << "<- via REST" << endl;
   cout << "cmd: " << cmd << endl;

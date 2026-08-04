@@ -28,6 +28,10 @@ std::string timeStamp(int format = 0);
 // ======================================================================
 std::string jsFormat(std::vector<std::string>);
 std::string jsFormat(std::vector<int>);
+// port <= 0: http://host/detconfigs (via nginx on port 80)
+// port > 0:  http://host:port/detconfigs (direct to Node/Express)
+std::string detconfigsRestBase(const std::string& host, int port = 0);
+
 // -- check if file exists
 bool fileExists(const std::string& filename);
 

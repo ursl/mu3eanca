@@ -17,6 +17,7 @@ using namespace std;
 
 namespace {
 
+// ----------------------------------------------------------------------
 void collectPayloadFilesRecursive(const string& dir, vector<string>& out) {
   DIR* folder = opendir(dir.c_str());
   if (!folder) return;
@@ -774,4 +775,13 @@ string timeStamp(int format) {
            << std::setfill('0') << std::setw(2) << sec;
   }
   return result.str();
+}
+
+
+// ----------------------------------------------------------------------
+string detconfigsRestBase(const string& host, int port) {
+  if (port > 0) {
+    return "http://" + host + ":" + to_string(port) + "/detconfigs";
+  }
+  return "http://" + host + "/detconfigs";
 }
