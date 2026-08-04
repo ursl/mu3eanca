@@ -35,41 +35,6 @@ async function ensureIndexes() {
   indexReady = true;
 }
 
-function detectFormat(filename, explicit, buffer) {
-  if (explicit === "json" || explicit === "ndjson") return explicit;
-  const lower = (filename || "").toLowerCase();
-  if (lower.endsWith(".ndjson") || lower.endsWith(".jsonl")) return "ndjson";
-  if (lower.endsWith(".json")) return "json";
-
-  const text = buffer.toString("utf8").trimStart();
-  if (text.startsWith("{") || text.startsWith("[")) return "json";
-  return "ndjson";
-}
-
-function contentTypeFor(format) {
-  return format === "ndjson" ? "application/x-ndjson" : "application/json";
-}
-
-/** Light validation so we do not store garbage; does not rewrite the bytes. */
-function validatePayload(buffer, format) {
-  const text = buffer.toString("utf8");
-  if (format === "json") {
-    JSON.parse(text);
-    return;
-  }
-  // NDJSON / JSONL: each non-empty line must be a JSON value
-  const lines = text.split(/\r?\n/);
-  let nonEmpty = 0;
-  for (const line of lines) {
-    if (line.trim() === "") continue;
-    JSON.parse(line);
-    nonEmpty += 1;
-  }
-  if (nonEmpty === 0) {
-    throw new Error("NDJSON file has no non-empty lines");
-  }
-}
-
 function uploadToGridFS(bucket, filename, buffer, metadata) {
   return new Promise((resolve, reject) => {
     const uploadStream = bucket.openUploadStream(filename, { metadata });
@@ -108,8 +73,6 @@ function metaResponse(doc) {
     name: doc.name,
     run: doc.run,
     filename: doc.filename,
-    format: doc.format,
-    contentType: doc.contentType,
     comment: doc.comment || "",
     date: doc.date,
     blobStorage: doc.blobStorage,
@@ -118,12 +81,12 @@ function metaResponse(doc) {
 }
 
 // ----------------------------------------------------------------------
-// Upload a calibration (JSON or NDJSON) into Mongo + GridFS.
+// Upload a calibration file into Mongo + GridFS (any content; no payload validation).
 //
 // curl -X POST -F "name=pixelpedestal" -F "run=7559" -F "file=@cal.json" \
 //   http://localhost:5050/cal/upload
-// curl -X POST -F "name=pixelpedestal" -F "run=7559" -F "format=ndjson" \
-//   -F "file=@cal.ndjson" -F "replace=1" http://localhost:5050/cal/upload
+// curl -X POST -F "name=pixelpedestal" -F "run=7559" \
+//   -F "file=@cal.root" -F "replace=1" http://localhost:5050/cal/upload
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -137,17 +100,6 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     }
     if (!Number.isFinite(run) || run < 0) {
       return res.status(400).send("Missing or invalid 'run' (non-negative integer)");
-    }
-
-    const format = detectFormat(
-      req.file.originalname,
-      (req.body.format || "").toLowerCase(),
-      req.file.buffer,
-    );
-    try {
-      validatePayload(req.file.buffer, format);
-    } catch (err) {
-      return res.status(400).send(`Invalid ${format.toUpperCase()}: ${err.message}`);
     }
 
     const bucket = getBucket();
@@ -169,13 +121,10 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         .send(`Calibration '${name}' for run ${run} already exists (pass replace=1 to overwrite)`);
     }
 
-    const contentType = contentTypeFor(format);
-    const filename = req.file.originalname || `${name}_${run}.${format === "ndjson" ? "ndjson" : "json"}`;
+    const filename = req.file.originalname || `${name}_${run}`;
     const gridFsId = await uploadToGridFS(bucket, filename, req.file.buffer, {
       name,
       run,
-      format,
-      contentType,
     });
 
     if (existing?.blobGridFsId) {
@@ -186,8 +135,6 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       name,
       run,
       filename,
-      format,
-      contentType,
       comment: req.body.comment || "",
       date: new Date().toISOString(),
       blobStorage: "gridfs",
@@ -268,12 +215,9 @@ router.get("/:name/:run", async (req, res) => {
       return res.status(404).send("GridFS file not found");
     }
 
-    const contentType = doc.contentType || contentTypeFor(doc.format);
-    res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", `attachment; filename="${doc.filename}"`);
     res.setHeader("X-Calibration-Name", doc.name);
     res.setHeader("X-Calibration-Run", String(doc.run));
-    res.setHeader("X-Calibration-Format", doc.format || "");
     res.setHeader("Content-Length", files[0].length);
 
     bucket.openDownloadStream(oid).pipe(res);
@@ -302,8 +246,6 @@ router.get("/:name", async (req, res) => {
         name: doc.name,
         run: doc.run,
         filename: doc.filename,
-        format: doc.format,
-        contentType: doc.contentType,
         comment: doc.comment || "",
         date: doc.date,
       })),
