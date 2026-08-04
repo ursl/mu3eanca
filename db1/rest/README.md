@@ -48,6 +48,10 @@ server {
 ```
 where, of course, `pc11740.psi.ch` should be replaced with whatever machine you are running the server on. Test the configuration with `sudo nginx -t` and then `sudo service nginx restart`. 
 
+On **mu3edb0**, use the site config in `../../db2/nginx.conf` and
+`../../db2/nginx-proxy-common.conf` (see `db2/README.md` for `sudo cp` / reload steps).
+That file proxies `/cdb`, `/rdb`, `/detconfigs`, `/detcal`, `/relval` to port 5050.
+
 
 ```
 pc11740>npm run start
@@ -80,25 +84,28 @@ moor>curl http://pc11740.psi.ch/cdb/findOne/payloads/tag_mppcalignment_mcidealv5
 {"_id":"659bc2d672ec635e5d0cad04","hash":"tag_mppcalignment_mcidealv5.1_iov_1","comment":"mcidealv5.1 MPPC detector initialization","schema":"define this","date":"2024-01-05 10:49:09","BLOB":"zvqt3gAAAAAAAAAAAAAAANMAkhp1Iz/AV8buw ...
 
 
-# Detector configs (Mongo `detconfigs`; also still available under /cdb/... for legacy clients)
+# Detector configs (Mongo `detconfigs`; default via nginx on port 80)
+moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=5" http://mu3edb0.psi.ch/detconfigs/upload
+moor>curl -O -J "http://mu3edb0.psi.ch/detconfigs/downloadTag?tag=5"
+moor>curl -v -F "file=@..." -F "file=@..." -F "tag=4" http://mu3edb0.psi.ch/detconfigs/uploadMany
+moor>curl -X POST -F "tag=j1" -F "filename=j1/root.json" -F "file=@j1/root.json" http://mu3edb0.psi.ch/detconfigs/uploadJSON
+moor>curl http://mu3edb0.psi.ch/detconfigs/downloadJSON/j1 -o root.json
+moor>curl -fsS "http://mu3edb0.psi.ch/detconfigs/detconfigTags"
+moor>curl -X DELETE "http://mu3edb0.psi.ch/detconfigs/deleteDetconfigTag?tag=j1"
+# Direct to Node (local dev): use localhost:5050 or CLI --port 5050
 moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=5" http://localhost:5050/detconfigs/upload
-moor>curl -O -J "http://localhost:5050/detconfigs/downloadTag?tag=5"
-moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "file=@mask_408_1_12_DS_chip5.bin" -F "file=@mask_408_1_12_DS_chip6.bin" -F "tag=4" http://localhost:5050/detconfigs/uploadMany
-moor>curl -X POST -F "tag=j1" -F "filename=j1/root.json" -F "file=@j1/root.json" http://localhost:5050/detconfigs/uploadJSON
-moor>curl http://localhost:5050/detconfigs/downloadJSON/j1 -o root.json
-moor>curl -fsS "http://localhost:5050/detconfigs/detconfigTags"
-moor>curl -X DELETE "http://localhost:5050/detconfigs/deleteDetconfigTag?tag=j1"
 
 curl -X PUT -H "Content-Type: application/json" --data-binary @/Users/ursl/tmp/maskfiles/dqm101.json http://pc11740/rdb/addAttribute/7559
 
 # Detector calibrations (Mongo `detcal` + GridFS `detcalBlobs`)
 # Upload any file; indexed by (name, run). Download uses IOV-style lookup: most recent run <= RUN.
+# Detector calibrations (Mongo `detcal` + GridFS; via nginx on port 80)
+moor>curl -X POST -F "name=pixelpedestal" -F "run=7559" -F "file=@pedestal.json" http://mu3edb0.psi.ch/detcal/upload
+moor>curl -OJ "http://mu3edb0.psi.ch/detcal/pixelpedestal/7580"
+moor>curl "http://mu3edb0.psi.ch/detcal/pixelpedestal"
+moor>curl -X DELETE "http://mu3edb0.psi.ch/detcal/pixelpedestal/7559"
+# Direct to Node (local dev):
 moor>curl -X POST -F "name=pixelpedestal" -F "run=7559" -F "file=@pedestal.json" http://localhost:5050/detcal/upload
-moor>curl -X POST -F "name=pixelpedestal" -F "run=7600" -F "file=@pedestal.root" http://localhost:5050/detcal/upload
-moor>curl -OJ "http://localhost:5050/detcal/pixelpedestal/7580"
-moor>curl "http://localhost:5050/detcal/pixelpedestal/7580/meta"
-moor>curl "http://localhost:5050/detcal/pixelpedestal"
-moor>curl -X DELETE "http://localhost:5050/detcal/pixelpedestal/7559"
 
 
 ```
