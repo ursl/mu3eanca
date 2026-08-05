@@ -1,42 +1,111 @@
 import express from "express";
-import { Binary } from "mongodb";
+import { GridFSBucket, ObjectId } from "mongodb";
 import multer from "multer";
 import archiver from "archiver";
 import stream from "stream";
-import fs from "fs";
 
 import db from "../db/conn.mjs";
 
 const router = express.Router();
 
+const COLLECTION = "detconfigs";
+// Parallel to detcal / detcalBlobs — separate GridFS bucket for config file bytes.
+const GRIDFS_BUCKET = "detconfigBlobs";
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB per file (MongoDB BSON limit is 16MB)
+    fileSize: 100 * 1024 * 1024, // 100MB; GridFS has no 16MB BSON limit
     files: 1000,
   },
 });
 
-const singleUpload = multer({ dest: "uploads/" });
+let detconfigBucket = null;
+function getBucket() {
+  if (!db?.databaseName) return null;
+  if (!detconfigBucket) {
+    detconfigBucket = new GridFSBucket(db, { bucketName: GRIDFS_BUCKET });
+  }
+  return detconfigBucket;
+}
+
+function uploadToGridFS(bucket, filename, buffer, metadata) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = bucket.openUploadStream(filename, { metadata });
+    uploadStream.on("error", reject);
+    uploadStream.on("finish", () => resolve(uploadStream.id));
+    uploadStream.end(buffer);
+  });
+}
+
+async function deleteGridFsFile(bucket, id) {
+  if (!id) return;
+  try {
+    await bucket.delete(new ObjectId(id));
+  } catch (err) {
+    if (err?.code !== "ENOENT" && err?.message && !/FileNotFound/i.test(err.message)) {
+      throw err;
+    }
+  }
+}
+
+/** Load file bytes: GridFS (new) or legacy inline `content` Binary/Buffer. */
+async function readFileBuffer(bucket, doc) {
+  if (doc.blobStorage === "gridfs" && doc.blobGridFsId) {
+    if (!bucket) {
+      throw new Error("MongoDB file storage unavailable");
+    }
+    const oid = new ObjectId(doc.blobGridFsId);
+    const chunks = [];
+    const downloadStream = bucket.openDownloadStream(oid);
+    await new Promise((resolve, reject) => {
+      downloadStream.on("data", (chunk) => chunks.push(chunk));
+      downloadStream.on("error", reject);
+      downloadStream.on("end", resolve);
+    });
+    return Buffer.concat(chunks);
+  }
+
+  // Legacy docs stored content inline in the detconfigs collection
+  if (doc.content?.buffer) {
+    return Buffer.from(doc.content.buffer);
+  }
+  if (Buffer.isBuffer(doc.content)) {
+    return doc.content;
+  }
+  throw new Error(`No file bytes for ${doc.filename || doc._id}`);
+}
 
 // --------------------------------------------------------------
-// -- Upload a single file to MongoDB detconfigs
+// -- Upload a single file (metadata in detconfigs, bytes in detconfigBlobs)
 router.post("/upload", upload.single("file"), async (req, res) => {
   console.log("detconfigs upload req.body:" + JSON.stringify(req.body));
   if (!req.file || !req.body.tag) {
     return res.status(400).send("File and tag are required");
   }
 
-  let filesCollection = db.collection("detconfigs");
+  const bucket = getBucket();
+  if (!bucket) {
+    return res.status(503).send("MongoDB file storage unavailable");
+  }
 
   try {
-    const fileData = {
-      tag: req.body.tag,
-      filename: req.file.originalname,
-      content: req.file.buffer,
-    };
+    const tag = req.body.tag;
+    const filename = req.file.originalname;
+    const blobGridFsId = await uploadToGridFS(bucket, filename, req.file.buffer, {
+      tag,
+      filename,
+    });
 
-    const result = await filesCollection.insertOne(fileData);
+    const filesCollection = db.collection(COLLECTION);
+    const result = await filesCollection.insertOne({
+      tag,
+      filename,
+      size: req.file.size,
+      uploadDate: new Date(),
+      blobStorage: "gridfs",
+      blobGridFsId,
+    });
     res.status(200).send(`File uploaded successfully with ID: ${result.insertedId}`);
   } catch (err) {
     res.status(500).send("Error uploading file: " + err.message);
@@ -44,7 +113,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
 });
 
 // --------------------------------------------------------------
-// -- Upload multiple files to MongoDB detconfigs
+// -- Upload multiple files
 router.post("/uploadMany", upload.array("file"), async (req, res) => {
   console.log("detconfigs uploadMany:", {
     files: req.files ? req.files.length : 0,
@@ -56,18 +125,34 @@ router.post("/uploadMany", upload.array("file"), async (req, res) => {
     return res.status(400).send("Files and tag are required");
   }
 
-  let filesCollection = db.collection("detconfigs");
+  const bucket = getBucket();
+  if (!bucket) {
+    return res.status(503).send("MongoDB file storage unavailable");
+  }
+
+  const tag = req.body.tag;
+  const uploadedIds = [];
 
   try {
-    const fileDocs = req.files.map((file) => ({
-      tag: req.body.tag,
-      filename: file.originalname,
-      content: file.buffer,
-      uploadDate: new Date(),
-      size: file.size,
-    }));
+    const fileDocs = [];
+    for (const file of req.files) {
+      const blobGridFsId = await uploadToGridFS(bucket, file.originalname, file.buffer, {
+        tag,
+        filename: file.originalname,
+      });
+      uploadedIds.push(blobGridFsId);
+      fileDocs.push({
+        tag,
+        filename: file.originalname,
+        size: file.size,
+        uploadDate: new Date(),
+        blobStorage: "gridfs",
+        blobGridFsId,
+      });
+    }
 
-    console.log(`Attempting to insert ${fileDocs.length} files for tag ${req.body.tag}`);
+    console.log(`Attempting to insert ${fileDocs.length} files for tag ${tag}`);
+    const filesCollection = db.collection(COLLECTION);
     const result = await filesCollection.insertMany(fileDocs);
     console.log(`Successfully uploaded ${result.insertedCount} files`);
 
@@ -79,6 +164,9 @@ router.post("/uploadMany", upload.array("file"), async (req, res) => {
     });
   } catch (err) {
     console.error("Error in detconfigs/uploadMany:", err);
+    for (const id of uploadedIds) {
+      await deleteGridFsFile(bucket, id).catch(() => {});
+    }
     res.status(500).json({
       success: false,
       message: "Error uploading files: " + err.message,
@@ -96,7 +184,8 @@ router.get("/downloadTag", async (req, res) => {
     return res.status(400).send("Tag parameter is required");
   }
 
-  let filesCollection = db.collection("detconfigs");
+  const bucket = getBucket();
+  const filesCollection = db.collection(COLLECTION);
 
   try {
     const files = await filesCollection.find({ tag }).toArray();
@@ -115,42 +204,55 @@ router.get("/downloadTag", async (req, res) => {
 
     archive.pipe(res);
 
-    files.forEach((file) => {
+    for (const file of files) {
+      const buf = await readFileBuffer(bucket, file);
       const bufferStream = new stream.PassThrough();
-      // -- note: .buffer is absolutely essential
-      bufferStream.end(file.content.buffer);
+      bufferStream.end(buf);
       archive.append(bufferStream, { name: file.filename });
-    });
+    }
 
     archive.on("error", (err) => {
       throw err;
     });
 
-    archive.finalize();
+    await archive.finalize();
   } catch (err) {
-    res.status(500).send("Error retrieving files: " + err.message);
+    if (!res.headersSent) {
+      res.status(500).send("Error retrieving files: " + err.message);
+    }
   }
 });
 
 // ----------------------------------------------------------------------
 // curl -X POST -F "tag=j1" -F "filename=j1/root.json" -F "file=@j1/root.json" \
 //   http://localhost:5050/detconfigs/uploadJSON
-router.post("/uploadJSON", singleUpload.single("file"), async (req, res) => {
+router.post("/uploadJSON", upload.single("file"), async (req, res) => {
   try {
-    let collection = db.collection("detconfigs");
+    if (!req.file || !req.body.tag) {
+      return res.status(400).send("File and tag are required");
+    }
 
-    const { tag, filename } = req.body;
-    const filePath = req.file.path;
+    const bucket = getBucket();
+    if (!bucket) {
+      return res.status(503).send("MongoDB file storage unavailable");
+    }
 
-    const fileContent = fs.readFileSync(filePath);
+    const tag = req.body.tag;
+    const filename = req.body.filename || req.file.originalname;
+    const blobGridFsId = await uploadToGridFS(bucket, filename, req.file.buffer, {
+      tag,
+      filename,
+    });
 
+    const collection = db.collection(COLLECTION);
     await collection.insertOne({
       tag,
       filename,
-      content: Binary(fileContent),
+      size: req.file.size,
+      uploadDate: new Date(),
+      blobStorage: "gridfs",
+      blobGridFsId,
     });
-
-    fs.unlinkSync(filePath);
 
     res.status(200).send("File uploaded successfully");
   } catch (error) {
@@ -163,13 +265,14 @@ router.post("/uploadJSON", singleUpload.single("file"), async (req, res) => {
 // curl http://localhost:5050/detconfigs/downloadJSON/j2 -o root.json
 router.get("/downloadJSON/:tag", async (req, res) => {
   try {
-    let collection = db.collection("detconfigs");
+    const bucket = getBucket();
+    const collection = db.collection(COLLECTION);
 
     const fileDocuments = await collection.find({ tag: req.params.tag }).toArray();
     if (fileDocuments.length > 0) {
       const fileDocument = fileDocuments[fileDocuments.length - 1];
       if (fileDocument) {
-        const fileContentBuffer = fileDocument.content.buffer;
+        const fileContentBuffer = await readFileBuffer(bucket, fileDocument);
         const fileContentJson = JSON.parse(fileContentBuffer.toString("utf8"));
         res.json(fileContentJson);
       }
@@ -187,7 +290,7 @@ router.get("/downloadJSON/:tag", async (req, res) => {
 //    curl -fsS "http://host:5050/detconfigs/detconfigTags"
 router.get("/detconfigTags", async (req, res) => {
   try {
-    let detconfigsCollection = await db.collection("detconfigs");
+    let detconfigsCollection = await db.collection(COLLECTION);
     let results = await detconfigsCollection
       .aggregate([{ $group: { _id: "$tag" } }, { $sort: { _id: 1 } }])
       .toArray();
@@ -203,7 +306,7 @@ router.get("/detconfigTags", async (req, res) => {
 // -- Get summary of detconfigs tags and their counts
 router.get("/findAll/detconfigsSummary", async (req, res) => {
   try {
-    let detconfigsCollection = await db.collection("detconfigs");
+    let detconfigsCollection = await db.collection(COLLECTION);
     let results = await detconfigsCollection
       .aggregate([
         { $group: { _id: "$tag", count: { $sum: 1 } } },
@@ -219,7 +322,7 @@ router.get("/findAll/detconfigsSummary", async (req, res) => {
 });
 
 // --------------------------------------------------------------
-// -- Delete all documents in detconfigs for a given tag
+// -- Delete all documents in detconfigs for a given tag (+ GridFS blobs)
 async function deleteDetconfigsByTag(req, res) {
   const tag = req.query.tag;
 
@@ -228,15 +331,26 @@ async function deleteDetconfigsByTag(req, res) {
   }
 
   try {
-    let detconfigsCollection = await db.collection("detconfigs");
-    const result = await detconfigsCollection.deleteMany({ tag });
+    const bucket = getBucket();
+    const detconfigsCollection = db.collection(COLLECTION);
+    const docs = await detconfigsCollection.find({ tag }).toArray();
 
-    if (result.deletedCount === 0) {
+    if (docs.length === 0) {
       return res.status(404).json({
         success: false,
         message: `No documents found with tag: ${tag}`,
       });
     }
+
+    if (bucket) {
+      for (const doc of docs) {
+        if (doc.blobGridFsId) {
+          await deleteGridFsFile(bucket, doc.blobGridFsId);
+        }
+      }
+    }
+
+    const result = await detconfigsCollection.deleteMany({ tag });
 
     res.json({
       success: true,
