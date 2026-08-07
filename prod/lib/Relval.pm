@@ -150,8 +150,8 @@ sub relval_context {
     }
     my $ana_base = _strip($cfg->{ana_basedir} // "");
     if ($ana_base eq "") {
-        $ana_base = "$code_base/snakemake/relval/ana";
-        $ana_base = "$code_base/ana" unless -d $ana_base;
+        $ana_base = "$code_base/ana";
+        die "Relval: ana_basedir missing: $ana_base\n" unless -d $ana_base;
     }
 
     my $mu3e_tag = _strip($cfg->{mu3e_tag} // "");
