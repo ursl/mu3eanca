@@ -56,6 +56,7 @@ For each release you will **run** tasks against, copy a relval config and point 
 config-relval-v6.5.cfg
 config-relval.cfg             # typically the “current” / newest workdir
 config-relval-vX.Y.cfg
+config-relval-all.cfg         # include: several relval configs (like setup-all)
 ```
 
 Important keys:
@@ -103,6 +104,9 @@ Against the workdir named in the relval config:
 ```tcsh
 # current / newest (e.g. mu3e-v6.9pre0)
 ./relval -c config-relval.cfg
+
+# all configured versions (see includes in config-relval-all.cfg)
+./relval -c config-relval-all.cfg
 
 # a specific older versioned config
 ./relval -c config-relval-v6.5.cfg

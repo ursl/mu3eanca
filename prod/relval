@@ -17,6 +17,7 @@
 # Setup examples:
 #   ./relval -c config-setup-v6.5.cfg
 #   ./relval -c config-setup-all.cfg -n
+#   ./relval -c config-relval-all.cfg -n
 #   ./relval -c config-setup-v6.5.cfg status   # CLI overrides config target
 #
 # Targets: setup          clone/checkout/[build]/[relink] for repos in config
@@ -53,7 +54,7 @@ use Cwd qw(abs_path);
 use File::Basename qw(dirname);
 
 use lib abs_path(dirname($0)) . "/lib";
-use RelvalConfig qw(load_config load_setup_units host_name);
+use RelvalConfig qw(load_config load_setup_units load_relval_units host_name);
 use Setup qw(setup_run_config setup_status_config);
 use Relval qw(relval_run_all relval_run_compare);
 
@@ -75,6 +76,7 @@ Targets:
 Examples:
   ./relval -c config-setup-v6.9pre0.cfg
   ./relval -c config-relval.cfg
+  ./relval -c config-relval-all.cfg
   ./relval -c config-relval.cfg -s mu3e-v6.5
   ./relval -c config-relval.cfg compare compare_against_setup=mu3e-v6.5
   ./relval -c config-relval.cfg mu3e_workdir=mu3e-v6.5
@@ -110,32 +112,68 @@ sub _setup_opts {
 
 # ----------------------------------------------------------------------
 # Pull key=value tokens from @ARGV (e.g. compare_against_setup=mu3e-v6.5).
-sub apply_cli_overrides {
-    my ($cfg) = @_;
+# Returns list of [key, value] pairs; leaves non-kv args in @ARGV.
+sub parse_cli_overrides {
+    my @over = ();
     my @rest = ();
     for my $a (@ARGV) {
         if ($a =~ /^([A-Za-z0-9_]+)=(.*)$/) {
-            $cfg->{$1} = $2;
-            print(prefix(), "override $1=$2\n");
+            push @over, [$1, $2];
         } else {
             push @rest, $a;
         }
     }
     @ARGV = @rest;
+    return @over;
+}
+
+# ----------------------------------------------------------------------
+sub apply_cli_overrides {
+    my ($cfg, $overrides) = @_;
+    $overrides = parse_cli_overrides() unless defined $overrides;
+    for my $pair (@$overrides) {
+        my ($k, $v) = @$pair;
+        $cfg->{$k} = $v;
+        print(prefix(), "override $k=$v\n");
+    }
 }
 
 # ----------------------------------------------------------------------
 sub do_all {
-    my ($cfg) = @_;
-    my %opts = _setup_opts();
+    my ($cfg, %opts) = @_;
     relval_run_all($cfg, %opts);
 }
 
 # ----------------------------------------------------------------------
-sub do_compare {
-    my ($cfg) = @_;
+sub do_all_units {
+    my ($cfg_file, $host, $overrides) = @_;
+    my @units = load_relval_units($cfg_file, $host);
     my %opts = _setup_opts();
+    print(prefix(), "relval units: ", scalar(@units), "\n");
+    for my $cfg (@units) {
+        apply_cli_overrides($cfg, $overrides);
+        print(prefix(), "--- ", ($cfg->{_config_path} // "?"), " ---\n");
+        do_all($cfg, %opts);
+    }
+}
+
+# ----------------------------------------------------------------------
+sub do_compare {
+    my ($cfg, %opts) = @_;
     relval_run_compare($cfg, %opts);
+}
+
+# ----------------------------------------------------------------------
+sub do_compare_units {
+    my ($cfg_file, $host, $overrides) = @_;
+    my @units = load_relval_units($cfg_file, $host);
+    my %opts = _setup_opts();
+    print(prefix(), "relval units: ", scalar(@units), "\n");
+    for my $cfg (@units) {
+        apply_cli_overrides($cfg, $overrides);
+        print(prefix(), "--- ", ($cfg->{_config_path} // "?"), " ---\n");
+        do_compare($cfg, %opts);
+    }
 }
 
 # ----------------------------------------------------------------------
@@ -143,6 +181,18 @@ sub do_histocompare {
     my ($cfg) = @_;
     print(prefix(), "target histocompare not implemented yet (use target compare for PDF diffs)\n");
     print(prefix(), "  compare_against_setup: ", ($cfg->{compare_against_setup} // ""), "\n");
+}
+
+# ----------------------------------------------------------------------
+sub do_histocompare_units {
+    my ($cfg_file, $host, $overrides) = @_;
+    my @units = load_relval_units($cfg_file, $host);
+    print(prefix(), "relval units: ", scalar(@units), "\n");
+    for my $cfg (@units) {
+        apply_cli_overrides($cfg, $overrides);
+        print(prefix(), "--- ", ($cfg->{_config_path} // "?"), " ---\n");
+        do_histocompare($cfg);
+    }
 }
 
 # ----------------------------------------------------------------------
@@ -219,6 +269,26 @@ sub do_list {
 }
 
 # ----------------------------------------------------------------------
+sub do_list_units {
+    my ($cfg_file, $host, $overrides) = @_;
+    my $meta = load_config($cfg_file, $host);
+    my $includes = $meta->{includes} // [];
+    if (@$includes) {
+        print(prefix(), "meta config ", ($meta->{_config_path} // $cfg_file), "\n");
+        print("  target: ", ($meta->{target} // ""), "\n");
+        print(prefix(), "includes (", scalar(@$includes), ")\n");
+        print("  - $_\n") for @$includes;
+    }
+    my @units = load_relval_units($cfg_file, $host);
+    print(prefix(), "relval units: ", scalar(@units), "\n");
+    for my $cfg (@units) {
+        apply_cli_overrides($cfg, $overrides);
+        print(prefix(), "--- ", ($cfg->{_config_path} // "?"), " ---\n");
+        do_list($cfg);
+    }
+}
+
+# ----------------------------------------------------------------------
 # -- main
 # ----------------------------------------------------------------------
 getopts('c:H:s:j:nh');
@@ -233,18 +303,18 @@ my $host     = host_name($opt_H);
 # Target: CLI arg wins; else config "target:"; else "list"
 # Also allow key=value overrides on the command line.
 my $target = "";
-my @argv_kv = ();
+my @cli_overrides = ();
 my @argv_rest = ();
 for my $a (@ARGV) {
     if ($a =~ /^([A-Za-z0-9_]+)=(.*)$/) {
-        push @argv_kv, $a;
+        push @cli_overrides, [$1, $2];
     } elsif ($target eq "" && $a !~ /^-/) {
         $target = $a;
     } else {
         push @argv_rest, $a;
     }
 }
-@ARGV = (@argv_kv, @argv_rest);
+@ARGV = @argv_rest;
 
 if ($target eq "") {
     my $peek = load_config($cfg_file, $host);
@@ -260,23 +330,14 @@ if ($target eq "setup") {
 } elsif ($target eq "status") {
     do_status($cfg_file, $host);
 } else {
-    my $cfg = load_config($cfg_file, $host);
-    apply_cli_overrides($cfg);
     if ($target eq "list") {
-        do_list($cfg);
-        my $includes = $cfg->{includes} // [];
-        if (@$includes) {
-            for my $unit (load_setup_units($cfg_file, $host)) {
-                print(prefix(), "==== included unit ====\n");
-                do_list($unit);
-            }
-        }
+        do_list_units($cfg_file, $host, \@cli_overrides);
     } elsif ($target eq "all") {
-        do_all($cfg);
+        do_all_units($cfg_file, $host, \@cli_overrides);
     } elsif ($target eq "compare") {
-        do_compare($cfg);
+        do_compare_units($cfg_file, $host, \@cli_overrides);
     } elsif ($target eq "histocompare") {
-        do_histocompare($cfg);
+        do_histocompare_units($cfg_file, $host, \@cli_overrides);
     } else {
         print "ERROR: unknown target '$target'\n";
         usage();
