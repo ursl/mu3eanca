@@ -45,6 +45,10 @@ package RelvalConfig;
 #   [include]
 #   file: config-setup-v6.5.cfg
 #
+#   # --- meta relval: run several relval configs (config-relval-all.cfg) ---
+#   include: config-relval-v6.5.cfg
+#   include: config-relval-v6.9pre0.cfg
+#
 #   # --- relval tasks ---
 #   [task]
 #   id: signal
@@ -68,6 +72,7 @@ use File::Spec;
 our @EXPORT_OK = qw(
     load_config
     load_setup_units
+    load_relval_units
     host_name
     read_cfg_file
     discover_repos
@@ -469,11 +474,10 @@ sub load_config {
     return $cfg;
 }
 
-# ----------------------------------------------------------------------
-# For `setup`: if config has includes, each included file is a setup unit.
-# Otherwise the config itself is the single unit.
+# For meta configs with include: lines, expand each included file as a unit.
+# Used by setup (load_setup_units) and relval (load_relval_units).
 # Returns list of config hrefs (each already host-overlaid).
-sub load_setup_units {
+sub _load_included_units {
     my ($base_path, $host) = @_;
     my $cfg = load_config($base_path, $host);
     my $includes = $cfg->{includes} // [];
@@ -490,6 +494,16 @@ sub load_setup_units {
         push @units, load_config($path, $host);
     }
     return @units;
+}
+
+# ----------------------------------------------------------------------
+sub load_setup_units {
+    return _load_included_units(@_);
+}
+
+# ----------------------------------------------------------------------
+sub load_relval_units {
+    return _load_included_units(@_);
 }
 
 1;
