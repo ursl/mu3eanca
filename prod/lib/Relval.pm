@@ -288,7 +288,7 @@ sub _run_fillhist {
     my $id  = $task->{id};
     my $out = relval_fmt_tpl($ctx->{fillhist_tpl}, $id);
     my $exe = $ctx->{fillhist_exe};
-    die "Relval: fillhist exe missing: $exe (build snakemake/relval/ana)\n"
+    die "Relval: fillhist exe missing: $exe (run ./relval -c config-setup-ana.cfg setup)\n"
         unless $ctx->{dry_run} || -x $exe || -f $exe;
 
     my $ann = "mu3e-$ctx->{mu3e_tag}_$task->{cdb_GT}";

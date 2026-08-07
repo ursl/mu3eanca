@@ -43,7 +43,8 @@ Helpers (once per basedir, or when you need a rebuild):
 ```text
 config-setup-mu3eUtil.cfg
 config-setup-mu3eValidation.cfg
-config-setup-all.cfg          # include: several setup configs
+config-setup-ana.cfg          # make prod/ana (fillhist / compare)
+config-setup-all.cfg          # include: ana + util + validation + MU3E versions
 ```
 
 ---
@@ -217,4 +218,4 @@ Configured by `setup_basedir` in the host config:
     run/output/
 ```
 
-Legacy Snakemake trees remain under `snakemake/` and are not required for the flow above (histogram tools are still taken from `snakemake/relval/ana/bin/` for now).
+Legacy Snakemake trees remain under `snakemake/` and are not required for the Perl flow above.

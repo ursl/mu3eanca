@@ -16,6 +16,9 @@ package Setup;
 # Per-repo steps:
 #   clone/fetch → checkout tag|branch → merge → [submodules] → [build] → [relink]
 #
+# Local relval histogram tools (no git repo):
+#   ana_build: true  → make -C <relval_code_basedir>/ana
+#
 # History
 #         2026/07/13 first shot
 #         2026/07/13 multi-repo rewrite
@@ -24,21 +27,26 @@ package Setup;
 use strict;
 use warnings;
 use Exporter qw(import);
-use Cwd qw(getcwd);
+use Cwd qw(getcwd abs_path);
+use File::Basename qw(dirname);
 use File::Path qw(make_path);
 
 our @EXPORT_OK = qw(
     setup_basedir
+    setup_ana_dir
     setup_contexts_from_config
     setup_ensure_clone
     setup_checkout
     setup_merge
     setup_update_submodules
     setup_build
+    setup_build_ana
     setup_relink
     setup_run_repo
+    setup_run_ana
     setup_run_config
     setup_status_repo
+    setup_status_ana
     setup_status_config
 );
 
@@ -347,6 +355,80 @@ sub setup_update_submodules {
 }
 
 # ----------------------------------------------------------------------
+sub _truthy {
+    my ($v) = @_;
+    return 0 unless defined $v;
+    $v = lc(_strip($v));
+    return 0 if $v eq "" || $v eq "0" || $v eq "false" || $v eq "no" || $v eq "off";
+    return 1;
+}
+
+# ----------------------------------------------------------------------
+sub setup_ana_dir {
+    my ($cfg) = @_;
+    my $dir = _strip($cfg->{ana_dir} // "ana");
+    return $dir if $dir =~ m{^/};
+
+    my $base = _strip($cfg->{relval_code_basedir} // "");
+    if ($base eq "") {
+        my $cfg_path = $cfg->{_config_path} // "";
+        $base = abs_path(dirname($cfg_path)) if $cfg_path ne "";
+    }
+    die "Setup: ana_dir '$dir' is relative but relval_code_basedir is not set\n"
+        if $base eq "";
+    return "$base/$dir";
+}
+
+# ----------------------------------------------------------------------
+sub setup_build_ana {
+    my ($s) = @_;
+    my $dir = $s->{path};
+    die "Setup: ana directory missing: $dir\n"
+        unless $s->{dry_run} || -d $dir;
+    die "Setup: ana Makefile missing: $dir/Makefile\n"
+        unless $s->{dry_run} || -f "$dir/Makefile";
+
+    my $jobs = $s->{make_jobs};
+    _log($s, "make in $dir (-j$jobs)");
+    if (!$s->{dry_run}) {
+        my $cwd = getcwd();
+        chdir($dir) or die "Cannot chdir $dir: $!\n";
+        _run($s, "make", "-j$jobs");
+        chdir($cwd) or die "Cannot chdir back to $cwd: $!\n";
+    }
+}
+
+# ----------------------------------------------------------------------
+sub setup_run_ana {
+    my ($cfg, %opts) = @_;
+    return unless _truthy($cfg->{ana_build});
+
+    my $jobs = $opts{jobs} // $cfg->{make_jobs} // 4;
+    my $s = {
+        id        => "ana",
+        path      => setup_ana_dir($cfg),
+        make_jobs => 0 + $jobs,
+        dry_run   => $opts{dry_run} // 0,
+    };
+    _log($s, "setup_run path=$s->{path}");
+    setup_build_ana($s);
+    _log($s, "setup_run done");
+}
+
+# ----------------------------------------------------------------------
+sub setup_status_ana {
+    my ($cfg, %opts) = @_;
+    return unless _truthy($cfg->{ana_build});
+
+    my $dir = setup_ana_dir($cfg);
+    print(_prefix(), "status [ana]\n");
+    print("  path:      $dir\n");
+    print("  Makefile:  ", (-f "$dir/Makefile" ? "yes" : "no"), "\n");
+    print("  fillhist:  ", (-x "$dir/bin/runFillHistograms" ? "yes" : "no"), "\n");
+    print("  compare:   ", (-x "$dir/bin/runCompareHistograms" ? "yes" : "no"), "\n");
+}
+
+# ----------------------------------------------------------------------
 sub setup_build {
     my ($s) = @_;
     return unless $s->{build};
@@ -414,6 +496,11 @@ sub setup_run_repo {
 # ----------------------------------------------------------------------
 sub setup_run_config {
     my ($cfg, %opts) = @_;
+    setup_run_ana($cfg, %opts);
+
+    my $repos = $cfg->{setup_repos} // [];
+    return unless @$repos;
+
     my @ctx = setup_contexts_from_config($cfg, %opts);
     for my $s (@ctx) {
         setup_status_repo($s);
@@ -453,6 +540,11 @@ sub setup_status_repo {
 # ----------------------------------------------------------------------
 sub setup_status_config {
     my ($cfg, %opts) = @_;
+    setup_status_ana($cfg, %opts);
+
+    my $repos = $cfg->{setup_repos} // [];
+    return unless @$repos;
+
     my @ctx = setup_contexts_from_config($cfg, %opts);
     for my $s (@ctx) {
         setup_status_repo($s);
