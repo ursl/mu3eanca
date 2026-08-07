@@ -9,7 +9,7 @@
 #include <TH2D.h>
 #include <TProfile.h>
 
-#include "../../../common/json.h" // nlohmann
+#include "../../common/json.h" // nlohmann
 
 using namespace std;
 
