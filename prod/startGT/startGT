@@ -18,7 +18,7 @@ use warnings;
 use Getopt::Long;
 use Pod::Usage;
 
-my $config   = 'GTs-for-v7.1.cfg';
+my $config   = 'GT-v7.1.cfg';
 my $help     = 0;
 my $host_opt = '';
 my $dry_run  = 0;
@@ -67,7 +67,7 @@ Targets:
   list           print resolved config (default)
 
 Options:
-  -c FILE   config file (default: GTs-for-v7.1.cfg)
+  -c FILE   config file (default: GT-v7.1.cfg)
   -H HOST   host overlay config-HOST.cfg
   -j N      make -jN for mu3e build
   -n        dry-run
