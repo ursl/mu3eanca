@@ -79,7 +79,7 @@ our @EXPORT_OK = qw(
 );
 
 # Keys that append when repeated (not overwrite).
-my %LIST_KEYS = map { $_ => 1 } qw(include);
+my %LIST_KEYS = map { $_ => 1 } qw(include alltags);
 
 # ----------------------------------------------------------------------
 sub host_name {

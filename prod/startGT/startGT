@@ -5,13 +5,9 @@
 #
 #   ./startGT setup
 #   ./startGT sim                              # one mcideal alignment ROOT
-#   ./startGT -g mcidealv7.1 alignment
-#   ./startGT -g 'mcrealisticv7.1=2026V0' alignment
-#   ./startGT -g 'datav7.1=2026V0' alignment
-#   ./startGT -g mcidealv7.1 quality
-#   ./startGT -g mcidealv7.1 alltags            # alignment + quality in one go
+#   ./startGT -g mcideal alltags
 #
-# GT names with '=' — quote: -g 'datav7.1=2026V0'
+# -g is a flavour: mcideal | mcrealistic | data (full GT name from gt_base in config)
 # ----------------------------------------------------------------------
 
 use strict;
@@ -51,6 +47,7 @@ use StartGT qw(
     startgt_run_alignment_payloads
     startgt_run_quality_payloads
     startgt_run_alltags
+    startgt_resolve_gt
     startgt_status
 );
 
@@ -68,7 +65,7 @@ Targets:
   sim            mcideal mu3eSim → single alignment ROOT (shared by all GTs)
   alignment      write alignment payloads (-g GT required)
   quality        write perfect quality payloads, IOV 1 (-g GT required)
-  alltags        alignment + quality for one GT (-g GT required); alias: payloads
+  alltags        all calibrations from config alltags: list (-g GT required)
   status         show paths and build state
   list           print resolved config (default)
 
@@ -77,7 +74,7 @@ Options:
   -H HOST   host overlay config-HOST.cfg
   -j N      make -jN for mu3e build
   -n        dry-run
-  -g GT     global tag, e.g. mcidealv7.1 or datav7.1=2026V0 (quote if '=')
+  -g FLAV   GT flavour: mcideal, mcrealistic, or data (full name from gt_base in config)
   -h        help
 END
     exit(1);
@@ -130,6 +127,13 @@ print(prefix(), "config=$cfg_file host=$host target=$target",
     ($dry_run ? " (dry-run)" : ""), "\n");
 
 my $cfg = load_config($cfg_file, $host);
+
+if ($GT ne "") {
+    my $flavour = $GT;
+    $GT = startgt_resolve_gt($cfg, $flavour);
+    print(prefix(), "GT flavour=$flavour resolved=$GT\n") if $GT ne $flavour;
+}
+
 my %opts = _opts();
 
 if ($target eq "setup") {
