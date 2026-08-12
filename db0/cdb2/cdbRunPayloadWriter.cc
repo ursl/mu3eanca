@@ -98,6 +98,30 @@ int main(int argc, const char* argv[]) {
     return 0;
   }
   
+  // -- pixeltimecalibration ideal input
+  if (mode == "pixeltimecalibration-ideal") {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m pixeltimecalibration-ideal -f filename [-t filterMode]" << endl;
+      return 0;
+    }
+    string filter = (tagname != "unset") ? tagname : string("ideal");
+    writer.writePixelTimeCalibrationIdealInput(filename, filter);
+    return 0;
+  }
+
+  // -- pixelefficiency ideal input
+  if (mode == "pixelefficiency-ideal") {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m pixelefficiency-ideal -f filename [-t filterMode]" << endl;
+      return 0;
+    }
+    string filter = (tagname != "unset") ? tagname : string("ideal");
+    writer.writePixelEfficiencyIdealInput(filename, filter);
+    return 0;
+  }
+  
   // -- pixelmask
   if (mode.find("pixelmask") != string::npos) {
     if (run > 1 && inputfiledir == "unset") {
@@ -134,10 +158,11 @@ int main(int argc, const char* argv[]) {
   if (string::npos != mode.find("tiletimecalibration") && string::npos != mode.find("ideal")) {
     if (filename == "unset") {
       cout << "Error: filename is unset" << endl;
-      cout << "Usage: cdbRunPayloadWriter -m tiletimecalibration-ideal -f filename" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m tiletimecalibration-ideal -f filename [-t filterMode]" << endl;
       return 0;
     }
-    writer.writeTileTimeCalibrationIdealInput(filename, mode);
+    string filter = (tagname != "unset") ? tagname : string("ideal");
+    writer.writeTileTimeCalibrationIdealInput(filename, filter);
     return 0;
   }
 
