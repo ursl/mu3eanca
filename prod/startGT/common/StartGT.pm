@@ -32,6 +32,9 @@ our @EXPORT_OK = qw(
     startgt_run_alignment_payloads
     startgt_run_quality_payloads
     startgt_run_stuff_payloads
+    startgt_run_mask_payloads
+    startgt_run_efficiency_payloads
+    startgt_run_timecalib_payloads
     startgt_run_alltags
     startgt_alltags_config
     startgt_status
@@ -41,12 +44,18 @@ my @TEST_CDB_SUBDIRS = qw(payloads globaltags tags runrecords configs);
 my @ALIGNMENT_CALIB_TYPES = qw(pixelalignment tilealignment fibrealignment mppcalignment);
 my @QUALITY_CALIB_TYPES = qw(pixelqualitylm fibrequality tilequality);
 my @STUFF_CALIB_TYPES = qw(eventstuffv1 eventstuffv2 detsetupv1);
+my @MASK_CALIB_TYPES = qw(pixelmask);
+my @EFFICIENCY_CALIB_TYPES = qw(pixelefficiency);
+my @TIMECALIB_TYPES = qw(pixeltimecalibration tiletimecalibration);
 my $DEFAULT_IOV = 1;
 
 my %KNOWN_CALIB = map { $_ => 1 } (
     @ALIGNMENT_CALIB_TYPES,
     @QUALITY_CALIB_TYPES,
     @STUFF_CALIB_TYPES,
+    @MASK_CALIB_TYPES,
+    @EFFICIENCY_CALIB_TYPES,
+    @TIMECALIB_TYPES,
 );
 
 my %QUALITY_ANNOTATIONS = (
@@ -69,6 +78,24 @@ my %STUFF_CALIB = (
         ideal_file => "ascii/detector-MagnetOn-v6.5.json",
         annotation => "Magnet turned on.",
     },
+);
+
+my %MASK_ANNOTATIONS = (
+    pixelmask => "All pixels unmasked (ideal IOV 1).",
+);
+
+my %EFFICIENCY_ANNOTATIONS = (
+    pixelefficiency => "Fully efficient for complete pixel detector.",
+);
+
+my %TIMECALIB_ANNOTATIONS = (
+    pixeltimecalibration => "Zero shifts and uncertainties (ideal IOV 1).",
+    tiletimecalibration  => "Zero offsets (ideal IOV 1).",
+);
+
+my %TIMECALIB_EXT = (
+    pixeltimecalibration => "calib",
+    tiletimecalibration  => "json",
 );
 
 # ----------------------------------------------------------------------
@@ -182,14 +209,94 @@ sub startgt_tag_name_for_calib {
     my ($calib, $gt) = @_;
     return startgt_quality_tag_name($calib, $gt)
         if grep { $_ eq $calib } @QUALITY_CALIB_TYPES;
+    return startgt_pixelefficiency_tag_name($gt)
+        if $calib eq "pixelefficiency";
     return startgt_stuff_tag_name($calib, $gt)
         if grep { $_ eq $calib } @STUFF_CALIB_TYPES;
     return startgt_alignment_tag_name($calib, $gt);
 }
 
+sub startgt_pixelefficiency_tag_name {
+    my ($gt) = @_;
+    my $flavour = startgt_gt_flavour($gt);
+    if ($flavour eq "mcideal" && $gt !~ /=/) {
+        return "pixelefficiency_ideal";
+    }
+    return "pixelefficiency_${gt}";
+}
+
+sub startgt_calib_tag_suffix {
+    my ($calib, $gt) = @_;
+    my $tagname = startgt_tag_name_for_calib($calib, $gt);
+    return startgt_quality_tag_suffix($tagname);
+}
+
+sub startgt_calib_payload_path {
+    my ($payload_dir, $calib, $gt, $iov) = @_;
+    $iov //= $DEFAULT_IOV;
+    my $suffix = startgt_calib_tag_suffix($calib, $gt);
+    my $hash   = "tag_${calib}_${suffix}_iov_${iov}";
+    my $block  = sprintf("%04d", int($iov / 1000));
+    return "$payload_dir/${calib}_${suffix}/$block/$hash";
+}
+
+# Chip/tile ID filter for ideal IOV-1 content (installed components).
+sub startgt_installed_component_filter {
+    my ($cfg, $gt) = @_;
+    my $flavour = startgt_gt_flavour($gt);
+    if ($flavour eq "mcideal" && $gt !~ /=/) {
+        return $gt;
+    }
+    my $year = startgt_year_from_gt($gt, $cfg);
+    die "startGT: need conditions year for '$gt' (=YYYY in name or conditions_year in config)\n"
+        if $year eq "";
+    return $year;
+}
+
+# pixelmask -m mode string (must contain "pixelmask" for cdbRunPayloadWriter).
+sub startgt_pixelmask_mode {
+    my ($cfg, $gt) = @_;
+    my $flavour = startgt_gt_flavour($gt);
+    if ($flavour eq "mcideal" && $gt !~ /=/) {
+        return "pixelmask-ideal";
+    }
+    my $year = startgt_year_from_gt($gt, $cfg);
+    die "startGT: need conditions year for pixelmask on '$gt'\n" if $year eq "";
+    return "pixelmask-${year}";
+}
+
 sub startgt_stuff_tag_name {
     my ($calib, $gt) = @_;
     return "${calib}_${gt}";
+}
+
+sub startgt_ideal_input_filter {
+    my ($cfg, $gt, $calib) = @_;
+    if ($calib eq "pixelefficiency") {
+        my $tagname = startgt_tag_name_for_calib($calib, $gt);
+        return startgt_quality_ideal_filter($cfg, $gt, $tagname);
+    }
+    return startgt_calib_tag_suffix($calib, $gt);
+}
+
+sub startgt_write_calib_tags {
+    my ($ctx, $cdb_root, $gt, @calibs) = @_;
+    my $tags_dir    = "$cdb_root/tags";
+    my $payload_dir = "$cdb_root/payloads";
+    make_path($tags_dir) unless $ctx->{dry_run};
+
+    my @written;
+    for my $calib (@calibs) {
+        my $tagname = startgt_tag_name_for_calib($calib, $gt);
+        my $payload = startgt_calib_payload_path($payload_dir, $calib, $gt);
+        if (!$ctx->{dry_run} && !-f $payload) {
+            _log($ctx, "  skip $tagname (payload missing: $payload)");
+            next;
+        }
+        startgt_write_tag_file($ctx, $tags_dir, $tagname, $gt);
+        push @written, $tagname;
+    }
+    return @written;
 }
 
 # All tag names startGT may create for a given GT (from config alltags list).
@@ -776,6 +883,152 @@ sub startgt_run_stuff_payloads {
 }
 
 # ----------------------------------------------------------------------
+sub startgt_run_mask_payloads {
+    my ($cfg, %opts) = @_;
+    my $gt = _strip($opts{gt} // "");
+    die "startGT: -g required (mcideal, mcrealistic, or data)\n" if $gt eq "";
+
+    my @calibs = @{ $opts{calibs} // [] };
+    @calibs = @MASK_CALIB_TYPES unless @calibs;
+    my $skip_global = $opts{skip_global_tag} ? 1 : 0;
+
+    my $ctx = startgt_context($cfg, %opts);
+    _ensure_run_dir($ctx);
+
+    my $cdb_root = startgt_ensure_test_cdb($ctx, $cfg);
+    my $exe      = startgt_cdb_writer_exe($cfg);
+    die "startGT: cdbRunPayloadWriter missing: $exe\n"
+        unless $ctx->{dry_run} || -x $exe || -f $exe;
+
+    my $mask_mode = startgt_pixelmask_mode($cfg, $gt);
+    my $cdb_dir   = startgt_cdb_code_basedir($cfg);
+    _log($ctx, "cdbRunPayloadWriter pixelmask (ideal IOV 1, @calibs)");
+    _log($ctx, "  cwd:       $cdb_dir");
+    _log($ctx, "  GT (-t):   $gt");
+    _log($ctx, "  CDB (-u):  $cdb_root");
+    _log($ctx, "  mask -m:   $mask_mode");
+
+    my $cwd = getcwd();
+    chdir($cdb_dir) or die "Cannot chdir $cdb_dir: $!\n" unless $ctx->{dry_run};
+
+    for my $calib (@calibs) {
+        my $ann = _strip($opts{annotation} // $cfg->{"${calib}_annotation"}
+            // $MASK_ANNOTATIONS{$calib} // "");
+        _log($ctx, "  $calib");
+        _run($ctx, $exe, "-m", $mask_mode, "-u", $cdb_root, "-t", $gt, "-a", $ann, "-r", "1");
+    }
+
+    chdir($cwd) unless $ctx->{dry_run};
+
+    my @tag_names = startgt_write_calib_tags($ctx, $cdb_root, $gt, @calibs);
+    startgt_write_global_tag($ctx, $cfg, $cdb_root, $gt, @tag_names) unless $skip_global;
+    return @tag_names;
+}
+
+# ----------------------------------------------------------------------
+sub startgt_run_efficiency_payloads {
+    my ($cfg, %opts) = @_;
+    my $gt = _strip($opts{gt} // "");
+    die "startGT: -g required (mcideal, mcrealistic, or data)\n" if $gt eq "";
+
+    my @calibs = @{ $opts{calibs} // [] };
+    @calibs = @EFFICIENCY_CALIB_TYPES unless @calibs;
+    my $skip_global = $opts{skip_global_tag} ? 1 : 0;
+
+    my $ctx = startgt_context($cfg, %opts);
+    _ensure_run_dir($ctx);
+
+    my $cdb_root    = startgt_ensure_test_cdb($ctx, $cfg);
+    my $payload_dir = "$cdb_root/payloads";
+    my $exe         = startgt_cdb_writer_exe($cfg);
+    die "startGT: cdbRunPayloadWriter missing: $exe\n"
+        unless $ctx->{dry_run} || -x $exe || -f $exe;
+
+    my $tmpdir = "$ctx->{run_dir}/output/startgt-efficiency";
+    make_path($tmpdir) unless $ctx->{dry_run};
+
+    my $cdb_dir = startgt_cdb_code_basedir($cfg);
+    _log($ctx, "cdbRunPayloadWriter pixelefficiency (ideal IOV 1, @calibs)");
+    _log($ctx, "  cwd:       $cdb_dir");
+    _log($ctx, "  GT:        $gt");
+    _log($ctx, "  payloads:  $payload_dir");
+
+    my $cwd = getcwd();
+    chdir($cdb_dir) or die "Cannot chdir $cdb_dir: $!\n" unless $ctx->{dry_run};
+
+    for my $calib (@calibs) {
+        my $tagname = startgt_tag_name_for_calib($calib, $gt);
+        my $suffix  = startgt_calib_tag_suffix($calib, $gt);
+        my $filter  = startgt_ideal_input_filter($cfg, $gt, $calib);
+        my $ann     = _strip($opts{annotation} // $cfg->{"${calib}_annotation"}
+            // $EFFICIENCY_ANNOTATIONS{$calib} // "");
+        my $tmpfile = "$tmpdir/tmp-${calib}-${suffix}.csv";
+
+        _log($ctx, "  $calib tag=$tagname filter=$filter");
+        _run($ctx, $exe, "-m", "${calib}-ideal", "-f", $tmpfile, "-t", $filter);
+        _run($ctx, $exe, "-c", $calib, "-f", $tmpfile, "-t", $suffix, "-p", $payload_dir, "-a", $ann);
+    }
+
+    chdir($cwd) unless $ctx->{dry_run};
+
+    my @tag_names = startgt_write_calib_tags($ctx, $cdb_root, $gt, @calibs);
+    startgt_write_global_tag($ctx, $cfg, $cdb_root, $gt, @tag_names) unless $skip_global;
+    return @tag_names;
+}
+
+# ----------------------------------------------------------------------
+sub startgt_run_timecalib_payloads {
+    my ($cfg, %opts) = @_;
+    my $gt = _strip($opts{gt} // "");
+    die "startGT: -g required (mcideal, mcrealistic, or data)\n" if $gt eq "";
+
+    my @calibs = @{ $opts{calibs} // [] };
+    @calibs = @TIMECALIB_TYPES unless @calibs;
+    my $skip_global = $opts{skip_global_tag} ? 1 : 0;
+
+    my $ctx = startgt_context($cfg, %opts);
+    _ensure_run_dir($ctx);
+
+    my $cdb_root    = startgt_ensure_test_cdb($ctx, $cfg);
+    my $payload_dir = "$cdb_root/payloads";
+    my $exe         = startgt_cdb_writer_exe($cfg);
+    die "startGT: cdbRunPayloadWriter missing: $exe\n"
+        unless $ctx->{dry_run} || -x $exe || -f $exe;
+
+    my $tmpdir = "$ctx->{run_dir}/output/startgt-timecalib";
+    make_path($tmpdir) unless $ctx->{dry_run};
+
+    my $cdb_dir = startgt_cdb_code_basedir($cfg);
+    _log($ctx, "cdbRunPayloadWriter time calibrations (ideal IOV 1, @calibs)");
+    _log($ctx, "  cwd:       $cdb_dir");
+    _log($ctx, "  GT:        $gt");
+    _log($ctx, "  payloads:  $payload_dir");
+
+    my $cwd = getcwd();
+    chdir($cdb_dir) or die "Cannot chdir $cdb_dir: $!\n" unless $ctx->{dry_run};
+
+    for my $calib (@calibs) {
+        my $tagname = startgt_tag_name_for_calib($calib, $gt);
+        my $suffix  = startgt_calib_tag_suffix($calib, $gt);
+        my $filter  = startgt_ideal_input_filter($cfg, $gt, $calib);
+        my $ext     = $TIMECALIB_EXT{$calib} // "calib";
+        my $ann     = _strip($opts{annotation} // $cfg->{"${calib}_annotation"}
+            // $TIMECALIB_ANNOTATIONS{$calib} // "");
+        my $tmpfile = "$tmpdir/tmp-${calib}-${suffix}.${ext}";
+
+        _log($ctx, "  $calib tag=$tagname filter=$filter");
+        _run($ctx, $exe, "-m", "${calib}-ideal", "-f", $tmpfile, "-t", $filter);
+        _run($ctx, $exe, "-c", $calib, "-f", $tmpfile, "-t", $suffix, "-p", $payload_dir, "-a", $ann);
+    }
+
+    chdir($cwd) unless $ctx->{dry_run};
+
+    my @tag_names = startgt_write_calib_tags($ctx, $cdb_root, $gt, @calibs);
+    startgt_write_global_tag($ctx, $cfg, $cdb_root, $gt, @tag_names) unless $skip_global;
+    return @tag_names;
+}
+
+# ----------------------------------------------------------------------
 sub startgt_run_alltags {
     my ($cfg, %opts) = @_;
     my $gt = _strip($opts{gt} // "");
@@ -784,9 +1037,12 @@ sub startgt_run_alltags {
     my @all = startgt_alltags_config($cfg);
     my %want = map { $_ => 1 } @all;
 
-    my @alignment = grep { $want{$_} } @ALIGNMENT_CALIB_TYPES;
-    my @quality   = grep { $want{$_} } @QUALITY_CALIB_TYPES;
-    my @stuff     = grep { $want{$_} } @STUFF_CALIB_TYPES;
+    my @alignment  = grep { $want{$_} } @ALIGNMENT_CALIB_TYPES;
+    my @quality    = grep { $want{$_} } @QUALITY_CALIB_TYPES;
+    my @stuff      = grep { $want{$_} } @STUFF_CALIB_TYPES;
+    my @mask       = grep { $want{$_} } @MASK_CALIB_TYPES;
+    my @efficiency = grep { $want{$_} } @EFFICIENCY_CALIB_TYPES;
+    my @timecalib  = grep { $want{$_} } @TIMECALIB_TYPES;
 
     my $ctx = startgt_context($cfg, %opts);
     _log($ctx, "alltags for GT $gt (@all)");
@@ -802,6 +1058,18 @@ sub startgt_run_alltags {
     delete $sub_opts{calibs};
     $sub_opts{calibs} = \@stuff if @stuff;
     startgt_run_stuff_payloads($cfg, %sub_opts) if @stuff;
+
+    delete $sub_opts{calibs};
+    $sub_opts{calibs} = \@mask if @mask;
+    startgt_run_mask_payloads($cfg, %sub_opts) if @mask;
+
+    delete $sub_opts{calibs};
+    $sub_opts{calibs} = \@efficiency if @efficiency;
+    startgt_run_efficiency_payloads($cfg, %sub_opts) if @efficiency;
+
+    delete $sub_opts{calibs};
+    $sub_opts{calibs} = \@timecalib if @timecalib;
+    startgt_run_timecalib_payloads($cfg, %sub_opts) if @timecalib;
 
     my $cdb_root = startgt_ensure_test_cdb($ctx, $cfg);
     startgt_write_global_tag($ctx, $cfg, $cdb_root, $gt);
