@@ -1084,6 +1084,9 @@ void cdbPayloadWriter::run(int argc, const char* argv[]) {
   if (string::npos != cal.find("eventstuffv2")) {
     writeEventStuffV2Payloads(payloaddir, gt, filename, annotation, iov);
   }
+  if (string::npos != cal.find("detsetupv1")) {
+    writeDetSetupV1Payloads(payloaddir, gt, filename, annotation, iov);
+  }
   if (string::npos != cal.find("fibrequality")) {
     writeFibreQualityPayloads(payloaddir, gt, filename, annotation, iov);
   }
