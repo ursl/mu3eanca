@@ -141,6 +141,38 @@ int main(int argc, const char* argv[]) {
     return 0;
   }
 
+  // -- IDEAL quality inputs (chip / fibre / tile lists with perfect status)
+  if (mode == "pixelqualitylm-ideal") {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m pixelqualitylm-ideal -f filename [-t filterMode]" << endl;
+      return 0;
+    }
+    string filter = (tagname != "unset") ? tagname : string("ideal");
+    writer.writePixelQualityLMIdealInput(filename, filter);
+    return 0;
+  }
+  if (mode == "fibrequality-ideal") {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m fibrequality-ideal -f filename [-t filterMode]" << endl;
+      return 0;
+    }
+    string filter = (tagname != "unset") ? tagname : string("ideal");
+    writer.writeFibreQualityIdealInput(filename, filter);
+    return 0;
+  }
+  if (mode == "tilequality-ideal") {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m tilequality-ideal -f filename [-t filterMode]" << endl;
+      return 0;
+    }
+    string filter = (tagname != "unset") ? tagname : string("ideal");
+    writer.writeTileQualityIdealInput(filename, filter);
+    return 0;
+  }
+
   // -- default case: run the main function of cdbPayloadWriter
   writer.run(argc, argv);
   return 0;
