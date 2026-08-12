@@ -8,6 +8,8 @@
 #   ./startGT -g mcidealv7.1 alignment
 #   ./startGT -g 'mcrealisticv7.1=2026V0' alignment
 #   ./startGT -g 'datav7.1=2026V0' alignment
+#   ./startGT -g mcidealv7.1 quality
+#   ./startGT -g mcidealv7.1 alltags            # alignment + quality in one go
 #
 # GT names with '=' — quote: -g 'datav7.1=2026V0'
 # ----------------------------------------------------------------------
@@ -47,6 +49,8 @@ use StartGT qw(
     startgt_setup
     startgt_run_mu3esim
     startgt_run_alignment_payloads
+    startgt_run_quality_payloads
+    startgt_run_alltags
     startgt_status
 );
 
@@ -63,6 +67,8 @@ Targets:
   setup          clone/checkout/build/relink mu3e
   sim            mcideal mu3eSim → single alignment ROOT (shared by all GTs)
   alignment      write alignment payloads (-g GT required)
+  quality        write perfect quality payloads, IOV 1 (-g GT required)
+  alltags        alignment + quality for one GT (-g GT required); alias: payloads
   status         show paths and build state
   list           print resolved config (default)
 
@@ -130,8 +136,12 @@ if ($target eq "setup") {
     startgt_setup($cfg, %opts);
 } elsif ($target eq "sim") {
     startgt_run_mu3esim($cfg, %opts);
-} elsif ($target eq "alignment" || $target eq "payloads") {
+} elsif ($target eq "alignment") {
     startgt_run_alignment_payloads($cfg, %opts);
+} elsif ($target eq "quality") {
+    startgt_run_quality_payloads($cfg, %opts);
+} elsif ($target eq "alltags" || $target eq "payloads") {
+    startgt_run_alltags($cfg, %opts);
 } elsif ($target eq "status") {
     startgt_status($cfg, %opts);
 } elsif ($target eq "list") {

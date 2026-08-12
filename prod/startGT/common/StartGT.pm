@@ -28,12 +28,21 @@ our @EXPORT_OK = qw(
     startgt_run_mu3esim
     startgt_ensure_test_cdb
     startgt_run_alignment_payloads
+    startgt_run_quality_payloads
+    startgt_run_alltags
     startgt_status
 );
 
 my @TEST_CDB_SUBDIRS = qw(payloads globaltags tags runrecords configs);
 my @ALIGNMENT_CALIB_TYPES = qw(pixelalignment tilealignment fibrealignment mppcalignment);
+my @QUALITY_CALIB_TYPES = qw(pixelqualitylm fibrequality tilequality);
 my $DEFAULT_IOV = 1;
+
+my %QUALITY_ANNOTATIONS = (
+    pixelqualitylm => "Perfect pixel detector with no deficiencies.",
+    fibrequality   => "Perfect fibre detector with no deficiencies.",
+    tilequality    => "Perfect tile detector with no deficiencies.",
+);
 
 # ----------------------------------------------------------------------
 sub _strip {
@@ -121,8 +130,29 @@ sub startgt_read_global_tag_tags {
     return @tags;
 }
 
+# All tag names startGT may create for a given GT (alignment + quality, …).
+sub startgt_expected_tag_names {
+    my ($gt) = @_;
+    return (
+        startgt_alignment_tag_names($gt),
+        startgt_quality_tag_names($gt),
+    );
+}
+
+# Tag JSON files already on disk for this GT (from earlier startGT steps).
+sub startgt_present_gt_tags {
+    my ($ctx, $cdb_root, $gt) = @_;
+    my $tags_dir = "$cdb_root/tags";
+    my @present;
+    return @present unless -d $tags_dir;
+    for my $tag (startgt_expected_tag_names($gt)) {
+        push @present, $tag if $ctx->{dry_run} || -f "$tags_dir/$tag";
+    }
+    return @present;
+}
+
 # ----------------------------------------------------------------------
-# Merge tag names into globaltags/<gt> (preserves tags from earlier steps).
+# Merge tag names into globaltags/<gt>: existing file + disk + this step.
 sub startgt_write_global_tag {
     my ($ctx, $cdb_root, $gt, @add_tags) = @_;
     my $gt_dir = "$cdb_root/globaltags";
@@ -137,7 +167,7 @@ sub startgt_write_global_tag {
             push @tags, $t;
         }
     }
-    for my $t (@add_tags) {
+    for my $t (@add_tags, startgt_present_gt_tags($ctx, $cdb_root, $gt)) {
         next if $t eq "" || $seen{$t}++;
         push @tags, $t;
     }
@@ -150,7 +180,7 @@ sub startgt_write_global_tag {
         . _json_format_string_array(@tags)
         . ", \"comment\" : \"$comment\" }\n";
 
-    _log($ctx, "write global tag: $path");
+    _log($ctx, "write global tag: $path (" . scalar(@tags) . " tags, sorted)");
     return if $ctx->{dry_run};
     open my $fh, ">", $path or die "startGT: cannot write $path: $!\n";
     print $fh $json;
@@ -181,6 +211,74 @@ sub startgt_write_tag_file {
 }
 
 # ----------------------------------------------------------------------
+# Tag names follow cdbInitGT (mcideal: fibre/tile *_ideal; pixel always _<GT>).
+sub startgt_quality_tag_name {
+    my ($calib, $gt) = @_;
+    my $flavour = startgt_gt_flavour($gt);
+    if (($calib eq "fibrequality" || $calib eq "tilequality")
+        && $flavour eq "mcideal" && $gt !~ /=/) {
+        return "${calib}_ideal";
+    }
+    return "${calib}_${gt}";
+}
+
+# Suffix after calib_ — passed to cdbRunPayloadWriter -t for payload hash/dir.
+sub startgt_quality_tag_suffix {
+    my ($tagname) = @_;
+    return $1 if $tagname =~ /^[^_]+_(.+)$/;
+    return $tagname;
+}
+
+# Chip/tile/fibre ID filter for ideal *content* (perfect status, IOV 1).
+# mcideal (no =year): full ideal detector via tag suffix (ideal / mcidealv6.9).
+# mcrealistic / data / year-specific mcideal: installed components for that year.
+sub startgt_quality_ideal_filter {
+    my ($cfg, $gt, $tagname) = @_;
+    my $flavour = startgt_gt_flavour($gt);
+    if ($flavour eq "mcideal" && $gt !~ /=/) {
+        return startgt_quality_tag_suffix($tagname);
+    }
+    my $year = startgt_year_from_gt($gt, $cfg);
+    die "startGT: need conditions year for quality on '$gt' (=YYYY in name or conditions_year in config)\n"
+        if $year eq "";
+    return $year;
+}
+
+sub startgt_quality_payload_path {
+    my ($payload_dir, $calib, $tagname, $iov) = @_;
+    $iov //= $DEFAULT_IOV;
+    my $suffix = startgt_quality_tag_suffix($tagname);
+    my $hash   = "tag_${calib}_${suffix}_iov_${iov}";
+    my $block  = sprintf("%04d", int($iov / 1000));
+    return "$payload_dir/${calib}_${suffix}/$block/$hash";
+}
+
+sub startgt_quality_tag_names {
+    my ($gt) = @_;
+    return map { startgt_quality_tag_name($_, $gt) } @QUALITY_CALIB_TYPES;
+}
+
+sub startgt_write_quality_tags {
+    my ($ctx, $cdb_root, $gt) = @_;
+    my $tags_dir    = "$cdb_root/tags";
+    my $payload_dir = "$cdb_root/payloads";
+    make_path($tags_dir) unless $ctx->{dry_run};
+
+    my @written;
+    _log($ctx, "write quality tag JSONs under $tags_dir");
+    for my $calib (@QUALITY_CALIB_TYPES) {
+        my $tagname = startgt_quality_tag_name($calib, $gt);
+        my $payload = startgt_quality_payload_path($payload_dir, $calib, $tagname);
+        if (!$ctx->{dry_run} && !-f $payload) {
+            _log($ctx, "  skip $tagname (payload missing: $payload)");
+            next;
+        }
+        startgt_write_tag_file($ctx, $tags_dir, $tagname, $gt);
+        push @written, $tagname;
+    }
+    return @written;
+}
+
 sub startgt_write_alignment_tags {
     my ($ctx, $cdb_root, $gt) = @_;
     my $tags_dir    = "$cdb_root/tags";
@@ -433,6 +531,65 @@ sub startgt_run_alignment_payloads {
 }
 
 # ----------------------------------------------------------------------
+sub startgt_run_quality_payloads {
+    my ($cfg, %opts) = @_;
+    my $gt = _strip($opts{gt} // "");
+    die "startGT: -g GT required (e.g. -g mcidealv6.9 or -g 'mcidealv6.9=2025')\n" if $gt eq "";
+
+    my $ctx = startgt_context($cfg, %opts);
+    _ensure_run_dir($ctx);
+
+    my $cdb_root    = startgt_ensure_test_cdb($ctx, $cfg);
+    my $payload_dir = "$cdb_root/payloads";
+    my $exe         = startgt_cdb_writer_exe($cfg);
+    die "startGT: cdbRunPayloadWriter missing: $exe\n"
+        unless $ctx->{dry_run} || -x $exe || -f $exe;
+
+    my $tmpdir = "$ctx->{run_dir}/output/startgt-quality";
+    make_path($tmpdir) unless $ctx->{dry_run};
+
+    my $cdb_dir = startgt_cdb_code_basedir($cfg);
+    _log($ctx, "cdbRunPayloadWriter quality (perfect IOV 1)");
+    _log($ctx, "  cwd:       $cdb_dir");
+    _log($ctx, "  GT:        $gt");
+    _log($ctx, "  payloads:  $payload_dir");
+
+    my $cwd = getcwd();
+    chdir($cdb_dir) or die "Cannot chdir $cdb_dir: $!\n" unless $ctx->{dry_run};
+
+    for my $calib (@QUALITY_CALIB_TYPES) {
+        my $tagname = startgt_quality_tag_name($calib, $gt);
+        my $suffix  = startgt_quality_tag_suffix($tagname);
+        my $filter  = startgt_quality_ideal_filter($cfg, $gt, $tagname);
+        my $ann     = _strip($opts{annotation} // $cfg->{"${calib}_annotation"} // $QUALITY_ANNOTATIONS{$calib} // "");
+        my $ext     = ($calib eq "tilequality") ? "json" : "csv";
+        my $tmpfile = "$tmpdir/tmp-${calib}-${suffix}.${ext}";
+
+        _log($ctx, "  $calib tag=$tagname filter=$filter");
+        _run($ctx, $exe, "-m", "${calib}-ideal", "-f", $tmpfile, "-t", $filter);
+        _run($ctx, $exe, "-c", $calib, "-f", $tmpfile, "-t", $suffix, "-p", $payload_dir, "-a", $ann);
+    }
+
+    chdir($cwd) unless $ctx->{dry_run};
+
+    my @tag_names = startgt_write_quality_tags($ctx, $cdb_root, $gt);
+    startgt_write_global_tag($ctx, $cdb_root, $gt, @tag_names);
+}
+
+# ----------------------------------------------------------------------
+# Alignment + quality payloads for one GT (all startGT payload steps so far).
+sub startgt_run_alltags {
+    my ($cfg, %opts) = @_;
+    my $gt = _strip($opts{gt} // "");
+    die "startGT: -g GT required (e.g. -g mcidealv6.9 or -g 'datav6.9=2025V0')\n" if $gt eq "";
+
+    my $ctx = startgt_context($cfg, %opts);
+    _log($ctx, "alltags for GT $gt (alignment + quality)");
+    startgt_run_alignment_payloads($cfg, %opts);
+    startgt_run_quality_payloads($cfg, %opts);
+}
+
+# ----------------------------------------------------------------------
 sub startgt_status {
     my ($cfg, %opts) = @_;
     my $ctx = startgt_context($cfg, %opts);
@@ -464,6 +621,11 @@ sub startgt_status {
             (-d "$cdb_root/payloads" ? "yes" : "no"), ")\n");
         for my $calib (@ALIGNMENT_CALIB_TYPES) {
             my $tagname = startgt_alignment_tag_name($calib, $opts{gt});
+            my $tagpath = "$cdb_root/tags/$tagname";
+            print("  tag $tagname: ", (-f $tagpath ? "present" : "missing"), "\n");
+        }
+        for my $calib (@QUALITY_CALIB_TYPES) {
+            my $tagname = startgt_quality_tag_name($calib, $opts{gt});
             my $tagpath = "$cdb_root/tags/$tagname";
             print("  tag $tagname: ", (-f $tagpath ? "present" : "missing"), "\n");
         }
