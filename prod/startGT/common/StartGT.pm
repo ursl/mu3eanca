@@ -32,6 +32,8 @@ our @EXPORT_OK = qw(
 );
 
 my @TEST_CDB_SUBDIRS = qw(payloads globaltags tags runrecords configs);
+my @ALIGNMENT_CALIB_TYPES = qw(pixelalignment tilealignment fibrealignment mppcalignment);
+my $DEFAULT_IOV = 1;
 
 # ----------------------------------------------------------------------
 sub _strip {
@@ -60,6 +62,144 @@ sub _run {
     return if $ctx->{dry_run};
     system(@cmd);
     die "Command failed: @cmd\n" if $? != 0;
+}
+
+# ----------------------------------------------------------------------
+sub _json_escape {
+    my ($s) = @_;
+    $s =~ s/\\/\\\\/g;
+    $s =~ s/"/\\"/g;
+    return $s;
+}
+
+# ----------------------------------------------------------------------
+# CDB hash tag_<calib>_<gt>_iov_<n> → payloads/<calib>_<gt>/0000/...
+sub startgt_alignment_tag_name {
+    my ($calib, $gt) = @_;
+    return "${calib}_${gt}";
+}
+
+# ----------------------------------------------------------------------
+sub startgt_alignment_payload_path {
+    my ($payload_dir, $calib, $gt, $iov) = @_;
+    $iov //= $DEFAULT_IOV;
+    my $tag   = startgt_alignment_tag_name($calib, $gt);
+    my $hash  = "tag_${calib}_${gt}_iov_${iov}";
+    my $block = sprintf("%04d", int($iov / 1000));
+    return "$payload_dir/$tag/$block/$hash";
+}
+
+# ----------------------------------------------------------------------
+sub startgt_gt_comment {
+    my ($gt) = @_;
+    return "Created (initially) for GT $gt with startGT";
+}
+
+# ----------------------------------------------------------------------
+sub _json_format_string_array {
+    my (@items) = @_;
+    return "[ " . join(", ", map { '"' . _json_escape($_) . '"' } @items) . " ]";
+}
+
+# ----------------------------------------------------------------------
+sub startgt_read_global_tag_tags {
+    my ($path) = @_;
+    return () unless -f $path;
+    open my $fh, "<", $path or return ();
+    local $/;
+    my $content = <$fh>;
+    close $fh;
+    my @tags;
+    if ($content =~ /"tags"\s*:\s*\[(.*?)\]/s) {
+        my $inner = $1;
+        while ($inner =~ /"((?:\\.|[^"\\])*)"/g) {
+            my ($t) = ($1);
+            $t =~ s/\\"/"/g;
+            push @tags, $t;
+        }
+    }
+    return @tags;
+}
+
+# ----------------------------------------------------------------------
+# Merge tag names into globaltags/<gt> (preserves tags from earlier steps).
+sub startgt_write_global_tag {
+    my ($ctx, $cdb_root, $gt, @add_tags) = @_;
+    my $gt_dir = "$cdb_root/globaltags";
+    make_path($gt_dir) unless $ctx->{dry_run};
+    my $path = "$gt_dir/$gt";
+
+    my %seen;
+    my @tags;
+    if (!$ctx->{dry_run} && -f $path) {
+        for my $t (startgt_read_global_tag_tags($path)) {
+            next if $seen{$t}++;
+            push @tags, $t;
+        }
+    }
+    for my $t (@add_tags) {
+        next if $t eq "" || $seen{$t}++;
+        push @tags, $t;
+    }
+    @tags = sort @tags;
+
+    my $comment = _json_escape(startgt_gt_comment($gt));
+    my $json = "{ \"gt\" : \""
+        . _json_escape($gt)
+        . "\", \"tags\" : "
+        . _json_format_string_array(@tags)
+        . ", \"comment\" : \"$comment\" }\n";
+
+    _log($ctx, "write global tag: $path");
+    return if $ctx->{dry_run};
+    open my $fh, ">", $path or die "startGT: cannot write $path: $!\n";
+    print $fh $json;
+    close $fh;
+}
+
+# ----------------------------------------------------------------------
+sub startgt_alignment_tag_names {
+    my ($gt) = @_;
+    return map { startgt_alignment_tag_name($_, $gt) } @ALIGNMENT_CALIB_TYPES;
+}
+
+# ----------------------------------------------------------------------
+sub startgt_write_tag_file {
+    my ($ctx, $tags_dir, $tagname, $gt, $iovs) = @_;
+    $iovs //= [$DEFAULT_IOV];
+    my $iov_str = join(", ", @$iovs);
+    my $comment = _json_escape(startgt_gt_comment($gt));
+    my $json = "{ \"tag\" : \""
+        . _json_escape($tagname)
+        . "\", \"iovs\" : [$iov_str], \"comment\" : \"$comment\" }\n";
+    my $path = "$tags_dir/$tagname";
+    _log($ctx, "write tag: $path");
+    return if $ctx->{dry_run};
+    open my $fh, ">", $path or die "startGT: cannot write $path: $!\n";
+    print $fh $json;
+    close $fh;
+}
+
+# ----------------------------------------------------------------------
+sub startgt_write_alignment_tags {
+    my ($ctx, $cdb_root, $gt) = @_;
+    my $tags_dir    = "$cdb_root/tags";
+    my $payload_dir = "$cdb_root/payloads";
+    make_path($tags_dir) unless $ctx->{dry_run};
+
+    my @written;
+    _log($ctx, "write alignment tag JSONs under $tags_dir");
+    for my $calib (@ALIGNMENT_CALIB_TYPES) {
+        my $tagname = startgt_alignment_tag_name($calib, $gt);
+        my $payload = startgt_alignment_payload_path($payload_dir, $calib, $gt);
+        if (!$ctx->{dry_run} && !-f $payload) {
+            _log($ctx, "  skip $tagname (payload missing: $payload)");
+            next;
+        }
+        startgt_write_tag_file($ctx, $tags_dir, $tagname, $gt);
+        push @written, $tagname;
+    }
+    return @written;
 }
 
 # ----------------------------------------------------------------------
@@ -133,11 +273,8 @@ sub startgt_cdb_writer_exe {
 # Single alignment ROOT for all GTs (from one mcideal mu3eSim run).
 sub startgt_alignment_rel {
     my ($cfg) = @_;
-    my $out = _cfg_key($cfg, "alignment_output", "alignment_output_mcideal");
-    if ($out eq "") {
-        my $tag = _strip($cfg->{mu3e_tag} // "unknown");
-        $out = "output/mu3e_alignment_$tag.root";
-    }
+    my $out = _strip($cfg->{alignment_output} // "");
+    return "output/mu3e_alignment.root" if $out eq "";
     return $out;
 }
 
@@ -290,6 +427,9 @@ sub startgt_run_alignment_payloads {
     chdir($cdb_dir) or die "Cannot chdir $cdb_dir: $!\n" unless $ctx->{dry_run};
     _run($ctx, @cmd);
     chdir($cwd) unless $ctx->{dry_run};
+
+    my @tag_names = startgt_write_alignment_tags($ctx, $cdb_root, $gt);
+    startgt_write_global_tag($ctx, $cdb_root, $gt, @tag_names);
 }
 
 # ----------------------------------------------------------------------
@@ -322,6 +462,13 @@ sub startgt_status {
         print("  payload filter -m: $filter\n");
         print("  payloads dir:      $cdb_root/payloads (",
             (-d "$cdb_root/payloads" ? "yes" : "no"), ")\n");
+        for my $calib (@ALIGNMENT_CALIB_TYPES) {
+            my $tagname = startgt_alignment_tag_name($calib, $opts{gt});
+            my $tagpath = "$cdb_root/tags/$tagname";
+            print("  tag $tagname: ", (-f $tagpath ? "present" : "missing"), "\n");
+        }
+        my $gtpath = "$cdb_root/globaltags/$opts{gt}";
+        print("  global tag:        $gtpath (", (-f $gtpath ? "present" : "missing"), ")\n");
     }
 
     require Setup;
