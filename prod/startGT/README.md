@@ -22,10 +22,10 @@ make lib/libCDB.so bin/cdbRunPayloadWriter
 
 # 3) Bootstrap mu3e + test-CDB for a release:
 cd /path/to/mu3eanca/prod/startGT
-./startGT -c GT-v6.9.cfg -H moor setup
-./startGT -c GT-v6.9.cfg -H moor sim
-./startGT -c GT-v6.9.cfg -H moor -g mcideal alltags
-./startGT -c GT-v6.9.cfg -H moor -g data alltags
+./startGT -c GT-v6.9.cfg setup
+./startGT -c GT-v6.9.cfg sim
+./startGT -c GT-v6.9.cfg -g mcideal alltags
+./startGT -c GT-v6.9.cfg -g data alltags
 ```
 
 Default config is `GT-v7.1.cfg`; use `-c GT-v6.9.cfg` for v6.9.
