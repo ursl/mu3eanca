@@ -1,0 +1,23 @@
+#! /usr/bin/perl
+# skipSmallRuns — stop the pipeline for this run if RDB Events < min_events.
+# Exit 1 (soft skip) when too small; Pipeline does not run later tasks.
+use strict;
+use warnings;
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $min = 0 + ($ctx->{min_events} // 0);
+
+my $n = TaskLib::rdb_events($ctx, $run);
+TaskLib::ctx_set($ctxfile, n_events => $n);
+TaskLib::task_log($ctx, "skipSmallRuns", "run $run events=$n min_events=$min");
+
+if ($min > 0 && $n < $min) {
+    TaskLib::task_log($ctx, "skipSmallRuns",
+        "Skipping run $run, as too few events");
+    exit 1;
+}
+exit 0;

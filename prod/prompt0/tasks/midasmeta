@@ -1,0 +1,43 @@
+#! /usr/bin/perl
+# midasmeta — run mu3e_midas_meta on the raw MIDAS file for this run.
+use strict;
+use warnings;
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $file = TaskLib::raw_file($ctx, $run);
+
+my $mu3e = $ctx->{mu3e} // "";
+my @cand = (
+    "$mu3e/_build/modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta",
+    "$mu3e/modules/mu3eUtil/_build/tools/midasMeta/mu3e_midas_meta",
+);
+my $exe = "";
+for my $c (@cand) {
+    if (-x $c || -f $c) {
+        $exe = $c;
+        last;
+    }
+}
+
+if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, "midasmeta", "would: " . ($exe || "mu3e_midas_meta") . " $file");
+    exit 0;
+}
+
+if ($exe eq "") {
+    TaskLib::task_log($ctx, "midasmeta",
+        "mu3e_midas_meta not found under $mu3e (run ./prompt setup)");
+    exit 2;
+}
+if (!-f $file) {
+    TaskLib::task_log($ctx, "midasmeta", "raw file missing: $file");
+    exit 2;
+}
+
+TaskLib::task_log($ctx, "midasmeta", "$exe $file");
+my $rc = system($exe, $file);
+exit(($rc == 0) ? 0 : 2);

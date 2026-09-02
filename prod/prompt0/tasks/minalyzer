@@ -1,0 +1,20 @@
+#! /usr/bin/perl
+# minalyzer — SLURM minalyzer over the raw file (processRuns submitJobsRawMinalyzer).
+# Not ported yet: this script is the place for that work.
+use strict;
+use warnings;
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $file = TaskLib::raw_file($ctx, $run);
+my $gt   = $ctx->{cdb_GT} // "";
+my $n    = $ctx->{n_events} // $ctx->{n_events_chunk} // "";
+
+TaskLib::task_log($ctx, "minalyzer",
+    "run $run file=$file gt=$gt n_events=$n  (submitJobsRawMinalyzer not ported)");
+
+exit 0 if $ctx->{dry_run};
+exit 2;

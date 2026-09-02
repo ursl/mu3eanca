@@ -1,7 +1,7 @@
 # prompt0 — 2026 prompt production
 
-Perl workflow to **bootstrap a dated production area** and (next) run prompt
-reconstruction for 2026 data taking. Successor to `run2025/scripts/processRuns`.
+Perl workflow to bootstrap a dated production area and run a per-run
+**pipeline of task scripts**. Successor to `run2025/scripts/processRuns`.
 SLURM jobs still go through `slurm/run`.
 
 ```tcsh
@@ -16,7 +16,10 @@ cd /path/to/mu3eanca/prod/prompt0
 |------|------|
 | `prompt` | CLI driver |
 | `Prompt.pm` | Production-area setup/init |
-| `prompt-v7.1.cfg` | Version config (packages, GT, date stamp) |
+| `Pipeline.pm` | Per-run task list, aliases, fail-fast |
+| `TaskLib.pm` | Helpers for `tasks/*` (paths, RDB, ctx) |
+| `tasks/` | One executable script per task |
+| `prompt-v7.1.cfg` | Version config (packages, GT, pipeline aliases) |
 | `host-merlin6.cfg` | merlin6 paths (`-H merlin6`; auto on `merlin-l-*`) |
 | `host-moor.cfg` | Mac overlay (auto on `moor`) |
 
@@ -75,6 +78,7 @@ Production area:
 | `bootstrap` | `setup` then `init` |
 | `status` | Paths, binaries, tar |
 | `list` | Resolved config + packages (default) |
+| `run RUN ...` | Run the pipeline for each run (`-P` selects the list) |
 
 Options:
 
@@ -82,12 +86,43 @@ Options:
 -c FILE        config (default: prompt-v7.1.cfg)
 -H PLATFORM    host-PLATFORM.cfg (default: hostname, with merlin-l-* → merlin6)
 -s YYMMDD      override prompt_workdir
--p ID          only this [repo] id (repeatable / comma-separated)
+-p ID          only this [repo] id (setup; repeatable / comma-separated)
+-P PIPE        pipeline alias or comma-separated tasks (default: cfg pipeline:)
+-r RUNS        comma-separated run numbers
 -j N           make -jN
 -n             dry-run
 ```
 
-Run processing (minalyzer / sort / trirec / watch) is not in this first cut; `init` matches `processRuns -i`.
+---
+
+## Per-run pipeline
+
+Each run walks a comma-separated list of **task scripts** in `tasks/`. If a
+task exits non-zero, the rest of the list is skipped for **that run** (the
+next run still starts).
+
+```
+pipeline: beam
+pipeline_alias: beam=midasmeta,skipSmallRuns,minalyzer,mu3esort,mu3etrirec
+```
+
+```tcsh
+./prompt -n run 12345
+./prompt -P beam run 12345
+./prompt -P midasmeta,skipSmallRuns -n run 12345 12346
+```
+
+Exit codes from a task:
+
+| Exit | Meaning |
+|------|---------|
+| 0 | Continue with the next task |
+| 1 | Soft skip (e.g. `skipSmallRuns` when Events < `min_events`) |
+| 2+ | Hard failure; `./prompt run` exits non-zero at the end |
+
+`minalyzer` / `mu3esort` / `mu3etrirec` are stubs (dry-run logs the intent;
+a real run exits 2 until ported from `processRuns`). `skipSmallRuns` and
+`midasmeta` are live.
 
 ---
 

@@ -24,6 +24,7 @@ our @EXPORT_OK = qw(
     prompt_platform
     prompt_apply_area
     prompt_context
+    prompt_repo_dir
     prompt_setup
     prompt_init
     prompt_bootstrap
@@ -146,6 +147,7 @@ sub prompt_context {
         mu3eanca       => $anca,
         slurm_run      => $slurm_run,
         slurm_queue    => _strip($cfg->{slurm_queue} // "-p hourly"),
+        raw_input_layout => _strip($cfg->{raw_input_layout} // "runblock3"),
         cdb_dbconn     => _strip($cfg->{cdb_dbconn} // ""),
         cdb_GT         => _strip($cfg->{cdb_GT} // ""),
         rdb_url        => _strip($cfg->{rdb_url} // ""),
@@ -365,6 +367,9 @@ sub prompt_list {
         next if ref($val);
         print("  $key: $val\n");
     }
+    require Pipeline;
+    Pipeline::pipeline_print($cfg);
+
     my $repos = $cfg->{setup_repos} // [];
     print(_prefix(), "packages (", scalar(@$repos), ")\n");
     for my $r (@$repos) {

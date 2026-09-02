@@ -89,6 +89,7 @@ my %LIST_KEYS = map { $_ => 1 } qw(
     tar_packages
     slurm_stages
     githash_extra
+    pipeline_alias
 );
 
 # ----------------------------------------------------------------------

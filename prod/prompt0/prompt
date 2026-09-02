@@ -6,6 +6,7 @@
 #   ./prompt setup
 #   ./prompt init
 #   ./prompt bootstrap          # setup + init
+#   ./prompt [-P beam] run 12345
 #
 # Host overlay is host-<platform>.cfg (e.g. host-merlin6.cfg), not
 # config-<hostname>.cfg as in startGT / relval.
@@ -24,12 +25,16 @@ my $dry_run  = 0;
 my $jobs     = undef;
 my $setup_name = "";
 my @packages   = ();
+my $pipeline   = "";
+my $runs_opt   = "";
 
 GetOptions(
     "c=s"        => \$config,
     "H|host=s"   => \$host_opt,
     "s=s"        => \$setup_name,
     "p=s@"       => \@packages,
+    "P=s"        => \$pipeline,
+    "r=s"        => \$runs_opt,
     "j=i"        => \$jobs,
     "n"          => \$dry_run,
     "h|help"     => \$help,
@@ -52,6 +57,7 @@ use Prompt qw(
     prompt_status
     prompt_list
 );
+use Pipeline qw(pipeline_run);
 
 sub prefix {
     my $now = localtime;
@@ -60,7 +66,7 @@ sub prefix {
 
 sub usage {
     print <<"END";
-Usage: $0 [-c FILE] [-H platform] [-s YYMMDD] [-p ID] [-n] [-j N] [target]
+Usage: $0 [-c FILE] [-H platform] [-s YYMMDD] [-p ID] [-P PIPE] [-n] [-j N] [target] [RUN ...]
 
 Targets:
   setup          clone/checkout/build/relink [repo] packages
@@ -68,12 +74,15 @@ Targets:
   bootstrap      setup then init
   status         paths and build/tar state
   list           print resolved config + packages (default)
+  run RUN ...    run the pipeline for each RUN (see -P)
 
 Options:
   -c FILE        config file (default: prompt-v7.1.cfg)
   -H PLATFORM    host overlay host-PLATFORM.cfg (default: merlin6 on merlin-l-*)
   -s YYMMDD      override prompt_workdir (dated production area)
-  -p ID          only this [repo] id (repeatable or comma-separated; e.g. -p minalyzer)
+  -p ID          only this [repo] id (setup; repeatable or comma-separated)
+  -P PIPE        pipeline alias or comma-separated tasks (default: cfg pipeline:)
+  -r RUNS        comma-separated run numbers (in addition to trailing args)
   -j N           make -jN for package builds
   -n             dry-run
   -h             help
@@ -86,7 +95,22 @@ sub _opts {
     $opts{jobs} = 0 + $jobs if defined $jobs;
     $opts{setup_name} = $setup_name if $setup_name ne "";
     $opts{repo_ids} = \@packages if @packages;
+    $opts{pipeline} = $pipeline if $pipeline ne "";
     return %opts;
+}
+
+sub _collect_runs {
+    my ($target, @argv) = @_;
+    my @runs;
+    if ($runs_opt ne "") {
+        push @runs, grep { $_ ne "" } split(/,/, $runs_opt);
+    }
+    for my $a (@argv) {
+        next if $a eq $target;
+        next if $a =~ /^-/;
+        push @runs, grep { $_ ne "" } split(/,/, $a);
+    }
+    return @runs;
 }
 
 my $script_dir = abs_path(dirname($0));
@@ -109,9 +133,13 @@ if ($target eq "") {
 }
 $target = "list" if $target eq "";
 
+my @runs = ($target eq "run") ? _collect_runs($target, @ARGV) : ();
+
 print(prefix(), "config=$cfg_file host=$host target=$target",
     ($setup_name ne "" ? " workdir=$setup_name" : ""),
     (@packages ? " packages=" . join(",", @packages) : ""),
+    ($pipeline ne "" ? " pipeline=$pipeline" : ""),
+    (@runs ? " runs=" . join(",", @runs) : ""),
     ($dry_run ? " (dry-run)" : ""), "\n");
 
 my $cfg = load_config($cfg_file, $host);
@@ -129,6 +157,11 @@ if ($target eq "setup") {
     prompt_status($cfg, %opts);
 } elsif ($target eq "list") {
     prompt_list($cfg);
+} elsif ($target eq "run") {
+    $opts{runs} = \@runs;
+    my $hard = pipeline_run($cfg, %opts);
+    print(prefix(), "done\n");
+    exit($hard ? 1 : 0);
 } else {
     die "unknown target '$target'\n";
 }

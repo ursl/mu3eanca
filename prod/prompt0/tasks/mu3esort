@@ -1,0 +1,18 @@
+#! /usr/bin/perl
+# mu3esort — SLURM mu3eSort (processRuns submitJobsRawSort).
+# Not ported yet: this script is the place for that work.
+use strict;
+use warnings;
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $file = TaskLib::raw_file($ctx, $run);
+
+TaskLib::task_log($ctx, "mu3esort",
+    "run $run file=$file  (submitJobsRawSort not ported)");
+
+exit 0 if $ctx->{dry_run};
+exit 2;
