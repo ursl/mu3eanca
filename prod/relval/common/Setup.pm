@@ -187,6 +187,7 @@ sub setup_contexts_from_config {
             relink        => $repo->{relink},
             submodules    => $repo->{submodules},
             make_jobs     => 0 + $jobs,
+            cmake_args    => _strip($repo->{cmake_args} // ""),
             relink_script => _strip($cfg->{relink_script} // ""),
             util_merges   => \@util_merges,
             util_subdir   => $util_subdir,
@@ -435,16 +436,19 @@ sub setup_build {
 
     my $build = "$s->{path}/_build";
     my $jobs  = $s->{make_jobs};
+    my @cmake = ("cmake", "..");
+    push @cmake, split(/\s+/, $s->{cmake_args})
+        if defined $s->{cmake_args} && $s->{cmake_args} ne "";
     _log($s, "build in $build (-j$jobs)");
     if (!$s->{dry_run}) {
         make_path($build);
         my $cwd = getcwd();
         chdir($build) or die "Cannot chdir $build: $!\n";
-        _run($s, "cmake", "..");
+        _run($s, @cmake);
         _run($s, "make", "-j$jobs");
         chdir($cwd) or die "Cannot chdir back to $cwd: $!\n";
     } else {
-        _log($s, "would: cmake .. && make -j$jobs");
+        _log($s, "would: @cmake && make -j$jobs");
     }
 }
 
@@ -526,6 +530,8 @@ sub setup_status_repo {
     print("  relink:    ", ($s->{relink} ? "yes" : "no"), "\n");
     print("  submodules:", ($s->{submodules} ? "yes" : "no"), "\n");
     print("  make_jobs: $s->{make_jobs}\n");
+    print("  cmake_args:", ($s->{cmake_args} ne "" ? " $s->{cmake_args}" : " (none)"), "\n")
+        if defined $s->{cmake_args};
     print("  exists:    ", (-d $s->{path} ? "yes" : "no"), "\n");
     if (-d $s->{path} && _is_git_repo($s->{path}) && !$s->{dry_run}) {
         my $head = `git -C "$s->{path}" rev-parse --short HEAD 2>/dev/null`;

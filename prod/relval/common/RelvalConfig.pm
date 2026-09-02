@@ -54,7 +54,7 @@ package RelvalConfig;
 #   id: signal
 #   ...
 #
-# Host overlay: config-<host>.cfg keys override the base file.
+# Host overlay (CWD): host-<platform>.cfg preferred, else config-<host>.cfg.
 #
 # History
 #         2026/07/13 first shot
@@ -74,12 +74,19 @@ our @EXPORT_OK = qw(
     load_setup_units
     load_relval_units
     host_name
+    host_overlay_file
     read_cfg_file
     discover_repos
 );
 
 # Keys that append when repeated (not overwrite).
-my %LIST_KEYS = map { $_ => 1 } qw(include alltags);
+my %LIST_KEYS = map { $_ => 1 } qw(
+    include
+    alltags
+    tar_packages
+    slurm_stages
+    githash_extra
+);
 
 # ----------------------------------------------------------------------
 sub host_name {
@@ -89,6 +96,16 @@ sub host_name {
     my $h = hostname();
     $h =~ s/\..*//;
     return $h;
+}
+
+# ----------------------------------------------------------------------
+# prompt0 uses host-<platform>.cfg (e.g. host-merlin6.cfg).
+# startGT / relval keep config-<hostname>.cfg.
+sub host_overlay_file {
+    my ($host) = @_;
+    return "" unless defined $host && $host ne "";
+    return "host-$host.cfg" if -f "host-$host.cfg";
+    return "config-$host.cfg";
 }
 
 # ----------------------------------------------------------------------
@@ -230,6 +247,7 @@ my @REPO_SUFFIXES = qw(
     checkout_merge
     checkout_branch
     checkout_tag
+    cmake_args
     submodules
     workdir
     make_jobs
@@ -291,6 +309,7 @@ sub _normalize_repo {
     $workdir =~ s/[\/\s]/_/g;
 
     my $jobs = $raw->{make_jobs} // $cfg->{make_jobs} // 4;
+    my $cmake_args = _strip($raw->{cmake_args} // "");
 
     return {
         id         => $id,
@@ -303,6 +322,7 @@ sub _normalize_repo {
         relink     => $relink,
         submodules => $submodules,
         make_jobs  => 0 + $jobs,
+        cmake_args => $cmake_args,
     };
 }
 
@@ -432,8 +452,10 @@ sub _normalize_tasks {
 # ----------------------------------------------------------------------
 sub _apply_host_overlay {
     my ($cfg, $tasks, $repos, $host) = @_;
-    my $host_path = "config-$host.cfg";
-    return ($cfg, $tasks, $repos) unless -f $host_path;
+    my $host_path = host_overlay_file($host);
+    $cfg->{_host} = $host // "";
+    $cfg->{_host_overlay} = $host_path;
+    return ($cfg, $tasks, $repos) unless $host_path ne "" && -f $host_path;
 
     my ($hcfg, $htasks, $hrepos, $hincludes) = read_cfg_file($host_path);
     _merge_scalars($cfg, $hcfg);
