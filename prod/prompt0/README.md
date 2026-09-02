@@ -104,7 +104,7 @@ workdir: some-tool
 build: true
 relink: false
 submodules: false
-# cmake_args: "-Dmu3e_DIR={mu3e}/install"   # {mu3e} = that [repo] checkout path
+# cmake_args: "-Dmu3e_DIR={mu3e}/install/{cmake_libdir}/cmake/mu3e"
 ```
 
 If the batch job needs the package inside the tar (extracted by `slurm/run`):
@@ -123,6 +123,7 @@ Prefixed keys also work (`minalyzer_repo:`, `minalyzer_checkout_branch:`, …) f
 
 ```
 setup_basedir: "/data/experiment/mu3e/data/prod/prompt"
+cmake_libdir: lib64
 relink_script: "/psi/home/langenegger/mu3e/mu3eanca/perl/relinkBinFiles"
 mu3eanca: "/psi/home/langenegger/mu3e/mu3eanca"
 cdb_dbconn: "http://mu3edb0/cdb/"
