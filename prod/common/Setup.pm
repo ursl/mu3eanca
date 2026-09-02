@@ -189,6 +189,7 @@ sub setup_contexts_from_config {
             build         => $repo->{build},
             relink        => $repo->{relink},
             submodules    => $repo->{submodules},
+            install       => $repo->{install} ? 1 : 0,
             make_jobs     => 0 + $jobs,
             cmake_args    => _strip($repo->{cmake_args} // ""),
             relink_script => _strip($cfg->{relink_script} // ""),
@@ -433,15 +434,59 @@ sub setup_status_ana {
 }
 
 # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# Expand {placeholders} in cmake_args (and similar strings).
+#   {setup_basedir} {path} {workdir} {id}  — this repo
+#   {mu3e}                                 — path of [repo] id mu3e
+#   {any_scalar_config_key}
+sub _expand_vars {
+    my ($s, $text) = @_;
+    return "" unless defined $text;
+    return $text unless $text =~ /\{/;
+
+    my %vars = (
+        setup_basedir => $s->{basedir} // "",
+        basedir       => $s->{basedir} // "",
+        path          => $s->{path} // "",
+        workdir       => $s->{workdir} // "",
+        id            => $s->{id} // "",
+    );
+    my $cfg = $s->{cfg} // {};
+    for my $r (@{ $cfg->{setup_repos} // [] }) {
+        next unless defined $r->{id} && $r->{id} ne "";
+        my $wd = $r->{workdir} // $r->{id};
+        $vars{$r->{id}} = ($s->{basedir} // "") . "/$wd";
+    }
+    for my $k (keys %$cfg) {
+        next if ref($cfg->{$k});
+        next if $k =~ /^_/;
+        next if exists $vars{$k};
+        $vars{$k} = defined $cfg->{$k} ? $cfg->{$k} : "";
+    }
+
+    $text =~ s/\{([A-Za-z0-9_.-]+)\}/
+        exists $vars{$1}
+            ? $vars{$1}
+            : die "Setup: unknown placeholder {$1} in cmake_args "
+                . "(known: " . join(", ", sort keys %vars) . ")\n"
+    /ge;
+    return $text;
+}
+
+# ----------------------------------------------------------------------
 sub setup_build {
     my ($s) = @_;
     return unless $s->{build};
 
     my $build = "$s->{path}/_build";
     my $jobs  = $s->{make_jobs};
+    my $args  = _expand_vars($s, $s->{cmake_args} // "");
     my @cmake = ("cmake", "..");
-    push @cmake, split(/\s+/, $s->{cmake_args})
-        if defined $s->{cmake_args} && $s->{cmake_args} ne "";
+    if ($s->{install} && $args !~ /CMAKE_INSTALL_PREFIX/) {
+        push @cmake, "-DCMAKE_INSTALL_PREFIX=$s->{path}/install";
+    }
+    push @cmake, split(/\s+/, $args) if $args ne "";
+
     _log($s, "build in $build (-j$jobs)");
     if (!$s->{dry_run}) {
         make_path($build);
@@ -449,9 +494,14 @@ sub setup_build {
         chdir($build) or die "Cannot chdir $build: $!\n";
         _run($s, @cmake);
         _run($s, "make", "-j$jobs");
+        if ($s->{install}) {
+            _log($s, "make install -> $s->{path}/install");
+            _run($s, "make", "install");
+        }
         chdir($cwd) or die "Cannot chdir back to $cwd: $!\n";
     } else {
-        _log($s, "would: @cmake && make -j$jobs");
+        my $extra = $s->{install} ? " && make install" : "";
+        _log($s, "would: @cmake && make -j$jobs$extra");
     }
 }
 
@@ -530,11 +580,16 @@ sub setup_status_repo {
     }
     print("  merges:    ", (@{$s->{merges}} ? join(", ", @{$s->{merges}}) : "(none)"), "\n");
     print("  build:     ", ($s->{build} ? "yes" : "no"), "\n");
+    print("  install:   ", ($s->{install} ? "yes" : "no"), "\n");
     print("  relink:    ", ($s->{relink} ? "yes" : "no"), "\n");
     print("  submodules:", ($s->{submodules} ? "yes" : "no"), "\n");
     print("  make_jobs: $s->{make_jobs}\n");
-    print("  cmake_args:", ($s->{cmake_args} ne "" ? " $s->{cmake_args}" : " (none)"), "\n")
-        if defined $s->{cmake_args};
+    if (defined $s->{cmake_args}) {
+        my $raw = $s->{cmake_args};
+        my $exp = eval { _expand_vars($s, $raw) } // $raw;
+        print("  cmake_args:", ($raw ne "" ? " $raw" : " (none)"), "\n");
+        print("  cmake_args expanded: $exp\n") if $exp ne $raw && $raw ne "";
+    }
     print("  exists:    ", (-d $s->{path} ? "yes" : "no"), "\n");
     if (-d $s->{path} && _is_git_repo($s->{path}) && !$s->{dry_run}) {
         my $head = `git -C "$s->{path}" rev-parse --short HEAD 2>/dev/null`;

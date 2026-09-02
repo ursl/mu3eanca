@@ -26,6 +26,8 @@ package RelvalConfig;
 #   # mu3e_build: true
 #   # mu3e_relink: true
 #   # mu3e_submodules: true
+#   # mu3e_install: true
+#   # mu3e_cmake_args: "-DCMAKE_INSTALL_PREFIX={path}/install"
 #
 #   mu3eValidation_repo: "git@bitbucket.org:mu3e/mu3eValidation"
 #   mu3eValidation_tag: "main"
@@ -255,6 +257,7 @@ my @REPO_SUFFIXES = qw(
     relink
     merges
     merge
+    install
     build
     tag
     repo
@@ -268,6 +271,7 @@ sub _repo_defaults {
         build      => $is_mu3e ? 1 : 0,
         relink     => $is_mu3e ? 1 : 0,
         submodules => $is_mu3e ? 1 : 0,
+        install    => $is_mu3e ? 1 : 0,
     );
 }
 
@@ -300,6 +304,8 @@ sub _normalize_repo {
         ? _truthy($raw->{relink}) : $def{relink};
     my $submodules = exists $raw->{submodules}
         ? _truthy($raw->{submodules}) : $def{submodules};
+    my $install = exists $raw->{install}
+        ? _truthy($raw->{install}) : $def{install};
 
     my $workdir = _strip($raw->{workdir} // "");
     if ($workdir eq "") {
@@ -322,6 +328,7 @@ sub _normalize_repo {
         build      => $build,
         relink     => $relink,
         submodules => $submodules,
+        install    => $install,
         make_jobs  => 0 + $jobs,
         cmake_args => $cmake_args,
     };

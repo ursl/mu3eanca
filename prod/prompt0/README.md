@@ -103,7 +103,7 @@ workdir: some-tool
 build: true
 relink: false
 submodules: false
-# cmake_args: "-DFOO=bar"
+# cmake_args: "-Dmu3e_DIR={mu3e}/install"   # {mu3e} = that [repo] checkout path
 ```
 
 If the batch job needs the package inside the tar (extracted by `slurm/run`):
