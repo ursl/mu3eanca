@@ -19,7 +19,8 @@ cd /path/to/mu3eanca/prod/prompt0
 | `Pipeline.pm` | Per-run task list, aliases, fail-fast |
 | `TaskLib.pm` | Helpers for `tasks/*` (paths, RDB, ctx) |
 | `tasks/` | One executable script per task |
-| `prompt-v7.1.cfg` | Version config (packages, GT, pipeline aliases) |
+| `prompt-base.cfg` | Shared defaults (pipeline, run_year, slurm wrappers, …) |
+| `prompt-v7.1.cfg` | Version config (`base:` + workdir, GT, `[repo]` pins) |
 | `host-merlin6.cfg` | merlin6 paths (`-H merlin6`; auto on `merlin-l-*`) |
 | `host-moor.cfg` | Mac overlay (auto on `moor`) |
 
@@ -49,6 +50,7 @@ Production area:
 # 1) Edit host-merlin6.cfg paths if needed (once per platform).
 
 # 2) Edit prompt-v7.1.cfg: prompt_workdir (today's YYMMDD) and [repo] pins.
+#    Shared defaults live in prompt-base.cfg.
 
 # 3) Dry-run first:
 ./prompt -H merlin6 -n list
@@ -128,7 +130,8 @@ a real run exits 2 until ported from `processRuns`). `skipSmallRuns` and
 
 ## Run year
 
-Raw (and `{year}` in host `data_dir` / `raw_input_base`) follow the run number:
+Raw (and `{year}` in host `data_dir` / `raw_input_base`) follow the run number
+in `prompt-base.cfg`:
 
 ```
 run_year: 9410=2025
