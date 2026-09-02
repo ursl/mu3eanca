@@ -55,12 +55,10 @@ sub _log {
 }
 
 # ----------------------------------------------------------------------
-# Run a task script, tee stdout+stderr to the terminal and $logfile.
+# Run a task script; stdout+stderr go to the parent's STDOUT (already teed).
 # Returns the child exit code.
 sub _run_task {
-    my ($script, $run, $ctx, $logfile) = @_;
-    open my $log, ">", $logfile or die "pipeline: cannot write $logfile: $!\n";
-    $log->autoflush(1);
+    my ($script, $run, $ctx) = @_;
     STDOUT->autoflush(1);
 
     my $pid = open(my $rh, "-|");
@@ -72,12 +70,9 @@ sub _run_task {
     my $buf;
     while (read($rh, $buf, 8192)) {
         print STDOUT $buf;
-        print $log $buf;
     }
     close $rh;
-    my $exit = ($? == -1) ? 255 : ($? >> 8);
-    close $log;
-    return $exit;
+    return ($? == -1) ? 255 : ($? >> 8);
 }
 
 # ----------------------------------------------------------------------
@@ -132,6 +127,17 @@ sub pipeline_tasks {
     my @tasks = grep { $_ ne "" } map { _strip($_) } split(/,/, $spec);
     die "pipeline: empty task list (from '$spec')\n" unless @tasks;
     return @tasks;
+}
+
+# ----------------------------------------------------------------------
+# Filename token: alias (`beam`, `test`) or a comma-list turned into dashes.
+sub pipeline_name {
+    my ($cfg, $spec) = @_;
+    $spec = _strip($spec // "");
+    $spec = _strip($cfg->{pipeline} // "") if $spec eq "";
+    $spec =~ s/,+/-/g;
+    $spec =~ s/[^\w.-]+/_/g;
+    return $spec ne "" ? $spec : "pipeline";
 }
 
 # ----------------------------------------------------------------------
@@ -239,6 +245,7 @@ sub pipeline_run {
     die "pipeline: no run numbers (./prompt -P beam run 12345)\n" unless @runs;
 
     my @tasks = pipeline_tasks($cfg, $opts{pipeline});
+    my $pname = pipeline_name($cfg, $opts{pipeline});
     my $tdir  = pipeline_task_dir();
     my @known = pipeline_known_tasks();
     my %known = map { $_ => 1 } @known;
@@ -262,25 +269,26 @@ sub pipeline_run {
         my $rdir = "$pctx->{root}/runs/" . sprintf("%05d", $run);
         my $ctx  = "$rdir/ctx.cfg";
         my $stamp = _stamp();
+        my $logfile = "$rdir/$stamp-$pname.log";
         $kv->{log_stamp} = $stamp;
         $kv->{log_dir}   = $rdir;
+        $kv->{log_file}  = $logfile;
+        $kv->{pipeline_name} = $pname;
         if (!$dry) {
             make_path($rdir);
             _write_ctx($ctx, $kv);
         }
 
-        my $plog = "$rdir/$stamp-prompt.log";
         my $tied = 0;
         if ($dry) {
-            _log("would log to $rdir/$stamp-TASK.log");
+            _log("would log to $logfile");
         } else {
             open my $tty, ">&", \*STDOUT or die "pipeline: dup STDOUT: $!\n";
             $tty->autoflush(1);
-            open my $runlog, ">", $plog or die "pipeline: cannot write $plog: $!\n";
+            open my $runlog, ">", $logfile or die "pipeline: cannot write $logfile: $!\n";
             $runlog->autoflush(1);
             print $runlog $opts{banner}, "\n" if defined $opts{banner} && $opts{banner} ne "";
-            print $runlog task_prefix("pipeline"),
-                "log $plog  pipeline=" . join(",", @tasks) . "\n";
+            print $runlog task_prefix("pipeline"), "log $logfile\n";
             tie *STDOUT, "Pipeline::Tee", $tty, $runlog
                 or die "pipeline: tie STDOUT: $!\n";
             $tied = 1;
@@ -293,13 +301,12 @@ sub pipeline_run {
             my $stopped = 0;
             for my $t (@tasks) {
                 my $script = "$tdir/$t";
-                my $tlog   = "$rdir/$stamp-$t.log";
                 if ($dry) {
                     _log("[$t] would: $script $run $ctx");
                     next;
                 }
-                _log("[$t] start  log=$tlog");
-                my $exit = _run_task($script, $run, $ctx, $tlog);
+                _log("[$t] start");
+                my $exit = _run_task($script, $run, $ctx);
                 if ($exit == 0) {
                     _log("[$t] ok");
                     next;
@@ -325,7 +332,7 @@ sub pipeline_run {
 1;
 
 # ----------------------------------------------------------------------
-# Tee parent-process prints to the terminal and the per-run prompt log.
+# Tee parent-process prints (and task output) to the terminal and one run log.
 package Pipeline::Tee;
 use strict;
 use warnings;
