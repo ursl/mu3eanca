@@ -4,7 +4,8 @@ package RelvalConfig;
 # RelvalConfig
 # ============
 #
-# Load and merge relval / setup config files (simple text format).
+# Shared config loader for prod workflows (relval, startGT, prompt0).
+# Lives in prod/common together with Setup.pm.
 #
 # Format:
 #   # comment

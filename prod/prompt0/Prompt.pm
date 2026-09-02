@@ -8,7 +8,7 @@ package Prompt;
 # git checkout per [repo] block (mu3e, minalyzer, extra packages).
 #
 # Config + host overlay: RelvalConfig (host-<platform>.cfg).
-# Git clone/build/relink: Setup (../relval/common).
+# Git clone/build/relink: Setup (../common).
 #
 # History
 #         2026/09/02 first shot (setup / init / status)

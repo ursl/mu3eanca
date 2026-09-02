@@ -4,6 +4,9 @@ package Setup;
 # Setup
 # =====
 #
+# Shared git clone / checkout / build / relink for prod workflows
+# (relval, startGT, prompt0). Lives in prod/common.
+#
 # Create and modify git repositories under setup_basedir
 # (alias: mu3e_relval_basedir).
 #

@@ -15,12 +15,12 @@ cd /path/to/mu3eanca/prod/prompt0
 | Path | Role |
 |------|------|
 | `prompt` | CLI driver |
-| `common/Prompt.pm` | Production-area setup/init |
+| `Prompt.pm` | Production-area setup/init |
 | `prompt-v7.1.cfg` | Version config (packages, GT, date stamp) |
 | `host-merlin6.cfg` | merlin6 paths (`-H merlin6`; auto on `merlin-l-*`) |
 | `host-moor.cfg` | Mac overlay (auto on `moor`) |
 
-Shared clone/build: `../relval/common/` (`RelvalConfig`, `Setup`).
+Shared clone/build: `../common/` (`RelvalConfig`, `Setup`).
 
 Host overlay is **`host-<platform>.cfg`**, not `config-<hostname>.cfg` as in startGT/relval. merlin6 is the platform; login nodes `merlin-l-001` / `merlin-l-002` map to it.
 

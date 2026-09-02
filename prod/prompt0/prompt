@@ -38,8 +38,8 @@ pod2usage(1) if $help;
 use Cwd qw(abs_path);
 use File::Basename qw(dirname);
 
-use lib abs_path(dirname($0)) . "/common";
-use lib abs_path(dirname($0)) . "/../relval/common";
+use lib abs_path(dirname($0));
+use lib abs_path(dirname($0)) . "/../common";
 use RelvalConfig qw(load_config);
 use Prompt qw(
     prompt_platform

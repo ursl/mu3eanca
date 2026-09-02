@@ -43,11 +43,11 @@ Dry-run (print commands, do not execute):
 | Path | Role |
 |------|------|
 | `startGT` | CLI driver |
-| `common/StartGT.pm` | Core logic (payload writers, tag naming, global-tag merge) |
+| `StartGT.pm` | Core logic (payload writers, tag naming, global-tag merge) |
 | `GT-v6.9.cfg`, `GT-v7.1.cfg` | Release configs (`alltags` list, mu3e tag, conditions year) |
 | `config-<hostname>.cfg` | Host overlay (`setup_basedir`, `CDB_code_basedir`, …) |
 
-Shared infrastructure comes from `../relval/common/` (`RelvalConfig`, `Setup`).
+Shared infrastructure: `../common/` (`RelvalConfig`, `Setup`).
 
 ---
 
