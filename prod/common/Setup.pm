@@ -551,14 +551,49 @@ sub setup_run_repo {
 }
 
 # ----------------------------------------------------------------------
+# Optional %opts{repo_ids}: restrict setup/status to these [repo] ids
+# (array or comma-separated string). Config order is kept.
+sub _wanted_repo_ids {
+    my (%opts) = @_;
+    my $raw = $opts{repo_ids} // $opts{packages};
+    return () unless defined $raw;
+    my @src = (ref($raw) eq "ARRAY") ? @$raw : ($raw);
+    my @ids;
+    for my $x (@src) {
+        next unless defined $x;
+        push @ids, grep { $_ ne "" } split(/[\s,]+/, $x);
+    }
+    return @ids;
+}
+
+# ----------------------------------------------------------------------
+sub _filter_contexts {
+    my ($cfg, %opts) = @_;
+    my @ctx = setup_contexts_from_config($cfg, %opts);
+    my @want = _wanted_repo_ids(%opts);
+    return @ctx unless @want;
+
+    my %have = map { $_->{id} => 1 } @ctx;
+    for my $id (@want) {
+        die "Setup: unknown repo id '$id' (have: "
+            . join(", ", map { $_->{id} } @ctx) . ")\n"
+            unless $have{$id};
+    }
+    my %ok = map { $_ => 1 } @want;
+    my @out = grep { $ok{$_->{id}} } @ctx;
+    _log({ id => "setup" }, "repo filter: " . join(", ", map { $_->{id} } @out));
+    return @out;
+}
+
+# ----------------------------------------------------------------------
 sub setup_run_config {
     my ($cfg, %opts) = @_;
-    setup_run_ana($cfg, %opts);
+    setup_run_ana($cfg, %opts) unless _wanted_repo_ids(%opts);
 
     my $repos = $cfg->{setup_repos} // [];
     return unless @$repos;
 
-    my @ctx = setup_contexts_from_config($cfg, %opts);
+    my @ctx = _filter_contexts($cfg, %opts);
     for my $s (@ctx) {
         setup_status_repo($s);
         setup_run_repo($s);
@@ -604,12 +639,12 @@ sub setup_status_repo {
 # ----------------------------------------------------------------------
 sub setup_status_config {
     my ($cfg, %opts) = @_;
-    setup_status_ana($cfg, %opts);
+    setup_status_ana($cfg, %opts) unless _wanted_repo_ids(%opts);
 
     my $repos = $cfg->{setup_repos} // [];
     return unless @$repos;
 
-    my @ctx = setup_contexts_from_config($cfg, %opts);
+    my @ctx = _filter_contexts($cfg, %opts);
     for my $s (@ctx) {
         setup_status_repo($s);
     }

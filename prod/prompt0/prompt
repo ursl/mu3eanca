@@ -23,14 +23,16 @@ my $host_opt = "";
 my $dry_run  = 0;
 my $jobs     = undef;
 my $setup_name = "";
+my @packages   = ();
 
 GetOptions(
     "c=s"        => \$config,
     "H|host=s"   => \$host_opt,
-    "s=s"     => \$setup_name,
-    "j=i"     => \$jobs,
-    "n"       => \$dry_run,
-    "h|help"  => \$help,
+    "s=s"        => \$setup_name,
+    "p=s@"       => \@packages,
+    "j=i"        => \$jobs,
+    "n"          => \$dry_run,
+    "h|help"     => \$help,
 ) or pod2usage(2);
 
 pod2usage(1) if $help;
@@ -58,10 +60,10 @@ sub prefix {
 
 sub usage {
     print <<"END";
-Usage: $0 [-c FILE] [-H platform] [-s YYMMDD] [-n] [-j N] [target]
+Usage: $0 [-c FILE] [-H platform] [-s YYMMDD] [-p ID] [-n] [-j N] [target]
 
 Targets:
-  setup          clone/checkout/build/relink all [repo] packages
+  setup          clone/checkout/build/relink [repo] packages
   init           production area: slurm dirs, data blocks, githashes, alignment, tar
   bootstrap      setup then init
   status         paths and build/tar state
@@ -71,6 +73,7 @@ Options:
   -c FILE        config file (default: prompt-v7.1.cfg)
   -H PLATFORM    host overlay host-PLATFORM.cfg (default: merlin6 on merlin-l-*)
   -s YYMMDD      override prompt_workdir (dated production area)
+  -p ID          only this [repo] id (repeatable or comma-separated; e.g. -p minalyzer)
   -j N           make -jN for package builds
   -n             dry-run
   -h             help
@@ -82,6 +85,7 @@ sub _opts {
     my %opts = (dry_run => $dry_run ? 1 : 0);
     $opts{jobs} = 0 + $jobs if defined $jobs;
     $opts{setup_name} = $setup_name if $setup_name ne "";
+    $opts{repo_ids} = \@packages if @packages;
     return %opts;
 }
 
@@ -107,6 +111,7 @@ $target = "list" if $target eq "";
 
 print(prefix(), "config=$cfg_file host=$host target=$target",
     ($setup_name ne "" ? " workdir=$setup_name" : ""),
+    (@packages ? " packages=" . join(",", @packages) : ""),
     ($dry_run ? " (dry-run)" : ""), "\n");
 
 my $cfg = load_config($cfg_file, $host);

@@ -70,7 +70,7 @@ Production area:
 
 | Target | Description |
 |--------|-------------|
-| `setup` | Clone / checkout / build / relink every `[repo]` package |
+| `setup` | Clone / checkout / build / relink `[repo]` packages (`-p` to restrict) |
 | `init` | SLURM dirs, mlzr/trirec block dirs, `githashes`, alignment ROOT, tar for `slurm/run` |
 | `bootstrap` | `setup` then `init` |
 | `status` | Paths, binaries, tar |
@@ -82,6 +82,7 @@ Options:
 -c FILE        config (default: prompt-v7.1.cfg)
 -H PLATFORM    host-PLATFORM.cfg (default: hostname, with merlin-l-* → merlin6)
 -s YYMMDD      override prompt_workdir
+-p ID          only this [repo] id (repeatable / comma-separated)
 -j N           make -jN
 -n             dry-run
 ```
