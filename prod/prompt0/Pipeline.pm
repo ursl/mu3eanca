@@ -22,6 +22,8 @@ use Exporter qw(import);
 use File::Basename qw(dirname);
 use File::Path qw(make_path);
 use Cwd qw(abs_path);
+use POSIX qw(strftime);
+use IO::Handle;
 
 use Prompt qw(prompt_context prompt_repo_dir);
 use TaskLib qw(task_prefix year_for_run expand_year raw_file);
@@ -43,8 +45,39 @@ sub _strip {
 }
 
 # ----------------------------------------------------------------------
+sub _stamp {
+    return strftime("%y%m%d-%H%M%S", localtime);
+}
+
+# ----------------------------------------------------------------------
 sub _log {
     print(task_prefix("pipeline"), @_, "\n");
+}
+
+# ----------------------------------------------------------------------
+# Run a task script, tee stdout+stderr to the terminal and $logfile.
+# Returns the child exit code.
+sub _run_task {
+    my ($script, $run, $ctx, $logfile) = @_;
+    open my $log, ">", $logfile or die "pipeline: cannot write $logfile: $!\n";
+    $log->autoflush(1);
+    STDOUT->autoflush(1);
+
+    my $pid = open(my $rh, "-|");
+    die "pipeline: fork failed: $!\n" unless defined $pid;
+    if ($pid == 0) {
+        open STDERR, ">&STDOUT" or die "pipeline: dup STDERR: $!\n";
+        exec($script, $run, $ctx) or die "pipeline: exec $script: $!\n";
+    }
+    my $buf;
+    while (read($rh, $buf, 8192)) {
+        print STDOUT $buf;
+        print $log $buf;
+    }
+    close $rh;
+    my $exit = ($? == -1) ? 255 : ($? >> 8);
+    close $log;
+    return $exit;
 }
 
 # ----------------------------------------------------------------------
@@ -228,39 +261,91 @@ sub pipeline_run {
         my $kv   = _ctx_kv($cfg, $pctx, $run);
         my $rdir = "$pctx->{root}/runs/" . sprintf("%05d", $run);
         my $ctx  = "$rdir/ctx.cfg";
+        my $stamp = _stamp();
+        $kv->{log_stamp} = $stamp;
+        $kv->{log_dir}   = $rdir;
         if (!$dry) {
             make_path($rdir);
             _write_ctx($ctx, $kv);
         }
 
-        _log("run $run year=$kv->{year}  " . join(" -> ", @tasks)
-            . ($kv->{raw_file} ? "  raw=$kv->{raw_file}" : ""));
-        my $stopped = 0;
-        for my $t (@tasks) {
-            my $script = "$tdir/$t";
-            if ($dry) {
-                _log("[$t] would: $script $run $ctx");
-                next;
-            }
-            _log("[$t] start");
-            my $rc = system($script, $run, $ctx);
-            my $exit = ($rc == -1) ? 255 : ($rc >> 8);
-            if ($exit == 0) {
-                _log("[$t] ok");
-                next;
-            }
-            $stopped = 1;
-            if ($exit == 1) {
-                _log("[$t] skip (exit 1); remaining tasks not run for run $run");
-            } else {
-                _log("[$t] FAIL (exit $exit); remaining tasks not run for run $run");
-                $hard++;
-            }
-            last;
+        my $plog = "$rdir/$stamp-prompt.log";
+        my $tied = 0;
+        if ($dry) {
+            _log("would log to $rdir/$stamp-TASK.log");
+        } else {
+            open my $tty, ">&", \*STDOUT or die "pipeline: dup STDOUT: $!\n";
+            $tty->autoflush(1);
+            open my $runlog, ">", $plog or die "pipeline: cannot write $plog: $!\n";
+            $runlog->autoflush(1);
+            print $runlog $opts{banner}, "\n" if defined $opts{banner} && $opts{banner} ne "";
+            print $runlog task_prefix("pipeline"),
+                "log $plog  pipeline=" . join(",", @tasks) . "\n";
+            tie *STDOUT, "Pipeline::Tee", $tty, $runlog
+                or die "pipeline: tie STDOUT: $!\n";
+            $tied = 1;
         }
-        _log("run $run " . ($stopped ? "stopped" : "done"));
+
+        my $err = "";
+        eval {
+            _log("run $run year=$kv->{year}  " . join(" -> ", @tasks)
+                . ($kv->{raw_file} ? "  raw=$kv->{raw_file}" : ""));
+            my $stopped = 0;
+            for my $t (@tasks) {
+                my $script = "$tdir/$t";
+                my $tlog   = "$rdir/$stamp-$t.log";
+                if ($dry) {
+                    _log("[$t] would: $script $run $ctx");
+                    next;
+                }
+                _log("[$t] start  log=$tlog");
+                my $exit = _run_task($script, $run, $ctx, $tlog);
+                if ($exit == 0) {
+                    _log("[$t] ok");
+                    next;
+                }
+                $stopped = 1;
+                if ($exit == 1) {
+                    _log("[$t] skip (exit 1); remaining tasks not run for run $run");
+                } else {
+                    _log("[$t] FAIL (exit $exit); remaining tasks not run for run $run");
+                    $hard++;
+                }
+                last;
+            }
+            _log("run $run " . ($stopped ? "stopped" : "done"));
+            1;
+        } or do { $err = $@ || "pipeline: run $run failed\n"; };
+        untie *STDOUT if $tied;
+        die $err if $err;
     }
     return $hard;
+}
+
+1;
+
+# ----------------------------------------------------------------------
+# Tee parent-process prints to the terminal and the per-run prompt log.
+package Pipeline::Tee;
+use strict;
+use warnings;
+
+sub TIEHANDLE {
+    my ($class, $real, $log) = @_;
+    bless { real => $real, log => $log }, $class;
+}
+
+sub PRINT {
+    my $self = shift;
+    my $ok1 = print { $self->{real} } @_;
+    my $ok2 = print { $self->{log} } @_;
+    return $ok1 && $ok2;
+}
+
+sub PRINTF {
+    my $self = shift;
+    my $fmt  = shift;
+    return $self->PRINT(sprintf($fmt, @_));
 }
 
 1;

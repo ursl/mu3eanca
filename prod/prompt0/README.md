@@ -126,6 +126,16 @@ Exit codes from a task:
 a real run exits 2 until ported from `processRuns`). `skipSmallRuns` and
 `midasmeta` are live.
 
+Per-run logs (stdout + stderr, also echoed to the terminal):
+
+```text
+{setup_basedir}/{prompt_workdir}/runs/012345/
+  ctx.cfg
+  YYMMDD-HHMMSS-prompt.log     # ./prompt / pipeline chatter
+  YYMMDD-HHMMSS-midasmeta.log  # that task
+  ...
+```
+
 ---
 
 ## Run year

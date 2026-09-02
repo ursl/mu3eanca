@@ -135,12 +135,13 @@ $target = "list" if $target eq "";
 
 my @runs = ($target eq "run") ? _collect_runs($target, @ARGV) : ();
 
-print(prefix(), "config=$cfg_file host=$host target=$target",
-    ($setup_name ne "" ? " workdir=$setup_name" : ""),
-    (@packages ? " packages=" . join(",", @packages) : ""),
-    ($pipeline ne "" ? " pipeline=$pipeline" : ""),
-    (@runs ? " runs=" . join(",", @runs) : ""),
-    ($dry_run ? " (dry-run)" : ""), "\n");
+my $banner = prefix() . "config=$cfg_file host=$host target=$target"
+    . ($setup_name ne "" ? " workdir=$setup_name" : "")
+    . (@packages ? " packages=" . join(",", @packages) : "")
+    . ($pipeline ne "" ? " pipeline=$pipeline" : "")
+    . (@runs ? " runs=" . join(",", @runs) : "")
+    . ($dry_run ? " (dry-run)" : "");
+print($banner, "\n");
 
 my $cfg = load_config($cfg_file, $host);
 prompt_apply_area($cfg, _opts());
@@ -159,6 +160,7 @@ if ($target eq "setup") {
     prompt_list($cfg);
 } elsif ($target eq "run") {
     $opts{runs} = \@runs;
+    $opts{banner} = $banner;
     my $hard = pipeline_run($cfg, %opts);
     print(prefix(), "done\n");
     exit($hard ? 1 : 0);
