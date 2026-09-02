@@ -40,7 +40,7 @@ use File::Basename qw(dirname);
 
 use lib abs_path(dirname($0));
 use lib abs_path(dirname($0)) . "/../common";
-use RelvalConfig qw(load_config host_name);
+use ProdConfig qw(load_config host_name);
 use StartGT qw(
     startgt_setup
     startgt_run_mu3esim

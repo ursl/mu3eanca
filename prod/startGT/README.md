@@ -47,7 +47,7 @@ Dry-run (print commands, do not execute):
 | `GT-v6.9.cfg`, `GT-v7.1.cfg` | Release configs (`alltags` list, mu3e tag, conditions year) |
 | `config-<hostname>.cfg` | Host overlay (`setup_basedir`, `CDB_code_basedir`, …) |
 
-Shared infrastructure: `../common/` (`RelvalConfig`, `Setup`).
+Shared infrastructure: `../common/` (`ProdConfig`, `Setup`).
 
 ---
 
@@ -187,4 +187,4 @@ make lib/libCDB.so bin/cdbRunPayloadWriter
 
 - `db0/cdb2/bin/cdbRunPayloadWriter` — low-level payload and ideal-input writer
 - `db0/cdb2/cdbInitGT.cc` — reference for tag naming conventions
-- `../relval/README.md` — mu3e setup/run/compare workflow (shared `Setup` / `RelvalConfig`)
+- `../relval/README.md` — mu3e setup/run/compare workflow (shared `Setup` / `ProdConfig`)

@@ -11,7 +11,7 @@ package Setup;
 # (alias: mu3e_relval_basedir).
 #
 # Config drives one or more repos via prefixed keys or [repo] blocks
-# (see RelvalConfig). Example:
+# (see ProdConfig). Example:
 #
 #   ./relval -c config-setup-v6.5.cfg setup
 #   ./relval -c meta-config-setup.cfg setup

@@ -23,6 +23,7 @@ our @EXPORT_OK = qw(
     task_prefix
     block_dir raw_file
     rdb_events
+    parse_run_years year_for_run expand_year
 );
 
 # ----------------------------------------------------------------------
@@ -113,6 +114,61 @@ sub raw_file {
         return "$base/$srun.mid.lz4";
     }
     return "$base/" . block_dir($run) . "/$srun.mid.lz4";
+}
+
+# ----------------------------------------------------------------------
+# Run → calendar year.
+#
+#   run_year: 9410=2025    # inclusive last run of 2025
+#   run_year: 2026         # open (current) year: 9411 and up, so far
+#
+# When 2027 starts, add `run_year: NNNN=2026` and change the open year.
+sub parse_run_years {
+    my ($cfg) = @_;
+    my $raw = (ref($cfg) eq "HASH") ? $cfg->{run_year} : undef;
+    my @lines = ref($raw) eq "ARRAY" ? @$raw : (defined $raw ? ($raw) : ());
+    my @bounds;
+    my $open = "";
+    for my $line (@lines) {
+        $line = _strip($line);
+        next if $line eq "";
+        if ($line =~ /^(\d+)\s*=\s*(\d{4})$/) {
+            push @bounds, [ 0 + $1, $2 ];
+        } elsif ($line =~ /^(\d{4})$/) {
+            $open = $1;
+        } else {
+            die "run_year must be LAST=YYYY or YYYY (got: $line)\n";
+        }
+    }
+    @bounds = sort { $a->[0] <=> $b->[0] } @bounds;
+    return { bounds => \@bounds, open => $open };
+}
+
+# ----------------------------------------------------------------------
+# Year for a run, or the open/current year if $run is undef.
+sub year_for_run {
+    my ($cfg, $run) = @_;
+    my $p = parse_run_years($cfg);
+    if (!defined $run || $run eq "") {
+        return $p->{open} if $p->{open} ne "";
+        return @{ $p->{bounds} } ? $p->{bounds}[-1][1] : "";
+    }
+    die "TaskLib: bad run number '$run'\n" unless $run =~ /^\d+$/;
+    for my $b (@{ $p->{bounds} }) {
+        return $b->[1] if $run <= $b->[0];
+    }
+    return $p->{open} if $p->{open} ne "";
+    die "TaskLib: no year for run $run (set run_year: in the version cfg)\n";
+}
+
+# ----------------------------------------------------------------------
+sub expand_year {
+    my ($text, $year) = @_;
+    return $text unless defined $text && $text =~ /\{year\}/;
+    die "TaskLib: {year} in path but year is unset\n"
+        if !defined $year || $year eq "";
+    $text =~ s/\{year\}/$year/g;
+    return $text;
 }
 
 # ----------------------------------------------------------------------

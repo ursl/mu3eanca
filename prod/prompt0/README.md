@@ -23,7 +23,7 @@ cd /path/to/mu3eanca/prod/prompt0
 | `host-merlin6.cfg` | merlin6 paths (`-H merlin6`; auto on `merlin-l-*`) |
 | `host-moor.cfg` | Mac overlay (auto on `moor`) |
 
-Shared clone/build: `../common/` (`RelvalConfig`, `Setup`).
+Shared clone/build: `../common/` (`ProdConfig`, `Setup`).
 
 Host overlay is **`host-<platform>.cfg`**, not `config-<hostname>.cfg` as in startGT/relval. merlin6 is the platform; login nodes `merlin-l-001` / `merlin-l-002` map to it.
 
@@ -126,6 +126,19 @@ a real run exits 2 until ported from `processRuns`). `skipSmallRuns` and
 
 ---
 
+## Run year
+
+Raw (and `{year}` in host `data_dir` / `raw_input_base`) follow the run number:
+
+```
+run_year: 9410=2025
+run_year: 2026
+```
+
+Runs `<= 9410` are 2025; `9411` and later are 2026 until you add the next bound.
+
+---
+
 ## Adding a software package
 
 In `prompt-v7.1.cfg` (or a date-copied cfg), add a `[repo]` block next to `mu3e`. `workdir` is the directory name under the production area. `id` can contain hyphens.
@@ -162,8 +175,8 @@ cmake_libdir: lib64
 relink_script: "/psi/home/langenegger/mu3e/mu3eanca/perl/relinkBinFiles"
 mu3eanca: "/psi/home/langenegger/mu3e/mu3eanca"
 cdb_dbconn: "http://mu3edb0/cdb/"
-data_dir: "/data/experiment/mu3e/data/2026"
-raw_input_base: "/data/experiment/mu3e/data/2026/raw"
+data_dir: "/data/experiment/mu3e/data/{year}"
+raw_input_base: "/data/experiment/mu3e/data/{year}/raw"
 raw_input_layout: "runblock3"
 slurm_run: "/psi/home/langenegger/mu3e/mu3eanca/slurm/run"
 slurm_queue: "-p hourly"

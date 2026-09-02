@@ -8,7 +8,7 @@ package StartGT;
 # All GT flavours (mcideal, mcrealistic, data) read that file; installed-
 # component selection is done in cdbRunPayloadWriter (-m 2025/2026/all).
 #
-# Config + host overlay: RelvalConfig; git build: Setup (../common).
+# Config + host overlay: ProdConfig; git build: Setup (../common).
 #
 # History
 #         2026/08/11 first shot

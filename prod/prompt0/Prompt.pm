@@ -7,7 +7,7 @@ package Prompt;
 # prompt0 production area: dated workdir under setup_basedir, with one
 # git checkout per [repo] block (mu3e, minalyzer, extra packages).
 #
-# Config + host overlay: RelvalConfig (host-<platform>.cfg).
+# Config + host overlay: ProdConfig (host-<platform>.cfg).
 # Git clone/build/relink: Setup (../common).
 #
 # History
@@ -127,19 +127,23 @@ sub prompt_context {
     require Setup;
     my $root    = _strip($cfg->{setup_basedir} // "");
     my $workdir = _strip($cfg->{prompt_workdir} // "");
-    my $data    = _strip($cfg->{data_dir} // "");
-    my $raw     = _strip($cfg->{raw_input_base} // "");
-    $raw = "$data/raw" if $raw eq "" && $data ne "";
-
     my $anca = _strip($cfg->{mu3eanca} // "");
     my $slurm_run = _strip($cfg->{slurm_run} // "");
     $slurm_run = "$anca/slurm/run" if $slurm_run eq "" && $anca ne "";
+
+    require TaskLib;
+    my $year = TaskLib::year_for_run($cfg);
+    my $data    = TaskLib::expand_year(_strip($cfg->{data_dir} // ""), $year);
+    my $raw     = _strip($cfg->{raw_input_base} // "");
+    $raw = "$data/raw" if $raw eq "" && $data ne "";
+    $raw = TaskLib::expand_year($raw, $year);
 
     return {
         cfg            => $cfg,
         root           => $root,
         parent         => _strip($cfg->{_host_setup_basedir} // ""),
         workdir        => $workdir,
+        year           => $year,
         data_dir       => $data,
         raw_dir        => $raw,
         mlzr_dir       => ($data ne "" && $workdir ne "") ? "$data/mlzr/$workdir" : "",
@@ -327,6 +331,7 @@ sub prompt_status {
     print("  production root:   ", ($ctx->{root} ne "" ? $ctx->{root} : "(unset)"),
         " (", (-d $ctx->{root} ? "present" : "missing"), ")\n");
     print("  data_dir:          ", ($ctx->{data_dir} ne "" ? $ctx->{data_dir} : "(unset)"), "\n");
+    print("  year (open):       ", ($ctx->{year} ne "" ? $ctx->{year} : "(unset)"), "\n");
     print("  raw_input_base:    ", ($ctx->{raw_dir} ne "" ? $ctx->{raw_dir} : "(unset)"), "\n");
     print("  mlzr_dir:          $ctx->{mlzr_dir}\n") if $ctx->{mlzr_dir} ne "";
     print("  trirec_dir:        $ctx->{trirec_dir}\n") if $ctx->{trirec_dir} ne "";

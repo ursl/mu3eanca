@@ -24,7 +24,7 @@ use File::Path qw(make_path);
 use Cwd qw(abs_path);
 
 use Prompt qw(prompt_context prompt_repo_dir);
-use TaskLib qw(task_prefix);
+use TaskLib qw(task_prefix year_for_run expand_year raw_file);
 
 our @EXPORT_OK = qw(
     pipeline_aliases
@@ -157,18 +157,25 @@ sub _write_ctx {
 sub _ctx_kv {
     my ($cfg, $pctx, $run) = @_;
     my $srun = sprintf("%05d", $run);
+    my $year = year_for_run($cfg, $run);
+    my $data = expand_year(_strip($cfg->{data_dir} // ""), $year);
+    my $raw  = _strip($cfg->{raw_input_base} // "");
+    $raw = "$data/raw" if $raw eq "" && $data ne "";
+    $raw = expand_year($raw, $year);
+    my $workdir = $pctx->{workdir} // "";
     my %kv = (
         run              => $run,
         srun             => $srun,
+        year             => $year,
         dry_run          => $pctx->{dry_run} ? 1 : 0,
         root             => $pctx->{root} // "",
         parent           => $pctx->{parent} // "",
-        workdir          => $pctx->{workdir} // "",
-        data_dir         => $pctx->{data_dir} // "",
-        raw_dir          => $pctx->{raw_dir} // "",
+        workdir          => $workdir,
+        data_dir         => $data,
+        raw_dir          => $raw,
         raw_input_layout => $pctx->{raw_input_layout} // "runblock3",
-        mlzr_dir         => $pctx->{mlzr_dir} // "",
-        trirec_dir       => $pctx->{trirec_dir} // "",
+        mlzr_dir         => ($data ne "" && $workdir ne "") ? "$data/mlzr/$workdir" : "",
+        trirec_dir       => ($data ne "" && $workdir ne "") ? "$data/trirec/$workdir" : "",
         mu3eanca         => $pctx->{mu3eanca} // "",
         slurm_run        => $pctx->{slurm_run} // "",
         slurm_queue      => $pctx->{slurm_queue} // "",
@@ -183,6 +190,7 @@ sub _ctx_kv {
         slurm_sort_csh     => _strip($cfg->{slurm_sort_csh} // ""),
         slurm_trirec_csh   => _strip($cfg->{slurm_trirec_csh} // ""),
     );
+    $kv{raw_file} = raw_file(\%kv, $run) if $raw ne "";
     for my $r (@{ $cfg->{setup_repos} // [] }) {
         next unless defined $r->{id} && $r->{id} ne "";
         $kv{ $r->{id} } = prompt_repo_dir($cfg, $r->{id});
@@ -225,7 +233,8 @@ sub pipeline_run {
             _write_ctx($ctx, $kv);
         }
 
-        _log("run $run  " . join(" -> ", @tasks));
+        _log("run $run year=$kv->{year}  " . join(" -> ", @tasks)
+            . ($kv->{raw_file} ? "  raw=$kv->{raw_file}" : ""));
         my $stopped = 0;
         for my $t (@tasks) {
             my $script = "$tdir/$t";
