@@ -1,0 +1,132 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# prompt — 2026 prompt production (prompt0)
+#
+#   ./prompt setup
+#   ./prompt init
+#   ./prompt bootstrap          # setup + init
+#
+# Host overlay is host-<platform>.cfg (e.g. host-merlin6.cfg), not
+# config-<hostname>.cfg as in startGT / relval.
+# ----------------------------------------------------------------------
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Pod::Usage;
+
+my $config   = "prompt-v7.1.cfg";
+my $help     = 0;
+my $host_opt = "";
+my $dry_run  = 0;
+my $jobs     = undef;
+my $setup_name = "";
+
+GetOptions(
+    "c=s"        => \$config,
+    "H|host=s"   => \$host_opt,
+    "s=s"     => \$setup_name,
+    "j=i"     => \$jobs,
+    "n"       => \$dry_run,
+    "h|help"  => \$help,
+) or pod2usage(2);
+
+pod2usage(1) if $help;
+
+use Cwd qw(abs_path);
+use File::Basename qw(dirname);
+
+use lib abs_path(dirname($0)) . "/common";
+use lib abs_path(dirname($0)) . "/../relval/common";
+use RelvalConfig qw(load_config);
+use Prompt qw(
+    prompt_platform
+    prompt_apply_area
+    prompt_setup
+    prompt_init
+    prompt_bootstrap
+    prompt_status
+    prompt_list
+);
+
+sub prefix {
+    my $now = localtime;
+    return "$now/prompt         / ";
+}
+
+sub usage {
+    print <<"END";
+Usage: $0 [-c FILE] [-H platform] [-s YYMMDD] [-n] [-j N] [target]
+
+Targets:
+  setup          clone/checkout/build/relink all [repo] packages
+  init           production area: slurm dirs, data blocks, githashes, alignment, tar
+  bootstrap      setup then init
+  status         paths and build/tar state
+  list           print resolved config + packages (default)
+
+Options:
+  -c FILE        config file (default: prompt-v7.1.cfg)
+  -H PLATFORM    host overlay host-PLATFORM.cfg (default: merlin6 on merlin-l-*)
+  -s YYMMDD      override prompt_workdir (dated production area)
+  -j N           make -jN for package builds
+  -n             dry-run
+  -h             help
+END
+    exit(1);
+}
+
+sub _opts {
+    my %opts = (dry_run => $dry_run ? 1 : 0);
+    $opts{jobs} = 0 + $jobs if defined $jobs;
+    $opts{setup_name} = $setup_name if $setup_name ne "";
+    return %opts;
+}
+
+my $script_dir = abs_path(dirname($0));
+chdir($script_dir) or die "Cannot chdir to $script_dir: $!\n";
+
+my $cfg_file = $config;
+my $host     = prompt_platform($host_opt);
+
+my $target = "";
+for my $a (@ARGV) {
+    next if $a =~ /^-/;
+    $target = $a;
+    last;
+}
+
+if ($target eq "") {
+    my $peek = load_config($cfg_file, $host);
+    $target = $peek->{target} // $peek->{action} // "list";
+    $target =~ s/^\s+|\s+$//g;
+}
+$target = "list" if $target eq "";
+
+print(prefix(), "config=$cfg_file host=$host target=$target",
+    ($setup_name ne "" ? " workdir=$setup_name" : ""),
+    ($dry_run ? " (dry-run)" : ""), "\n");
+
+my $cfg = load_config($cfg_file, $host);
+prompt_apply_area($cfg, _opts());
+
+my %opts = _opts();
+
+if ($target eq "setup") {
+    prompt_setup($cfg, %opts);
+} elsif ($target eq "init") {
+    prompt_init($cfg, %opts);
+} elsif ($target eq "bootstrap") {
+    prompt_bootstrap($cfg, %opts);
+} elsif ($target eq "status") {
+    prompt_status($cfg, %opts);
+} elsif ($target eq "list") {
+    prompt_list($cfg);
+} else {
+    die "unknown target '$target'\n";
+}
+
+print(prefix(), "done\n");
+exit(0);
