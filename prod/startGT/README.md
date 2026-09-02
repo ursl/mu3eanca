@@ -33,7 +33,7 @@ Default config is `GT-v7.1.cfg`; use `-c GT-v6.9.cfg` for v6.9.
 Dry-run (print commands, do not execute):
 
 ```tcsh
-./startGT -c GT-v6.9.cfg -H moor -g mcideal -n alltags
+./startGT -c GT-v6.9.cfg -g mcideal -n alltags
 ```
 
 ---
