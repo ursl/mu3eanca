@@ -23,7 +23,7 @@ package SlurmBatch;
 use strict;
 use warnings;
 use Exporter qw(import);
-use Cwd qw(getcwd);
+use Cwd qw(getcwd abs_path);
 use File::Basename qw(dirname basename);
 use File::Copy qw(move);
 use File::Path qw(make_path);
