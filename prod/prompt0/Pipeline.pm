@@ -216,6 +216,7 @@ sub _ctx_kv {
         mlzr_dir         => ($data ne "" && $workdir ne "") ? "$data/mlzr/$workdir" : "",
         trirec_dir       => ($data ne "" && $workdir ne "") ? "$data/trirec/$workdir" : "",
         mu3eanca         => $pctx->{mu3eanca} // "",
+        prompt_dir       => abs_path(dirname(__FILE__)),
         slurm_run        => $pctx->{slurm_run} // "",
         slurm_queue      => $pctx->{slurm_queue} // "",
         cdb_dbconn       => $pctx->{cdb_dbconn} // "",

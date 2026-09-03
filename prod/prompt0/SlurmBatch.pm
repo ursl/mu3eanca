@@ -108,13 +108,20 @@ sub encode_replace {
 }
 
 # ----------------------------------------------------------------------
+# Relative wrappers live next to this module (prod/prompt0/slurm/...).
+# Absolute paths are left unchanged. Falls back to mu3eanca if the
+# prompt0 file is not there (old run2025/scripts/... values).
 sub _abs_wrapper {
     my ($ctx, $rel) = @_;
     $rel = "" unless defined $rel;
     return $rel if $rel =~ m{^/};
+    my $prompt0 = abs_path(dirname(__FILE__));
+    my $here = "$prompt0/$rel";
+    return $here if -f $here;
     my $anca = $ctx->{mu3eanca} // "";
-    die "SlurmBatch: wrapper '$rel' needs mu3eanca in ctx\n" if $anca eq "";
-    return "$anca/$rel";
+    my $legacy = ($anca ne "") ? "$anca/$rel" : "";
+    return $legacy if $legacy ne "" && -f $legacy;
+    return $here;
 }
 
 sub _queue_args {
