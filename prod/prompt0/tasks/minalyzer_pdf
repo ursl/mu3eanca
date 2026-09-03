@@ -4,10 +4,12 @@
 #   Minalyzer_pdf DIR RUN pdf
 #   opens DIR/dqm_histos_XXXXX.root
 #
-# Runs on the login node (not SLURM), cwd = production root.
+# Runs on the login node (not SLURM), cwd = the Minalyzer_pdf dir
+# (textpos.sty and other local TeX files live there).
 use strict;
 use warnings;
 use Cwd qw(getcwd);
+use File::Basename qw(dirname);
 use FindBin;
 use lib "$FindBin::Bin/..";
 use TaskLib;
@@ -27,10 +29,10 @@ my $ana = $ctx->{mu3eana} // "";
 my $rel = $ctx->{minalyzer_pdf_bin} // "_build/UCL/Minalyzer_pdf/Minalyzer_pdf";
 my $exe = ($rel =~ m{^/}) ? $rel : (($ana ne "") ? "$ana/$rel" : $rel);
 my $mode = $ctx->{minalyzer_pdf_mode} // "pdf";
-my $root = $ctx->{root} // "";
+my $pdfdir = dirname($exe);
 
 if ($ctx->{dry_run}) {
-    TaskLib::task_log($ctx, $name, "would: $exe $dir $run $mode");
+    TaskLib::task_log($ctx, $name, "would: (cd $pdfdir && $exe $dir $run $mode)");
     exit 0;
 }
 
@@ -62,16 +64,12 @@ if (!-e $dqm) {
 }
 
 my $cwd = getcwd();
-if ($root ne "") {
-    chdir($root) or die "minalyzer_pdf: cannot chdir $root: $!\n";
-}
+chdir($pdfdir) or die "minalyzer_pdf: cannot chdir $pdfdir: $!\n";
 
-TaskLib::task_log($ctx, $name, "cwd=$root");
+TaskLib::task_log($ctx, $name, "cwd=$pdfdir");
 TaskLib::task_log($ctx, $name, "$exe $dir $run $mode");
 my $rc = system($exe, $dir, $run, $mode);
 
-if ($root ne "") {
-    chdir($cwd) or die "minalyzer_pdf: cannot chdir back to $cwd: $!\n";
-}
+chdir($cwd) or die "minalyzer_pdf: cannot chdir back to $cwd: $!\n";
 
 exit(($rc == 0) ? 0 : 2);
