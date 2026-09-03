@@ -31,6 +31,7 @@ my $exe = TaskLib::resolve_path($ctx, $rel, $rundir);
 my $mode = $ctx->{minalyzer_pdf_mode} // "pdf";
 
 if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "would: TEXINPUTS=$rundir:\$TEXINPUTS");
     TaskLib::task_log($ctx, $name, "would: (cd $rundir && $exe $dir $run $mode)");
     exit 0;
 }
@@ -66,10 +67,16 @@ if (!-e $dqm) {
     TaskLib::task_log($ctx, $name, "symlink $dqm -> merged-dqm_histos_$srun.root");
 }
 
+# Trailing : keeps the TeX defaults; rundir first so local textpos.sty wins
+# even if Minalyzer_pdf chdirs into _build before calling pdflatex.
+my $tex = $ENV{TEXINPUTS} // "";
+$ENV{TEXINPUTS} = ($tex eq "") ? "$rundir:" : "$rundir:$tex";
+
 my $cwd = getcwd();
 chdir($rundir) or die "minalyzer_pdf: cannot chdir $rundir: $!\n";
 
 TaskLib::task_log($ctx, $name, "cwd=$rundir");
+TaskLib::task_log($ctx, $name, "TEXINPUTS=$ENV{TEXINPUTS}");
 TaskLib::task_log($ctx, $name, "$exe $dir $run $mode");
 my $rc = system($exe, $dir, $run, $mode);
 
