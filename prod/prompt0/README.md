@@ -122,9 +122,8 @@ Exit codes from a task:
 | 1 | Soft skip (e.g. `skipSmallRuns` when Events < `min_events`) |
 | 2+ | Hard failure; `./prompt run` exits non-zero at the end |
 
-`minalyzer` / `mu3esort` / `mu3etrirec` are stubs (dry-run logs the intent;
-a real run exits 2 until ported from `processRuns`). `skipSmallRuns` and
-`midasmeta` are live.
+`skipSmallRuns` and `midasmeta` are live. `minalyzer` submits via `slurm/run`
+(same wrappers as `processRuns`); `mu3esort` / `mu3etrirec` are still stubs.
 
 Per-run log (stdout + stderr of `./prompt` and every task, also echoed
 to the terminal). One file; the name uses the pipeline alias (`beam`, `test`):

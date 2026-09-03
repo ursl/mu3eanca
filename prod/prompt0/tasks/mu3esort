@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 # mu3esort — SLURM mu3eSort (processRuns submitJobsRawSort).
-# Not ported yet: this script is the place for that work.
+# Not ported yet. Use SlurmBatch::run with njobs => 1 (no event splitting).
 use strict;
 use warnings;
 use FindBin;

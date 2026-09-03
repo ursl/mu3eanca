@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 # mu3etrirec — SLURM mu3eTrirec (processRuns submitJobsRawTrirec).
-# Not ported yet: this script is the place for that work.
+# Not ported yet. Use SlurmBatch::run (same as minalyzer, with event splitting).
 use strict;
 use warnings;
 use FindBin;

@@ -229,6 +229,8 @@ sub _ctx_kv {
         slurm_sort_csh     => _strip($cfg->{slurm_sort_csh} // ""),
         slurm_trirec_csh   => _strip($cfg->{slurm_trirec_csh} // ""),
     );
+    $kv{tar_file} = ($pctx->{root} ne "" && $workdir ne "")
+        ? "$pctx->{root}/slurm/$workdir.tar.gz" : "";
     $kv{raw_file} = raw_file(\%kv, $run) if $raw ne "";
     for my $r (@{ $cfg->{setup_repos} // [] }) {
         next unless defined $r->{id} && $r->{id} ne "";

@@ -1,20 +1,67 @@
 #! /usr/bin/perl
 # minalyzer — SLURM minalyzer over the raw file (processRuns submitJobsRawMinalyzer).
-# Not ported yet: this script is the place for that work.
 use strict;
 use warnings;
+use File::Basename qw(dirname basename);
 use FindBin;
 use lib "$FindBin::Bin/..";
 use TaskLib;
+use SlurmBatch;
 
 my ($run, $ctxfile) = TaskLib::args(@ARGV);
 my $ctx = TaskLib::load($ctxfile);
+my $name = "minalyzer";
+
 my $file = TaskLib::raw_file($ctx, $run);
-my $gt   = $ctx->{cdb_GT} // "";
-my $n    = $ctx->{n_events} // $ctx->{n_events_chunk} // "";
+my $srun = sprintf("%05d", $run);
+my $block = TaskLib::block_dir($run);
+my $mlzr = $ctx->{mlzr_dir} // "";
+my $merged = ($mlzr ne "") ? "$mlzr/$block/merged-dqm_histos_$srun.root" : "";
 
-TaskLib::task_log($ctx, "minalyzer",
-    "run $run file=$file gt=$gt n_events=$n  (submitJobsRawMinalyzer not ported)");
+my $total = $ctx->{n_events};
+if (!defined $total || $total eq "") {
+    $total = TaskLib::rdb_events($ctx, $run);
+    TaskLib::ctx_set($ctxfile, n_events => $total);
+}
+my $chunk = 0 + ($ctx->{n_events_chunk} // 100000);
 
-exit 0 if $ctx->{dry_run};
-exit 2;
+if (!-f $file && !$ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "raw file missing: $file");
+    exit 2;
+}
+
+my $storage1 = "$ctx->{root}/slurm/storage1/mlzr";
+my $datadir  = dirname($file);
+my $midas    = basename($file);
+
+my $rc = SlurmBatch::run($ctx, {
+    name    => $name,
+    stage   => "mlzr",
+    wrapper => $ctx->{slurm_analyzer_csh},
+    total   => $total,
+    chunk   => $chunk,
+    skip_if => $merged,
+    env     => [
+        [ STORAGE1 => $storage1 ],
+        [ DATADIR  => $datadir ],
+        [ MIDASFILE => $midas ],
+        [ RUN      => $run ],
+        [ GT       => $ctx->{cdb_GT} ],
+    ],
+    job_env => sub {
+        my ($j) = @_;
+        my $anl = $j->{last} ? "-s$j->{skip}" : "-s$j->{skip} -e$j->{chunk}";
+        return ([ ANLZR => $anl ]);
+    },
+    merge => sub {
+        my ($c, $m) = @_;
+        return if $merged eq "";
+        my @in;
+        for my $job (@{ $m->{jobs} }) {
+            push @in, "$m->{storage}/root_output_files_$job/dqm_histos_$m->{srun}.root";
+        }
+        SlurmBatch::hadd($c, $name, $merged, @in) or exit 2;
+    },
+});
+
+exit($rc == 0 ? 0 : 2);
