@@ -56,6 +56,7 @@ use Prompt qw(
     prompt_bootstrap
     prompt_status
     prompt_list
+    prompt_cleanup
 );
 use Pipeline qw(pipeline_run);
 
@@ -75,6 +76,7 @@ Targets:
   status         paths and build/tar state
   list           print resolved config + packages (default)
   run RUN ...    run the pipeline for each RUN (see -P)
+  cleanup RUN ... remove per-run output (keeps timestamped logs in runs/XXXXX/)
 
 Options:
   -c FILE        config file (default: prompt-v7.1.cfg)
@@ -133,7 +135,8 @@ if ($target eq "") {
 }
 $target = "list" if $target eq "";
 
-my @runs = ($target eq "run") ? _collect_runs($target, @ARGV) : ();
+my @runs = ($target eq "run" || $target eq "cleanup")
+    ? _collect_runs($target, @ARGV) : ();
 
 my $banner = prefix() . "config=$cfg_file host=$host target=$target"
     . ($setup_name ne "" ? " workdir=$setup_name" : "")
@@ -164,6 +167,9 @@ if ($target eq "setup") {
     my $hard = pipeline_run($cfg, %opts);
     print(prefix(), "done\n");
     exit($hard ? 1 : 0);
+} elsif ($target eq "cleanup") {
+    $opts{runs} = \@runs;
+    prompt_cleanup($cfg, %opts);
 } else {
     die "unknown target '$target'\n";
 }

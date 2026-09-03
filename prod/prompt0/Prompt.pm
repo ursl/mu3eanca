@@ -18,7 +18,7 @@ use strict;
 use warnings;
 use Exporter qw(import);
 use Cwd qw(getcwd abs_path);
-use File::Path qw(make_path);
+use File::Path qw(make_path remove_tree);
 
 our @EXPORT_OK = qw(
     prompt_platform
@@ -30,6 +30,7 @@ our @EXPORT_OK = qw(
     prompt_bootstrap
     prompt_status
     prompt_list
+    prompt_cleanup
 );
 
 # ----------------------------------------------------------------------
@@ -359,6 +360,98 @@ sub prompt_status {
 
     require Setup;
     Setup::setup_status_config($cfg, %opts);
+}
+
+# ----------------------------------------------------------------------
+# Remove per-run products. Timestamped logs in runs/XXXXX/*.log are kept.
+sub _rm_path {
+    my ($ctx, $path) = @_;
+    return unless defined $path && $path ne "";
+    return unless -e $path || -l $path;
+    _log(($ctx->{dry_run} ? "would rm " : "rm ") . $path);
+    return if $ctx->{dry_run};
+    if (-l $path || !-d $path) {
+        unlink($path) or warn "prompt: cannot unlink $path: $!\n";
+        return;
+    }
+    remove_tree($path);
+}
+
+sub _rm_matching {
+    my ($ctx, $dir, $re) = @_;
+    return unless defined $dir && $dir ne "" && -d $dir;
+    opendir my $dh, $dir or return;
+    my @names = readdir $dh;
+    closedir $dh;
+    for my $f (@names) {
+        next if $f eq "." || $f eq "..";
+        next unless $f =~ $re;
+        _rm_path($ctx, "$dir/$f");
+    }
+}
+
+sub prompt_cleanup {
+    my ($cfg, %opts) = @_;
+    my @runs = @{ $opts{runs} // [] };
+    die "prompt: cleanup needs run numbers (./prompt cleanup 9410)\n" unless @runs;
+
+    my $ctx = prompt_context($cfg, %opts);
+    require TaskLib;
+
+    for my $raw (@runs) {
+        die "prompt: bad run number '$raw'\n" unless $raw =~ /^\d+$/;
+        my $run  = 0 + $raw;
+        my $srun = sprintf("%05d", $run);
+        my $block = TaskLib::block_dir($run);
+        my $year = TaskLib::year_for_run($cfg, $run);
+        my $data = TaskLib::expand_year(_strip($cfg->{data_dir} // ""), $year);
+        my $wd   = $ctx->{workdir} // "";
+        my $re   = qr/(?:^|[^0-9])0*$run(?:[^0-9]|$)/;
+
+        _log("cleanup run $run (srun=$srun year=$year)"
+            . ($ctx->{dry_run} ? " (dry-run)" : ""));
+
+        for my $id ($run, $srun) {
+            for my $stage (@{ $ctx->{slurm_stages} // [] }) {
+                for my $kind (qw(jobs storage1)) {
+                    _rm_path($ctx, "$ctx->{root}/slurm/$kind/$stage/$id");
+                    _rm_path($ctx, "$ctx->{root}/slurm/$kind/$stage/old/$id");
+                }
+            }
+        }
+
+        if ($data ne "" && $wd ne "") {
+            for my $prod (@{ $ctx->{data_products} // [qw(mlzr trirec)] }) {
+                _rm_matching($ctx, "$data/$prod/$wd/$block", $re);
+            }
+        }
+
+        my $ana = prompt_repo_dir($cfg, "mu3eana");
+        my $pdfdir = _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}");
+        $pdfdir =~ s/\{mu3eana\}/$ana/g if $ana ne "";
+        _rm_matching($ctx, $pdfdir, $re) if $pdfdir ne "" && $pdfdir ne $ana;
+        _rm_matching($ctx, $ana, $re);
+        my $pdfbin = _strip($cfg->{minalyzer_pdf_bin} // "");
+        if ($pdfbin ne "" && $ana ne "") {
+            require File::Basename;
+            my $exedir = File::Basename::dirname(
+                ($pdfbin =~ m{^/}) ? $pdfbin : "$ana/$pdfbin");
+            _rm_matching($ctx, $exedir, $re) if $exedir ne $ana && $exedir ne $pdfdir;
+        }
+
+        my $rdir = "$ctx->{root}/runs/$srun";
+        if (-d $rdir) {
+            opendir my $dh, $rdir or die "prompt: cannot read $rdir: $!\n";
+            my @names = readdir $dh;
+            closedir $dh;
+            for my $f (@names) {
+                next if $f eq "." || $f eq "..";
+                next if $f =~ /\.log$/;
+                _rm_path($ctx, "$rdir/$f");
+            }
+        }
+        _log("cleanup run $run done (logs in $rdir kept)");
+    }
 }
 
 # ----------------------------------------------------------------------
