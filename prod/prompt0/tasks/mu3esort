@@ -1,18 +1,76 @@
 #! /usr/bin/perl
 # mu3esort — SLURM mu3eSort (processRuns submitJobsRawSort).
-# Not ported yet. Use SlurmBatch::run with njobs => 1 (no event splitting).
+# One job per run (njobs => 1, no event splitting).
+# Runs from mu3e/run/ inside the tar (alignment ROOT lives there).
 use strict;
 use warnings;
+use File::Basename qw(dirname basename);
 use FindBin;
 use lib "$FindBin::Bin/..";
 use TaskLib;
+use SlurmBatch;
 
 my ($run, $ctxfile) = TaskLib::args(@ARGV);
 my $ctx = TaskLib::load($ctxfile);
+my $name = "mu3esort";
+
 my $file = TaskLib::raw_file($ctx, $run);
+my $srun = sprintf("%05d", $run);
+my $block = TaskLib::block_dir($run);
 
-TaskLib::task_log($ctx, "mu3esort",
-    "run $run file=$file  (submitJobsRawSort not ported)");
+# Output lands under {data_dir}/trirec/{workdir}/{block}/run{srun}-sorted.root
+# (same getSortSubdir logic as processRuns).
+my $trirec = $ctx->{trirec_dir} // "";
+my $merged  = ($trirec ne "") ? "$trirec/$block/run$srun-sorted.root" : "";
 
-exit 0 if $ctx->{dry_run};
-exit 2;
+if (!-f $file && !$ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "raw file missing: $file");
+    exit 2;
+}
+
+my $storage1 = "$ctx->{root}/slurm/storage1/sort";
+my $datadir  = dirname($file);
+my $midas    = basename($file);
+
+# conf file selection: prefer sort_conf from cfg, else default beam conf.
+my $anlzr = $ctx->{sort_anlzr}
+    // "--alignment.file=mu3e_alignment.root --conf trirec_twolayer_beam.conf";
+
+my $rc = SlurmBatch::run($ctx, {
+    name    => $name,
+    stage   => "sort",
+    wrapper => $ctx->{slurm_sort_csh},
+    njobs   => 1,
+    skip_if => $merged,
+    env     => [
+        [ STORAGE1  => $storage1 ],
+        [ DATADIR   => $datadir ],
+        [ MIDASFILE => $midas ],
+        [ RUN       => $run ],
+        [ GT        => $ctx->{cdb_GT} ],
+        [ ANLZR     => $anlzr ],
+        [ SORTEDFILE => "sorted-run${run}_0.root" ],
+    ],
+    merge => sub {
+        my ($c, $m) = @_;
+        return if $merged eq "";
+        # Only one job; copy sorted file to the output location.
+        my $job = "${run}_0";
+        my $src = "$m->{storage}/$run/sorted-run$job.root";
+        require File::Path;
+        File::Path::make_path(dirname($merged));
+        if (!$c->{dry_run}) {
+            unlink($merged) if -e $merged;
+            if (!-f $src) {
+                TaskLib::task_log($c, $name, "sorted file missing: $src");
+                exit 2;
+            }
+            require File::Copy;
+            File::Copy::copy($src, $merged)
+                or die "mu3esort: cannot cp $src -> $merged: $!\n";
+        }
+        TaskLib::task_log($c, $name, "sorted file: $merged");
+    },
+});
+
+exit($rc == 0 ? 0 : 2);
