@@ -350,6 +350,9 @@ sub prompt_status {
     print("  minalyzer:         ", ((-x $man || -f $man) ? "yes" : "no"), "  $man\n");
     print("  minalyzer_pdf:     ", ((-x $pdf || -f $pdf) ? "yes" : "no"), "  $pdf\n")
         if $pdf ne "";
+    my $pdfrun = _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}");
+    $pdfrun =~ s/\{mu3eana\}/$ana/g if $ana ne "";
+    print("  minalyzer_pdf cwd: $pdfrun\n") if $pdfrun ne "";
     print("  alignment ROOT:    $align (", (-f $align ? "present" : "missing"), ")\n");
     print("  githashes:         ",
         (-f "$ctx->{root}/githashes" ? "present" : "missing"), "\n");

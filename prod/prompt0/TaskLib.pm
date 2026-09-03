@@ -24,6 +24,7 @@ our @EXPORT_OK = qw(
     block_dir raw_file
     rdb_events
     parse_run_years year_for_run expand_year
+    expand_ctx resolve_path
 );
 
 # ----------------------------------------------------------------------
@@ -169,6 +170,30 @@ sub expand_year {
         if !defined $year || $year eq "";
     $text =~ s/\{year\}/$year/g;
     return $text;
+}
+
+# ----------------------------------------------------------------------
+# {key} from ctx (e.g. {mu3eana} {root} {year}). Unknown keys stay as {key}.
+sub expand_ctx {
+    my ($ctx, $text) = @_;
+    return "" unless defined $text;
+    $text =~ s/\{([A-Za-z0-9_]+)\}/
+        (ref($ctx) eq "HASH" && defined $ctx->{$1} && $ctx->{$1} ne "")
+            ? $ctx->{$1} : "{$1}"
+    /ge;
+    return $text;
+}
+
+# ----------------------------------------------------------------------
+# Cwd / binary paths: never dirname(exe). Absolute after expand; empty ->
+# $base; relative -> $base/$spec.
+sub resolve_path {
+    my ($ctx, $spec, $base) = @_;
+    $spec = expand_ctx($ctx, defined $spec ? $spec : "");
+    $base = expand_ctx($ctx, defined $base ? $base : "");
+    return $base if $spec eq "" || $spec eq ".";
+    return $spec if $spec =~ m{^/};
+    return ($base ne "") ? "$base/$spec" : $spec;
 }
 
 # ----------------------------------------------------------------------

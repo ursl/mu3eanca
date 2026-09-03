@@ -4,12 +4,11 @@
 #   Minalyzer_pdf DIR RUN pdf
 #   opens DIR/dqm_histos_XXXXX.root
 #
-# Runs on the login node (not SLURM), cwd = the Minalyzer_pdf dir
-# (textpos.sty and other local TeX files live there).
+# Runs on the login node (not SLURM). cwd is minalyzer_pdf_rundir
+# (the mu3eana checkout), not the _build tree.
 use strict;
 use warnings;
 use Cwd qw(getcwd);
-use File::Basename qw(dirname);
 use FindBin;
 use lib "$FindBin::Bin/..";
 use TaskLib;
@@ -26,19 +25,23 @@ my $merged = ($dir ne "") ? "$dir/merged-dqm_histos_$srun.root" : "";
 my $dqm = ($dir ne "") ? "$dir/dqm_histos_$srun.root" : "";
 
 my $ana = $ctx->{mu3eana} // "";
+my $rundir = TaskLib::resolve_path($ctx, $ctx->{minalyzer_pdf_rundir}, $ana);
 my $rel = $ctx->{minalyzer_pdf_bin} // "_build/UCL/Minalyzer_pdf/Minalyzer_pdf";
-my $exe = ($rel =~ m{^/}) ? $rel : (($ana ne "") ? "$ana/$rel" : $rel);
+my $exe = TaskLib::resolve_path($ctx, $rel, $rundir);
 my $mode = $ctx->{minalyzer_pdf_mode} // "pdf";
-my $pdfdir = dirname($exe);
 
 if ($ctx->{dry_run}) {
-    TaskLib::task_log($ctx, $name, "would: (cd $pdfdir && $exe $dir $run $mode)");
+    TaskLib::task_log($ctx, $name, "would: (cd $rundir && $exe $dir $run $mode)");
     exit 0;
 }
 
 if ($ana eq "") {
     TaskLib::task_log($ctx, $name,
         "mu3eana checkout missing in ctx (add [repo] id: mu3eana and ./prompt setup)");
+    exit 2;
+}
+if ($rundir eq "" || !-d $rundir) {
+    TaskLib::task_log($ctx, $name, "rundir missing: $rundir");
     exit 2;
 }
 if (!-x $exe && !-f $exe) {
@@ -64,9 +67,9 @@ if (!-e $dqm) {
 }
 
 my $cwd = getcwd();
-chdir($pdfdir) or die "minalyzer_pdf: cannot chdir $pdfdir: $!\n";
+chdir($rundir) or die "minalyzer_pdf: cannot chdir $rundir: $!\n";
 
-TaskLib::task_log($ctx, $name, "cwd=$pdfdir");
+TaskLib::task_log($ctx, $name, "cwd=$rundir");
 TaskLib::task_log($ctx, $name, "$exe $dir $run $mode");
 my $rc = system($exe, $dir, $run, $mode);
 

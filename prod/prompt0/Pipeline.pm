@@ -231,6 +231,7 @@ sub _ctx_kv {
         slurm_trirec_csh   => _strip($cfg->{slurm_trirec_csh} // ""),
         minalyzer_pdf_bin  => _strip($cfg->{minalyzer_pdf_bin} //
             "_build/UCL/Minalyzer_pdf/Minalyzer_pdf"),
+        minalyzer_pdf_rundir => _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}"),
         minalyzer_pdf_mode => _strip($cfg->{minalyzer_pdf_mode} // "pdf"),
     );
     $kv{tar_file} = ($pctx->{root} ne "" && $workdir ne "")
