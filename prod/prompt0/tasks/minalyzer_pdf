@@ -1,0 +1,61 @@
+#! /usr/bin/perl
+# minalyzer_pdf — plots from the merged minalyzer ROOT (mu3eana Minalyzer_pdf).
+#
+#   Minalyzer_pdf merged-dqm_histos_XXXXX.root RUN pdf
+#
+# Runs on the login node (not SLURM), cwd = production root.
+use strict;
+use warnings;
+use Cwd qw(getcwd);
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $name = "minalyzer_pdf";
+
+my $srun = sprintf("%05d", $run);
+my $block = TaskLib::block_dir($run);
+my $mlzr = $ctx->{mlzr_dir} // "";
+my $merged = ($mlzr ne "") ? "$mlzr/$block/merged-dqm_histos_$srun.root" : "";
+
+my $ana = $ctx->{mu3eana} // "";
+my $rel = $ctx->{minalyzer_pdf_bin} // "_build/UCL/Minalyzer_pdf/Minalyzer_pdf";
+my $exe = ($rel =~ m{^/}) ? $rel : (($ana ne "") ? "$ana/$rel" : $rel);
+my $mode = $ctx->{minalyzer_pdf_mode} // "pdf";
+my $root = $ctx->{root} // "";
+
+if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "would: $exe $merged $run $mode");
+    exit 0;
+}
+
+if ($ana eq "") {
+    TaskLib::task_log($ctx, $name,
+        "mu3eana checkout missing in ctx (add [repo] id: mu3eana and ./prompt setup)");
+    exit 2;
+}
+if (!-x $exe && !-f $exe) {
+    TaskLib::task_log($ctx, $name, "Minalyzer_pdf not found: $exe");
+    exit 2;
+}
+if ($merged eq "" || !-f $merged) {
+    TaskLib::task_log($ctx, $name, "merged ROOT missing: $merged");
+    exit 2;
+}
+
+my $cwd = getcwd();
+if ($root ne "") {
+    chdir($root) or die "minalyzer_pdf: cannot chdir $root: $!\n";
+}
+
+TaskLib::task_log($ctx, $name, "cwd=$root");
+TaskLib::task_log($ctx, $name, "$exe $merged $run $mode");
+my $rc = system($exe, $merged, $run, $mode);
+
+if ($root ne "") {
+    chdir($cwd) or die "minalyzer_pdf: cannot chdir back to $cwd: $!\n";
+}
+
+exit(($rc == 0) ? 0 : 2);

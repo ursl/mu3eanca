@@ -319,8 +319,13 @@ sub prompt_status {
     my $ctx = prompt_context($cfg, %opts);
     my $mu3e = prompt_repo_dir($cfg, "mu3e");
     my $mlzr = prompt_repo_dir($cfg, "minalyzer");
+    my $ana  = prompt_repo_dir($cfg, "mu3eana");
     my $exe  = "$mu3e/_build/mu3eSim/mu3eSim";
     my $man  = "$mlzr/_build/analyzer/minalyzer";
+    my $pdfbin = _strip($cfg->{minalyzer_pdf_bin} //
+        "_build/UCL/Minalyzer_pdf/Minalyzer_pdf");
+    my $pdf  = ($pdfbin =~ m{^/}) ? $pdfbin
+        : (($ana ne "") ? "$ana/$pdfbin" : $pdfbin);
     my $align = "$mu3e/run/" . _strip($cfg->{alignment_output} // "mu3e_alignment.root");
     my $tar  = "$ctx->{root}/slurm/$ctx->{workdir}.tar.gz";
 
@@ -343,6 +348,8 @@ sub prompt_status {
     print("  tar file:          $tar (", (-f $tar ? "present" : "missing"), ")\n");
     print("  mu3eSim:           ", ((-x $exe || -f $exe) ? "yes" : "no"), "  $exe\n");
     print("  minalyzer:         ", ((-x $man || -f $man) ? "yes" : "no"), "  $man\n");
+    print("  minalyzer_pdf:     ", ((-x $pdf || -f $pdf) ? "yes" : "no"), "  $pdf\n")
+        if $pdf ne "";
     print("  alignment ROOT:    $align (", (-f $align ? "present" : "missing"), ")\n");
     print("  githashes:         ",
         (-f "$ctx->{root}/githashes" ? "present" : "missing"), "\n");
