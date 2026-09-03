@@ -81,6 +81,7 @@ Production area:
 | `status` | Paths, binaries, tar |
 | `list` | Resolved config + packages (default) |
 | `run RUN ...` | Run the pipeline for each run (`-P` selects the list) |
+| `cleanup RUN ...` | Remove per-run output; keep timestamped logs in `runs/XXXXX/` |
 
 Options:
 
@@ -101,16 +102,27 @@ Options:
 
 Each run walks a comma-separated list of **task scripts** in `tasks/`. If a
 task exits non-zero, the rest of the list is skipped for **that run** (the
-next run still starts).
+next run still starts). `./prompt list` prints aliases and the known scripts.
 
 ```
 pipeline: beam
-pipeline_alias: beam=midasmeta,skipSmallRuns,minalyzer,mu3esort,mu3etrirec
+pipeline_alias: beam=midasmeta,skipSmallRuns,minalyzer,minalyzer_pdf,mu3esort,mu3etrirec
+pipeline_alias: test=midasmeta
 ```
+
+| Task | Description | Status |
+|------|-------------|--------|
+| `midasmeta` | `mu3e_midas_meta` on the raw MIDAS file | live |
+| `skipSmallRuns` | Stop this run if RDB Events < `min_events` (exit 1) | live |
+| `minalyzer` | SLURM minalyzer over the raw file; hadd to `merged-dqm_histos_XXXXX.root` | live |
+| `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots from the merged ROOT | live |
+| `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting) | stub |
+| `mu3etrirec` | SLURM mu3eTrirec with event splitting | stub |
 
 ```tcsh
 ./prompt -n run 12345
 ./prompt -P beam run 12345
+./prompt -P minalyzer_pdf run 12345
 ./prompt -P midasmeta,skipSmallRuns -n run 12345 12346
 ```
 
@@ -121,9 +133,6 @@ Exit codes from a task:
 | 0 | Continue with the next task |
 | 1 | Soft skip (e.g. `skipSmallRuns` when Events < `min_events`) |
 | 2+ | Hard failure; `./prompt run` exits non-zero at the end |
-
-`skipSmallRuns` and `midasmeta` are live. `minalyzer` submits via `slurm/run`
-(same wrappers as `processRuns`); `mu3esort` / `mu3etrirec` are still stubs.
 
 Per-run log (stdout + stderr of `./prompt` and every task, also echoed
 to the terminal). One file; the name uses the pipeline alias (`beam`, `test`):
