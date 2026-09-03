@@ -1,7 +1,8 @@
 #! /usr/bin/perl
 # minalyzer_pdf — plots from the merged minalyzer ROOT (mu3eana Minalyzer_pdf).
 #
-#   Minalyzer_pdf merged-dqm_histos_XXXXX.root RUN pdf
+#   Minalyzer_pdf DIR RUN pdf
+#   opens DIR/dqm_histos_XXXXX.root
 #
 # Runs on the login node (not SLURM), cwd = production root.
 use strict;
@@ -18,7 +19,9 @@ my $name = "minalyzer_pdf";
 my $srun = sprintf("%05d", $run);
 my $block = TaskLib::block_dir($run);
 my $mlzr = $ctx->{mlzr_dir} // "";
-my $merged = ($mlzr ne "") ? "$mlzr/$block/merged-dqm_histos_$srun.root" : "";
+my $dir = ($mlzr ne "") ? "$mlzr/$block" : "";
+my $merged = ($dir ne "") ? "$dir/merged-dqm_histos_$srun.root" : "";
+my $dqm = ($dir ne "") ? "$dir/dqm_histos_$srun.root" : "";
 
 my $ana = $ctx->{mu3eana} // "";
 my $rel = $ctx->{minalyzer_pdf_bin} // "_build/UCL/Minalyzer_pdf/Minalyzer_pdf";
@@ -27,7 +30,7 @@ my $mode = $ctx->{minalyzer_pdf_mode} // "pdf";
 my $root = $ctx->{root} // "";
 
 if ($ctx->{dry_run}) {
-    TaskLib::task_log($ctx, $name, "would: $exe $merged $run $mode");
+    TaskLib::task_log($ctx, $name, "would: $exe $dir $run $mode");
     exit 0;
 }
 
@@ -40,9 +43,22 @@ if (!-x $exe && !-f $exe) {
     TaskLib::task_log($ctx, $name, "Minalyzer_pdf not found: $exe");
     exit 2;
 }
-if ($merged eq "" || !-f $merged) {
-    TaskLib::task_log($ctx, $name, "merged ROOT missing: $merged");
+if ($dir eq "") {
+    TaskLib::task_log($ctx, $name, "mlzr_dir empty in ctx");
     exit 2;
+}
+if (!-e $dqm) {
+    if (!-f $merged) {
+        TaskLib::task_log($ctx, $name, "merged ROOT missing: $merged");
+        exit 2;
+    }
+    # hadd writes merged-dqm_histos_XXXXX.root; the pdf tool opens dqm_histos_XXXXX.root
+    unlink($dqm) if -l $dqm;
+    if (!symlink("merged-dqm_histos_$srun.root", $dqm)) {
+        TaskLib::task_log($ctx, $name, "cannot symlink $dqm -> merged-dqm_histos_$srun.root: $!");
+        exit 2;
+    }
+    TaskLib::task_log($ctx, $name, "symlink $dqm -> merged-dqm_histos_$srun.root");
 }
 
 my $cwd = getcwd();
@@ -51,8 +67,8 @@ if ($root ne "") {
 }
 
 TaskLib::task_log($ctx, $name, "cwd=$root");
-TaskLib::task_log($ctx, $name, "$exe $merged $run $mode");
-my $rc = system($exe, $merged, $run, $mode);
+TaskLib::task_log($ctx, $name, "$exe $dir $run $mode");
+my $rc = system($exe, $dir, $run, $mode);
 
 if ($root ne "") {
     chdir($cwd) or die "minalyzer_pdf: cannot chdir back to $cwd: $!\n";
