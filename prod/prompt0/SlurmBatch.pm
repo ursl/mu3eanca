@@ -15,7 +15,7 @@ package SlurmBatch;
 #     total   => $nevents,
 #     skip_if => $merged_file,
 #     env     => [ [STORAGE1 => $s], [DATADIR => $d], ... ],
-#     job_env => sub { my ($j) = @_; return ([ ANLZR => "-s$j->{skip} -e$j->{chunk}" ]); },
+#     job_env => sub { my ($j) = @_; return [ [ ANLZR => "-s$j->{skip} -e$j->{chunk}" ] ]; },
 #     merge   => sub { ... },
 #   });
 # ----------------------------------------------------------------------
@@ -71,6 +71,22 @@ sub _rotate {
         system("rm", "-rf", $dest);
     }
     move($dir, $old_parent) or die "SlurmBatch: cannot mv $dir -> $old_parent: $!\n";
+}
+
+# ----------------------------------------------------------------------
+# Normalize job_env / env extras to a list of [key, value] arrayrefs.
+# Accepts [ [K => v], ... ] or a flat [ K => v, ... ].
+sub _pairs {
+    my ($extra) = @_;
+    return () unless defined $extra && ref($extra) eq "ARRAY" && @$extra;
+    if (ref($extra->[0]) eq "ARRAY") {
+        return @$extra;
+    }
+    my @out;
+    for (my $i = 0; $i + 1 < @$extra; $i += 2) {
+        push @out, [ $extra->[$i], $extra->[$i + 1] ];
+    }
+    return @out;
 }
 
 # ----------------------------------------------------------------------
@@ -260,7 +276,7 @@ sub run {
                 job   => $job,
                 last  => ($i == $njobs - 1) ? 1 : 0,
             });
-            push @pairs, @$extra if $extra;
+            push @pairs, _pairs($extra);
         }
         my $r = encode_replace(\@pairs);
         my @cmd = (@cmd0, "-r", $r, $job);

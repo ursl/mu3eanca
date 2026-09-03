@@ -51,7 +51,7 @@ my $rc = SlurmBatch::run($ctx, {
     job_env => sub {
         my ($j) = @_;
         my $anl = $j->{last} ? "-s$j->{skip}" : "-s$j->{skip} -e$j->{chunk}";
-        return ([ ANLZR => $anl ]);
+        return [ [ ANLZR => $anl ] ];
     },
     merge => sub {
         my ($c, $m) = @_;
