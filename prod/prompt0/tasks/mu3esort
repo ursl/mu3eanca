@@ -56,7 +56,7 @@ my $rc = SlurmBatch::run($ctx, {
         return if $merged eq "";
         # Only one job; copy sorted file to the output location.
         my $job = "${run}_0";
-        my $src = "$m->{storage}/$run/sorted-run$job.root";
+        my $src = "$m->{storage}/sorted-run$job.root";
         require File::Path;
         File::Path::make_path(dirname($merged));
         if (!$c->{dry_run}) {
