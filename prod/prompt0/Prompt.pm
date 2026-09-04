@@ -149,6 +149,7 @@ sub prompt_context {
         raw_dir        => $raw,
         mlzr_dir       => ($data ne "" && $workdir ne "") ? "$data/mlzr/$workdir" : "",
         trirec_dir     => ($data ne "" && $workdir ne "") ? "$data/trirec/$workdir" : "",
+        sort_dir       => ($data ne "" && $workdir ne "") ? "$data/sort/$workdir" : "",
         mu3eanca       => $anca,
         slurm_run      => $slurm_run,
         slurm_queue    => _strip($cfg->{slurm_queue} // "-p hourly"),
@@ -158,10 +159,9 @@ sub prompt_context {
         rdb_url        => _strip($cfg->{rdb_url} // ""),
         n_events       => 0 + (_strip($cfg->{n_events} // "100000")),
         min_events     => 0 + (_strip($cfg->{min_events} // "10000")),
-        run_block_max  => 0 + (_strip($cfg->{run_block_max} // "10")),
         slurm_stages   => [ _cfg_list($cfg, "slurm_stages", qw(mlzr trirec sort)) ],
         tar_packages   => [ _cfg_list($cfg, "tar_packages", qw(mu3e minalyzer)) ],
-        data_products  => [qw(mlzr trirec)],
+        data_products  => [qw(mlzr trirec sort)],
         dry_run        => $opts{dry_run} // 0,
         jobs           => $opts{jobs},
     };
@@ -267,7 +267,8 @@ sub _make_tar {
 }
 
 # ----------------------------------------------------------------------
-# Production-area init (processRuns -i): slurm dirs, data blocks, hashes, alignment, tar.
+# Production-area init: slurm dirs, githashes, alignment ROOT, tar for slurm/run.
+# Data product block dirs (mlzr/trirec/sort/{workdir}/{NNN}) are created on write.
 sub prompt_init {
     my ($cfg, %opts) = @_;
     my $ctx = prompt_context($cfg, %opts);
@@ -282,23 +283,6 @@ sub prompt_init {
         make_path("$ctx->{root}/slurm/jobs/$stage/old")     unless $ctx->{dry_run};
         make_path("$ctx->{root}/slurm/storage1/$stage/old") unless $ctx->{dry_run};
         _log("slurm dirs: jobs/$stage storage1/$stage");
-    }
-
-    if ($ctx->{data_dir} eq "") {
-        _log("data_dir unset; skip mlzr/trirec block dirs");
-    } else {
-        my $nmax = $ctx->{run_block_max};
-        $nmax = 10 if $nmax < 1;
-        for my $prod (@{ $ctx->{data_products} }) {
-            for (my $i = 0; $i < $nmax; $i++) {
-                my $block = sprintf("%03d", $i);
-                my $dir   = "$ctx->{data_dir}/$prod/$ctx->{workdir}/$block";
-                _log("mkdir $dir") if $i == 0;
-                make_path($dir) unless $ctx->{dry_run};
-            }
-            _log("data blocks: $ctx->{data_dir}/$prod/$ctx->{workdir}/  000.."
-                . sprintf("%03d", $nmax - 1));
-        }
     }
 
     _write_githashes($ctx, $cfg);
@@ -341,6 +325,7 @@ sub prompt_status {
     print("  raw_input_base:    ", ($ctx->{raw_dir} ne "" ? $ctx->{raw_dir} : "(unset)"), "\n");
     print("  mlzr_dir:          $ctx->{mlzr_dir}\n") if $ctx->{mlzr_dir} ne "";
     print("  trirec_dir:        $ctx->{trirec_dir}\n") if $ctx->{trirec_dir} ne "";
+    print("  sort_dir:          $ctx->{sort_dir}\n") if $ctx->{sort_dir} ne "";
     print("  cdb_dbconn:        $ctx->{cdb_dbconn}\n");
     print("  cdb_GT:            $ctx->{cdb_GT}\n");
     print("  slurm_run:         $ctx->{slurm_run}\n");
@@ -421,7 +406,7 @@ sub prompt_cleanup {
         }
 
         if ($data ne "" && $wd ne "") {
-            for my $prod (@{ $ctx->{data_products} // [qw(mlzr trirec)] }) {
+            for my $prod (@{ $ctx->{data_products} // [qw(mlzr trirec sort)] }) {
                 _rm_matching($ctx, "$data/$prod/$wd/$block", $re);
             }
         }

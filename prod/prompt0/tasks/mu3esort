@@ -18,10 +18,10 @@ my $file = TaskLib::raw_file($ctx, $run);
 my $srun = sprintf("%05d", $run);
 my $block = TaskLib::block_dir($run);
 
-# Output lands under {data_dir}/trirec/{workdir}/{block}/run{srun}-sorted.root
-# (same getSortSubdir logic as processRuns).
-my $trirec = $ctx->{trirec_dir} // "";
-my $merged  = ($trirec ne "") ? "$trirec/$block/run$srun-sorted.root" : "";
+# Output: {data_dir}/sort/{workdir}/{block}/run{srun}-sorted.root
+# block = run/1000 as 3 digits (same as mlzr/trirec).
+my $sortdir = $ctx->{sort_dir} // "";
+my $merged  = ($sortdir ne "") ? "$sortdir/$block/run$srun-sorted.root" : "";
 
 if (!-f $file && !$ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "raw file missing: $file");

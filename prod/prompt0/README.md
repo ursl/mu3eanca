@@ -76,7 +76,7 @@ Production area:
 | Target | Description |
 |--------|-------------|
 | `setup` | Clone / checkout / build / relink `[repo]` packages (`-p` to restrict) |
-| `init` | SLURM dirs, mlzr/trirec block dirs, `githashes`, alignment ROOT, tar for `slurm/run` |
+| `init` | SLURM job/storage dirs, `githashes`, alignment ROOT, tar for `slurm/run` |
 | `bootstrap` | `setup` then `init` |
 | `status` | Paths, binaries, tar |
 | `list` | Resolved config + packages (default) |
@@ -116,7 +116,7 @@ pipeline_alias: test=midasmeta
 | `skipSmallRuns` | Stop this run if RDB Events < `min_events` (exit 1) | live |
 | `minalyzer` | SLURM minalyzer over the raw file; hadd to `merged-dqm_histos_XXXXX.root` | live |
 | `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots from the merged ROOT | live |
-| `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `trirec/{workdir}/{block}/` | live |
+| `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `sort/{workdir}/{block}/` | live |
 | `mu3etrirec` | SLURM mu3eTrirec with event splitting | stub |
 
 ```tcsh
