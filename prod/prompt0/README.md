@@ -117,13 +117,14 @@ pipeline_alias: test=midasmeta
 | `minalyzer` | SLURM minalyzer over the raw file; hadd to `merged-dqm_histos_XXXXX.root` | live |
 | `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots from the merged ROOT | live |
 | `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `sort/{workdir}/{block}/` | live |
-| `mu3etrirec` | SLURM mu3eTrirec with event splitting | stub |
+| `mu3etrirec` | SLURM mu3eTrirec on the sorted ROOT (event splitting); hadd to `run{srun}-trirec.root` under `trirec/{workdir}/{block}/` | live |
 
 ```tcsh
 ./prompt -n run 12345
 ./prompt -P beam run 12345
 ./prompt -P minalyzer_pdf run 12345
 ./prompt -P mu3esort run 9410
+./prompt -P mu3etrirec run 9410
 ./prompt -P midasmeta,skipSmallRuns -n run 12345 12346
 ```
 

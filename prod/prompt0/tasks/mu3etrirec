@@ -1,18 +1,92 @@
 #! /usr/bin/perl
-# mu3etrirec — SLURM mu3eTrirec (processRuns submitJobsRawTrirec).
-# Not ported yet. Use SlurmBatch::run (same as minalyzer, with event splitting).
+# mu3etrirec — SLURM mu3eTrirec on the mu3esort output (processRuns submitJobsRawTrirec).
+# Event splitting; hadd to trirec/{workdir}/{block}/run{srun}-trirec.root.
+# Runs from mu3e/run/ inside the tar.
 use strict;
 use warnings;
+use File::Basename qw(dirname basename);
 use FindBin;
 use lib "$FindBin::Bin/..";
 use TaskLib;
+use SlurmBatch;
 
 my ($run, $ctxfile) = TaskLib::args(@ARGV);
 my $ctx = TaskLib::load($ctxfile);
-my $file = TaskLib::raw_file($ctx, $run);
+my $name = "mu3etrirec";
 
-TaskLib::task_log($ctx, "mu3etrirec",
-    "run $run file=$file  (submitJobsRawTrirec not ported)");
+my $srun = sprintf("%05d", $run);
+my $block = TaskLib::block_dir($run);
+my $sortdir = $ctx->{sort_dir} // "";
+my $sorted = ($sortdir ne "") ? "$sortdir/$block/run$srun-sorted.root" : "";
+my $trirec = $ctx->{trirec_dir} // "";
+my $merged = ($trirec ne "") ? "$trirec/$block/run$srun-trirec.root" : "";
 
-exit 0 if $ctx->{dry_run};
-exit 2;
+if (!-f $sorted && !$ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "sorted file missing: $sorted");
+    exit 2;
+}
+
+my $total = _tree_entries($sorted);
+if ($total < 1) {
+    $total = 0 + ($ctx->{n_events} // 0);
+}
+my $chunk = 0 + ($ctx->{trirec_n_events} // 2000000);
+my $extra = $ctx->{trirec_anlzr} // "--conf trirec_twolayer_beam.conf";
+$extra =~ s/^\s+|\s+$//g;
+
+my $storage1 = "$ctx->{root}/slurm/storage1/trirec";
+my $cdb = $ctx->{cdb_dbconn} // "";
+
+my $rc = SlurmBatch::run($ctx, {
+    name    => $name,
+    stage   => "trirec",
+    wrapper => $ctx->{slurm_trirec_csh},
+    total   => $total,
+    chunk   => $chunk,
+    skip_if => $merged,
+    env     => [
+        [ STORAGE1   => $storage1 ],
+        [ SORTEDDIR  => dirname($sorted) ],
+        [ SORTEDFILE => basename($sorted) ],
+        [ RUN        => $run ],
+        [ GT         => $ctx->{cdb_GT} ],
+        [ CDB        => $cdb ],
+    ],
+    job_env => sub {
+        my ($j) = @_;
+        my $anl = $j->{last} ? "-s $j->{skip}" : "-s $j->{skip} -n $j->{chunk}";
+        $anl .= " $extra" if $extra ne "";
+        return [
+            [ ROOTFILE => "trirec-run$j->{job}.root" ],
+            [ ANLZR    => $anl ],
+        ];
+    },
+    merge => sub {
+        my ($c, $m) = @_;
+        return if $merged eq "";
+        my @in;
+        for my $job (@{ $m->{jobs} }) {
+            push @in, "$m->{storage}/trirec-run$job.root";
+        }
+        SlurmBatch::hadd($c, $name, $merged, @in) or exit 2;
+    },
+});
+
+exit($rc == 0 ? 0 : 2);
+
+# ----------------------------------------------------------------------
+# Sorted ROOT tree entries (processRuns: mu3e->GetEntries). 0 if ROOT fails.
+sub _tree_entries {
+    my ($file) = @_;
+    return 0 unless defined $file && $file ne "" && -f $file;
+    my $esc = $file;
+    $esc =~ s/"/\\"/g;
+    my $cmd = qq{root -l -b -e 'TFile *f1 = TFile::Open("$esc"); cout << mu3e->GetEntries() << endl;exit(0);'};
+    TaskLib::task_log($ctx, $name, "count entries: $file");
+    my $out = `$cmd`;
+    $out =~ s/root \[\d+\]//g;
+    $out =~ s/\s+//g;
+    return 0 + $out if $out =~ /^\d+$/;
+    TaskLib::task_log($ctx, $name, "could not count mu3e entries, using n_events");
+    return 0;
+}
