@@ -265,6 +265,7 @@ my @REPO_SUFFIXES = qw(
     merges
     merge
     install
+    commit
     build
     tag
     repo
@@ -294,7 +295,9 @@ sub _normalize_repo {
 
     my $branch = _strip($raw->{checkout_branch} // $raw->{branch} // "");
     my $tag    = _strip($raw->{checkout_tag} // $raw->{tag} // "");
-    die "repo $id: need tag or checkout_branch\n" if $tag eq "" && $branch eq "";
+    my $commit = _strip($raw->{commit} // $raw->{checkout_commit} // "");
+    die "repo $id: need tag, checkout_branch, or commit\n"
+        if $tag eq "" && $branch eq "" && $commit eq "";
     die "repo $id: use only one of tag or checkout_branch\n"
         if $tag ne "" && $branch ne "";
 
@@ -330,6 +333,7 @@ sub _normalize_repo {
         repo       => $url,
         tag        => $tag,
         branch     => $branch,
+        commit     => $commit,
         merges     => \@merges,
         workdir    => $workdir,
         build      => $build,

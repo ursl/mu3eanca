@@ -182,6 +182,7 @@ sub setup_contexts_from_config {
             repo          => $repo->{repo},
             tag           => $repo->{tag},
             branch        => $repo->{branch},
+            commit        => $repo->{commit} // "",
             merges        => [ @{$repo->{merges}} ],
             workdir       => $workdir,
             path          => "$basedir/$workdir",
@@ -299,10 +300,23 @@ sub setup_checkout {
         } else {
             _git($s, "checkout", "-B", $branch, "origin/$branch");
         }
-        _git($s, "reset", "--hard", "origin/$branch");
-    } else {
+        # Pinning a commit below; do not reset back to origin/$branch.
+        _git($s, "reset", "--hard", "origin/$branch") if ($s->{commit} // "") eq "";
+    } elsif ($s->{tag} ne "") {
         _log($s, "checkout ref $s->{tag}");
         _git($s, "checkout", $s->{tag});
+    }
+
+    my $commit = _strip($s->{commit} // "");
+    if ($commit ne "") {
+        _log($s, "checkout commit $commit");
+        # SHA may already be present after the branch/tag fetch.
+        if (!$s->{dry_run}
+            && !_git_ok($s, "cat-file", "-e", "${commit}^{commit}"))
+        {
+            _git($s, "fetch", "--force", "origin", $commit);
+        }
+        _git($s, "checkout", "--detach", $commit);
     }
 
     _log($s, "HEAD: ", _git_capture($s, "rev-parse", "--short", "HEAD"));
@@ -610,9 +624,10 @@ sub setup_status_repo {
     print("  repo:      $s->{repo}\n");
     if ($s->{branch} ne "") {
         print("  checkout:  branch $s->{branch}\n");
-    } else {
+    } elsif ($s->{tag} ne "") {
         print("  checkout:  tag/ref $s->{tag}\n");
     }
+    print("  commit:    $s->{commit}\n") if defined $s->{commit} && $s->{commit} ne "";
     print("  merges:    ", (@{$s->{merges}} ? join(", ", @{$s->{merges}}) : "(none)"), "\n");
     print("  build:     ", ($s->{build} ? "yes" : "no"), "\n");
     print("  install:   ", ($s->{install} ? "yes" : "no"), "\n");
