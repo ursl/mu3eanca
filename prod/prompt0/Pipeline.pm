@@ -308,8 +308,7 @@ sub pipeline_run {
 
         my $err = "";
         eval {
-            _log("run $run year=$kv->{year}  " . join(" -> ", @tasks)
-                . ($kv->{raw_file} ? "  raw=$kv->{raw_file}" : ""));
+            _log("run $run year=$kv->{year}  " . join(" -> ", @tasks));
             my $stopped = 0;
             for my $t (@tasks) {
                 my $script = "$tdir/$t";
