@@ -3,8 +3,15 @@ import db from "../db/conn.mjs";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 import { ObjectId } from "mongodb";
 import { GridFSBucket } from "mongodb";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const RDB_PY_CANDIDATES = [
+    path.resolve(__dirname, "../../../db0/cdb2/rdb.py"),
+    path.resolve(__dirname, "../public/rdb.py"),
+];
 
 const router = express.Router();
 
@@ -25,6 +32,18 @@ const upload = multer({
     limits: {
         fileSize: 100 * 1024 * 1024  // 100MB limit
     }
+});
+
+// ----------------------------------------------------------------------
+// -- Download offline JSON query script (rdb.py)
+router.get("/rdb.py", (req, res) => {
+    const file = RDB_PY_CANDIDATES.find((p) => fs.existsSync(p));
+    if (!file) {
+        return res.status(404).send("rdb.py not found on this server");
+    }
+    res.setHeader("Content-Type", "text/x-python; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="rdb.py"');
+    res.sendFile(file);
 });
 
 // ----------------------------------------------------------------------

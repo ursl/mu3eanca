@@ -20,7 +20,15 @@
 
     h1 {
         color: green;
-        margin-bottom: 20px;
+        margin: 0;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 12px;
     }
 
     .header-section {
@@ -836,7 +844,11 @@ async function updateCsvDisplay() {
 <body>
     <div id="runData" data-run='<%- JSON.stringify(data) %>' style="display: none;"></div>
     <div class="header-section">
-        <h1><a href="/rdb/" style="text-decoration: none; color: inherit;">Mu3e Run Database</a></h1>
+        <div class="header-title">
+            <h1><a href="/rdb/" style="text-decoration: none; color: inherit;">Mu3e Run Database</a></h1>
+            <a href="/rdb/rdb.py" class="button" download="rdb.py"
+               title="Offline Python script to query JSON runrecords">Download rdb.py</a>
+        </div>
         
         <form id="filterForm" class="filter-section">
             <div class="filter-row">
