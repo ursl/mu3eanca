@@ -2,8 +2,10 @@
 """rdb.py — offline query of the RDB JSON backend (runrecords/).
 
 Reads <dir>/NNNN/runRecord_<run>.json (or a CDB root that contains runrecords/).
-Queries hit a flattened sidecar cache; JSON files are scanned only on --rebuild.
+Queries hit a flattened sidecar cache; JSON files are scanned only on --rebuild
+(or after --sync, which downloads from REST like syncJSON --rdb, then rebuilds).
 
+  python3 rdb.py --dir ~/data/mu3e/cdb --sync
   python3 rdb.py --dir ~/data/mu3e/cdb --rebuild
   python3 rdb.py --dir ~/data/mu3e/cdb --significant
   python3 rdb.py --dir ~/data/mu3e/cdb --class cosmic --significant --dq pixel=1
@@ -28,9 +30,11 @@ import sys
 from datetime import datetime, timezone
 
 CACHE_VERSION = 1
-VERSION = "1.1"
+VERSION = "1.2"
 UPDATE_URL = "https://raw.githubusercontent.com/ursl/mu3eanca/master/db0/cdb2/rdb.py"
 VERSION_RE = re.compile(r'^VERSION = "([^"]+)"', re.M)
+DEFAULT_HOST = "mu3edb0"
+DEFAULT_CDB_PORT = 5050
 INDEX_NAME = ".rdb.index.jsonl"
 META_NAME = ".rdb.meta.json"
 UNSET = {"", "unset", "none", "null", "nan"}
@@ -129,6 +133,158 @@ def cmd_update():
         return 1
     eprint("rdb.py: updated %s -> %s (%s)" % (VERSION, remote_s, dest))
     return 0
+
+
+def cdb_base_url(host):
+    host = (host or DEFAULT_HOST).strip().rstrip("/")
+    if host.startswith("http://") or host.startswith("https://"):
+        return host if host.endswith("/cdb") else host + "/cdb"
+    if ":" in host.rsplit("@", 1)[-1]:
+        return "http://%s/cdb" % host
+    return "http://%s:%d/cdb" % (host, DEFAULT_CDB_PORT)
+
+
+def http_get(url, timeout=60):
+    import urllib.error
+    import urllib.request
+
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "rdb.py/" + VERSION}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.getcode() or 200, resp.read()
+    except urllib.error.HTTPError as exc:
+        body = b""
+        try:
+            body = exc.read()
+        except Exception:
+            pass
+        return exc.code, body
+    except urllib.error.URLError as exc:
+        reason = getattr(exc, "reason", exc)
+        raise OSError("%s (%s)" % (url, reason)) from exc
+
+
+def runrecord_relpath(irun):
+    if irun < 0:
+        return "runRecord_%s.json" % irun
+    return "%04d/runRecord_%d.json" % (irun // 1000, irun)
+
+
+def json_is_significant(data):
+    attrs = data.get("Attributes") if isinstance(data.get("Attributes"), list) else []
+    ri = latest_attr(attrs, "RunInfo") or {}
+    return to_bool(ri.get("Significant")) is True
+
+
+def ensure_runrecords_dir(path):
+    path = os.path.abspath(os.path.expanduser(path))
+    base = os.path.basename(path.rstrip(os.sep))
+    if base == "runrecords":
+        os.makedirs(path, exist_ok=True)
+        return path
+    nested = os.path.join(path, "runrecords")
+    os.makedirs(nested, exist_ok=True)
+    return nested
+
+
+def _parse_run_numbers(raw):
+    try:
+        numbers = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise ValueError(str(exc))
+    if isinstance(numbers, dict):
+        for key in ("runNumbers", "runs", "data"):
+            if isinstance(numbers.get(key), list):
+                numbers = numbers[key]
+                break
+    if not isinstance(numbers, list):
+        raise ValueError("expected a JSON array of run numbers")
+    runs = []
+    for item in numbers:
+        try:
+            runs.append(int(item))
+        except (TypeError, ValueError):
+            continue
+    return sorted(set(runs))
+
+
+def cmd_sync(runrecords_dir, args):
+    """Download runrecords from REST /cdb (same endpoints as syncJSON --rdb)."""
+    base = cdb_base_url(args.host)
+    eprint("rdb.py: sync from %s -> %s" % (base, runrecords_dir))
+    run_set = parse_run_spec(args.run) if args.run else None
+    if run_set is not None:
+        runs = sorted(run_set)
+    else:
+        try:
+            code, raw = http_get(base + "/findAll/runNumbers")
+        except (OSError, TimeoutError) as exc:
+            eprint("rdb.py: findAll/runNumbers failed (%s)" % exc)
+            return 1
+        if code != 200:
+            eprint("rdb.py: findAll/runNumbers failed (HTTP %s)" % code)
+            return 1
+        try:
+            runs = _parse_run_numbers(raw)
+        except ValueError as exc:
+            eprint("rdb.py: cannot parse run number list (%s)" % exc)
+            return 1
+    if args.first is not None or args.last is not None:
+        runs = [irun for irun in runs
+                if (args.first is None or irun >= args.first)
+                and (args.last is None or irun <= args.last)]
+    eprint("rdb.py: %d run numbers (significant-only=%s)"
+           % (len(runs), "no" if args.all_runs else "yes"))
+
+    n_ok = n_skip = n_err = 0
+    n_tot = len(runs)
+    for i, irun in enumerate(runs, 1):
+        url = base + "/findOne/runrecords/" + str(irun)
+        try:
+            code, raw = http_get(url, timeout=30)
+        except (OSError, TimeoutError) as exc:
+            eprint("rdb.py: run %d: %s" % (irun, exc))
+            n_err += 1
+            continue
+        if code != 200 or raw.strip() in (b"", b"Not found"):
+            n_err += 1
+            continue
+        try:
+            text = raw.decode("utf-8")
+            data = json.loads(text)
+        except (UnicodeDecodeError, ValueError) as exc:
+            eprint("rdb.py: run %d: bad JSON (%s)" % (irun, exc))
+            n_err += 1
+            continue
+        if not args.all_runs and not json_is_significant(data):
+            n_skip += 1
+            continue
+        rel = runrecord_relpath(irun)
+        dest = os.path.join(runrecords_dir, rel)
+        parent = os.path.dirname(dest)
+        try:
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            with open(dest, "w") as fh:
+                fh.write(text if text.endswith("\n") else text + "\n")
+        except OSError as exc:
+            eprint("rdb.py: cannot write %s (%s)" % (dest, exc))
+            n_err += 1
+            continue
+        n_ok += 1
+        if i % 25 == 0 or i == n_tot:
+            eprint("\rrdb.py: sync %d/%d  wrote %d" % (i, n_tot, n_ok), end="")
+            try:
+                sys.stderr.flush()
+            except Exception:
+                pass
+    if n_tot:
+        eprint("")
+    eprint("rdb.py: synced %d files (%d not significant, %d errors)"
+           % (n_ok, n_skip, n_err))
+    return 0 if n_err == 0 or n_ok > 0 else 1
 
 
 def is_unset(value):
@@ -597,7 +753,8 @@ Cache (inside the runrecords directory)
 
   Missing or incompatible cache: the script exits and asks for --rebuild.
   Stale cache (JSON newer or file count changed): WARNING on stderr, then
-  the existing cache is still queried.  Rebuild is never automatic.
+  the existing cache is still queried.  Rebuild is never automatic except
+  after --sync.
 
 Flattened fields
   All BOR and EOR keys that occur in the files, latest DataQuality
@@ -637,10 +794,20 @@ Output (stdout = matching run numbers unless dump/count)
   --summary             print "rdb.py: N / TOTAL" to stderr after the result
   --list-fields         print cache column names and exit
   --rebuild             rebuild cache; with filters, query afterwards
+  --sync                download runrecords from REST (like syncJSON --rdb),
+                        then rebuild the cache.  Default: significant runs
+                        only.  -f / -l / -r restrict which numbers are fetched
+                        (they do not run a query afterwards).
+  --host HOST           REST host for --sync (default: mu3edb0, port 5050;
+                        or $MU3E_CDB_HOST).  Bare hostname uses port 5050/cdb;
+                        host:port or http(s)://… is accepted as given.
+  -a / --all            with --sync: all runs, not only significant
   --version             print "rdb.py VERSION" and exit
   --update              fetch GitHub master; replace this file if newer
 
 Examples
+  python3 rdb.py --dir ~/data/mu3e/cdb --sync
+  python3 rdb.py --dir ~/data/mu3e/cdb --sync --all -f 4000 -l 4100 --host mu3edb0
   python3 rdb.py --dir ~/data/mu3e/cdb --rebuild
   python3 rdb.py --dir ~/data/mu3e/cdb --significant
   python3 rdb.py --dir ~/data/mu3e/cdb --class cosmic --significant --dq 'pixel!=-1'
@@ -682,6 +849,14 @@ def build_parser():
     p.add_argument("--dir", "-d", default=os.environ.get("MU3E_CDB"),
                    metavar="DIR",
                    help="CDB root or runrecords directory (default: $MU3E_CDB)")
+    p.add_argument("--host", default=os.environ.get("MU3E_CDB_HOST", DEFAULT_HOST),
+                   metavar="HOST",
+                   help="REST host for --sync (default: %s or $MU3E_CDB_HOST)"
+                   % DEFAULT_HOST)
+    p.add_argument("--sync", action="store_true",
+                   help="download runrecords from REST into --dir (then rebuild cache)")
+    p.add_argument("-a", "--all", dest="all_runs", action="store_true",
+                   help="with --sync: download all runs, not only significant")
     p.add_argument("--rebuild", action="store_true",
                    help="rebuild the flattened cache from the JSON files")
     p.add_argument("--significant", action="store_true",
@@ -698,11 +873,11 @@ def build_parser():
     p.add_argument("--max-events", type=int, default=None, metavar="N",
                    help="maximum EOR Events")
     p.add_argument("-f", dest="first", type=int, default=None, metavar="N",
-                   help="first run number (inclusive)")
+                   help="first run number (inclusive); with --sync, restrict download")
     p.add_argument("-l", dest="last", type=int, default=None, metavar="N",
-                   help="last run number (inclusive)")
+                   help="last run number (inclusive); with --sync, restrict download")
     p.add_argument("-r", "--r", "--run", dest="run", default=None, metavar="LIST",
-                   help="run list/ranges, e.g. 226,4000-4010")
+                   help="run list/ranges, e.g. 226,4000-4010; with --sync, fetch these")
     p.add_argument("--comment", default=None, metavar="TEXT",
                    help="substring on EOR Comments or RunInfo.Comments")
     p.add_argument("--shift", default=None, metavar="TEXT",
@@ -735,17 +910,24 @@ def main(argv=None):
         parser.print_help(sys.stderr)
         eprint("\nrdb.py: error: --dir is required (or set environment MU3E_CDB)")
         return 2
-    runrecords_dir = resolve_runrecords_dir(args.dir)
 
-    if args.rebuild:
+    if args.sync:
+        runrecords_dir = ensure_runrecords_dir(args.dir)
+        rc = cmd_sync(runrecords_dir, args)
+        if rc != 0:
+            return rc
         rows, _meta = rebuild_cache(runrecords_dir)
     else:
-        status, _meta, msg = cache_status(runrecords_dir)
-        if status in ("missing", "incompatible"):
-            raise SystemExit("rdb.py: " + msg)
-        if status == "stale":
-            eprint("rdb.py: WARNING " + msg)
-        rows = load_cache(runrecords_dir)
+        runrecords_dir = resolve_runrecords_dir(args.dir)
+        if args.rebuild:
+            rows, _meta = rebuild_cache(runrecords_dir)
+        else:
+            status, _meta, msg = cache_status(runrecords_dir)
+            if status in ("missing", "incompatible"):
+                raise SystemExit("rdb.py: " + msg)
+            if status == "stale":
+                eprint("rdb.py: WARNING " + msg)
+            rows = load_cache(runrecords_dir)
 
     if args.list_fields:
         if not rows:
@@ -757,10 +939,11 @@ def main(argv=None):
     query = (
         args.significant or args.not_significant or args.run_class or args.dq
         or args.min_events is not None or args.max_events is not None
-        or args.first is not None or args.last is not None or args.run
         or args.comment or args.shift or args.components or args.components_out
     )
-    if args.rebuild and not query:
+    if not args.sync:
+        query = query or args.first is not None or args.last is not None or args.run
+    if (args.rebuild or args.sync) and not query:
         return 0
 
     selected = apply_filters(rows, args)
