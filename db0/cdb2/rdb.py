@@ -28,6 +28,9 @@ import sys
 from datetime import datetime, timezone
 
 CACHE_VERSION = 1
+VERSION = "1.1"
+UPDATE_URL = "https://raw.githubusercontent.com/ursl/mu3eanca/master/db0/cdb2/rdb.py"
+VERSION_RE = re.compile(r'^VERSION = "([^"]+)"', re.M)
 INDEX_NAME = ".rdb.index.jsonl"
 META_NAME = ".rdb.meta.json"
 UNSET = {"", "unset", "none", "null", "nan"}
@@ -49,6 +52,83 @@ DQ_CMP = re.compile(r"^([A-Za-z_]+)(==|=|!=|>=|<=|>|<)(-?\d+)$")
 # ----------------------------------------------------------------------
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
+
+def parse_version(text):
+    parts = []
+    for bit in str(text).strip().split("."):
+        if not bit.isdigit():
+            raise ValueError("not a numeric version: %s" % text)
+        parts.append(int(bit))
+    return tuple(parts)
+
+
+def extract_version(source):
+    m = VERSION_RE.search(source)
+    if not m:
+        return None
+    return m.group(1)
+
+
+def cmd_update():
+    """Replace this script with GitHub master if that copy is newer."""
+    import urllib.error
+    import urllib.request
+
+    dest = os.path.realpath(__file__)
+    req = urllib.request.Request(
+        UPDATE_URL, headers={"User-Agent": "rdb.py/" + VERSION}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read()
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        eprint("rdb.py: cannot fetch %s (%s)" % (UPDATE_URL, exc))
+        return 1
+
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        eprint("rdb.py: remote file is not UTF-8 text")
+        return 1
+    if "offline query of the RDB" not in text or not text.lstrip().startswith("#!"):
+        eprint("rdb.py: remote file does not look like rdb.py")
+        return 1
+    remote_s = extract_version(text)
+    if remote_s is None:
+        eprint("rdb.py: GitHub copy has no VERSION (older than %s); not replacing"
+               % VERSION)
+        return 0
+    try:
+        local_t = parse_version(VERSION)
+        remote_t = parse_version(remote_s)
+    except ValueError as exc:
+        eprint("rdb.py: %s" % exc)
+        return 1
+
+    if remote_t == local_t:
+        eprint("rdb.py: already at %s" % VERSION)
+        return 0
+    if remote_t < local_t:
+        eprint("rdb.py: local %s is newer than GitHub %s (not replacing)"
+               % (VERSION, remote_s))
+        return 0
+
+    tmp = dest + ".new"
+    try:
+        with open(tmp, "wb") as fh:
+            fh.write(raw)
+        os.chmod(tmp, os.stat(dest).st_mode)
+        os.replace(tmp, dest)
+    except OSError as exc:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        eprint("rdb.py: cannot replace %s (%s)" % (dest, exc))
+        return 1
+    eprint("rdb.py: updated %s -> %s (%s)" % (VERSION, remote_s, dest))
+    return 0
 
 
 def is_unset(value):
@@ -557,6 +637,8 @@ Output (stdout = matching run numbers unless dump/count)
   --summary             print "rdb.py: N / TOTAL" to stderr after the result
   --list-fields         print cache column names and exit
   --rebuild             rebuild cache; with filters, query afterwards
+  --version             print "rdb.py VERSION" and exit
+  --update              fetch GitHub master; replace this file if newer
 
 Examples
   python3 rdb.py --dir ~/data/mu3e/cdb --rebuild
@@ -566,6 +648,7 @@ Examples
   python3 rdb.py --dir ~/data/mu3e/cdb --class beam --format json
   python3 rdb.py --dir ~/data/mu3e/cdb --significant --format line
   python3 rdb.py --dir ~/data/mu3e/cdb -r 226 --format dump
+  python3 rdb.py --update
 """
 
 
@@ -582,8 +665,9 @@ def build_parser():
         prog="rdb.py",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
-            "rdb.py — offline query of RDB runrecords JSON (flattened sidecar cache).\n"
+            "rdb.py %s — offline query of RDB runrecords JSON (flattened sidecar cache).\n"
             "Run with no arguments, -h, or --help to print this message."
+            % VERSION
         ),
         epilog=USAGE_EPILOG,
         add_help=False,
@@ -591,6 +675,10 @@ def build_parser():
     )
     p.add_argument("-h", "--help", action="help",
                    help="print this help message and exit")
+    p.add_argument("--version", action="version", version="rdb.py " + VERSION,
+                   help="print version and exit")
+    p.add_argument("--update", action="store_true",
+                   help="replace this script from GitHub if a newer VERSION exists")
     p.add_argument("--dir", "-d", default=os.environ.get("MU3E_CDB"),
                    metavar="DIR",
                    help="CDB root or runrecords directory (default: $MU3E_CDB)")
@@ -641,6 +729,8 @@ def main(argv=None):
         parser.print_help(sys.stdout)
         return 2
     args = parser.parse_args(argv)
+    if args.update:
+        return cmd_update()
     if not args.dir:
         parser.print_help(sys.stderr)
         eprint("\nrdb.py: error: --dir is required (or set environment MU3E_CDB)")

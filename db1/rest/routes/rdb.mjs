@@ -3,15 +3,61 @@ import db from "../db/conn.mjs";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import https from "https";
 import { fileURLToPath } from "url";
 import { ObjectId } from "mongodb";
 import { GridFSBucket } from "mongodb";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const RDB_PY_CANDIDATES = [
+const RDB_PY_RAW_URL =
+    "https://raw.githubusercontent.com/ursl/mu3eanca/master/db0/cdb2/rdb.py";
+const RDB_PY_LOCAL = [
     path.resolve(__dirname, "../../../db0/cdb2/rdb.py"),
     path.resolve(__dirname, "../public/rdb.py"),
 ];
+
+function httpsGetBuffer(url, maxRedirects = 5) {
+    return new Promise((resolve, reject) => {
+        const req = https.get(
+            url,
+            {
+                timeout: 10000,
+                headers: { "User-Agent": "mu3eanca-rdb" },
+            },
+            (res) => {
+                if (
+                    res.statusCode >= 300 &&
+                    res.statusCode < 400 &&
+                    res.headers.location &&
+                    maxRedirects > 0
+                ) {
+                    res.resume();
+                    const next = new URL(res.headers.location, url).href;
+                    resolve(httpsGetBuffer(next, maxRedirects - 1));
+                    return;
+                }
+                if (res.statusCode !== 200) {
+                    res.resume();
+                    reject(new Error("HTTP " + res.statusCode));
+                    return;
+                }
+                const chunks = [];
+                res.on("data", (c) => chunks.push(c));
+                res.on("end", () => resolve(Buffer.concat(chunks)));
+                res.on("error", reject);
+            },
+        );
+        req.on("timeout", () => {
+            req.destroy();
+            reject(new Error("timeout"));
+        });
+        req.on("error", reject);
+    });
+}
+
+function localRdbPy() {
+    return RDB_PY_LOCAL.find((p) => fs.existsSync(p));
+}
 
 const router = express.Router();
 
@@ -35,15 +81,28 @@ const upload = multer({
 });
 
 // ----------------------------------------------------------------------
-// -- Download offline JSON query script (rdb.py)
-router.get("/rdb.py", (req, res) => {
-    const file = RDB_PY_CANDIDATES.find((p) => fs.existsSync(p));
-    if (!file) {
-        return res.status(404).send("rdb.py not found on this server");
-    }
+// -- Download offline JSON query script (rdb.py).
+//    Prefer GitHub master (raw file, not the blob HTML page). Fall back to
+//    the local checkout if GitHub is unreachable or the file is not there yet.
+router.get("/rdb.py", async (req, res) => {
     res.setHeader("Content-Type", "text/x-python; charset=utf-8");
     res.setHeader("Content-Disposition", 'attachment; filename="rdb.py"');
-    res.sendFile(file);
+    try {
+        const buf = await httpsGetBuffer(RDB_PY_RAW_URL);
+        const text = buf.toString("utf8");
+        if (!text.includes("offline query of the RDB") || !text.startsWith("#!")) {
+            throw new Error("remote file does not look like rdb.py");
+        }
+        console.log("rdb.py: serving from " + RDB_PY_RAW_URL);
+        return res.send(buf);
+    } catch (err) {
+        console.log("rdb.py: GitHub fetch failed (" + err.message + "), trying local file");
+        const file = localRdbPy();
+        if (!file) {
+            return res.status(404).send("rdb.py not found on GitHub or this server");
+        }
+        return res.sendFile(file);
+    }
 });
 
 // ----------------------------------------------------------------------
