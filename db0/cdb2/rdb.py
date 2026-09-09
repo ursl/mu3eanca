@@ -428,9 +428,7 @@ def apply_filters(rows, args):
 
 
 # ----------------------------------------------------------------------
-def field_list(rows, fields_arg):
-    if fields_arg:
-        return [f.strip() for f in fields_arg.split(",") if f.strip()]
+def field_list(rows):
     if not rows:
         return []
     present = set()
@@ -454,61 +452,39 @@ def field_list(rows, fields_arg):
     return keys
 
 
-def csv_escape(val):
-    if val is None:
-        return ""
-    if isinstance(val, bool):
-        return "true" if val else "false"
-    s = str(val)
-    if any(c in s for c in ",\"\n"):
-        return '"' + s.replace('"', '""') + '"'
-    return s
+def run_numbers(rows):
+    return [row["run"] for row in rows]
 
 
-def print_rows(rows, args, n_total, schema_rows=None):
+def print_match_summary(n_sel, n_total, args):
+    if args.summary:
+        eprint("rdb.py: %d / %d" % (n_sel, n_total))
+
+
+def print_rows(rows, args, n_total):
     fmt = args.format
+    runs = run_numbers(rows)
     if fmt == "count":
-        print(len(rows))
-        eprint("rdb.py: %d / %d" % (len(rows), n_total))
+        print(len(runs))
+        print_match_summary(len(runs), n_total, args)
         return
-    if fmt == "runs":
-        for row in rows:
-            print(row["run"])
-        eprint("rdb.py: %d / %d" % (len(rows), n_total))
+    if fmt == "line":
+        for run in runs:
+            print(run)
+        print_match_summary(len(runs), n_total, args)
         return
     if fmt == "csv":
-        fields = field_list(schema_rows if schema_rows is not None else rows, args.fields)
-        print(",".join(fields))
-        for row in rows:
-            print(",".join(csv_escape(row.get(f)) for f in fields))
-        eprint("rdb.py: %d / %d" % (len(rows), n_total))
+        print(",".join(str(run) for run in runs))
+        print_match_summary(len(runs), n_total, args)
         return
     if fmt == "json":
-        print(json.dumps(rows, indent=2, ensure_ascii=False))
-        eprint("rdb.py: %d / %d" % (len(rows), n_total))
-        return
-    if fmt == "summary":
-        for row in rows:
-            sig = row.get("significant")
-            sig_s = "true" if sig is True else ("false" if sig is False else "unset")
-            print("run %s: %s  class=%s  significant=%s  nevts=%s  dq_pixel=%s"
-                  % (row.get("run"),
-                     row.get("bor_start_time") or "-",
-                     row.get("class") or "-",
-                     sig_s,
-                     row.get("eor_events") if row.get("eor_events") is not None else "-",
-                     row.get("dq_pixel") if row.get("dq_pixel") is not None else "-"))
-        eprint("rdb.py: %d / %d" % (len(rows), n_total))
-        return
-    if fmt == "files":
-        for row in rows:
-            print(row.get("file") or "")
-        eprint("rdb.py: %d / %d" % (len(rows), n_total))
+        print(json.dumps(runs))
+        print_match_summary(len(runs), n_total, args)
         return
     raise SystemExit("rdb.py: unknown --format %s" % fmt)
 
 
-def print_dump(rows, n_total):
+def print_dump(rows, n_total, args):
     for row in rows:
         path = row.get("file")
         print("# %s" % path)
@@ -521,64 +497,154 @@ def print_dump(rows, n_total):
         sys.stdout.write(text)
         if not text.endswith("\n"):
             print()
-    eprint("rdb.py: %d / %d" % (len(rows), n_total))
+    print_match_summary(len(rows), n_total, args)
 
 
 # ----------------------------------------------------------------------
+USAGE_EPILOG = """
+Overview
+  Offline query of the RDB JSON backend (runrecords/).  Reads
+      <dir>/NNNN/runRecord_<run>.json
+  or a CDB root that contains a runrecords/ subdirectory.
+
+  Queries never scan the JSON tree.  They read a flattened sidecar cache
+  written by --rebuild.  Rebuild when files were added, removed, or
+  updated (for example after syncJSON --rdb).
+
+Cache (inside the runrecords directory)
+  .rdb.index.jsonl   one flattened record per run
+  .rdb.meta.json     file count / mtime fingerprint
+
+  Missing or incompatible cache: the script exits and asks for --rebuild.
+  Stale cache (JSON newer or file count changed): WARNING on stderr, then
+  the existing cache is still queried.  Rebuild is never automatic.
+
+Flattened fields
+  All BOR and EOR keys that occur in the files, latest DataQuality
+  (goodLinks is stored as dq_links), and latest RunInfo fields
+  Significant, Components, ComponentsOut, Class, Comments.
+
+  Combined class (--class): latest RunInfo.Class if it is set, otherwise
+  BOR "Run Class".  Matching is case-insensitive.  Repeat --class for OR.
+  Raw values remain in the cache as ri_class and bor_run_class.
+
+  DataQuality / RunInfo are taken from the last matching Attributes entry.
+
+Directory
+  --dir / -d    CDB root (…/cdb) or the runrecords directory itself.
+  If --dir is omitted, the environment variable MU3E_CDB is used.
+
+Filters (AND unless noted)
+  --significant / --not-significant
+  --class NAME          combined class; repeatable = OR
+  --dq EXPR             latest DQ, e.g. pixel=1 or pixel!=-1 (repeatable).
+                        Fields: mu3e beam vertex pixel fibres tiles
+                        calibration links
+                        Operators: =  ==  !=  >  >=  <  <=
+  --min-events / --max-events    EOR Events
+  -f / -l               first / last run number (inclusive)
+  -r / --r / --run LIST 226,4000-4010  (commas and ranges)
+  --comment TEXT        substring on EOR Comments or RunInfo.Comments
+  --shift TEXT          substring on BOR Shift crew
+  --components / --components-out    substring on those RunInfo fields
+
+Output (stdout = matching run numbers unless dump/count)
+  --format csv          comma-separated run numbers, one line (default)
+           json         JSON array of run numbers
+           line         one run number per line
+           dump         original JSON of matching runs
+           count        number of matches only
+  --summary             print "rdb.py: N / TOTAL" to stderr after the result
+  --list-fields         print cache column names and exit
+  --rebuild             rebuild cache; with filters, query afterwards
+
+Examples
+  python3 rdb.py --dir ~/data/mu3e/cdb --rebuild
+  python3 rdb.py --dir ~/data/mu3e/cdb --significant
+  python3 rdb.py --dir ~/data/mu3e/cdb --class cosmic --significant --dq 'pixel!=-1'
+  python3 rdb.py --dir ~/data/mu3e/cdb -f 4000 -l 5000 --min-events 10000
+  python3 rdb.py --dir ~/data/mu3e/cdb --class beam --format json
+  python3 rdb.py --dir ~/data/mu3e/cdb --significant --format line
+  python3 rdb.py --dir ~/data/mu3e/cdb -r 226 --format dump
+"""
+
+
+class _HelpParser(argparse.ArgumentParser):
+    """Print the full help text on argparse errors (unknown/missing flags)."""
+
+    def error(self, message):
+        self.print_help(sys.stderr)
+        self.exit(2, "\nrdb.py: error: %s\n" % message)
+
+
 def build_parser():
-    p = argparse.ArgumentParser(
+    p = _HelpParser(
         prog="rdb.py",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Offline query of RDB runrecords JSON (flattened sidecar cache).",
-        epilog="""
-Examples (tcsh):
-  python3 rdb.py --dir ~/data/mu3e/cdb --rebuild
-  python3 rdb.py --dir ~/data/mu3e/cdb --significant --format summary
-  python3 rdb.py --dir ~/data/mu3e/cdb --class cosmic --significant --dq pixel!=-1
-  python3 rdb.py --dir ~/data/mu3e/cdb -f 4000 -l 5000 --min-events 10000
-
---dir may be the CDB root (contains runrecords/) or the runrecords directory.
-MU3E_CDB is used if --dir is omitted.
-""",
+        description=(
+            "rdb.py — offline query of RDB runrecords JSON (flattened sidecar cache).\n"
+            "Run with no arguments, -h, or --help to print this message."
+        ),
+        epilog=USAGE_EPILOG,
+        add_help=False,
+        allow_abbrev=False,
     )
+    p.add_argument("-h", "--help", action="help",
+                   help="print this help message and exit")
     p.add_argument("--dir", "-d", default=os.environ.get("MU3E_CDB"),
+                   metavar="DIR",
                    help="CDB root or runrecords directory (default: $MU3E_CDB)")
     p.add_argument("--rebuild", action="store_true",
-                   help="rebuild the flattened cache from JSON files")
+                   help="rebuild the flattened cache from the JSON files")
     p.add_argument("--significant", action="store_true",
-                   help="latest RunInfo.Significant is true")
+                   help="keep runs whose latest RunInfo.Significant is true")
     p.add_argument("--not-significant", action="store_true",
-                   help="latest RunInfo.Significant is false")
+                   help="keep runs whose latest RunInfo.Significant is false")
     p.add_argument("--class", dest="run_class", action="append", default=[],
+                   metavar="NAME",
                    help="combined class (RunInfo.Class if set, else BOR). Repeatable = OR")
-    p.add_argument("--dq", action="append", default=[],
+    p.add_argument("--dq", action="append", default=[], metavar="EXPR",
                    help="DataQuality filter, e.g. pixel=1 or pixel!=-1 (repeatable)")
-    p.add_argument("--min-events", type=int, default=None)
-    p.add_argument("--max-events", type=int, default=None)
-    p.add_argument("-f", dest="first", type=int, default=None, help="first run number")
-    p.add_argument("-l", dest="last", type=int, default=None, help="last run number")
-    p.add_argument("--run", default=None,
+    p.add_argument("--min-events", type=int, default=None, metavar="N",
+                   help="minimum EOR Events")
+    p.add_argument("--max-events", type=int, default=None, metavar="N",
+                   help="maximum EOR Events")
+    p.add_argument("-f", dest="first", type=int, default=None, metavar="N",
+                   help="first run number (inclusive)")
+    p.add_argument("-l", dest="last", type=int, default=None, metavar="N",
+                   help="last run number (inclusive)")
+    p.add_argument("-r", "--r", "--run", dest="run", default=None, metavar="LIST",
                    help="run list/ranges, e.g. 226,4000-4010")
-    p.add_argument("--comment", default=None,
+    p.add_argument("--comment", default=None, metavar="TEXT",
                    help="substring on EOR Comments or RunInfo.Comments")
-    p.add_argument("--shift", default=None, help="substring on BOR Shift crew")
-    p.add_argument("--components", default=None, help="substring on RunInfo.Components")
+    p.add_argument("--shift", default=None, metavar="TEXT",
+                   help="substring on BOR Shift crew")
+    p.add_argument("--components", default=None, metavar="TEXT",
+                   help="substring on RunInfo.Components")
     p.add_argument("--components-out", dest="components_out", default=None,
+                   metavar="TEXT",
                    help="substring on RunInfo.ComponentsOut")
-    p.add_argument("--format", choices=("runs", "csv", "json", "summary", "files", "dump", "count"),
-                   default="runs",
-                   help="output format (default: runs, one number per line)")
-    p.add_argument("--fields", default=None,
-                   help="csv columns (comma-separated). Default: all flattened fields")
+    p.add_argument("--format", choices=("csv", "json", "line", "dump", "count"),
+                   default="csv", metavar="FMT",
+                   help="run-list format: csv (default), json, line; or dump / count")
+    p.add_argument("--summary", action="store_true",
+                   help="print match count to stderr (N / TOTAL)")
     p.add_argument("--list-fields", action="store_true",
                    help="print cache column names and exit")
     return p
 
 
 def main(argv=None):
-    args = build_parser().parse_args(argv)
+    argv = sys.argv[1:] if argv is None else list(argv)
+    parser = build_parser()
+    if not argv:
+        parser.print_help(sys.stdout)
+        return 2
+    args = parser.parse_args(argv)
     if not args.dir:
-        raise SystemExit("rdb.py: --dir or environment MU3E_CDB required")
+        parser.print_help(sys.stderr)
+        eprint("\nrdb.py: error: --dir is required (or set environment MU3E_CDB)")
+        return 2
     runrecords_dir = resolve_runrecords_dir(args.dir)
 
     if args.rebuild:
@@ -594,7 +660,7 @@ def main(argv=None):
     if args.list_fields:
         if not rows:
             raise SystemExit("rdb.py: cache is empty")
-        for k in field_list(rows, None):
+        for k in field_list(rows):
             print(k)
         return 0
 
@@ -609,9 +675,9 @@ def main(argv=None):
 
     selected = apply_filters(rows, args)
     if args.format == "dump":
-        print_dump(selected, len(rows))
+        print_dump(selected, len(rows), args)
     else:
-        print_rows(selected, args, len(rows), schema_rows=rows)
+        print_rows(selected, args, len(rows))
     return 0
 
 
