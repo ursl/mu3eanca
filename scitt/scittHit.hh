@@ -23,6 +23,7 @@ struct scittHit {
 
   // labels (v1: mcs.front(); tid==0 is noise / unmatched)
   int32_t tid = 0;
+  int32_t pid = 0;
   int32_t hid = 0;
   int32_t abs_hid = 0;
   int32_t n_mc = 0;

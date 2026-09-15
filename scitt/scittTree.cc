@@ -40,6 +40,7 @@ void scittTree::initBranches() {
   fHitsTree->Branch("phi", &fHit.phi, "phi/D");
   fHitsTree->Branch("time", &fHit.time, "time/D");
   fHitsTree->Branch("tid", &fHit.tid, "tid/I");
+  fHitsTree->Branch("pid", &fHit.pid, "pid/I");
   fHitsTree->Branch("hid", &fHit.hid, "hid/I");
   fHitsTree->Branch("abs_hid", &fHit.abs_hid, "abs_hid/I");
   fHitsTree->Branch("n_mc", &fHit.n_mc, "n_mc/I");
