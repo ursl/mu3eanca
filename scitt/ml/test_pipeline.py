@@ -161,6 +161,22 @@ class ModelTests(unittest.TestCase):
         self.assertIn("efficiency", m1)
         self.assertIn("efficiency", b0)
 
+    def test_cluster_hits_needs_no_tid(self) -> None:
+        try:
+            import torch
+        except ImportError:
+            self.skipTest("torch not installed")
+        from ml.infer import cluster_hits
+        from ml.model import HitTransformer
+        from ml.synthetic import generate_frame
+
+        fr = generate_frame(0, np.random.default_rng(7))
+        data = {k: fr[k] for k in ("x", "y", "z", "layer", "tot", "time")}
+        device = torch.device("cpu")
+        model = HitTransformer(d_model=32, nhead=4, nlayers=1, dim_ff=64, emb_dim=4).to(device)
+        labels = cluster_hits(model, data, device)
+        self.assertEqual(labels.shape[0], fr["x"].shape[0])
+
 
 if __name__ == "__main__":
     unittest.main()

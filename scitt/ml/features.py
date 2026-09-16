@@ -43,8 +43,14 @@ def encode_hits(frame: Mapping[str, Any]) -> np.ndarray:
 
     y = _arr(frame, "y").astype(np.float32, copy=False)
     z = _arr(frame, "z").astype(np.float32, copy=False)
-    r = _arr(frame, "r").astype(np.float32, copy=False)
-    phi = _arr(frame, "phi").astype(np.float32, copy=False)
+    if "r" in frame:
+        r = _arr(frame, "r").astype(np.float32, copy=False)
+    else:
+        r = np.hypot(x, y).astype(np.float32)
+    if "phi" in frame:
+        phi = _arr(frame, "phi").astype(np.float32, copy=False)
+    else:
+        phi = np.arctan2(y, x).astype(np.float32)
     layer = _arr(frame, "layer").astype(np.int64, copy=False)
     tot = _arr(frame, "tot").astype(np.float32, copy=False)
     time = _arr(frame, "time").astype(np.float32, copy=False)

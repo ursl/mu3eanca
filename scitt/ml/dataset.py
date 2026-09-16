@@ -36,20 +36,27 @@ def slice_frame(frame: dict[str, Any], keep: np.ndarray) -> dict[str, Any]:
     return out
 
 
+def _col(frame: dict[str, Any], key: str, n: int, dtype, default=0):
+    if key not in frame:
+        return np.full(n, default, dtype=dtype)
+    return np.asarray(frame[key], dtype=dtype)
+
+
 def encode_frame(frame: dict[str, Any]) -> dict[str, Any]:
     feats = encode_hits(frame)
+    n = int(feats.shape[0])
     return {
         "features": feats,
-        "tid": np.asarray(frame["tid"], dtype=np.int64),
-        "pid": np.asarray(frame["pid"], dtype=np.int64),
-        "layer": np.asarray(frame["layer"], dtype=np.int64),
-        "sensor_id": np.asarray(frame["sensor_id"], dtype=np.int64),
-        "hid": np.asarray(frame["hid"], dtype=np.int64),
-        "n_mc": np.asarray(frame["n_mc"], dtype=np.int64),
-        "phi": np.asarray(frame["phi"], dtype=np.float32),
-        "z": np.asarray(frame["z"], dtype=np.float32),
-        "time": np.asarray(frame["time"], dtype=np.float32),
-        "frame_id": int(frame["frame_id"]),
+        "tid": _col(frame, "tid", n, np.int64),
+        "pid": _col(frame, "pid", n, np.int64),
+        "layer": _col(frame, "layer", n, np.int64, -1),
+        "sensor_id": _col(frame, "sensor_id", n, np.int64),
+        "hid": _col(frame, "hid", n, np.int64),
+        "n_mc": _col(frame, "n_mc", n, np.int64),
+        "phi": _col(frame, "phi", n, np.float32),
+        "z": _col(frame, "z", n, np.float32),
+        "time": _col(frame, "time", n, np.float32),
+        "frame_id": int(frame.get("frame_id", 0)),
     }
 
 
@@ -78,8 +85,13 @@ def load_root_frames(path: str, max_frames: Optional[int] = None) -> list[dict[s
     try:
         import uproot
     except ImportError as exc:
+        import sys
         raise ImportError(
-            "reading a ROOT dump needs uproot: pip install uproot"
+            "reading a ROOT dump needs uproot in this Python:\n"
+            "  %s\n"
+            "Install with:  python -m pip install uproot\n"
+            "(bare `pip install` can target a different interpreter)"
+            % sys.executable
         ) from exc
 
     branches = ("frame_id",) + HIT_COLUMNS

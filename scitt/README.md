@@ -118,15 +118,18 @@ cd /Users/ursl/macros/ana/mu3eanca/scitt
 # first time (already created on this machine)
 python3 -m venv .venv
 source .venv/bin/activate.csh
-pip install torch numpy scikit-learn uproot
+python -m pip install torch numpy scikit-learn uproot
 
 # later sessions
 cd /Users/ursl/macros/ana/mu3eanca/scitt
 source .venv/bin/activate.csh
 ```
 
-`uproot` is only required to read a real dump (`--root`). Synthetic training
-runs without it. Device is `auto`: CUDA, else MPS (Apple), else CPU.
+`uproot` is only required to read a real dump (`--root`). `--synthetic` does
+not use ROOT: it **invents** toy hits in Python (fake helices on the three
+layer radii, optional L3 recurls, plus noise). That is only to exercise the
+pipeline before a dump exists; it is not Geant4. Device is `auto`: CUDA, else
+MPS (Apple), else CPU.
 
 Deps are listed in [`pyproject.toml`](pyproject.toml).
 
@@ -157,17 +160,15 @@ python -m ml.train --synthetic --epochs 20 --n-train 256 --n-val 64 \
   --out runs/synth
 ```
 
-On this toy set, DBSCAN on (φ, z, t) is a strong baseline (hits are planted as
-compact blobs). The transformer is meant to be judged on **real dumps with
-killed sensors**.
+On this toy set, [DBSCAN](https://en.wikipedia.org/wiki/DBSCAN) on (φ, z, t) is
+a strong baseline: it is ordinary density clustering (hits near each other
+become a “track”), and the toy generator plants compact blobs. The transformer
+is meant to be judged on **real dumps with killed sensors**.
 
 ### Real dump
 
 ```tcsh
-python -m ml.train --root /path/to/scitt.root --epochs 20 \
-  --kill-mode sensor --kill-frac 0.3 \
-  --eval-fracs 0,0.15,0.3,0.5 \
-  --out runs/data
+python -m ml.train --root /path/to/scitt.root --epochs 20 --kill-mode sensor --kill-frac 0.3  --eval-fracs 0,0.15,0.3,0.5   --out runs/data
 ```
 
 Cap frames or change the train/val split:
@@ -178,6 +179,42 @@ python -m ml.train --root /path/to/scitt.root --max-frames 500 --val-frac 0.2
 
 Checkpoints: `runs/<name>/best.pt` (best val efficiency) and `last.pt`.
 Default `--out` is `runs/` (next to `ml/`).
+
+### Apply a trained model
+
+The file `best.pt` / `last.pt` is the model (weights + architecture flags).
+Applying it means: encode one frame of reconstructed hits → transformer →
+cluster in embedding space. **Do not pass `tid`.** Output is one integer per
+hit: `0,1,2,…` = cluster (a predicted track), `-1` = unassigned / noise.
+
+Required per hit: `x, y, z, layer, tot, time`. Optional: `r`, `phi` (else
+computed from `x,y`). Units as in the dump (mm, ns, 0-based layer).
+
+```tcsh
+python -m ml.infer --ckpt runs/best.pt --root /path/to/scitt.root
+python -m ml.infer --ckpt runs/best.pt --root /path/to/scitt.root --frame-id 42
+```
+
+From Python (same directory / venv):
+
+```python
+from ml.infer import load_model, cluster_hits
+import numpy as np
+
+model, device, _ = load_model("runs/best.pt")
+hits = {
+    "x": np.array([...], dtype=np.float32),
+    "y": np.array([...], dtype=np.float32),
+    "z": np.array([...], dtype=np.float32),
+    "layer": np.array([...], dtype=np.int64),   # 0,1,2
+    "tot": np.array([...], dtype=np.float32),
+    "time": np.array([...], dtype=np.float32),
+}
+labels = cluster_hits(model, hits, device)   # shape [N]
+# hits with the same label belong to the same predicted track
+```
+
+There is no helix fit yet: this only assigns hits to clusters.
 
 ### What training does
 
