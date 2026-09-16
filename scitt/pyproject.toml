@@ -1,0 +1,16 @@
+[project]
+name = "scitt-ml"
+version = "0.1.0"
+description = "Frame-level transformer track finding on Mu3e silicon hits"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "torch",
+    "scikit-learn",
+]
+
+[project.optional-dependencies]
+root = ["uproot"]
+
+[tool.setuptools.packages.find]
+include = ["ml*"]
