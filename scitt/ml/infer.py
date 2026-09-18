@@ -1,7 +1,8 @@
 """Apply a trained hit transformer to one frame of reconstructed hits.
 
-No ``tid`` / ``hid`` / ``pid`` is used. Output is a cluster id per hit
-(``-1`` = unassigned / noise).
+Clustering does not use ``tid`` / ``hid`` / ``pid``. Output is a cluster id
+per hit (``-1`` = unassigned / noise). If those labels are in the ROOT file
+they are printed next to ``cl`` for comparison only.
 
 tcsh, from this ``scitt/`` directory::
 
@@ -85,6 +86,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--root", default="", help="scitt ROOT file; clusters the chosen frame")
     p.add_argument("--frame-id", type=int, default=-1, help="frame_id to run; default = first frame")
     p.add_argument("--device", default="auto")
+    p.add_argument("--t-beta", type=float, default=0.2, help="clustering seed threshold")
+    p.add_argument("--t-dist", type=float, default=0.8, help="max embedding distance to join a seed")
     return p.parse_args(argv)
 
 
@@ -105,13 +108,60 @@ def main(argv: list[str] | None = None) -> int:
         if not match:
             raise SystemExit("frame_id %s not in %s" % (args.frame_id, args.root))
         fr = match[0]
-    labels = cluster_hits(model, fr, device)
+    labels = cluster_hits(model, fr, device, t_beta=args.t_beta, t_dist=args.t_dist)
     n_cl = int(np.sum(np.unique(labels) >= 0))
     n_noise = int(np.sum(labels < 0))
     print("frame_id=%s  hits=%d  clusters=%d  unassigned=%d"
           % (fr["frame_id"], labels.size, n_cl, n_noise))
     print("labels:", " ".join(str(int(x)) for x in labels))
+    _print_hit_table(fr, labels)
     return 0
+
+
+def _col(frame: dict, key: str, n: int, dtype):
+    if key not in frame:
+        return None
+    arr = np.asarray(frame[key])
+    if arr.shape[0] != n:
+        return None
+    return arr.astype(dtype, copy=False)
+
+
+def _print_hit_table(frame: dict, labels: np.ndarray) -> None:
+    n = int(labels.size)
+    tid = _col(frame, "tid", n, np.int64)
+    pid = _col(frame, "pid", n, np.int64)
+    hid = _col(frame, "hid", n, np.int64)
+    layer = _col(frame, "layer", n, np.int64)
+    r = _col(frame, "r", n, np.float32)
+    z = _col(frame, "z", n, np.float32)
+    print("%3s %5s %6s %5s %5s %5s %7s %8s" %
+          ("i", "cl", "tid", "pid", "hid", "lyr", "r", "z"))
+    for i in range(n):
+        print("%3d %5d %6s %5s %5s %5s %7s %8s" % (
+            i,
+            int(labels[i]),
+            "%d" % tid[i] if tid is not None else "-",
+            "%d" % pid[i] if pid is not None else "-",
+            "%d" % hid[i] if hid is not None else "-",
+            "%d" % layer[i] if layer is not None else "-",
+            "%.1f" % r[i] if r is not None else "-",
+            "%.1f" % z[i] if z is not None else "-",
+        ))
+    if tid is None:
+        return
+    print("cluster vs tid (nhits):")
+    for c in np.unique(labels):
+        sel = labels == c
+        ut, ct = np.unique(tid[sel], return_counts=True)
+        bits = " ".join("tid=%dx%d" % (int(t), int(nh)) for t, nh in zip(ut, ct))
+        print("  cl=%d  %s" % (int(c), bits))
+    print("tid vs cluster (nhits):")
+    for t in np.unique(tid):
+        sel = tid == t
+        ul, clc = np.unique(labels[sel], return_counts=True)
+        bits = " ".join("cl=%dx%d" % (int(c), int(nh)) for c, nh in zip(ul, clc))
+        print("  tid=%d  nhits=%d  %s" % (int(t), int(sel.sum()), bits))
 
 
 if __name__ == "__main__":
