@@ -298,6 +298,9 @@
             <div class="half-column">
                 <div class="data-box">
                     <h3>Detcalibrations</h3>
+                    <div style="margin-bottom: 8px; flex-shrink: 0;">
+                        <input type="text" class="form-control" id="detcal-name-filter" placeholder="Filter names...">
+                    </div>
                     <div id="detcal-names-loading" class="loading"></div>
                     <div class="table-responsive">
                         <table class="table table-hover" id="detcal-names-table">
@@ -1771,6 +1774,51 @@
             }
         }
 
+        function filterDetcalNames() {
+            const filterValue = document.getElementById('detcal-name-filter').value.toLowerCase();
+            const tbody = document.querySelector('#detcal-names-table tbody');
+            tbody.innerHTML = '';
+
+            const names = window.allDetcalNames || [];
+            if (names.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="2" class="text-center">No detcalibrations found</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+
+            const selectedName = localStorage.getItem('selectedDetcalName');
+            const filtered = names.filter(row => (row.name || '').toLowerCase().includes(filterValue));
+            if (filtered.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="2" class="text-center">No matching names</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+
+            filtered.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-name', row.name);
+                tr.innerHTML = `
+                    <td>${escapeHtml(row.name || '')}</td>
+                    <td>${row.count || 0}</td>
+                `;
+                tr.addEventListener('click', () => {
+                    document.querySelectorAll('#detcal-names-table tr').forEach(r => r.classList.remove('selected'));
+                    tr.classList.add('selected');
+                    localStorage.setItem('selectedDetcalName', row.name);
+                    document.getElementById('detcalUploadName').value = row.name;
+                    loadDetcalRuns(row.name);
+                });
+                if (selectedName === row.name) {
+                    tr.classList.add('selected');
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('detcal-name-filter').addEventListener('input', filterDetcalNames);
+
         async function loadDetcalSummary() {
             setLoading('detcal-names-loading', true);
             clearTable('detcal-names-table');
@@ -1781,37 +1829,14 @@
                     throw new Error(await response.text() || `HTTP error! status: ${response.status}`);
                 }
                 const names = await response.json();
-                const tbody = document.querySelector('#detcal-names-table tbody');
-                if (!names || names.length === 0) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = '<td colspan="2" class="text-center">No detcalibrations found</td>';
-                    tbody.appendChild(tr);
+                window.allDetcalNames = names || [];
+                filterDetcalNames();
+                if (window.allDetcalNames.length === 0) {
                     localStorage.removeItem('selectedDetcalName');
                     await loadDetcalRuns('');
                     return;
                 }
-                let restored = false;
-                names.forEach(row => {
-                    const tr = document.createElement('tr');
-                    tr.setAttribute('data-name', row.name);
-                    tr.innerHTML = `
-                        <td>${escapeHtml(row.name || '')}</td>
-                        <td>${row.count || 0}</td>
-                    `;
-                    tr.addEventListener('click', () => {
-                        document.querySelectorAll('#detcal-names-table tr').forEach(r => r.classList.remove('selected'));
-                        tr.classList.add('selected');
-                        localStorage.setItem('selectedDetcalName', row.name);
-                        document.getElementById('detcalUploadName').value = row.name;
-                        loadDetcalRuns(row.name);
-                    });
-                    if (selectedName === row.name) {
-                        tr.classList.add('selected');
-                        restored = true;
-                    }
-                    tbody.appendChild(tr);
-                });
-                if (restored) {
+                if (selectedName && window.allDetcalNames.some(row => row.name === selectedName)) {
                     document.getElementById('detcalUploadName').value = selectedName;
                     await loadDetcalRuns(selectedName);
                 } else {
