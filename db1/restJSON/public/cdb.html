@@ -421,6 +421,33 @@
         </div>
     </div>
 
+    <!-- Detcal File Viewer Modal -->
+    <div class="modal fade" id="detcalViewModal" tabindex="-1" aria-labelledby="detcalViewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detcalViewModalLabel">Detcalibration file</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <div><strong>Filename:</strong> <span id="detcalViewFilename"></span></div>
+                        <div><strong>Name:</strong> <span id="detcalViewName"></span></div>
+                        <div><strong>Run:</strong> <span id="detcalViewRun"></span></div>
+                        <div><strong>Date:</strong> <span id="detcalViewDate"></span></div>
+                        <div><strong>Comment:</strong> <span id="detcalViewComment"></span></div>
+                    </div>
+                    <hr>
+                    <h6>File contents</h6>
+                    <pre id="detcalViewContents" style="max-height: 55vh; overflow: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Detcal Upload Modal -->
     <div class="modal fade" id="detcalUploadModal" tabindex="-1" aria-labelledby="detcalUploadModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -1540,6 +1567,81 @@
             return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
         }
 
+        function looksBinaryAscii(text) {
+            if (!text) return false;
+            const sample = text.slice(0, 4096);
+            let bad = 0;
+            for (let i = 0; i < sample.length; i++) {
+                const c = sample.charCodeAt(i);
+                if (c === 0 || (c < 9) || (c > 13 && c < 32)) bad++;
+            }
+            return sample.length > 0 && (bad / sample.length) > 0.05;
+        }
+
+        function formatDetcalAscii(text) {
+            const trimmed = text.trim();
+            if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                try {
+                    return JSON.stringify(JSON.parse(text), null, 2);
+                } catch (e) {
+                    return text;
+                }
+            }
+            return text;
+        }
+
+        async function showDetcalDetails(rowData) {
+            const name = rowData.name;
+            const run = rowData.run;
+            if (!name || run === undefined || run === '') return;
+
+            document.getElementById('detcalViewFilename').textContent = rowData.filename || '';
+            document.getElementById('detcalViewName').textContent = name;
+            document.getElementById('detcalViewRun').textContent = run;
+            document.getElementById('detcalViewDate').textContent = rowData.date || '';
+            document.getElementById('detcalViewComment').textContent = rowData.comment || '';
+            document.getElementById('detcalViewContents').textContent = 'Loading file...';
+
+            const modal = new bootstrap.Modal(document.getElementById('detcalViewModal'));
+            modal.show();
+
+            try {
+                const response = await fetch(`/detcal/${encodeURIComponent(name)}/${encodeURIComponent(run)}?exact=1`);
+                if (!response.ok) {
+                    throw new Error(await response.text() || `HTTP error! status: ${response.status}`);
+                }
+                const contentDisposition = response.headers.get('Content-Disposition');
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        document.getElementById('detcalViewFilename').textContent = filenameMatch[1];
+                    }
+                }
+                const buffer = await response.arrayBuffer();
+                const bytes = new Uint8Array(buffer);
+                const decoder = new TextDecoder('utf-8', { fatal: false });
+                let text = decoder.decode(bytes);
+                const maxChars = 2 * 1024 * 1024;
+                let truncated = false;
+                if (text.length > maxChars) {
+                    text = text.slice(0, maxChars);
+                    truncated = true;
+                }
+                if (looksBinaryAscii(text)) {
+                    document.getElementById('detcalViewContents').textContent =
+                        `Binary file (${bytes.length} bytes). Download it to inspect the contents.`;
+                    return;
+                }
+                const formatted = formatDetcalAscii(text);
+                document.getElementById('detcalViewContents').textContent =
+                    truncated ? formatted + `\n\n... truncated after ${maxChars} characters ...` : formatted;
+            } catch (error) {
+                console.error('Error loading detcal file:', error);
+                document.getElementById('detcalViewContents').textContent =
+                    'Error loading file: ' + error.message;
+            }
+        }
+
         async function downloadDetcal(name, run, button) {
             const originalText = button.innerHTML;
             button.disabled = true;
@@ -1627,6 +1729,11 @@
                 }
                 rows.forEach(row => {
                     const tr = document.createElement('tr');
+                    tr.dataset.name = name;
+                    tr.dataset.run = String(row.run ?? '');
+                    tr.dataset.filename = row.filename || '';
+                    tr.dataset.date = formatDetcalDate(row.date);
+                    tr.dataset.comment = row.comment || '';
                     tr.innerHTML = `
                         <td>${row.run ?? ''}</td>
                         <td>${escapeHtml(formatDetcalDate(row.date))}</td>
@@ -1643,17 +1750,24 @@
                             </div>
                         </td>
                     `;
+                    tr.addEventListener('click', () => {
+                        document.querySelectorAll('#detcal-runs-table tr').forEach(r => r.classList.remove('selected'));
+                        tr.classList.add('selected');
+                        showDetcalDetails(tr.dataset);
+                    });
                     tbody.appendChild(tr);
                 });
                 tbody.querySelectorAll('.detcal-download-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
+                        e.stopPropagation();
                         downloadDetcal(btn.dataset.name, btn.dataset.run, btn);
                     });
                 });
                 tbody.querySelectorAll('.detcal-delete-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
+                        e.stopPropagation();
                         deleteDetcal(btn.dataset.name, btn.dataset.run, btn);
                     });
                 });
