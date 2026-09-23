@@ -36,26 +36,52 @@
             height: 40px;
             box-sizing: border-box;
         }
-        .container-fluid h1 {
-            margin: 0 0 10px 0;
-            padding: 0;
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
             flex-shrink: 0;
+            margin-bottom: 10px;
+        }
+        .page-header h1 {
+            margin: 0;
+            padding: 0;
+            font-size: 1.6rem;
+            white-space: nowrap;
+        }
+        #view-tabs {
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .view-panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .view-panel.active {
+            display: flex;
         }
         .main-row {
             display: flex;
             gap: 10px;
-            flex: 0 0 30vh;
+            flex: 1;
             min-height: 0;
             margin-bottom: 10px;
         }
         .payloads-row {
             display: flex;
-            flex: 0 0 30vh;
+            flex: 1;
             min-height: 0;
-            margin-bottom: 10px;
+            margin-bottom: 0;
         }
-        .detconfigs-row {
+        .detconfigs-row,
+        .detcal-row {
             display: flex;
+            gap: 10px;
             flex: 1;
             min-height: 0;
         }
@@ -154,8 +180,22 @@
 </head>
 <body>
     <div class="container-fluid">
-        <h1 class="mb-4">MU3E CDB Browser</h1>
-        
+        <div class="page-header">
+            <h1>MU3E CDB Browser</h1>
+            <ul class="nav nav-pills" id="view-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#cdb" data-view="cdb">CDB</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#detconfigs" data-view="detconfigs">Detconfigs</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#detcal" data-view="detcal">Detcalibrations</a>
+                </li>
+            </ul>
+        </div>
+
+        <div id="view-cdb" class="view-panel active">
         <!-- Global Tags and Tags Row -->
         <div class="main-row">
             <!-- Globaltags Box -->
@@ -222,42 +262,9 @@
                 </div>
             </div>
         </div>
-
-        <!-- Payload Details Modal -->
-        <div class="modal fade" id="payloadModal" tabindex="-1" aria-labelledby="payloadModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="payloadModalLabel">Payload details</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-2">
-                            <div><strong>Hash:</strong> <span id="payloadDetailHash"></span></div>
-                            <div><strong>Tag:</strong> <span id="payloadDetailTag"></span></div>
-                            <div><strong>IOV:</strong> <span id="payloadDetailIov"></span></div>
-                            <div><strong>Date:</strong> <span id="payloadDetailDate"></span></div>
-                            <div><strong>Schema:</strong> <span id="payloadDetailSchema"></span></div>
-                            <div><strong>Comment:</strong> <span id="payloadDetailComment"></span></div>
-                            <div><strong>BLOB size:</strong> <span id="payloadDetailBlobSize"></span></div>
-                        </div>
-                        <hr>
-                        <h6>Decoded content</h6>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" id="payloadPixelMaskFullDetails">
-                            <label class="form-check-label" for="payloadPixelMaskFullDetails">
-                                Full details for pixelmask payloads
-                            </label>
-                        </div>
-                        <pre id="payloadDetailDecoded" style="max-height: 55vh; overflow: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;"></pre>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
         </div>
-        
+
+        <div id="view-detconfigs" class="view-panel">
         <!-- Detconfigs Summary Box -->
         <div class="detconfigs-row">
             <div class="full-column">
@@ -283,6 +290,54 @@
                     </div>
                 </div>
             </div>
+        </div>
+        </div>
+
+        <div id="view-detcal" class="view-panel">
+        <div class="detcal-row">
+            <div class="half-column">
+                <div class="data-box">
+                    <h3>Detcalibrations</h3>
+                    <div id="detcal-names-loading" class="loading"></div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="detcal-names-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th style="width: 80px">Runs</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="half-column">
+                <div class="data-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-shrink: 0;">
+                        <h3 style="margin: 0; padding: 0 0 8px 0; border-bottom: 2px solid #dee2e6;">Runs <span id="detcal-runs-label" style="font-weight: normal; color: #555; vertical-align: baseline;"></span></h3>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#detcalUploadModal">
+                            <i class="bi bi-upload"></i> Upload File
+                        </button>
+                    </div>
+                    <div id="detcal-runs-loading" class="loading"></div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="detcal-runs-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 12%">Run</th>
+                                    <th style="width: 22%">Date</th>
+                                    <th style="width: 26%">Filename</th>
+                                    <th style="width: 22%">Comment</th>
+                                    <th style="width: 120px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
     </div>
 
@@ -324,6 +379,93 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="uploadButton">
+                        <i class="bi bi-upload"></i> Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payload Details Modal -->
+    <div class="modal fade" id="payloadModal" tabindex="-1" aria-labelledby="payloadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="payloadModalLabel">Payload details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <div><strong>Hash:</strong> <span id="payloadDetailHash"></span></div>
+                        <div><strong>Tag:</strong> <span id="payloadDetailTag"></span></div>
+                        <div><strong>IOV:</strong> <span id="payloadDetailIov"></span></div>
+                        <div><strong>Date:</strong> <span id="payloadDetailDate"></span></div>
+                        <div><strong>Schema:</strong> <span id="payloadDetailSchema"></span></div>
+                        <div><strong>Comment:</strong> <span id="payloadDetailComment"></span></div>
+                        <div><strong>BLOB size:</strong> <span id="payloadDetailBlobSize"></span></div>
+                    </div>
+                    <hr>
+                    <h6>Decoded content</h6>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="payloadPixelMaskFullDetails">
+                        <label class="form-check-label" for="payloadPixelMaskFullDetails">
+                            Full details for pixelmask payloads
+                        </label>
+                    </div>
+                    <pre id="payloadDetailDecoded" style="max-height: 55vh; overflow: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detcal Upload Modal -->
+    <div class="modal fade" id="detcalUploadModal" tabindex="-1" aria-labelledby="detcalUploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detcalUploadModalLabel">Upload Detector Calibration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="detcalUploadForm">
+                        <div class="mb-3">
+                            <label for="detcalUploadName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="detcalUploadName" required
+                                   placeholder="e.g. pixelpedestal">
+                        </div>
+                        <div class="mb-3">
+                            <label for="detcalUploadRun" class="form-label">Run</label>
+                            <input type="number" class="form-control" id="detcalUploadRun" required min="0" step="1"
+                                   placeholder="e.g. 7559">
+                        </div>
+                        <div class="mb-3">
+                            <label for="detcalUploadComment" class="form-label">Comment</label>
+                            <input type="text" class="form-control" id="detcalUploadComment"
+                                   placeholder="Optional comment">
+                        </div>
+                        <div class="mb-3">
+                            <label for="detcalUploadFile" class="form-label">File</label>
+                            <input type="file" class="form-control" id="detcalUploadFile" required>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="detcalUploadReplace">
+                            <label class="form-check-label" for="detcalUploadReplace">
+                                Replace if this name+run already exists
+                            </label>
+                        </div>
+                        <div id="detcalUploadProgress" class="progress mb-3 d-none">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="detcalUploadStatus" class="alert d-none"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="detcalUploadButton">
                         <i class="bi bi-upload"></i> Upload
                     </button>
                 </div>
@@ -1382,6 +1524,320 @@
             statusDiv.classList.add('d-none');
         });
 
+        function formatDetcalDate(value) {
+            if (!value) return '';
+            const date = new Date(value);
+            return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+        }
+
+        async function downloadDetcal(name, run, button) {
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            try {
+                const response = await fetch(`/detcal/${encodeURIComponent(name)}/${encodeURIComponent(run)}?exact=1`);
+                if (!response.ok) {
+                    throw new Error(await response.text() || `HTTP error! status: ${response.status}`);
+                }
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `${name}_${run}`;
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading detcal:', error);
+                alert('Error downloading detcal: ' + error.message);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        async function deleteDetcal(name, run, button) {
+            const confirmed = confirm(`Delete detcal "${name}" for run ${run}? This cannot be undone.`);
+            if (!confirmed) return;
+
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            try {
+                const response = await fetch(`/detcal/${encodeURIComponent(name)}/${encodeURIComponent(run)}`, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!response.ok) {
+                    throw new Error(await response.text() || `HTTP error! status: ${response.status}`);
+                }
+                await loadDetcalSummary();
+                await loadDetcalRuns(name);
+            } catch (error) {
+                console.error('Error deleting detcal:', error);
+                alert('Error deleting detcal: ' + error.message);
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+
+        async function loadDetcalRuns(name) {
+            const tbody = document.querySelector('#detcal-runs-table tbody');
+            const label = document.getElementById('detcal-runs-label');
+            label.textContent = name || '';
+            clearTable('detcal-runs-table');
+            if (!name) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="5" class="text-center">Select a name</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+
+            setLoading('detcal-runs-loading', true);
+            try {
+                const response = await fetch(`/detcal/${encodeURIComponent(name)}`);
+                if (!response.ok) {
+                    throw new Error(await response.text() || `HTTP error! status: ${response.status}`);
+                }
+                const rows = await response.json();
+                if (!rows || rows.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="5" class="text-center">No runs found</td>';
+                    tbody.appendChild(tr);
+                    return;
+                }
+                rows.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${row.run ?? ''}</td>
+                        <td>${escapeHtml(formatDetcalDate(row.date))}</td>
+                        <td>${escapeHtml(row.filename || '')}</td>
+                        <td title="${escapeHtml(row.comment || '')}">${escapeHtml(row.comment || '')}</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-primary detcal-download-btn" data-name="${escapeHtml(name)}" data-run="${row.run}" title="Download this run">
+                                    <i class="bi bi-download"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger detcal-delete-btn" data-name="${escapeHtml(name)}" data-run="${row.run}" title="Delete this run">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                tbody.querySelectorAll('.detcal-download-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        downloadDetcal(btn.dataset.name, btn.dataset.run, btn);
+                    });
+                });
+                tbody.querySelectorAll('.detcal-delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        deleteDetcal(btn.dataset.name, btn.dataset.run, btn);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading detcal runs:', error);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" class="text-center text-danger">Error: ${escapeHtml(error.message)}</td>`;
+                tbody.appendChild(tr);
+            } finally {
+                setLoading('detcal-runs-loading', false);
+            }
+        }
+
+        async function loadDetcalSummary() {
+            setLoading('detcal-names-loading', true);
+            clearTable('detcal-names-table');
+            const selectedName = localStorage.getItem('selectedDetcalName');
+            try {
+                const response = await fetch('/detcal/findAll/detcalSummary');
+                if (!response.ok) {
+                    throw new Error(await response.text() || `HTTP error! status: ${response.status}`);
+                }
+                const names = await response.json();
+                const tbody = document.querySelector('#detcal-names-table tbody');
+                if (!names || names.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="2" class="text-center">No detcalibrations found</td>';
+                    tbody.appendChild(tr);
+                    localStorage.removeItem('selectedDetcalName');
+                    await loadDetcalRuns('');
+                    return;
+                }
+                let restored = false;
+                names.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.setAttribute('data-name', row.name);
+                    tr.innerHTML = `
+                        <td>${escapeHtml(row.name || '')}</td>
+                        <td>${row.count || 0}</td>
+                    `;
+                    tr.addEventListener('click', () => {
+                        document.querySelectorAll('#detcal-names-table tr').forEach(r => r.classList.remove('selected'));
+                        tr.classList.add('selected');
+                        localStorage.setItem('selectedDetcalName', row.name);
+                        document.getElementById('detcalUploadName').value = row.name;
+                        loadDetcalRuns(row.name);
+                    });
+                    if (selectedName === row.name) {
+                        tr.classList.add('selected');
+                        restored = true;
+                    }
+                    tbody.appendChild(tr);
+                });
+                if (restored) {
+                    document.getElementById('detcalUploadName').value = selectedName;
+                    await loadDetcalRuns(selectedName);
+                } else {
+                    localStorage.removeItem('selectedDetcalName');
+                    await loadDetcalRuns('');
+                }
+            } catch (error) {
+                console.error('Error loading detcal summary:', error);
+                const tbody = document.querySelector('#detcal-names-table tbody');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="2" class="text-center text-danger">Error: ${escapeHtml(error.message)}</td>`;
+                tbody.appendChild(tr);
+            } finally {
+                setLoading('detcal-names-loading', false);
+            }
+        }
+
+        document.getElementById('detcalUploadButton').addEventListener('click', async () => {
+            const form = document.getElementById('detcalUploadForm');
+            const name = document.getElementById('detcalUploadName').value.trim();
+            const run = document.getElementById('detcalUploadRun').value.trim();
+            const comment = document.getElementById('detcalUploadComment').value.trim();
+            const fileInput = document.getElementById('detcalUploadFile');
+            const replace = document.getElementById('detcalUploadReplace').checked;
+            const progressBar = document.querySelector('#detcalUploadProgress .progress-bar');
+            const progressDiv = document.getElementById('detcalUploadProgress');
+            const statusDiv = document.getElementById('detcalUploadStatus');
+            const uploadButton = document.getElementById('detcalUploadButton');
+
+            if (!name) {
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.textContent = 'Please enter a name';
+                statusDiv.classList.remove('d-none');
+                return;
+            }
+            if (run === '' || Number(run) < 0 || !Number.isFinite(Number(run))) {
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.textContent = 'Please enter a non-negative run number';
+                statusDiv.classList.remove('d-none');
+                return;
+            }
+            if (!fileInput.files || fileInput.files.length === 0) {
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.textContent = 'Please select a file';
+                statusDiv.classList.remove('d-none');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('run', run);
+            if (comment) formData.append('comment', comment);
+            formData.append('file', fileInput.files[0]);
+            if (replace) formData.append('replace', '1');
+
+            try {
+                uploadButton.disabled = true;
+                progressDiv.classList.remove('d-none');
+                statusDiv.classList.add('d-none');
+                progressBar.style.width = '0%';
+
+                const response = await fetch('/detcal/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const raw = await response.text();
+                let result = null;
+                try {
+                    result = raw ? JSON.parse(raw) : null;
+                } catch (e) {
+                    result = null;
+                }
+                if (!response.ok) {
+                    throw new Error((result && result.message) || raw || `HTTP error! status: ${response.status}`);
+                }
+
+                statusDiv.className = 'alert alert-success';
+                statusDiv.textContent = (result && result.message) || 'Upload succeeded';
+                statusDiv.classList.remove('d-none');
+                progressBar.style.width = '100%';
+                form.reset();
+                document.getElementById('detcalUploadName').value = name;
+
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('detcalUploadModal'));
+                    if (modal) modal.hide();
+                    localStorage.setItem('selectedDetcalName', name);
+                    loadDetcalSummary();
+                }, 1200);
+            } catch (error) {
+                console.error('Error uploading detcal:', error);
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.textContent = 'Error uploading file: ' + error.message;
+                statusDiv.classList.remove('d-none');
+                progressBar.style.width = '0%';
+            } finally {
+                uploadButton.disabled = false;
+            }
+        });
+
+        document.getElementById('detcalUploadModal').addEventListener('hidden.bs.modal', () => {
+            const form = document.getElementById('detcalUploadForm');
+            const progressBar = document.querySelector('#detcalUploadProgress .progress-bar');
+            const progressDiv = document.getElementById('detcalUploadProgress');
+            const statusDiv = document.getElementById('detcalUploadStatus');
+            const selectedName = localStorage.getItem('selectedDetcalName') || '';
+            form.reset();
+            if (selectedName) {
+                document.getElementById('detcalUploadName').value = selectedName;
+            }
+            progressBar.style.width = '0%';
+            progressDiv.classList.add('d-none');
+            statusDiv.classList.add('d-none');
+        });
+
+        const VIEW_IDS = ['cdb', 'detconfigs', 'detcal'];
+
+        function currentViewFromHash() {
+            const hash = (window.location.hash || '#cdb').replace(/^#/, '').toLowerCase();
+            if (hash === 'detcalibrations') return 'detcal';
+            return VIEW_IDS.includes(hash) ? hash : 'cdb';
+        }
+
+        function showView(view) {
+            if (!VIEW_IDS.includes(view)) view = 'cdb';
+            document.querySelectorAll('.view-panel').forEach(panel => {
+                panel.classList.toggle('active', panel.id === `view-${view}`);
+            });
+            document.querySelectorAll('#view-tabs [data-view]').forEach(link => {
+                link.classList.toggle('active', link.dataset.view === view);
+            });
+            if (view === 'detconfigs') {
+                loadDetconfigsSummary();
+            } else if (view === 'detcal') {
+                loadDetcalSummary();
+            }
+        }
+
+        window.addEventListener('hashchange', () => showView(currentViewFromHash()));
+
         // Get and display hostname
         async function loadHostname() {
             const hostnameDisplay = document.getElementById('hostname-display');
@@ -1408,8 +1864,8 @@
         // Load initial data when page loads
         document.addEventListener('DOMContentLoaded', () => {
             loadGlobaltags();
-            loadDetconfigsSummary();
             loadHostname();
+            showView(currentViewFromHash());
         });
     </script>
 </body>

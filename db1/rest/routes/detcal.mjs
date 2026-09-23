@@ -158,6 +158,28 @@ router.post("/upload", upload.single("file"), async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
+// Summary of detcal names and how many runs each has.
+// Must be registered before /:name/:run so "findAll/detcalSummary" is not parsed as a run.
+// curl http://localhost:5050/detcal/findAll/detcalSummary
+router.get("/findAll/detcalSummary", async (req, res) => {
+  try {
+    await ensureIndexes();
+    const results = await db
+      .collection(COLLECTION)
+      .aggregate([
+        { $group: { _id: "$name", count: { $sum: 1 } } },
+        { $project: { _id: 0, name: "$_id", count: 1 } },
+        { $sort: { name: 1 } },
+      ])
+      .toArray();
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Error in detcalSummary:", error);
+    res.status(500).send({ error: error.message });
+  }
+});
+
+// ----------------------------------------------------------------------
 // Metadata for the most recent detcal with run <= :run (or exact with ?exact=1).
 // curl http://localhost:5050/detcal/pixelpedestal/7559/meta
 router.get("/:name/:run/meta", async (req, res) => {

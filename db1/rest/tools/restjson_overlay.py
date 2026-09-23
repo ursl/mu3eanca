@@ -56,6 +56,20 @@ def apply_cdb_html_overlay(path: Path) -> None:
 
     t = must_replace(
         t,
+        "        async function loadDetcalSummary() {\n"
+        "            setLoading('detcal-names-loading', true);\n",
+        "        async function loadDetcalSummary() {\n"
+        "            if (isJsonBackend) {\n"
+        "                const tbody = document.querySelector('#detcal-names-table tbody');\n"
+        "                tbody.innerHTML = '<tr><td colspan=\"2\" class=\"text-center\">detcal upload/management disabled in JSON backend mode</td></tr>';\n"
+        "                return;\n"
+        "            }\n"
+        "            setLoading('detcal-names-loading', true);\n",
+        "inject detcal skip block",
+    )
+
+    t = must_replace(
+        t,
         "                        hostnameDisplay.textContent = data.hostname || window.location.hostname;\n",
         "                        const host = data.hostname || window.location.hostname || \"Unknown\";\n"
         "                        const root = data.cdbRoot || \"unset\";\n"
@@ -88,8 +102,9 @@ def apply_cdb_html_overlay(path: Path) -> None:
         "            loadGlobaltags();\n",
         "        document.addEventListener('DOMContentLoaded', () => {\n"
         "            if (isJsonBackend) {\n"
-        "                const uploadOpenBtn = document.querySelector('[data-bs-target=\"#uploadModal\"]');\n"
-        "                if (uploadOpenBtn) uploadOpenBtn.style.display = 'none';\n"
+        "                document.querySelectorAll('[data-bs-target=\"#uploadModal\"], [data-bs-target=\"#detcalUploadModal\"]').forEach(btn => {\n"
+        "                    btn.style.display = 'none';\n"
+        "                });\n"
         "            }\n"
         "            loadGlobaltags();\n",
         "hide upload button in json mode",
