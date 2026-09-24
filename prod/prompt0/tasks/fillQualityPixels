@@ -1,0 +1,90 @@
+#! /usr/bin/perl
+# fillQualityPixels — pixel quality LM from the merged minalyzer ROOT
+# (processRuns runPixelFillQualityLM / fillQualityPixels.cc).
+#
+#   fillQualityPixels -j JSONCDB -g GT -i IGT -f merged-dqm_histos_XXXXX.root
+#
+# Login node, cwd = run2025/analysis (csv/ payloads/ live there).
+use strict;
+use warnings;
+use Cwd qw(getcwd);
+use File::Path qw(make_path);
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $name = "fillQualityPixels";
+
+my $srun = sprintf("%05d", $run);
+my $block = TaskLib::block_dir($run);
+my $mlzr = $ctx->{mlzr_dir} // "";
+my $merged = ($mlzr ne "") ? "$mlzr/$block/merged-dqm_histos_$srun.root" : "";
+
+my $anca = $ctx->{mu3eanca} // "";
+my $rundir = TaskLib::resolve_path(
+    $ctx,
+    $ctx->{fill_quality_pixels_rundir} // "{mu3eanca}/run2025/analysis",
+    $anca,
+);
+my $rel = $ctx->{fill_quality_pixels_bin} // "bin/fillQualityPixels";
+my $exe = TaskLib::resolve_path($ctx, $rel, $rundir);
+if (!-x $exe && !-f $exe) {
+    my $legacy = TaskLib::resolve_path($ctx, "bin/pixelFillQualityLM", $rundir);
+    $exe = $legacy if -x $legacy || -f $legacy;
+}
+
+my $gt  = $ctx->{cdb_GT} // "";
+my $igt = $ctx->{cdb_GT_in} // $gt;
+my $jsondir = $ctx->{cdb_json} // "";
+if ($jsondir eq "") {
+    my $db = $ctx->{cdb_dbconn} // "";
+    $jsondir = $db if $db =~ m{^/};
+}
+my $meta = $ctx->{fill_quality_pixels_meta} // "";
+$meta = TaskLib::resolve_path($ctx, $meta, $rundir) if $meta ne "";
+
+my @cmd = ($exe);
+push @cmd, "-j", $jsondir if $jsondir ne "";
+push @cmd, "-g", $gt      if $gt ne "";
+push @cmd, "-i", $igt     if $igt ne "";
+push @cmd, "-f", $merged  if $merged ne "";
+push @cmd, "-r", $meta    if $meta ne "";
+
+if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
+    exit 0;
+}
+
+if ($rundir eq "" || !-d $rundir) {
+    TaskLib::task_log($ctx, $name, "rundir missing: $rundir");
+    exit 2;
+}
+if (!-x $exe && !-f $exe) {
+    TaskLib::task_log($ctx, $name, "fillQualityPixels not found: $exe");
+    exit 2;
+}
+if ($merged eq "" || !-f $merged) {
+    TaskLib::task_log($ctx, $name, "merged ROOT missing: $merged");
+    exit 2;
+}
+if ($jsondir eq "") {
+    TaskLib::task_log($ctx, $name, "cdb_json unset (JSON CDB for -j)");
+    exit 2;
+}
+
+for my $d (qw(log out csv payloads)) {
+    make_path("$rundir/$d");
+}
+
+my $cwd = getcwd();
+chdir($rundir) or die "fillQualityPixels: cannot chdir $rundir: $!\n";
+
+TaskLib::task_log($ctx, $name, "cwd=$rundir");
+TaskLib::task_log($ctx, $name, "@cmd");
+my $rc = system(@cmd);
+
+chdir($cwd) or die "fillQualityPixels: cannot chdir back to $cwd: $!\n";
+
+exit(($rc == 0) ? 0 : 2);
