@@ -7,7 +7,7 @@ package Pipeline;
 # Per-run task list for prompt0. Tasks are executable scripts in tasks/.
 #
 #   pipeline: beam
-#   pipeline_alias: beam=midasmeta,skipSmallRuns,minalyzer,minalyzer_pdf,mu3esort,mu3etrirec
+#   pipeline_alias: beam=midasmeta,skipSmallRuns,minalyzer,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
 #
 # CLI:  ./prompt [-P beam | -P t1,t2,...] run RUN [RUN ...]
 #
@@ -238,6 +238,13 @@ sub _ctx_kv {
             "_build/UCL/Minalyzer_pdf/Minalyzer_pdf"),
         minalyzer_pdf_rundir => _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}"),
         minalyzer_pdf_mode => _strip($cfg->{minalyzer_pdf_mode} // "pdf"),
+        fill_quality_pixels_bin => _strip($cfg->{fill_quality_pixels_bin} //
+            "bin/fillQualityPixels"),
+        fill_quality_pixels_rundir => _strip($cfg->{fill_quality_pixels_rundir} //
+            "{mu3eanca}/run2025/analysis"),
+        fill_quality_pixels_meta => _strip($cfg->{fill_quality_pixels_meta} // ""),
+        cdb_json           => _strip($cfg->{cdb_json} // ""),
+        cdb_GT_in          => _strip($cfg->{cdb_GT_in} // ""),
     );
     $kv{tar_file} = ($pctx->{root} ne "" && $workdir ne "")
         ? "$pctx->{root}/slurm/$workdir.tar.gz" : "";

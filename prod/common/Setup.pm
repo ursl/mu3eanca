@@ -25,6 +25,7 @@ package Setup;
 # History
 #         2026/07/13 first shot
 #         2026/07/13 multi-repo rewrite
+#         2026/10/14 build_subdir: cmake inside a clone subdirectory
 # ----------------------------------------------------------------------
 
 use strict;
@@ -188,6 +189,7 @@ sub setup_contexts_from_config {
             path          => "$basedir/$workdir",
             basedir       => $basedir,
             build         => $repo->{build},
+            build_subdir  => _strip($repo->{build_subdir} // ""),
             relink        => $repo->{relink},
             submodules    => $repo->{submodules},
             install       => $repo->{install} ? 1 : 0,
@@ -488,11 +490,24 @@ sub _expand_vars {
 }
 
 # ----------------------------------------------------------------------
+# Directory that contains CMakeLists.txt. build_subdir is relative to the clone.
+sub _build_source_dir {
+    my ($s) = @_;
+    my $sub = _strip($s->{build_subdir} // "");
+    return $s->{path} if $sub eq "";
+    return "$s->{path}/$sub";
+}
+
+# ----------------------------------------------------------------------
 sub setup_build {
     my ($s) = @_;
     return unless $s->{build};
 
-    my $build = "$s->{path}/_build";
+    my $src = _build_source_dir($s);
+    if (($s->{build_subdir} // "") ne "" && !$s->{dry_run} && !-d $src) {
+        die "Setup: build_subdir '$s->{build_subdir}' not found under $s->{path}\n";
+    }
+    my $build = "$src/_build";
     my $jobs  = $s->{make_jobs};
     my $args  = _expand_vars($s, $s->{cmake_args} // "");
     my @cmake = ("cmake", "..");
@@ -630,6 +645,9 @@ sub setup_status_repo {
     print("  commit:    $s->{commit}\n") if defined $s->{commit} && $s->{commit} ne "";
     print("  merges:    ", (@{$s->{merges}} ? join(", ", @{$s->{merges}}) : "(none)"), "\n");
     print("  build:     ", ($s->{build} ? "yes" : "no"), "\n");
+    if (($s->{build_subdir} // "") ne "") {
+        print("  build_subdir: $s->{build_subdir}\n");
+    }
     print("  install:   ", ($s->{install} ? "yes" : "no"), "\n");
     print("  relink:    ", ($s->{relink} ? "yes" : "no"), "\n");
     print("  submodules:", ($s->{submodules} ? "yes" : "no"), "\n");

@@ -339,6 +339,13 @@ sub prompt_status {
     my $pdfrun = _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}");
     $pdfrun =~ s/\{mu3eana\}/$ana/g if $ana ne "";
     print("  minalyzer_pdf cwd: $pdfrun\n") if $pdfrun ne "";
+    my $fqrel = _strip($cfg->{fill_quality_pixels_bin} // "bin/fillQualityPixels");
+    my $fqdir = _strip($cfg->{fill_quality_pixels_rundir} // "{mu3eanca}/run2025/analysis");
+    my $anca0 = _strip($cfg->{mu3eanca} // "");
+    $fqdir =~ s/\{mu3eanca\}/$anca0/g if $anca0 ne "";
+    my $fqexe = ($fqrel =~ m{^/}) ? $fqrel : (($fqdir ne "") ? "$fqdir/$fqrel" : $fqrel);
+    print("  fillQualityPixels: ", ((-x $fqexe || -f $fqexe) ? "yes" : "no"), "  $fqexe\n")
+        if $fqexe ne "";
     print("  alignment ROOT:    $align (", (-f $align ? "present" : "missing"), ")\n");
     print("  githashes:         ",
         (-f "$ctx->{root}/githashes" ? "present" : "missing"), "\n");
@@ -416,6 +423,14 @@ sub prompt_cleanup {
         $pdfdir =~ s/\{mu3eana\}/$ana/g if $ana ne "";
         _rm_matching($ctx, $pdfdir, $re) if $pdfdir ne "" && $pdfdir ne $ana;
         _rm_matching($ctx, $ana, $re);
+        my $fqdir = _strip($cfg->{fill_quality_pixels_rundir} // "{mu3eanca}/run2025/analysis");
+        my $anca = _strip($cfg->{mu3eanca} // $ctx->{mu3eanca} // "");
+        $fqdir =~ s/\{mu3eanca\}/$anca/g if $anca ne "";
+        if ($fqdir ne "") {
+            for my $sub (qw(csv payloads log)) {
+                _rm_matching($ctx, "$fqdir/$sub", $re);
+            }
+        }
         my $pdfbin = _strip($cfg->{minalyzer_pdf_bin} // "");
         if ($pdfbin ne "" && $ana ne "") {
             require File::Basename;

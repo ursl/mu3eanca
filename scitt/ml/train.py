@@ -51,8 +51,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--dropout", type=float, default=0.1)
     p.add_argument("--loss", choices=("oc", "contrastive"), default="oc")
     p.add_argument("--kill-mode", choices=("none", "hit", "sensor", "chip", "layer"), default="sensor")
-    p.add_argument("--kill-frac", type=float, default=0.25, help="max drop probability in training")
-    p.add_argument("--eval-fracs", default="0,0.15,0.3,0.5", help="comma-separated drop scan")
+    p.add_argument("--kill-frac", type=float, default=0.25, help="max drop probability in training (collate)")
+    p.add_argument("--eval-kill", action="store_true",
+                   help="also evaluate val@kill each epoch (slow; does not affect weights)")
+    p.add_argument("--eval-fracs", default="",
+                   help="comma-separated drop scan after training; empty skips it")
     p.add_argument("--min-hits", type=int, default=2, help="reconstructable after drop")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", default="auto")
@@ -128,7 +131,10 @@ def train_one_epoch(model, loader, opt, device, loss_name: str) -> dict[str, flo
 
 
 @torch.no_grad()
-def predict_frame(model, frame: dict, device: torch.device) -> np.ndarray:
+def predict_frame(
+    model, frame: dict, device: torch.device,
+    t_beta: float = 0.2, t_dist: float = 0.8,
+) -> np.ndarray:
     enc = encode_frame(frame)
     feats = torch.from_numpy(enc["features"]).unsqueeze(0).to(device)
     mask = torch.ones(1, feats.shape[1], dtype=torch.bool, device=device)
@@ -136,7 +142,7 @@ def predict_frame(model, frame: dict, device: torch.device) -> np.ndarray:
         return np.zeros(0, dtype=np.int64)
     model.eval()
     emb, beta = model(feats, mask)
-    return cluster_condensation(emb[0], beta[0], mask[0])
+    return cluster_condensation(emb[0], beta[0], mask[0], t_beta=t_beta, t_dist=t_dist)
 
 
 def evaluate(
@@ -149,6 +155,8 @@ def evaluate(
     seed: int = 0,
     min_hits: int = 2,
     use_baseline: bool = False,
+    t_beta: float = 0.2,
+    t_dist: float = 0.8,
 ) -> dict[str, float]:
     rng = np.random.default_rng(seed)
     acc = MetricAccum()
@@ -161,7 +169,7 @@ def evaluate(
             pred = dbscan_phi_z_t(killed)
         else:
             assert model is not None and device is not None
-            pred = predict_frame(model, killed, device)
+            pred = predict_frame(model, killed, device, t_beta=t_beta, t_dist=t_dist)
         acc.add(
             killed["tid"],
             pred,
@@ -255,17 +263,18 @@ def main(argv: list[str] | None = None) -> int:
             kill_mode="none", kill_frac=0.0, seed=args.seed + epoch,
             min_hits=args.min_hits,
         )
-        drop_m = evaluate(
-            val_ds, model=model, device=device,
-            kill_mode=args.kill_mode, kill_frac=args.kill_frac,
-            seed=args.seed + epoch, min_hits=args.min_hits,
-        )
         print("epoch %03d  loss=%.4f  att=%.3f rep=%.3f beta=%.3f noise=%.3f"
               % (epoch, stats.get("loss", float("nan")),
                  stats.get("att", 0.0), stats.get("rep", 0.0),
                  stats.get("beta", 0.0), stats.get("noise", 0.0)))
         print("  " + format_metrics("val", val_m))
-        print("  " + format_metrics("val@kill=%.2f" % args.kill_frac, drop_m))
+        if args.eval_kill:
+            drop_m = evaluate(
+                val_ds, model=model, device=device,
+                kill_mode=args.kill_mode, kill_frac=args.kill_frac,
+                seed=args.seed + epoch, min_hits=args.min_hits,
+            )
+            print("  " + format_metrics("val@kill=%.2f" % args.kill_frac, drop_m))
         if val_m["efficiency"] >= best_eff:
             best_eff = val_m["efficiency"]
             save_ckpt(out_dir / "best.pt", model, args)
@@ -273,23 +282,24 @@ def main(argv: list[str] | None = None) -> int:
     save_ckpt(out_dir / "last.pt", model, args)
 
     fracs = [float(x) for x in args.eval_fracs.split(",") if x.strip() != ""]
-    scan_mode = args.kill_mode if args.kill_mode != "none" else "sensor"
-    print("drop scan  mode=%s  (reconstructable if >= %d hits remain)"
-          % (scan_mode, args.min_hits))
-    print("%8s  %8s %8s %8s  %8s %8s %8s"
-          % ("frac", "nn_eff", "nn_fake", "nn_recurl", "db_eff", "db_fake", "db_recurl"))
-    rows = drop_scan(
-        val_ds, fracs, model=model, device=device,
-        kill_mode=scan_mode, seed=args.seed + 999,
-        min_hits=args.min_hits, with_baseline=not args.no_baseline,
-    )
-    for frac, nn_m, bl_m in rows:
-        bl = bl_m or {"efficiency": 0.0, "fake_rate": 0.0, "recurl_efficiency": 0.0}
-        print("%8.2f  %8.3f %8.3f %8.3f  %8.3f %8.3f %8.3f"
-              % (frac,
-                 nn_m.get("efficiency", 0.0), nn_m.get("fake_rate", 0.0),
-                 nn_m.get("recurl_efficiency", 0.0),
-                 bl["efficiency"], bl["fake_rate"], bl["recurl_efficiency"]))
+    if fracs:
+        scan_mode = args.kill_mode if args.kill_mode != "none" else "sensor"
+        print("drop scan  mode=%s  (reconstructable if >= %d hits remain)"
+              % (scan_mode, args.min_hits))
+        print("%8s  %8s %8s %8s  %8s %8s %8s"
+              % ("frac", "nn_eff", "nn_fake", "nn_recurl", "db_eff", "db_fake", "db_recurl"))
+        rows = drop_scan(
+            val_ds, fracs, model=model, device=device,
+            kill_mode=scan_mode, seed=args.seed + 999,
+            min_hits=args.min_hits, with_baseline=not args.no_baseline,
+        )
+        for frac, nn_m, bl_m in rows:
+            bl = bl_m or {"efficiency": 0.0, "fake_rate": 0.0, "recurl_efficiency": 0.0}
+            print("%8.2f  %8.3f %8.3f %8.3f  %8.3f %8.3f %8.3f"
+                  % (frac,
+                     nn_m.get("efficiency", 0.0), nn_m.get("fake_rate", 0.0),
+                     nn_m.get("recurl_efficiency", 0.0),
+                     bl["efficiency"], bl["fake_rate"], bl["recurl_efficiency"]))
     print("wrote %s" % (out_dir / "last.pt"))
     return 0
 

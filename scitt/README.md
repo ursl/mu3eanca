@@ -216,6 +216,23 @@ labels = cluster_hits(model, hits, device)   # shape [N]
 
 There is no helix fit yet: this only assigns hits to clusters.
 
+### Scan clustering (`t_dist`, `t_beta`)
+
+These are **inference** cuts, not training. One `best.pt` is enough: embeddings
+are computed once, then clustered with each threshold. `--seed` / `--val-frac`
+must match the training run to reuse the same val frames. Default `--min-hits 3`.
+
+```tcsh
+python -m ml.scan_cluster --ckpt runs/best.pt --root /path/to/scitt.root \
+  --t-dists 0.4,0.6,0.8,1.0,1.2 --t-betas 0.1,0.2,0.3 --min-hits 3
+```
+
+A single frame with a chosen cut:
+
+```tcsh
+python -m ml.infer --ckpt runs/best.pt --root /path/to/scitt.root --frame-id 42 --t-dist 0.5
+```
+
 ### What training does
 
 1. Load frames (`hits` tree grouped by `frame_id`, or synthetic).
@@ -223,8 +240,8 @@ There is no helix fit yet: this only assigns hits to clusters.
 3. 2-layer transformer encoder → per-hit embedding + condensation score β.
 4. Loss: object condensation on `tid` (or `--loss contrastive`).
 5. Inference: cluster embeddings (**no `tid`**). Recurls should stay one instance.
-6. After the last epoch, print a **drop scan**: NN vs DBSCAN efficiency / fake
-   rate / recurl efficiency vs drop fraction.
+6. Each epoch prints `val` on the unmodified validation frames (`best.pt` uses that).
+   Kill-sample eval is optional (`--eval-kill`, `--eval-fracs`).
 
 A track is reconstructable if it still has `--min-hits` hits after the drop
 (default 2, so L1+L3 with a dead L2 still counts). Match: ≥50% efficiency and
@@ -241,8 +258,9 @@ A track is reconstructable if it still has `--min-hits` hits after the drop
 | `--max-frames` | 0 (all) | ROOT cap |
 | `--val-frac` | 0.2 | ROOT split |
 | `--kill-mode` | `sensor` | `none` `hit` `sensor` `chip` `layer` (`chip` = `sensor`) |
-| `--kill-frac` | 0.25 | max drop probability in training; eval scan uses `--eval-fracs` |
-| `--eval-fracs` | `0,0.15,0.3,0.5` | drop scan after training |
+| `--kill-frac` | 0.25 | max drop probability **in training batches** |
+| `--eval-kill` | off | extra `val@kill` each epoch (slow; not used for weights) |
+| `--eval-fracs` | empty | drop scan after the last epoch; e.g. `0,0.15,0.3,0.5` |
 | `--min-hits` | 2 | reconstructable after drop |
 | `--loss` | `oc` | `oc` or `contrastive` |
 | `--d-model` `--nlayers` `--nhead` | 64 / 2 / 4 | encoder size |

@@ -29,6 +29,7 @@ package ProdConfig;
 #   # mu3e_submodules: true
 #   # mu3e_install: true
 #   # mu3e_cmake_args: "-DCMAKE_INSTALL_PREFIX={path}/install"
+#   # mu3e_build_subdir: "summary_pdf"   # cd here before mkdir _build
 #
 #   mu3eValidation_repo: "git@bitbucket.org:mu3e/mu3eValidation"
 #   mu3eValidation_tag: "main"
@@ -68,6 +69,7 @@ package ProdConfig;
 #         2026/07/13 {id}_merges / {id}_merge aliases
 #         2026/09/02 rename RelvalConfig -> ProdConfig
 #         2026/09/02 base: merge for versioned prompt cfgs
+#         2026/10/14 build_subdir: cmake source dir inside the clone
 # ----------------------------------------------------------------------
 
 use strict;
@@ -258,6 +260,7 @@ my @REPO_SUFFIXES = qw(
     checkout_branch
     checkout_tag
     cmake_args
+    build_subdir
     submodules
     workdir
     make_jobs
@@ -327,21 +330,26 @@ sub _normalize_repo {
 
     my $jobs = $raw->{make_jobs} // $cfg->{make_jobs} // 4;
     my $cmake_args = _strip($raw->{cmake_args} // "");
+    my $build_subdir = _strip($raw->{build_subdir} // "");
+    die "repo $id: build_subdir must be a relative path inside the clone "
+        . "(got '$build_subdir')\n"
+        if $build_subdir =~ m{^/} || $build_subdir =~ m{(^|/)\.\.(/|$)};
 
     return {
-        id         => $id,
-        repo       => $url,
-        tag        => $tag,
-        branch     => $branch,
-        commit     => $commit,
-        merges     => \@merges,
-        workdir    => $workdir,
-        build      => $build,
-        relink     => $relink,
-        submodules => $submodules,
-        install    => $install,
-        make_jobs  => 0 + $jobs,
-        cmake_args => $cmake_args,
+        id           => $id,
+        repo         => $url,
+        tag          => $tag,
+        branch       => $branch,
+        commit       => $commit,
+        merges       => \@merges,
+        workdir      => $workdir,
+        build        => $build,
+        build_subdir => $build_subdir,
+        relink       => $relink,
+        submodules   => $submodules,
+        install      => $install,
+        make_jobs    => 0 + $jobs,
+        cmake_args   => $cmake_args,
     };
 }
 

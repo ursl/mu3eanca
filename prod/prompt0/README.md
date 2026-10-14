@@ -106,7 +106,7 @@ next run still starts). `./prompt list` prints aliases and the known scripts.
 
 ```
 pipeline: beam
-pipeline_alias: beam=midasmeta,skipSmallRuns,minalyzer,minalyzer_pdf,mu3esort,mu3etrirec
+pipeline_alias: beam=midasmeta,skipSmallRuns,minalyzer,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
 pipeline_alias: test=midasmeta
 ```
 
@@ -116,6 +116,7 @@ pipeline_alias: test=midasmeta
 | `skipSmallRuns` | Stop this run if RDB Events < `min_events` (exit 1) | live |
 | `minalyzer` | SLURM minalyzer over the raw file; hadd to `merged-dqm_histos_XXXXX.root` | live |
 | `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots from the merged ROOT | live |
+| `fillQualityPixels` | Login-node pixel quality LM from the merged ROOT (`run2025/analysis`) | live |
 | `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `sort/{workdir}/{block}/` | live |
 | `mu3etrirec` | SLURM mu3eTrirec on the sorted ROOT (event splitting); hadd to `run{srun}-trirec.root` under `trirec/{workdir}/{block}/` | live |
 
@@ -123,6 +124,7 @@ pipeline_alias: test=midasmeta
 ./prompt -n run 12345
 ./prompt -P beam run 12345
 ./prompt -P minalyzer_pdf run 12345
+./prompt -P fillQualityPixels run 9410
 ./prompt -P mu3esort run 9410
 ./prompt -P mu3etrirec run 9410
 ./prompt -P midasmeta,skipSmallRuns -n run 12345 12346
@@ -163,7 +165,7 @@ Runs `<= 9410` are 2025; `9411` and later are 2026 until you add the next bound.
 
 ## Adding a software package
 
-In `prompt-v7.1.cfg` (or a date-copied cfg), add a `[repo]` block next to `mu3e`. `workdir` is the directory name under the production area. `id` can contain hyphens.
+In `prompt-v7.1.cfg` (or a date-copied cfg), add a `[repo]` block next to `mu3e`. `workdir` is the directory name under the production area (the git clone). `id` can contain hyphens. Optional `build_subdir` is a path inside that clone; cmake then runs as `cd <build_subdir> && mkdir _build && cd _build && cmake ..`.
 
 ```
 [repo]
@@ -171,6 +173,7 @@ id: some-tool
 repo: "git@bitbucket.org:mu3e/some-tool"
 checkout_branch: "dev"
 workdir: some-tool
+# build_subdir: summary_pdf
 build: true
 relink: false
 submodules: false
