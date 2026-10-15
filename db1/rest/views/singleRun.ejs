@@ -625,6 +625,14 @@
      }
 
      function setBack() {
+         const ref = document.referrer;
+         try {
+             if (ref && new URL(ref).origin === window.location.origin) {
+                 window.history.back();
+                 return;
+             }
+         } catch (e) {
+         }
          window.location.href = '/rdb/';
      }
 
