@@ -361,6 +361,51 @@
         transform: rotate(180deg);
     }
 
+    .year-filter-box {
+        margin-top: 8px;
+        border: 1px solid #04AA6D;
+        border-radius: 4px;
+        background: white;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .year-filter-label {
+        font-weight: bold;
+        color: #046b45;
+    }
+
+    .year-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .year-button {
+        background: white;
+        color: #046b45;
+        border: 1px solid #04AA6D;
+        padding: 4px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .year-button:hover {
+        background: #e8f5e9;
+    }
+
+    .year-button.active {
+        background: #04AA6D;
+        color: white;
+    }
+
+    .year-button.active:hover {
+        background: #038857;
+    }
+
     /* Bulk action styles */
     .bulk-actions {
         background: #f8f9fa;
@@ -495,6 +540,18 @@ window.onload = function() {
     document.getElementById("filterRunMax").value = urlParams.get('maxRun') || '';
     document.getElementById("filterComment").value = urlParams.get('comment') || '';
     document.getElementById("filterRunClass").value = urlParams.get('runClass') || '';
+
+    if (urlParams.has('years')) {
+        const rawYears = urlParams.get('years');
+        const selected = (rawYears === '' || rawYears === 'none')
+            ? []
+            : rawYears.split(',').map(s => s.trim()).filter(Boolean);
+        document.querySelectorAll('.year-button').forEach(btn => {
+            const on = selected.includes(btn.dataset.year);
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
     
     // Set Data Quality filter values from URL parameters
     const dqFilterIds = ['filterDqMu3e', 'filterDqBeam', 'filterDqVtx', 'filterDqPix', 'filterDqFib', 'filterDqTil', 'filterDqLks'];
@@ -596,6 +653,18 @@ function toggleDqFilters() {
     }
 }
 
+function toggleYear(button) {
+    const on = !button.classList.contains('active');
+    button.classList.toggle('active', on);
+    button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    applyFilters();
+}
+
+function selectedYears() {
+    return Array.from(document.querySelectorAll('.year-button.active'))
+        .map(btn => btn.dataset.year);
+}
+
 function applyFilters() {
     isFiltered = true;
     const urlParams = new URLSearchParams();
@@ -616,6 +685,9 @@ function applyFilters() {
     if (maxRun) urlParams.set('maxRun', maxRun);
     if (comment) urlParams.set('comment', comment);
     if (runClass) urlParams.set('runClass', runClass);
+
+    const years = selectedYears();
+    urlParams.set('years', years.length ? years.join(',') : 'none');
 
     // Get Data Quality filter values
     const dqMu3e = document.getElementById("filterDqMu3e").value;
@@ -809,7 +881,7 @@ async function updateCsvDisplay() {
             
             // Copy all filter parameters
             ['onlySignificant', 'minRun', 'maxRun', 'startTime', 'stopTime', 'runClass', 'comment',
-             'dqMu3e', 'dqBeam', 'dqVtx', 'dqPix', 'dqFib', 'dqTil', 'dqLks'].forEach(param => {
+             'years', 'dqMu3e', 'dqBeam', 'dqVtx', 'dqPix', 'dqFib', 'dqTil', 'dqLks'].forEach(param => {
                 if (currentParams.has(param)) {
                     url.searchParams.set(param, currentParams.get(param));
                 }
@@ -893,6 +965,21 @@ async function updateCsvDisplay() {
                 </div>
             </div>
             
+            <div class="year-filter-box">
+                <span class="year-filter-label">Year</span>
+                <div class="year-buttons">
+                    <% const yearSelected = (y) => (locals.years || ['2026']).includes(y); %>
+                    <button type="button" class="year-button<%= yearSelected('2025') ? ' active' : '' %>"
+                        data-year="2025" title="Runs 0–9410"
+                        aria-pressed="<%= yearSelected('2025') ? 'true' : 'false' %>"
+                        onclick="toggleYear(this)">2025</button>
+                    <button type="button" class="year-button<%= yearSelected('2026') ? ' active' : '' %>"
+                        data-year="2026" title="Runs 9411 and later"
+                        aria-pressed="<%= yearSelected('2026') ? 'true' : 'false' %>"
+                        onclick="toggleYear(this)">2026</button>
+                </div>
+            </div>
+
             <!-- Data Quality Summary Filters (Collapsible) -->
             <div class="dq-filter-box">
                 <div class="dq-filter-header" onclick="toggleDqFilters()">
@@ -995,6 +1082,11 @@ async function updateCsvDisplay() {
                 <% if (locals.onlySignificant === "yes") { %>
                     (significant runs only)
                 <% } %>
+            <% } %>
+            <% if (locals.years && locals.years.length) { %>
+                — <%= locals.years.join(", ") %>
+            <% } else if (locals.years) { %>
+                — no year selected
             <% } %>
         </div>
         

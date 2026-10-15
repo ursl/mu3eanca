@@ -181,6 +181,44 @@ function mergeQueryConditions(baseQuery, additionalConditions) {
     return { ...baseQuery, ...additionalConditions };
 }
 
+// Run-number ranges for the year filter. 2025 is 0..9410; 2026 is 9411 onward.
+const RUN_YEAR_RANGES = {
+    "2025": { min: 0, max: 9410 },
+    "2026": { min: 9411 },
+};
+const DEFAULT_RUN_YEARS = ["2026"];
+
+function parseRunYears(raw) {
+    if (raw === undefined) return DEFAULT_RUN_YEARS.slice();
+    const text = String(raw).trim();
+    if (text === "" || text === "none") return [];
+    const known = new Set(Object.keys(RUN_YEAR_RANGES));
+    const seen = new Set();
+    const years = [];
+    for (const part of text.split(",")) {
+        const year = part.trim();
+        if (!known.has(year) || seen.has(year)) continue;
+        seen.add(year);
+        years.push(year);
+    }
+    return years;
+}
+
+function runYearMatch(years) {
+    if (!years.length) {
+        return { "BOR.Run number": { $in: [] } };
+    }
+    const clauses = years.map((year) => {
+        const range = RUN_YEAR_RANGES[year];
+        const cond = {};
+        if (range.min !== undefined) cond.$gte = range.min;
+        if (range.max !== undefined) cond.$lte = range.max;
+        return { "BOR.Run number": cond };
+    });
+    if (clauses.length === 1) return clauses[0];
+    return { $or: clauses };
+}
+
 // ----------------------------------------------------------------------
 router.get("/", async (req, res) => {
     let collection = await db.collection("runrecords");
@@ -213,8 +251,9 @@ router.get("/", async (req, res) => {
     const dqFib = req.query.dqFib;
     const dqTil = req.query.dqTil;
     const dqLks = req.query.dqLks;
+    const years = parseRunYears(req.query.years);
 
-    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass, comment, dqMu3e, dqBeam, dqVtx, dqPix, dqFib, dqTil, dqLks });
+    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass, comment, years, dqMu3e, dqBeam, dqVtx, dqPix, dqFib, dqTil, dqLks });
 
     try {
         // Build the aggregation pipeline
@@ -228,6 +267,8 @@ router.get("/", async (req, res) => {
         } else if (maxrun > -1) {
             pipeline.push({ $match: { "BOR.Run number": { $lte: maxrun } } });
         }
+
+        pipeline.push({ $match: runYearMatch(years) });
 
         // Filter by time if specified
         if (starttime && stoptime) {
@@ -464,6 +505,7 @@ router.get("/", async (req, res) => {
                 'dqFib': dqFib || '',
                 'dqTil': dqTil || '',
                 'dqLks': dqLks || '',
+                'years': years,
                 'pagination': pagination,
                 'page': page,
                 'pageSize': pageSize
@@ -528,6 +570,7 @@ router.get("/allRunNumbers", async (req, res) => {
     const dqFib = req.query.dqFib;
     const dqTil = req.query.dqTil;
     const dqLks = req.query.dqLks;
+    const years = parseRunYears(req.query.years);
     
     try {
         // Build the same aggregation pipeline as the main route (without pagination)
@@ -541,6 +584,8 @@ router.get("/allRunNumbers", async (req, res) => {
         } else if (maxrun > -1) {
             pipeline.push({ $match: { "BOR.Run number": { $lte: maxrun } } });
         }
+
+        pipeline.push({ $match: runYearMatch(years) });
 
         // Filter by time if specified
         if (starttime && stoptime) {
