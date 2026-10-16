@@ -30,8 +30,8 @@ getopts('df:n:');
 
 print "updateRunDB executed at ". localtime, "\n";
 
-my $RDBURL = "http://pc11740/rdb/runrecords";
-my $RDBADDURL = "http://pc11740/rdb/addAttribute";
+my $RDBURL = "http://mu3edb0/rdb/runrecords";
+my $RDBADDURL = "http://mu3edb0/rdb/addAttribute";
 my $RUNLOGDIR = "/home/mu3e/online/message/runlogs";
 my $ATTRDIR = "/home/ursl/mu3e/software/mu3eanca/db1/rest";
 my $RUNSDONE = "/home/ursl/mu3e/software/mu3eanca/runs.txt";
