@@ -9,8 +9,10 @@
 #
 # Options:  -d     debug, nothing is updated
 #           -n X   do at most X updates
+#           -r X   do run X only
 #
 # History 
+#         2026/10/16 start with 2026, add single run capability
 #         2025/05/16 add upload of DataQuality and RunInfo attributes
 #         2025/05/06 migration of path
 #         2025/05/01 migration of path
@@ -25,7 +27,7 @@
 use Getopt::Std;
 use File::Basename;
 
-getopts('df:n:');
+getopts('df:n:r:');
 
 
 print "updateRunDB executed at ". localtime, "\n";
@@ -35,6 +37,12 @@ my $RDBADDURL = "http://mu3edb0/rdb/addAttribute";
 my $RUNLOGDIR = "/home/mu3e/online/message/runlogs";
 my $ATTRDIR = "/home/ursl/mu3e/software/mu3eanca/db1/rest";
 my $RUNSDONE = "/home/ursl/mu3e/software/mu3eanca/runs.txt";
+
+my $singleRun = -1;
+if ($opt_r) {
+    $singleRun = $opt_r;
+}
+
 
 # -- read list of runs already done
 open(IN,  "$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE\n";
@@ -86,15 +94,21 @@ closedir RNLG;
 
 my $cnt = 0; 
 foreach $d (@runsToDo) {
-    print("updateRunDB for record ->$d<-\n");
-    if ($opt_n && $cnt == $opt_n) {
-        exit;
-    }
 
     my $runno = $d;
     $runno =~ s/\.json$//;
     $runno =~ s/^runlog_//;
     $runno = int($runno);
+
+    if ($singleRun > -1 && $runno != $singleRun) {
+        next;
+    }
+
+    print("updateRunDB for record ->$d<-\n");
+    if ($opt_n && $cnt == $opt_n) {
+        exit;
+    }
+
     my $dqFile = "$ATTRDIR/dqTemplate.json";
     my $riFile = "$ATTRDIR/runInfoTemplate.json";
 
