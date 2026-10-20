@@ -20,8 +20,6 @@ use File::Basename;
 
 getopts('d')  ;
 
-my $DEBUG = $opt_d;
-
 my $LAZYDIR = "/data/experiment/mu3e/data/2026/lazy";
 my $RUNRAWDATA = "/data/experiment/mu3e/data/2026/raw/";
 
@@ -33,7 +31,7 @@ sub getLazyFiles {
   opendir(my $dh, $lazyDir) or die "Cannot open $lazyDir: $!\n";
   my @files = grep { $_ ne '.' && $_ ne '..' && ($_ =~ /\.json$/ || $_ =~ /\.mid.lz4$/) } readdir($dh);
   closedir($dh);
-  @files = sort @files;
+  @files = sort { $b cmp $a } @files;
   return @files;
 }
 
@@ -47,8 +45,25 @@ sub getRawSubDir {
 
 my @lazyFiles = getLazyFiles($LAZYDIR);
 print "Found ". scalar(@lazyFiles) . " lazy files\n";
+my $count = 0;
 foreach my $file (@lazyFiles) {
   my $rawSubDir = getRawSubDir($file);
-  print $file . " -> " . $rawSubDir . "\n";
+  my $rawDir = $RUNRAWDATA . $rawSubDir;
+  if (! -d $rawDir) {
+    print "Raw directory $rawDir does not exist, create it\n";
+    mkdir $rawDir, 0755;
+  }
+  my $rawFile = $rawDir . "/" . $file;
+  if (! -f $rawFile) {
+    print "Raw file $rawFile does not exist, copy it\n";
+    if ($opt_d) {
+      print "cp -p $file $rawFile\n";
+    } else {
+      system("cp -p $file $rawFile");
+    }
+    $count++;
+  }
 }
+
+print "Copied ". $count . " raw files\n";
 
