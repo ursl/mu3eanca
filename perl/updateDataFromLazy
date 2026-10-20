@@ -23,8 +23,6 @@ getopts('d')  ;
 my $LAZYDIR = "/data/experiment/mu3e/data/2026/lazy";
 my $RUNRAWDATA = "/data/experiment/mu3e/data/2026/raw/";
 
-print "updateDataFromLazy executed at ". localtime, "\n";
-
 # ---------------------------------------------------------------------
 sub getLazyFiles {
   my $lazyDir = shift;
@@ -46,7 +44,6 @@ sub getRawSubDir {
 
 # ---------------------------------------------------------------------
 my @lazyFiles = getLazyFiles($LAZYDIR);
-print "Found ". scalar(@lazyFiles) . " lazy files\n";
 my $count = 0;
 foreach my $file (@lazyFiles) {
   my $rawSubDir = getRawSubDir($file);
@@ -57,6 +54,9 @@ foreach my $file (@lazyFiles) {
   }
   my $rawFile = $rawDir . "/" . $file;
   if (! -f $rawFile) {
+    if ($count == 0) {
+      print "updateDataFromLazy executed at ". localtime, "\n";
+    }
     print "Raw file $rawFile does not exist, copy it\n";
     if ($opt_d) {
       print "cp -p $LAZYDIR/$file $rawFile\n";
@@ -66,6 +66,9 @@ foreach my $file (@lazyFiles) {
     $count++;
   }
 }
-
-print "Copied ". $count . " raw files\n";
+if ($count > 0) {
+  print "updateDataFromLazy executed at ". localtime, "\n";
+  print "Found ". scalar(@lazyFiles) . " lazy files\n";
+  print "Copied ". $count . " raw files\n";
+} 
 
