@@ -59,9 +59,9 @@ foreach my $file (@lazyFiles) {
   if (! -f $rawFile) {
     print "Raw file $rawFile does not exist, copy it\n";
     if ($opt_d) {
-      print "cp -p $$LAZYDIR/$file $rawFile\n";
+      print "cp -p $LAZYDIR/$file $rawFile\n";
     } else {
-      system("cp -p $$LAZYDIR/$file $rawFile");
+      system("cp -p $LAZYDIR/$file $rawFile");
     }
     $count++;
   }
