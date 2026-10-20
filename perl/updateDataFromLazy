@@ -67,8 +67,8 @@ foreach my $file (@lazyFiles) {
   }
 }
 if ($count > 0) {
-  print "updateDataFromLazy executed at ". localtime, "\n";
-  print "Found ". scalar(@lazyFiles) . " lazy files\n";
-  print "Copied ". $count . " raw files\n";
-} 
+  print "Found ". scalar(@lazyFiles) . " lazy files and copied ". $count . " raw files\n";
+} else {
+  print "updateDataFromLazy executed at ". localtime, ", nothing to do\n";
+}
 
