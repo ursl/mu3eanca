@@ -17,6 +17,7 @@
 
 use Getopt::Std;
 use File::Basename;
+use LWP::Simple;
 
 getopts('d')  ;
 
@@ -29,6 +30,7 @@ print "updateDataFromLazy executed at ". localtime, "\n";
 
 # ---------------------------------------------------------------------
 sub getLazyFiles {
+  my $lazyDir = shift;
   opendir(my $dh, $lazyDir) or die "Cannot open $lazyDir: $!\n";
   my @files = grep { $_ ne '.' && $_ ne '..' && ($_ =~ /\.json$/ || $_ =~ /\.mid.lz4$/) } readdir($dh);
   closedir($dh);
