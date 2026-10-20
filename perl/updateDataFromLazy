@@ -1,0 +1,45 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# updateDataFromLazy
+# ==================
+#           
+# Usage:   cd .../mu3eanca/perl
+#          ./updateDataFromLazy
+#
+# History 
+#         2026/10/20 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+use File::Basename;
+
+getopts('d')  ;
+
+my $DEBUG = $opt_d;
+
+my $LAZYDIR = "/data/experiment/mu3e/data/2026/lazy";
+my $RUNRAWDATA = "/data/experiment/mu3e/data/2026/raw/";
+
+print "updateDataFromLazy executed at ". localtime, "\n";
+
+# ---------------------------------------------------------------------
+sub getLazyFiles {
+  opendir(my $dh, $lazyDir) or die "Cannot open $lazyDir: $!\n";
+  my @files = grep { $_ ne '.' && $_ ne '..' && ($_ =~ /\.json$/ || $_ =~ /\.mid.lz4$/) } readdir($dh);
+  closedir($dh);
+  @files = sort @files;
+  return @files;
+}
+
+
+my @lazyFiles = getLazyFiles($LAZYDIR);
+print "Found ". scalar(@lazyFiles) . " lazy files\n";
+foreach my $file (@lazyFiles) {
+  print $file . "\n";
+}
+
