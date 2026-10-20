@@ -37,12 +37,18 @@ sub getLazyFiles {
   return @files;
 }
 
+sub getRawSubDir {
+  my $file = shift;
+  my ($run) = $file =~ /(\d+)/;
+  my $rawSubDir = sprintf("%03d", $run / 1000);
+  return $rawSubDir;
+}
+
 
 my @lazyFiles = getLazyFiles($LAZYDIR);
 print "Found ". scalar(@lazyFiles) . " lazy files\n";
 foreach my $file (@lazyFiles) {
-  my ($run) = $file =~ /(\d+)/;
-  my $rawSubDir = sprintf("%03d", $run / 1000);
+  my $rawSubDir = getRawSubDir($file);
   print $file . " -> " . $rawSubDir . "\n";
 }
 
