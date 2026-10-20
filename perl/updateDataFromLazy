@@ -43,6 +43,6 @@ print "Found ". scalar(@lazyFiles) . " lazy files\n";
 foreach my $file (@lazyFiles) {
   my ($run) = $file =~ /(\d+)/;
   my $rawSubDir = sprintf("%03d", $run / 1000);
-  print $file . "\n";
+  print $file . " -> " . $rawSubDir . "\n";
 }
 
