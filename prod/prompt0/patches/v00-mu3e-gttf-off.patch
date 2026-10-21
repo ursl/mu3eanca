@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 116768141..3197ffcb5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -47,7 +47,7 @@ endif()
+ add_subdirectory(modules/mu3eUtil)
+ 
+ 
+-option(MU3E_GTTF "Build GTTF" ON)
++option(MU3E_GTTF "Build GTTF" OFF)
+ add_subdirectory(modules)
+ 
+ add_subdirectory(mu3eSim)
