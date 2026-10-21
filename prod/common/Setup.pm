@@ -584,6 +584,8 @@ sub setup_apply_patches {
         my $file = ($rel =~ m{^/}) ? $rel : "$cfg_dir/$rel";
         die "Setup: patch not found: $file (repo $s->{id})\n"
             unless $s->{dry_run} || -f $file;
+        # git -C <clone> resolves a relative patch path inside the clone.
+        $file = abs_path($file) if -f $file;
 
         _log($s, "patch $file");
         next if $s->{dry_run};
