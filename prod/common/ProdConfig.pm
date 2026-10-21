@@ -30,6 +30,7 @@ package ProdConfig;
 #   # mu3e_install: true
 #   # mu3e_cmake_args: "-DCMAKE_INSTALL_PREFIX={path}/install"
 #   # mu3e_build_subdir: "summary_pdf"   # cd here before mkdir _build
+#   # mu3e_patch: "patches/mu3e-gttf-off.patch"   # git apply after checkout
 #
 #   mu3eValidation_repo: "git@bitbucket.org:mu3e/mu3eValidation"
 #   mu3eValidation_tag: "main"
@@ -212,7 +213,13 @@ sub read_cfg_file {
         if ($line =~ /^\s*([A-Za-z0-9_]+)\s*:\s*(.*)$/) {
             my ($key, $val) = ($1, _parse_value($2));
             if ($mode ne "") {
-                $block{$key} = $val;
+                # Repeated patch: lines accumulate; other keys overwrite.
+                if ($key eq "patch") {
+                    $block{patch} = [] unless ref($block{patch}) eq "ARRAY";
+                    push @{$block{patch}}, $val;
+                } else {
+                    $block{$key} = $val;
+                }
             } elsif ($LIST_KEYS{$key}) {
                 $cfg{$key} = [] unless ref($cfg{$key}) eq "ARRAY";
                 push @{$cfg{$key}}, $val;
@@ -261,6 +268,7 @@ my @REPO_SUFFIXES = qw(
     checkout_tag
     cmake_args
     build_subdir
+    patch
     submodules
     workdir
     make_jobs
@@ -330,6 +338,7 @@ sub _normalize_repo {
 
     my $jobs = $raw->{make_jobs} // $cfg->{make_jobs} // 4;
     my $cmake_args = _strip($raw->{cmake_args} // "");
+    my @patches = _split_list($raw->{patch});
     my $build_subdir = _strip($raw->{build_subdir} // "");
     die "repo $id: build_subdir must be a relative path inside the clone "
         . "(got '$build_subdir')\n"
@@ -350,6 +359,7 @@ sub _normalize_repo {
         install      => $install,
         make_jobs    => 0 + $jobs,
         cmake_args   => $cmake_args,
+        patches      => \@patches,
     };
 }
 

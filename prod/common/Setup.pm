@@ -195,6 +195,7 @@ sub setup_contexts_from_config {
             install       => $repo->{install} ? 1 : 0,
             make_jobs     => 0 + $jobs,
             cmake_args    => _strip($repo->{cmake_args} // ""),
+            patches       => [ @{$repo->{patches} // []} ],
             relink_script => _strip($cfg->{relink_script} // ""),
             util_merges   => \@util_merges,
             util_subdir   => $util_subdir,
@@ -568,12 +569,42 @@ sub setup_relink {
 }
 
 # ----------------------------------------------------------------------
+# Apply [repo] patch: files after checkout and submodule update.
+# Paths are relative to the config file. A patch that is already applied
+# is left in place so setup can be re-run.
+sub setup_apply_patches {
+    my ($s) = @_;
+    my @patches = @{$s->{patches} // []};
+    return unless @patches;
+
+    my $cfg_path = $s->{cfg}{_config_path} // "";
+    my $cfg_dir = ($cfg_path ne "") ? dirname($cfg_path) : ".";
+
+    for my $rel (@patches) {
+        my $file = ($rel =~ m{^/}) ? $rel : "$cfg_dir/$rel";
+        die "Setup: patch not found: $file (repo $s->{id})\n"
+            unless $s->{dry_run} || -f $file;
+
+        _log($s, "patch $file");
+        next if $s->{dry_run};
+
+        if (system("git", "-C", $s->{path}, "apply", "--check", "--reverse", $file) == 0) {
+            _log($s, "patch already applied");
+            next;
+        }
+        _run($s, "git", "-C", $s->{path}, "apply", "--check", $file);
+        _run($s, "git", "-C", $s->{path}, "apply", $file);
+    }
+}
+
+# ----------------------------------------------------------------------
 sub setup_run_repo {
     my ($s) = @_;
     _log($s, "setup_run path=$s->{path}");
     setup_checkout($s);
     setup_merge($s);
     setup_update_submodules($s);
+    setup_apply_patches($s);
     setup_build($s);
     setup_relink($s);
     _log($s, "setup_run done");
@@ -644,6 +675,7 @@ sub setup_status_repo {
     }
     print("  commit:    $s->{commit}\n") if defined $s->{commit} && $s->{commit} ne "";
     print("  merges:    ", (@{$s->{merges}} ? join(", ", @{$s->{merges}}) : "(none)"), "\n");
+    print("  patches:   ", (@{$s->{patches} // []} ? join(", ", @{$s->{patches}}) : "(none)"), "\n");
     print("  build:     ", ($s->{build} ? "yes" : "no"), "\n");
     if (($s->{build_subdir} // "") ne "") {
         print("  build_subdir: $s->{build_subdir}\n");
