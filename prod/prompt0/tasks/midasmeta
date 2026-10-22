@@ -32,3 +32,5 @@ if (!-f $file) {
 TaskLib::task_log($ctx, "midasmeta", "$exe $file");
 my $rc = system($exe, $file);
 exit(($rc == 0) ? 0 : 2);
+
+# cdbRunPayloadWriter -c eventstuffv2 -p payloads -f .../run09361.mid.lz4.json -t $GLOBALTAG -a "prompt test" -i RUNNUMBER
