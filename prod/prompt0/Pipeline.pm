@@ -14,6 +14,8 @@ package Pipeline;
 # A task that exits non-zero stops the remaining tasks for that run
 # (next run still starts). Exit 1 is a soft skip (e.g. skipSmallRuns);
 # exit >= 2 is a hard failure (prompt exits non-zero at the end).
+# A run that came from an A..B range and has no raw file is skipped
+# before any task runs; that skip is not a hard failure.
 # ----------------------------------------------------------------------
 
 use strict;
@@ -282,9 +284,18 @@ sub pipeline_run {
         . "  runs=" . join(",", @runs)
         . ($dry ? " (dry-run)" : ""));
 
+    my $from_range = $opts{range_runs} // {};
+
     for my $run (@runs) {
         die "pipeline: bad run number '$run'\n" unless $run =~ /^\d+$/;
         my $kv   = _ctx_kv($cfg, $pctx, $run);
+        if ($from_range->{$run}) {
+            my $rawf = raw_file($kv, $run);
+            if (!-f $rawf) {
+                _log("run $run absent ($rawf); skip");
+                next;
+            }
+        }
         my $rdir = "$pctx->{root}/runs/" . sprintf("%05d", $run);
         my $ctx  = "$rdir/ctx.cfg";
         my $stamp = _stamp();

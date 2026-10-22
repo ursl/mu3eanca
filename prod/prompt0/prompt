@@ -84,7 +84,7 @@ Options:
   -s YYMMDD      override prompt_workdir (dated production area)
   -p ID          only this [repo] id (setup; repeatable or comma-separated)
   -P PIPE        pipeline alias or comma-separated tasks (default: cfg pipeline:)
-  -r RUNS        comma-separated run numbers (in addition to trailing args)
+  -r RUNS        run numbers: 12345,12346 or 12345..12350 (with the run target)
   -j N           make -jN for package builds
   -n             dry-run
   -h             help
@@ -101,18 +101,45 @@ sub _opts {
     return %opts;
 }
 
+# 12345..12350 is inclusive. A later bare number cancels the "from a range" mark.
+sub _expand_run_spec {
+    my ($tok) = @_;
+    return ($tok) unless $tok =~ /^(\d+)\.\.(\d+)$/;
+    my ($a, $b) = (0 + $1, 0 + $2);
+    my $span = abs($b - $a) + 1;
+    die "prompt: run range $tok has $span numbers (limit 20000)\n"
+        if $span > 20000;
+    return $a <= $b ? ($a .. $b) : reverse($b .. $a);
+}
+
 sub _collect_runs {
     my ($target, @argv) = @_;
-    my @runs;
+    my @specs;
     if ($runs_opt ne "") {
-        push @runs, grep { $_ ne "" } split(/,/, $runs_opt);
+        push @specs, grep { $_ ne "" } split(/,/, $runs_opt);
     }
     for my $a (@argv) {
         next if $a eq $target;
         next if $a =~ /^-/;
-        push @runs, grep { $_ ne "" } split(/,/, $a);
+        push @specs, grep { $_ ne "" } split(/,/, $a);
     }
-    return @runs;
+    my @runs;
+    my %seen;
+    my %from_range;
+    for my $spec (@specs) {
+        my $is_range = ($spec =~ /^\d+\.\.\d+$/);
+        for my $n (_expand_run_spec($spec)) {
+            die "prompt: bad run number '$n'\n" unless $n =~ /^\d+$/;
+            if ($is_range) {
+                $from_range{$n} = 1 unless $seen{$n};
+            } else {
+                delete $from_range{$n};
+            }
+            next if $seen{$n}++;
+            push @runs, $n;
+        }
+    }
+    return (\@runs, \%from_range);
 }
 
 my $script_dir = abs_path(dirname($0));
@@ -135,8 +162,13 @@ if ($target eq "") {
 }
 $target = "list" if $target eq "";
 
-my @runs = ($target eq "run" || $target eq "cleanup")
-    ? _collect_runs($target, @ARGV) : ();
+my @runs;
+my $from_range = {};
+if ($target eq "run" || $target eq "cleanup") {
+    my ($runlist, $range_mark) = _collect_runs($target, @ARGV);
+    @runs = @$runlist;
+    $from_range = $range_mark;
+}
 
 my $banner = prefix() . "config=$cfg_file host=$host target=$target"
     . ($setup_name ne "" ? " workdir=$setup_name" : "")
@@ -163,6 +195,7 @@ if ($target eq "setup") {
     prompt_list($cfg);
 } elsif ($target eq "run") {
     $opts{runs} = \@runs;
+    $opts{range_runs} = $from_range;
     $opts{banner} = $banner;
     my $hard = pipeline_run($cfg, %opts);
     print(prefix(), "done\n");

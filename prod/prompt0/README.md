@@ -80,7 +80,7 @@ Production area:
 | `bootstrap` | `setup` then `init` |
 | `status` | Paths, binaries, tar |
 | `list` | Resolved config + packages (default) |
-| `run RUN ...` | Run the pipeline for each run (`-P` selects the list) |
+| `run RUN ...` | Execute the pipeline for each run (`-P` selects the list). Numbers may be `12345` or `12345..12350` |
 | `cleanup RUN ...` | Remove per-run output; keep timestamped logs in `runs/XXXXX/` |
 
 Options:
@@ -91,7 +91,7 @@ Options:
 -s YYMMDD      override prompt_workdir
 -p ID          only this [repo] id (setup; repeatable / comma-separated)
 -P PIPE        pipeline alias or comma-separated tasks (default: cfg pipeline:)
--r RUNS        comma-separated run numbers
+-r RUNS        run numbers: 12345,12346 or inclusive 12345..12350
 -j N           make -jN
 -n             dry-run
 ```
@@ -128,7 +128,10 @@ pipeline_alias: test=midasmeta
 ./prompt -P mu3esort run 9410
 ./prompt -P mu3etrirec run 9410
 ./prompt -P midasmeta,skipSmallRuns -n run 12345 12346
+./prompt -P beam -r 12345..12350 run
 ```
+
+`A..B` includes both ends. A number from that range whose raw file is absent is logged and skipped; the following numbers still run, and the skip does not make `./prompt` exit non-zero. A single number still goes through the tasks, so a missing raw file there remains a hard failure. `A..B` may be mixed with commas and with numbers after `run` (`-r 12345..12350,13000 run 14000..14002`).
 
 Exit codes from a task:
 
