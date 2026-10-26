@@ -267,7 +267,19 @@ sub _make_tar {
 }
 
 # ----------------------------------------------------------------------
-# Production-area init: slurm dirs, githashes, alignment ROOT, tar for slurm/run.
+# cdb_payload_dir is relative to the production root (sibling of slurm/ and githashes).
+sub _payload_dir {
+    my ($ctx, $cfg) = @_;
+    my $rel = _strip($cfg->{cdb_payload_dir} // "");
+    return "" if $rel eq "";
+    return $rel if $rel =~ m{^/};
+    die "prompt: cdb_payload_dir must not contain .. (got: $rel)\n"
+        if $rel =~ m{(^|/)\.\.(/|$)};
+    return "$ctx->{root}/$rel";
+}
+
+# ----------------------------------------------------------------------
+# Production-area init: slurm dirs, githashes, payload dir, alignment ROOT, tar.
 # Data product block dirs (mlzr/trirec/sort/{workdir}/{NNN}) are created on write.
 sub prompt_init {
     my ($cfg, %opts) = @_;
@@ -283,6 +295,12 @@ sub prompt_init {
         make_path("$ctx->{root}/slurm/jobs/$stage/old")     unless $ctx->{dry_run};
         make_path("$ctx->{root}/slurm/storage1/$stage/old") unless $ctx->{dry_run};
         _log("slurm dirs: jobs/$stage storage1/$stage");
+    }
+
+    my $payload = _payload_dir($ctx, $cfg);
+    if ($payload ne "") {
+        _log("cdb payload dir: $payload");
+        make_path($payload) unless $ctx->{dry_run};
     }
 
     _write_githashes($ctx, $cfg);
@@ -349,6 +367,11 @@ sub prompt_status {
     print("  alignment ROOT:    $align (", (-f $align ? "present" : "missing"), ")\n");
     print("  githashes:         ",
         (-f "$ctx->{root}/githashes" ? "present" : "missing"), "\n");
+    my $payload = _payload_dir($ctx, $cfg);
+    print("  cdb payload dir:   ",
+        ($payload ne "" ? "$payload (" . (-d $payload ? "present" : "missing") . ")"
+                        : "(unset)"),
+        "\n");
 
     require Setup;
     Setup::setup_status_config($cfg, %opts);

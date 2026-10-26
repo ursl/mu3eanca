@@ -37,7 +37,9 @@ Production area:
   mutrig-offline-calibration/
   slurm/{prompt_workdir}.tar.gz
   slurm/jobs/{mlzr,trirec,sort}/
+  slurm/storage1/{mlzr,trirec,sort}/
   githashes
+  payloads/          # cdb_payload_dir, when set in the version cfg
 ```
 
 `prompt_workdir` is **date-based** (`YYMMDD`), so a new cycle is a new directory, not a new release tag.
@@ -76,7 +78,7 @@ Production area:
 | Target | Description |
 |--------|-------------|
 | `setup` | Clone / checkout / build / relink `[repo]` packages (`-p` to restrict) |
-| `init` | SLURM job/storage dirs, `githashes`, alignment ROOT, tar for `slurm/run` |
+| `init` | SLURM job/storage dirs, `githashes`, payload dir, alignment ROOT, tar for `slurm/run` |
 | `bootstrap` | `setup` then `init` |
 | `status` | Paths, binaries, tar |
 | `list` | Resolved config + packages (default) |

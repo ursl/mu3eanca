@@ -71,7 +71,7 @@ Usage: $0 [-c FILE] [-H platform] [-s YYMMDD] [-p ID] [-P PIPE] [-n] [-j N] [tar
 
 Targets:
   setup          clone/checkout/build/relink [repo] packages
-  init           production area: slurm dirs, data blocks, githashes, alignment, tar
+  init           production area: slurm dirs, githashes, payload dir, alignment, tar
   bootstrap      setup then init
   status         paths and build/tar state
   list           print resolved config + packages (default)
