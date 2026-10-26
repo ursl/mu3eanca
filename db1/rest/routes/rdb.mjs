@@ -1096,10 +1096,14 @@ router.put("/removeResources/:id", async (req, res) => {
         // Get resources to be deleted for GridFS cleanup
         const resourcesToDelete = result.Resources?.filter(r => r.description === description) || [];
         
-        // Delete files from GridFS
+        // Delete files from GridFS. addResource stores the MIME type
+        // (application/pdf), not the literal "pdf".
         for (const resource of resourcesToDelete) {
-            if (resource.type === 'pdf' && resource.fileId) {
+            if (!resource.fileId) continue;
+            try {
                 await bucket.delete(new ObjectId(resource.fileId));
+            } catch (err) {
+                console.error("GridFS delete failed for", resource.fileId, err);
             }
         }
 

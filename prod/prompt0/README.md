@@ -117,7 +117,7 @@ pipeline_alias: test=midasmeta
 | `midasmeta` | `mu3e_midas_meta` on the raw MIDAS file | live |
 | `skipSmallRuns` | Stop this run if RDB Events < `min_events` (exit 1) | live |
 | `minalyzer` | SLURM minalyzer over the raw file; hadd to `merged-dqm_histos_XXXXX.root` | live |
-| `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots from the merged ROOT | live |
+| `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots; upload the PDF to the RDB (`description=dqm`) | live |
 | `fillQualityPixels` | Login-node pixel quality LM from the merged ROOT (`run2025/analysis`) | live |
 | `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `sort/{workdir}/{block}/` | live |
 | `mu3etrirec` | SLURM mu3eTrirec on the sorted ROOT (event splitting); hadd to `run{srun}-trirec.root` under `trirec/{workdir}/{block}/` | live |
