@@ -213,10 +213,10 @@ sub read_cfg_file {
         if ($line =~ /^\s*([A-Za-z0-9_]+)\s*:\s*(.*)$/) {
             my ($key, $val) = ($1, _parse_value($2));
             if ($mode ne "") {
-                # Repeated patch: lines accumulate; other keys overwrite.
-                if ($key eq "patch") {
-                    $block{patch} = [] unless ref($block{patch}) eq "ARRAY";
-                    push @{$block{patch}}, $val;
+                # Repeated patch: and symlink: lines accumulate; other keys overwrite.
+                if ($key eq "patch" || $key eq "symlink") {
+                    $block{$key} = [] unless ref($block{$key}) eq "ARRAY";
+                    push @{$block{$key}}, $val;
                 } else {
                     $block{$key} = $val;
                 }
@@ -269,6 +269,7 @@ my @REPO_SUFFIXES = qw(
     cmake_args
     build_subdir
     patch
+    symlink
     submodules
     workdir
     make_jobs
@@ -339,6 +340,17 @@ sub _normalize_repo {
     my $jobs = $raw->{make_jobs} // $cfg->{make_jobs} // 4;
     my $cmake_args = _strip($raw->{cmake_args} // "");
     my @patches = _split_list($raw->{patch});
+    my @symlinks;
+    for my $spec (_split_list($raw->{symlink})) {
+        die "repo $id: symlink must be NAME=TARGET (got '$spec')\n"
+            unless $spec =~ /^([^=]+)=(.+)$/;
+        my ($name, $target) = (_strip($1), _strip($2));
+        die "repo $id: symlink name must be a relative path inside the clone "
+            . "(got '$name')\n"
+            if $name eq "" || $name =~ m{^/} || $name =~ m{(^|/)\.\.(/|$)};
+        die "repo $id: symlink target empty\n" if $target eq "";
+        push @symlinks, { name => $name, target => $target };
+    }
     my $build_subdir = _strip($raw->{build_subdir} // "");
     die "repo $id: build_subdir must be a relative path inside the clone "
         . "(got '$build_subdir')\n"
@@ -360,6 +372,7 @@ sub _normalize_repo {
         make_jobs    => 0 + $jobs,
         cmake_args   => $cmake_args,
         patches      => \@patches,
+        symlinks     => \@symlinks,
     };
 }
 

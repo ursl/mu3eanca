@@ -17,7 +17,8 @@ package Setup;
 #   ./relval -c meta-config-setup.cfg setup
 #
 # Per-repo steps:
-#   clone/fetch → checkout tag|branch → merge → [submodules] → [build] → [relink]
+#   clone/fetch → checkout tag|branch → merge → [submodules] → [patch]
+#   → [symlink] → [build] → [relink]
 #
 # Local relval histogram tools (no git repo):
 #   ana_build: true  → make -C <relval_code_basedir>/ana
@@ -196,6 +197,7 @@ sub setup_contexts_from_config {
             make_jobs     => 0 + $jobs,
             cmake_args    => _strip($repo->{cmake_args} // ""),
             patches       => [ @{$repo->{patches} // []} ],
+            symlinks      => [ @{$repo->{symlinks} // []} ],
             relink_script => _strip($cfg->{relink_script} // ""),
             util_merges   => \@util_merges,
             util_subdir   => $util_subdir,
@@ -600,6 +602,37 @@ sub setup_apply_patches {
 }
 
 # ----------------------------------------------------------------------
+# symlink: NAME=TARGET inside the clone. TARGET is used as written, so
+# ../util stays a relative link to the sibling checkout.
+sub setup_apply_symlinks {
+    my ($s) = @_;
+    my @links = @{$s->{symlinks} // []};
+    return unless @links;
+
+    for my $link (@links) {
+        my $dest = "$s->{path}/$link->{name}";
+        my $target = $link->{target};
+        _log($s, "symlink $dest -> $target");
+        next if $s->{dry_run};
+
+        if (-l $dest) {
+            my $cur = readlink($dest);
+            if (defined $cur && $cur eq $target) {
+                _log($s, "symlink already set");
+                next;
+            }
+            unlink($dest) or die "Setup: cannot replace symlink $dest: $!\n";
+        } elsif (-e $dest) {
+            die "Setup: $dest exists and is not a symlink (repo $s->{id})\n";
+        }
+        my $parent = dirname($dest);
+        make_path($parent) unless -d $parent;
+        symlink($target, $dest)
+            or die "Setup: cannot symlink $dest -> $target: $!\n";
+    }
+}
+
+# ----------------------------------------------------------------------
 sub setup_run_repo {
     my ($s) = @_;
     _log($s, "setup_run path=$s->{path}");
@@ -607,6 +640,7 @@ sub setup_run_repo {
     setup_merge($s);
     setup_update_submodules($s);
     setup_apply_patches($s);
+    setup_apply_symlinks($s);
     setup_build($s);
     setup_relink($s);
     _log($s, "setup_run done");
@@ -678,6 +712,8 @@ sub setup_status_repo {
     print("  commit:    $s->{commit}\n") if defined $s->{commit} && $s->{commit} ne "";
     print("  merges:    ", (@{$s->{merges}} ? join(", ", @{$s->{merges}}) : "(none)"), "\n");
     print("  patches:   ", (@{$s->{patches} // []} ? join(", ", @{$s->{patches}}) : "(none)"), "\n");
+    my @syms = map { "$_->{name}=$_->{target}" } @{$s->{symlinks} // []};
+    print("  symlinks:  ", (@syms ? join(", ", @syms) : "(none)"), "\n");
     print("  build:     ", ($s->{build} ? "yes" : "no"), "\n");
     if (($s->{build_subdir} // "") ne "") {
         print("  build_subdir: $s->{build_subdir}\n");
