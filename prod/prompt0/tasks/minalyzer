@@ -16,7 +16,7 @@ my $file = TaskLib::raw_file($ctx, $run);
 my $srun = sprintf("%05d", $run);
 my $block = TaskLib::block_dir($run);
 my $mlzr = $ctx->{mlzr_dir} // "";
-my $merged = ($mlzr ne "") ? "$mlzr/$block/merged-dqm_histos_$srun.root" : "";
+my $merged = ($mlzr ne "") ? "$mlzr/$block/dqm_histos_$srun.root" : "";
 
 my $total = $ctx->{n_events};
 if (!defined $total || $total eq "") {
