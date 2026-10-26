@@ -323,12 +323,15 @@ sub prompt_status {
     my $mu3e = prompt_repo_dir($cfg, "mu3e");
     my $mlzr = prompt_repo_dir($cfg, "minalyzer");
     my $ana  = prompt_repo_dir($cfg, "mu3eana");
+    my $dqm  = prompt_repo_dir($cfg, "dqm_pdf");
     my $exe  = "$mu3e/_build/mu3eSim/mu3eSim";
     my $man  = "$mlzr/_build/analyzer/minalyzer";
-    my $pdfbin = _strip($cfg->{minalyzer_pdf_bin} //
-        "_build/UCL/Minalyzer_pdf/Minalyzer_pdf");
+    my $pdfbin = _strip($cfg->{minalyzer_pdf_bin} // "_build/Minalyzer_pdf");
+    my $pdfrun = _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}");
+    $pdfrun =~ s/\{mu3eana\}/$ana/g if $ana ne "";
+    $pdfrun =~ s/\{dqm_pdf\}/$dqm/g if $dqm ne "";
     my $pdf  = ($pdfbin =~ m{^/}) ? $pdfbin
-        : (($ana ne "") ? "$ana/$pdfbin" : $pdfbin);
+        : (($pdfrun ne "") ? "$pdfrun/$pdfbin" : $pdfbin);
     my $align = "$mu3e/run/" . _strip($cfg->{alignment_output} // "mu3e_alignment.root");
     my $tar  = "$ctx->{root}/slurm/$ctx->{workdir}.tar.gz";
 
@@ -354,8 +357,6 @@ sub prompt_status {
     print("  minalyzer:         ", ((-x $man || -f $man) ? "yes" : "no"), "  $man\n");
     print("  minalyzer_pdf:     ", ((-x $pdf || -f $pdf) ? "yes" : "no"), "  $pdf\n")
         if $pdf ne "";
-    my $pdfrun = _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}");
-    $pdfrun =~ s/\{mu3eana\}/$ana/g if $ana ne "";
     print("  minalyzer_pdf cwd: $pdfrun\n") if $pdfrun ne "";
     my $fqrel = _strip($cfg->{fill_quality_pixels_bin} // "bin/fillQualityPixels");
     my $fqdir = _strip($cfg->{fill_quality_pixels_rundir} // "{mu3eanca}/run2025/analysis");
@@ -442,9 +443,14 @@ sub prompt_cleanup {
         }
 
         my $ana = prompt_repo_dir($cfg, "mu3eana");
+        my $dqm = prompt_repo_dir($cfg, "dqm_pdf");
         my $pdfdir = _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}");
         $pdfdir =~ s/\{mu3eana\}/$ana/g if $ana ne "";
+        $pdfdir =~ s/\{dqm_pdf\}/$dqm/g if $dqm ne "";
         _rm_matching($ctx, $pdfdir, $re) if $pdfdir ne "" && $pdfdir ne $ana;
+        for my $sub (qw(output csv)) {
+            _rm_matching($ctx, "$pdfdir/$sub", $re) if $pdfdir ne "";
+        }
         _rm_matching($ctx, $ana, $re);
         my $fqdir = _strip($cfg->{fill_quality_pixels_rundir} // "{mu3eanca}/run2025/analysis");
         my $anca = _strip($cfg->{mu3eanca} // $ctx->{mu3eanca} // "");

@@ -237,7 +237,7 @@ sub _ctx_kv {
             "--conf trirec_twolayer_beam.conf"),
         trirec_n_events    => 0 + (_strip($cfg->{trirec_n_events} // "2000000")),
         minalyzer_pdf_bin  => _strip($cfg->{minalyzer_pdf_bin} //
-            "_build/UCL/Minalyzer_pdf/Minalyzer_pdf"),
+            "_build/Minalyzer_pdf"),
         minalyzer_pdf_rundir => _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}"),
         minalyzer_pdf_mode => _strip($cfg->{minalyzer_pdf_mode} // "pdf"),
         fill_quality_pixels_bin => _strip($cfg->{fill_quality_pixels_bin} //
