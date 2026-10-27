@@ -524,14 +524,14 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   if (DBX) cout << "XXX chipID = " << chipID << " linkMask = " << ai.abcLinkMask[0] << " " << ai.abcLinkMask[1] << " " << ai.abcLinkMask[2] << endl;
   
   // -- hand-curated list to avoid getting lost in algorithmic nightmares
-  vector<int> vBadChips = {102};
+  vector<int> vBadChips = {};
 
   if (find(vBadChips.begin(), vBadChips.end(), chipID) != vBadChips.end()) {  
     links.push_back(3);
     links.push_back(3);
     links.push_back(3);
     links.push_back(0); // now used to keep 1./LVDS-overflow-rate
-    return true;
+    return false;
   }
   
   // -- completely masked chip
@@ -545,18 +545,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     return false;
   }
 
-  if (9 == ai.abcLinkMask[0]
-    && 9 == ai.abcLinkMask[1]
-    && 9 == ai.abcLinkMask[2]) {
-    links.push_back(9);
-    links.push_back(9);
-    links.push_back(9);
-    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
-    return false;
-  }
-
-
-  // -- determine dead chips
+  // -- completely dead chips
   double nLinkA = h->Integral(1, 88, 1, 250);
   double nLinkB = h->Integral(89, 172, 1, 250);
   double nLinkC = h->Integral(173, 256, 1, 250);
@@ -581,52 +570,46 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   if (nLinkB > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245)) badChip = 2;
   if (nLinkC > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)) badChip = 3;
   if (badChip > 0) {
-    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2] << endl;  
-    if (nLinkA < 1) {
-      if (0 == ai.abcLinkMask[0] || 9 == ai.abcLinkMask[0]) {
-        // -- keep mask information if present
+    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2] << endl;
+    const double nHits[3] = {nLinkA, nLinkB, nLinkC};
+    static const char kSensor[3] = {'A', 'B', 'C'};
+    for (int i = 0; i < 3; ++i) {
+      if (nHits[i] >= 1) {
+        links.push_back(6);
+        continue;
+      }
+      int idx = -1;
+      if (!ai.letterToIndex(kSensor[i], idx)) {
+        links.push_back(4);
+      } else if (0 == ai.abcLinkMask[idx] || 9 == ai.abcLinkMask[idx]) {
         links.push_back(9);
       } else {
         links.push_back(8);
       }
-    } else {
-      links.push_back(6);
-    }
-    if (nLinkB < 1) {
-      if (0 == ai.abcLinkMask[1] || 9 == ai.abcLinkMask[1]) {
-        // -- keep mask information if present
-        links.push_back(9);
-      } else {
-        links.push_back(8);
-      }
-    } else {
-      links.push_back(6);
-    }
-    if (nLinkC < 1) {
-      if (0 == ai.abcLinkMask[2] || 9 == ai.abcLinkMask[2]) {
-        // -- keep mask information if present
-        links.push_back(9);
-      } else {
-        links.push_back(8);
-      }
-    } else {
-      links.push_back(6);
     }
     links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return true;
   }
   
-  // -- check individual links
+  // -- check individual links. i = 0,1,2 is sensor A, B, C.
+  //    Mask and rate live at the right-hand index of that letter.
   int lkStatus[4] = {0, 0, 0, 0};
   int nBadLinks(0);
   badChip = -1;
   bool badLink[3] = {false, false, false};
+  static const char kSensor[3] = {'A', 'B', 'C'};
   for (int i = 0; i < 3; ++i) {
-    if (vLink[i] < 1) lkStatus[i] = 8;
-    if (0 == ai.abcLinkMask[i]) lkStatus[i] = 9;
-    if (9 == ai.abcLinkMask[i]) lkStatus[i] = 9;
-    if (ai.abcLinkErrs[i] > 10) lkStatus[i] = 4;
-    if (ai.abcLinkErrs[i] > 10 && 1 == ai.abcLinkMask[i]) {
+    int idx = -1;
+    if (!ai.letterToIndex(kSensor[i], idx)) {
+      lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
+      continue;
+    }
+    if (vLink[i] < 1) lkStatus[i] = calPixelQualityLM::NoHits;
+    if (0 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
+    if (9 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
+    if (ai.abcLinkErrs[idx] > 10.) lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
+    // -- if LVDS error rate is high and link is not masked, set to badChip!
+    if (ai.abcLinkErrs[idx] > 10. && 1 == ai.abcLinkMask[idx]) {
       badChip = 1;
       ++nBadLinks;
       badLink[i] = true;
@@ -635,14 +618,18 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
  
   if (DBX) {
     for (int i = 0; i < 3; ++i) {
-      if (DBX) cout << "Chip " << chipID << " link " << i << " status = " << lkStatus[i] 
-         << " mask = " << ai.abcLinkMask[i] << " errs = " << ai.abcLinkErrs[i]
+      int idx = -1;
+      bool mapped = ai.letterToIndex(kSensor[i], idx);
+      if (DBX) cout << "Chip " << chipID << " sensor " << kSensor[i] << " status = " << lkStatus[i]
+         << " idx = " << (mapped ? idx : -1)
+         << " mask = " << (mapped ? ai.abcLinkMask[idx] : -1)
+         << " errs = " << (mapped ? ai.abcLinkErrs[idx] : -1)
          << " badLink = " << badLink[i]
          << endl;
     }
   }
 
-  // -- Check for row overflow (indicating LVDS errors)
+  // -- Check for row overflow (indicating LVDS errors), stored in the fourth lkStatus[]
   int iOverFlow = h->Integral(1, 256, 251, 252);
   if (0) cout << "Chip " << chipID << " overflow bin: " << iOverFlow << endl;
 
@@ -659,20 +646,21 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     if (DBX) cout << "Chip " << chipID << " NO overflow: " << iOverFlow << " status = " << lkStatus[3] <<  endl;
   }
 
-
+  // -- badChip is true for unmasked links with LVDS error rates > 10 Hz. 
+  //    These leak into other matrices.
   if (badChip >= 0) {    
     cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << endl;
     for (int i = 0; i < 3; ++i) {
       if (badLink[i]) {
-        lkStatus[i] = 4;
+        lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
       } else {
         // -- do not override 9 status (masked link stays masked)
-        if (lkStatus[i] != 9) {
-          lkStatus[i] = 5;
+        if (lkStatus[i] != calPixelQualityLM::Masked) {
+          lkStatus[i] = calPixelQualityLM::LVDSErrorOtherLink;
         }
         // -- if masked link has hits, set to bad
-        if (9 == lkStatus[i] && vLink[i] > 0) {
-          lkStatus[i] = 5;
+        if (calPixelQualityLM::Masked == lkStatus[i] && vLink[i] > 0) {
+          lkStatus[i] = calPixelQualityLM::LVDSErrorTopBottomEdge;
         }
       }
     }
@@ -688,7 +676,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
 }
 
 // ----------------------------------------------------------------------
-// -- this is completely new and now relies on PCLS data read from midas meta data tree
+// -- old code
 bool determineBrokenLinksV0(TH2 *h, vector<int> &links) {
   bool DBX(false);
 
@@ -768,25 +756,31 @@ bool determineBrokenLinksV0(TH2 *h, vector<int> &links) {
   }
 
   
-  // -- check individual links
+  // -- check individual links. i = 0,1,2 is sensor A, B, C.
   int lkStatus[3] = {0, 0, 0};
   int nBadLinks(0);
   badChip = -1;
+  static const char kSensor[3] = {'A', 'B', 'C'};
   for (int i = 0; i < 3; ++i) {
+    int idx = -1;
+    if (!ai.letterToIndex(kSensor[i], idx)) {
+      lkStatus[i] = 4;
+      cout << "Chip " << chipID << " sensor " << kSensor[i] << " status = " << lkStatus[i]
+           << " unmapped" << endl;
+      continue;
+    }
     if (vLink[i] < 1) lkStatus[i] = 8;
-    if (0 == ai.abcLinkMask[i]) lkStatus[i] = 9;
-    if (9 == ai.abcLinkMask[i]) lkStatus[i] = 9;
-    if (ai.abcLinkErrs[i] > 10) lkStatus[i] = 4;
-    if (ai.abcLinkErrs[i] > 10 && 1 == ai.abcLinkMask[i]) {
+    if (0 == ai.abcLinkMask[idx]) lkStatus[i] = 9;
+    if (9 == ai.abcLinkMask[idx]) lkStatus[i] = 9;
+    if (ai.abcLinkErrs[idx] > 10) lkStatus[i] = 4;
+    if (ai.abcLinkErrs[idx] > 10 && 1 == ai.abcLinkMask[idx]) {
       badChip = i;
       ++nBadLinks;
     }
-  }
- 
-  for (int i = 0; i < 3; ++i) {
-    cout << "Chip " << chipID << " link " << i << " status = " << lkStatus[i] 
-    << " mask = " << ai.abcLinkMask[i] << " errs = " << ai.abcLinkErrs[i]
-    << endl;
+    cout << "Chip " << chipID << " sensor " << kSensor[i] << " status = " << lkStatus[i]
+         << " idx = " << idx
+         << " mask = " << ai.abcLinkMask[idx] << " errs = " << ai.abcLinkErrs[idx]
+         << endl;
   }
 
 
@@ -801,17 +795,7 @@ bool determineBrokenLinksV0(TH2 *h, vector<int> &links) {
     }
   }
 
-  // -- Marius' special case, ignoring EEE case IF LVDS error rate low enough
-  // -- "So I would say if all links are EEE then we should not trust the 
-  //     matrix information and only use the lvds errors."
-  if (ai.abcLinkMatrix[0] == 4 && ai.abcLinkMatrix[1] == 4 && ai.abcLinkMatrix[2] == 4) {
-   if (ai.abcLinkErrs[0] > 10) lkStatus[0] = 4;
-   if (ai.abcLinkErrs[1] > 10) lkStatus[1] = 4;
-   if (ai.abcLinkErrs[2] > 10) lkStatus[2] = 4;
-   if (badChip >= 0) {
-    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << endl;
-   }
-  }
+  // An all-E matrix maps no sensor letter. Those sensors are already status 4.
 
   links.push_back(lkStatus[0]);
   links.push_back(lkStatus[1]);
@@ -1009,8 +993,10 @@ static bool isLayer3Section(const string& name) {
 }
 
 // ----------------------------------------------------------------------
-// linkMask, linkMatrix, lvdsErrGT0 and lvdsErrRates are stored left to right.
-// Link 0 is the rightmost entry. abcLink* is filled in that link order.
+// The JSON stores linkMask, linkMatrix and lvdsErrRates left to right.
+// abcLink*[link] and lvdsErrRate* are filled in right-hand order:
+// link 0 is the rightmost entry. Which sensor that is comes from
+// AsicInfo::letterToIndex / indexToLetter, not from the slot number.
 // abcLinkMatrix: 0=A, 1=B, 2=C, 4=E (or missing).
 static void decodeLinksRhs(AsicInfo& ai, const vector<long long>& rates) {
   const int n = 3;
@@ -1019,25 +1005,25 @@ static void decodeLinksRhs(AsicInfo& ai, const vector<long long>& rates) {
     ai.abcLinkMask[link] = 0;
     ai.abcLinkErrs[link] = (src < (int)rates.size() ? rates[src] : 0);
     ai.abcLinkMatrix[link] = 4;
+    ai.abcLinkNames[link] = "E";
+    ai.abcLinkOffsets[link] = link;
     if ((int)ai.linkMask.size() > src) {
       char c = ai.linkMask[src];
       if (c >= '0' && c <= '9') ai.abcLinkMask[link] = c - '0';
     }
     if ((int)ai.linkMatrix.size() > src) {
       char c = ai.linkMatrix[src];
+      ai.abcLinkNames[link] = string(1, c);
       if (c == 'E') ai.abcLinkMatrix[link] = 4;
       else if (c >= 'A' && c <= 'C') ai.abcLinkMatrix[link] = c - 'A';
     }
   }
+  ai.lvdsErrRate0 = ai.abcLinkErrs[0];
+  ai.lvdsErrRate1 = ai.abcLinkErrs[1];
+  ai.lvdsErrRate2 = ai.abcLinkErrs[2];
 }
 
 // ----------------------------------------------------------------------
-static char linkLetter(int abcMatrix) {
-  if (abcMatrix == 4) return 'E';
-  if (abcMatrix >= 0 && abcMatrix <= 2) return char('A' + abcMatrix);
-  return '?';
-}
-
 static bool linkIsBad(const AsicInfo& ai, int link) {
   return ai.abcLinkMatrix[link] == 4 || ai.abcLinkErrs[link] > kLvdsBadHz;
 }
@@ -1055,12 +1041,19 @@ void printRunInfoMap() {
          << " linkMask=" << ai.linkMask;
     for (int link = 0; link < 3; ++link) {
       if (ai.abcLinkMask[link] == 9) continue;
-      bool bad = linkIsBad(ai, link);
+      char letter = '?';
+      bool mapped = ai.indexToLetter(link, letter);
+      bool bad = !mapped || linkIsBad(ai, link);
       cout << " | link" << link
-           << " " << linkLetter(ai.abcLinkMatrix[link])
+           << " " << (mapped ? string(1, letter) : ai.abcLinkNames[link])
            << " mask=" << ai.abcLinkMask[link]
            << " rate=" << ai.abcLinkErrs[link]
            << (bad ? " BAD" : "");
+    }
+    for (char letter : {'A', 'B', 'C'}) {
+      int idx = -1;
+      if (ai.letterToIndex(letter, idx)) cout << " " << letter << "->link" << idx;
+      else cout << " " << letter << "->?";
     }
     if (badCase) {
       cout << "BAD CASE" << endl;
@@ -1196,9 +1189,6 @@ void parseMidasMetaData(string filename) {
           if (arr[i].is_number()) rates[i] = arr[i].get<long long>();
         }
       }
-      ai.lvdsErrRate0 = rates[0];
-      ai.lvdsErrRate1 = rates[1];
-      ai.lvdsErrRate2 = rates[2];
       decodeLinksRhs(ai, rates);
 
       if (gRunInfoMap.count(ai.globalId)) {
