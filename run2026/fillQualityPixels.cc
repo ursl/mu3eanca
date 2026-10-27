@@ -180,7 +180,6 @@ int main(int argc, char* argv[]) {
 
   parseMidasMetaData(rootMetaMidasFilename);
   printRunInfoMap();
-  return 0;
 
   cout << "printMode = " << printMode << endl;
 
@@ -512,7 +511,7 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 // ----------------------------------------------------------------------
 // -- this is completely new and now relies on PCLS data read from midas meta data tree
 bool determineBrokenLinks(TH2 *h, vector<int> &links) {
-  bool DBX(false);
+  bool DBX(true);
 
   // -- the histogram still used to provide the chip name
   string schip = h->GetName();
@@ -527,9 +526,9 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   vector<int> vBadChips = {};
 
   if (find(vBadChips.begin(), vBadChips.end(), chipID) != vBadChips.end()) {  
-    links.push_back(3);
-    links.push_back(3);
-    links.push_back(3);
+    links.push_back(calPixelQualityLM::DeclaredBad);
+    links.push_back(calPixelQualityLM::DeclaredBad);
+    links.push_back(calPixelQualityLM::DeclaredBad);
     links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return false;
   }
@@ -538,9 +537,9 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   if (0 == ai.abcLinkMask[0]
       && 0 == ai.abcLinkMask[1]
       && 0 == ai.abcLinkMask[2]) {
-    links.push_back(9);
-    links.push_back(9);
-    links.push_back(9);
+    links.push_back(calPixelQualityLM::Masked);
+    links.push_back(calPixelQualityLM::Masked);
+    links.push_back(calPixelQualityLM::Masked);
     links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return false;
   }
@@ -553,54 +552,24 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
   if (DBX) cout << "  nLinkA = " << nLinkA << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC << " nLinkAverage = " << nLinkAverage << endl;
   if (nLinkA < 1 && nLinkB < 1 && nLinkC < 1) {
-    links.push_back(7);
-    links.push_back(7);
-    links.push_back(7);
+    links.push_back(calPixelQualityLM::NoHits);
+    links.push_back(calPixelQualityLM::NoHits);
+    links.push_back(calPixelQualityLM::NoHits);
     links.push_back(0); // now used to keep 1./LVDS-overflow-rate
     return false;
   }
 
-  // -- search for pathological cases where all hits are very close to the top (bottom) edge
-  vector<double> vLinkMeanY;
-  vLinkMeanY.push_back(h->ProjectionY("A", 1, 88)->GetMean());
-  vLinkMeanY.push_back(h->ProjectionY("B", 89, 172)->GetMean());
-  vLinkMeanY.push_back(h->ProjectionY("C", 173, 256)->GetMean());
-  int badChip(-1); // -- if any link is broken and not masked, the chip is bad
-  if (nLinkA > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245)) badChip = 1;
-  if (nLinkB > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245)) badChip = 2;
-  if (nLinkC > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)) badChip = 3;
-  if (badChip > 0) {
-    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2] << endl;
-    const double nHits[3] = {nLinkA, nLinkB, nLinkC};
-    static const char kSensor[3] = {'A', 'B', 'C'};
-    for (int i = 0; i < 3; ++i) {
-      if (nHits[i] >= 1) {
-        links.push_back(6);
-        continue;
-      }
-      int idx = -1;
-      if (!ai.letterToIndex(kSensor[i], idx)) {
-        links.push_back(4);
-      } else if (0 == ai.abcLinkMask[idx] || 9 == ai.abcLinkMask[idx]) {
-        links.push_back(9);
-      } else {
-        links.push_back(8);
-      }
-    }
-    links.push_back(0); // now used to keep 1./LVDS-overflow-rate
-    return true;
-  }
-  
   // -- check individual links. i = 0,1,2 is sensor A, B, C.
   //    Mask and rate live at the right-hand index of that letter.
   int lkStatus[4] = {0, 0, 0, 0};
   int nBadLinks(0);
-  badChip = -1;
+  int badChip = -1;
   bool badLink[3] = {false, false, false};
   static const char kSensor[3] = {'A', 'B', 'C'};
   for (int i = 0; i < 3; ++i) {
     int idx = -1;
     if (!ai.letterToIndex(kSensor[i], idx)) {
+      if (DBX) cout << "Chip " << chipID << " sensor " << kSensor[i] << " unmapped " << idx << endl;
       lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
       continue;
     }
@@ -666,6 +635,32 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     }
   }
 
+  // -- hits piled at the top or bottom edge. Only a sensor that is still
+  //    Good is marked; E, mask, and a high LVDS rate stay as they are.
+  vector<double> vLinkMeanY;
+  vLinkMeanY.push_back(h->ProjectionY("A", 1, 88)->GetMean());
+  vLinkMeanY.push_back(h->ProjectionY("B", 89, 172)->GetMean());
+  vLinkMeanY.push_back(h->ProjectionY("C", 173, 256)->GetMean());
+  badChip = -1;
+  if (nLinkA > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245)) badChip = 1;
+  if (nLinkB > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245)) badChip = 2;
+  if (nLinkC > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)) badChip = 3;
+  if (badChip > 0) {
+    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip
+         << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2]
+         << endl;
+    const double nHits[3] = {nLinkA, nLinkB, nLinkC};
+    const bool atEdge[3] = {
+      nHits[0] > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245),
+      nHits[1] > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245),
+      nHits[2] > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)
+    };
+    for (int i = 0; i < 3; ++i) {
+      if (atEdge[i] && lkStatus[i] == calPixelQualityLM::Good) {
+        lkStatus[i] = calPixelQualityLM::LVDSErrorTopBottomEdge;
+      }
+    }
+  }
 
   links.push_back(lkStatus[0]);
   links.push_back(lkStatus[1]);
