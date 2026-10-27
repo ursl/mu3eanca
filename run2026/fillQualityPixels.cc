@@ -71,6 +71,7 @@ struct pixhit {
 
 // ----------------------------------------------------------------------
 void parseMidasMetaData(string filename);
+void printRunInfoMap();
 void createPayload(string, calAbs *, string, string, string);
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 bool determineBrokenLinks(TH2 *h, vector<int> &links);
@@ -178,6 +179,7 @@ int main(int argc, char* argv[]) {
   
 
   parseMidasMetaData(rootMetaMidasFilename);
+  printRunInfoMap();
   return 0;
 
   cout << "printMode = " << printMode << endl;
@@ -994,11 +996,16 @@ static bool fileExists(const string& filename) {
 static const long long kLvdsBadHz = 10;
 
 // ----------------------------------------------------------------------
-// Section names such as "L1 US 1-4" and "L2 DS 8-10". "Layer 3" does not match.
-static bool isL123Section(const string& name) {
+// Section names such as "L1 US 1-4" and "L2 DS 8-10".
+// "Central US Layer 3" does not match; that is a one-link section.
+static bool isL12Section(const string& name) {
   return name.find("L1") != string::npos
       || name.find("L2") != string::npos
       || name.find("L3") != string::npos;
+}
+
+static bool isLayer3Section(const string& name) {
+  return name.find("Layer 3") != string::npos;
 }
 
 // ----------------------------------------------------------------------
@@ -1036,6 +1043,73 @@ static bool linkIsBad(const AsicInfo& ai, int link) {
 }
 
 // ----------------------------------------------------------------------
+// -- gRunInfoMap is a std::map, so iteration is in globalId order.
+void printRunInfoMap() {
+  cout << "gRunInfoMap " << gRunInfoMap.size() << " entries, sorted by globalId" << endl;
+  bool badCase(false);
+  for (const auto& it : gRunInfoMap) {
+    const AsicInfo& ai = it.second;
+    cout << "globalId=" << it.first
+         << " " << ai.FEBName
+         << " linkMatrix=" << ai.linkMatrix
+         << " linkMask=" << ai.linkMask;
+    for (int link = 0; link < 3; ++link) {
+      if (ai.abcLinkMask[link] == 9) continue;
+      bool bad = linkIsBad(ai, link);
+      cout << " | link" << link
+           << " " << linkLetter(ai.abcLinkMatrix[link])
+           << " mask=" << ai.abcLinkMask[link]
+           << " rate=" << ai.abcLinkErrs[link]
+           << (bad ? " BAD" : "");
+    }
+    if (badCase) {
+      cout << "BAD CASE" << endl;
+    }
+    cout << endl;
+  }
+}
+
+// ----------------------------------------------------------------------
+// One physical link, stored in slot 0. Slots 1 and 2 are absent (mask 9),
+// so they are not counted as the three-link 'E' case.
+static void setSingleLink(AsicInfo& ai, int mask, char matrix, long long rate) {
+  ai.linkMask = to_string(mask);
+  ai.linkMatrix = string(1, matrix);
+  ai.lvdsErrRate0 = rate;
+  ai.lvdsErrRate1 = 0;
+  ai.lvdsErrRate2 = 0;
+  ai.abcLinkMask[0] = mask;
+  ai.abcLinkErrs[0] = rate;
+  if (matrix == 'E') ai.abcLinkMatrix[0] = 4;
+  else if (matrix >= 'A' && matrix <= 'C') ai.abcLinkMatrix[0] = matrix - 'A';
+  else ai.abcLinkMatrix[0] = 4;
+  for (int link = 1; link < 3; ++link) {
+    ai.abcLinkMask[link] = 9;
+    ai.abcLinkErrs[link] = 0;
+    ai.abcLinkMatrix[link] = -1;
+  }
+}
+
+// mask / matrix / lvds_error_rate, as on a Layer 3 links[] entry.
+static bool readSingleLink(const json& src, int& mask, char& matrix, long long& rate) {
+  bool any = false;
+  if (src.contains("mask") && src["mask"].is_number()) {
+    mask = src["mask"].get<int>();
+    any = true;
+  }
+  if (src.contains("matrix") && src["matrix"].is_string()) {
+    string s = src["matrix"].get<string>();
+    if (!s.empty()) matrix = s[0];
+    any = true;
+  }
+  if (src.contains("lvds_error_rate") && src["lvds_error_rate"].is_number()) {
+    rate = src["lvds_error_rate"].get<long long>();
+    any = true;
+  }
+  return any;
+}
+
+// ----------------------------------------------------------------------
 void parseMidasMetaData(string filename) {
   if (!fileExists(filename)) {
     cout << "parseMidasMetaData> ERROR: file " << filename << " does not exist" << endl;
@@ -1052,11 +1126,53 @@ void parseMidasMetaData(string filename) {
   gRunInfoMap.clear();
   int nAsic = 0;
   int nBad = 0;
+  int nLayer3Skip = 0;
   for (const auto& section : j["febs"]) {
     if (!section.contains("name") || !section["name"].is_string()) continue;
     string secName = section["name"].get<string>();
-    if (!isL123Section(secName)) continue;
     if (!section.contains("asics") || !section["asics"].is_array()) continue;
+
+    if (isLayer3Section(secName)) {
+      const auto& asics = section["asics"];
+      const json* links = (section.contains("links") && section["links"].is_array())
+          ? &section["links"] : nullptr;
+      for (size_t i = 0; i < asics.size(); ++i) {
+        const auto& a = asics[i];
+        int gid = a.value("globalId", 0);
+        if (gid <= 0) {
+          ++nLayer3Skip;
+          continue;
+        }
+        int mask = 0;
+        char matrix = 'E';
+        long long rate = 0;
+        bool have = readSingleLink(a, mask, matrix, rate);
+        if (!have && links && i < links->size()) {
+          have = readSingleLink((*links)[i], mask, matrix, rate);
+        }
+        if (!have) {
+          cout << "parseMidasMetaData> WARNING: " << secName
+               << " globalId=" << gid << " has no single-link fields" << endl;
+          continue;
+        }
+        AsicInfo ai;
+        ai.FEBName = secName;
+        ai.fedID = section.value("index", -1);
+        ai.confId = a.value("confId", 0);
+        ai.globalId = gid;
+        setSingleLink(ai, mask, matrix, rate);
+        bool bad = linkIsBad(ai, 0);
+        if (bad) ++nBad;
+        if (gRunInfoMap.count(ai.globalId)) {
+          cout << "parseMidasMetaData> WARNING: duplicate globalId " << ai.globalId << endl;
+        }
+        gRunInfoMap[ai.globalId] = ai;
+        ++nAsic;
+      }
+      continue;
+    }
+
+    if (!isL12Section(secName)) continue;
 
     for (const auto& a : section["asics"]) {
       if (!a.contains("linkMatrix") || !a["linkMatrix"].is_string()) continue;
@@ -1085,23 +1201,6 @@ void parseMidasMetaData(string filename) {
       ai.lvdsErrRate2 = rates[2];
       decodeLinksRhs(ai, rates);
 
-      cout << "parseMidasMetaData> " << secName
-           << " globalId=" << ai.globalId
-           << " linkMatrix=" << ai.linkMatrix
-           << " linkMask=" << ai.linkMask
-           << " rates=" << rates[0] << "," << rates[1] << "," << rates[2];
-      for (int link = 0; link < 3; ++link) {
-        bool bad = linkIsBad(ai, link);
-        if (bad) ++nBad;
-        cout << " | link" << link
-             << (link == 0 ? "(RHS)" : "")
-             << " " << linkLetter(ai.abcLinkMatrix[link])
-             << " mask=" << ai.abcLinkMask[link]
-             << " rate=" << ai.abcLinkErrs[link]
-             << (bad ? " BAD" : "");
-      }
-      cout << endl;
-
       if (gRunInfoMap.count(ai.globalId)) {
         cout << "parseMidasMetaData> WARNING: duplicate globalId " << ai.globalId << endl;
       }
@@ -1109,5 +1208,8 @@ void parseMidasMetaData(string filename) {
       ++nAsic;
     }
   }
-  cout << "parseMidasMetaData> " << nAsic << " ASICs, " << nBad << " bad links" << endl;
+  if (nLayer3Skip) {
+    cout << "parseMidasMetaData> Layer 3 skipped " << nLayer3Skip
+         << " ASICs with no globalId" << endl;
+  }
 } 
