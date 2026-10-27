@@ -191,6 +191,7 @@ sub setup_contexts_from_config {
             basedir       => $basedir,
             build         => $repo->{build},
             build_subdir  => _strip($repo->{build_subdir} // ""),
+            cmake         => $repo->{cmake} ? 1 : 0,
             relink        => $repo->{relink},
             submodules    => $repo->{submodules},
             install       => $repo->{install} ? 1 : 0,
@@ -510,8 +511,26 @@ sub setup_build {
     if (($s->{build_subdir} // "") ne "" && !$s->{dry_run} && !-d $src) {
         die "Setup: build_subdir '$s->{build_subdir}' not found under $s->{path}\n";
     }
+    my $jobs = $s->{make_jobs};
+    if (!$s->{cmake}) {
+        _log($s, "make -j$jobs in $src");
+        if (!$s->{dry_run}) {
+            my $cwd = getcwd();
+            chdir($src) or die "Cannot chdir $src: $!\n";
+            _run($s, "make", "-j$jobs");
+            if ($s->{install}) {
+                _log($s, "make install");
+                _run($s, "make", "install");
+            }
+            chdir($cwd) or die "Cannot chdir back to $cwd: $!\n";
+        } else {
+            my $extra = $s->{install} ? " && make install" : "";
+            _log($s, "would: (cd $src && make -j$jobs$extra)");
+        }
+        return;
+    }
+
     my $build = "$src/_build";
-    my $jobs  = $s->{make_jobs};
     my $args  = _expand_vars($s, $s->{cmake_args} // "");
     my @cmake = ("cmake", "..");
     if ($s->{install} && $args !~ /CMAKE_INSTALL_PREFIX/) {
@@ -715,6 +734,7 @@ sub setup_status_repo {
     my @syms = map { "$_->{name}=$_->{target}" } @{$s->{symlinks} // []};
     print("  symlinks:  ", (@syms ? join(", ", @syms) : "(none)"), "\n");
     print("  build:     ", ($s->{build} ? "yes" : "no"), "\n");
+    print("  cmake:     ", ($s->{cmake} ? "yes" : "no"), "\n") if $s->{build};
     if (($s->{build_subdir} // "") ne "") {
         print("  build_subdir: $s->{build_subdir}\n");
     }

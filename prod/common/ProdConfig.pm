@@ -278,6 +278,7 @@ my @REPO_SUFFIXES = qw(
     merge
     install
     commit
+    cmake
     build
     tag
     repo
@@ -328,6 +329,8 @@ sub _normalize_repo {
         ? _truthy($raw->{submodules}) : $def{submodules};
     my $install = exists $raw->{install}
         ? _truthy($raw->{install}) : $def{install};
+    # cmake defaults to on. cmake: false means `make -jN` in the source dir.
+    my $cmake = exists $raw->{cmake} ? _truthy($raw->{cmake}) : 1;
 
     my $workdir = _strip($raw->{workdir} // "");
     if ($workdir eq "") {
@@ -366,6 +369,7 @@ sub _normalize_repo {
         workdir      => $workdir,
         build        => $build,
         build_subdir => $build_subdir,
+        cmake        => $cmake,
         relink       => $relink,
         submodules   => $submodules,
         install      => $install,
