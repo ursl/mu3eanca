@@ -7,6 +7,7 @@
 #   ./prompt init
 #   ./prompt bootstrap          # setup + init
 #   ./prompt [-P beam] run 12345
+#   ./prompt [-P beam] process 10482   # that run and every later raw file
 #
 # Host overlay is host-<platform>.cfg (e.g. host-merlin6.cfg), not
 # config-<hostname>.cfg as in startGT / relval.
@@ -59,6 +60,7 @@ use Prompt qw(
     prompt_cleanup
 );
 use Pipeline qw(pipeline_run);
+use TaskLib qw(forward_runs);
 
 sub prefix {
     my $now = localtime;
@@ -76,6 +78,7 @@ Targets:
   status         paths and build/tar state
   list           print resolved config + packages (default)
   run RUN ...    run the pipeline for each RUN (see -P)
+  process RUN    from RUN forward: every later raw file in the block dirs (010, 011, ...)
   cleanup RUN ... remove per-run output (keeps timestamped logs in runs/XXXXX/)
 
 Options:
@@ -84,7 +87,7 @@ Options:
   -s YYMMDD      override prompt_workdir (dated production area)
   -p ID          only this [repo] id (setup; repeatable or comma-separated)
   -P PIPE        pipeline alias or comma-separated tasks (default: cfg pipeline:)
-  -r RUNS        run numbers: 12345,12346 or 12345..12350 (with the run target)
+  -r RUNS        run numbers: 12345,12346 or 12345..12350 (with run or cleanup)
   -j N           make -jN for package builds
   -n             dry-run
   -h             help
@@ -164,10 +167,14 @@ $target = "list" if $target eq "";
 
 my @runs;
 my $from_range = {};
-if ($target eq "run" || $target eq "cleanup") {
+if ($target eq "run" || $target eq "cleanup" || $target eq "process") {
     my ($runlist, $range_mark) = _collect_runs($target, @ARGV);
     @runs = @$runlist;
     $from_range = $range_mark;
+}
+if ($target eq "process") {
+    die "prompt: process takes one starting run (./prompt process 10482)\n"
+        unless @runs == 1 && !%$from_range;
 }
 
 my $banner = prefix() . "config=$cfg_file host=$host target=$target"
@@ -193,6 +200,19 @@ if ($target eq "setup") {
     prompt_status($cfg, %opts);
 } elsif ($target eq "list") {
     prompt_list($cfg);
+} elsif ($target eq "process") {
+    my $start = $runs[0];
+    my @fwd = forward_runs($cfg, $start);
+    if (!@fwd) {
+        print(prefix(), "process: no raw files at or after $start\n");
+        exit(0);
+    }
+    print(prefix(), "process: from $start -> " . join(",", @fwd) . "\n");
+    $opts{runs} = \@fwd;
+    $opts{banner} = $banner;
+    my $hard = pipeline_run($cfg, %opts);
+    print(prefix(), "done\n");
+    exit($hard ? 1 : 0);
 } elsif ($target eq "run") {
     $opts{runs} = \@runs;
     $opts{range_runs} = $from_range;

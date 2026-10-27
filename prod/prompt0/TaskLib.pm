@@ -21,7 +21,7 @@ use Exporter qw(import);
 our @EXPORT_OK = qw(
     args load task_log ctx_set
     task_prefix
-    block_dir raw_file
+    block_dir raw_file forward_runs
     rdb_events
     parse_run_years year_for_run expand_year
     expand_ctx resolve_path
@@ -115,6 +115,65 @@ sub raw_file {
         return "$base/$srun.mid.lz4";
     }
     return "$base/" . block_dir($run) . "/$srun.mid.lz4";
+}
+
+# ----------------------------------------------------------------------
+# Run numbers >= $start that already have a raw file, increasing.
+# runblock3 scans {raw}/{010}/, {raw}/{011}/, ... and skips a block whose
+# last run is still below $start. flat scans the raw directory itself.
+sub forward_runs {
+    my ($cfg, $start) = @_;
+    die "TaskLib: bad start run '$start'\n" unless defined $start && $start =~ /^\d+$/;
+    $start = 0 + $start;
+
+    my $layout = _strip($cfg->{raw_input_layout} // "runblock3");
+    my $raw_t  = _strip($cfg->{raw_input_base} // "");
+    my $data_t = _strip($cfg->{data_dir} // "");
+    die "TaskLib: raw_input_base and data_dir are unset\n"
+        if $raw_t eq "" && $data_t eq "";
+
+    my %year;
+    $year{ year_for_run($cfg, $start) } = 1;
+    my $parsed = parse_run_years($cfg);
+    $year{ $parsed->{open} } = 1 if $parsed->{open} ne "";
+    for my $b (@{ $parsed->{bounds} }) {
+        $year{ $b->[1] } = 1 if $b->[0] >= $start;
+    }
+
+    my %seen;
+    my @runs;
+    for my $y (sort keys %year) {
+        next if $y eq "";
+        my $base = $raw_t ne "" ? expand_year($raw_t, $y) : expand_year("$data_t/raw", $y);
+        next unless -d $base;
+        my @dirs = ($base);
+        if ($layout ne "flat") {
+            @dirs = ();
+            opendir(my $dh, $base) or die "TaskLib: cannot read $base: $!\n";
+            while (my $name = readdir($dh)) {
+                next unless $name =~ /^(\d{3})$/;
+                my $last = (0 + $1 + 1) * 1000 - 1;
+                next if $last < $start;
+                push @dirs, "$base/$name";
+            }
+            closedir($dh);
+        }
+        for my $dir (@dirs) {
+            next unless -d $dir;
+            opendir(my $dh, $dir) or die "TaskLib: cannot read $dir: $!\n";
+            while (my $name = readdir($dh)) {
+                next unless $name =~ /^run(\d+)\.mid\.lz4$/;
+                my $run = 0 + $1;
+                next if $run < $start;
+                next if year_for_run($cfg, $run) ne $y;
+                next if $seen{$run}++;
+                push @runs, $run;
+            }
+            closedir($dh);
+        }
+    }
+    @runs = sort { $a <=> $b } @runs;
+    return @runs;
 }
 
 # ----------------------------------------------------------------------
