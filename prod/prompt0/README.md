@@ -170,7 +170,7 @@ Runs `<= 9410` are 2025; `9411` and later are 2026 until you add the next bound.
 
 ## Adding a software package
 
-In `prompt-v7.1.cfg` (or a date-copied cfg), add a `[repo]` block next to `mu3e`. `workdir` is the directory name under the production area (the git clone). `id` can contain hyphens. Optional `build_subdir` is a path inside that clone; cmake then runs as `cd <build_subdir> && mkdir _build && cd _build && cmake ..`.
+In `prompt-v7.1.cfg` (or a date-copied cfg), add a `[repo]` block next to `mu3e`. `workdir` is the directory name under the production area (the git clone). `id` can contain hyphens. Optional `build_subdir` is a path inside that clone; cmake then runs as `cd <build_subdir> && mkdir _build && cd _build && cmake ..`. With `cmake: false`, repeat `make_subdir` and each directory is built with `make -jN`.
 
 ```
 [repo]

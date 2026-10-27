@@ -29,7 +29,8 @@ package ProdConfig;
 #   # mu3e_submodules: true
 #   # mu3e_install: true
 #   # mu3e_cmake_args: "-DCMAKE_INSTALL_PREFIX={path}/install"
-#   # mu3e_build_subdir: "summary_pdf"   # cd here before mkdir _build
+#   # mu3e_build_subdir: "summary_pdf"   # cmake: cd here before mkdir _build
+#   # mu3e_make_subdir: "run2026"        # cmake: false, repeatable, make -jN here
 #   # mu3e_patch: "patches/mu3e-gttf-off.patch"   # git apply after checkout
 #
 #   mu3eValidation_repo: "git@bitbucket.org:mu3e/mu3eValidation"
@@ -213,8 +214,9 @@ sub read_cfg_file {
         if ($line =~ /^\s*([A-Za-z0-9_]+)\s*:\s*(.*)$/) {
             my ($key, $val) = ($1, _parse_value($2));
             if ($mode ne "") {
-                # Repeated patch: and symlink: lines accumulate; other keys overwrite.
-                if ($key eq "patch" || $key eq "symlink") {
+                # Repeated patch:, symlink:, build_subdir:, and make_subdir: lines accumulate.
+                if ($key eq "patch" || $key eq "symlink"
+                    || $key eq "build_subdir" || $key eq "make_subdir") {
                     $block{$key} = [] unless ref($block{$key}) eq "ARRAY";
                     push @{$block{$key}}, $val;
                 } else {
@@ -268,6 +270,7 @@ my @REPO_SUFFIXES = qw(
     checkout_tag
     cmake_args
     build_subdir
+    make_subdir
     patch
     symlink
     submodules
@@ -294,6 +297,18 @@ sub _repo_defaults {
         submodules => $is_mu3e ? 1 : 0,
         install    => $is_mu3e ? 1 : 0,
     );
+}
+
+# ----------------------------------------------------------------------
+sub _repo_rel_paths {
+    my ($id, $key, $val) = @_;
+    my @paths = _split_list($val);
+    for my $path (@paths) {
+        die "repo $id: $key must be a relative path inside the clone "
+            . "(got '$path')\n"
+            if $path =~ m{^/} || $path =~ m{(^|/)\.\.(/|$)};
+    }
+    return @paths;
 }
 
 # ----------------------------------------------------------------------
@@ -354,10 +369,14 @@ sub _normalize_repo {
         die "repo $id: symlink target empty\n" if $target eq "";
         push @symlinks, { name => $name, target => $target };
     }
-    my $build_subdir = _strip($raw->{build_subdir} // "");
-    die "repo $id: build_subdir must be a relative path inside the clone "
-        . "(got '$build_subdir')\n"
-        if $build_subdir =~ m{^/} || $build_subdir =~ m{(^|/)\.\.(/|$)};
+    my @build_subdirs = _repo_rel_paths($id, "build_subdir", $raw->{build_subdir});
+    my @make_subdirs  = _repo_rel_paths($id, "make_subdir", $raw->{make_subdir});
+    if (!$cmake && @build_subdirs) {
+        die "repo $id: build_subdir is for cmake; use make_subdir with cmake: false\n";
+    }
+    if ($cmake && @make_subdirs) {
+        die "repo $id: make_subdir is for cmake: false; use build_subdir\n";
+    }
 
     return {
         id           => $id,
@@ -368,7 +387,8 @@ sub _normalize_repo {
         merges       => \@merges,
         workdir      => $workdir,
         build        => $build,
-        build_subdir => $build_subdir,
+        build_subdirs => \@build_subdirs,
+        make_subdirs  => \@make_subdirs,
         cmake        => $cmake,
         relink       => $relink,
         submodules   => $submodules,

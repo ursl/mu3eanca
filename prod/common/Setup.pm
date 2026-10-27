@@ -190,7 +190,8 @@ sub setup_contexts_from_config {
             path          => "$basedir/$workdir",
             basedir       => $basedir,
             build         => $repo->{build},
-            build_subdir  => _strip($repo->{build_subdir} // ""),
+            build_subdirs => [ @{$repo->{build_subdirs} // []} ],
+            make_subdirs  => [ @{$repo->{make_subdirs} // []} ],
             cmake         => $repo->{cmake} ? 1 : 0,
             relink        => $repo->{relink},
             submodules    => $repo->{submodules},
@@ -494,23 +495,10 @@ sub _expand_vars {
 }
 
 # ----------------------------------------------------------------------
-# Directory that contains CMakeLists.txt. build_subdir is relative to the clone.
-sub _build_source_dir {
-    my ($s) = @_;
-    my $sub = _strip($s->{build_subdir} // "");
-    return $s->{path} if $sub eq "";
-    return "$s->{path}/$sub";
-}
-
-# ----------------------------------------------------------------------
-sub setup_build {
-    my ($s) = @_;
-    return unless $s->{build};
-
-    my $src = _build_source_dir($s);
-    if (($s->{build_subdir} // "") ne "" && !$s->{dry_run} && !-d $src) {
-        die "Setup: build_subdir '$s->{build_subdir}' not found under $s->{path}\n";
-    }
+# One build directory. No subdir means the clone root.
+# build_subdir is the cmake source dir; make_subdir is the plain-make dir.
+sub _build_one {
+    my ($s, $src) = @_;
     my $jobs = $s->{make_jobs};
     if (!$s->{cmake}) {
         _log($s, "make -j$jobs in $src");
@@ -553,6 +541,26 @@ sub setup_build {
     } else {
         my $extra = $s->{install} ? " && make install" : "";
         _log($s, "would: @cmake && make -j$jobs$extra");
+    }
+}
+
+# ----------------------------------------------------------------------
+sub setup_build {
+    my ($s) = @_;
+    return unless $s->{build};
+
+    my $label = $s->{cmake} ? "build_subdir" : "make_subdir";
+    my @subs = @{$s->{cmake} ? ($s->{build_subdirs} // []) : ($s->{make_subdirs} // [])};
+    if (!@subs) {
+        _build_one($s, $s->{path});
+        return;
+    }
+    for my $sub (@subs) {
+        my $src = "$s->{path}/$sub";
+        if (!$s->{dry_run} && !-d $src) {
+            die "Setup: $label '$sub' not found under $s->{path}\n";
+        }
+        _build_one($s, $src);
     }
 }
 
@@ -735,9 +743,10 @@ sub setup_status_repo {
     print("  symlinks:  ", (@syms ? join(", ", @syms) : "(none)"), "\n");
     print("  build:     ", ($s->{build} ? "yes" : "no"), "\n");
     print("  cmake:     ", ($s->{cmake} ? "yes" : "no"), "\n") if $s->{build};
-    if (($s->{build_subdir} // "") ne "") {
-        print("  build_subdir: $s->{build_subdir}\n");
-    }
+    my @bsubs = @{$s->{build_subdirs} // []};
+    print("  build_subdir: ", join(", ", @bsubs), "\n") if @bsubs;
+    my @msubs = @{$s->{make_subdirs} // []};
+    print("  make_subdir: ", join(", ", @msubs), "\n") if @msubs;
     print("  install:   ", ($s->{install} ? "yes" : "no"), "\n");
     print("  relink:    ", ($s->{relink} ? "yes" : "no"), "\n");
     print("  submodules:", ($s->{submodules} ? "yes" : "no"), "\n");
