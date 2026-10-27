@@ -7,7 +7,7 @@
 #   ./prompt init
 #   ./prompt bootstrap          # setup + init
 #   ./prompt [-P beam] run 12345
-#   ./prompt [-P beam] process 10482   # that run and every later raw file
+#   ./prompt [-P beam] process 10482   # that run, every later raw file, then sleep
 #
 # Host overlay is host-<platform>.cfg (e.g. host-merlin6.cfg), not
 # config-<hostname>.cfg as in startGT / relval.
@@ -78,7 +78,7 @@ Targets:
   status         paths and build/tar state
   list           print resolved config + packages (default)
   run RUN ...    run the pipeline for each RUN (see -P)
-  process RUN    from RUN forward: every later raw file in the block dirs (010, 011, ...)
+  process RUN    from RUN forward through raw files (010, 011, ...), then sleep and look again
   cleanup RUN ... remove per-run output (keeps timestamped logs in runs/XXXXX/)
 
 Options:
@@ -201,16 +201,28 @@ if ($target eq "setup") {
 } elsif ($target eq "list") {
     prompt_list($cfg);
 } elsif ($target eq "process") {
-    my $start = $runs[0];
-    my @fwd = forward_runs($cfg, $start);
-    if (!@fwd) {
-        print(prefix(), "process: no raw files at or after $start\n");
-        exit(0);
+    my $start = 0 + $runs[0];
+    my $pause = 0 + ($cfg->{process_sleep} // 60);
+    $pause = 60 if $pause < 1;
+    my $hard = 0;
+    while (1) {
+        my @fwd = forward_runs($cfg, $start);
+        if (@fwd) {
+            print(prefix(), "process: from $start -> " . join(",", @fwd) . "\n");
+            $opts{runs} = \@fwd;
+            $opts{banner} = $banner;
+            $hard += pipeline_run($cfg, %opts);
+            $start = $fwd[-1] + 1;
+        } else {
+            print(prefix(), "process: no raw files at or after $start\n");
+        }
+        if ($dry_run) {
+            print(prefix(), "process: would sleep ${pause}s and look again\n");
+            last;
+        }
+        print(prefix(), "process: sleep ${pause}s\n");
+        sleep($pause);
     }
-    print(prefix(), "process: from $start -> " . join(",", @fwd) . "\n");
-    $opts{runs} = \@fwd;
-    $opts{banner} = $banner;
-    my $hard = pipeline_run($cfg, %opts);
     print(prefix(), "done\n");
     exit($hard ? 1 : 0);
 } elsif ($target eq "run") {
