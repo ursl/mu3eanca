@@ -361,8 +361,8 @@ int main(int argc, char* argv[]) {
             if (string::npos != name.find("hitmap_perChip")) {
               unsigned int chipID;
               replaceAll(name, "hitmap_perChip_", "");
-              chipID = ::stoi(name); 
               if (1) cout << "   .. chipID = " << chipID << " from name = " << oname << endl;
+              chipID = ::stoi(name); 
               if (0 == chipID) {
                 cout << "  XXXXXXXXX  skipping illegal chipID = " << chipID << " from name = " << name << " is 0, skipping" << endl;
                 continue;
