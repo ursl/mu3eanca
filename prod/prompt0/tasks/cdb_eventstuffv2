@@ -48,9 +48,9 @@ my @steps = (
     [$bindir . "/cdbInsertIovTag",
         "-j", $cdb, "-t", $tag, "-i", $run],
     [$bindir . "/syncMu3eDB0",
-        "--dir", $cdb, "--host", $rest, "--sync", "payload", "--name", $payload],
+        "--dir", $cdb, "--host", $rest, "--sync", "payload", "--name", $payload, "--del"],
     [$bindir . "/syncMu3eDB0",
-        "--dir", $cdb, "--host", $rest, "--sync", "tag", "--name", $tag],
+        "--dir", $cdb, "--host", $rest, "--sync", "tag", "--name", $tag, "--del"],
 );
 
 if ($ctx->{dry_run}) {
