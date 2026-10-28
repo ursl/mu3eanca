@@ -1,0 +1,84 @@
+#! /usr/bin/perl
+# cdb_eventstuffv2 — write the eventstuffv2 payload from the midasmeta JSON,
+# insert the IOV, and upload the payload and the tag to MongoDB.
+#
+# The JSON is the raw file plus ".json", written by midasmeta:
+#   {raw_dir}/011/run11015.mid.lz4.json
+#
+#   cdbRunPayloadWriter -u $CDB -m eventstuffv2 -a "prompt" -f <json> -t $cdb_GT -r RUN
+#   cdbInsertIovTag     -j $CDB -t eventstuffv2_$cdb_GT -i RUN
+#   syncMongo --dir $CDB --host <mongo> --sync payload --name tag_eventstuffv2_${cdb_GT}_iov_RUN
+#   syncMongo --dir $CDB --host <mongo> --sync tag     --name eventstuffv2_$cdb_GT
+use strict;
+use warnings;
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $name = "cdb_eventstuffv2";
+
+my $gt  = $ctx->{cdb_GT} // "";
+my $cdb = $ctx->{cdb_json} // "";
+my $raw = $ctx->{raw_file} // TaskLib::raw_file($ctx, $run);
+my $json = "$raw.json";
+my $anca = $ctx->{mu3eanca} // "";
+my $bindir = ($anca ne "") ? "$anca/db0/cdb2/bin" : "";
+
+my $host = "mu3edb0";
+if (($ctx->{rdb_url} // "") =~ m{^https?://([^/:]+)}) {
+    $host = $1;
+}
+
+my $tag = "eventstuffv2_$gt";
+my $payload = "tag_${tag}_iov_$run";
+
+my @steps = (
+    [$bindir . "/cdbRunPayloadWriter",
+        "-u", $cdb, "-m", "eventstuffv2", "-a", "prompt",
+        "-f", $json, "-t", $gt, "-r", $run],
+    [$bindir . "/cdbInsertIovTag",
+        "-j", $cdb, "-t", $tag, "-i", $run],
+    [$bindir . "/syncMongo",
+        "--dir", $cdb, "--host", $host, "--sync", "payload", "--name", $payload],
+    [$bindir . "/syncMongo",
+        "--dir", $cdb, "--host", $host, "--sync", "tag", "--name", $tag],
+);
+
+if ($ctx->{dry_run}) {
+    for my $cmd (@steps) {
+        TaskLib::task_log($ctx, $name, "would: @$cmd");
+    }
+    exit 0;
+}
+
+if ($gt eq "") {
+    TaskLib::task_log($ctx, $name, "cdb_GT unset");
+    exit 2;
+}
+if ($cdb eq "" || !-d $cdb) {
+    TaskLib::task_log($ctx, $name, "cdb_json missing: $cdb");
+    exit 2;
+}
+if (!-f $json) {
+    TaskLib::task_log($ctx, $name, "metadata JSON missing: $json");
+    exit 2;
+}
+for my $exe (map { $_->[0] } @steps) {
+    if (!-x $exe && !-f $exe) {
+        TaskLib::task_log($ctx, $name, "program missing: $exe");
+        exit 2;
+    }
+}
+
+for my $cmd (@steps) {
+    TaskLib::task_log($ctx, $name, "@$cmd");
+    my $rc = system(@$cmd);
+    if ($rc != 0) {
+        TaskLib::task_log($ctx, $name, "failed ($rc): $cmd->[0]");
+        exit 2;
+    }
+}
+
+exit 0;

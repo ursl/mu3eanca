@@ -109,13 +109,14 @@ next run still starts). `./prompt list` prints aliases and the known scripts.
 
 ```
 pipeline: beam
-pipeline_alias: beam=midasmeta,skipSmallRuns,minalyzer,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
+pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
 pipeline_alias: test=midasmeta
 ```
 
 | Task | Description | Status |
 |------|-------------|--------|
 | `midasmeta` | `mu3e_midas_meta` on the raw MIDAS file | live |
+| `cdb_eventstuffv2` | eventstuffv2 payload from the midasmeta JSON, IOV insert, Mongo upload | live |
 | `skipSmallRuns` | Stop this run if RDB Events < `min_events` (exit 1) | live |
 | `minalyzer` | SLURM minalyzer over the raw file; hadd to `merged-dqm_histos_XXXXX.root` | live |
 | `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots; upload the PDF to the RDB (`description=dqm`) | live |
