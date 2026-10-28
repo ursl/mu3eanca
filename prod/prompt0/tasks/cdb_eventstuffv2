@@ -1,14 +1,14 @@
 #! /usr/bin/perl
 # cdb_eventstuffv2 — write the eventstuffv2 payload from the midasmeta JSON,
-# insert the IOV, and upload the payload and the tag to MongoDB.
+# insert the IOV, and upload the payload and the tag through the CDB REST API.
 #
 # The JSON is the raw file plus ".json", written by midasmeta:
 #   {raw_dir}/011/run11015.mid.lz4.json
 #
 #   cdbRunPayloadWriter -u $CDB -m eventstuffv2 -a "prompt" -f <json> -t $cdb_GT -r RUN
 #   cdbInsertIovTag     -j $CDB -t eventstuffv2_$cdb_GT -i RUN
-#   syncMongo --dir $CDB --host <mongo> --sync payload --name tag_eventstuffv2_${cdb_GT}_iov_RUN
-#   syncMongo --dir $CDB --host <mongo> --sync tag     --name eventstuffv2_$cdb_GT
+#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync payload --name tag_eventstuffv2_${cdb_GT}_iov_RUN
+#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync tag     --name eventstuffv2_$cdb_GT
 use strict;
 use warnings;
 use FindBin;
@@ -26,9 +26,13 @@ my $json = "$raw.json";
 my $anca = $ctx->{mu3eanca} // "";
 my $bindir = ($anca ne "") ? "$anca/db0/cdb2/bin" : "";
 
-my $host = "mu3edb0";
-if (($ctx->{rdb_url} // "") =~ m{^https?://([^/:]+)}) {
-    $host = $1;
+my $rest = "http://mu3edb0/cdb";
+my $dbc = $ctx->{cdb_dbconn} // "";
+if ($dbc =~ m{^https?://}) {
+    $rest = $dbc;
+    $rest =~ s{/$}{};
+} elsif (($ctx->{rdb_url} // "") =~ m{^(https?)://([^/:]+)}) {
+    $rest = "$1://$2/cdb";
 }
 
 my $tag = "eventstuffv2_$gt";
@@ -40,10 +44,10 @@ my @steps = (
         "-f", $json, "-t", $gt, "-r", $run],
     [$bindir . "/cdbInsertIovTag",
         "-j", $cdb, "-t", $tag, "-i", $run],
-    [$bindir . "/syncMongo",
-        "--dir", $cdb, "--host", $host, "--sync", "payload", "--name", $payload],
-    [$bindir . "/syncMongo",
-        "--dir", $cdb, "--host", $host, "--sync", "tag", "--name", $tag],
+    [$bindir . "/syncMu3eDB0",
+        "--dir", $cdb, "--host", $rest, "--sync", "payload", "--name", $payload],
+    [$bindir . "/syncMu3eDB0",
+        "--dir", $cdb, "--host", $rest, "--sync", "tag", "--name", $tag],
 );
 
 if ($ctx->{dry_run}) {
