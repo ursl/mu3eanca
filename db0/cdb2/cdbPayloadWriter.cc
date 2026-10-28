@@ -1368,7 +1368,12 @@ void cdbPayloadWriter::writeEventStuffV2IdealInput(std::string filename, std::st
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writeEventStuffV2Payloads(string payloaddir, string gt, string filename, string annotation, int iov) {
-  cout << "   ->cdbInitGT> writing local template eventstuffv2 payloads" << endl;
+  cout << "->cdbPayloadWriter::writeEventStuffV2Payloads> writing local template eventstuffv2 payloads" << endl;
+  cout << "  payloaddir: " << payloaddir << endl;
+  cout << "  gt: " << gt << endl;
+  cout << "  filename: " << filename << endl;
+  cout << "  annotation: " << annotation << endl;
+  cout << "  iov: " << iov << endl;
   calEventStuffV2 *ces = new calEventStuffV2();
   ces->readJSON(filename);
   string hash = "tag_eventstuffv2_" + gt + "_iov_" + to_string(iov);

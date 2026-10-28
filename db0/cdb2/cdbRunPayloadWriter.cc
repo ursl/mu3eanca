@@ -154,6 +154,22 @@ int main(int argc, const char* argv[]) {
     return 0;
   }
 
+   // -- single eventstuffv2 
+   if (string::npos != mode.find("eventstuffv2")) {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m eventstuffv2 -f filename" << endl;
+      return 0;
+    }
+    cout << "== cdbRunPayloadWriter::main> writing eventstuffv2 payloads" << endl;
+    cout << "   uri: " << uri << endl;
+    cout << "   tagname: " << tagname << endl;
+    cout << "   filename: " << filename << endl;
+    cout << "   annotation: " << annotation << endl;
+    cout << "   run: " << run << endl;
+    writer.writeEventStuffV2Payloads(uri+"/payloads/", tagname, filename, annotation, run);
+    return 0;
+  }
   // -- IDEAL tiletimecalibration 
   if (string::npos != mode.find("tiletimecalibration") && string::npos != mode.find("ideal")) {
     if (filename == "unset") {
