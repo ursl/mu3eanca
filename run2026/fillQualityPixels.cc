@@ -32,6 +32,7 @@ using json = nlohmann::ordered_json;
 #include "TMath.h"
 #include "TKey.h"
 #include "TROOT.h"
+#include "TSystem.h"
 
 using namespace std;
 
@@ -75,7 +76,6 @@ void printRunInfoMap();
 void createPayload(string, calAbs *, string, string, string);
 void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z);
 bool determineBrokenLinks(TH2 *h, vector<int> &links);
-bool determineBrokenLinksV0(TH2 *h, vector<int> &links);
 void determineDeadColumns(TH2 *h, vector<int> &colums, vector<int> &links);
 void determineNoisyPixels(TH2 *h, vector<int> &pixels, vector<int> &colums, vector<int> &links); // icol,irow,iqual
 
@@ -336,7 +336,7 @@ int main(int argc, char* argv[]) {
   // -- read in ALL chipids in VTX
   vector<unsigned int> vchipid;
   vector<string> vStations = {"station_0"};
-  map<string, int> vLayers  = {{"layer_1", 8}, {"layer_2", 10}};
+  map<string, int> vLayers  = {{"layer_1", 8}, {"layer_2", 10}, {"layer_3", 24}};
   map<int, TH2*> mHitmaps;
 
   // -- read in all hitmaps
@@ -358,11 +358,13 @@ int main(int argc, char* argv[]) {
             if (!gROOT->GetClass(key->GetClassName())->InheritsFrom("TH1")) continue;       
             string name = key->GetName();
             string oname = s + "/" + name;
+            if (string::npos != name.find("hitmap_perChip_withToTCut_")) continue;
             if (string::npos != name.find("hitmap_perChip")) {
               unsigned int chipID;
               replaceAll(name, "hitmap_perChip_", "");
-              if (1) cout << "   .. chipID = " << chipID << " from name = " << oname << endl;
+              if (1) cout << "   .. chipID = ";
               chipID = ::stoi(name); 
+              cout << chipID << " from name = " << oname << endl;
               if (0 == chipID) {
                 cout << "  XXXXXXXXX  skipping illegal chipID = " << chipID << " from name = " << name << " is 0, skipping" << endl;
                 continue;
@@ -381,6 +383,11 @@ int main(int argc, char* argv[]) {
 
   // -- do analysis
   vector<int> deadlinks, deadcolumns, noisyPixels;
+  if (gSystem->AccessPathName("csv")) {
+    if (gSystem->mkdir("csv") != 0) {
+      cout << "ERROR: cannot create directory csv" << endl;
+    }
+  }
   ofstream ofs;
   ofs.open(Form("csv/pixelqualitylm-run%d.csv", run));
   ofs << CSVSCHEMA << " NB: " << calPixelQualityLM::getStatusDocumentation() << endl;
@@ -524,7 +531,6 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   
   // -- hand-curated list to avoid getting lost in algorithmic nightmares
   vector<int> vBadChips = {};
-
   if (find(vBadChips.begin(), vBadChips.end(), chipID) != vBadChips.end()) {  
     links.push_back(calPixelQualityLM::DeclaredBad);
     links.push_back(calPixelQualityLM::DeclaredBad);
@@ -666,136 +672,6 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   links.push_back(lkStatus[1]);
   links.push_back(lkStatus[2]);
   links.push_back(lkStatus[3]);
-
-  return true;
-}
-
-// ----------------------------------------------------------------------
-// -- old code
-bool determineBrokenLinksV0(TH2 *h, vector<int> &links) {
-  bool DBX(false);
-
-  // -- the histogram still used to provide the chip name
-  string schip = h->GetName();
-  replaceAll(schip, "hitmap_perChip_", "");
-  int chipID = ::stoi(schip);
-
-  // -- determine dead chips
-  double nLinkA = h->Integral(1, 88, 1, 250);
-  double nLinkB = h->Integral(89, 172, 1, 250);
-  double nLinkC = h->Integral(173, 256, 1, 250);
-  vector<double> vLink = {nLinkA, nLinkB, nLinkC};
-  double nLinkAverage = (nLinkA + nLinkB + nLinkC)/3.;
-  if (1) cout << "  nLinkA = " << nLinkA << " nLinkB = " << nLinkB << " nLinkC = " << nLinkC << " nLinkAverage = " << nLinkAverage << endl;
-  if (nLinkA < 1 && nLinkB < 1 && nLinkC < 1) {
-    links.push_back(8);
-    links.push_back(8);
-    links.push_back(8);
-    links.push_back(8);
-    return false;
-  }
-
-  // -- search for pathological cases where all hits are very close to the top (bottom) edge
-  vector<double> vLinkMeanY;
-  vLinkMeanY.push_back(h->ProjectionY("A", 1, 88)->GetMean());
-  vLinkMeanY.push_back(h->ProjectionY("B", 89, 172)->GetMean());
-  vLinkMeanY.push_back(h->ProjectionY("C", 173, 256)->GetMean());
-  int badChip(-1); // -- if any link is broken and not masked, the chip is bad
-  if (nLinkA > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245)) badChip = 1;
-  if (nLinkB > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245)) badChip = 2;
-  if (nLinkC > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)) badChip = 3;
-  if (badChip > 0) {
-    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2] << endl;  
-    if (nLinkA < 1) {
-      links.push_back(8);
-    } else {
-      links.push_back(3);
-    }
-    if (nLinkB < 1) {
-      links.push_back(8);
-    } else {
-      links.push_back(3);
-    }
-    if (nLinkC < 1) {
-      links.push_back(8);
-    } else {
-      links.push_back(3);
-    }
-    links.push_back(0);
-    return true;
-  }
-
-
-  // -- hand-curated list to avoid getting lost in algorithmic nightmares
-  vector<int> vBadChips = {102};
-
-  if (find(vBadChips.begin(), vBadChips.end(), chipID) != vBadChips.end()) {  
-    links.push_back(3);
-    links.push_back(3);
-    links.push_back(3);
-    links.push_back(3);
-    return true;
-  }
-
-  AsicInfo ai = gRunInfoMap[chipID];
-
-  // -- completely disabled chip
-  if (0 == ai.abcLinkMask[0]
-      && 0 == ai.abcLinkMask[1]
-      && 0 == ai.abcLinkMask[2]) {
-    links.push_back(9);
-    links.push_back(9);
-    links.push_back(9);
-    links.push_back(0);
-    return false;
-  }
-
-  
-  // -- check individual links. i = 0,1,2 is sensor A, B, C.
-  int lkStatus[3] = {0, 0, 0};
-  int nBadLinks(0);
-  badChip = -1;
-  static const char kSensor[3] = {'A', 'B', 'C'};
-  for (int i = 0; i < 3; ++i) {
-    int idx = -1;
-    if (!ai.letterToIndex(kSensor[i], idx)) {
-      lkStatus[i] = 4;
-      cout << "Chip " << chipID << " sensor " << kSensor[i] << " status = " << lkStatus[i]
-           << " unmapped" << endl;
-      continue;
-    }
-    if (vLink[i] < 1) lkStatus[i] = 8;
-    if (0 == ai.abcLinkMask[idx]) lkStatus[i] = 9;
-    if (9 == ai.abcLinkMask[idx]) lkStatus[i] = 9;
-    if (ai.abcLinkErrs[idx] > 10) lkStatus[i] = 4;
-    if (ai.abcLinkErrs[idx] > 10 && 1 == ai.abcLinkMask[idx]) {
-      badChip = i;
-      ++nBadLinks;
-    }
-    cout << "Chip " << chipID << " sensor " << kSensor[i] << " status = " << lkStatus[i]
-         << " idx = " << idx
-         << " mask = " << ai.abcLinkMask[idx] << " errs = " << ai.abcLinkErrs[idx]
-         << endl;
-  }
-
-
-  if (badChip >= 0) {    
-    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << endl;
-    for (int i = 0; i < 3; ++i) {
-      if (i != badChip) {
-        lkStatus[i] = 5;
-      } else {
-        lkStatus[i] = 4;
-      }
-    }
-  }
-
-  // An all-E matrix maps no sensor letter. Those sensors are already status 4.
-
-  links.push_back(lkStatus[0]);
-  links.push_back(lkStatus[1]);
-  links.push_back(lkStatus[2]);
-  links.push_back(0);
 
   return true;
 }
