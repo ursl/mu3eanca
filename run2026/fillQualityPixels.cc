@@ -60,7 +60,7 @@ using namespace std;
 // moor>./bin/fillQualityPixels -i datav6.3=2025V0 -g datav6.4=2025V0 -j ~/data/mu3e/cdb/ -p 4
 // ----------------------------------------------------------------------
 
-#define JSONDIR "/Users/ursl/data/mu3e/cdb"
+#define JSONDIR "/data/experiment/mu3e/cdb/"
 #define CSVSCHEMA "#chipID,ckdivend,ckdivend2,linkA,linkB,linkC,linkM,ncol[,icol,iqual],npix[,icol,irow,iqual]"
 // ----------------------------------------------------------------------
 struct pixhit {
@@ -163,10 +163,13 @@ int main(int argc, char* argv[]) {
   string jsondir(JSONDIR), filename("nada.root");
   string gt("datav6.3=2025V0");
   string igt("datav6.2=2025Beam");
+  string outputdir("/data/experiment/mu3e/data/prod/prompt/cdb");
   string rootMetaMidasFilename("nada.root");
   string comment("no comment provided :-(");
+
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-c"))      {comment = argv[++i];}
+    if (!strcmp(argv[i], "-d"))      {outputdir = argv[++i];}
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-i"))      {igt = argv[++i];}
@@ -469,7 +472,7 @@ int main(int argc, char* argv[]) {
   string schema = cpq->getSchema();
   string payloadcomment = comment + " " +  calPixelQualityLM::getStatusDocumentation();
 
-  createPayload(hash, cpq, "./payloads", schema, payloadcomment);
+  createPayload(hash, cpq, outputdir, schema, payloadcomment);
 
   if (0) {
     cout << "READ CSV: " << Form("csv/pixelqualitylm-run%d.csv", run) << endl;
@@ -481,7 +484,7 @@ int main(int argc, char* argv[]) {
 }
 
 // ----------------------------------------------------------------------
-void createPayload(string hash, calAbs *a, string jsondir, string schema, string comment) {
+void createPayload(string hash, calAbs *a, string dir, string schema, string comment) {
 
   string sblob = a->makeBLOB();
   payload pl;
@@ -494,7 +497,7 @@ void createPayload(string hash, calAbs *a, string jsondir, string schema, string
   cout <<  pl.printString(false) << endl;
   a->printBLOB(sblob);
   cout << "######################################################################" << endl;
-  a->writePayloadToFile(hash, jsondir, pl);
+  a->writePayloadToFile(hash, dir, pl);
 }
 
 // ----------------------------------------------------------------------
