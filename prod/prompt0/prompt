@@ -29,6 +29,9 @@ my @packages   = ();
 my $pipeline   = "";
 my $runs_opt   = "";
 
+# Saved before GetOptions, which removes the flags from @ARGV.
+my @invocation = ($0, @ARGV);
+
 GetOptions(
     "c=s"        => \$config,
     "H|host=s"   => \$host_opt,
@@ -65,6 +68,14 @@ use TaskLib qw(forward_runs);
 sub prefix {
     my $now = localtime;
     return "$now/prompt         / ";
+}
+
+# An argument is quoted when it would not be a single tcsh word.
+sub _quote_arg {
+    my ($s) = @_;
+    return $s if $s =~ /^[\w.\/:=@+,~-]+$/;
+    $s =~ s/'/'\\''/g;
+    return "'$s'";
 }
 
 sub usage {
@@ -147,6 +158,8 @@ sub _collect_runs {
 
 my $script_dir = abs_path(dirname($0));
 chdir($script_dir) or die "Cannot chdir to $script_dir: $!\n";
+
+print(prefix(), join(" ", map { _quote_arg($_) } @invocation), "\n");
 
 my $cfg_file = $config;
 my $host     = prompt_platform($host_opt);
