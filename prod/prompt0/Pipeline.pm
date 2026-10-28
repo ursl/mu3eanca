@@ -7,7 +7,7 @@ package Pipeline;
 # Per-run task list for prompt0. Tasks are executable scripts in tasks/.
 #
 #   pipeline: beam
-#   pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
+#   pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,cdb_pixelqualitylm,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
 #
 # CLI:  ./prompt [-P beam | -P t1,t2,...] run RUN [RUN ...]
 #
