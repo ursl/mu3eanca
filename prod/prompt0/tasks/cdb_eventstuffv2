@@ -11,6 +11,7 @@
 #   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync tag     --name eventstuffv2_$cdb_GT
 use strict;
 use warnings;
+use Cwd qw(getcwd);
 use FindBin;
 use lib "$FindBin::Bin/..";
 use TaskLib;
@@ -25,6 +26,8 @@ my $raw = $ctx->{raw_file} // TaskLib::raw_file($ctx, $run);
 my $json = "$raw.json";
 my $anca = $ctx->{mu3eanca} // "";
 my $bindir = ($anca ne "") ? "$anca/db0/cdb2/bin" : "";
+# bin/* is linked against lib/libCDB.so, resolved from the process cwd.
+my $cdbdir = "$bindir/..";
 
 my $rest = "http://mu3edb0/cdb";
 my $dbc = $ctx->{cdb_dbconn} // "";
@@ -51,6 +54,7 @@ my @steps = (
 );
 
 if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "would: cd $cdbdir");
     for my $cmd (@steps) {
         TaskLib::task_log($ctx, $name, "would: @$cmd");
     }
@@ -76,13 +80,26 @@ for my $exe (map { $_->[0] } @steps) {
     }
 }
 
+my $cwd = getcwd();
+chdir($cdbdir) or do {
+    TaskLib::task_log($ctx, $name, "cannot chdir $cdbdir: $!");
+    exit 2;
+};
+TaskLib::task_log($ctx, $name, "cwd=$cdbdir");
+
 for my $cmd (@steps) {
     TaskLib::task_log($ctx, $name, "@$cmd");
     my $rc = system(@$cmd);
     if ($rc != 0) {
+        chdir($cwd);
         TaskLib::task_log($ctx, $name, "failed ($rc): $cmd->[0]");
         exit 2;
     }
 }
+
+chdir($cwd) or do {
+    TaskLib::task_log($ctx, $name, "cannot chdir back to $cwd: $!");
+    exit 2;
+};
 
 exit 0;
