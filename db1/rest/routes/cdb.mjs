@@ -9,6 +9,16 @@ import db from "../db/conn.mjs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const PAYLOAD_GRIDFS_BUCKET = "payloadBlobs";
+// Same cutoff as cdbUtil.hh kMaxInlinePayloadB64Chars. Larger base64 BLOBs
+// are stored in GridFS and the document keeps blobStorage/blobGridFsId/blobSize.
+const MAX_INLINE_PAYLOAD_B64 = 10 * 1024 * 1024;
+const CDB_COLLECTIONS = new Set([
+  "globaltags",
+  "tags",
+  "payloads",
+  "configs",
+  "runrecords",
+]);
 
 /**
  * When several `tags` documents share the same `tag`, prefer one with a non-empty
@@ -339,6 +349,162 @@ router.get("/debug/payloads", async (req, res) => {
     console.error("Error in debug/payloads:", error);
     res.status(500).send({ error: error.message });
   }
+});
+
+function cdbTimeStamp() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+function payloadBucket() {
+  return new GridFSBucket(db, { bucketName: PAYLOAD_GRIDFS_BUCKET });
+}
+
+function uploadPayloadBlob(filename, buffer) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = payloadBucket().openUploadStream(filename);
+    uploadStream.on("error", reject);
+    uploadStream.on("finish", () => resolve(uploadStream.id));
+    uploadStream.end(buffer);
+  });
+}
+
+async function deleteGridFsIfPresent(doc) {
+  if (!doc || doc.blobStorage !== "gridfs" || !doc.blobGridFsId) return;
+  const hashInfo = typeof doc.hash === "string" ? doc.hash : "?";
+  try {
+    await payloadBucket().delete(new ObjectId(doc.blobGridFsId));
+    console.log(`sync: deleted GridFS blob id=${doc.blobGridFsId} hash=${hashInfo}`);
+  } catch (err) {
+    console.error(`sync: GridFS delete failed id=${doc.blobGridFsId} hash=${hashInfo}:`, err.message);
+  }
+}
+
+async function offloadLargePayloadBlob(doc) {
+  if (typeof doc.BLOB !== "string" || doc.BLOB.length <= MAX_INLINE_PAYLOAD_B64) {
+    return doc;
+  }
+  const buf = Buffer.from(doc.BLOB, "base64");
+  const hashStr = typeof doc.hash === "string" ? doc.hash : "payload";
+  const id = await uploadPayloadBlob(hashStr, buf);
+  delete doc.BLOB;
+  doc.blobStorage = "gridfs";
+  doc.blobGridFsId = id.toString();
+  doc.blobSize = buf.length;
+  return doc;
+}
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function deleteMatching(collectionName, filter) {
+  const col = db.collection(collectionName);
+  const docs = await col.find(filter).toArray();
+  let n = 0;
+  for (const doc of docs) {
+    await deleteGridFsIfPresent(doc);
+    const r = await col.deleteOne({ _id: doc._id });
+    n += r.deletedCount || 0;
+  }
+  return n;
+}
+
+// --------------------------------------------------------------
+// -- Insert one JSON document. X-Cdb-File is the on-disk basename.
+router.post("/insert/:collection", async (req, res) => {
+  const collection = req.params.collection;
+  if (!CDB_COLLECTIONS.has(collection)) {
+    return res.status(400).send("unknown collection " + collection);
+  }
+  const fileBase = String(req.get("x-cdb-file") || "");
+  if (!fileBase) return res.status(400).send("missing X-Cdb-File");
+  if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+    return res.status(400).send("JSON object required");
+  }
+
+  const doc = req.body;
+  if (collection === "globaltags") {
+    if (typeof doc.gt !== "string" || doc.gt !== fileBase) {
+      return res.status(400).send(
+        `filename "${fileBase}" does not match "gt" "${doc.gt ?? ""}"`
+      );
+    }
+  }
+  if (collection === "runrecords") {
+    if (!Object.prototype.hasOwnProperty.call(doc, "EOR")) {
+      return res.status(400).send("EOR not found");
+    }
+    if (Array.isArray(doc.EOR) && doc.EOR.length > 1) {
+      return res.status(400).send("multiple EORs");
+    }
+  }
+
+  delete doc._id;
+  doc.History = [{ date: cdbTimeStamp(), comment: "Database entry inserted" }];
+  try {
+    if (collection === "payloads") await offloadLargePayloadBlob(doc);
+  } catch (err) {
+    console.error("GridFS offload failed:", err);
+    return res.status(500).send("GridFS offload failed: " + err.message);
+  }
+
+  const result = await db.collection(collection).insertOne(doc);
+  console.log(`inserted ${collection}/${fileBase} _id=${result.insertedId}`);
+  return res.status(201).json({
+    insertedId: String(result.insertedId),
+    file: fileBase,
+  });
+});
+
+router.delete("/globaltags/:gt", async (req, res) => {
+  const n = await deleteMatching("globaltags", { gt: req.params.gt });
+  console.log(`delete globaltags gt=${req.params.gt} count=${n}`);
+  return res.status(200).json({ deleted: n });
+});
+
+router.delete("/tags/:tag", async (req, res) => {
+  const n = await deleteMatching("tags", { tag: req.params.tag });
+  console.log(`delete tags tag=${req.params.tag} count=${n}`);
+  return res.status(200).json({ deleted: n });
+});
+
+router.delete("/payloads/hash/:hash", async (req, res) => {
+  const n = await deleteMatching("payloads", { hash: req.params.hash });
+  console.log(`delete payloads hash=${req.params.hash} count=${n}`);
+  return res.status(200).json({ deleted: n });
+});
+
+router.delete("/payloads", async (req, res) => {
+  const tagDir = req.query.tagDir;
+  if (!tagDir) return res.status(400).send("tagDir required");
+  const rx = "^tag_" + escapeRegex(String(tagDir)) + "_iov_";
+  const n = await deleteMatching("payloads", { hash: { $regex: rx } });
+  console.log(`delete payloads for tag dir ${tagDir} count=${n}`);
+  return res.status(200).json({ deleted: n });
+});
+
+// Legacy clear: regex (case-insensitive) on gt, tag, hash, and cfgHash,
+// or every document when all=1.
+router.delete("/clear/:collection", async (req, res) => {
+  const collection = req.params.collection;
+  if (!CDB_COLLECTIONS.has(collection)) {
+    return res.status(400).send("unknown collection " + collection);
+  }
+  let n = 0;
+  if (req.query.all === "1") {
+    n = await deleteMatching(collection, {});
+  } else if (req.query.pat) {
+    const pat = String(req.query.pat);
+    for (const field of ["gt", "tag", "hash", "cfgHash"]) {
+      n += await deleteMatching(collection, { [field]: { $regex: pat, $options: "i" } });
+    }
+  } else {
+    return res.status(400).send("pat or all=1 required");
+  }
+  console.log(`clear ${collection} count=${n}`);
+  return res.status(200).json({ deleted: n });
 });
 
 console.log(

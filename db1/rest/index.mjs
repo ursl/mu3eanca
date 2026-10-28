@@ -29,6 +29,9 @@ const PORT = process.env.PORT || 5050;
 const app = express();
 
 app.use(cors());
+// Payload JSON can be tens of MB (base64 BLOB). Parse this path before the
+// default 100kb parser so the later parsers see req._body and skip it.
+app.use("/cdb/insert", express.json({ limit: "200mb" }));
 app.use(express.json());
 app.use(bodyParser.json());
 
