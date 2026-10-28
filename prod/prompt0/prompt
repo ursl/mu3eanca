@@ -159,7 +159,7 @@ sub _collect_runs {
 my $script_dir = abs_path(dirname($0));
 chdir($script_dir) or die "Cannot chdir to $script_dir: $!\n";
 
-print(prefix(), join(" ", map { _quote_arg($_) } @invocation), "\n");
+print(prefix(), "pid=$$ ", join(" ", map { _quote_arg($_) } @invocation), "\n");
 
 my $cfg_file = $config;
 my $host     = prompt_platform($host_opt);
