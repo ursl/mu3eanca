@@ -246,7 +246,7 @@ sub _ctx_kv {
             "{mu3eanca}/run2025/analysis"),
         fill_quality_pixels_meta => _strip($cfg->{fill_quality_pixels_meta} // ""),
         cdb_json           => _strip($cfg->{cdb_json} // ""),
-        cdb_GT_in          => _strip($cfg->{cdb_GT_in} // ""),
+        cdb_pixelqualitylm_tag => _strip($cfg->{cdb_pixelqualitylm_tag} // ""),
     );
     $kv{tar_file} = ($pctx->{root} ne "" && $workdir ne "")
         ? "$pctx->{root}/slurm/$workdir.tar.gz" : "";

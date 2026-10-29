@@ -52,7 +52,7 @@ using namespace std;
 // Examples:
 // ---------
 // cd mu3eanca/run2026
-//    ./bin/fillQualityPixels -i datav7.1=2026V0 -g datav7.1=2026V0 \
+//    ./bin/fillQualityPixels -g datav7.1=2026V1 -t datav7.1=2026V0 \
 //    -j ~/data/mu3e/cdb/ -f ~/data/mu3e/run2026/mlzr/merged-dqm_histos_06163.root 
 //    -r datav6.4=2025V0-MidasMeta2025Data.root
 //
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
   int verbose(0), mode(1), printMode(0);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(JSONDIR), filename("nada.root");
-  string gt("datav6.3=2025V0");
+  string tag("datav6.3=2025V0");
   string igt("datav6.2=2025Beam");
   string outputdir("/data/experiment/mu3e/data/prod/prompt/cdb");
   string rootMetaMidasFilename("nada.root");
@@ -169,8 +169,8 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-c"))      {comment = argv[++i];}
     if (!strcmp(argv[i], "-d"))      {outputdir = argv[++i];}
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
-    if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
-    if (!strcmp(argv[i], "-i"))      {igt = argv[++i];}
+    if (!strcmp(argv[i], "-t"))      {tag = argv[++i];}
+    if (!strcmp(argv[i], "-g"))      {igt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-p"))      {printMode = atoi(argv[++i]);}
@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
     }  
     ofs.close();
 
-    string hash = string("tag_pixelqualitylm_") + gt + string("_iov_1");
+    string hash = string("tag_pixelqualitylm_") + tag + string("_iov_1");
     calPixelQualityLM *cpq = new calPixelQualityLM();
     cpq->readCsv(Form("csv/deadlinks-allpixels.csv"));
     string blob = cpq->makeBLOB();
@@ -320,7 +320,7 @@ int main(int argc, char* argv[]) {
   // FIXME
   int ckdivend(gRunInfoMap[1].ckdivend), ckdivend2(gRunInfoMap[1].ckdivend2);
 
-  string hash = string("tag_pixelqualitylm_") + gt + string("_iov_") + to_string(run);
+  string hash = string("tag_pixelqualitylm_") + tag + string("_iov_") + to_string(run);
   
   cout << "hallo" << endl;
   TFile *f = TFile::Open(filename.c_str());
