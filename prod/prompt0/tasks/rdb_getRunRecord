@@ -1,0 +1,60 @@
+#! /usr/bin/perl
+# rdb_getRunRecord — copy this run's run record from the REST API into $CDB.
+#
+#   syncJSON --rdb --dir $CDB -a -f RUN -l RUN
+#
+# -f/-l are the run-number bounds. -a keeps the record even when it is not
+# marked significant. Run from db0/cdb2 so lib/libCDB.so resolves.
+use strict;
+use warnings;
+use Cwd qw(getcwd);
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $name = "rdb_getRunRecord";
+
+my $cdb = $ctx->{cdb_json} // "";
+$cdb =~ s{/$}{};
+my $anca = $ctx->{mu3eanca} // "";
+my $bindir = ($anca ne "") ? "$anca/db0/cdb2/bin" : "";
+my $cdbdir = "$bindir/..";
+my $exe = ($bindir ne "") ? "$bindir/syncJSON" : "";
+
+my @cmd = ($exe, "--rdb", "--dir", $cdb, "-a", "-f", $run, "-l", $run);
+
+if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "would: cd $cdbdir");
+    TaskLib::task_log($ctx, $name, "would: @cmd");
+    exit 0;
+}
+
+if ($cdb eq "" || !-d $cdb) {
+    TaskLib::task_log($ctx, $name, "cdb_json missing: $cdb");
+    exit 2;
+}
+if (!-x $exe && !-f $exe) {
+    TaskLib::task_log($ctx, $name, "program missing: $exe");
+    exit 2;
+}
+
+my $cwd = getcwd();
+chdir($cdbdir) or do {
+    TaskLib::task_log($ctx, $name, "cannot chdir $cdbdir: $!");
+    exit 2;
+};
+TaskLib::task_log($ctx, $name, "cwd=$cdbdir");
+TaskLib::task_log($ctx, $name, "@cmd");
+my $rc = system(@cmd);
+chdir($cwd) or do {
+    TaskLib::task_log($ctx, $name, "cannot chdir back to $cwd: $!");
+    exit 2;
+};
+if ($rc != 0) {
+    TaskLib::task_log($ctx, $name, "failed ($rc): $exe");
+    exit 2;
+}
+
+exit 0;
