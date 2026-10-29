@@ -758,12 +758,6 @@
          setEdit();
      });
 
-     // Add event listener for the Save button
-     document.getElementById('btnSubm').addEventListener('click', function() {
-         console.log("Save button clicked");
-         updateRun();
-     });
-
      // Add event listeners for textarea changes
      document.querySelectorAll('textarea').forEach(textarea => {
          textarea.addEventListener('change', function() {
@@ -818,11 +812,21 @@
          } 
      }
 
+     let saveInFlight = false;
+     let leavingPage = false;
+     window.addEventListener('pagehide', function () {
+         leavingPage = true;
+     });
+
      function updateRun() {
          if (doEdit < 1) {
              alert("Nothing edited. Will not save.\nClick Edit button to allow editing.");
              return;
-         } 
+         }
+         if (saveInFlight) {
+             return;
+         }
+         saveInFlight = true; 
 
          var ldata = <%- JSON.stringify(data) %>;
          
@@ -1009,7 +1013,13 @@
              location.reload();
          })
          .catch(error => {
+             saveInFlight = false;
              console.error('Error:', error);
+             // Leaving the page aborts the request. Safari reports that as
+             // "Load failed", which is not a failed save.
+             if (leavingPage || (error && error.name === 'AbortError')) {
+                 return;
+             }
              alert('Error saving changes: ' + error.message);
          });
      }

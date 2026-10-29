@@ -460,6 +460,17 @@
 </style>
 
 <script>
+// Back (and the browser back button) restore this page from the
+// back-forward cache, so a save made on a run page stays invisible
+// until a real reload.
+window.addEventListener('pageshow', function (event) {
+    const nav = performance.getEntriesByType('navigation')[0];
+    const fromHistory = event.persisted || (nav && nav.type === 'back_forward');
+    if (fromHistory) {
+        window.location.reload();
+    }
+});
+
 let isFiltered = true;
 let onlySignificant = "yes";
 let isOnlySignificant = true;

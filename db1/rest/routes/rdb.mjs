@@ -760,15 +760,18 @@ router.post("/updateRun", async (req, res) => {
 
     let ndata = req.body;
     delete ndata["_id"];
-    console.log("ndata: " + JSON.stringify(ndata));                
+    console.log("ndata: " + JSON.stringify(ndata));
 
-    const nval = {$set: ndata};
-    await collection.updateOne(query, nval, function(err, res) {
-        if (err) throw err;
+    try {
+        await collection.updateOne(query, {$set: ndata});
         console.log("1 document updated");
-    });
-    // await db.save(); // FIXME: will lead to "500 (Internal Server Error)"
-
+        res.sendStatus(204);
+    } catch (error) {
+        console.error("updateRun failed:", error);
+        if (!res.headersSent) {
+            res.status(500).send("Internal server error: " + error.message);
+        }
+    }
 });
 
 
