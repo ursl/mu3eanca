@@ -23,6 +23,8 @@
          }
 
          .button {
+             appearance: none;
+             -webkit-appearance: none;
              background-color: #00703c; /* Green */
              border: none;
              color: white;
@@ -31,6 +33,65 @@
              text-decoration: none;
              display: inline-block;
              font-size: 16px;
+             border-radius: 4px;
+             cursor: pointer;
+             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+             transition: background-color 0.12s ease, box-shadow 0.08s ease, transform 0.08s ease;
+         }
+
+         .button:hover {
+             background-color: #005c32;
+         }
+
+         .button:active {
+             background-color: #003d24;
+             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+             transform: translateY(1px);
+         }
+
+         .button:focus-visible {
+             outline: 2px solid #003d24;
+             outline-offset: 2px;
+         }
+
+         /* Idle Save is muted until Edit is clicked. Inline background would
+            outrank :active, so the two states live in classes. */
+         #btnSubm {
+             float: right;
+             background-color: #93c572;
+         }
+
+         #btnSubm:hover {
+             background-color: #7aaf5a;
+         }
+
+         #btnSubm:active {
+             background-color: #5a8a3e;
+         }
+
+         #btnSubm.ready {
+             background-color: #00703c;
+         }
+
+         #btnSubm.ready:hover {
+             background-color: #005c32;
+         }
+
+         #btnSubm.ready:active {
+             background-color: #003d24;
+         }
+
+         #btnEdit.is-editing {
+             background-color: #005c32;
+             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+         }
+
+         #btnEdit.is-editing:hover {
+             background-color: #004d2a;
+         }
+
+         #btnEdit.is-editing:active {
+             background-color: #003d24;
          }
         
          textarea {
@@ -240,7 +301,7 @@
         <div>
             <input id="btnBack" type="button" class="button" value="Back" onclick=setBack() />
             <input id="btnEdit" type="button" class="button" color="blue" value="Edit" onclick=setEdit() />
-            <input id="btnSubm" type="button" class="button" value="Save" style="float: right; background-color:#93c572" onclick=updateRun() />
+            <input id="btnSubm" type="button" class="button" value="Save" onclick=updateRun() />
         </div>
 
         <table id="runs">
@@ -661,10 +722,13 @@
                  riSignificant.disabled = false;
              }
 
-             // Update Save button color
              const submitButton = document.getElementById('btnSubm');
              if (submitButton) {
-                 submitButton.style = "float: right; background-color:#00703c";
+                 submitButton.classList.add('ready');
+             }
+             const editButton = document.getElementById('btnEdit');
+             if (editButton) {
+                 editButton.classList.add('is-editing');
              }
              
              // Enable Data Quality checkboxes if they exist
@@ -728,10 +792,13 @@
                  riSignificant.disabled = true;
              }
 
-             // Update Save button color
              const submitButton = document.getElementById('btnSubm');
              if (submitButton) {
-                 submitButton.style = "float: right; background-color:#00703c";
+                 submitButton.classList.remove('ready');
+             }
+             const editButton = document.getElementById('btnEdit');
+             if (editButton) {
+                 editButton.classList.remove('is-editing');
              }
              
              // Disable Data Quality checkboxes if they exist
