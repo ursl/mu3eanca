@@ -519,7 +519,7 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 // ----------------------------------------------------------------------
 // -- this is completely new and now relies on PCLS data read from midas meta data tree
 bool determineBrokenLinks(TH2 *h, vector<int> &links) {
-  bool DBX(true);
+  bool DBX(false);
 
   // -- the histogram still used to provide the chip name
   string schip = h->GetName();
@@ -527,6 +527,10 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   int chipID = ::stoi(schip);
 
   AsicInfo ai = gRunInfoMap[chipID];
+
+  // -- allow ignoring Midas meta data for layer 3 (globalID missing)
+  bool MMDvalid(true);
+  if (chipID >= 2055) MMDvalid = false;
 
   if (DBX) cout << "XXX chipID = " << chipID << " linkMask = " << ai.abcLinkMask[0] << " " << ai.abcLinkMask[1] << " " << ai.abcLinkMask[2] << endl;
   
@@ -541,7 +545,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   }
   
   // -- completely masked chip
-  if (0 == ai.abcLinkMask[0]
+  if (MMDvalid && 0 == ai.abcLinkMask[0]
       && 0 == ai.abcLinkMask[1]
       && 0 == ai.abcLinkMask[2]) {
     links.push_back(calPixelQualityLM::Masked);
@@ -575,17 +579,17 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   static const char kSensor[3] = {'A', 'B', 'C'};
   for (int i = 0; i < 3; ++i) {
     int idx = -1;
-    if (!ai.letterToIndex(kSensor[i], idx)) {
+    if (MMDvalid && !ai.letterToIndex(kSensor[i], idx)) {
       if (DBX) cout << "Chip " << chipID << " sensor " << kSensor[i] << " unmapped " << idx << endl;
       lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
       continue;
     }
     if (vLink[i] < 1) lkStatus[i] = calPixelQualityLM::NoHits;
-    if (0 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
-    if (9 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
-    if (ai.abcLinkErrs[idx] > 10.) lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
+    if (MMDvalid && 0 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
+    if (MMDvalid && 9 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
+    if (MMDvalid && ai.abcLinkErrs[idx] > 10.) lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
     // -- if LVDS error rate is high and link is not masked, set to badChip!
-    if (ai.abcLinkErrs[idx] > 10. && 1 == ai.abcLinkMask[idx]) {
+    if (MMDvalid && ai.abcLinkErrs[idx] > 10. && 1 == ai.abcLinkMask[idx]) {
       badChip = 1;
       ++nBadLinks;
       badLink[i] = true;
