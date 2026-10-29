@@ -103,7 +103,8 @@ Options:
 
 ## Per-run pipeline
 
-Each run walks a comma-separated list of **task scripts** in `tasks/`. If a
+Each run walks a comma-separated list of **task scripts** in `tasks/`. An
+entry in that list may be another alias, which is expanded in place. If a
 task exits non-zero, the rest of the list is skipped for **that run** (the
 next run still starts). `./prompt list` prints aliases and the known scripts.
 

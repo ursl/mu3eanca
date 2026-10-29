@@ -97,7 +97,7 @@ Options:
   -H PLATFORM    host overlay host-PLATFORM.cfg (default: merlin6 on merlin-l-*)
   -s YYMMDD      override prompt_workdir (dated production area)
   -p ID          only this [repo] id (setup; repeatable or comma-separated)
-  -P PIPE        pipeline alias or comma-separated tasks (default: cfg pipeline:)
+  -P PIPE        pipeline alias, tasks, or a mix (default: cfg pipeline:)
   -r RUNS        run numbers: 12345,12346 or 12345..12350 (with run or cleanup)
   -j N           make -jN for package builds
   -n             dry-run

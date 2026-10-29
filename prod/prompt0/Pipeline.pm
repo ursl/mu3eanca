@@ -9,6 +9,9 @@ package Pipeline;
 #   pipeline: beam
 #   pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,minalyzer_pdf,fillQualityPixels,cdb_pixelqualitylm,mu3esort,mu3etrirec
 #
+# A comma-separated entry may be another alias. The alias is expanded in
+# place. A name that is both an alias and a task script is the alias.
+#
 # CLI:  ./prompt [-P beam | -P t1,t2,...] run RUN [RUN ...]
 #
 # A task that exits non-zero stops the remaining tasks for that run
@@ -112,6 +115,25 @@ sub pipeline_aliases {
 }
 
 # ----------------------------------------------------------------------
+# Expand alias names inside a comma list. Cycles die.
+sub _expand_spec {
+    my ($alias, $spec, $stack) = @_;
+    $stack //= {};
+    my @out;
+    for my $tok (grep { $_ ne "" } map { _strip($_) } split(/,/, $spec)) {
+        if (exists $alias->{$tok}) {
+            die "pipeline: alias loop involving '$tok'\n" if $stack->{$tok};
+            $stack->{$tok} = 1;
+            push @out, _expand_spec($alias, $alias->{$tok}, $stack);
+            delete $stack->{$tok};
+        } else {
+            push @out, $tok;
+        }
+    }
+    return @out;
+}
+
+# ----------------------------------------------------------------------
 sub pipeline_tasks {
     my ($cfg, $spec) = @_;
     $spec = _strip($spec // "");
@@ -120,14 +142,8 @@ sub pipeline_tasks {
         if $spec eq "";
 
     my %alias = pipeline_aliases($cfg);
-    my $guard = 0;
-    while ($spec !~ /,/ && exists $alias{$spec}) {
-        $spec = $alias{$spec};
-        die "pipeline: alias loop involving '$spec'\n" if ++$guard > 10;
-    }
-
-    my @tasks = grep { $_ ne "" } map { _strip($_) } split(/,/, $spec);
-    die "pipeline: empty task list (from '$spec')\n" unless @tasks;
+    my @tasks = _expand_spec(\%alias, $spec);
+    die "pipeline: empty task list\n" unless @tasks;
     return @tasks;
 }
 
