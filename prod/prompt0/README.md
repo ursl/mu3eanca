@@ -109,7 +109,7 @@ next run still starts). `./prompt list` prints aliases and the known scripts.
 
 ```
 pipeline: beam
-pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,cdb_pixelqualitylm,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
+pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,cdb_pixelqualitylm,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
 pipeline_alias: test=midasmeta
 ```
 
@@ -119,6 +119,7 @@ pipeline_alias: test=midasmeta
 | `cdb_eventstuffv2` | eventstuffv2 payload from the midasmeta JSON, IOV insert, Mongo upload | live |
 | `skipSmallRuns` | Stop this run if RDB Events < `min_events` (exit 1) | live |
 | `minalyzer` | SLURM minalyzer over the raw file; hadd to `dqm_histos_XXXXX.root` | live |
+| `rdb_getRunRecord` | `syncJSON --rdb` for this run into `cdb_json` (`-a -f RUN -l RUN`) | live |
 | `cdb_pixelqualitylm` | pixelqualitylm payload from that ROOT and the midasmeta JSON; CDB upload commented out | live |
 | `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots; upload the PDF to the RDB (`description=dqm`) | live |
 | `fillQualityPixels` | Login-node pixel quality LM from the merged ROOT (`run2025/analysis`) | live |
