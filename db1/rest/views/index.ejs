@@ -1153,7 +1153,7 @@ async function updateCsvDisplay() {
                     <% data.map((result) => { %>
                         <tr>
                             <td><input type="checkbox" class="run-select" data-run="<%= result.BOR["Run number"] %>" onchange="toggleRun(this)"></td>
-                            <td><a href="/rdb/run/<%= result.BOR["Run number"] %>"><%= result.BOR["Run number"] %></a></td>
+                            <td><a href="/rdb/run/<%= result.BOR["Run number"] %><%= listQuery ? '?' + listQuery : '' %>"><%= result.BOR["Run number"] %></a></td>
                             <td><%= result.BOR["Start time"] %></td>
                             <td><%= result.EOR["Stop time"] %></td>
                             <% if (result.Attributes && result.Attributes.length > 0) { %>

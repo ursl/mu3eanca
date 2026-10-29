@@ -54,10 +54,42 @@
              outline-offset: 2px;
          }
 
+         .button:disabled,
+         .button:disabled:hover,
+         .button:disabled:active {
+             background-color: #00703c;
+             opacity: 0.4;
+             cursor: not-allowed;
+             box-shadow: none;
+             transform: none;
+         }
+
+         .run-actions {
+             display: flex;
+             align-items: center;
+             flex-wrap: wrap;
+             gap: 8px;
+         }
+
+         .run-actions .nav-buttons,
+         .run-actions .edit-buttons {
+             display: flex;
+             align-items: center;
+             gap: 8px;
+             padding: 0;
+         }
+
+         .run-actions .nav-buttons {
+             margin-left: 2em;
+         }
+
+         .run-actions .edit-buttons {
+             margin-left: auto;
+         }
+
          /* Idle Save is muted until Edit is clicked. Inline background would
             outrank :active, so the two states live in classes. */
          #btnSubm {
-             float: right;
              background-color: #93c572;
          }
 
@@ -298,10 +330,16 @@
             <%=data.BOR["Run number"]%>
         </h1>
 
-        <div>
+        <div class="run-actions">
             <input id="btnBack" type="button" class="button" value="Back" onclick=setBack() />
-            <input id="btnEdit" type="button" class="button" color="blue" value="Edit" onclick=setEdit() />
-            <input id="btnSubm" type="button" class="button" value="Save" onclick=updateRun() />
+            <span class="nav-buttons">
+                <input id="btnPrev" type="button" class="button" value="Prev. run" onclick=setPrev() <%- prevRun == null ? "disabled" : "" %> />
+                <input id="btnNext" type="button" class="button" value="Next run" onclick=setNext() <%- nextRun == null ? "disabled" : "" %> />
+            </span>
+            <span class="edit-buttons">
+                <input id="btnEdit" type="button" class="button" color="blue" value="Edit" onclick=setEdit() />
+                <input id="btnSubm" type="button" class="button" value="Save" onclick=updateRun() />
+            </span>
         </div>
 
         <table id="runs">
@@ -509,15 +547,10 @@
     <script>
      const lData = <%- JSON.stringify(data) %>;
      console.log(lData);
-     
-     let sruns = '<%-runs%>';
-     let aruns = sruns.split(",");
-     const sthisRun = <%= data.BOR["Run number"]%>;
-     const thisRun = String(sthisRun);
-     const idxThisRun = aruns.indexOf(thisRun);
-     let idxPrevRun = (idxThisRun > 0? idxThisRun - 1: -1);
-     let idxNextRun = (idxThisRun < aruns.length? idxThisRun + 1: -1);
-     console.log("idxThisRun / idxPrevRun / idxnextRun :" + idxThisRun + " / " + idxPrevRun + " / " + idxNextRun);
+
+     const prevRun = <%- JSON.stringify(prevRun) %>;
+     const nextRun = <%- JSON.stringify(nextRun) %>;
+     const listQuery = <%- JSON.stringify(listQuery || "") %>;
      
      let mycolors = [];
      mycolors.push('#1450fa'); // blue
@@ -669,32 +702,24 @@
      
      let doEdit = -1;
 
+     function runHref(run) {
+         return "/rdb/run/" + encodeURIComponent(run) + (listQuery ? "?" + listQuery : "");
+     }
+
      function setNext() {
-         if (idxNextRun < aruns.length) {
-             window.location.href = '/rdb/run/' + aruns[idxNextRun] + '/?runs=' + sruns;
-         } else {
-             window.location.href = '/rdb/';
+         if (nextRun != null) {
+             window.location.href = runHref(nextRun);
          }
      }
 
      function setPrev() {
-         if (idxPrevRun > -1) {
-             window.location.href = '/rdb/run/' + aruns[idxPrevRun] + '/?runs=' + sruns;
-         } else {
-             window.location.href = '/rdb/';
+         if (prevRun != null) {
+             window.location.href = runHref(prevRun);
          }
      }
 
      function setBack() {
-         const ref = document.referrer;
-         try {
-             if (ref && new URL(ref).origin === window.location.origin) {
-                 window.history.back();
-                 return;
-             }
-         } catch (e) {
-         }
-         window.location.href = '/rdb/';
+         window.location.href = "/rdb/" + (listQuery ? "?" + listQuery : "");
      }
 
      function setEdit() {

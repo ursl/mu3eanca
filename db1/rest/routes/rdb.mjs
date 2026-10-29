@@ -219,6 +219,207 @@ function runYearMatch(years) {
     return { $or: clauses };
 }
 
+// Filter stages shared by the run list, the run-number export, and
+// next/prev on a single run. Same order as the main table: run number descending.
+function buildRunListPipeline(query) {
+    const minrun = Number(query.minRun) || -1;
+    const maxrun = Number(query.maxRun) || -1;
+    const onlySignificant = query.onlySignificant === "no" ? "no" : "yes";
+    const starttime = query.startTime;
+    const stoptime = query.stopTime;
+    const runClass = query.runClass;
+    const comment = query.comment;
+    const years = parseRunYears(query.years);
+
+    const pipeline = [];
+
+    if (minrun > -1 && maxrun > 0) {
+        pipeline.push({ $match: { "BOR.Run number": { $gte: minrun, $lte: maxrun } } });
+    } else if (minrun > -1) {
+        pipeline.push({ $match: { "BOR.Run number": { $gte: minrun } } });
+    } else if (maxrun > -1) {
+        pipeline.push({ $match: { "BOR.Run number": { $lte: maxrun } } });
+    }
+
+    pipeline.push({ $match: runYearMatch(years) });
+
+    if (starttime && stoptime) {
+        pipeline.push({
+            $match: {
+                "BOR.Start time": { $regex: starttime },
+                "BOR.Stop time": { $regex: stoptime }
+            }
+        });
+    } else if (starttime) {
+        pipeline.push({ $match: { "BOR.Start time": { $regex: starttime } } });
+    } else if (stoptime) {
+        pipeline.push({ $match: { "BOR.Stop time": { $regex: stoptime } } });
+    }
+
+    pipeline.push({
+        $addFields: {
+            lastRunInfo: {
+                $arrayElemAt: [
+                    {
+                        $filter: {
+                            input: "$Attributes",
+                            as: "attr",
+                            cond: { $eq: [{ $type: "$$attr.RunInfo" }, "object"] }
+                        }
+                    },
+                    -1
+                ]
+            },
+            lastDataQuality: {
+                $arrayElemAt: [
+                    {
+                        $filter: {
+                            input: "$Attributes",
+                            as: "attr",
+                            cond: { $eq: [{ $type: "$$attr.DataQuality" }, "object"] }
+                        }
+                    },
+                    -1
+                ]
+            }
+        }
+    });
+
+    if (onlySignificant === "yes") {
+        pipeline.push({
+            $match: {
+                "lastRunInfo.RunInfo.Significant": "true"
+            }
+        });
+    }
+
+    if (runClass) {
+        pipeline.push({
+            $match: {
+                "BOR.Run Class": runClass
+            }
+        });
+    }
+
+    if (comment) {
+        pipeline.push({
+            $match: {
+                $or: [
+                    { "lastRunInfo.RunInfo.Comments": {
+                        $regex: comment,
+                        $options: "i"
+                    }},
+                    { "EOR.Comments": {
+                        $regex: comment,
+                        $options: "i"
+                    }}
+                ]
+            }
+        });
+    }
+
+    const dqMatchConditions = [];
+    const dqFieldMap = {
+        dqMu3e: "mu3e",
+        dqBeam: "beam",
+        dqVtx: "vertex",
+        dqPix: "pixel",
+        dqFib: "fibres",
+        dqTil: "tiles",
+        dqLks: "links"
+    };
+
+    for (const [paramName, fieldName] of Object.entries(dqFieldMap)) {
+        const filterValue = query[paramName];
+        if (filterValue !== undefined && filterValue !== "") {
+            if (filterValue === "-1") {
+                dqMatchConditions.push({
+                    $or: [
+                        { lastDataQuality: null },
+                        { [`lastDataQuality.DataQuality.${fieldName}`]: { $exists: false } },
+                        { [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["1", "0", 1, 0] } }
+                    ]
+                });
+            } else if (filterValue === "notbad") {
+                dqMatchConditions.push({
+                    [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["0", 0] }
+                });
+            } else {
+                const numValue = parseInt(filterValue, 10);
+                dqMatchConditions.push({
+                    [`lastDataQuality.DataQuality.${fieldName}`]: { $in: [filterValue, numValue] }
+                });
+            }
+        }
+    }
+
+    if (dqMatchConditions.length > 0) {
+        pipeline.push({ $match: { $and: dqMatchConditions } });
+    }
+
+    return pipeline;
+}
+
+const LIST_QUERY_KEYS = [
+    "onlySignificant", "minRun", "maxRun", "nRun",
+    "startTime", "stopTime", "runClass", "comment", "years",
+    "dqMu3e", "dqBeam", "dqVtx", "dqPix", "dqFib", "dqTil", "dqLks",
+    "page", "pageSize"
+];
+
+function listQueryString(query) {
+    const params = new URLSearchParams();
+    for (const key of LIST_QUERY_KEYS) {
+        const value = query[key];
+        if (value === undefined || value === null || value === "") continue;
+        params.set(key, String(value));
+    }
+    return params.toString();
+}
+
+// Next is the next higher run number in the filtered set; Prev is the next lower.
+async function neighborRuns(collection, query, runno) {
+    const filters = buildRunListPipeline(query);
+    const nruns = query.nRun ? Number(query.nRun) : -1;
+    if (nruns > 0) {
+        const window = await collection.aggregate([
+            ...filters,
+            { $sort: { "BOR.Run number": -1 } },
+            { $limit: nruns },
+            { $project: { _id: 0, run: "$BOR.Run number" } }
+        ]).toArray();
+        const runs = window.map((row) => row.run);
+        const idx = runs.indexOf(runno);
+        if (idx < 0) return { prevRun: null, nextRun: null };
+        return {
+            prevRun: idx + 1 < runs.length ? runs[idx + 1] : null,
+            nextRun: idx > 0 ? runs[idx - 1] : null
+        };
+    }
+
+    const project = { $project: { _id: 0, run: "$BOR.Run number" } };
+    const [higherRows, lowerRows] = await Promise.all([
+        collection.aggregate([
+            { $match: { "BOR.Run number": { $gt: runno } } },
+            ...filters,
+            { $sort: { "BOR.Run number": 1 } },
+            { $limit: 1 },
+            project
+        ]).toArray(),
+        collection.aggregate([
+            { $match: { "BOR.Run number": { $lt: runno } } },
+            ...filters,
+            { $sort: { "BOR.Run number": -1 } },
+            { $limit: 1 },
+            project
+        ]).toArray()
+    ]);
+    return {
+        prevRun: lowerRows.length ? lowerRows[0].run : null,
+        nextRun: higherRows.length ? higherRows[0].run : null
+    };
+}
+
 // ----------------------------------------------------------------------
 router.get("/", async (req, res) => {
     let collection = await db.collection("runrecords");
@@ -256,149 +457,7 @@ router.get("/", async (req, res) => {
     console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass, comment, years, dqMu3e, dqBeam, dqVtx, dqPix, dqFib, dqTil, dqLks });
 
     try {
-        // Build the aggregation pipeline
-        let pipeline = [];
-        
-        // First stage: Filter by run number range if specified
-        if (minrun > -1 && maxrun > 0) {
-            pipeline.push({ $match: { "BOR.Run number": { $gte: minrun, $lte: maxrun } } });
-        } else if (minrun > -1) {
-            pipeline.push({ $match: { "BOR.Run number": { $gte: minrun } } });
-        } else if (maxrun > -1) {
-            pipeline.push({ $match: { "BOR.Run number": { $lte: maxrun } } });
-        }
-
-        pipeline.push({ $match: runYearMatch(years) });
-
-        // Filter by time if specified
-        if (starttime && stoptime) {
-            pipeline.push({ 
-                $match: { 
-                    "BOR.Start time": { $regex: starttime },
-                    "BOR.Stop time": { $regex: stoptime }
-                } 
-            });
-        } else if (starttime) {
-            pipeline.push({ $match: { "BOR.Start time": { $regex: starttime } } });
-        } else if (stoptime) {
-            pipeline.push({ $match: { "BOR.Stop time": { $regex: stoptime } } });
-        }
-
-        // Add a field with the last RunInfo instance for filtering
-        pipeline.push({
-            $addFields: {
-                lastRunInfo: {
-                    $arrayElemAt: [
-                        {
-                            $filter: {
-                                input: "$Attributes",
-                                as: "attr",
-                                cond: { $eq: [{ $type: "$$attr.RunInfo" }, "object"] }
-                            }
-                        },
-                        -1  // Get the last element
-                    ]
-                },
-                lastDataQuality: {
-                    $arrayElemAt: [
-                        {
-                            $filter: {
-                                input: "$Attributes",
-                                as: "attr",
-                                cond: { $eq: [{ $type: "$$attr.DataQuality" }, "object"] }
-                            }
-                        },
-                        -1  // Get the last element
-                    ]
-                }
-            }
-        });
-
-        // If onlySignificant is "yes", filter by last RunInfo's Significant field
-        if (onlySignificant === "yes") {
-            pipeline.push({
-                $match: {
-                    "lastRunInfo.RunInfo.Significant": "true"
-                }
-            });
-        }
-
-        // If runClass is specified, filter by last RunInfo's Class field
-        if (runClass) {
-            pipeline.push({
-                $match: {
-                    "BOR.Run Class": runClass
-                }
-            });
-        }
-
-        // If comment is specified, filter by both RunInfo Comments and EOR Comments (case-insensitive)
-        if (comment) {
-            pipeline.push({
-                $match: {
-                    $or: [
-                        { "lastRunInfo.RunInfo.Comments": { 
-                            $regex: comment,
-                            $options: 'i'  // 'i' makes the search case-insensitive
-                        }},
-                        { "EOR.Comments": { 
-                            $regex: comment,
-                            $options: 'i'  // 'i' makes the search case-insensitive
-                        }}
-                    ]
-                }
-            });
-        }
-
-        // Data Quality filters - build match conditions for each field
-        const dqMatchConditions = [];
-        const dqFieldMap = {
-            'dqMu3e': 'mu3e',
-            'dqBeam': 'beam',
-            'dqVtx': 'vertex',
-            'dqPix': 'pixel',
-            'dqFib': 'fibres',
-            'dqTil': 'tiles',
-            'dqLks': 'links'
-        };
-
-        // Process each Data Quality filter
-        for (const [paramName, fieldName] of Object.entries(dqFieldMap)) {
-            const filterValue = req.query[paramName];
-            if (filterValue !== undefined && filterValue !== '') {
-                if (filterValue === "-1") {
-                    // Unset: lastDataQuality is null, or field doesn't exist, or is not "1" or "0" (as string or number)
-                    dqMatchConditions.push({
-                        $or: [
-                            { "lastDataQuality": null },
-                            { [`lastDataQuality.DataQuality.${fieldName}`]: { $exists: false } },
-                            { [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["1", "0", 1, 0] } }
-                        ]
-                    });
-                } else if (filterValue === "notbad") {
-                    // Not Bad: field is not "0" or 0 (matches Good, Unset, or any value except Bad)
-                    dqMatchConditions.push({
-                        [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["0", 0] }
-                    });
-                } else {
-                    // Good (1) or Bad (0) - field must exist and match the value
-                    // Match both string and number versions since MongoDB can store either
-                    const numValue = parseInt(filterValue, 10);
-                    dqMatchConditions.push({
-                        [`lastDataQuality.DataQuality.${fieldName}`]: { $in: [filterValue, numValue] }
-                    });
-                }
-            }
-        }
-
-        // Apply Data Quality filters if any are specified
-        // All conditions must be met (AND logic) - explicitly use $and for all cases
-        if (dqMatchConditions.length > 0) {
-            // Always use $and to ensure explicit AND logic, even for single condition
-            pipeline.push({ $match: { $and: dqMatchConditions } });
-        }
-
-        // Sort by run number descending
+        let pipeline = buildRunListPipeline(req.query);
         pipeline.push({ $sort: { "BOR.Run number": -1 } });
 
         // Get total count efficiently - build count pipeline (same filters, no sort/limit/skip)
@@ -508,7 +567,8 @@ router.get("/", async (req, res) => {
                 'years': years,
                 'pagination': pagination,
                 'page': page,
-                'pageSize': pageSize
+                'pageSize': pageSize,
+                'listQuery': listQueryString(req.query)
             });
             console.log("Template render call completed - response will be sent automatically");
         } catch (renderError) {
@@ -544,8 +604,21 @@ router.get("/run/:id", async (req, res) => {
 
     if (!result) res.send("Not found").status(404);
     else {
-        console.log("calling singleRun with result: " + JSON.stringify(result));
-        res.render('singleRun', {'data': result, 'runs': req.query.runs});
+        let prevRun = null;
+        let nextRun = null;
+        try {
+            const neighbors = await neighborRuns(collection, req.query, runno);
+            prevRun = neighbors.prevRun;
+            nextRun = neighbors.nextRun;
+        } catch (error) {
+            console.error("neighborRuns failed:", error);
+        }
+        res.render('singleRun', {
+            data: result,
+            prevRun: prevRun,
+            nextRun: nextRun,
+            listQuery: listQueryString(req.query)
+        });
     }
 });
 
@@ -554,170 +627,19 @@ router.get("/run/:id", async (req, res) => {
 router.get("/allRunNumbers", async (req, res) => {
     console.log("serving from RDB /allRunNumbers with filters:", JSON.stringify(req.query));
     let collection = await db.collection("runrecords");
-    
-    // Parse query parameters (same as main route)
-    const minrun = Number(req.query.minRun) || -1;
-    const maxrun = Number(req.query.maxRun) || -1;
-    const onlySignificant = req.query.onlySignificant === "no" ? "no" : "yes";
-    const starttime = req.query.startTime;
-    const stoptime = req.query.stopTime;
-    const runClass = req.query.runClass;
-    const comment = req.query.comment;
-    const dqMu3e = req.query.dqMu3e;
-    const dqBeam = req.query.dqBeam;
-    const dqVtx = req.query.dqVtx;
-    const dqPix = req.query.dqPix;
-    const dqFib = req.query.dqFib;
-    const dqTil = req.query.dqTil;
-    const dqLks = req.query.dqLks;
-    const years = parseRunYears(req.query.years);
-    
+
     try {
-        // Build the same aggregation pipeline as the main route (without pagination)
-        let pipeline = [];
-        
-        // Filter by run number range if specified
-        if (minrun > -1 && maxrun > 0) {
-            pipeline.push({ $match: { "BOR.Run number": { $gte: minrun, $lte: maxrun } } });
-        } else if (minrun > -1) {
-            pipeline.push({ $match: { "BOR.Run number": { $gte: minrun } } });
-        } else if (maxrun > -1) {
-            pipeline.push({ $match: { "BOR.Run number": { $lte: maxrun } } });
-        }
-
-        pipeline.push({ $match: runYearMatch(years) });
-
-        // Filter by time if specified
-        if (starttime && stoptime) {
-            pipeline.push({ 
-                $match: { 
-                    "BOR.Start time": { $regex: starttime },
-                    "BOR.Stop time": { $regex: stoptime }
-                } 
-            });
-        } else if (starttime) {
-            pipeline.push({ $match: { "BOR.Start time": { $regex: starttime } } });
-        } else if (stoptime) {
-            pipeline.push({ $match: { "BOR.Stop time": { $regex: stoptime } } });
-        }
-
-        // Add fields for filtering (same as main route)
-        pipeline.push({
-            $addFields: {
-                lastRunInfo: {
-                    $arrayElemAt: [
-                        {
-                            $filter: {
-                                input: "$Attributes",
-                                as: "attr",
-                                cond: { $eq: [{ $type: "$$attr.RunInfo" }, "object"] }
-                            }
-                        },
-                        -1
-                    ]
-                },
-                lastDataQuality: {
-                    $arrayElemAt: [
-                        {
-                            $filter: {
-                                input: "$Attributes",
-                                as: "attr",
-                                cond: { $eq: [{ $type: "$$attr.DataQuality" }, "object"] }
-                            }
-                        },
-                        -1
-                    ]
-                }
-            }
-        });
-
-        // Apply filters (same logic as main route)
-        if (onlySignificant === "yes") {
-            pipeline.push({
-                $match: {
-                    "lastRunInfo.RunInfo.Significant": "true"
-                }
-            });
-        }
-
-        if (runClass) {
-            pipeline.push({
-                $match: {
-                    "BOR.Run Class": runClass
-                }
-            });
-        }
-
-        if (comment) {
-            pipeline.push({
-                $match: {
-                    $or: [
-                        { "lastRunInfo.RunInfo.Comments": { 
-                            $regex: comment,
-                            $options: 'i'
-                        }},
-                        { "EOR.Comments": { 
-                            $regex: comment,
-                            $options: 'i'
-                        }}
-                    ]
-                }
-            });
-        }
-
-        // Data Quality filters
-        const dqMatchConditions = [];
-        const dqFieldMap = {
-            'dqMu3e': 'mu3e',
-            'dqBeam': 'beam',
-            'dqVtx': 'vertex',
-            'dqPix': 'pixel',
-            'dqFib': 'fibres',
-            'dqTil': 'tiles',
-            'dqLks': 'links'
-        };
-
-        for (const [paramName, fieldName] of Object.entries(dqFieldMap)) {
-            const filterValue = req.query[paramName];
-            if (filterValue !== undefined && filterValue !== '') {
-                if (filterValue === "-1") {
-                    dqMatchConditions.push({
-                        $or: [
-                            { "lastDataQuality": null },
-                            { [`lastDataQuality.DataQuality.${fieldName}`]: { $exists: false } },
-                            { [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["1", "0", 1, 0] } }
-                        ]
-                    });
-                } else if (filterValue === "notbad") {
-                    dqMatchConditions.push({
-                        [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["0", 0] }
-                    });
-                } else {
-                    const numValue = parseInt(filterValue, 10);
-                    dqMatchConditions.push({
-                        [`lastDataQuality.DataQuality.${fieldName}`]: { $in: [filterValue, numValue] }
-                    });
-                }
-            }
-        }
-
-        if (dqMatchConditions.length > 0) {
-            pipeline.push({ $match: { $and: dqMatchConditions } });
-        }
-
-        // Project only the run number
+        const pipeline = buildRunListPipeline(req.query);
         pipeline.push({
             $project: {
                 runNumber: "$BOR.Run number"
             }
         });
-
-        // Sort by run number descending
         pipeline.push({ $sort: { runNumber: -1 } });
 
         const results = await collection.aggregate(pipeline).toArray();
         const runNumbers = results.map(record => record.runNumber);
-        
+
         console.log(`Returning ${runNumbers.length} run numbers`);
         res.json(runNumbers);
     } catch (error) {
@@ -725,6 +647,7 @@ router.get("/allRunNumbers", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 // ----------------------------------------------------------------------
 // -- Get last run number
