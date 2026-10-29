@@ -109,7 +109,7 @@ next run still starts). `./prompt list` prints aliases and the known scripts.
 
 ```
 pipeline: beam
-pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,cdb_pixelqualitylm,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
+pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,minalyzer_pdf,fillQualityPixels,cdb_pixelqualitylm,mu3esort,mu3etrirec
 pipeline_alias: test=midasmeta
 ```
 
@@ -120,9 +120,9 @@ pipeline_alias: test=midasmeta
 | `skipSmallRuns` | Stop this run if RDB Events < `min_events` (exit 1) | live |
 | `minalyzer` | SLURM minalyzer over the raw file; hadd to `dqm_histos_XXXXX.root` | live |
 | `rdb_getRunRecord` | `syncJSON --rdb` for this run into `cdb_json` (`-a -f RUN -l RUN`) | live |
-| `cdb_pixelqualitylm` | pixelqualitylm payload from that ROOT and the midasmeta JSON; CDB upload commented out | live |
 | `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots; upload the PDF to the RDB (`description=dqm`) | live |
 | `fillQualityPixels` | Login-node pixel quality LM from the merged ROOT (`run2025/analysis`) | live |
+| `cdb_pixelqualitylm` | pixelqualitylm payload from that ROOT and the midasmeta JSON; CDB upload commented out | live |
 | `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `sort/{workdir}/{block}/` | live |
 | `mu3etrirec` | SLURM mu3eTrirec on the sorted ROOT (event splitting); hadd to `run{srun}-trirec.root` under `trirec/{workdir}/{block}/` | live |
 
