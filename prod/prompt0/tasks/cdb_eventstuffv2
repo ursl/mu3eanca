@@ -5,7 +5,7 @@
 # The JSON is the raw file plus ".json", written by midasmeta:
 #   {raw_dir}/011/run11015.mid.lz4.json
 #
-#   cdbRunPayloadWriter -u $CDB -m eventstuffv2 -a "prompt" -f <json> -t $cdb_GT -r RUN
+#   cdbRunPayloadWriter -u $CDB -m eventstuffv2 -a $cdb_eventstuffv2_comment -f <json> -t $cdb_GT -r RUN
 #   cdbInsertIovTag     -j $CDB -t eventstuffv2_$cdb_GT -i RUN
 #   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync payload --name tag_eventstuffv2_${cdb_GT}_iov_RUN
 #   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync tag     --name eventstuffv2_$cdb_GT
@@ -40,10 +40,12 @@ if ($dbc =~ m{^https?://}) {
 
 my $tag = "eventstuffv2_$gt";
 my $payload = "tag_${tag}_iov_$run";
+my $comment = $ctx->{cdb_eventstuffv2_comment} // "";
+$comment = "prompt" if $comment eq "";
 
 my @steps = (
     [$bindir . "/cdbRunPayloadWriter",
-        "-u", $cdb, "-m", "eventstuffv2", "-a", "prompt",
+        "-u", $cdb, "-m", "eventstuffv2", "-a", $comment,
         "-f", $json, "-t", $gt, "-r", $run],
     [$bindir . "/cdbInsertIovTag",
         "-j", $cdb, "-t", $tag, "-i", $run],
