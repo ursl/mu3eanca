@@ -53,12 +53,15 @@ if ($meta ne "") {
     $meta = "$raw.json";
 }
 
+my $outputdir = $ctx->{cdb_payload_dir} // "";
+
 my @cmd = ($exe);
 push @cmd, "-j", $jsondir if $jsondir ne "";
 push @cmd, "-g", $gt      if $gt ne "";
 push @cmd, "-t", $igt     if $igt ne "";
 push @cmd, "-f", $merged  if $merged ne "";
 push @cmd, "-r", $meta    if $meta ne "";
+push @cmd, "-d", $outputdir if $outputdir ne "";
 
 if ($ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
