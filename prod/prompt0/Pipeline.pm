@@ -7,7 +7,7 @@ package Pipeline;
 # Per-run task list for prompt0. Tasks are executable scripts in tasks/.
 #
 #   pipeline: beam
-#   pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,minalyzer_pdf,fillQualityPixels,cdb_pixelqualitylm,mu3esort,mu3etrirec
+#   pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,minalyzer_pdf,fillQualityPixels,cdb_pixelqualitylm,mu3esort,mu3ecor26,mu3etrirec
 #
 # A comma-separated entry may be another alias. The alias is expanded in
 # place. A name that is both an alias and a task script is the alias.

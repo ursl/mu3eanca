@@ -1,0 +1,140 @@
+#! /usr/bin/perl
+# mu3ecor26 — correlations PDF from the sorted ROOT, then upload to the RDB.
+#
+# In mu3eana:
+#   mkdir results-$RUNNUMBER
+#   _build/sfh/Correlations/mu3eCor26 \
+#       $data_dir/sort/$prompt_workdir/XXX/runRUN-sort.root results-$RUNNUMBER -1
+#   mv the PDF to results-$RUNNUMBER/cor26-$RUNNUMBER.pdf
+#   upload that PDF to the RDB (same calls as minalyzer_pdf, description=cor26)
+use strict;
+use warnings;
+use Cwd qw(getcwd);
+use File::Path qw(make_path);
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $name = "mu3ecor26";
+
+my $srun = sprintf("%05d", $run);
+my $block = TaskLib::block_dir($run);
+my $sortdir = $ctx->{sort_dir} // "";
+my $sorted = ($sortdir ne "") ? "$sortdir/$block/run$srun-sort.root" : "";
+
+my $rundir = $ctx->{mu3eana} // "";
+my $exe = ($rundir ne "") ? "$rundir/_build/sfh/Correlations/mu3eCor26" : "";
+my $resname = "results-$run";
+my $resdir = ($rundir ne "") ? "$rundir/$resname" : "";
+my $pdfname = "cor26-$run.pdf";
+
+my @cmd = ($exe, $sorted, $resname, "-1");
+
+my $rdb = $ctx->{rdb_url} // "";
+$rdb =~ s{/+$}{};
+
+if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "would: mkdir $resdir");
+    TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
+    TaskLib::task_log($ctx, $name, "would: mv <pdf> $resdir/$pdfname");
+    if ($rdb eq "") {
+        TaskLib::task_log($ctx, $name, "rdb_url empty; PDF would not be uploaded");
+    } else {
+        TaskLib::task_log($ctx, $name,
+            "would: curl -fsS -X PUT -H Content-Type: application/json"
+            . " --data {\"description\":\"cor26\"} $rdb/removeResources/$run");
+        TaskLib::task_log($ctx, $name,
+            "would: curl -fsS -X POST -F pdf=\@$resdir/$pdfname"
+            . " -F description=cor26 $rdb/addResource/$run");
+    }
+    exit 0;
+}
+
+if ($rundir eq "" || !-d $rundir) {
+    TaskLib::task_log($ctx, $name, "mu3eana missing: $rundir");
+    exit 2;
+}
+if (!-x $exe && !-f $exe) {
+    TaskLib::task_log($ctx, $name, "mu3eCor26 not found: $exe");
+    exit 2;
+}
+if ($sorted eq "" || !-f $sorted) {
+    TaskLib::task_log($ctx, $name, "sorted ROOT missing: $sorted");
+    exit 2;
+}
+if ($rdb eq "") {
+    TaskLib::task_log($ctx, $name, "rdb_url empty; cannot upload the PDF");
+    exit 2;
+}
+
+make_path($resdir);
+
+my $started = time();
+my $cwd = getcwd();
+chdir($rundir) or die "mu3ecor26: cannot chdir $rundir: $!\n";
+
+TaskLib::task_log($ctx, $name, "cwd=$rundir");
+TaskLib::task_log($ctx, $name, "@cmd");
+my $rc = system(@cmd);
+
+chdir($cwd) or die "mu3ecor26: cannot chdir back to $cwd: $!\n";
+if ($rc != 0) {
+    TaskLib::task_log($ctx, $name, "failed ($rc): $exe");
+    exit 2;
+}
+
+my $pdf = _result_pdf($resdir, $started);
+if ($pdf eq "") {
+    TaskLib::task_log($ctx, $name, "no PDF written in $resdir");
+    exit 2;
+}
+
+my $dest = "$resdir/$pdfname";
+if ($pdf ne $dest) {
+    rename($pdf, $dest) or do {
+        TaskLib::task_log($ctx, $name, "cannot rename $pdf -> $dest: $!");
+        exit 2;
+    };
+}
+TaskLib::task_log($ctx, $name, "pdf=$dest");
+
+my $rm = system(
+    "curl", "-fsS", "-X", "PUT",
+    "-H", "Content-Type: application/json",
+    "--data", '{"description":"cor26"}',
+    "$rdb/removeResources/$run",
+);
+if ($rm != 0) {
+    TaskLib::task_log($ctx, $name, "removeResources description=cor26 failed");
+    exit 2;
+}
+
+TaskLib::task_log($ctx, $name, "upload $dest description=cor26 $rdb/addResource/$run");
+my $up = system(
+    "curl", "-fsS", "-X", "POST",
+    "-F", "pdf=\@$dest",
+    "-F", "description=cor26",
+    "$rdb/addResource/$run",
+);
+exit($up == 0 ? 0 : 2);
+
+# Newest PDF written by this run.
+sub _result_pdf {
+    my ($dir, $since) = @_;
+    opendir my $dh, $dir or return "";
+    my @names = readdir $dh;
+    closedir $dh;
+    my @fresh;
+    for my $n (@names) {
+        next unless $n =~ /\.pdf$/i;
+        my $path = "$dir/$n";
+        next unless -f $path;
+        my $mtime = (stat($path))[9] // 0;
+        push @fresh, $path if $mtime >= $since;
+    }
+    return "" unless @fresh;
+    @fresh = sort { ((stat($b))[9] // 0) <=> ((stat($a))[9] // 0) } @fresh;
+    return $fresh[0];
+}

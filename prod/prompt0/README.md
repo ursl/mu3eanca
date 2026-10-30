@@ -110,7 +110,7 @@ next run still starts). `./prompt list` prints aliases and the known scripts.
 
 ```
 pipeline: beam
-pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,minalyzer_pdf,fillQualityPixels,cdb_pixelqualitylm,mu3esort,mu3etrirec
+pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,minalyzer_pdf,fillQualityPixels,cdb_pixelqualitylm,mu3esort,mu3ecor26,mu3etrirec
 pipeline_alias: test=midasmeta
 ```
 
@@ -125,6 +125,7 @@ pipeline_alias: test=midasmeta
 | `fillQualityPixels` | Login-node pixel quality LM from the merged ROOT (`run2025/analysis`) | live |
 | `cdb_pixelqualitylm` | pixelqualitylm payload from that ROOT and the midasmeta JSON; CDB upload commented out | live |
 | `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `sort/{workdir}/{block}/` | live |
+| `mu3ecor26` | `mu3eCor26` on `run{srun}-sort.root`; PDF renamed to `cor26-<run>.pdf` and uploaded (`description=cor26`) | live |
 | `mu3etrirec` | SLURM mu3eTrirec on the sorted ROOT (event splitting); hadd to `run{srun}-trirec.root` under `trirec/{workdir}/{block}/` | live |
 
 ```tcsh
