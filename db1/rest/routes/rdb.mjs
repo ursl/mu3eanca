@@ -752,9 +752,38 @@ router.put("/addAttribute/:id", async (req, res) => {
     res.sendStatus(204);
 });
 
+// The stable name of a resource is its description ("dqm", "cor26").
+// Array position changes when a resource is deleted or replaced.
+function resourceName(resource) {
+    const name = resource && resource.description;
+    return (typeof name === "string" && name !== "") ? name : "";
+}
+
+function resourcesNamed(resources, name) {
+    return (resources || []).filter((r) => resourceName(r) === name);
+}
+
+function latestResourceNamed(resources, name) {
+    const matches = resourcesNamed(resources, name);
+    matches.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+    return matches[0] || null;
+}
+
+async function deleteResourceFiles(bucket, resources) {
+    for (const resource of resources) {
+        if (!resource.fileId) continue;
+        try {
+            await bucket.delete(new ObjectId(resource.fileId));
+        } catch (err) {
+            console.error("GridFS delete failed for", resource.fileId, err);
+        }
+    }
+}
+
 // ----------------------------------------------------------------------
-// -- Add a resource to a run record
-// curl -X POST -F "pdf=@/path/to/file" http://localhost:5050/rdb/addResource/780
+// -- Add a resource to a run record.
+// A previous resource with the same description is replaced.
+// curl -X POST -F "pdf=@/path/to/file" -F "description=dqm" http://localhost:5050/rdb/addResource/780
 router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
     try {
         if (!req.file) {
@@ -775,12 +804,16 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
             return res.status(503).send("MongoDB file storage unavailable");
         }
 
+        const description = req.body.description || "Resource";
+        const previous = resourcesNamed(result.Resources, description);
+        await deleteResourceFiles(bucket, previous);
+
         // Upload to GridFS
         const uploadStream = bucket.openUploadStream(req.file.originalname, {
             metadata: {
                 runNumber: runno,
                 type: req.file.mimetype,
-                description: req.body.description || 'Resource',
+                description,
                 contentType: req.file.mimetype
             }
         });
@@ -801,18 +834,16 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
             fileId: uploadStream.id,
             filename: req.file.originalname,
             uploadDate: new Date().toISOString(),
-            description: req.body.description || 'Resource'
+            description
         };
 
-        // Update runrecord document
+        // Update runrecord document. Drop the previous entry with this name.
         const updateData = { ...result };
         delete updateData._id;
 
-        if (updateData.hasOwnProperty("Resources")) {
-            updateData.Resources.push(resourceEntry);
-        } else {
-            updateData.Resources = [resourceEntry];
-        }
+        const kept = (updateData.Resources || []).filter((r) => resourceName(r) !== description);
+        kept.push(resourceEntry);
+        updateData.Resources = kept;
 
         // Add to history
         const currentdate = new Date();
@@ -855,22 +886,22 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
-// -- Serve a resource
-// GET /rdb/resource/:runNumber/:index
-router.get("/resource/:runNumber/:index", async (req, res) => {
+// -- Serve a resource by description name ("dqm", "cor26").
+// If several share the name, the newest uploadDate is served.
+// GET /rdb/resource/:runNumber/:name
+router.get("/resource/:runNumber/:name", async (req, res) => {
     try {
         const runno = parseInt(req.params.runNumber);
-        const index = parseInt(req.params.index);
-        
+        const name = req.params.name;
+
         const runrecordsCollection = await db.collection("runrecords");
         const query = {"BOR.Run number": runno};
         const result = await runrecordsCollection.findOne(query);
 
-        if (!result || !result.Resources || !result.Resources[index]) {
+        const resource = result && latestResourceNamed(result.Resources, name);
+        if (!resource) {
             return res.status(404).send('Resource not found');
         }
-
-        const resource = result.Resources[index];
         if (!resource.fileId) {
             return res.status(400).send('Not a valid resource');
         }
@@ -893,7 +924,7 @@ router.get("/resource/:runNumber/:index", async (req, res) => {
             'Content-Type': file.metadata.contentType || 'application/octet-stream',
             'Content-Length': file.length,
             'Content-Disposition': `inline; filename="${file.filename}"`,
-            'Cache-Control': 'public, max-age=31536000' // Cache for 1 year
+            'Cache-Control': 'no-cache'
         });
 
         // Stream the file from GridFS to the response
@@ -907,24 +938,20 @@ router.get("/resource/:runNumber/:index", async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
-// -- Delete a resource
-// DELETE /rdb/resource/:runNumber/:index
-router.delete("/resource/:runNumber/:index", async (req, res) => {
+// -- Delete every resource with this description name.
+// DELETE /rdb/resource/:runNumber/:name
+router.delete("/resource/:runNumber/:name", async (req, res) => {
     try {
         const runno = parseInt(req.params.runNumber);
-        const index = parseInt(req.params.index);
-        
+        const name = req.params.name;
+
         const runrecordsCollection = await db.collection("runrecords");
         const query = {"BOR.Run number": runno};
         const result = await runrecordsCollection.findOne(query);
 
-        if (!result || !result.Resources || !result.Resources[index]) {
+        const matched = result && resourcesNamed(result.Resources, name);
+        if (!matched || matched.length === 0) {
             return res.status(404).send('Resource not found');
-        }
-
-        const resource = result.Resources[index];
-        if (!resource.fileId) {
-            return res.status(400).send('Not a valid resource');
         }
 
         const bucket = getUploadsBucket();
@@ -932,13 +959,12 @@ router.delete("/resource/:runNumber/:index", async (req, res) => {
             return res.status(503).send("MongoDB file storage unavailable");
         }
 
-        // Delete from GridFS
-        await bucket.delete(new ObjectId(resource.fileId));
+        await deleteResourceFiles(bucket, matched);
 
-        // Update runrecord to remove the resource reference
         const updateData = { ...result };
         delete updateData._id;
-        updateData.Resources.splice(index, 1);
+        updateData.Resources = (updateData.Resources || []).filter((r) => resourceName(r) !== name);
+        const resource = matched[0];
 
         // Add to history
         const currentdate = new Date();
