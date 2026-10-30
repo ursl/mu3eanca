@@ -4,7 +4,7 @@
 #
 #   fillQualityPixels -j JSONCDB -g GT -i IGT -f merged-dqm_histos_XXXXX.root
 #
-# Login node, cwd = run2025/analysis (csv/ payloads/ live there).
+# Login node, cwd = run2026 (csv/ payloads/ live there).
 use strict;
 use warnings;
 use Cwd qw(getcwd);
@@ -25,7 +25,7 @@ my $merged = ($mlzr ne "") ? "$mlzr/$block/merged-dqm_histos_$srun.root" : "";
 my $anca = $ctx->{mu3eanca} // "";
 my $rundir = TaskLib::resolve_path(
     $ctx,
-    $ctx->{fill_quality_pixels_rundir} // "{mu3eanca}/run2025/analysis",
+    $ctx->{fill_quality_pixels_rundir} // "{mu3eanca}/run2026",
     $anca,
 );
 my $rel = $ctx->{fill_quality_pixels_bin} // "bin/fillQualityPixels";
