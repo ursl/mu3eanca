@@ -264,6 +264,7 @@ sub _ctx_kv {
         cdb_json           => _strip($cfg->{cdb_json} // ""),
         cdb_pixelqualitylm_tag => _strip($cfg->{cdb_pixelqualitylm_tag} // ""),
         cdb_pixelqualitylm_comment => _strip($cfg->{cdb_pixelqualitylm_comment} // ""),
+        cdb_eventstuffv2_tag => _strip($cfg->{cdb_eventstuffv2_tag} // ""),
         cdb_eventstuffv2_comment => _strip($cfg->{cdb_eventstuffv2_comment} // ""),
         cdb_payload_dir      => _strip($cfg->{cdb_payload_dir} // ""),
     );

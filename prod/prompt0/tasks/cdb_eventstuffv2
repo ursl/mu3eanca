@@ -5,10 +5,10 @@
 # The JSON is the raw file plus ".json", written by midasmeta:
 #   {raw_dir}/011/run11015.mid.lz4.json
 #
-#   cdbRunPayloadWriter -u $CDB -m eventstuffv2 -a $cdb_eventstuffv2_comment -f <json> -t $cdb_GT -r RUN
-#   cdbInsertIovTag     -j $CDB -t eventstuffv2_$cdb_GT -i RUN
-#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync payload --name tag_eventstuffv2_${cdb_GT}_iov_RUN
-#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync tag     --name eventstuffv2_$cdb_GT
+#   cdbRunPayloadWriter -u $CDB -m eventstuffv2 -a $cdb_eventstuffv2_comment -f <json> -t $cdb_eventstuffv2_tag -r RUN
+#   cdbInsertIovTag     -j $CDB -t eventstuffv2_$cdb_eventstuffv2_tag -i RUN
+#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync payload --name tag_eventstuffv2_${tag}_iov_RUN --del
+#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync tag     --name eventstuffv2_$cdb_eventstuffv2_tag --del
 use strict;
 use warnings;
 use Cwd qw(getcwd);
@@ -21,6 +21,8 @@ my $ctx = TaskLib::load($ctxfile);
 my $name = "cdb_eventstuffv2";
 
 my $gt  = $ctx->{cdb_GT} // "";
+my $short = $ctx->{cdb_eventstuffv2_tag} // "";
+$short = $gt if $short eq "";
 my $cdb = $ctx->{cdb_json} // "";
 my $raw = $ctx->{raw_file} // TaskLib::raw_file($ctx, $run);
 my $json = "$raw.json";
@@ -38,7 +40,7 @@ if ($dbc =~ m{^https?://}) {
     $rest = "$1://$2/cdb";
 }
 
-my $tag = "eventstuffv2_$gt";
+my $tag = "eventstuffv2_$short";
 my $payload = "tag_${tag}_iov_$run";
 my $comment = $ctx->{cdb_eventstuffv2_comment} // "";
 $comment = "prompt" if $comment eq "";
@@ -46,7 +48,7 @@ $comment = "prompt" if $comment eq "";
 my @steps = (
     [$bindir . "/cdbRunPayloadWriter",
         "-u", $cdb, "-m", "eventstuffv2", "-a", $comment,
-        "-f", $json, "-t", $gt, "-r", $run],
+        "-f", $json, "-t", $short, "-r", $run],
     [$bindir . "/cdbInsertIovTag",
         "-j", $cdb, "-t", $tag, "-i", $run],
     [$bindir . "/syncMu3eDB0",
@@ -63,8 +65,8 @@ if ($ctx->{dry_run}) {
     exit 0;
 }
 
-if ($gt eq "") {
-    TaskLib::task_log($ctx, $name, "cdb_GT unset");
+if ($short eq "") {
+    TaskLib::task_log($ctx, $name, "cdb_eventstuffv2_tag and cdb_GT unset");
     exit 2;
 }
 if ($cdb eq "" || !-d $cdb) {
