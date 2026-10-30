@@ -39,7 +39,7 @@ if (!-x $exe && !-f $exe) {
 
 my $gt  = $ctx->{cdb_GT} // "";
 my $igt = $ctx->{cdb_GT_in} // $gt;
-my $jsondir = $ctx->{cdb_json} // "";
+my $jsondir = $ctx->{cdb_json}."/payloads" // "";
 if ($jsondir eq "") {
     my $db = $ctx->{cdb_dbconn} // "";
     $jsondir = $db if $db =~ m{^/};
