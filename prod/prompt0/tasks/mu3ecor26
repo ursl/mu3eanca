@@ -27,7 +27,7 @@ my $sorted = ($sortdir ne "") ? "$sortdir/$block/run$srun-sort.root" : "";
 
 my $rundir = $ctx->{mu3eana} // "";
 my $exe = ($rundir ne "") ? "$rundir/_build/sfh/Correlations/mu3eCor26" : "";
-my $resname = "results/results-$run";
+my $resname = "results-$run";
 my $resdir = ($rundir ne "") ? "$rundir/$resname" : "";
 my $pdfname = "cor26-$run.pdf";
 
