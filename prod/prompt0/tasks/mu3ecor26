@@ -2,10 +2,11 @@
 # mu3ecor26 — correlations PDF from the sorted ROOT, then upload to the RDB.
 #
 # In mu3eana:
-#   mkdir results-$RUNNUMBER
+#   mkdir -p results/results-$RUNNUMBER
 #   _build/sfh/Correlations/mu3eCor26 \
-#       $data_dir/sort/$prompt_workdir/XXX/runRUN-sort.root results-$RUNNUMBER -1
-#   mv the PDF to results-$RUNNUMBER/cor26-$RUNNUMBER.pdf
+#       $data_dir/sort/$prompt_workdir/XXX/runRUN-sort.root \
+#       results/results-$RUNNUMBER -1
+#   mv the PDF to results/results-$RUNNUMBER/cor26-$RUNNUMBER.pdf
 #   upload that PDF to the RDB (same calls as minalyzer_pdf, description=cor26)
 use strict;
 use warnings;
@@ -26,7 +27,7 @@ my $sorted = ($sortdir ne "") ? "$sortdir/$block/run$srun-sort.root" : "";
 
 my $rundir = $ctx->{mu3eana} // "";
 my $exe = ($rundir ne "") ? "$rundir/_build/sfh/Correlations/mu3eCor26" : "";
-my $resname = "results-$run";
+my $resname = "results/results-$run";
 my $resdir = ($rundir ne "") ? "$rundir/$resname" : "";
 my $pdfname = "cor26-$run.pdf";
 
@@ -36,7 +37,7 @@ my $rdb = $ctx->{rdb_url} // "";
 $rdb =~ s{/+$}{};
 
 if ($ctx->{dry_run}) {
-    TaskLib::task_log($ctx, $name, "would: mkdir $resdir");
+    TaskLib::task_log($ctx, $name, "would: mkdir -p $resdir");
     TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
     TaskLib::task_log($ctx, $name, "would: mv <pdf> $resdir/$pdfname");
     if ($rdb eq "") {
