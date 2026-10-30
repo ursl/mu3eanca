@@ -2,8 +2,11 @@
 # fillQualityPixels — pixel quality LM from the merged minalyzer ROOT
 # (processRuns runPixelFillQualityLM / fillQualityPixels.cc).
 #
-#   fillQualityPixels -j JSONCDB -g GT -i IGT -f dqm_histos_XXXXX.root -r <raw>.json
+#   fillQualityPixels -j JSONCDB -g GT -t TAG -d PAYLOADS \
+#       -f dqm_histos_XXXXX.root -r <raw>.json
 #
+# -t is cdb_pixelqualitylm_tag (the name written into the payload file).
+# -g is cdb_GT, the global tag used to read the CDB.
 # -r is the midasmeta JSON: the raw file path with ".json" appended.
 #
 # Login node, cwd = run2026 (csv/ payloads/ live there).
@@ -38,7 +41,8 @@ if (!-x $exe && !-f $exe) {
 }
 
 my $gt  = $ctx->{cdb_GT} // "";
-my $igt = $ctx->{cdb_GT_in} // $gt;
+my $tag = $ctx->{cdb_pixelqualitylm_tag} // "";
+$tag = $gt if $tag eq "";
 my $jsondir = $ctx->{cdb_json} // "";
 if ($jsondir eq "") {
     my $db = $ctx->{cdb_dbconn} // "";
@@ -59,7 +63,7 @@ $outputdir =~ s{/$}{};
 my @cmd = ($exe);
 push @cmd, "-j", $jsondir if $jsondir ne "";
 push @cmd, "-g", $gt      if $gt ne "";
-push @cmd, "-t", $igt     if $igt ne "";
+push @cmd, "-t", $tag     if $tag ne "";
 push @cmd, "-f", $merged  if $merged ne "";
 push @cmd, "-r", $meta    if $meta ne "";
 push @cmd, "-d", $outputdir if $outputdir ne "";
