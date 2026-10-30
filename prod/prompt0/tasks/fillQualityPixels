@@ -2,7 +2,9 @@
 # fillQualityPixels — pixel quality LM from the merged minalyzer ROOT
 # (processRuns runPixelFillQualityLM / fillQualityPixels.cc).
 #
-#   fillQualityPixels -j JSONCDB -g GT -i IGT -f merged-dqm_histos_XXXXX.root
+#   fillQualityPixels -j JSONCDB -g GT -i IGT -f dqm_histos_XXXXX.root -r <raw>.json
+#
+# -r is the midasmeta JSON: the raw file path with ".json" appended.
 #
 # Login node, cwd = run2026 (csv/ payloads/ live there).
 use strict;
@@ -42,8 +44,14 @@ if ($jsondir eq "") {
     my $db = $ctx->{cdb_dbconn} // "";
     $jsondir = $db if $db =~ m{^/};
 }
+my $raw = $ctx->{raw_file} // "";
+$raw = TaskLib::raw_file($ctx, $run) if $raw eq "";
 my $meta = $ctx->{fill_quality_pixels_meta} // "";
-$meta = TaskLib::resolve_path($ctx, $meta, $rundir) if $meta ne "";
+if ($meta ne "") {
+    $meta = TaskLib::resolve_path($ctx, $meta, $rundir);
+} else {
+    $meta = "$raw.json";
+}
 
 my @cmd = ($exe);
 push @cmd, "-j", $jsondir if $jsondir ne "";
@@ -71,6 +79,10 @@ if ($merged eq "" || !-f $merged) {
 }
 if ($jsondir eq "") {
     TaskLib::task_log($ctx, $name, "cdb_json unset (JSON CDB for -j)");
+    exit 2;
+}
+if ($meta eq "" || !-f $meta) {
+    TaskLib::task_log($ctx, $name, "metadata JSON missing: $meta");
     exit 2;
 }
 
