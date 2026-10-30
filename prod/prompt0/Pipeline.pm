@@ -263,6 +263,7 @@ sub _ctx_kv {
         fill_quality_pixels_meta => _strip($cfg->{fill_quality_pixels_meta} // ""),
         cdb_json           => _strip($cfg->{cdb_json} // ""),
         cdb_pixelqualitylm_tag => _strip($cfg->{cdb_pixelqualitylm_tag} // ""),
+        cdb_pixelqualitylm_comment => _strip($cfg->{cdb_pixelqualitylm_comment} // ""),
         cdb_payload_dir      => _strip($cfg->{cdb_payload_dir} // ""),
     );
     $kv{tar_file} = ($pctx->{root} ne "" && $workdir ne "")

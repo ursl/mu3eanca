@@ -2,10 +2,11 @@
 # fillQualityPixels — pixel quality LM from the merged minalyzer ROOT
 # (processRuns runPixelFillQualityLM / fillQualityPixels.cc).
 #
-#   fillQualityPixels -j JSONCDB -g GT -t TAG -d PAYLOADS \
+#   fillQualityPixels -j JSONCDB -g GT -t TAG -d PAYLOADS -c COMMENT \
 #       -f dqm_histos_XXXXX.root -r <raw>.json
 #
 # -t is cdb_pixelqualitylm_tag (the name written into the payload file).
+# -c is cdb_pixelqualitylm_comment. The binary appends the status documentation.
 # -g is cdb_GT, the global tag used to read the CDB.
 # -r is the midasmeta JSON: the raw file path with ".json" appended.
 #
@@ -59,6 +60,7 @@ if ($meta ne "") {
 
 my $outputdir = TaskLib::expand_ctx($ctx, $ctx->{cdb_payload_dir} // "");
 $outputdir =~ s{/$}{};
+my $comment = $ctx->{cdb_pixelqualitylm_comment} // "";
 
 my @cmd = ($exe);
 push @cmd, "-j", $jsondir if $jsondir ne "";
@@ -67,6 +69,7 @@ push @cmd, "-t", $tag     if $tag ne "";
 push @cmd, "-f", $merged  if $merged ne "";
 push @cmd, "-r", $meta    if $meta ne "";
 push @cmd, "-d", $outputdir if $outputdir ne "";
+push @cmd, "-c", $comment if $comment ne "";
 
 if ($ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
