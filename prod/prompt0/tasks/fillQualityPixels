@@ -20,7 +20,7 @@ my $name = "fillQualityPixels";
 my $srun = sprintf("%05d", $run);
 my $block = TaskLib::block_dir($run);
 my $mlzr = $ctx->{mlzr_dir} // "";
-my $merged = ($mlzr ne "") ? "$mlzr/$block/merged-dqm_histos_$srun.root" : "";
+my $merged = ($mlzr ne "") ? "$mlzr/$block/dqm_histos_$srun.root" : "";
 
 my $anca = $ctx->{mu3eanca} // "";
 my $rundir = TaskLib::resolve_path(
