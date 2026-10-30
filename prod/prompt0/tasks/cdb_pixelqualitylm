@@ -4,17 +4,18 @@
 # fillQualityPixels writes the payload file. It is run from run2026 so the
 # relative libAnaUtil / libCDB links resolve, and so csv/ is created there.
 #
-#   fillQualityPixels -i $cdb_GT -g $cdb_GT -j $CDB -d $CDB/payloads \
+#   fillQualityPixels -g $cdb_GT -t $cdb_pixelqualitylm_tag -j $CDB -d $CDB/payloads \
 #     -f $data_dir/mlzr/$prompt_workdir/XXX/dqm_histos_RUN.root \
 #     -r $data_dir/raw/XXX/runRUN.mid.lz4.json
 #
-# -d is $CDB/payloads (the program default is the CDB root, and sync reads
-# payloads/<tag>/<block>/). -i is cdb_GT_in when that is set, otherwise cdb_GT.
+# -t is the short tag (datav7.1=2026V0). fillQualityPixels writes
+# payloads/pixelqualitylm_<tag>/<block>/tag_pixelqualitylm_<tag>_iov_<run>.
+# -g is cdb_GT, the global tag used to read the CDB.
 #
 # Upload, same shape as cdb_eventstuffv2. Not run; cwd for these is db0/cdb2.
-#   cdbInsertIovTag -j $CDB -t pixelqualitylm_$cdb_GT -i RUN
-#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync payload --name tag_pixelqualitylm_${cdb_GT}_iov_RUN --del
-#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync tag     --name pixelqualitylm_$cdb_GT --del
+#   cdbInsertIovTag -j $CDB -t pixelqualitylm_$cdb_pixelqualitylm_tag -i RUN
+#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync payload --name tag_pixelqualitylm_${tag}_iov_RUN --del
+#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync tag     --name pixelqualitylm_$cdb_pixelqualitylm_tag --del
 use strict;
 use warnings;
 use Cwd qw(getcwd);
@@ -27,7 +28,11 @@ my $ctx = TaskLib::load($ctxfile);
 my $name = "cdb_pixelqualitylm";
 
 my $gt  = $ctx->{cdb_GT} // "";
-my $igt = $ctx->{cdb_GT_in} // $gt;
+my $tag = $ctx->{cdb_pixelqualitylm_tag} // "";
+$tag = $gt if $tag eq "";
+# fillQualityPixels stores the file under pixelqualitylm_<short tag>.
+my $iovtag  = "pixelqualitylm_$tag";
+my $payload = "tag_${iovtag}_iov_$run";
 my $cdb = $ctx->{cdb_json} // "";
 $cdb =~ s{/$}{};
 my $raw = $ctx->{raw_file} // TaskLib::raw_file($ctx, $run);
@@ -51,12 +56,10 @@ if ($dbc =~ m{^https?://}) {
 } elsif (($ctx->{rdb_url} // "") =~ m{^(https?)://([^/:]+)}) {
     $rest = "$1://$2/cdb";
 }
-my $tag = "pixelqualitylm_$gt";
-my $payload = "tag_${tag}_iov_$run";
 
 my @cmd = (
     $exe,
-    "-i", $igt, "-g", $gt, "-j", $cdb, "-d", "$cdb/payloads",
+    "-g", $gt, "-t", $tag, "-j", $cdb, "-d", "$cdb/payloads",
     "-f", $root, "-r", $json,
 );
 
@@ -64,11 +67,11 @@ my @cmd = (
 # (those binaries load lib/libCDB.so from the cwd).
 # my @upload = (
 #     [$bindir . "/cdbInsertIovTag",
-#         "-j", $cdb, "-t", $tag, "-i", $run],
+#         "-j", $cdb, "-t", $iovtag, "-i", $run],
 #     [$bindir . "/syncMu3eDB0",
 #         "--dir", $cdb, "--host", $rest, "--sync", "payload", "--name", $payload, "--del"],
 #     [$bindir . "/syncMu3eDB0",
-#         "--dir", $cdb, "--host", $rest, "--sync", "tag", "--name", $tag, "--del"],
+#         "--dir", $cdb, "--host", $rest, "--sync", "tag", "--name", $iovtag, "--del"],
 # );
 
 if ($ctx->{dry_run}) {
@@ -76,11 +79,11 @@ if ($ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "would: @cmd");
     TaskLib::task_log($ctx, $name, "upload commented out: cd $cdbdir");
     TaskLib::task_log($ctx, $name,
-        "upload commented out: $bindir/cdbInsertIovTag -j $cdb -t $tag -i $run");
+        "upload commented out: $bindir/cdbInsertIovTag -j $cdb -t $iovtag -i $run");
     TaskLib::task_log($ctx, $name,
         "upload commented out: $bindir/syncMu3eDB0 --dir $cdb --host $rest --sync payload --name $payload --del");
     TaskLib::task_log($ctx, $name,
-        "upload commented out: $bindir/syncMu3eDB0 --dir $cdb --host $rest --sync tag --name $tag --del");
+        "upload commented out: $bindir/syncMu3eDB0 --dir $cdb --host $rest --sync tag --name $iovtag --del");
     exit 0;
 }
 

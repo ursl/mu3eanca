@@ -52,7 +52,7 @@ using namespace std;
 // Examples:
 // ---------
 // cd mu3eanca/run2026
-//    ./bin/fillQualityPixels -i datav7.1=2026V0 -g datav7.1=2026V0 \
+//    ./bin/fillQualityPixels -g datav7.1=2026V1 -t datav7.1=2026V0 \
 //    -j ~/data/mu3e/cdb/ -f ~/data/mu3e/run2026/mlzr/merged-dqm_histos_06163.root 
 //    -r datav6.4=2025V0-MidasMeta2025Data.root
 //
@@ -114,33 +114,31 @@ vector<int> gChipIDs = {1,2,3,4,5,6,
           1281, 1282, 1283, 1284, 1285, 1286,
           1313, 1314, 1315, 1316, 1317, 1318,
           // -- layer 3 central station (cf. db0/cdb2/cdbPayloadWriter.cc)
-          2056, 2057, 2058, 2059, 2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 2072, 
-          2088, 2089, 2090, 2091, 2092, 2093, 2094, 2095, 2096, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 2104, 
-          2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134, 2135, 2136, 
-          2152, 2153, 2154, 2155, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2165, 2166, 2167, 2168, 
-          2184, 2185, 2186, 2187, 2188, 2189, 2190, 2191, 2192, 2193, 2194, 2195, 2196, 2197, 2198, 2199, 2200, 
-          2216, 2217, 2218, 2219, 2220, 2221, 2222, 2223, 2224, 2225, 2226, 2227, 2228, 2229, 2230, 2231, 2232, 
-          2248, 2249, 2250, 2251, 2252, 2253, 2254, 2255, 2256, 2257, 2258, 2259, 2260, 2261, 2262, 2263, 2264, 
-          2280, 2281, 2282, 2283, 2284, 2285, 2286, 2287, 2288, 2289, 2290, 2291, 2292, 2293, 2294, 2295, 2296, 
-          2312, 2313, 2314, 2315, 2316, 2317, 2318, 2319, 2320, 2321, 2322, 2323, 2324, 2325, 2326, 2327, 2328, 
-          2344, 2345, 2346, 2347, 2348, 2349, 2350, 2351, 2352, 2353, 2354, 2355, 2356, 2357, 2358, 2359, 2360, 
-          2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 
-          2408, 2409, 2410, 2411, 2412, 2413, 2414, 2415, 2416, 2417, 2418, 2419, 2420, 2421, 2422, 2423, 2424, 
-          2440, 2441, 2442, 2443, 2444, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 
-          2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2482, 2483, 2484, 2485, 2486, 2487, 2488, 
-          2504, 2505, 2506, 2507, 2508, 2509, 2510, 2511, 2512, 2513, 2514, 2515, 2516, 2517, 2518, 2519, 2520, 
-          2536, 2537, 2538, 2539, 2540, 2541, 2542, 2543, 2544, 2545, 2546, 2547, 2548, 2549, 2550, 2551, 2552, 
-          2568, 2569, 2570, 2571, 2572, 2573, 2574, 2575, 2576, 2577, 2578, 2579, 2580, 2581, 2582, 2583, 2584, 
-          2600, 2601, 2602, 2603, 2604, 2605, 2606, 2607, 2608, 2609, 2610, 2611, 2612, 2613, 2614, 2615, 2616, 
-          2632, 2633, 2634, 2635, 2636, 2637, 2638, 2639, 2640, 2641, 2642, 2643, 2644, 2645, 2646, 2647, 2648, 
-          2664, 2665, 2666, 2667, 2668, 2669, 2670, 2671, 2672, 2673, 2674, 2675, 2676, 2677, 2678, 2679, 2680, 
-          2696, 2697, 2698, 2699, 2700, 2701, 2702, 2703, 2704, 2705, 2706, 2707, 2708, 2709, 2710, 2711, 2712, 
-          2728, 2729, 2730, 2731, 2732, 2733, 2734, 2735, 2736, 2737, 2738, 2739, 2740, 2741, 2742, 2743, 2744, 
-          2760, 2761, 2762, 2763, 2764, 2765, 2766, 2767, 2768, 2769, 2770, 2771, 2772, 2773, 2774, 2775, 2776, 
-          2792, 2793, 2794, 2795, 2796, 2797, 2798, 2799, 2800, 2801, 2802, 2803, 2804, 2805, 2806, 2807, 2808      
-          };
-
-
+          2055, 2056, 2057, 2058, 2059, 2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 
+          2087, 2088, 2089, 2090, 2091, 2092, 2093, 2094, 2095, 2096, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 
+          2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134, 2135, 
+          2151, 2152, 2153, 2154, 2155, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2165, 2166, 2167, 
+          2183, 2184, 2185, 2186, 2187, 2188, 2189, 2190, 2191, 2192, 2193, 2194, 2195, 2196, 2197, 2198, 2199, 
+          2215, 2216, 2217, 2218, 2219, 2220, 2221, 2222, 2223, 2224, 2225, 2226, 2227, 2228, 2229, 2230, 2231, 
+          2247, 2248, 2249, 2250, 2251, 2252, 2253, 2254, 2255, 2256, 2257, 2258, 2259, 2260, 2261, 2262, 2263, 
+          2279, 2280, 2281, 2282, 2283, 2284, 2285, 2286, 2287, 2288, 2289, 2290, 2291, 2292, 2293, 2294, 2295, 
+          2311, 2312, 2313, 2314, 2315, 2316, 2317, 2318, 2319, 2320, 2321, 2322, 2323, 2324, 2325, 2326, 2327, 
+          2343, 2344, 2345, 2346, 2347, 2348, 2349, 2350, 2351, 2352, 2353, 2354, 2355, 2356, 2357, 2358, 2359, 
+          2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 
+          2407, 2408, 2409, 2410, 2411, 2412, 2413, 2414, 2415, 2416, 2417, 2418, 2419, 2420, 2421, 2422, 2423, 
+          2439, 2440, 2441, 2442, 2443, 2444, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 
+          2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2482, 2483, 2484, 2485, 2486, 2487, 
+          2503, 2504, 2505, 2506, 2507, 2508, 2509, 2510, 2511, 2512, 2513, 2514, 2515, 2516, 2517, 2518, 2519, 
+          2535, 2536, 2537, 2538, 2539, 2540, 2541, 2542, 2543, 2544, 2545, 2546, 2547, 2548, 2549, 2550, 2551, 
+          2567, 2568, 2569, 2570, 2571, 2572, 2573, 2574, 2575, 2576, 2577, 2578, 2579, 2580, 2581, 2582, 2583, 
+          2599, 2600, 2601, 2602, 2603, 2604, 2605, 2606, 2607, 2608, 2609, 2610, 2611, 2612, 2613, 2614, 2615, 
+          2631, 2632, 2633, 2634, 2635, 2636, 2637, 2638, 2639, 2640, 2641, 2642, 2643, 2644, 2645, 2646, 2647, 
+          2663, 2664, 2665, 2666, 2667, 2668, 2669, 2670, 2671, 2672, 2673, 2674, 2675, 2676, 2677, 2678, 2679, 
+          2695, 2696, 2697, 2698, 2699, 2700, 2701, 2702, 2703, 2704, 2705, 2706, 2707, 2708, 2709, 2710, 2711, 
+          2727, 2728, 2729, 2730, 2731, 2732, 2733, 2734, 2735, 2736, 2737, 2738, 2739, 2740, 2741, 2742, 2743, 
+          2759, 2760, 2761, 2762, 2763, 2764, 2765, 2766, 2767, 2768, 2769, 2770, 2771, 2772, 2773, 2774, 2775, 
+          2791, 2792, 2793, 2794, 2795, 2796, 2797, 2798, 2799, 2800, 2801, 2802, 2803, 2804, 2805, 2806, 2807
+};
 
 map<int, AsicInfo> gRunInfoMap;
 bool gIsBeam(true);
@@ -161,7 +159,7 @@ int main(int argc, char* argv[]) {
   int verbose(0), mode(1), printMode(0);
   // note: mode = 1 PixelQuality, 2 PixelQualityV, 3 PixelQualityM
   string jsondir(JSONDIR), filename("nada.root");
-  string gt("datav6.3=2025V0");
+  string tag("datav6.3=2025V0");
   string igt("datav6.2=2025Beam");
   string outputdir("/data/experiment/mu3e/data/prod/prompt/cdb");
   string rootMetaMidasFilename("nada.root");
@@ -171,8 +169,8 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-c"))      {comment = argv[++i];}
     if (!strcmp(argv[i], "-d"))      {outputdir = argv[++i];}
     if (!strcmp(argv[i], "-f"))      {filename = argv[++i];}
-    if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
-    if (!strcmp(argv[i], "-i"))      {igt = argv[++i];}
+    if (!strcmp(argv[i], "-t"))      {tag = argv[++i];}
+    if (!strcmp(argv[i], "-g"))      {igt = argv[++i];}
     if (!strcmp(argv[i], "-j"))      {jsondir = argv[++i];}
     if (!strcmp(argv[i], "-m"))      {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-p"))      {printMode = atoi(argv[++i]);}
@@ -242,7 +240,7 @@ int main(int argc, char* argv[]) {
     }  
     ofs.close();
 
-    string hash = string("tag_pixelqualitylm_") + gt + string("_iov_1");
+    string hash = string("tag_pixelqualitylm_") + tag + string("_iov_1");
     calPixelQualityLM *cpq = new calPixelQualityLM();
     cpq->readCsv(Form("csv/deadlinks-allpixels.csv"));
     string blob = cpq->makeBLOB();
@@ -322,7 +320,7 @@ int main(int argc, char* argv[]) {
   // FIXME
   int ckdivend(gRunInfoMap[1].ckdivend), ckdivend2(gRunInfoMap[1].ckdivend2);
 
-  string hash = string("tag_pixelqualitylm_") + gt + string("_iov_") + to_string(run);
+  string hash = string("tag_pixelqualitylm_") + tag + string("_iov_") + to_string(run);
   
   cout << "hallo" << endl;
   TFile *f = TFile::Open(filename.c_str());
@@ -521,7 +519,7 @@ void chipIDSpecBook(int chipid, int &station, int &layer, int &phi, int &z) {
 // ----------------------------------------------------------------------
 // -- this is completely new and now relies on PCLS data read from midas meta data tree
 bool determineBrokenLinks(TH2 *h, vector<int> &links) {
-  bool DBX(true);
+  bool DBX(false);
 
   // -- the histogram still used to provide the chip name
   string schip = h->GetName();
@@ -529,6 +527,10 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   int chipID = ::stoi(schip);
 
   AsicInfo ai = gRunInfoMap[chipID];
+
+  // -- allow ignoring Midas meta data for layer 3 (globalID missing)
+  bool MMDvalid(true);
+  if (chipID >= 2055) MMDvalid = false;
 
   if (DBX) cout << "XXX chipID = " << chipID << " linkMask = " << ai.abcLinkMask[0] << " " << ai.abcLinkMask[1] << " " << ai.abcLinkMask[2] << endl;
   
@@ -543,7 +545,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   }
   
   // -- completely masked chip
-  if (0 == ai.abcLinkMask[0]
+  if (MMDvalid && 0 == ai.abcLinkMask[0]
       && 0 == ai.abcLinkMask[1]
       && 0 == ai.abcLinkMask[2]) {
     links.push_back(calPixelQualityLM::Masked);
@@ -577,17 +579,17 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   static const char kSensor[3] = {'A', 'B', 'C'};
   for (int i = 0; i < 3; ++i) {
     int idx = -1;
-    if (!ai.letterToIndex(kSensor[i], idx)) {
+    if (MMDvalid && !ai.letterToIndex(kSensor[i], idx)) {
       if (DBX) cout << "Chip " << chipID << " sensor " << kSensor[i] << " unmapped " << idx << endl;
       lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
       continue;
     }
     if (vLink[i] < 1) lkStatus[i] = calPixelQualityLM::NoHits;
-    if (0 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
-    if (9 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
-    if (ai.abcLinkErrs[idx] > 10.) lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
+    if (MMDvalid && 0 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
+    if (MMDvalid && 9 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
+    if (MMDvalid && ai.abcLinkErrs[idx] > 10.) lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
     // -- if LVDS error rate is high and link is not masked, set to badChip!
-    if (ai.abcLinkErrs[idx] > 10. && 1 == ai.abcLinkMask[idx]) {
+    if (MMDvalid && ai.abcLinkErrs[idx] > 10. && 1 == ai.abcLinkMask[idx]) {
       badChip = 1;
       ++nBadLinks;
       badLink[i] = true;

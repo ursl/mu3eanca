@@ -34,7 +34,7 @@ my $midas    = basename($file);
 
 # conf file selection: prefer sort_conf from cfg, else default beam conf.
 my $anlzr = $ctx->{sort_anlzr}
-    // "--alignment.file=mu3e_alignment.root --conf trirec_twolayer_beam.conf";
+    // "--alignment.file=mu3e_alignment.root --conf trirec_threelayer_beam.conf ";
 
 my $rc = SlurmBatch::run($ctx, {
     name    => $name,

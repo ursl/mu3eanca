@@ -7,7 +7,10 @@ package Pipeline;
 # Per-run task list for prompt0. Tasks are executable scripts in tasks/.
 #
 #   pipeline: beam
-#   pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,cdb_pixelqualitylm,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
+#   pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,minalyzer_pdf,fillQualityPixels,cdb_pixelqualitylm,mu3esort,mu3ecor26,mu3etrirec
+#
+# A comma-separated entry may be another alias. The alias is expanded in
+# place. A name that is both an alias and a task script is the alias.
 #
 # CLI:  ./prompt [-P beam | -P t1,t2,...] run RUN [RUN ...]
 #
@@ -28,7 +31,7 @@ use POSIX qw(strftime);
 use IO::Handle;
 
 use Prompt qw(prompt_context prompt_repo_dir);
-use TaskLib qw(task_prefix year_for_run expand_year raw_file);
+use TaskLib qw(task_prefix year_for_run expand_year expand_ctx raw_file);
 
 our @EXPORT_OK = qw(
     pipeline_aliases
@@ -112,6 +115,25 @@ sub pipeline_aliases {
 }
 
 # ----------------------------------------------------------------------
+# Expand alias names inside a comma list. Cycles die.
+sub _expand_spec {
+    my ($alias, $spec, $stack) = @_;
+    $stack //= {};
+    my @out;
+    for my $tok (grep { $_ ne "" } map { _strip($_) } split(/,/, $spec)) {
+        if (exists $alias->{$tok}) {
+            die "pipeline: alias loop involving '$tok'\n" if $stack->{$tok};
+            $stack->{$tok} = 1;
+            push @out, _expand_spec($alias, $alias->{$tok}, $stack);
+            delete $stack->{$tok};
+        } else {
+            push @out, $tok;
+        }
+    }
+    return @out;
+}
+
+# ----------------------------------------------------------------------
 sub pipeline_tasks {
     my ($cfg, $spec) = @_;
     $spec = _strip($spec // "");
@@ -120,14 +142,8 @@ sub pipeline_tasks {
         if $spec eq "";
 
     my %alias = pipeline_aliases($cfg);
-    my $guard = 0;
-    while ($spec !~ /,/ && exists $alias{$spec}) {
-        $spec = $alias{$spec};
-        die "pipeline: alias loop involving '$spec'\n" if ++$guard > 10;
-    }
-
-    my @tasks = grep { $_ ne "" } map { _strip($_) } split(/,/, $spec);
-    die "pipeline: empty task list (from '$spec')\n" unless @tasks;
+    my @tasks = _expand_spec(\%alias, $spec);
+    die "pipeline: empty task list\n" unless @tasks;
     return @tasks;
 }
 
@@ -232,9 +248,9 @@ sub _ctx_kv {
         slurm_sort_csh     => _strip($cfg->{slurm_sort_csh} // ""),
         slurm_trirec_csh   => _strip($cfg->{slurm_trirec_csh} // ""),
         sort_anlzr         => _strip($cfg->{sort_anlzr} //
-            "--alignment.file=mu3e_alignment.root --conf trirec_twolayer_beam.conf"),
+            "--alignment.file=mu3e_alignment.root --conf trirec_threelayer_beam.conf"),
         trirec_anlzr       => _strip($cfg->{trirec_anlzr} //
-            "--conf trirec_twolayer_beam.conf"),
+            "--conf trirec_threelayer_beam.conf"),
         trirec_n_events    => 0 + (_strip($cfg->{trirec_n_events} // "2000000")),
         minalyzer_pdf_bin  => _strip($cfg->{minalyzer_pdf_bin} //
             "_build/Minalyzer_pdf"),
@@ -246,7 +262,8 @@ sub _ctx_kv {
             "{mu3eanca}/run2025/analysis"),
         fill_quality_pixels_meta => _strip($cfg->{fill_quality_pixels_meta} // ""),
         cdb_json           => _strip($cfg->{cdb_json} // ""),
-        cdb_GT_in          => _strip($cfg->{cdb_GT_in} // ""),
+        cdb_pixelqualitylm_tag => _strip($cfg->{cdb_pixelqualitylm_tag} // ""),
+        cdb_payload_dir      => _strip($cfg->{cdb_payload_dir} // ""),
     );
     $kv{tar_file} = ($pctx->{root} ne "" && $workdir ne "")
         ? "$pctx->{root}/slurm/$workdir.tar.gz" : "";
@@ -255,6 +272,8 @@ sub _ctx_kv {
         next unless defined $r->{id} && $r->{id} ne "";
         $kv{ $r->{id} } = prompt_repo_dir($cfg, $r->{id});
     }
+    # {cdb_json}/payloads — placeholders resolve against the context just built.
+    $kv{cdb_payload_dir} = expand_ctx(\%kv, $kv{cdb_payload_dir});
     return \%kv;
 }
 

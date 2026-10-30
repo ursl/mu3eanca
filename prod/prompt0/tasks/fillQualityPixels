@@ -2,9 +2,11 @@
 # fillQualityPixels — pixel quality LM from the merged minalyzer ROOT
 # (processRuns runPixelFillQualityLM / fillQualityPixels.cc).
 #
-#   fillQualityPixels -j JSONCDB -g GT -i IGT -f merged-dqm_histos_XXXXX.root
+#   fillQualityPixels -j JSONCDB -g GT -i IGT -f dqm_histos_XXXXX.root -r <raw>.json
 #
-# Login node, cwd = run2025/analysis (csv/ payloads/ live there).
+# -r is the midasmeta JSON: the raw file path with ".json" appended.
+#
+# Login node, cwd = run2026 (csv/ payloads/ live there).
 use strict;
 use warnings;
 use Cwd qw(getcwd);
@@ -20,12 +22,12 @@ my $name = "fillQualityPixels";
 my $srun = sprintf("%05d", $run);
 my $block = TaskLib::block_dir($run);
 my $mlzr = $ctx->{mlzr_dir} // "";
-my $merged = ($mlzr ne "") ? "$mlzr/$block/merged-dqm_histos_$srun.root" : "";
+my $merged = ($mlzr ne "") ? "$mlzr/$block/dqm_histos_$srun.root" : "";
 
 my $anca = $ctx->{mu3eanca} // "";
 my $rundir = TaskLib::resolve_path(
     $ctx,
-    $ctx->{fill_quality_pixels_rundir} // "{mu3eanca}/run2025/analysis",
+    $ctx->{fill_quality_pixels_rundir} // "{mu3eanca}/run2026",
     $anca,
 );
 my $rel = $ctx->{fill_quality_pixels_bin} // "bin/fillQualityPixels";
@@ -42,15 +44,25 @@ if ($jsondir eq "") {
     my $db = $ctx->{cdb_dbconn} // "";
     $jsondir = $db if $db =~ m{^/};
 }
+my $raw = $ctx->{raw_file} // "";
+$raw = TaskLib::raw_file($ctx, $run) if $raw eq "";
 my $meta = $ctx->{fill_quality_pixels_meta} // "";
-$meta = TaskLib::resolve_path($ctx, $meta, $rundir) if $meta ne "";
+if ($meta ne "") {
+    $meta = TaskLib::resolve_path($ctx, $meta, $rundir);
+} else {
+    $meta = "$raw.json";
+}
+
+my $outputdir = TaskLib::expand_ctx($ctx, $ctx->{cdb_payload_dir} // "");
+$outputdir =~ s{/$}{};
 
 my @cmd = ($exe);
 push @cmd, "-j", $jsondir if $jsondir ne "";
 push @cmd, "-g", $gt      if $gt ne "";
-push @cmd, "-i", $igt     if $igt ne "";
+push @cmd, "-t", $igt     if $igt ne "";
 push @cmd, "-f", $merged  if $merged ne "";
 push @cmd, "-r", $meta    if $meta ne "";
+push @cmd, "-d", $outputdir if $outputdir ne "";
 
 if ($ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
@@ -71,6 +83,10 @@ if ($merged eq "" || !-f $merged) {
 }
 if ($jsondir eq "") {
     TaskLib::task_log($ctx, $name, "cdb_json unset (JSON CDB for -j)");
+    exit 2;
+}
+if ($meta eq "" || !-f $meta) {
+    TaskLib::task_log($ctx, $name, "metadata JSON missing: $meta");
     exit 2;
 }
 

@@ -1211,8 +1211,8 @@ async function updateCsvDisplay() {
                                             .sort((a, b) => (a.description || '').localeCompare(b.description || ''));
                                     %>
                                     <% latestResources.forEach((resource, index) => { %>
-                                        <% const resourceIndex = result.Resources.indexOf(resource); %>
-                                        <a href="/rdb/resource/<%= result.BOR["Run number"] %>/<%= resourceIndex %>" 
+                                        <% const resourceName = resource.description || resource.filename || ""; %>
+                                        <a href="/rdb/resource/<%= result.BOR["Run number"] %>/<%= encodeURIComponent(resourceName) %>" 
                                            target="_blank" 
                                            title="<%= resource.filename %>"><%= resource.description || 'No description' %></a><% if (index < latestResources.length - 1) { %>, <% } %>
                                     <% }); %>

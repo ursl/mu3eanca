@@ -103,13 +103,14 @@ Options:
 
 ## Per-run pipeline
 
-Each run walks a comma-separated list of **task scripts** in `tasks/`. If a
+Each run walks a comma-separated list of **task scripts** in `tasks/`. An
+entry in that list may be another alias, which is expanded in place. If a
 task exits non-zero, the rest of the list is skipped for **that run** (the
 next run still starts). `./prompt list` prints aliases and the known scripts.
 
 ```
 pipeline: beam
-pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,cdb_pixelqualitylm,minalyzer_pdf,fillQualityPixels,mu3esort,mu3etrirec
+pipeline_alias: beam=midasmeta,cdb_eventstuffv2,skipSmallRuns,minalyzer,rdb_getRunRecord,minalyzer_pdf,fillQualityPixels,cdb_pixelqualitylm,mu3esort,mu3ecor26,mu3etrirec
 pipeline_alias: test=midasmeta
 ```
 
@@ -119,10 +120,12 @@ pipeline_alias: test=midasmeta
 | `cdb_eventstuffv2` | eventstuffv2 payload from the midasmeta JSON, IOV insert, Mongo upload | live |
 | `skipSmallRuns` | Stop this run if RDB Events < `min_events` (exit 1) | live |
 | `minalyzer` | SLURM minalyzer over the raw file; hadd to `dqm_histos_XXXXX.root` | live |
-| `cdb_pixelqualitylm` | pixelqualitylm payload from that ROOT and the midasmeta JSON; CDB upload commented out | live |
+| `rdb_getRunRecord` | `syncJSON --rdb` for this run into `cdb_json` (`-a -f RUN -l RUN`) | live |
 | `minalyzer_pdf` | Login-node `Minalyzer_pdf` plots; upload the PDF to the RDB (`description=dqm`) | live |
 | `fillQualityPixels` | Login-node pixel quality LM from the merged ROOT (`run2025/analysis`) | live |
+| `cdb_pixelqualitylm` | pixelqualitylm payload from that ROOT and the midasmeta JSON; CDB upload commented out | live |
 | `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `sort/{workdir}/{block}/` | live |
+| `mu3ecor26` | `mu3eCor26` on `run{srun}-sort.root`; uploads `results/results-<run>/results-<run>.pdf` (`description=cor26`) | live |
 | `mu3etrirec` | SLURM mu3eTrirec on the sorted ROOT (event splitting); hadd to `run{srun}-trirec.root` under `trirec/{workdir}/{block}/` | live |
 
 ```tcsh
