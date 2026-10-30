@@ -53,7 +53,8 @@ if ($meta ne "") {
     $meta = "$raw.json";
 }
 
-my $outputdir = $ctx->{cdb_payload_dir} // "";
+my $outputdir = TaskLib::expand_ctx($ctx, $ctx->{cdb_payload_dir} // "");
+$outputdir =~ s{/$}{};
 
 my @cmd = ($exe);
 push @cmd, "-j", $jsondir if $jsondir ne "";

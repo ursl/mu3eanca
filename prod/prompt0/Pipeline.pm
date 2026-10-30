@@ -31,7 +31,7 @@ use POSIX qw(strftime);
 use IO::Handle;
 
 use Prompt qw(prompt_context prompt_repo_dir);
-use TaskLib qw(task_prefix year_for_run expand_year raw_file);
+use TaskLib qw(task_prefix year_for_run expand_year expand_ctx raw_file);
 
 our @EXPORT_OK = qw(
     pipeline_aliases
@@ -263,6 +263,7 @@ sub _ctx_kv {
         fill_quality_pixels_meta => _strip($cfg->{fill_quality_pixels_meta} // ""),
         cdb_json           => _strip($cfg->{cdb_json} // ""),
         cdb_pixelqualitylm_tag => _strip($cfg->{cdb_pixelqualitylm_tag} // ""),
+        cdb_payload_dir      => _strip($cfg->{cdb_payload_dir} // ""),
     );
     $kv{tar_file} = ($pctx->{root} ne "" && $workdir ne "")
         ? "$pctx->{root}/slurm/$workdir.tar.gz" : "";
@@ -271,6 +272,8 @@ sub _ctx_kv {
         next unless defined $r->{id} && $r->{id} ne "";
         $kv{ $r->{id} } = prompt_repo_dir($cfg, $r->{id});
     }
+    # {cdb_json}/payloads — placeholders resolve against the context just built.
+    $kv{cdb_payload_dir} = expand_ctx(\%kv, $kv{cdb_payload_dir});
     return \%kv;
 }
 
