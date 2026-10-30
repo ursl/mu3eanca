@@ -2,11 +2,10 @@
 # mu3ecor26 — correlations PDF from the sorted ROOT, then upload to the RDB.
 #
 # In mu3eana:
-#   mkdir -p results/results-$RUNNUMBER
+#   mkdir -p results
 #   _build/sfh/Correlations/mu3eCor26 \
-#       $data_dir/sort/$prompt_workdir/XXX/runRUN-sort.root \
-#       results/results-$RUNNUMBER -1
-#   mv the PDF to results/results-$RUNNUMBER/cor26-$RUNNUMBER.pdf
+#       $data_dir/sort/$prompt_workdir/XXX/runRUN-sort.root results-$RUNNUMBER -1
+#   The program writes results/results-$RUNNUMBER/results-$RUNNUMBER.pdf
 #   upload that PDF to the RDB (same calls as minalyzer_pdf, description=cor26)
 use strict;
 use warnings;
@@ -28,8 +27,10 @@ my $sorted = ($sortdir ne "") ? "$sortdir/$block/run$srun-sort.root" : "";
 my $rundir = $ctx->{mu3eana} // "";
 my $exe = ($rundir ne "") ? "$rundir/_build/sfh/Correlations/mu3eCor26" : "";
 my $resname = "results-$run";
-my $resdir = ($rundir ne "") ? "$rundir/$resname" : "";
-my $pdfname = "cor26-$run.pdf";
+my $resultsdir = ($rundir ne "") ? "$rundir/results" : "";
+# mu3eCor26 prefixes "results/" itself, so the files land in results/results-$run/.
+my $resdir = ($resultsdir ne "") ? "$resultsdir/$resname" : "";
+my $pdf = ($resdir ne "") ? "$resdir/$resname.pdf" : "";
 
 my @cmd = ($exe, $sorted, $resname, "-1");
 
@@ -37,9 +38,9 @@ my $rdb = $ctx->{rdb_url} // "";
 $rdb =~ s{/+$}{};
 
 if ($ctx->{dry_run}) {
-    TaskLib::task_log($ctx, $name, "would: mkdir -p $resdir");
+    TaskLib::task_log($ctx, $name, "would: mkdir -p $resultsdir");
     TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
-    TaskLib::task_log($ctx, $name, "would: mv <pdf> $resdir/$pdfname");
+    TaskLib::task_log($ctx, $name, "would: upload $pdf");
     if ($rdb eq "") {
         TaskLib::task_log($ctx, $name, "rdb_url empty; PDF would not be uploaded");
     } else {
@@ -47,7 +48,7 @@ if ($ctx->{dry_run}) {
             "would: curl -fsS -X PUT -H Content-Type: application/json"
             . " --data {\"description\":\"cor26\"} $rdb/removeResources/$run");
         TaskLib::task_log($ctx, $name,
-            "would: curl -fsS -X POST -F pdf=\@$resdir/$pdfname"
+            "would: curl -fsS -X POST -F pdf=\@$pdf"
             . " -F description=cor26 $rdb/addResource/$run");
     }
     exit 0;
@@ -70,9 +71,8 @@ if ($rdb eq "") {
     exit 2;
 }
 
-make_path($resdir);
+make_path($resultsdir);
 
-my $started = time();
 my $cwd = getcwd();
 chdir($rundir) or die "mu3ecor26: cannot chdir $rundir: $!\n";
 
@@ -86,20 +86,11 @@ if ($rc != 0) {
     exit 2;
 }
 
-my $pdf = _result_pdf($resdir, $started);
-if ($pdf eq "") {
-    TaskLib::task_log($ctx, $name, "no PDF written in $resdir");
+if (!-f $pdf) {
+    TaskLib::task_log($ctx, $name, "PDF missing: $pdf");
     exit 2;
 }
-
-my $dest = "$resdir/$pdfname";
-if ($pdf ne $dest) {
-    rename($pdf, $dest) or do {
-        TaskLib::task_log($ctx, $name, "cannot rename $pdf -> $dest: $!");
-        exit 2;
-    };
-}
-TaskLib::task_log($ctx, $name, "pdf=$dest");
+TaskLib::task_log($ctx, $name, "pdf=$pdf");
 
 my $rm = system(
     "curl", "-fsS", "-X", "PUT",
@@ -112,30 +103,11 @@ if ($rm != 0) {
     exit 2;
 }
 
-TaskLib::task_log($ctx, $name, "upload $dest description=cor26 $rdb/addResource/$run");
+TaskLib::task_log($ctx, $name, "upload $pdf description=cor26 $rdb/addResource/$run");
 my $up = system(
     "curl", "-fsS", "-X", "POST",
-    "-F", "pdf=\@$dest",
+    "-F", "pdf=\@$pdf",
     "-F", "description=cor26",
     "$rdb/addResource/$run",
 );
 exit($up == 0 ? 0 : 2);
-
-# Newest PDF written by this run.
-sub _result_pdf {
-    my ($dir, $since) = @_;
-    opendir my $dh, $dir or return "";
-    my @names = readdir $dh;
-    closedir $dh;
-    my @fresh;
-    for my $n (@names) {
-        next unless $n =~ /\.pdf$/i;
-        my $path = "$dir/$n";
-        next unless -f $path;
-        my $mtime = (stat($path))[9] // 0;
-        push @fresh, $path if $mtime >= $since;
-    }
-    return "" unless @fresh;
-    @fresh = sort { ((stat($b))[9] // 0) <=> ((stat($a))[9] // 0) } @fresh;
-    return $fresh[0];
-}
