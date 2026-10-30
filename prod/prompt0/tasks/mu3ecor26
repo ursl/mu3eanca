@@ -22,7 +22,7 @@ my $name = "mu3ecor26";
 my $srun = sprintf("%05d", $run);
 my $block = TaskLib::block_dir($run);
 my $sortdir = $ctx->{sort_dir} // "";
-my $sorted = ($sortdir ne "") ? "$sortdir/$block/run$srun-sort.root" : "";
+my $sorted = ($sortdir ne "") ? "$sortdir/$block/run$srun-sorted.root" : "";
 
 my $rundir = $ctx->{mu3eana} // "";
 my $exe = ($rundir ne "") ? "$rundir/_build/sfh/Correlations/mu3eCor26" : "";
