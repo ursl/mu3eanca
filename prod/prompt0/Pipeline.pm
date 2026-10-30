@@ -248,9 +248,9 @@ sub _ctx_kv {
         slurm_sort_csh     => _strip($cfg->{slurm_sort_csh} // ""),
         slurm_trirec_csh   => _strip($cfg->{slurm_trirec_csh} // ""),
         sort_anlzr         => _strip($cfg->{sort_anlzr} //
-            "--alignment.file=mu3e_alignment.root --conf trirec_twolayer_beam.conf"),
+            "--alignment.file=mu3e_alignment.root --conf trirec_threelayer_beam.conf"),
         trirec_anlzr       => _strip($cfg->{trirec_anlzr} //
-            "--conf trirec_twolayer_beam.conf"),
+            "--conf trirec_threelayer_beam.conf"),
         trirec_n_events    => 0 + (_strip($cfg->{trirec_n_events} // "2000000")),
         minalyzer_pdf_bin  => _strip($cfg->{minalyzer_pdf_bin} //
             "_build/Minalyzer_pdf"),
