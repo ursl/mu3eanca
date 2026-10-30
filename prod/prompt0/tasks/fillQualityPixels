@@ -56,7 +56,7 @@ if ($meta ne "") {
 my @cmd = ($exe);
 push @cmd, "-j", $jsondir if $jsondir ne "";
 push @cmd, "-g", $gt      if $gt ne "";
-push @cmd, "-i", $igt     if $igt ne "";
+push @cmd, "-t", $igt     if $igt ne "";
 push @cmd, "-f", $merged  if $merged ne "";
 push @cmd, "-r", $meta    if $meta ne "";
 
