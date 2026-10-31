@@ -84,6 +84,8 @@ Production area:
 | `list` | Resolved config + packages (default) |
 | `run RUN ...` | Execute the pipeline for each run (`-P` selects the list). Numbers may be `12345` or `12345..12350` |
 | `process RUN` | One starting run. Find `runNNNNN.mid.lz4` at that number and every higher one under `{raw_input_base}/010`, `011`, … and run the pipeline in that order. Then sleep `process_sleep` seconds (default 60) and look again. `-n` scans once and does not sleep |
+| `processEven RUN` | Same scan as `process`. Only even run numbers are passed to the pipeline |
+| `processOdd RUN` | Same scan as `process`. Only odd run numbers are passed to the pipeline |
 | `cleanup RUN ...` | Remove per-run output; keep timestamped logs in `runs/XXXXX/` |
 
 Options:
