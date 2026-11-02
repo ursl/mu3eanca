@@ -9,7 +9,7 @@ package SlurmBatch;
 #   my $rc = SlurmBatch::run($ctx, {
 #     name    => "minalyzer",
 #     stage   => "mlzr",
-#     abbr    => "mlzr",         # sbatch -J: abbr-RUN, plus -CHUNK when split
+#     abbr    => "m",            # sbatch -J: abbrRUN, plus -CHUNK when split
 #     wrapper => $ctx->{slurm_analyzer_csh},
 #     njobs   => 1,              # force one job (sort); else int(total/chunk)+1
 #     chunk   => 100000,
@@ -274,7 +274,7 @@ sub run {
     my @jobs;
     for (my $i = 0; $i < $njobs; $i++) {
         my $job = "${run}_$i";
-        my $jname = $split ? "$abbr-$run-$i" : "$abbr-$run";
+        my $jname = $split ? "$abbr$run-$i" : "$abbr$run";
         my $skip = ($chunk > 0) ? $i * $chunk : 0;
         my @pairs = @{ $spec->{env} // [] };
         if ($spec->{job_env}) {
