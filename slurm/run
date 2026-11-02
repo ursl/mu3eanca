@@ -10,6 +10,7 @@
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.mac, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside! ??? IS THIS TRUE ???
 #
+# 2026/11/02   add -j (for better visual/operational control during mu3e prompt ops)
 # 2022/03/09   migrated to merlin, removed grid stuff
 # 2021/08/19   change -q to imply qsub. 'partition' (queue) is specified with -P. slurm is the default and -S is gone.
 # 2020/01/15   change cn-test to t3
@@ -47,7 +48,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('bCc:dl:L:m:p:qr:R:t:v:w:x:');
+getopts('bCc:dl:j:L:m:p:qr:R:t:v:w:x:');
 
 # -- User setup
 my $siesta = 120;
@@ -81,6 +82,12 @@ if ($opt_v) {
 my $jobsList = "jobs.list";
 if ($opt_L) {
     $jobsList = $opt_L;
+}
+
+# -- job name
+my $jobName = "nada";
+if ($opt_j) {
+    $jobName = $opt_j;
 }
 
 
@@ -241,8 +248,11 @@ foreach $jobfile (@ARGV) {
         }
     } elsif ($opt_m eq "batch") {
         print "batch submission: $job\n";
-        $jobName = "$job.csh";
-        if ($user eq "langenegger") { $jobName = `rline`; chop($jobName); }
+        if ($jobName eq "nada") {
+            $jobName = "$job.csh";
+            if ($user eq "langenegger") { $jobName = `rline`; chop($jobName); }
+        } 
+
         if ($opt_d) {
             print "$sbatch -J $jobName -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
         } else {
