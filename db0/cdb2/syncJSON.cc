@@ -244,6 +244,7 @@ int main(int argc, char* argv[]) {
   bool cdbOnly(false);
   bool rdbOnly(false);
   bool noReplace(false);
+  bool syncGiven(false);
   int firstRun(0), lastRun(-1);
 
   for (int i = 1; i < argc; ++i) {
@@ -271,6 +272,7 @@ int main(int argc, char* argv[]) {
       lastRun = atoi(argv[++i]);
     } else if (!strcmp(argv[i], "-m") && i + 1 < argc) {
       mode = string(argv[++i]);
+      syncGiven = true;
     } else if (!strcmp(argv[i], "-p") && i + 1 < argc) {
       pattern = string(argv[++i]);
     } else if (!strcmp(argv[i], "--pat") && i + 1 < argc) {
@@ -281,6 +283,7 @@ int main(int argc, char* argv[]) {
       rdbOnly = true;
     } else if (!strcmp(argv[i], "--sync") && i + 1 < argc) {
       syncKind = string(argv[++i]);
+      syncGiven = true;
     } else if (!strcmp(argv[i], "--name") && i + 1 < argc) {
       syncName = string(argv[++i]);
     } else if (!strcmp(argv[i], "--deep")) {
@@ -293,8 +296,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // Map legacy -m / -p / -e when --sync not given
-  if (syncKind.empty()) {
+  // Default -m all. Skip that when --update is the request.
+  if (syncKind.empty() && updateTagName.empty()) {
     if (mode == "all") {
       syncKind = "all";
     } else if (mode == "gt") {
@@ -338,7 +341,7 @@ int main(int argc, char* argv[]) {
 
   if (!rdbOnly) {
     if (!updateTagName.empty()) {
-      if (!syncKind.empty()) {
+      if (syncGiven) {
         cerr << "syncJSON: --update and --sync are mutually exclusive" << endl;
         delete pDB;
         return 1;
