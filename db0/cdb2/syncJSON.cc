@@ -105,6 +105,7 @@ static void writePayloadOne(cdbAbs* pDB, const string& dirPath, const string& ha
   mkdirParentsForFile(filepath);
   ofstream ofs(filepath);
   ofs << pl.json() << endl;
+  cout << "write payload " << filepath << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -140,6 +141,7 @@ static void writeTagFile(cdbAbs* pDB, const string& dirPath, const string& tag,
   mkdirParentsForFile(tf);
   ofstream ofs(tf);
   ofs << sstr.str();
+  cout << "write tag " << tf << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -180,11 +182,9 @@ static void syncGtDeep(cdbAbs* pDB, const string& dirPath, const string& gt,
     }
     writeTagFile(pDB, dirPath, t, it->second, noReplace);
     for (int iov : it->second) {
-      cout << "\r writing payload for tag " << t << " iov " << iov << flush;
       string h = "tag_" + t + "_iov_" + to_string(iov);
       writePayloadOne(pDB, dirPath, h, noReplace);
     }
-    cout << endl;
   }
 }
 
