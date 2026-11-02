@@ -214,6 +214,18 @@ int main(int argc, const char* argv[]) {
     return 0;
   }
 
+
+  // -- IDEAL detsetupv1
+  if (mode == "detsetupv1-ideal") {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m detsetupv1-ideal -f filename [-t filterMode]" << endl;
+      return 0;
+    }
+    writer.writeDetSetupV1IdealInput(filename, annotation);
+    return 0;
+  }
+
   // -- default case: run the main function of cdbPayloadWriter
   writer.run(argc, argv);
   return 0;

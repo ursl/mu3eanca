@@ -16,8 +16,10 @@
 #include <glob.h>
 
 #include <TFile.h>
+#include <TObjString.h>
 #include <TTree.h>
 #include <map>
+#include <nlohmann/json.hpp>
 
 #include "calDetSetupV1.hh"
 #include "calEventStuffV1.hh"
@@ -1296,7 +1298,7 @@ void cdbPayloadWriter::writePixelEfficiencyPayloads(string payloaddir, string gt
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writeDetSetupV1Payloads(string payloaddir, string gt, string filename, string annotation, int iov) {
-  cout << "   ->cdbInitGT> writing local template detsetupv1 payloads" << endl;
+  cout << "   ->cdbInitGT> writing local template detsetupv1 payloads, payloaddir = " << payloaddir << endl;
   calDetSetupV1 *cdc = new calDetSetupV1();
   string result = cdc->readJSON(filename);
   string templateHash = "detsetupv1_";
@@ -2171,4 +2173,41 @@ void cdbPayloadWriter::writePixelMaskIdealPayload(string payloaddir, string gt, 
   cpm->printBLOB(sblob, 1);
   cout << "######################################################################" << endl;
   cpm->writePayloadToFile(pl.fHash, payloaddir, pl);    
+}
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writeDetSetupV1IdealInput(string filename, string annotation) {
+  cout << "   ->cdbPayloadWriter::writeDetSetupV1IdealInput> writing det setup v1 ideal input" << endl;
+
+  TFile *file = TFile::Open(filename.c_str());
+  TObjString *os = static_cast<TObjString*>(file->Get("config_all"));
+  string sconfig = os->GetString().Data();
+  file->Close();
+
+  nlohmann::json all = nlohmann::json::parse(sconfig);
+  if (!all.contains("detector")) {
+    cerr << "   ->cdbPayloadWriter::writeDetSetupV1IdealInput> no \"detector\" in "
+         << filename << endl;
+    return;
+  }
+  nlohmann::json det;
+  det["detector"] = all["detector"];
+
+  if (string::npos != annotation.find("MagnetOn")) {
+    det["detector"]["magnet"]["field"]["strength"] = -1.0;
+  } else {
+    det["detector"]["magnet"]["field"]["strength"] = 0.0;
+  }
+
+  string jsonfilename = "detector-" + annotation + ".json";
+  string::size_type slash = jsonfilename.find_last_of('/');
+  if (slash != string::npos) {
+    jsonfilename = jsonfilename.substr(slash + 1);
+  }
+  jsonfilename = "ascii/" + jsonfilename;
+  cout << "   ->cdbPayloadWriter::writeDetSetupV1IdealInput> " << jsonfilename << endl;
+
+  ofstream ofs(jsonfilename);
+  ofs << det.dump(2) << endl;
+  ofs.close();
 }

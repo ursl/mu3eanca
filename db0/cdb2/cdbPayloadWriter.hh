@@ -29,10 +29,9 @@ public:
     std::string annotation, int iov, std::string mode = "all");
   // there is NO writeAlignmentPayloadsIdealInput, that will always be extract directly from a root file with (modified) alignment information
 
-
   // -- DETECTOR and EVENTSTUFF payloads
   void writeDetSetupV1Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
-  void writeDetSetupV2Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writeDetSetupV1IdealInput(std::string filename, std::string annotation);
 
   void writeEventStuffV1Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   
