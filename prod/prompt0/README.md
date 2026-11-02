@@ -127,7 +127,7 @@ pipeline_alias: test=midasmeta
 | `fillQualityPixels` | Login-node pixel quality LM from the merged ROOT (`run2025/analysis`) | live |
 | `cdb_pixelqualitylm` | IOV insert and CDB upload of the pixelqualitylm payload written by `fillQualityPixels` | live |
 | `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `sort/{workdir}/{block}/` | live |
-| `mu3ecor26` | `mu3eCor26` on `run{srun}-sort.root`; uploads `results/results-<run>/results-<run>.pdf` (`description=cor26`) | live |
+| `mu3ecor26` | SLURM `mu3eCor26` (`njobs => 1`, no event splitting) on `run{srun}-sorted.root`; uploads `results/results-<run>/results-<run>.pdf` (`description=cor26`) | live |
 | `mu3etrirec` | SLURM mu3eTrirec on the sorted ROOT (event splitting); hadd to `run{srun}-trirec.root` under `trirec/{workdir}/{block}/` | live |
 
 ```tcsh

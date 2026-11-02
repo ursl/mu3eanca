@@ -159,7 +159,7 @@ sub prompt_context {
         rdb_url        => _strip($cfg->{rdb_url} // ""),
         n_events       => 0 + (_strip($cfg->{n_events} // "100000")),
         min_events     => 0 + (_strip($cfg->{min_events} // "10000")),
-        slurm_stages   => [ _cfg_list($cfg, "slurm_stages", qw(mlzr trirec sort)) ],
+        slurm_stages   => [ _cfg_list($cfg, "slurm_stages", qw(mlzr trirec sort cor26)) ],
         tar_packages   => [ _cfg_list($cfg, "tar_packages", qw(mu3e minalyzer)) ],
         data_products  => [qw(mlzr trirec sort)],
         dry_run        => $opts{dry_run} // 0,
