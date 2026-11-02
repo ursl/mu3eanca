@@ -297,6 +297,7 @@ int processTagFile(const string& jsondir, const string& tag, int insertRun, int 
 
   // Modify the runs list
   if (removeRun > 0) {
+    cout << "insertIovTag: removing run " << removeRun << endl;
     removeRunFromVector(runs, removeRun);
     cout << "insertIovTag: removed run " << removeRun << ", new list = ";
     for (size_t i = 0; i < runs.size(); i++) {
