@@ -31,6 +31,7 @@
 //           -f -l -r    run number filters (unchanged)
 //           --rdb       RDB only
 //           --noreplace skip writes if tags/<tag> or payloads/<tag>/... already exists
+//           --update <tag>  rewrite tags/<tag>, then write only missing payloads
 // ----------------------------------------------------------------------
 
 using namespace std;
@@ -60,6 +61,9 @@ static void printSyncJSONUsage(const char* prog) {
     "  --rdb            Runrecords only (skip CDB sync).\n"
     "  --noreplace      Do not overwrite existing tags/<tag> or payload files under\n"
     "                   payloads/<tag>/ (skip those writes; globaltags/ still updated).\n"
+    "  --update <tag>   Rewrite tags/<tag> and download only payload files that are\n"
+    "                   not already under payloads/<tag>/. Skips the runrecord dump.\n"
+    "                   Replaces: --sync tag, then --sync tag --deep --noreplace.\n"
     "  --help, -?       This message.\n"
     "\n"
     "--sync modes:\n"
@@ -76,6 +80,7 @@ static void printSyncJSONUsage(const char* prog) {
     "  " << prog << " --cdb --dir ~/cdb --host localhost --sync all \n"
     "  " << prog << " --cdb --dir ~/cdb --host localhost --sync payload --name pixeltimecalibration_mcidealv6.5 \n"
     "  " << prog << " --cdb --dir ~/cdb --host localhost --sync gt --name datav6.3=2025 --deep \n"
+    "  " << prog << " --dir ~/cdb --host localhost --update pixelqualitylm_datav7.1=2026V1 \n"
     "\n";
 }
 
@@ -213,6 +218,14 @@ static void syncPayloadSelection(cdbAbs* pDB, const string& dirPath, const strin
 }
 
 // ----------------------------------------------------------------------
+// Always replace tags/<tag>. Write a payload only when its file is absent.
+static void updateTag(cdbAbs* pDB, const string& dirPath, const string& tag) {
+  cout << "update tag: " << tag << " (rewrite tag file, new payloads only)" << endl;
+  syncTagShallow(pDB, dirPath, tag, false);
+  writePayloadsForTag(pDB, dirPath, tag, true);
+}
+
+// ----------------------------------------------------------------------
 int main(int argc, char* argv[]) {
   for (int i = 1; i < argc; ++i) {
     if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-?")) {
@@ -225,6 +238,7 @@ int main(int argc, char* argv[]) {
       mode("all"), runfile("unset");
   string syncKind;
   string syncName;
+  string updateTagName;
   bool deep(false);
   bool all(false);
   bool cdbOnly(false);
@@ -273,6 +287,9 @@ int main(int argc, char* argv[]) {
       deep = true;
     } else if (!strcmp(argv[i], "--noreplace")) {
       noReplace = true;
+    } else if (!strcmp(argv[i], "--update") && i + 1 < argc) {
+      updateTagName = string(argv[++i]);
+      cdbOnly = true;
     }
   }
 
@@ -320,7 +337,14 @@ int main(int argc, char* argv[]) {
   vector<string> vGlobalTags = pDB->readGlobalTags();
 
   if (!rdbOnly) {
-    if (syncKind == "all") {
+    if (!updateTagName.empty()) {
+      if (!syncKind.empty()) {
+        cerr << "syncJSON: --update and --sync are mutually exclusive" << endl;
+        delete pDB;
+        return 1;
+      }
+      updateTag(pDB, dirPath, updateTagName);
+    } else if (syncKind == "all") {
       bool filterOneGt = !syncName.empty();
       for (const string& gt : vGlobalTags) {
         if (pattern != "unset" && string::npos == gt.find(pattern)) {
