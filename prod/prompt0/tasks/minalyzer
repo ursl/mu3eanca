@@ -37,6 +37,7 @@ my $midas    = basename($file);
 my $rc = SlurmBatch::run($ctx, {
     name    => $name,
     stage   => "mlzr",
+    abbr    => "mlzr",
     wrapper => $ctx->{slurm_analyzer_csh},
     total   => $total,
     chunk   => $chunk,

@@ -42,6 +42,7 @@ my $cdb = $ctx->{cdb_dbconn} // "";
 my $rc = SlurmBatch::run($ctx, {
     name    => $name,
     stage   => "trirec",
+    abbr    => "rec",
     wrapper => $ctx->{slurm_trirec_csh},
     total   => $total,
     chunk   => $chunk,

@@ -53,6 +53,7 @@ my $storage1 = "$ctx->{root}/slurm/storage1/cor26";
 my $rc = SlurmBatch::run($ctx, {
     name    => $name,
     stage   => "cor26",
+    abbr    => "cor26",
     wrapper => $ctx->{slurm_cor26_csh},
     njobs   => 1,
     skip_if => $pdf,
