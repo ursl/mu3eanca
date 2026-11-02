@@ -31,7 +31,8 @@
 //           -f -l -r    run number filters (unchanged)
 //           --rdb       RDB only
 //           --noreplace skip writes if tags/<tag> or payloads/<tag>/... already exists
-//           --update <tag>  rewrite tags/<tag>, then write only missing payloads
+//           --update <name> tag: rewrite tags/<tag>, then missing payloads
+//                       GT:   rewrite globaltags/<gt>, then --update each member tag
 // ----------------------------------------------------------------------
 
 using namespace std;
@@ -61,9 +62,10 @@ static void printSyncJSONUsage(const char* prog) {
     "  --rdb            Runrecords only (skip CDB sync).\n"
     "  --noreplace      Do not overwrite existing tags/<tag> or payload files under\n"
     "                   payloads/<tag>/ (skip those writes; globaltags/ still updated).\n"
-    "  --update <tag>   Rewrite tags/<tag> and download only payload files that are\n"
-    "                   not already under payloads/<tag>/. Skips the runrecord dump.\n"
-    "                   Replaces: --sync tag, then --sync tag --deep --noreplace.\n"
+    "  --update <name>  Tag: rewrite tags/<tag> and download only payload files that\n"
+    "                   are not already under payloads/<tag>/.\n"
+    "                   Global tag: rewrite globaltags/<gt>, then do that for every\n"
+    "                   member tag. Skips the runrecord dump.\n"
     "  --help, -?       This message.\n"
     "\n"
     "--sync modes:\n"
@@ -81,6 +83,7 @@ static void printSyncJSONUsage(const char* prog) {
     "  " << prog << " --cdb --dir ~/cdb --host localhost --sync payload --name pixeltimecalibration_mcidealv6.5 \n"
     "  " << prog << " --cdb --dir ~/cdb --host localhost --sync gt --name datav6.3=2025 --deep \n"
     "  " << prog << " --dir ~/cdb --host localhost --update pixelqualitylm_datav7.1=2026V1 \n"
+    "  " << prog << " --dir ~/cdb --host localhost --update datav7.1=2026V1 \n"
     "\n";
 }
 
@@ -159,6 +162,7 @@ static void writeGlobalTagFile(cdbAbs* pDB, const string& dirPath, const string&
   mkdirParentsForFile(gf);
   ofstream ofs(gf);
   ofs << sstr.str();
+  cout << "write globaltag " << gf << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -223,6 +227,25 @@ static void updateTag(cdbAbs* pDB, const string& dirPath, const string& tag) {
   cout << "update tag: " << tag << " (rewrite tag file, new payloads only)" << endl;
   syncTagShallow(pDB, dirPath, tag, false);
   writePayloadsForTag(pDB, dirPath, tag, true);
+}
+
+// ----------------------------------------------------------------------
+// Rewrite globaltags/<gt>, then updateTag for every member tag.
+static void updateGlobalTag(cdbAbs* pDB, const string& dirPath, const string& gt) {
+  cout << "update global tag: " << gt << endl;
+  vector<string> vTags = pDB->readTags(gt);
+  writeGlobalTagFile(pDB, dirPath, gt, vTags);
+  for (const string& t : vTags) {
+    updateTag(pDB, dirPath, t);
+  }
+}
+
+// ----------------------------------------------------------------------
+static bool isGlobalTagName(const vector<string>& gts, const string& name) {
+  for (const string& gt : gts) {
+    if (gt == name) return true;
+  }
+  return false;
 }
 
 // ----------------------------------------------------------------------
@@ -346,7 +369,11 @@ int main(int argc, char* argv[]) {
         delete pDB;
         return 1;
       }
-      updateTag(pDB, dirPath, updateTagName);
+      if (isGlobalTagName(vGlobalTags, updateTagName)) {
+        updateGlobalTag(pDB, dirPath, updateTagName);
+      } else {
+        updateTag(pDB, dirPath, updateTagName);
+      }
     } else if (syncKind == "all") {
       bool filterOneGt = !syncName.empty();
       for (const string& gt : vGlobalTags) {
