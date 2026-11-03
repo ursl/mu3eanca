@@ -20,7 +20,8 @@
 use strict;
 use warnings;
 
-use Getopt::Long;
+# no_ignore_case: otherwise -H is -h (help) and -p is -P (pipeline).
+use Getopt::Long qw(:config no_ignore_case);
 use Pod::Usage;
 
 my $config   = "prompt-v7.1.cfg";
@@ -277,7 +278,8 @@ if ($target eq "setup") {
 
     my $child_cmd = sub {
         my ($run) = @_;
-        my @cmd = ($prog, "-c", $cfg_file, "-H", $host);
+        # Host comes from the hostname (merlin-l-* → merlin6). Do not pass -H.
+        my @cmd = ($prog, "-c", $cfg_file);
         push @cmd, "-s", $setup_name if $setup_name ne "";
         push @cmd, "-P", $pipeline if $pipeline ne "";
         push @cmd, "run", $run;
