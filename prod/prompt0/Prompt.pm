@@ -255,12 +255,17 @@ sub _make_tar {
     my $cwd = getcwd();
     chdir($root) or die "Cannot chdir $root: $!\n" unless $ctx->{dry_run};
     unlink("$root/$tar") if !$ctx->{dry_run} && -e "$root/$tar";
+    # CMakeFiles holds .o and precompiled headers (*.gch). The jobs run the
+    # linked binaries under _build/, not those intermediates.
     _run(
         $ctx, "tar", "zcvf", $tar,
         "--exclude", ".git",
         "--exclude", "mu3e/install",
         "--exclude", "minalyzer/json_output",
         "--exclude", "minalyzer/root_output_files",
+        "--exclude", "CMakeFiles",
+        "--exclude", "*.o",
+        "--exclude", "*.gch",
         @pkgs,
     );
     chdir($cwd) unless $ctx->{dry_run};
