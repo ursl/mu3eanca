@@ -1,0 +1,183 @@
+{
+  "detector": {
+    "beampipe": {
+      "collimator1": {
+        "r": "22",
+        "t": "20",
+        "z": "-406.13"
+      },
+      "degrader1": {
+        "thickness": "0.59999999999999998",
+        "zOffset": "0"
+      },
+      "endpoint_ds": "109.13",
+      "endpoint_us": "93.129999999999995",
+      "radius": {
+        "inner": "30",
+        "outer": "33"
+      },
+      "window": {
+        "thickness": "0.035000000000000003",
+        "z": "6"
+      }
+    },
+    "fibres": {
+      "alCoating": "0",
+      "deadWidth": "0.0050000000000000001",
+      "diameter": "0.25",
+      "length": "287.75",
+      "maxFibresPerLayer": "126",
+      "mppcs": {
+        "epoxy": {
+          "thickness": "0.10000000000000001"
+        },
+        "height": "1.6000000000000001",
+        "pcb": {
+          "thickness": "1"
+        },
+        "thickness": "0.29999999999999999",
+        "width": "32"
+      },
+      "nLayers": "3",
+      "refractiveIndex": "1.5900000000000001",
+      "ribbons": {
+        "geometry": "0",
+        "geometry_options": "",
+        "n": "12",
+        "pitch": "0.17999999999999999",
+        "rOffset": "0",
+        "stagger": "12.5"
+      }
+    },
+    "magnet": {
+      "field": {
+        "compensationCoilScale": "0.90000000000000002",
+        "configuration": "6",
+        "configuration_options": "",
+        "map": "/Users/ursl/mu3e/software/mu3e-v7.0/run/cryogenics.bin",
+        "strength": -1.0,
+        "transportFieldStrength": "0"
+      },
+      "length": "3000",
+      "radius": {
+        "inner": "500",
+        "outer": "550"
+      }
+    },
+    "phase": "1",
+    "phase_options": "",
+    "pixels": {
+      "conductor": {
+        "thickness": "0.014999999999999999",
+        "width": "5"
+      },
+      "kapton": {
+        "extLengthInner": "10.65",
+        "extLengthOuter": "2",
+        "fpOverlengthInner": "1",
+        "fpOverlengthOuter": "3.7999999999999998",
+        "thickness": "0.025000000000000001"
+      },
+      "large": {
+        "deadWidth": "3",
+        "inactiveFrameSize": "0.089999999999999997",
+        "length": "20.66",
+        "nLayers": "2",
+        "nZSensors3": "17",
+        "nZSensors4": "18",
+        "pixelSize": "0.080000000000000002",
+        "thickness": "0.050000000000000003",
+        "width": "23.18",
+        "zSpacing": "0.040000000000000001"
+      },
+      "mylarCondom": {
+        "thickness_inner": "0.002",
+        "thickness_outer": "0.002"
+      },
+      "nPhiSensors": {
+        "layer1": "8",
+        "layer2": "10",
+        "layer3": "24",
+        "layer4": "28"
+      },
+      "small": {
+        "deadWidth": "3",
+        "inactiveFrameSize": "0.089999999999999997",
+        "length": "20.66",
+        "nLayers": "2",
+        "nZSensors": "6",
+        "pixelSize": "0.080000000000000002",
+        "thickness": "0.050000000000000003",
+        "width": "23.18",
+        "zSpacing": "0.040000000000000001"
+      }
+    },
+    "target": {
+      "MottScattering": {
+        "ballRadius": "5",
+        "ballZOffset": "-30",
+        "placeBall": "0"
+      },
+      "length": "50",
+      "material": "Mylar",
+      "offset": {
+        "x": "0",
+        "y": "0",
+        "z": "0"
+      },
+      "radius": "19",
+      "shape": "0",
+      "shape_options": "",
+      "thickness1": "0.074999999999999997",
+      "thickness2": "0.085000000000000006"
+    },
+    "tiles": {
+      "mutrig": {
+        "thickness": "1.5",
+        "width": "15"
+      },
+      "nLayers": "2",
+      "nModules": "7",
+      "nPhi": "56",
+      "nZ": "52",
+      "radius": {
+        "endringInner": "49",
+        "inner": "47",
+        "matrixInner": "57.328000000000003",
+        "outer": "62.5",
+        "supportInner": "49.286999999999999"
+      },
+      "sipms": {
+        "PCBthickness": "0.69999999999999996",
+        "thickness": "1.45",
+        "width": "3.3999999999999999"
+      },
+      "stationActiveLength": "335.12",
+      "stationLength": "342.31999999999999",
+      "support": {
+        "endring": "3.5",
+        "height": "7.3099999999999996",
+        "pipeID": "2",
+        "pipeOD": "2.5",
+        "pipePitch": "13",
+        "width": "46.5"
+      },
+      "tile": {
+        "gapPhi": "0.20000000000000001",
+        "gapZ": "0.20000000000000001",
+        "height": "5",
+        "matrixGapPhi": "0.16500000000000001",
+        "matrixGapZ": "0.14999999999999999"
+      },
+      "tmb": {
+        "thickness": "0.80000000000000004",
+        "width": "44.600000000000001"
+      }
+    },
+    "world": {
+      "height": "1500",
+      "length": "3200",
+      "width": "3200"
+    }
+  }
+}
