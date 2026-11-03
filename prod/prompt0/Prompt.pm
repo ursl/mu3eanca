@@ -272,11 +272,16 @@ sub _make_tar {
 }
 
 # ----------------------------------------------------------------------
-# cdb_payload_dir is relative to the production root (sibling of slurm/ and githashes).
+# {cdb_json}/payloads expands first. An absolute result is used as-is.
+# A path with no placeholder is relative to the production root.
 sub _payload_dir {
     my ($ctx, $cfg) = @_;
     my $rel = _strip($cfg->{cdb_payload_dir} // "");
     return "" if $rel eq "";
+    require TaskLib;
+    $rel = TaskLib::expand_ctx($cfg, $rel);
+    die "prompt: cdb_payload_dir has an unset placeholder (got: $rel)\n"
+        if $rel =~ /\{[A-Za-z0-9_]+\}/;
     return $rel if $rel =~ m{^/};
     die "prompt: cdb_payload_dir must not contain .. (got: $rel)\n"
         if $rel =~ m{(^|/)\.\.(/|$)};
