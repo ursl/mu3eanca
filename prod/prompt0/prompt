@@ -10,6 +10,8 @@
 #   ./prompt [-P beam] process 10482   # that run, every later raw file, then sleep
 #   ./prompt processEven 10482        # same scan, only even run numbers
 #   ./prompt processOdd  10482        # same scan, only odd run numbers
+#   ./prompt -P dqm pool10 11000      # up to 10 child "prompt run"s, current raw files
+#   ./prompt -P dqm prod10 11000      # same pool, then sleep and pick up new runs
 #
 # Host overlay is host-<platform>.cfg (e.g. host-merlin6.cfg), not
 # config-<hostname>.cfg as in startGT / relval.
@@ -49,7 +51,8 @@ GetOptions(
 pod2usage(1) if $help;
 
 use Cwd qw(abs_path);
-use File::Basename qw(dirname);
+use File::Basename qw(dirname basename);
+use POSIX qw(WNOHANG);
 
 use lib abs_path(dirname($0));
 use lib abs_path(dirname($0)) . "/../common";
@@ -94,6 +97,8 @@ Targets:
   process RUN    from RUN forward through raw files (010, 011, ...), then sleep and look again
   processEven RUN  same as process, only even run numbers
   processOdd RUN   same as process, only odd run numbers
+  poolN RUN      reprocess raw files from RUN up, at most N child prompt runs at once
+  prodN RUN      same pool as poolN, then sleep and pick up new raw files
   cleanup RUN ... remove per-run output (keeps timestamped logs in runs/XXXXX/)
 
 Options:
@@ -182,15 +187,24 @@ if ($target eq "") {
 }
 $target = "list" if $target eq "";
 
+my ($pool_mode, $pool_n) = ("", 0);
+if ($target =~ /^(pool|prod)(\d+)$/) {
+    $pool_mode = $1;
+    $pool_n = 0 + $2;
+    die "prompt: $target needs a slot count >= 1 (./prompt pool10 11000)\n"
+        if $pool_n < 1;
+}
+
 my @runs;
 my $from_range = {};
 if ($target eq "run" || $target eq "cleanup" || $target eq "process"
-    || $target eq "processEven" || $target eq "processOdd") {
+    || $target eq "processEven" || $target eq "processOdd" || $pool_mode ne "") {
     my ($runlist, $range_mark) = _collect_runs($target, @ARGV);
     @runs = @$runlist;
     $from_range = $range_mark;
 }
-if ($target eq "process" || $target eq "processEven" || $target eq "processOdd") {
+if ($target eq "process" || $target eq "processEven" || $target eq "processOdd"
+    || $pool_mode ne "") {
     die "prompt: $target takes one starting run (./prompt $target 10482)\n"
         unless @runs == 1 && !%$from_range;
 }
@@ -250,6 +264,115 @@ if ($target eq "setup") {
     }
     print(prefix(), "done\n");
     exit($hard ? 1 : 0);
+} elsif ($pool_mode ne "") {
+    my $start = 0 + $runs[0];
+    my $pause = 0 + ($cfg->{process_sleep} // 60);
+    $pause = 60 if $pause < 1;
+    my $prog = "$script_dir/" . basename($0);
+    my @queue;
+    my $scan = $start;
+    my %seen;
+    my %kids;
+    my $hard = 0;
+
+    my $child_cmd = sub {
+        my ($run) = @_;
+        my @cmd = ($prog, "-c", $cfg_file, "-H", $host);
+        push @cmd, "-s", $setup_name if $setup_name ne "";
+        push @cmd, "-P", $pipeline if $pipeline ne "";
+        push @cmd, "run", $run;
+        return @cmd;
+    };
+    my $reap = sub {
+        my ($block) = @_;
+        my $flag = $block ? 0 : WNOHANG;
+        while (1) {
+            my $pid = waitpid(-1, $flag);
+            last if $pid <= 0;
+            my $run = delete $kids{$pid};
+            my $rc = $? >> 8;
+            $rc = 1 if $rc == 0 && ($? & 127);
+            if ($rc != 0) {
+                $hard++;
+                print(prefix(), "$target: run $run exited $rc (" . scalar(keys %kids) . " left)\n");
+            } else {
+                print(prefix(), "$target: run $run done (" . scalar(keys %kids) . " left)\n");
+            }
+            $flag = WNOHANG;
+        }
+    };
+    my $spawn = sub {
+        my ($run) = @_;
+        my @cmd = $child_cmd->($run);
+        print(prefix(), "$target: start " . join(" ", map { _quote_arg($_) } @cmd) . "\n");
+        my $pid = fork();
+        die "prompt: fork failed: $!\n" unless defined $pid;
+        if ($pid == 0) {
+            exec {$cmd[0]} @cmd or die "prompt: exec $cmd[0]: $!\n";
+        }
+        $kids{$pid} = $run;
+    };
+    my $discover = sub {
+        my @fwd = forward_runs($cfg, $scan);
+        for my $r (@fwd) {
+            next if $seen{$r}++;
+            push @queue, $r;
+        }
+        $scan = $fwd[-1] + 1 if @fwd;
+        return @fwd;
+    };
+
+    $discover->();
+    if (!@queue && ($pool_mode eq "pool" || $dry_run)) {
+        print(prefix(), "$target: no raw files at or after $start\n");
+        if ($pool_mode eq "prod") {
+            print(prefix(), "$target: would sleep ${pause}s and look again\n");
+        }
+        print(prefix(), "done\n");
+        exit 0;
+    }
+    if (@queue) {
+        print(prefix(), "$target: $pool_n slots, " . scalar(@queue)
+            . " runs from $start -> " . join(",", @queue) . "\n");
+    }
+    if ($dry_run) {
+        for my $run (@queue) {
+            my @cmd = $child_cmd->($run);
+            print(prefix(), "$target: would: " . join(" ", map { _quote_arg($_) } @cmd) . "\n");
+        }
+        if ($pool_mode eq "prod") {
+            print(prefix(), "$target: would sleep ${pause}s and look again\n");
+        }
+        print(prefix(), "done\n");
+        exit 0;
+    }
+
+    if ($pool_mode eq "pool") {
+        while (@queue || keys %kids) {
+            while (@queue && keys(%kids) < $pool_n) {
+                $spawn->(shift @queue);
+            }
+            $reap->(keys(%kids) >= $pool_n || !@queue);
+        }
+        print(prefix(), "done\n");
+        exit($hard ? 1 : 0);
+    }
+
+    while (1) {
+        $reap->(0);
+        $discover->();
+        while (@queue && keys(%kids) < $pool_n) {
+            $spawn->(shift @queue);
+        }
+        if (!@queue && keys(%kids) < $pool_n) {
+            print(prefix(), "$target: no raw files at or after $scan ("
+                . scalar(keys %kids) . " still running)\n");
+            print(prefix(), "$target: sleep ${pause}s\n");
+            sleep($pause);
+            next;
+        }
+        $reap->(1) if keys %kids;
+    }
 } elsif ($target eq "run") {
     $opts{runs} = \@runs;
     $opts{range_runs} = $from_range;
