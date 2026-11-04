@@ -248,6 +248,7 @@ sub _ctx_kv {
         slurm_sort_csh     => _strip($cfg->{slurm_sort_csh} // ""),
         slurm_trirec_csh   => _strip($cfg->{slurm_trirec_csh} // ""),
         slurm_cor26_csh    => _strip($cfg->{slurm_cor26_csh} // ""),
+        slurm_midasmeta_csh => _strip($cfg->{slurm_midasmeta_csh} // ""),
         sort_anlzr         => _strip($cfg->{sort_anlzr} //
             "--alignment.file=mu3e_alignment.root --conf trirec_threelayer_beam.conf"),
         trirec_anlzr       => _strip($cfg->{trirec_anlzr} //

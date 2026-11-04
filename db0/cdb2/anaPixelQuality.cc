@@ -46,6 +46,8 @@ using namespace std;
 // -r FILENAME runlist file
 // -R r1,r2    comma-separated list of runs
 //
+// Examples:
+// 
 // ----------------------------------------------------------------------
 
 std::unordered_map<int, int> gRunNumberIndex;
@@ -81,7 +83,7 @@ int main(int argc, char *argv[]) {
 
   // -- command line arguments
   string filename("anaPixelQuality.root");
-  string gt("datav6.3=2025V0");
+  string gt("datav7.1=2026V1");
   string db("/Users/ursl/data/mu3e/cdb");
   string metaMidasTreeFile("");
   int first(0), last(0);
@@ -118,20 +120,7 @@ int main(int argc, char *argv[]) {
     filename = string("anaPixelQuality.root");
   }
 
-  TTree *tMetaMidas(0);
-  if (metaMidasTreeFile != "") {
-    cout << "Meta Midas tree file: " << metaMidasTreeFile << endl;
-
-    TFile *fMetaMidas = TFile::Open(metaMidasTreeFile.c_str());
-    tMetaMidas = (TTree*)fMetaMidas->Get("midasMetaTree");
-    if (tMetaMidas) {
-      cout << "Meta Midas tree found" << endl;
-    } else {
-      cout << "Meta Midas tree not found" << endl;
-    }
-  }
-
-    if ("" != filename1 && "" != filename2) {
+  if ("" != filename1 && "" != filename2) {
     overlayHistograms(filename1, filename2);
     return 0;
   } 
