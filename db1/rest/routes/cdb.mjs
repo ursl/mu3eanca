@@ -274,16 +274,20 @@ router.get("/findPayloadsByTag/:tag", async (req, res) => {
   console.log("serving /findPayloadsByTag/" + req.params.tag);
   
   try {
-    // First get the tag document to get its IOVs array
+    // Same tag document as GET /findOne/tags/:id (comment, then newest _id).
     let tagsCollection = await db.collection("tags");
-    let tag = await tagsCollection.findOne({tag: req.params.tag});
-    
-    if (!tag || !tag.iovs) {
-      console.log("No tag found or no IOVs array:", req.params.tag);
-      return res.send({ tag: req.params.tag, iovs: [], payloads: [] }).status(200);
+    const tagRows = await tagsCollection.aggregate([
+      { $match: { tag: req.params.tag } },
+      ...TAG_TOP_LEVEL_COMMENT_STAGES,
+      { $sort: { __hasComment: -1, _id: -1 } },
+      { $limit: 1 },
+      { $project: { __commentLen: 0, __hasComment: 0 } },
+    ]).toArray();
+    const tag = tagRows[0];
+    const iovs = tag && Array.isArray(tag.iovs) ? tag.iovs : [];
+    if (!tag) {
+      console.log("No tag found:", req.params.tag);
     }
-    
-    console.log("Found tag with IOVs:", tag.iovs);
     
     // Then get all payloads for this tag
     let payloadsCollection = await db.collection("payloads");
@@ -309,8 +313,8 @@ router.get("/findPayloadsByTag/:tag", async (req, res) => {
     
     // Add the IOVs array from the tag document to the response
     let response = {
-      tag: tag.tag,
-      iovs: tag.iovs,
+      tag: tag && tag.tag ? tag.tag : req.params.tag,
+      iovs: iovs,
       payloads: results,
       totalCount: totalCount,
       returnedCount: results.length,

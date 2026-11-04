@@ -160,6 +160,13 @@
         #payloads-table {
             font-size: 12px;
         }
+        #payloads-tag-label a.tag-file-link {
+            color: #0d6efd;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .tag-iov-ok { color: #1f8a4c; font-weight: 600; }
+        .tag-iov-bad { color: #c2410c; font-weight: 600; }
         #payloads-table th,
         #payloads-table td {
             padding: 6px 8px;
@@ -424,6 +431,25 @@
         </div>
     </div>
 
+    <!-- Tag file modal -->
+    <div class="modal fade" id="tagModal" tabindex="-1" aria-labelledby="tagModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tagModalLabel">Tag</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="tagFileCheck" class="mb-2"></div>
+                    <pre id="tagFileBody" style="max-height: 60vh; overflow: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Detcal File Viewer Modal -->
     <div class="modal fade" id="detcalViewModal" tabindex="-1" aria-labelledby="detcalViewModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -597,6 +623,7 @@
             setLoading('tags-loading', true);
             clearTable('tags-table');
             clearTable('payloads-table');
+            document.getElementById("payloads-tag-label").textContent = "";
 
             // Set the global tag label
             const tagLabel = document.getElementById("tags-tag-label");
@@ -652,6 +679,79 @@
             }
         }
 
+        // Tag name after "Payloads" opens the tag document. The IOV-list
+        // length is compared with the number of payload documents in the DB.
+        let openTagPayloadCount = null;
+
+        function renderPayloadsTagLabel(tag, iovCount, payloadCount, extra) {
+            const el = document.getElementById("payloads-tag-label");
+            el.replaceChildren();
+            openTagPayloadCount = payloadCount;
+
+            const link = document.createElement("a");
+            link.href = "#";
+            link.className = "tag-file-link";
+            link.textContent = tag;
+            link.addEventListener("click", (ev) => {
+                ev.preventDefault();
+                showTagFile(tag);
+            });
+            el.appendChild(link);
+
+            const counts = document.createElement("span");
+            let text = ` (IOVs in tag: ${iovCount}, payloads in DB: ${payloadCount})`;
+            if (extra && extra.hasMore) {
+                text += ` — showing ${extra.returnedCount} of ${extra.totalCount}`;
+            }
+            counts.textContent = text;
+            el.appendChild(counts);
+
+            const check = document.createElement("span");
+            if (iovCount === payloadCount) {
+                check.className = "tag-iov-ok";
+                check.textContent = " — consistent";
+            } else {
+                check.className = "tag-iov-bad";
+                check.textContent = " — mismatch";
+            }
+            el.appendChild(check);
+        }
+
+        async function showTagFile(tag) {
+            document.getElementById("tagModalLabel").textContent = tag;
+            const check = document.getElementById("tagFileCheck");
+            check.textContent = "Loading tag...";
+            check.className = "mb-2";
+            document.getElementById("tagFileBody").textContent = "";
+            const modal = new bootstrap.Modal(document.getElementById("tagModal"));
+            modal.show();
+
+            try {
+                const response = await fetch(`/cdb/findOne/tags/${encodeURIComponent(tag)}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const doc = await response.json();
+                if (doc && Object.prototype.hasOwnProperty.call(doc, "_id")) delete doc._id;
+                const iovCount = Array.isArray(doc.iovs) ? doc.iovs.length : 0;
+                const payloadCount = openTagPayloadCount;
+                if (payloadCount == null) {
+                    check.textContent = `IOV list length ${iovCount}.`;
+                } else if (iovCount === payloadCount) {
+                    check.className = "mb-2 tag-iov-ok";
+                    check.textContent = `IOV list length ${iovCount} matches ${payloadCount} payloads in the DB.`;
+                } else {
+                    check.className = "mb-2 tag-iov-bad";
+                    check.textContent = `IOV list length ${iovCount} does not match ${payloadCount} payloads in the DB.`;
+                }
+                document.getElementById("tagFileBody").textContent = JSON.stringify(doc, null, 2);
+            } catch (error) {
+                check.className = "mb-2 tag-iov-bad";
+                check.textContent = "Could not load the tag.";
+                document.getElementById("tagFileBody").textContent = error.message;
+            }
+        }
+
         // Fetch and display payloads for a tag
         async function loadPayloads(tag) {
             console.log("Loading payloads for tag:", tag);
@@ -661,14 +761,20 @@
             
             // Clear the payloads tag label initially
             document.getElementById("payloads-tag-label").textContent = "";
+            openTagPayloadCount = null;
             
             try {
-                const response = await fetch(`/cdb/findPayloadsByTag/${tag}`);
+                const response = await fetch(`/cdb/findPayloadsByTag/${encodeURIComponent(tag)}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                
+                const iovCount = Array.isArray(data.iovs) ? data.iovs.length : 0;
+                const payloadCount = Number.isFinite(data.totalCount)
+                    ? data.totalCount
+                    : (Array.isArray(data.payloads) ? data.payloads.length : 0);
+                renderPayloadsTagLabel(data.tag || tag, iovCount, payloadCount, data);
+
                 if (!data.payloads || data.payloads.length === 0) {
                     const row = payloadsBody.insertRow();
                     const cell = row.insertCell();
@@ -684,16 +790,6 @@
                     const iovB = parseInt(b.hash.split("_iov_")[1]);
                     return iovB - iovA;
                 });
-                
-                // Set the tag label next to the Payloads title
-                const tagLabel = document.getElementById("payloads-tag-label");
-                let labelText = `${data.tag} (Total IOVs: ${data.iovs.length})`;
-                if (data.hasMore) {
-                    labelText += ` - Showing ${data.returnedCount} of ${data.totalCount} payloads`;
-                } else if (data.totalCount) {
-                    labelText += ` (${data.totalCount} payloads)`;
-                }
-                tagLabel.textContent = labelText;
                 
                 // Add each payload
                 data.payloads.forEach(payload => {
@@ -721,7 +817,7 @@
                     row.insertCell().textContent = payload.schema || "";
                     
                     // Highlight if this IOV is in the tag's IOVs array
-                    if (data.iovs.includes(parseInt(iov))) {
+                    if (Array.isArray(data.iovs) && data.iovs.includes(parseInt(iov))) {
                         row.style.backgroundColor = "#e6ffe6"; // Light green
                     }
                     
@@ -740,6 +836,7 @@
                 cell.style.color = "red";
                 cell.style.textAlign = "center";
                 document.getElementById("payloads-tag-label").textContent = "";
+                openTagPayloadCount = null;
             }
         }
 
