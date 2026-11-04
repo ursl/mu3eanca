@@ -404,21 +404,21 @@ int main(int argc, char* argv[]) {
     deadcolumns.clear();
     noisyPixels.clear();
     // -- determine broken links
-    cout << "mHitmaps[" << it.first << "] : " << mHitmaps[it.first]->GetName() << endl;
+    if (verbose > 0) cout << "mHitmaps[" << it.first << "] : " << mHitmaps[it.first]->GetName() << endl;
     bool turnedOn = determineBrokenLinks(mHitmaps[it.first], deadlinks);
-    cout << "chipID = " << it.first << " turnedOn = " << turnedOn << endl;
+    if (verbose > 0) cout << "chipID = " << it.first << " turnedOn = " << turnedOn << endl;
     if (deadlinks.size() > 0) {
-      cout << "chipID = " << it.first << " with link quality: ";
+      if (verbose > 0) cout << "chipID = " << it.first << " with link quality: ";
       ofs << it.first << ",";
       // -- ckdivend and ckdivend2
       ofs << ckdivend << "," << ckdivend2 << ",";
       for (auto itL : deadlinks) {
         ofs << itL << ",";
-        cout << itL << " ";
+        if (verbose > 0) cout << itL << " ";
       }
-      cout << endl;
+      if (verbose > 0) cout << endl;
     } else {
-      cout << "chipID = " << it.first << " has no broken links" << endl;
+      if (verbose > 0) cout << "chipID = " << it.first << " has no broken links" << endl;
     }
     // -- determine dead columns
     if (gIsBeam) {
@@ -432,29 +432,29 @@ int main(int argc, char* argv[]) {
 
     // -- write out dead columns only after potential correction in noisy pixel determination
     if (deadcolumns.size() > 0) {
-      cout << "chipID = " << it.first << " has " << deadcolumns.size()/2 << " dead/bad columns: ";
+      if (verbose > 0) cout << "chipID = " << it.first << " has " << deadcolumns.size()/2 << " dead/bad columns: ";
       ofs << deadcolumns.size()/2 << ",";
       for (auto itC = deadcolumns.begin(); itC != deadcolumns.end(); ++itC) {
-        cout << *itC << " ";
+        if (verbose > 0) cout << *itC << " ";
         ofs << *itC << ",";
       }
-      cout << endl;
+      if (verbose > 0) cout << endl;
     } else {
-      cout << "chipID = " << it.first << " has no dead columns" << endl;
+      if (verbose > 0) cout << "chipID = " << it.first << " has no dead columns" << endl;
       ofs << 0 << ",";
     }
    
     if (noisyPixels.size() > 0) {
-      cout << "chipID = " << it.first << " has " << noisyPixels.size()/3 << " noisy pixels: ";
+      if (verbose > 0) cout << "chipID = " << it.first << " has " << noisyPixels.size()/3 << " noisy pixels: ";
       ofs << noisyPixels.size()/3 << ",";
       for (auto itN = noisyPixels.begin(); itN != noisyPixels.end(); ++itN) {
-        cout << *itN << " ";
+        if (verbose > 0) cout << *itN << " ";
         ofs << *itN;
         if (itN != noisyPixels.end() - 1) ofs << ",";
       }
-      cout << endl;
+      if (verbose > 0) cout << endl;
     } else {
-      cout << "chipID = " << it.first << " has no noisy pixels" << endl;
+      if (verbose > 0) cout << "chipID = " << it.first << " has no noisy pixels" << endl;
       ofs << 0;
     }
     
@@ -628,7 +628,9 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
   // -- badChip is true for unmasked links with LVDS error rates > 10 Hz. 
   //    These leak into other matrices.
   if (badChip >= 0) {    
-    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << endl;
+    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ gID = " << chipID 
+         << " badChip = " << badChip << " lkStatus = " << lkStatus[0] 
+         << " " << lkStatus[1] << " " << lkStatus[2] << " " << lkStatus[3] << endl;
     for (int i = 0; i < 3; ++i) {
       if (badLink[i]) {
         lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
@@ -647,31 +649,101 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
 
   // -- hits piled at the top or bottom edge. Only a sensor that is still
   //    Good is marked; E, mask, and a high LVDS rate stay as they are.
-  vector<double> vLinkMeanY;
-  vLinkMeanY.push_back(h->ProjectionY("A", 1, 88)->GetMean());
-  vLinkMeanY.push_back(h->ProjectionY("B", 89, 172)->GetMean());
-  vLinkMeanY.push_back(h->ProjectionY("C", 173, 256)->GetMean());
-  badChip = -1;
-  if (nLinkA > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245)) badChip = 1;
-  if (nLinkB > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245)) badChip = 2;
-  if (nLinkC > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)) badChip = 3;
-  if (badChip > 0) {
-    cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ badChip = " << badChip
-         << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2]
-         << endl;
-    const double nHits[3] = {nLinkA, nLinkB, nLinkC};
-    const bool atEdge[3] = {
-      nHits[0] > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245),
-      nHits[1] > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245),
-      nHits[2] > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)
-    };
-    for (int i = 0; i < 3; ++i) {
-      if (atEdge[i] && lkStatus[i] == calPixelQualityLM::Good) {
-        lkStatus[i] = calPixelQualityLM::LVDSErrorTopBottomEdge;
+  if (0) {
+    // -- this is not a good approach: A sufficiently noisy edge pixel will disable the entire link!
+    vector<double> vLinkMeanY;
+    vLinkMeanY.push_back(h->ProjectionY("A", 1, 88)->GetMean());
+    vLinkMeanY.push_back(h->ProjectionY("B", 89, 172)->GetMean());
+    vLinkMeanY.push_back(h->ProjectionY("C", 173, 256)->GetMean());
+
+    badChip = -1;
+    if (nLinkA > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245)) badChip = 1;
+    if (nLinkB > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245)) badChip = 2;
+    if (nLinkC > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)) badChip = 3;
+    if (badChip > 0) {
+      cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ gID = " << chipID 
+          << " badChip = " << badChip
+          << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2]
+          << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << " " << lkStatus[3]
+          << endl;
+      const double nHits[3] = {nLinkA, nLinkB, nLinkC};
+      const bool atEdge[3] = {
+        nHits[0] > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245),
+        nHits[1] > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245),
+        nHits[2] > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)
+      };
+      for (int i = 0; i < 3; ++i) {
+        if (atEdge[i] && lkStatus[i] == calPixelQualityLM::Good) {
+          lkStatus[i] = calPixelQualityLM::LVDSErrorTopBottomEdge;
+        }
       }
     }
   }
 
+  if (1) {
+    // -- this is a different approach: Check for noisy pixels at the top and bottom edge
+    vector<double> vLinkMeanY;
+    TH1D *hmean = new TH1D("hmean", "hmean", 256, 0, 256);
+    for (int i = 1; i <= 88; ++i) {
+      TH1D *hA = h->ProjectionY("A", i, i);
+      if (hA->GetSumOfWeights() > 0) {
+        double mean = hA->GetMean();
+        hmean->Fill(mean);
+      }
+      delete hA;
+    }
+    vLinkMeanY.push_back(hmean->GetMean());
+
+    hmean->Reset();
+    for (int i = 89; i <= 172; ++i) {
+      TH1D *hB = h->ProjectionY("B", i, i);
+      if (hB->GetSumOfWeights() > 0) {
+        double mean = hB->GetMean();
+        hmean->Fill(mean);
+      }
+      delete hB;
+    }
+    vLinkMeanY.push_back(hmean->GetMean());
+
+    hmean->Reset();
+    for (int i = 173; i <= 256; ++i) {
+      TH1D *hC = h->ProjectionY("C", i, i);
+      if (hC->GetSumOfWeights() > 0) {
+        double mean = hC->GetMean();
+        hmean->Fill(mean);
+      }
+      delete hC;
+    }
+    vLinkMeanY.push_back(hmean->GetMean());
+
+    delete hmean;
+    badChip = -1;
+    if (nLinkA > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245)) badChip = 1;
+    if (nLinkB > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245)) badChip = 2;
+    if (nLinkC > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)) badChip = 3;
+    if (badChip > 0) {
+      cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ gID = " << chipID 
+          << " badChip = " << badChip
+          << " vLinkMeanY = " << vLinkMeanY[0] << " " << vLinkMeanY[1] << " " << vLinkMeanY[2]
+          << " lkStatus = " << lkStatus[0] << " " << lkStatus[1] << " " << lkStatus[2] << " " << lkStatus[3]
+          << endl;
+      const double nHits[3] = {nLinkA, nLinkB, nLinkC};
+      const bool atEdge[3] = {
+        nHits[0] > 0 && (vLinkMeanY[0] < 10 || vLinkMeanY[0] > 245),
+        nHits[1] > 0 && (vLinkMeanY[1] < 10 || vLinkMeanY[1] > 245),
+        nHits[2] > 0 && (vLinkMeanY[2] < 10 || vLinkMeanY[2] > 245)
+      };
+      for (int i = 0; i < 3; ++i) {
+        if (atEdge[i] && lkStatus[i] == calPixelQualityLM::Good) {
+          lkStatus[i] = calPixelQualityLM::LVDSErrorTopBottomEdge;
+        }
+      }
+    }
+
+
+
+  }
+  
   links.push_back(lkStatus[0]);
   links.push_back(lkStatus[1]);
   links.push_back(lkStatus[2]);
