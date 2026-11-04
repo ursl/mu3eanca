@@ -1240,7 +1240,7 @@ async function updateCsvDisplay() {
                                         <% const resourceName = resource.description || resource.filename || ""; %>
                                         <a href="/rdb/resource/<%= result.BOR["Run number"] %>/<%= encodeURIComponent(resourceName) %>" 
                                            target="_blank" 
-                                           title="<%= resource.filename %>"><%= resource.description || 'No description' %></a><% if (index < latestResources.length - 1) { %>, <% } %>
+                                           title="<%= resource.filename %>"><%= resource.description || 'No description' %><% if (resource.comment) { %>, <%= resource.comment %><% } %></a><% if (index < latestResources.length - 1) { %>, <% } %>
                                     <% }); %>
                                     <% if (nonPdfResources.length > 0) { %> <span style="color: #666; font-style: italic;">(more)</span><% } %>
                                 <% } %>

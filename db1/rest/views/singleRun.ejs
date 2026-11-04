@@ -526,7 +526,7 @@
                                 <%= new Date(resource.uploadDate).toLocaleString() %>
                             </td>
                             <td style="padding: 8px; border: 1px solid #ddd;">
-                                <%= resource.description || 'No description' %>
+                                <%= resource.description || 'No description' %><% if (resource.comment) { %>, <%= resource.comment %><% } %>
                             </td>
                             <td style="padding: 8px; border: 1px solid #ddd;">
                                 <button onclick="deleteResource(<%= JSON.stringify(resource.description || resource.filename || '') %>)" 

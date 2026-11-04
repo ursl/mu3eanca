@@ -7,6 +7,7 @@
 # After the job, that PDF is uploaded to the RDB (description=cor26).
 use strict;
 use warnings;
+use JSON::PP qw(encode_json);
 use FindBin;
 use lib "$FindBin::Bin/..";
 use TaskLib;
@@ -91,20 +92,27 @@ sub _upload {
         exit 2 unless $c->{dry_run};
         return;
     }
+    my $comment = $c->{workdir} // "";
+    my %rm = (description => "cor26");
+    $rm{comment} = $comment if $comment ne "";
+    my $rm_json = encode_json(\%rm);
+
     if ($c->{dry_run}) {
         TaskLib::task_log($c, $name,
             "would: curl -fsS -X PUT -H Content-Type: application/json"
-            . " --data {\"description\":\"cor26\"} $rdb/removeResources/$run");
+            . " --data $rm_json $rdb/removeResources/$run");
         TaskLib::task_log($c, $name,
             "would: curl -fsS -X POST -F pdf=\@$pdf"
-            . " -F description=cor26 $rdb/addResource/$run");
+            . " -F description=cor26"
+            . (($c->{workdir} // "") ne "" ? " -F comment=$c->{workdir}" : "")
+            . " $rdb/addResource/$run");
         return;
     }
 
     my $rm = system(
         "curl", "-fsS", "-X", "PUT",
         "-H", "Content-Type: application/json",
-        "--data", '{"description":"cor26"}',
+        "--data", $rm_json,
         "$rdb/removeResources/$run",
     );
     if ($rm != 0) {
@@ -112,12 +120,16 @@ sub _upload {
         exit 2;
     }
 
-    TaskLib::task_log($c, $name, "upload $pdf description=cor26 $rdb/addResource/$run");
-    my $up = system(
+    TaskLib::task_log($c, $name, "upload $pdf description=cor26"
+        . ($comment ne "" ? " comment=$comment" : "")
+        . " $rdb/addResource/$run");
+    my @up = (
         "curl", "-fsS", "-X", "POST",
         "-F", "pdf=\@$pdf",
         "-F", "description=cor26",
-        "$rdb/addResource/$run",
     );
+    push @up, "-F", "comment=$comment" if $comment ne "";
+    push @up, "$rdb/addResource/$run";
+    my $up = system(@up);
     exit 2 if $up != 0;
 }

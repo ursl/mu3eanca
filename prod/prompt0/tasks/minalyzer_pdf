@@ -6,12 +6,14 @@
 #
 # Login node (not SLURM). cwd is minalyzer_pdf_rundir. output/ and csv/
 # are created there before the executable runs. The PDF written into
-# output/ is uploaded to rdb_url (mu3edb0 on merlin) as description=dqm,
-# replacing any earlier resource with that description.
+# output/ is uploaded to rdb_url (mu3edb0 on merlin) as description=dqm.
+# comment is the production directory (prompt_workdir). A re-upload
+# replaces only the resource with that description and comment.
 use strict;
 use warnings;
 use Cwd qw(getcwd);
 use File::Path qw(make_path);
+use JSON::PP qw(encode_json);
 use FindBin;
 use lib "$FindBin::Bin/..";
 use TaskLib;
@@ -44,6 +46,10 @@ my @cmd = (
 
 my $rdb = $ctx->{rdb_url} // "";
 $rdb =~ s{/+$}{};
+my $comment = $ctx->{workdir} // "";
+my %rm = (description => "dqm");
+$rm{comment} = $comment if $comment ne "";
+my $rm_json = encode_json(\%rm);
 
 if ($ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "would: mkdir $rundir/output $rundir/csv");
@@ -53,10 +59,12 @@ if ($ctx->{dry_run}) {
     } else {
         TaskLib::task_log($ctx, $name,
             "would: curl -fsS -X PUT -H Content-Type: application/json"
-            . " --data {\"description\":\"dqm\"} $rdb/removeResources/$run");
+            . " --data $rm_json $rdb/removeResources/$run");
         TaskLib::task_log($ctx, $name,
             "would: curl -fsS -X POST -F pdf=\@$rundir/output/<pdf>"
-            . " -F description=dqm $rdb/addResource/$run");
+            . " -F description=dqm"
+            . ($comment ne "" ? " -F comment=$comment" : "")
+            . " $rdb/addResource/$run");
     }
     exit 0;
 }
@@ -109,7 +117,7 @@ if ($pdf eq "") {
 my $rm = system(
     "curl", "-fsS", "-X", "PUT",
     "-H", "Content-Type: application/json",
-    "--data", '{"description":"dqm"}',
+    "--data", $rm_json,
     "$rdb/removeResources/$run",
 );
 if ($rm != 0) {
@@ -117,13 +125,17 @@ if ($rm != 0) {
     exit 2;
 }
 
-TaskLib::task_log($ctx, $name, "upload $pdf description=dqm $rdb/addResource/$run");
-my $up = system(
+TaskLib::task_log($ctx, $name, "upload $pdf description=dqm"
+    . ($comment ne "" ? " comment=$comment" : "")
+    . " $rdb/addResource/$run");
+my @up = (
     "curl", "-fsS", "-X", "POST",
     "-F", "pdf=\@$pdf",
     "-F", "description=dqm",
-    "$rdb/addResource/$run",
 );
+push @up, "-F", "comment=$comment" if $comment ne "";
+push @up, "$rdb/addResource/$run";
+my $up = system(@up);
 exit($up == 0 ? 0 : 2);
 
 # Newest PDF written by this run. Prefer a name that contains the run number.
