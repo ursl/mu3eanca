@@ -297,8 +297,7 @@ int main(int argc, char* argv[]) {
   // ------------------------------------------------------------------
   cout << "gRunInfoMap.size() = " << gRunInfoMap.size() << endl;
   for (auto it : gRunInfoMap) {
-    cout << "run = " << it.second.confId
-      << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
+    cout  << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
       << " linkMask = " << it.second.linkMask[0] << it.second.linkMask[1] << it.second.linkMask[2]
       << " linkMatrix = " << it.second.linkMatrix[0] << it.second.linkMatrix[1] << it.second.linkMatrix[2]
       << " abcLinkMask = " << it.second.abcLinkMask[0] << it.second.abcLinkMask[1] << it.second.abcLinkMask[2]
@@ -530,7 +529,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
 
   // -- allow ignoring Midas meta data for layer 3 (globalID missing)
   bool MMDvalid(true);
-  if (chipID >= 2055) MMDvalid = false;
+  //  if (chipID >= 2055) MMDvalid = false;
 
   if (DBX) cout << "XXX chipID = " << chipID << " linkMask = " << ai.abcLinkMask[0] << " " << ai.abcLinkMask[1] << " " << ai.abcLinkMask[2] << endl;
   
@@ -860,8 +859,7 @@ static const long long kLvdsBadHz = 10;
 // "Central US Layer 3" does not match; that is a one-link section.
 static bool isL12Section(const string& name) {
   return name.find("L1") != string::npos
-      || name.find("L2") != string::npos
-      || name.find("L3") != string::npos;
+      || name.find("L2") != string::npos;
 }
 
 static bool isLayer3Section(const string& name) {
@@ -873,14 +871,14 @@ static bool isLayer3Section(const string& name) {
 // abcLink*[link] and lvdsErrRate* are filled in right-hand order:
 // link 0 is the rightmost entry. Which sensor that is comes from
 // AsicInfo::letterToIndex / indexToLetter, not from the slot number.
-// abcLinkMatrix: 0=A, 1=B, 2=C, 4=E (or missing).
+// abcLinkMatrix holds the letter itself: 'A', 'B', 'C', 'E', or 'M'.
 static void decodeLinksRhs(AsicInfo& ai, const vector<long long>& rates) {
   const int n = 3;
   for (int link = 0; link < n; ++link) {
     int src = n - 1 - link;
     ai.abcLinkMask[link] = 0;
     ai.abcLinkErrs[link] = (src < (int)rates.size() ? rates[src] : 0);
-    ai.abcLinkMatrix[link] = 4;
+    ai.abcLinkMatrix[link] = 'E';
     ai.abcLinkNames[link] = "E";
     ai.abcLinkOffsets[link] = link;
     if ((int)ai.linkMask.size() > src) {
@@ -890,8 +888,7 @@ static void decodeLinksRhs(AsicInfo& ai, const vector<long long>& rates) {
     if ((int)ai.linkMatrix.size() > src) {
       char c = ai.linkMatrix[src];
       ai.abcLinkNames[link] = string(1, c);
-      if (c == 'E') ai.abcLinkMatrix[link] = 4;
-      else if (c >= 'A' && c <= 'C') ai.abcLinkMatrix[link] = c - 'A';
+      if (c == 'E' || c == 'M' || (c >= 'A' && c <= 'C')) ai.abcLinkMatrix[link] = c;
     }
   }
   ai.lvdsErrRate0 = ai.abcLinkErrs[0];
@@ -901,7 +898,7 @@ static void decodeLinksRhs(AsicInfo& ai, const vector<long long>& rates) {
 
 // ----------------------------------------------------------------------
 static bool linkIsBad(const AsicInfo& ai, int link) {
-  return ai.abcLinkMatrix[link] == 4 || ai.abcLinkErrs[link] > kLvdsBadHz;
+  return ai.abcLinkMatrix[link] == 'E' || ai.abcLinkErrs[link] > kLvdsBadHz;
 }
 
 // ----------------------------------------------------------------------
@@ -939,43 +936,22 @@ void printRunInfoMap() {
 }
 
 // ----------------------------------------------------------------------
-// One physical link, stored in slot 0. Slots 1 and 2 are absent (mask 9),
-// so they are not counted as the three-link 'E' case.
-static void setSingleLink(AsicInfo& ai, int mask, char matrix, long long rate) {
-  ai.linkMask = to_string(mask);
-  ai.linkMatrix = string(1, matrix);
+// One physical link reads out submatrices A, B, and C. The same mask,
+// rate, and letter 'M' are stored in every slot.
+static void setSingleLink(AsicInfo& ai, int mask, long long rate) {
+  char digit = (mask >= 0 && mask <= 9) ? static_cast<char>('0' + mask) : '0';
+  ai.linkMask = string(3, digit);
+  ai.linkMatrix = "MMM";
   ai.lvdsErrRate0 = rate;
-  ai.lvdsErrRate1 = 0;
-  ai.lvdsErrRate2 = 0;
-  ai.abcLinkMask[0] = mask;
-  ai.abcLinkErrs[0] = rate;
-  if (matrix == 'E') ai.abcLinkMatrix[0] = 4;
-  else if (matrix >= 'A' && matrix <= 'C') ai.abcLinkMatrix[0] = matrix - 'A';
-  else ai.abcLinkMatrix[0] = 4;
-  for (int link = 1; link < 3; ++link) {
-    ai.abcLinkMask[link] = 9;
-    ai.abcLinkErrs[link] = 0;
-    ai.abcLinkMatrix[link] = -1;
+  ai.lvdsErrRate1 = rate;
+  ai.lvdsErrRate2 = rate;
+  for (int link = 0; link < 3; ++link) {
+    ai.abcLinkMask[link] = mask;
+    ai.abcLinkErrs[link] = rate;
+    ai.abcLinkMatrix[link] = 'M';
+    ai.abcLinkNames[link] = "M";
+    ai.abcLinkOffsets[link] = link;
   }
-}
-
-// mask / matrix / lvds_error_rate, as on a Layer 3 links[] entry.
-static bool readSingleLink(const json& src, int& mask, char& matrix, long long& rate) {
-  bool any = false;
-  if (src.contains("mask") && src["mask"].is_number()) {
-    mask = src["mask"].get<int>();
-    any = true;
-  }
-  if (src.contains("matrix") && src["matrix"].is_string()) {
-    string s = src["matrix"].get<string>();
-    if (!s.empty()) matrix = s[0];
-    any = true;
-  }
-  if (src.contains("lvds_error_rate") && src["lvds_error_rate"].is_number()) {
-    rate = src["lvds_error_rate"].get<long long>();
-    any = true;
-  }
-  return any;
 }
 
 // ----------------------------------------------------------------------
@@ -1002,26 +978,15 @@ void parseMidasMetaData(string filename) {
     if (!section.contains("asics") || !section["asics"].is_array()) continue;
 
     if (isLayer3Section(secName)) {
-      const auto& asics = section["asics"];
-      const json* links = (section.contains("links") && section["links"].is_array())
-          ? &section["links"] : nullptr;
-      for (size_t i = 0; i < asics.size(); ++i) {
-        const auto& a = asics[i];
+      for (const auto& a : section["asics"]) {
         int gid = a.value("globalId", 0);
         if (gid <= 0) {
           ++nLayer3Skip;
           continue;
         }
-        int mask = 0;
-        char matrix = 'E';
-        long long rate = 0;
-        bool have = readSingleLink(a, mask, matrix, rate);
-        if (!have && links && i < links->size()) {
-          have = readSingleLink((*links)[i], mask, matrix, rate);
-        }
-        if (!have) {
+        if (!a.contains("linkMask") || !a["linkMask"].is_string()) {
           cout << "parseMidasMetaData> WARNING: " << secName
-               << " globalId=" << gid << " has no single-link fields" << endl;
+               << " globalId=" << gid << " has no linkMask" << endl;
           continue;
         }
         AsicInfo ai;
@@ -1029,7 +994,22 @@ void parseMidasMetaData(string filename) {
         ai.fedID = section.value("index", -1);
         ai.confId = a.value("confId", 0);
         ai.globalId = gid;
-        setSingleLink(ai, mask, matrix, rate);
+        ai.idxInSection = a.value("index", 0);
+        ai.FEBLinkName = a.value("FEBLink", "");
+        ai.linkMask = a.value("linkMask", "");
+        if (a.contains("dacs") && a["dacs"].contains("conf")) {
+          ai.ckdivend = a["dacs"]["conf"].value("ckdivend", 0);
+          ai.ckdivend2 = a["dacs"]["conf"].value("ckdivend2", 0);
+        }
+        long long rate = 0;
+        if (a.contains("lvdsErrRate") && a["lvdsErrRate"].is_number()) {
+          rate = a["lvdsErrRate"].get<long long>();
+        }
+        int mask = 0;
+        if (!ai.linkMask.empty() && ai.linkMask[0] >= '0' && ai.linkMask[0] <= '9') {
+          mask = ai.linkMask[0] - '0';
+        }
+        setSingleLink(ai, mask, rate);
         bool bad = linkIsBad(ai, 0);
         if (bad) ++nBad;
         if (gRunInfoMap.count(ai.globalId)) {

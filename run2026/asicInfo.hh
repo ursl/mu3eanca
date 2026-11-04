@@ -14,6 +14,8 @@
 // A letter maps to an index only when that letter occurs once. 'E' does
 // not map. Two or more 'E' leave at most one index mapped to a letter,
 // and a letter may have no index.
+// 'M' is one multiplexed link for submatrices A, B, and C. All three
+// slots hold that same link, and A, B, and C map to slots 0, 1, and 2.
 // ----------------------------------------------------------------------
 struct AsicInfo {
   int confId{};
@@ -29,10 +31,10 @@ struct AsicInfo {
   long long lvdsErrRate1{};
   long long lvdsErrRate2{};
   // abcLink*[i] is right-hand index i, not sensor A/B/C.
-  // abcLinkMatrix: 0=A, 1=B, 2=C, 4=E.
+  // abcLinkMatrix holds 'A', 'B', 'C', 'E', or 'M' (one link for A, B, and C).
   int         abcLinkMask[3]{0,0,0};
   long long   abcLinkErrs[3]{0LL,0LL,0LL};
-  int         abcLinkMatrix[3]{4,4,4};
+  char        abcLinkMatrix[3]{'E','E','E'};
   std::string abcLinkNames[3]{"unset", "unset", "unset"};
   int         abcLinkOffsets[3]{9,9,9};
   int ckdivend{};
@@ -50,9 +52,17 @@ struct AsicInfo {
   int vdacBaseline{};
 
   // True when letter (A, B, or C) occurs once. index is its right-hand index.
+  // A multiplexed linkMatrix of "MMM" maps A, B, and C to slots 0, 1, and 2.
   bool letterToIndex(char letter, int& index) const {
     if (letter < 'A' || letter > 'C') return false;
     const int n = static_cast<int>(linkMatrix.size());
+    if (n >= 3
+        && linkMatrix[n - 1] == 'M'
+        && linkMatrix[n - 2] == 'M'
+        && linkMatrix[n - 3] == 'M') {
+      index = letter - 'A';
+      return true;
+    }
     int found = -1;
     int hits = 0;
     for (int rhs = 0; rhs < n && rhs < 3; ++rhs) {
