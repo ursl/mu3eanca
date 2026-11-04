@@ -165,6 +165,23 @@
         font-style: italic;
     }
 
+    .run-class {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+        white-space: nowrap;
+        font-style: normal;
+    }
+    .run-class-beam { background: #1f8a4c; color: #fff; }
+    .run-class-cosmic { background: #b7e4b4; color: #14532d; }
+    .run-class-source { background: #f3e36b; color: #3f3500; }
+    .run-class-calibration { background: #1565c0; color: #fff; }
+    .run-class-test { background: #d9d9d9; color: #333; }
+    .run-class-junk { background: #f5a142; color: #3a2200; }
+
     .table-container {
         flex: 1;
         display: block;
@@ -227,10 +244,10 @@
     .main-table th:nth-child(3), .main-table td:nth-child(3) { width: 13%; }
     .main-table th:nth-child(4), .main-table td:nth-child(4) { width: 13%; }
     .main-table th:nth-child(5), .main-table td:nth-child(5) { width: 2%; }
-    .main-table th:nth-child(6), .main-table td:nth-child(6) { width: 5%; }
+    .main-table th:nth-child(6), .main-table td:nth-child(6) { width: 12%; }
     .main-table th:nth-child(7), .main-table td:nth-child(7) { width: 5%; }
     .main-table th:nth-child(8), .main-table td:nth-child(8) { width: 12%; }
-    .main-table th:nth-child(9), .main-table td:nth-child(9) { width: 32%; }
+    .main-table th:nth-child(9), .main-table td:nth-child(9) { width: 25%; }
     .main-table th:nth-child(10), .main-table td:nth-child(10) { width: 10%; }
 
     /* Collapsible CSV box styles */
@@ -1168,7 +1185,16 @@ async function updateCsvDisplay() {
                                             <span class="status-unset">n/a</span>
                                         <% } %>
                                     </td>
-                                    <td><%= result.BOR["Run Class"] || 'n/a' %></td>
+                                    <td>
+                                        <% const runClass = (result.BOR["Run Class"] || "").trim(); %>
+                                        <% if (["Beam","Cosmic","Source","Calibration","Test","Junk"].includes(runClass)) { %>
+                                            <span class="run-class run-class-<%= runClass.toLowerCase() %>"><%= runClass %></span>
+                                        <% } else if (runClass) { %>
+                                            <%= runClass %>
+                                        <% } else { %>
+                                            <span class="status-unset">n/a</span>
+                                        <% } %>
+                                    </td>
                                     <td><%= result.EOR["Events"] %></td>
                                     <td><%= result.BOR["Shift crew"] %></td>
                                     <td>
@@ -1179,14 +1205,14 @@ async function updateCsvDisplay() {
                                     </td>
                                 <% } else { %>
                                     <td><span class="status-unset">N/A</span></td>
-                                    <td>n/a</td>
+                                    <td><span class="status-unset">n/a</span></td>
                                     <td><%= result.EOR["Events"] %></td>
                                     <td><%= result.BOR["Shift crew"] %></td>
                                     <td><%= result.EOR["Comments"] %></td>
                                 <% } %>
                             <% } else { %>
                                 <td>-</td>
-                                <td>n/a</td>
+                                <td><span class="status-unset">n/a</span></td>
                                 <td><%= result.EOR["Events"] %></td>
                                 <td><%= result.BOR["Shift crew"] %></td>
                                 <td><%= result.EOR["Comments"] %></td>

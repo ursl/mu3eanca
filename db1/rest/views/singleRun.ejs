@@ -170,6 +170,23 @@
              font-style: italic;
          }
 
+         .run-class {
+             display: inline-block;
+             padding: 1px 8px;
+             border-radius: 999px;
+             font-size: 12px;
+             font-weight: 500;
+             line-height: 18px;
+             white-space: nowrap;
+             font-style: normal;
+         }
+         .run-class-beam { background: #1f8a4c; color: #fff; }
+         .run-class-cosmic { background: #b7e4b4; color: #14532d; }
+         .run-class-source { background: #f3e36b; color: #3f3500; }
+         .run-class-calibration { background: #1565c0; color: #fff; }
+         .run-class-test { background: #d9d9d9; color: #333; }
+         .run-class-junk { background: #f5a142; color: #3a2200; }
+
          #histcomments {
              font-family: Arial, Helvetica, sans-serif;
              border-collapse: collapse;
@@ -383,7 +400,16 @@
 
             <tr>
                 <td> Run Class </td>
-                <td> <%= data.BOR["Run Class"]%> </td>
+                <td>
+                    <% const runClass = (data.BOR["Run Class"] || "").trim(); %>
+                    <% if (["Beam","Cosmic","Source","Calibration","Test","Junk"].includes(runClass)) { %>
+                        <span class="run-class run-class-<%= runClass.toLowerCase() %>"><%= runClass %></span>
+                    <% } else if (runClass) { %>
+                        <%= runClass %>
+                    <% } else { %>
+                        <span class="status-unset">n/a</span>
+                    <% } %>
+                </td>
             </tr>
 
             <tr>
