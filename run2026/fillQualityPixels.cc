@@ -683,7 +683,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
 
 // ----------------------------------------------------------------------
 void determineDeadColumns(TH2 *h, vector<int> &columns, vector<int> &links) {
-  bool DBX(true);
+  bool DBX(false);
   double minHits(1);
   double meanHits = h->Integral(1, 256, 1, 250)/h->GetNbinsX();
   if (meanHits < 10) {
