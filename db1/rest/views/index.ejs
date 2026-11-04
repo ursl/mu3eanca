@@ -1162,7 +1162,7 @@ async function updateCsvDisplay() {
                         <th>Class</th>
                         <th>Events</th>
                         <th>Shift crew</th>
-                        <th>Shift Comments/RunInfo Comments</th>
+                        <th>Shift Comments</th>
                         <th>Resources</th>
                     </tr>
                 </thead>
@@ -1199,9 +1199,6 @@ async function updateCsvDisplay() {
                                     <td><%= result.BOR["Shift crew"] %></td>
                                     <td>
                                         <%= result.EOR["Comments"] %>
-                                        <% if (lastRunInfo.RunInfo.Comments && lastRunInfo.RunInfo.Comments !== "unset") { %>
-                                            /<%= lastRunInfo.RunInfo.Comments %>
-                                        <% } %>
                                     </td>
                                 <% } else { %>
                                     <td><span class="status-unset">N/A</span></td>
@@ -1240,7 +1237,7 @@ async function updateCsvDisplay() {
                                         <% const resourceName = resource.description || resource.filename || ""; %>
                                         <a href="/rdb/resource/<%= result.BOR["Run number"] %>/<%= encodeURIComponent(resourceName) %>" 
                                            target="_blank" 
-                                           title="<%= resource.filename %>"><%= resource.description || 'No description' %><% if (resource.comment) { %>, <%= resource.comment %><% } %></a><% if (index < latestResources.length - 1) { %>, <% } %>
+                                           title="<%= resource.filename %>"><%= resource.description || 'No description' %></a><% if (index < latestResources.length - 1) { %>, <% } %>
                                     <% }); %>
                                     <% if (nonPdfResources.length > 0) { %> <span style="color: #666; font-style: italic;">(more)</span><% } %>
                                 <% } %>
