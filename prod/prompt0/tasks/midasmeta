@@ -1,36 +1,70 @@
 #! /usr/bin/perl
-# midasmeta — run mu3e_midas_meta on the raw MIDAS file for this run.
+# midasmeta — SLURM mu3e_midas_meta, one job per run (no event splitting).
+#
+# The binary writes <raw file>.json beside the MIDAS file. That path is
+# what cdb_eventstuffv2 reads. A copy is also left under
+# slurm/storage1/mmeta/<run>/. An existing JSON skips the job.
 use strict;
 use warnings;
+use File::Basename qw(basename);
 use FindBin;
 use lib "$FindBin::Bin/..";
 use TaskLib;
+use SlurmBatch;
 
 my ($run, $ctxfile) = TaskLib::args(@ARGV);
 my $ctx = TaskLib::load($ctxfile);
+my $name = "midasmeta";
+
 my $file = TaskLib::raw_file($ctx, $run);
+my $json = ($file ne "") ? "$file.json" : "";
 
 my $mu3e = $ctx->{mu3e} // "";
-my $exe = "$mu3e/_build/modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta";
+my $exe = ($mu3e ne "") ? "$mu3e/_build/modules/mu3eUtil/tools/midasMeta/mu3e_midas_meta" : "";
 
-if ($ctx->{dry_run}) {
-    TaskLib::task_log($ctx, "midasmeta", "would: " . ($exe || "mu3e_midas_meta") . " $file");
-    exit 0;
+if (!$ctx->{dry_run}) {
+    if ($mu3e eq "" || !-d $mu3e) {
+        TaskLib::task_log($ctx, $name, "mu3e missing: $mu3e (run ./prompt setup)");
+        exit 2;
+    }
+    if (!-x $exe && !-f $exe) {
+        TaskLib::task_log($ctx, $name, "mu3e_midas_meta not found: $exe");
+        exit 2;
+    }
+    if ($file eq "" || !-f $file) {
+        TaskLib::task_log($ctx, $name, "raw file missing: $file");
+        exit 2;
+    }
 }
 
-if ($exe eq "") {
-    TaskLib::task_log($ctx, "midasmeta",
-        "mu3e_midas_meta not found under $mu3e (run ./prompt setup)");
-    exit 2;
-}
+my $storage1 = "$ctx->{root}/slurm/storage1/mmeta";
 
-if (!-f $file) {
-    TaskLib::task_log($ctx, "midasmeta", "raw file missing: $file");
-    exit 2;
-}
+my $rc = SlurmBatch::run($ctx, {
+    name    => $name,
+    stage   => "mmeta",
+    abbr    => "a",
+    wrapper => $ctx->{slurm_midasmeta_csh},
+    njobs   => 1,
+    skip_if => $json,
+    env     => [
+        [ STORAGE1  => $storage1 ],
+        [ EXE       => $exe ],
+        [ MIDASFILE => $file ],
+        [ RUN       => $run ],
+    ],
+    merge => sub {
+        my ($c, $m) = @_;
+        my $src = "$m->{storage}/" . basename($json);
+        if (!$c->{dry_run} && !-f $json) {
+            TaskLib::task_log($c, $name, "metadata JSON missing: $json");
+            exit 2;
+        }
+        if (!$c->{dry_run} && !-f $src) {
+            TaskLib::task_log($c, $name, "metadata JSON missing: $src");
+            exit 2;
+        }
+        TaskLib::task_log($c, $name, "json=$json");
+    },
+});
 
-TaskLib::task_log($ctx, "midasmeta", "$exe $file");
-my $rc = system($exe, $file);
-exit(($rc == 0) ? 0 : 2);
-
-# cdbRunPayloadWriter -c eventstuffv2 -p payloads -f .../run09361.mid.lz4.json -t $GLOBALTAG -a "prompt test" -i RUNNUMBER
+exit($rc == 0 ? 0 : 2);
