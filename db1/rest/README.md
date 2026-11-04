@@ -20,9 +20,13 @@ and re-apply `restJSON`-specific overlays.
 Install `node/npm/pm2` the correct way by using [nvm](https://github.com/nvm-sh/nvm). Follow the instructions there. If `pm2` is missing, install it with `npm install pm2 -g` after the `npm` installation. 
 
 # Setup
+From this directory (`db1/rest`), install the versions locked in `package.json` and `package-lock.json`:
+
 ```
-npm install express cors express-async-errors dotenv mongodb node-fetch
+npm ci
 ```
+
+That pulls `express`, `cors`, `express-async-errors`, `dotenv`, `mongodb`, `body-parser`, `ejs`, `multer`, and `archiver@7.0.1`. Do not install those packages by name. A bare `npm install archiver` resolves to archiver 8, which is ESM-only and has no default export. `routes/detconfigs.mjs` does `import archiver from "archiver"` and calls `archiver("zip", ...)`, which works with archiver 7 only. If `node_modules` already has archiver 8, remove it and run `npm ci` again (or `npm install archiver@7.0.1`).
 
 # Run it
 By default, the REST interface seems to listen on port 80, though in reality it is on port 5050. If apache is running, that needs to be stopped, e.g. 
