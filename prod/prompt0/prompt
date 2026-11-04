@@ -10,7 +10,7 @@
 #   ./prompt [-P beam] process 10482   # that run, every later raw file, then sleep
 #   ./prompt processEven 10482        # same scan, only even run numbers
 #   ./prompt processOdd  10482        # same scan, only odd run numbers
-#   ./prompt -P dqm pool10 11000      # up to 10 child "prompt run"s, current raw files
+#   ./prompt -P dqm pool10 11000      # up to 10 children until mu3esort
 #   ./prompt -P dqm prod10 11000      # same pool, then sleep and pick up new runs
 #
 # Host overlay is host-<platform>.cfg (e.g. host-merlin6.cfg), not
@@ -54,6 +54,8 @@ pod2usage(1) if $help;
 use Cwd qw(abs_path);
 use File::Basename qw(dirname basename);
 use POSIX qw(WNOHANG);
+use Fcntl qw(F_GETFL F_SETFL F_SETFD O_NONBLOCK);
+use Errno qw(EAGAIN EWOULDBLOCK);
 
 use lib abs_path(dirname($0));
 use lib abs_path(dirname($0)) . "/../common";
@@ -98,7 +100,7 @@ Targets:
   process RUN    from RUN forward through raw files (010, 011, ...), then sleep and look again
   processEven RUN  same as process, only even run numbers
   processOdd RUN   same as process, only odd run numbers
-  poolN RUN      reprocess raw files from RUN up, at most N child prompt runs at once
+  poolN RUN      reprocess raw files from RUN up, at most N children until pool_long_from
   prodN RUN      same pool as poolN, then sleep and pick up new raw files
   cleanup RUN ... remove per-run output (keeps timestamped logs in runs/XXXXX/)
 
@@ -274,7 +276,13 @@ if ($target eq "setup") {
     my $scan = $start;
     my %seen;
     my %kids;
+    my %long;
     my $hard = 0;
+    my $long_from = $cfg->{pool_long_from} // "mu3esort";
+    $long_from =~ s/^\s+|\s+$//g;
+    $long_from =~ s/^['"]|['"]$//g;
+    my ($rd, $wr);
+    my $relbuf = "";
 
     my $child_cmd = sub {
         my ($run) = @_;
@@ -285,34 +293,94 @@ if ($target eq "setup") {
         push @cmd, "run", $run;
         return @cmd;
     };
+    my $counts = sub {
+        return scalar(keys %kids) . " short, " . scalar(keys %long) . " long";
+    };
     my $reap = sub {
-        my ($block) = @_;
-        my $flag = $block ? 0 : WNOHANG;
         while (1) {
-            my $pid = waitpid(-1, $flag);
+            my $pid = waitpid(-1, WNOHANG);
             last if $pid <= 0;
+            my $phase = "short";
             my $run = delete $kids{$pid};
+            if (!defined $run) {
+                $run = delete $long{$pid};
+                $phase = "long";
+            }
             my $rc = $? >> 8;
             $rc = 1 if $rc == 0 && ($? & 127);
+            my $left = $counts->();
+            if (!defined $run) {
+                print(prefix(), "$target: reaped pid $pid exit $rc ($left)\n");
+                $hard++ if $rc != 0;
+                next;
+            }
             if ($rc != 0) {
                 $hard++;
-                print(prefix(), "$target: run $run exited $rc (" . scalar(keys %kids) . " left)\n");
+                print(prefix(), "$target: run $run ($phase) exited $rc ($left)\n");
             } else {
-                print(prefix(), "$target: run $run done (" . scalar(keys %kids) . " left)\n");
+                print(prefix(), "$target: run $run ($phase) done ($left)\n");
             }
-            $flag = WNOHANG;
+        }
+    };
+    # A child writes its pid when it reaches pool_long_from. That pid
+    # leaves the slot count and stays in %long until it exits.
+    my $release = sub {
+        return unless defined $rd;
+        while (1) {
+            my $n = sysread($rd, my $chunk, 4096);
+            if (!defined $n) {
+                last if $! == EAGAIN || $! == EWOULDBLOCK;
+                die "prompt: slot pipe: $!\n";
+            }
+            last if $n == 0;
+            $relbuf .= $chunk;
+        }
+        while ($relbuf =~ s/^(\d+)\n//) {
+            my $pid = 0 + $1;
+            my $run = delete $kids{$pid};
+            next unless defined $run;
+            $long{$pid} = $run;
+            print(prefix(), "$target: run $run reached $long_from (" . $counts->() . ")\n");
         }
     };
     my $spawn = sub {
         my ($run) = @_;
         my @cmd = $child_cmd->($run);
         print(prefix(), "$target: start " . join(" ", map { _quote_arg($_) } @cmd) . "\n");
+        # The child waits until the parent has recorded the pid, so a
+        # release cannot arrive before %kids knows about it.
+        pipe(my $go_r, my $go_w) or die "prompt: pipe failed: $!\n";
         my $pid = fork();
         die "prompt: fork failed: $!\n" unless defined $pid;
         if ($pid == 0) {
+            close $rd if defined $rd;
+            close $go_w;
+            my $got = sysread($go_r, my $buf, 1);
+            close $go_r;
+            exit 2 unless $got;
+            if (defined $wr && $long_from ne "") {
+                fcntl($wr, F_SETFD, 0);
+                $ENV{PROMPT_RELEASE_FD} = fileno($wr);
+                $ENV{PROMPT_LONG_FROM} = $long_from;
+            }
             exec {$cmd[0]} @cmd or die "prompt: exec $cmd[0]: $!\n";
         }
+        close $go_r;
         $kids{$pid} = $run;
+        my $nw = syswrite($go_w, "x");
+        close $go_w;
+        if (!$nw) {
+            kill 9, $pid;
+            delete $kids{$pid};
+            die "prompt: failed to start run $run: $!\n";
+        }
+    };
+    my $wait_io = sub {
+        my ($timeout) = @_;
+        return unless defined $rd;
+        my $rin = "";
+        vec($rin, fileno($rd), 1) = 1;
+        select($rin, undef, undef, $timeout);
     };
     my $discover = sub {
         my @fwd = forward_runs($cfg, $scan);
@@ -333,8 +401,9 @@ if ($target eq "setup") {
         print(prefix(), "done\n");
         exit 0;
     }
+    my $slot_note = ($long_from ne "") ? "$pool_n slots until $long_from" : "$pool_n slots";
     if (@queue) {
-        print(prefix(), "$target: $pool_n slots, " . scalar(@queue)
+        print(prefix(), "$target: $slot_note, " . scalar(@queue)
             . " runs from $start -> " . join(",", @queue) . "\n");
     }
     if ($dry_run) {
@@ -349,31 +418,44 @@ if ($target eq "setup") {
         exit 0;
     }
 
+    pipe($rd, $wr) or die "prompt: pipe failed: $!\n";
+    my $fl = fcntl($rd, F_GETFL, 0);
+    fcntl($rd, F_SETFL, $fl | O_NONBLOCK);
+    fcntl($wr, F_SETFD, 0);
+    # An empty handler makes select return when a child exits, so a slot
+    # release and a finished child are both visible without a blocking wait.
+    $SIG{CHLD} = sub { };
+
     if ($pool_mode eq "pool") {
-        while (@queue || keys %kids) {
+        while (@queue || keys %kids || keys %long) {
+            $release->();
+            $reap->();
             while (@queue && keys(%kids) < $pool_n) {
                 $spawn->(shift @queue);
             }
-            $reap->(keys(%kids) >= $pool_n || !@queue);
+            last if !@queue && !keys(%kids) && !keys(%long);
+            $wait_io->();
         }
+        $release->();
+        $reap->();
         print(prefix(), "done\n");
         exit($hard ? 1 : 0);
     }
 
     while (1) {
-        $reap->(0);
+        $release->();
+        $reap->();
         $discover->();
         while (@queue && keys(%kids) < $pool_n) {
             $spawn->(shift @queue);
         }
-        if (!@queue && keys(%kids) < $pool_n) {
-            print(prefix(), "$target: no raw files at or after $scan ("
-                . scalar(keys %kids) . " still running)\n");
-            print(prefix(), "$target: sleep ${pause}s\n");
-            sleep($pause);
+        if (@queue && keys(%kids) >= $pool_n) {
+            $wait_io->();
             next;
         }
-        $reap->(1) if keys %kids;
+        print(prefix(), "$target: no raw files at or after $scan (" . $counts->() . ")\n");
+        print(prefix(), "$target: sleep ${pause}s\n");
+        $wait_io->($pause);
     }
 } elsif ($target eq "run") {
     $opts{runs} = \@runs;

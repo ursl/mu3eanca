@@ -358,6 +358,7 @@ sub pipeline_run {
                     _log("[$t] would: $script $run $ctx");
                     next;
                 }
+                _release_pool_slot($t);
                 _log("[$t] start");
                 my $exit = _run_task($script, $run, $ctx);
                 if ($exit == 0) {
@@ -380,6 +381,29 @@ sub pipeline_run {
         die $err if $err;
     }
     return $hard;
+}
+
+# ----------------------------------------------------------------------
+# poolN/prodN: the child counts toward N until this task. Tell the parent
+# once, then keep going in this same process. A direct ./prompt run has
+# neither env var and does not write anything.
+sub _release_pool_slot {
+    my ($task) = @_;
+    my $mark = $ENV{PROMPT_LONG_FROM} // "";
+    return if $mark eq "" || $task ne $mark;
+    return if $ENV{PROMPT_SLOT_RELEASED};
+    my $fdn = $ENV{PROMPT_RELEASE_FD} // "";
+    return if $fdn !~ /^\d+$/;
+    $ENV{PROMPT_SLOT_RELEASED} = 1;
+    my $fd = 0 + $fdn;
+    open my $fh, ">&=$fd" or do {
+        _log("[$task] slot release failed: $!");
+        return;
+    };
+    $fh->autoflush(1);
+    print $fh "$$\n";
+    close $fh;
+    _log("[$task] released the pool slot");
 }
 
 1;
