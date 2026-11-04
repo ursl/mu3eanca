@@ -62,29 +62,29 @@ pc11740>npm run start
 pc11740>pm2 start index.mjs 
 ```
 
-The following works within PSI's network. pc11740.psi.ch is not reachable from outside (sigh)!
+The following works within PSI's network. mu3edb0.psi.ch is not reachable from outside (sigh)!
 
 
 Use/look at it in a browser:
 ```
-http://pc11740.psi.ch/rdb
+http://mu3edb0.psi.ch/rdb
 
-http://pc11740.psi.ch/cdb/findOne/globaltags/mcidealv5.1
-http://pc11740.psi.ch/cdb/findOne/tags/fibrealignment_mcidealv5.0
-http://pc11740.psi.ch/cdb/findOne/payloads/tag_mppcalignment_mcidealv5.1_iov_1
+http://mu3edb0.psi.ch/cdb/findOne/globaltags/mcidealv5.1
+http://mu3edb0.psi.ch/cdb/findOne/tags/fibrealignment_mcidealv5.0
+http://mu3edb0.psi.ch/cdb/findOne/payloads/tag_mppcalignment_mcidealv5.1_iov_1
 
 ```
 
 Or use curl for direct transfer:
 
 ```
-moor>curl http://pc11740.psi.ch/cdb/findOne/globaltags/mcidealv5.1
+moor>curl http://mu3edb0.psi.ch/cdb/findOne/globaltags/mcidealv5.1
 {"_id":"659bc2c762958113d50ba132","gt":"mcidealv5.1","tags":["pixelalignment_mcidealv5.1","fibrealignment_mcidealv5.1","tilealignment_mcidealv5.1","mppcalignment_mcidealv5.1"]}
 
-moor>curl http://pc11740.psi.ch/cdb/findOne/tags/fibrealignment_mcidealv5.0
+moor>curl http://mu3edb0.psi.ch/cdb/findOne/tags/fibrealignment_mcidealv5.0
 {"_id":"659bc2605e30961c4e057491","tag":"fibrealignment_mcidealv5.0","iovs":[1]}
 
-moor>curl http://pc11740.psi.ch/cdb/findOne/payloads/tag_mppcalignment_mcidealv5.1_iov_1
+moor>curl http://mu3edb0.psi.ch/cdb/findOne/payloads/tag_mppcalignment_mcidealv5.1_iov_1
 {"_id":"659bc2d672ec635e5d0cad04","hash":"tag_mppcalignment_mcidealv5.1_iov_1","comment":"mcidealv5.1 MPPC detector initialization","schema":"define this","date":"2024-01-05 10:49:09","BLOB":"zvqt3gAAAAAAAAAAAAAAANMAkhp1Iz/AV8buw ...
 
 
@@ -99,7 +99,7 @@ moor>curl -X DELETE "http://mu3edb0.psi.ch/detconfigs/deleteDetconfigTag?tag=j1"
 # Direct to Node (local dev): use localhost:5050 or CLI --port 5050
 moor>curl -v -F "file=@mask_408_1_12_DS_chip4.bin" -F "tag=5" http://localhost:5050/detconfigs/upload
 
-curl -X PUT -H "Content-Type: application/json" --data-binary @/Users/ursl/tmp/maskfiles/dqm101.json http://pc11740/rdb/addAttribute/7559
+curl -X PUT -H "Content-Type: application/json" --data-binary @/Users/ursl/tmp/maskfiles/dqm101.json http://mu3edb0/rdb/addAttribute/7559
 
 # Detector calibrations (Mongo `detcal` + GridFS `detcalBlobs`)
 # Upload any file; indexed by (name, run). Download uses IOV-style lookup: most recent run <= RUN.
