@@ -763,6 +763,16 @@ function resourcesNamed(resources, name) {
     return (resources || []).filter((r) => resourceName(r) === name);
 }
 
+// comment === null matches every resource with this description.
+// A string comment matches that description when the stored comment is
+// the same, or when the stored resource has no comment yet.
+function resourceMatches(resource, description, comment) {
+    if (resourceName(resource) !== description) return false;
+    if (comment == null) return true;
+    const stored = resource.comment || "";
+    return stored === "" || stored === comment;
+}
+
 function latestResourceNamed(resources, name) {
     const matches = resourcesNamed(resources, name);
     matches.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
@@ -783,6 +793,7 @@ async function deleteResourceFiles(bucket, resources) {
 // ----------------------------------------------------------------------
 // -- Add a resource to a run record.
 // A previous resource with the same description is replaced.
+// When comment is non-empty, only that description and comment are replaced.
 // curl -X POST -F "pdf=@/path/to/file" -F "description=dqm" http://localhost:5050/rdb/addResource/780
 router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
     try {
@@ -805,7 +816,11 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
         }
 
         const description = req.body.description || "Resource";
-        const previous = resourcesNamed(result.Resources, description);
+        const comment = typeof req.body.comment === "string" ? req.body.comment : "";
+        // A non-empty comment replaces only that description+comment pair,
+        // so v04 does not remove a dqm PDF uploaded from another workdir.
+        const scope = comment !== "" ? comment : null;
+        const previous = (result.Resources || []).filter((r) => resourceMatches(r, description, scope));
         await deleteResourceFiles(bucket, previous);
 
         // Upload to GridFS
@@ -814,6 +829,7 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
                 runNumber: runno,
                 type: req.file.mimetype,
                 description,
+                comment,
                 contentType: req.file.mimetype
             }
         });
@@ -834,14 +850,15 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
             fileId: uploadStream.id,
             filename: req.file.originalname,
             uploadDate: new Date().toISOString(),
-            description
+            description,
+            comment
         };
 
         // Update runrecord document. Drop the previous entry with this name.
         const updateData = { ...result };
         delete updateData._id;
 
-        const kept = (updateData.Resources || []).filter((r) => resourceName(r) !== description);
+        const kept = (updateData.Resources || []).filter((r) => !resourceMatches(r, description, scope));
         kept.push(resourceEntry);
         updateData.Resources = kept;
 
@@ -875,7 +892,8 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
                 type: resourceEntry.type,
                 filename: resourceEntry.filename,
                 uploadDate: resourceEntry.uploadDate,
-                description: resourceEntry.description
+                description: resourceEntry.description,
+                comment: resourceEntry.comment
             }
         });
 
@@ -1019,14 +1037,15 @@ router.get("/run/:id/json", async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
-// -- Remove resources with specific description
+// -- Remove resources with a description, and a comment when one is sent.
 // curl -X PUT -H "Content-Type: application/json" \
-//      --data '{"description": "vtx"}' \
+//      --data '{"description": "dqm", "comment": "v04"}' \
 //      http://localhost:5050/rdb/removeResources/780
 router.put("/removeResources/:id", async (req, res) => {
     try {
         const runno = parseInt(req.params.id);
         const description = req.body.description;
+        const comment = typeof req.body.comment === "string" ? req.body.comment : null;
 
         if (!description) {
             return res.status(400).send('Description is required');
@@ -1046,7 +1065,7 @@ router.put("/removeResources/:id", async (req, res) => {
         }
 
         // Get resources to be deleted for GridFS cleanup
-        const resourcesToDelete = result.Resources?.filter(r => r.description === description) || [];
+        const resourcesToDelete = (result.Resources || []).filter((r) => resourceMatches(r, description, comment));
         
         // Delete files from GridFS. addResource stores the MIME type
         // (application/pdf), not the literal "pdf".
@@ -1064,7 +1083,7 @@ router.put("/removeResources/:id", async (req, res) => {
         delete updateData._id;
         
         if (updateData.Resources) {
-            updateData.Resources = updateData.Resources.filter(r => r.description !== description);
+            updateData.Resources = updateData.Resources.filter((r) => !resourceMatches(r, description, comment));
         }
 
         // Add to history
@@ -1078,7 +1097,9 @@ router.put("/removeResources/:id", async (req, res) => {
         
         const addComment = {
             date: datetime,
-            comment: `Removed resources with description: ${description}`
+            comment: comment == null
+                ? `Removed resources with description: ${description}`
+                : `Removed resources with description: ${description}, ${comment}`
         };
         
         if (updateData.hasOwnProperty("History")) {

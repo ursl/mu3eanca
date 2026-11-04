@@ -36,8 +36,8 @@ Production area:
   minalyzer/
   mutrig-offline-calibration/
   slurm/{prompt_workdir}.tar.gz
-  slurm/jobs/{mlzr,trirec,sort}/
-  slurm/storage1/{mlzr,trirec,sort}/
+  slurm/jobs/{mlzr,trirec,sort,cor26,mmeta}/
+  slurm/storage1/{mlzr,trirec,sort,cor26,mmeta}/
   githashes
   payloads/          # cdb_payload_dir, when set in the version cfg
 ```
@@ -120,7 +120,7 @@ pipeline_alias: test=midasmeta
 
 | Task | Description | Status |
 |------|-------------|--------|
-| `midasmeta` | `mu3e_midas_meta` on the raw MIDAS file | live |
+| `midasmeta` | SLURM `mu3e_midas_meta` (`njobs => 1`, job name `a` + run) on the raw MIDAS file; writes `<raw>.json` for `cdb_eventstuffv2` | live |
 | `cdb_eventstuffv2` | eventstuffv2 payload from the midasmeta JSON, IOV insert, Mongo upload | live |
 | `skipSmallRuns` | Stop this run if RDB Events < `min_events` (exit 1) | live |
 | `minalyzer` | SLURM minalyzer over the raw file; hadd to `dqm_histos_XXXXX.root` | live |
