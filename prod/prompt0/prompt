@@ -11,6 +11,7 @@
 #   ./prompt processEven 10482        # same scan, only even run numbers
 #   ./prompt processOdd  10482        # same scan, only odd run numbers
 #   ./prompt -P dqm pool10 11000      # up to 10 children until mu3esort
+#   ./prompt -P dqm pool10 11000..11020
 #   ./prompt -P dqm prod10 11000      # same pool, then sleep and pick up new runs
 #
 # Host overlay is host-<platform>.cfg (e.g. host-merlin6.cfg), not
@@ -119,8 +120,8 @@ Targets:
   process RUN    from RUN forward through raw files (010, 011, ...), then sleep and look again
   processEven RUN  same as process, only even run numbers
   processOdd RUN   same as process, only odd run numbers
-  poolN RUN      reprocess raw files from RUN up, at most N children until pool_long_from
-  prodN RUN      same pool as poolN; keep scanning from RUN, alternate newest and oldest
+  poolN RUN      from RUN upward, or only the runs in RUN..RUN
+  prodN RUN      one start run; keep scanning from RUN, alternate newest and oldest
   cleanup RUN ... remove per-run output (keeps timestamped logs in runs/XXXXX/)
 
 Options:
@@ -129,7 +130,7 @@ Options:
   -s YYMMDD      override prompt_workdir (dated production area)
   -p ID          only this [repo] id (setup; repeatable or comma-separated)
   -P PIPE        pipeline alias, tasks, or a mix (default: cfg pipeline:)
-  -r RUNS        run numbers: 12345,12346 or 12345..12350 (with run or cleanup)
+  -r RUNS        run numbers: 12345,12346 or 12345..12350 (run, pool, or cleanup)
   -j N           make -jN for package builds
   -n             dry-run
   -h             help
@@ -226,10 +227,15 @@ if ($target eq "run" || $target eq "cleanup" || $target eq "process"
     $from_range = $range_mark;
 }
 if ($target eq "process" || $target eq "processEven" || $target eq "processOdd"
-    || $pool_mode ne "") {
+    || $pool_mode eq "prod") {
     die "prompt: $target takes one starting run (./prompt $target 10482)\n"
         unless @runs == 1 && !%$from_range;
 }
+if ($pool_mode eq "pool" && @runs < 1) {
+    die "prompt: $target needs a run or a range "
+        . "(./prompt $target 10482 or ./prompt $target 10482..10490)\n";
+}
+my $one_start = (@runs == 1 && !%$from_range);
 
 my $banner = prefix() . "config=$cfg_file host=$host target=$target"
     . ($setup_name ne "" ? " workdir=$setup_name" : "")
@@ -428,9 +434,32 @@ if ($target eq "setup") {
         return $run;
     };
 
-    $discover->();
+    $discover->() if $pool_mode ne "pool" || $one_start;
+    if ($pool_mode eq "pool" && !$one_start) {
+        my $lo = $runs[0];
+        for my $r (@runs) { $lo = $r if $r < $lo; }
+        my %want = map { $_ => 1 } @runs;
+        my %have = map { $_ => 1 } grep { $want{$_} } forward_runs($cfg, $lo);
+        my @missing;
+        for my $r (sort { $a <=> $b } @runs) {
+            if ($have{$r}) {
+                next if $seen{$r}++;
+                push @queue, $r;
+            } else {
+                push @missing, $r;
+            }
+        }
+        if (@missing) {
+            print(prefix(), "$target: absent " . _run_ranges(@missing) . "\n");
+        }
+    }
     if (!@queue && ($pool_mode eq "pool" || $dry_run)) {
-        print(prefix(), "$target: no raw files at or after $start\n");
+        if ($pool_mode eq "pool" && !$one_start) {
+            my @asked = sort { $a <=> $b } @runs;
+            print(prefix(), "$target: no raw files in " . _run_ranges(@asked) . "\n");
+        } else {
+            print(prefix(), "$target: no raw files at or after $start\n");
+        }
         if ($pool_mode eq "prod") {
             print(prefix(), "$target: would sleep ${pause}s and look again\n");
         }
