@@ -363,6 +363,10 @@ if ($target eq "setup") {
                 $ENV{PROMPT_RELEASE_FD} = fileno($wr);
                 $ENV{PROMPT_LONG_FROM} = $long_from;
             }
+            # The run log (runs/RUN/<stamp>-<pipeline>.log) already records
+            # the child. Do not copy that stream onto the prod/pool terminal.
+            open STDOUT, ">", "/dev/null" or exit 2;
+            open STDERR, ">&STDOUT" or exit 2;
             exec {$cmd[0]} @cmd or die "prompt: exec $cmd[0]: $!\n";
         }
         close $go_r;

@@ -86,7 +86,7 @@ Production area:
 | `process RUN` | One starting run. Find `runNNNNN.mid.lz4` at that number and every higher one under `{raw_input_base}/010`, `011`, … and run the pipeline in that order. Then sleep `process_sleep` seconds (default 60) and look again. `-n` scans once and does not sleep |
 | `processEven RUN` | Same scan as `process`. Only even run numbers are passed to the pipeline |
 | `processOdd RUN` | Same scan as `process`. Only odd run numbers are passed to the pipeline |
-| `poolN RUN` | Reprocess raw files from RUN upward. At most N children until `pool_long_from` (default `mu3esort`); that task and the ones after it do not hold a slot. Stops when every child has finished |
+| `poolN RUN` | Reprocess raw files from RUN upward. At most N children until `pool_long_from` (default `mu3esort`); that task and the ones after it do not hold a slot. The master prints submissions and exits only. Each child writes `runs/RUN/<stamp>-<pipeline>.log`. Stops when every child has finished |
 | `prodN RUN` | Same pool as `poolN`. After the current files, sleep `process_sleep` and pick up new raw files |
 | `cleanup RUN ...` | Remove per-run output; keep timestamped logs in `runs/XXXXX/` |
 
