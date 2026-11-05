@@ -86,6 +86,25 @@ sub _quote_arg {
     return "'$s'";
 }
 
+# 11811,11812,11813,11820 -> 11811-11813,11820. @runs must be sorted.
+sub _run_ranges {
+    my @r = @_;
+    return "" unless @r;
+    my @parts;
+    my $a = $r[0];
+    my $b = $r[0];
+    for (my $i = 1; $i < @r; $i++) {
+        if ($r[$i] == $b + 1) {
+            $b = $r[$i];
+            next;
+        }
+        push @parts, ($a == $b) ? $a : "$a-$b";
+        $a = $b = $r[$i];
+    }
+    push @parts, ($a == $b) ? $a : "$a-$b";
+    return join(",", @parts);
+}
+
 sub usage {
     print <<"END";
 Usage: $0 [-c FILE] [-H platform] [-s YYMMDD] [-p ID] [-P PIPE] [-n] [-j N] [target] [RUN ...]
@@ -101,7 +120,7 @@ Targets:
   processEven RUN  same as process, only even run numbers
   processOdd RUN   same as process, only odd run numbers
   poolN RUN      reprocess raw files from RUN up, at most N children until pool_long_from
-  prodN RUN      same pool as poolN, then sleep and pick up new raw files
+  prodN RUN      same pool as poolN; keep scanning from RUN, alternate newest and oldest
   cleanup RUN ... remove per-run output (keeps timestamped logs in runs/XXXXX/)
 
 Options:
@@ -273,7 +292,6 @@ if ($target eq "setup") {
     $pause = 60 if $pause < 1;
     my $prog = "$script_dir/" . basename($0);
     my @queue;
-    my $scan = $start;
     my %seen;
     my %kids;
     my %long;
@@ -386,14 +404,28 @@ if ($target eq "setup") {
         vec($rin, fileno($rd), 1) = 1;
         select($rin, undef, undef, $timeout);
     };
+    my $take_newest = 1;
     my $discover = sub {
-        my @fwd = forward_runs($cfg, $scan);
+        # Always from the original start. A run that appears later in a
+        # gap below the highest file already seen is still queued.
+        my @fwd = forward_runs($cfg, $start);
+        my @added;
         for my $r (@fwd) {
             next if $seen{$r}++;
-            push @queue, $r;
+            push @added, $r;
         }
-        $scan = $fwd[-1] + 1 if @fwd;
-        return @fwd;
+        if (@added) {
+            push @queue, @added;
+            @queue = sort { $a <=> $b } @queue;
+        }
+        return @added;
+    };
+    # Newest waiting run, then the oldest, and so on.
+    my $next_run = sub {
+        return undef unless @queue;
+        my $run = $take_newest ? pop @queue : shift @queue;
+        $take_newest = !$take_newest;
+        return $run;
     };
 
     $discover->();
@@ -408,12 +440,23 @@ if ($target eq "setup") {
     my $slot_note = ($long_from ne "") ? "$pool_n slots until $long_from" : "$pool_n slots";
     if (@queue) {
         print(prefix(), "$target: $slot_note, " . scalar(@queue)
-            . " runs from $start -> " . join(",", @queue) . "\n");
+            . " waiting: " . _run_ranges(@queue) . "\n");
     }
     if ($dry_run) {
-        for my $run (@queue) {
-            my @cmd = $child_cmd->($run);
-            print(prefix(), "$target: would: " . join(" ", map { _quote_arg($_) } @cmd) . "\n");
+        my @show = @queue;
+        if ($pool_mode eq "prod") {
+            my $newest = 1;
+            while (@show) {
+                my $run = $newest ? pop @show : shift @show;
+                $newest = !$newest;
+                my @cmd = $child_cmd->($run);
+                print(prefix(), "$target: would: " . join(" ", map { _quote_arg($_) } @cmd) . "\n");
+            }
+        } else {
+            for my $run (@show) {
+                my @cmd = $child_cmd->($run);
+                print(prefix(), "$target: would: " . join(" ", map { _quote_arg($_) } @cmd) . "\n");
+            }
         }
         if ($pool_mode eq "prod") {
             print(prefix(), "$target: would sleep ${pause}s and look again\n");
@@ -449,15 +492,21 @@ if ($target eq "setup") {
     while (1) {
         $release->();
         $reap->();
-        $discover->();
+        my @added = $discover->();
+        if (@added) {
+            print(prefix(), "$target: queued " . _run_ranges(@added)
+                . " (waiting " . scalar(@queue) . ")\n");
+        }
         while (@queue && keys(%kids) < $pool_n) {
-            $spawn->(shift @queue);
+            my $run = $next_run->();
+            last unless defined $run;
+            $spawn->($run);
         }
         if (@queue && keys(%kids) >= $pool_n) {
             $wait_io->();
             next;
         }
-        print(prefix(), "$target: no raw files at or after $scan (" . $counts->() . ")\n");
+        print(prefix(), "$target: waiting for new raw files (" . $counts->() . ")\n");
         print(prefix(), "$target: sleep ${pause}s\n");
         $wait_io->($pause);
     }
