@@ -358,9 +358,10 @@ int main(int argc, char *argv[]) {
   OC.close();
 
 
-  vector<int> vRunsWithZeroWorkingLinks;
   // ---------------------------------------------------------------------------------------------------
   // -- loop over all runs
+  vector<int> vRunsWithZeroWorkingLinks, vRunsWithZeroNoisyPixels;
+
   for (auto itIoV: vIoV) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
       continue;
@@ -413,13 +414,22 @@ int main(int argc, char *argv[]) {
     }
     if (nWorkingLinks == 0) {
       vRunsWithZeroWorkingLinks.push_back(itIoV);
-    }
+    } 
+
+
     // -- fill the histograms per run
     hLinkStatus->Fill(nWorkingLinks);
-    hNoisyPixels->Fill(nNoisyPixels);
-    hGoodPixel->Fill(nGoodPixels);
-    rNoisyPixels->Fill(runIdx, nNoisyPixels);
-    rGoodPixel->Fill(runIdx, nGoodPixels);
+    // -- fill the histograms per run only if there are working links
+    if (nWorkingLinks > 0) {
+      hNoisyPixels->Fill(nNoisyPixels);
+      hGoodPixel->Fill(nGoodPixels);
+      rNoisyPixels->Fill(runIdx, nNoisyPixels);
+      rGoodPixel->Fill(runIdx, nGoodPixels);
+      if (nNoisyPixels == 0) {
+        vRunsWithZeroNoisyPixels.push_back(itIoV);
+      }
+    }
+
     // -- get the size of the JSON payload via size of BLOB
     string sblob = pPQ->makeBLOB();
     rPayloadSize->Fill(runIdx, sblob.size()/1024.);
@@ -459,6 +469,8 @@ int main(int argc, char *argv[]) {
   cout << "Runs with zero working links has " << vRunsWithZeroWorkingLinks.size() << " runs" << endl;
   sfilename = "zeroWorkingLinksRunList" + suffix + ".txt";
   writeRunList(sfilename, vRunsWithZeroWorkingLinks);
+  sfilename = "zeroNoisyPixelsRunList" + suffix + ".txt";
+  writeRunList(sfilename, vRunsWithZeroNoisyPixels);
 
   for (auto itIoV: vIoV) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
