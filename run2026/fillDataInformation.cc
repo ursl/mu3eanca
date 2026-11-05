@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include <cstdint>
+#include <ctime>
 #include <vector>
 #include <string.h>
 #include <chrono>
@@ -22,6 +23,7 @@
 #include "base64.hh"
 
 #include <nlohmann/json.hpp>
+#include <curl/curl.h>
 using json = nlohmann::ordered_json;
 
 
@@ -75,6 +77,165 @@ string getDataSubdir(int runnumber) {
 }
 
 // ----------------------------------------------------------------------
+static size_t curlWrite(void *contents, size_t size, size_t nmemb, void *userp) {
+  ((string*)userp)->append((char*)contents, size * nmemb);
+  return size * nmemb;
+}
+
+// ----------------------------------------------------------------------
+// "0" bad and "1" good stay as they are. Unset (and a missing field) becomes "2".
+static bool dqGradeLocked(const json &v) {
+  if (v.is_string()) {
+    string s = v.get<string>();
+    return s == "0" || s == "1";
+  }
+  if (v.is_number_integer()) {
+    int n = v.get<int>();
+    return n == 0 || n == 1;
+  }
+  return false;
+}
+
+static string dqGradeString(const json &v) {
+  if (v.is_string()) return v.get<string>();
+  if (v.is_number_integer()) return to_string(v.get<int>());
+  return "";
+}
+
+static string currentDateTime() {
+  time_t now = time(nullptr);
+  struct tm tmnow;
+  localtime_r(&now, &tmnow);
+  char buf[32];
+  strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S", &tmnow);
+  return string(buf);
+}
+
+// ----------------------------------------------------------------------
+// Same rule as syncRDB mode 11: write "2" (data present) on the last DataQuality.
+void uploadDataPresent(int run, const string &subsystems, const string &host, bool dry) {
+  vector<string> keys;
+  stringstream ks(subsystems);
+  string part;
+  while (getline(ks, part, ',')) {
+    if (!part.empty()) keys.push_back(part);
+  }
+  if (keys.empty()) return;
+
+  string responseData;
+  CURL *curl = curl_easy_init();
+  if (!curl) return;
+
+  string url = host + ":5050/rdb/run/" + to_string(run) + "/json";
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWrite);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+  struct curl_slist *headers = NULL;
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+  CURLcode res = curl_easy_perform(curl);
+  if (res != CURLE_OK) {
+    cerr << "GET " << url << " failed: " << curl_easy_strerror(res) << endl;
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    return;
+  }
+  long httpCode = 0;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+  if (httpCode != 200) {
+    cerr << "GET " << url << " returned " << httpCode << endl;
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    return;
+  }
+
+  try {
+    json j = json::parse(responseData);
+    if (j.contains("_id")) j.erase("_id");
+
+    int lastIdx = -1;
+    if (j.contains("Attributes") && j["Attributes"].is_array()) {
+      for (size_t i = 0; i < j["Attributes"].size(); ++i) {
+        if (j["Attributes"][i].is_object() && j["Attributes"][i].contains("DataQuality")
+            && j["Attributes"][i]["DataQuality"].is_object()) {
+          lastIdx = static_cast<int>(i);
+        }
+      }
+    }
+
+    vector<string> changed;
+    if (lastIdx < 0) {
+      json dq = {
+        {"mu3e", "-1"}, {"beam", "-1"}, {"vertex", "-1"}, {"pixel", "-1"},
+        {"fibres", "-1"}, {"tiles", "-1"}, {"links", "-1"}, {"version", "1"}
+      };
+      for (const auto &k : keys) {
+        dq[k] = "2";
+        changed.push_back(k);
+      }
+      json attr;
+      attr["DataQuality"] = dq;
+      if (!j.contains("Attributes") || !j["Attributes"].is_array()) j["Attributes"] = json::array();
+      j["Attributes"].push_back(attr);
+    } else {
+      json &dq = j["Attributes"][lastIdx]["DataQuality"];
+      for (const auto &k : keys) {
+        if (dq.contains(k) && dqGradeLocked(dq[k])) {
+          cout << "leave " << k << " = " << dqGradeString(dq[k]) << endl;
+          continue;
+        }
+        if (dq.contains(k) && dqGradeString(dq[k]) == "2") continue;
+        dq[k] = "2";
+        changed.push_back(k);
+      }
+    }
+
+    if (changed.empty()) {
+      cout << "DataQuality already set, nothing uploaded" << endl;
+      curl_slist_free_all(headers);
+      curl_easy_cleanup(curl);
+      return;
+    }
+
+    string comment = "DataQuality data present:";
+    for (const auto &k : changed) comment += " " + k;
+    json historyEntry = {{"date", currentDateTime()}, {"comment", comment}};
+    if (j.contains("History") && j["History"].is_array()) j["History"].push_back(historyEntry);
+    else j["History"] = json::array({historyEntry});
+
+    cout << comment << endl;
+    if (dry) {
+      cout << "dry run, not uploading" << endl;
+      curl_slist_free_all(headers);
+      curl_easy_cleanup(curl);
+      return;
+    }
+
+    responseData = j.dump();
+    string putUrl = host + ":5050/rdb/runrecords";
+    curl_easy_reset(curl);
+    curl_easy_setopt(curl, CURLOPT_URL, putUrl.c_str());
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(responseData.size()));
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+      cerr << "PUT " << putUrl << " failed: " << curl_easy_strerror(res) << endl;
+    } else {
+      curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+      cout << "uploaded DataQuality for run " << run << " (HTTP " << httpCode << ")" << endl;
+    }
+  } catch (const exception &e) {
+    cerr << "DataQuality upload failed: " << e.what() << endl;
+  }
+
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+}
+
+// ----------------------------------------------------------------------
 string findFile(string dir, string filename, int run) {
   vector<string> vdirs;  
   for (filesystem::directory_iterator it(dir), end; it != end; ++it) {
@@ -104,12 +265,16 @@ int main(int argc, char* argv[]) {
 
   // -- command line arguments
   int verbose(0), run(0);
+  bool dry(false);
   string fstub("dqm_histos"), mstub("run"), filename("");
   string gt("datav7.1=2026V2");
+  string host("mu3edb0");
 
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
     if (!strcmp(argv[i], "-r"))      {run = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-h"))      {host = argv[++i];}
+    if (!strcmp(argv[i], "-d"))      {dry = true;}
   }
    
   // -- open midas meta data file
@@ -134,21 +299,30 @@ int main(int argc, char* argv[]) {
   cout << "fibreHits = " << fibreHits << " (" << Form("%llu", fibreHits) << ")" << endl;
   cout << "midasEvts = " << midasEvts << " (" << Form("%d", midasEvts) << ")" << endl;
 
-  // -- now upload to RDB: any subsystem hit count != is updating the subsystem quality to not-bad
+  // -- tiles and fibres come from the MIDAS counters.
+  //    vertex (layer 1+2) and pixel (layer 3) need the mlzr hitmaps.
+  vector<string> present;
+  if (tileHits > 0) present.push_back("tiles");
+  if (fibreHits > 0) present.push_back("fibres");
 
-  return 0; 
+  double nVtxHits = 0.;
+  double nPixHits = 0.;
+  bool haveMlzr = false;
+  string mlzrFile = "NOT FOUND";
+  try {
+    mlzrFile = findFile(MLZRDIR, Form("%s_%d.root", fstub.c_str(), run), run);
+  } catch (const exception &e) {
+    cout << "mlzr scan failed: " << e.what() << endl;
+  }
+  TFile *f = 0;
+  if (mlzrFile != "NOT FOUND") f = TFile::Open(mlzrFile.c_str());
+  if (f && !f->IsZombie()) {
+    haveMlzr = true;
+  } else {
+    cout << "no mlzr file, vertex and pixel left unchanged" << endl;
+  }
 
-  // -- below a version accessing (also) the mlzr file for better granularity
-  filename = findFile(MLZRDIR, Form("%s_%d.root",fstub.c_str(), run), run);
-  if (filename == "NOT FOUND") {
-    cout << "XXXXXXXXX fillDataInformation failed to open file " << filename << endl;
-    return 0;
-  }
-  TFile *f = TFile::Open(filename.c_str());
-  if (!f) {
-    cout << "XXXXXXXXX fillDataInformation failed to open file " << filename << endl;
-    return 0;
-  }
+  if (haveMlzr) {
 
   // -- read in ALL chipids in VTX
   vector<unsigned int> vchipid;
@@ -165,6 +339,7 @@ int main(int argc, char* argv[]) {
            << Form("/ladder_%02d", iLdr);
         string s = ss.str();
         if (0) cout << "TDirectory " << s << "<-" << endl;
+        if (!f->GetDirectory(s.c_str())) continue;
         f->cd(s.c_str());
         TIter next(gDirectory->GetListOfKeys());
         TKey *key(0);
@@ -189,6 +364,10 @@ int main(int argc, char* argv[]) {
               vchipid.push_back(chipID);
               TH2F *h = (TH2F*)key->ReadObj();
               pixelHitmaps.insert(make_pair(chipID, h));
+              // layer_1 and layer_2 are the vertex detector; layer_3 is the outer pixel layer
+              double w = h->GetSumOfWeights();
+              if (itL.first == "layer_3") nPixHits += w;
+              else nVtxHits += w;
             }
           }
         }
@@ -196,24 +375,29 @@ int main(int argc, char* argv[]) {
     }
   }
   cout << "pixelHitmaps.size() = " << pixelHitmaps.size() << endl;
+  cout << "vertex hits (layer_1+layer_2) = " << nVtxHits << endl;
+  cout << "pixel hits (layer_3) = " << nPixHits << endl;
 
-  // -- Tile are so cool
-  int nTileHitsTotal = static_cast<int>(((TH2*)(f->Get("tile/Zphi_TileHitmap_Global")))->GetSumOfWeights());
+  TH2 *hTiles = (TH2*)f->Get("tile/Zphi_TileHitmap_Global");
+  TH2 *hFibres = (TH2*)f->Get("fibre/channelID_all");
+  if (hTiles) cout << "nTileHitsTotal = " << hTiles->GetSumOfWeights() << endl;
+  if (hFibres) cout << "nFibreHitsTotal = " << hFibres->GetSumOfWeights() << endl;
 
-  // -- Fibres nearly so as well
-  int nFibreHitsTotal = static_cast<int>(((TH2*)(f->Get("fibre/channelID_all")))->GetSumOfWeights());
-
-  // -- do analysis
-  int nHitsPixelTotal(0);
-  for (auto it: pixelHitmaps){
-    // -- debug with first 12 only FIXME
-    int nhits = pixelHitmaps[it.first]->GetSumOfWeights();
-    if (verbose > 5) cout << "chipID = " << it.first << " nhits = " << nhits << endl;
-    nHitsPixelTotal += nhits;
+  if (nVtxHits > 0.) present.push_back("vertex");
+  if (nPixHits > 0.) present.push_back("pixel");
   }
-  cout << "nHitsPixelTotal = " << nHitsPixelTotal << endl;
-  cout << "nTileHitsTotal = " << nTileHitsTotal << endl;
-  cout << "nFibreHitsTotal = " << nFibreHitsTotal << endl;
+
+  string keylist;
+  for (size_t i = 0; i < present.size(); ++i) {
+    if (i) keylist += ",";
+    keylist += present[i];
+  }
+  if (keylist.empty()) {
+    cout << "no subsystem with hits, DataQuality unchanged" << endl;
+  } else {
+    uploadDataPresent(run, keylist, host, dry);
+  }
+  if (f) f->Close();
 
   return 0;
 }

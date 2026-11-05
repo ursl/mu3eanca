@@ -44,6 +44,9 @@ using namespace std;
 // --          8: set RunInfo.Significant to value
 // --          9: check if Resources exist and remove all documents with description XXX in that array
 // --         10: reset DataQuality: remove multiple DataQuality entries, keep one and reset all values to "-1".
+// --         11: set DataQuality subsystems in -k (comma list) to "2" (data present).
+// --             Leaves "0" (bad) and "1" (good) untouched. Needs -f (and optional -l).
+// --             Example: bin/syncRDB -m 11 -f 12237 -l 12237 -k vertex,pixel,tiles,fibres -h mu3edb0
 
 // -- History:
 // --   2025/06/10: add mode 9
@@ -66,6 +69,7 @@ void rdbMode7(int irun, bool debug);
 void rdbMode8(int irun, string value, bool debug);
 void rdbMode9(int irun, string description, bool debug);
 void rdbMode10(int irun, bool debug);
+void rdbMode11(int irun, string subsystems, bool debug);
 
 string getCurrentDateTime();
 
@@ -133,6 +137,23 @@ int main(int argc, char* argv[]) {
   } else {
       cout << "Error: Unable to open file " << runInfoTemplateFile << endl;
     }
+  }
+
+  // -- mode 11 touches one run (or a short range) and must not scan every run number
+  if (11 == mode) {
+    if (firstRun <= 0) {
+      cerr << "mode 11 needs -f run (optional -l lastRun) and -k vertex,pixel,tiles,fibres" << endl;
+      return 1;
+    }
+    if (key == "unset" || key.empty()) {
+      cerr << "mode 11 needs -k with a comma-separated subsystem list" << endl;
+      return 1;
+    }
+    int end = (lastRun > 0) ? lastRun : firstRun;
+    for (int irun = firstRun; irun <= end; ++irun) {
+      rdbMode11(irun, key, debug);
+    }
+    return 0;
   }
 
   cdbAbs *pDB(0);
@@ -1455,5 +1476,152 @@ void rdbMode10(int irun, bool debug) {
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
   }
+}
+
+// ----------------------------------------------------------------------
+// "0" and "1" are finished grades. Everything else may become "2".
+static bool dqGradeLocked(const json &v) {
+  if (v.is_string()) {
+    string s = v.get<string>();
+    return s == "0" || s == "1";
+  }
+  if (v.is_number_integer()) {
+    int n = v.get<int>();
+    return n == 0 || n == 1;
+  }
+  return false;
+}
+
+static string dqGradeString(const json &v) {
+  if (v.is_string()) return v.get<string>();
+  if (v.is_number_integer()) return to_string(v.get<int>());
+  return "";
+}
+
+// ----------------------------------------------------------------------
+// -- set named DataQuality subsystems to "2" (data present) when they are still unset
+void rdbMode11(int irun, string subsystems, bool debug) {
+  vector<string> keys;
+  stringstream ks(subsystems);
+  string part;
+  while (getline(ks, part, ',')) {
+    if (!part.empty()) keys.push_back(part);
+  }
+  if (keys.empty()) {
+    cerr << "mode 11: empty subsystem list" << endl;
+    return;
+  }
+
+  string responseData;
+  CURL* curl = curl_easy_init();
+  if (!curl) return;
+
+  string url = rdbGetString + "/" + to_string(irun) + "/json";
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cdbRestWriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+  struct curl_slist* headers = NULL;
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+  CURLcode res = curl_easy_perform(curl);
+  if (res != CURLE_OK) {
+    cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    return;
+  }
+  long httpCode = 0;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+  if (httpCode != 200) {
+    cerr << "Run " << irun << ": GET " << url << " returned " << httpCode << endl;
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    return;
+  }
+
+  try {
+    json j = json::parse(responseData);
+    if (j.contains("_id")) j.erase("_id");
+
+    int lastIdx = -1;
+    if (j.contains("Attributes") && j["Attributes"].is_array()) {
+      for (size_t i = 0; i < j["Attributes"].size(); ++i) {
+        if (j["Attributes"][i].is_object() && j["Attributes"][i].contains("DataQuality")
+            && j["Attributes"][i]["DataQuality"].is_object()) {
+          lastIdx = static_cast<int>(i);
+        }
+      }
+    }
+
+    vector<string> changed;
+    if (lastIdx < 0) {
+      json dq = {
+        {"mu3e", "-1"}, {"beam", "-1"}, {"vertex", "-1"}, {"pixel", "-1"},
+        {"fibres", "-1"}, {"tiles", "-1"}, {"links", "-1"}, {"version", "1"}
+      };
+      for (const auto &k : keys) {
+        dq[k] = "2";
+        changed.push_back(k);
+      }
+      json attr;
+      attr["DataQuality"] = dq;
+      if (!j.contains("Attributes") || !j["Attributes"].is_array()) j["Attributes"] = json::array();
+      j["Attributes"].push_back(attr);
+    } else {
+      json &dq = j["Attributes"][lastIdx]["DataQuality"];
+      for (const auto &k : keys) {
+        if (dq.contains(k) && dqGradeLocked(dq[k])) {
+          cout << "Run " << irun << ": leave " << k << " = " << dqGradeString(dq[k]) << endl;
+          continue;
+        }
+        if (dq.contains(k) && dqGradeString(dq[k]) == "2") continue;
+        dq[k] = "2";
+        changed.push_back(k);
+      }
+    }
+
+    if (changed.empty()) {
+      cout << "Run " << irun << ": DataQuality already set, nothing uploaded" << endl;
+      curl_slist_free_all(headers);
+      curl_easy_cleanup(curl);
+      return;
+    }
+
+    string comment = "DataQuality data present:";
+    for (const auto &k : changed) comment += " " + k;
+    json historyEntry = {{"date", getCurrentDateTime()}, {"comment", comment}};
+    if (j.contains("History") && j["History"].is_array()) j["History"].push_back(historyEntry);
+    else j["History"] = json::array({historyEntry});
+
+    cout << "Run " << irun << ": " << comment << endl;
+    if (debug) {
+      cout << "debug, not uploading" << endl;
+      curl_slist_free_all(headers);
+      curl_easy_cleanup(curl);
+      return;
+    }
+
+    responseData = j.dump();
+    curl_easy_reset(curl);
+    curl_easy_setopt(curl, CURLOPT_URL, rdbPutString.c_str());
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, responseData.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(responseData.size()));
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    res = curl_easy_perform(curl);
+    if (res != CURLE_OK) {
+      cerr << "Failed to update run record: " << curl_easy_strerror(res) << endl;
+    } else {
+      cout << "Successfully updated DataQuality for run " << irun << endl;
+    }
+  } catch (const json::parse_error& e) {
+    cerr << "Run " << irun << ": Failed to parse JSON response: " << e.what() << endl;
+  } catch (const std::exception& e) {
+    cerr << "Run " << irun << ": Error processing JSON: " << e.what() << endl;
+  }
+
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
 }
 

@@ -5,6 +5,15 @@
 #include <iostream>
 #include <regex>
 
+// RDB stores each subsystem as a string. The first three values are already in the database:
+//   "-1" unset, "0" bad, "1" good.
+// "2" is data present: hits were seen, and nobody has marked the subsystem good or bad.
+// 1 stays "good", so existing records and the Good/Bad filters keep their meaning.
+static const int DQ_UNSET   = -1;
+static const int DQ_BAD     = 0;
+static const int DQ_PRESENT = 2;
+static const int DQ_GOOD    = 1;
+
 struct DataQuality {
     int mu3e;
     int beam;

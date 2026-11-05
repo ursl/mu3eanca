@@ -333,11 +333,12 @@ function buildRunListPipeline(query) {
         const filterValue = query[paramName];
         if (filterValue !== undefined && filterValue !== "") {
             if (filterValue === "-1") {
+                // Unset is only -1 / missing. "2" (data present) is a real grade.
                 dqMatchConditions.push({
                     $or: [
                         { lastDataQuality: null },
                         { [`lastDataQuality.DataQuality.${fieldName}`]: { $exists: false } },
-                        { [`lastDataQuality.DataQuality.${fieldName}`]: { $nin: ["1", "0", 1, 0] } }
+                        { [`lastDataQuality.DataQuality.${fieldName}`]: { $in: ["-1", -1, null, "unset", ""] } }
                     ]
                 });
             } else if (filterValue === "notbad") {

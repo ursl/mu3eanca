@@ -294,6 +294,29 @@
              color: #c62828;
          }
 
+         /* Data present (value 2) - Blue. More specific than the red unchecked rule. */
+         #runs td input[type="checkbox"][id^="dq"].dq-present[disabled]:not(:checked):not(:indeterminate) {
+             background-color: #1565c0;
+             border-color: #1565c0;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"].dq-present[disabled]:not(:checked):not(:indeterminate)::after {
+             content: '●';
+             position: absolute;
+             left: 50%;
+             top: 50%;
+             transform: translate(-50%, -50%);
+             color: white;
+             font-size: 12px;
+             font-weight: bold;
+             line-height: 1;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"].dq-present[disabled] + label,
+         #runs td label.dq-present {
+             color: #1565c0;
+         }
+
          /* Unset/Indeterminate state - Neutral gray */
          #runs td input[type="checkbox"][id^="dq"][disabled]:indeterminate,
          #runs td input[type="checkbox"][id^="dq"].dq-unset[disabled] {
@@ -671,14 +694,26 @@
                         if (propValue === '1') {
                             console.log("prop " + prop + " good");
                             element.checked = true;
+                            element.indeterminate = false;
+                            delete element.dataset.dq;
                             dqOrig.set(prop, "1");
                         } else if (propValue === '0') {
                             console.log("prop " + prop + " bad");
                             element.checked = false;
+                            element.indeterminate = false;
+                            delete element.dataset.dq;
                             dqOrig.set(prop, "0");
+                        } else if (propValue === '2') {
+                            console.log("prop " + prop + " data present");
+                            element.checked = false;
+                            element.indeterminate = false;
+                            element.dataset.dq = "2";
+                            element.title = "data present";
+                            dqOrig.set(prop, "2");
                         } else {
                             console.log("prop " + prop + " unset");
                             element.indeterminate = true;
+                            delete element.dataset.dq;
                             dqOrig.set(prop, "-1");
                         }
                         // Update styling classes
@@ -710,11 +745,14 @@
          if (!label || label.tagName !== 'LABEL') return;
          
          // Remove any existing state classes
-         checkbox.classList.remove('dq-good', 'dq-bad', 'dq-unset');
-         label.classList.remove('dq-good', 'dq-bad', 'dq-unset');
+         checkbox.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present');
+         label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present');
          
          if (checkbox.disabled) {
-             if (checkbox.indeterminate) {
+             if (checkbox.dataset.dq === "2") {
+                 checkbox.classList.add('dq-present');
+                 label.classList.add('dq-present');
+             } else if (checkbox.indeterminate) {
                  checkbox.classList.add('dq-unset');
                  label.classList.add('dq-unset');
              } else if (checkbox.checked) {
@@ -791,10 +829,10 @@
                          console.log("key: " + key + " unsetting disabled: " + value);
                          element.disabled = false;
                          // Remove styling classes when enabled (edit mode)
-                         element.classList.remove('dq-good', 'dq-bad', 'dq-unset');
+                         element.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present');
                          const label = element.nextElementSibling;
                          if (label && label.tagName === 'LABEL') {
-                             label.classList.remove('dq-good', 'dq-bad', 'dq-unset');
+                             label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present');
                          }
                      }
                  }
@@ -808,6 +846,13 @@
      document.getElementById('btnEdit').addEventListener('click', function() {
          console.log("Edit button clicked");
          setEdit();
+     });
+
+     // A click drops "data present" so the checkbox becomes bad or good.
+     document.querySelectorAll('input[type="checkbox"][id^="dq"]').forEach(function(element) {
+         element.addEventListener('click', function() {
+             delete this.dataset.dq;
+         });
      });
 
      // Add event listeners for textarea changes
@@ -992,7 +1037,9 @@
                  var status = "-3";
                  const element = document.getElementById(value);
                  if (element) {
-                     if (element.indeterminate) {
+                     if (element.dataset.dq === "2") {
+                         status = "2";
+                     } else if (element.indeterminate) {
                          status = "-1";
                      } else if (element.checked) {
                          status = "1";
