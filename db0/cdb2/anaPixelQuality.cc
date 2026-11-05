@@ -76,6 +76,8 @@ void setRunLabelsY(TH2D *h);
 void setRunLabelsX(TH1D *h);
 void overlayHistograms(string filename1, string filename2);
 
+int gNruns(0);
+
 // ----------------------------------------------------------------------
 int main(int argc, char *argv[]) {
 
@@ -244,7 +246,7 @@ int main(int argc, char *argv[]) {
 
   int nRuns = std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), maxRun)) 
             - std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), minRun)) + 1;
-
+  gNruns = nRuns;
 
   cout << "Number of runs: " << nRuns 
        << " from " << minRun << " to " << maxRun
@@ -297,7 +299,7 @@ int main(int argc, char *argv[]) {
   setTitles(rLinkStatus , "Chip index", "Run", 0.05, 1.1, 1.2);
   rLinkStatus->GetZaxis()->SetTitle("Working links"); rLinkStatus->SetTitleOffset(1.2, "z");
   rLinkStatus->SetMaximum(3); // simplest way to get reasonable color scheme
-  TH1D *hLinkStatus = new TH1D("hLinkStatus", "Working links per chip", 328, 0., 328.);
+  TH1D *hLinkStatus = new TH1D("hLinkStatus", "Working links (Perfect: 3x108+408 = 728)", 129, 0., 3*108+408.);
   setTitles(hLinkStatus, "Working links", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
   // -- Number of noisy pixels per run
@@ -356,15 +358,9 @@ int main(int argc, char *argv[]) {
   OC.close();
 
 
-  for (auto itIoV: vIoV) {
-    if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
-      continue;
-    }
-    if (first > 0 && itIoV < first) {
-      continue;
-    }
-  }
-
+  vector<int> vRunsWithZeroWorkingLinks;
+  // ---------------------------------------------------------------------------------------------------
+  // -- loop over all runs
   for (auto itIoV: vIoV) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
       continue;
@@ -392,38 +388,38 @@ int main(int argc, char *argv[]) {
     //cout << " Working links: "; 
     int nWorkingLinks(0);
     int runIdx = runIndex(itIoV)+1;
+    // -- loop over all chips
     while (pPQ->getNextID(chipid)) {
-      //if (chipid >= 2055) continue;
-      //if (chipid < 2055) continue;
       int lStatus = linkStatus(pPQ, chipid);
       nWorkingLinks += lStatus;
       int chipIdx = chipIndex(chipid)+1;
       rLinkStatus->Fill(chipIdx, runIdx, lStatus);
-      if (itIoV == 12229) {
-        cout << "Chip " << chipid << " (index = " << chipIdx << ") has " << lStatus << " working links: ";
-        cout << pPQ->getLinkStatus(chipid, 0) << "  ";
-        cout << pPQ->getLinkStatus(chipid, 1) << "  ";
-        cout << pPQ->getLinkStatus(chipid, 2) << endl;
-      }
+
       int chipNoisy = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy); 
       int chipGood = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Good);
       nNoisyPixels += chipNoisy;
       nGoodPixels += chipGood;
+      // -- count noisy pixels for all chips that are not completely dead
       if (!pPQ->isChipDead(chipid)) {
-        cNoisyPixels->Fill(chipNoisy);
+        double xNoisy = chipNoisy;
+        const TAxis *ax = cNoisyPixels->GetXaxis();
+        if (xNoisy >= ax->GetXmax()) {
+          xNoisy = ax->GetBinCenter(cNoisyPixels->GetNbinsX());
+        }
+        cNoisyPixels->Fill(xNoisy);
+    
       }
       ++nChips;
-      if (0) cout << "Chip " << chipid << " has " << chipNoisy << " noisy pixels and " << chipGood << " good pixels" << endl;
     }
+    if (nWorkingLinks == 0) {
+      vRunsWithZeroWorkingLinks.push_back(itIoV);
+    }
+    // -- fill the histograms per run
     hLinkStatus->Fill(nWorkingLinks);
     hNoisyPixels->Fill(nNoisyPixels);
     hGoodPixel->Fill(nGoodPixels);
-
     rNoisyPixels->Fill(runIdx, nNoisyPixels);
     rGoodPixel->Fill(runIdx, nGoodPixels);
-    if (nGoodPixels < 1.e6) {
-      vGoodPixelRuns.push_back(itIoV);
-    }
     // -- get the size of the JSON payload via size of BLOB
     string sblob = pPQ->makeBLOB();
     rPayloadSize->Fill(runIdx, sblob.size()/1024.);
@@ -460,6 +456,9 @@ int main(int argc, char *argv[]) {
   }
   cout << endl;
 
+  cout << "Runs with zero working links has " << vRunsWithZeroWorkingLinks.size() << " runs" << endl;
+  sfilename = "zeroWorkingLinksRunList" + suffix + ".txt";
+  writeRunList(sfilename, vRunsWithZeroWorkingLinks);
 
   for (auto itIoV: vIoV) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
@@ -670,6 +669,11 @@ void plotHistograms(string filename, string suffix) {
   TCanvas *c1 = new TCanvas("c1", "c1", 3000, 2000);
   shrinkPad(0.12, 0.15, 0.15);
 
+  TLatex *t1 = new TLatex();
+  t1->SetTextColor(kBlack);
+  t1->SetTextFont(42);
+  t1->SetTextSize(0.04);
+
   // -- plot the link status
   TH2D *rLinkStatus  = (TH2D*)pFile->Get("rLinkStatus");
   cout << " plotting rLinkStatus" << endl;
@@ -683,13 +687,20 @@ void plotHistograms(string filename, string suffix) {
   c1->SetRightMargin(0.1);
   c1->SetBottomMargin(0.15);
 
-
   shrinkPad(0.15, 0.15, 0.1);
-
   TH1D *hLinkStatus = (TH1D*)pFile->Get("hLinkStatus");
   cout << " plotting hLinkStatus" << endl;
   hLinkStatus->SetStats(0);
   hLinkStatus->Draw("hist");
+  hLinkStatus->SetTitle("");
+
+  t1->DrawLatexNDC(0.7, 0.86, Form("N_{ runs}^{ total} = %d", gNruns));
+  t1->DrawLatex(20., hLinkStatus->GetBinContent(1), Form("N_{ runs}^{ 0} = %d", static_cast<int>(hLinkStatus->GetBinContent(1))));
+  
+  t1->SetTextSize(0.03);
+  t1->DrawLatexNDC(0.15, 0.915, "(Perfect: 3x108+408 = 732)");
+  t1->SetTextSize(0.04);
+  
   c1->SaveAs(("hLinkStatus" + suffix + format).c_str());
 
 
@@ -728,9 +739,6 @@ void plotHistograms(string filename, string suffix) {
   l1->SetLineColor(kBlack);
   l1->SetLineStyle(kDashed);
   l1->Draw();
-  TLatex *t1 = new TLatex();
-  t1->SetTextColor(kBlack);
-  t1->SetTextSize(0.02);
   t1->DrawLatexNDC(0.2, 0.86, Form("N_{pix}^{VTX} = %d*64000", nChips));
 
   c1->SaveAs(("rGoodPixel" + suffix + format).c_str());
