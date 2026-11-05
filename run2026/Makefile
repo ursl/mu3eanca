@@ -75,7 +75,7 @@ OTHERLIBS     = $(UTIL)/lib/libAnaUtil.so $(CDB)/lib/libCDB.so $(LIBCURL)
 
 
 # -- Files
-BINARIES = fillQualityPixels fillQualityFibres fillQualityTiles
+BINARIES = fillDataInformation fillQualityPixels fillQualityFibres fillQualityTiles
 BINARY_OBJS = $(addprefix obj/,$(addsuffix .o,$(BINARIES)))
 
 # -- Default rules
