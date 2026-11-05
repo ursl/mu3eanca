@@ -69,8 +69,6 @@ int chipIndex(unsigned int chipid);
 int runIndex(int runnumber);
 int linkStatus(calPixelQualityLM *pPQ, unsigned int chipid);
 
-struct runQuality jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<int> &vJaksRuns);
-
 
 void writeRunList(string filename, vector<int> &vRuns);
 void plotHistograms(string filename, string suffix);
@@ -83,7 +81,8 @@ int main(int argc, char *argv[]) {
 
   // -- command line arguments
   string filename("anaPixelQuality.root");
-  string gt("datav7.1=2026V1");
+  // -- datav7.1=2026V2 does not include the mask files, much faster
+  string gt("datav7.1=2026V2");
   string db("/Users/ursl/data/mu3e/cdb");
   string metaMidasTreeFile("");
   int first(0), last(0);
@@ -184,6 +183,7 @@ int main(int argc, char *argv[]) {
     pDB = new cdbRest(ms, verbose);
   } else {
     // -- hope for the best that this is a JSON directory
+    cout << "Using JSON directory: " << db << endl;
     pDB = new cdbJSON(db, verbose);
   }
 
@@ -209,11 +209,8 @@ int main(int argc, char *argv[]) {
   }
 
   // -- get the number of runs
-  int minRun(vIoV[0]);
-  if (first > 0) minRun = first;
-  int maxRun(vIoV[vIoV.size()-1]);
-  if (last > 0) maxRun = last;
-  int nRuns(maxRun - minRun + 1);
+  int minRun(-1);
+  int maxRun(-1);
 
   if (first > 0) {
     minRun = first;
@@ -245,8 +242,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  nRuns = std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), maxRun)) 
-          - std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), minRun)) + 1;
+  int nRuns = std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), maxRun)) 
+            - std::distance(vIoV.begin(), std::find(vIoV.begin(), vIoV.end(), minRun)) + 1;
 
 
   cout << "Number of runs: " << nRuns 
@@ -292,8 +289,11 @@ int main(int argc, char *argv[]) {
   // -- Plot stuff for each run
   TFile *pFile = new TFile(filename.c_str(), "RECREATE");
 
+  // -- Number chips
+  const int nChips = 516;
+
   // -- Working links per chip
-  TH2D *rLinkStatus = new TH2D("rLinkStatus", "Working links per chip", 108, 0, 108, nRuns, 0, nRuns);
+  TH2D *rLinkStatus = new TH2D("rLinkStatus", "Working links per chip", nChips, 0, nChips, nRuns, 0, nRuns);
   setTitles(rLinkStatus , "Chip index", "Run", 0.05, 1.1, 1.2);
   rLinkStatus->GetZaxis()->SetTitle("Working links"); rLinkStatus->SetTitleOffset(1.2, "z");
   rLinkStatus->SetMaximum(3); // simplest way to get reasonable color scheme
@@ -309,7 +309,6 @@ int main(int argc, char *argv[]) {
   // -- Number of noisy pixels per chip
   TH1D *cNoisyPixels = new TH1D("cNoisyPixels", "Total number of noisy pixels per chip", 100, 0, 2000.);
   setTitles(cNoisyPixels, "Noisy pixels", "Number of chips", 0.05, 1.0, 1.2, 0.04);
-
 
   TH1D *rEEE = new TH1D("rEEE", "Chips without good links", nRuns, 0, nRuns);
   setTitles(rEEE, "Run", "Chips without good links", 0.05, 1.0, 1.2);
@@ -328,8 +327,44 @@ int main(int argc, char *argv[]) {
   TH1D *hPayloadSize = new TH1D("hPayloadSize", "Size of JSON payload [kB]", 50, 0, 1.e6);
   setTitles(hPayloadSize, "Size of JSON payload [kB]", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
-  vector<int> vJaksRuns, vAllBadLinkRuns, vGoodPixelRuns, vGoodRuns;
+  vector<int> vAllBadLinkRuns, vGoodPixelRuns, vGoodRuns;
+
+  // -- write the run index to a file
+  ofstream OS(filename + "-runIdx.txt");
+  for (auto itIoV: vIoV) {
+    if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
+      continue;
+    }
+    if (first > 0 && itIoV < first) {
+      continue;
+    }
+    if (last > 0 && itIoV > last) {
+      continue;
+    }
+    OS << "runIdx = " << runIndex(itIoV)+1 << " " << itIoV << endl;
+  }
+  OS.close();
   
+  // -- write out chip index to a file
+  ofstream OC(filename + "-chipIdx.txt");
+  pDC->setRunNumber(minRun);
+  uint32_t cid(0);
+  pPQ->resetIterator();
+  while (pPQ->getNextID(cid)) {
+    OC << "chipIdx = " << chipIndex(cid)+1 << " " << cid << endl;
+  }
+  OC.close();
+
+
+  for (auto itIoV: vIoV) {
+    if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
+      continue;
+    }
+    if (first > 0 && itIoV < first) {
+      continue;
+    }
+  }
+
   for (auto itIoV: vIoV) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
       continue;
@@ -356,10 +391,20 @@ int main(int argc, char *argv[]) {
     int nChips(0);
     //cout << " Working links: "; 
     int nWorkingLinks(0);
+    int runIdx = runIndex(itIoV)+1;
     while (pPQ->getNextID(chipid)) {
+      //if (chipid >= 2055) continue;
+      //if (chipid < 2055) continue;
       int lStatus = linkStatus(pPQ, chipid);
       nWorkingLinks += lStatus;
-      rLinkStatus->Fill(chipIndex(chipid), runIndex(itIoV), lStatus);
+      int chipIdx = chipIndex(chipid)+1;
+      rLinkStatus->Fill(chipIdx, runIdx, lStatus);
+      if (itIoV == 12229) {
+        cout << "Chip " << chipid << " (index = " << chipIdx << ") has " << lStatus << " working links: ";
+        cout << pPQ->getLinkStatus(chipid, 0) << "  ";
+        cout << pPQ->getLinkStatus(chipid, 1) << "  ";
+        cout << pPQ->getLinkStatus(chipid, 2) << endl;
+      }
       int chipNoisy = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy); 
       int chipGood = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Good);
       nNoisyPixels += chipNoisy;
@@ -374,28 +419,21 @@ int main(int argc, char *argv[]) {
     hNoisyPixels->Fill(nNoisyPixels);
     hGoodPixel->Fill(nGoodPixels);
 
-    rNoisyPixels->Fill(runIndex(itIoV), nNoisyPixels);
-    rGoodPixel->Fill(runIndex(itIoV), nGoodPixels);
+    rNoisyPixels->Fill(runIdx, nNoisyPixels);
+    rGoodPixel->Fill(runIdx, nGoodPixels);
     if (nGoodPixels < 1.e6) {
       vGoodPixelRuns.push_back(itIoV);
     }
     // -- get the size of the JSON payload via size of BLOB
     string sblob = pPQ->makeBLOB();
-    rPayloadSize->Fill(runIndex(itIoV), sblob.size()/1024.);
+    rPayloadSize->Fill(runIdx, sblob.size()/1024.);
     hPayloadSize->Fill(sblob.size()/1024.);
 
-    struct runQuality rn = jakGoodRunList(pPQ, itIoV, vJaksRuns);
-    rEEE->Fill(runIndex(itIoV), rn.nEEE);
-    hEEE->Fill(rn.nEEE);
-    if (rn.nEEE > 40) {
-      vAllBadLinkRuns.push_back(itIoV);
-    }
-    cout << "Run " << itIoV << " has " 
+    cout << "Run " << itIoV << " (index = " << runIdx << ") has " 
          << nChips << " chips, "
          << nNoisyPixels << " noisy pixels and " 
          << nGoodPixels << " good pixels" 
          << " and " << nWorkingLinks << " working links"
-         << " and " << rn.nEEE << " EEE"
          << endl;
   }
    // -- save the histograms 
@@ -404,16 +442,8 @@ int main(int argc, char *argv[]) {
 
   plotHistograms(filename, suffix);
 
-
-//  vector<int> vJakGoodRuns = {4756, 4757, 4758, 4863, 4864, 4865, 4866, 4868, 4869, 4870, 4871, 4872, 4873, 4876, 4877, 4878, 4880, 4881, 4882, 4883, 4884, 4885, 4886, 4887, 4888, 4889, 4890, 4891, 4892, 4893, 4894, 4896, 4897, 4898, 4899, 4900, 5102};
-  vector<int> vJakGoodRuns = {3312,3416,3471,3472,3474,3475,3487,3488,3492,3493,3494,3495,3496,3497,3498,3499,3500,3501,3502,3503,3504,3514,3568,3574,3575,3576,3578,3581,3582,3583,3585,3586,3602,3603,3604,3606,3619,3620,3622,3624,3625,3627,3629,3633,3634,3635,3636,3637,3638,3642,3644,3645,3646,3649,3651,3652,3653,3657,3794,3795,3796,3797,3798,3799,3812,3813,3814,3815,3816,3817,3818,3819,3820,3822,4724,4725,4726,4727,4728,4739,4740,4742,4743,4744,4745,4746,4748,4756,4757,4758,4863,4864,4865,4866,4868,4869,4870,4871,4872,4873,4876,4877,4878,4880,4881,4882,4883,4884,4885,4886,4887,4888,4889,4890,4891,4892,4893,4894,4896,4897,4898,4899,4900,5102,6116};
-
-  cout << "Jak's run list has " << vJaksRuns.size() << " runs" << endl;
-  string sfilename = "goodJakRunList" + suffix + ".txt";
-  writeRunList(sfilename, vJaksRuns);
-
   cout << "Bad run list (all bad links) has " << vAllBadLinkRuns.size() << " runs" << endl;
-  sfilename = "badLinksTooManyRunList" + suffix + ".txt";
+  string sfilename = "badLinksTooManyRunList" + suffix + ".txt";
   writeRunList(sfilename, vAllBadLinkRuns);
 
   cout << "BAD pixel run list (less than 1M good pixels) has " << vGoodPixelRuns.size() << " runs" << endl;
@@ -426,10 +456,7 @@ int main(int argc, char *argv[]) {
   cout << "Bad run list (too many  bad links, and too few good pixel) has " << sBadRuns.size() << " runs" << endl;
   sfilename = "badRunsList" + suffix + ".txt";
   for (auto it: sBadRuns) {
-    if (find(vJakGoodRuns.begin(), vJakGoodRuns.end(), it) != vJakGoodRuns.end()) {
-      cout << "*" << it << "*,";
-    }
-    cout << it << ",";
+        cout << it << ",";
   }
   cout << endl;
 
@@ -518,8 +545,33 @@ int chipIndex(unsigned int chipid) {
               1217, 1218, 1219, 1220, 1221, 1222,
               1249, 1250, 1251, 1252, 1253, 1254,
               1281, 1282, 1283, 1284, 1285, 1286,
-              1313, 1314, 1315, 1316, 1317, 1318
-              };
+              1313, 1314, 1315, 1316, 1317, 1318,
+              // -- layer 3
+              2055, 2056, 2057, 2058, 2059, 2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 
+              2087, 2088, 2089, 2090, 2091, 2092, 2093, 2094, 2095, 2096, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 
+              2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134, 2135, 
+              2151, 2152, 2153, 2154, 2155, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2165, 2166, 2167, 
+              2183, 2184, 2185, 2186, 2187, 2188, 2189, 2190, 2191, 2192, 2193, 2194, 2195, 2196, 2197, 2198, 2199, 
+              2215, 2216, 2217, 2218, 2219, 2220, 2221, 2222, 2223, 2224, 2225, 2226, 2227, 2228, 2229, 2230, 2231, 
+              2247, 2248, 2249, 2250, 2251, 2252, 2253, 2254, 2255, 2256, 2257, 2258, 2259, 2260, 2261, 2262, 2263, 
+              2279, 2280, 2281, 2282, 2283, 2284, 2285, 2286, 2287, 2288, 2289, 2290, 2291, 2292, 2293, 2294, 2295, 
+              2311, 2312, 2313, 2314, 2315, 2316, 2317, 2318, 2319, 2320, 2321, 2322, 2323, 2324, 2325, 2326, 2327, 
+              2343, 2344, 2345, 2346, 2347, 2348, 2349, 2350, 2351, 2352, 2353, 2354, 2355, 2356, 2357, 2358, 2359, 
+              2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 
+              2407, 2408, 2409, 2410, 2411, 2412, 2413, 2414, 2415, 2416, 2417, 2418, 2419, 2420, 2421, 2422, 2423, 
+              2439, 2440, 2441, 2442, 2443, 2444, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 
+              2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2482, 2483, 2484, 2485, 2486, 2487, 
+              2503, 2504, 2505, 2506, 2507, 2508, 2509, 2510, 2511, 2512, 2513, 2514, 2515, 2516, 2517, 2518, 2519, 
+              2535, 2536, 2537, 2538, 2539, 2540, 2541, 2542, 2543, 2544, 2545, 2546, 2547, 2548, 2549, 2550, 2551, 
+              2567, 2568, 2569, 2570, 2571, 2572, 2573, 2574, 2575, 2576, 2577, 2578, 2579, 2580, 2581, 2582, 2583, 
+              2599, 2600, 2601, 2602, 2603, 2604, 2605, 2606, 2607, 2608, 2609, 2610, 2611, 2612, 2613, 2614, 2615, 
+              2631, 2632, 2633, 2634, 2635, 2636, 2637, 2638, 2639, 2640, 2641, 2642, 2643, 2644, 2645, 2646, 2647, 
+              2663, 2664, 2665, 2666, 2667, 2668, 2669, 2670, 2671, 2672, 2673, 2674, 2675, 2676, 2677, 2678, 2679, 
+              2695, 2696, 2697, 2698, 2699, 2700, 2701, 2702, 2703, 2704, 2705, 2706, 2707, 2708, 2709, 2710, 2711, 
+              2727, 2728, 2729, 2730, 2731, 2732, 2733, 2734, 2735, 2736, 2737, 2738, 2739, 2740, 2741, 2742, 2743, 
+              2759, 2760, 2761, 2762, 2763, 2764, 2765, 2766, 2767, 2768, 2769, 2770, 2771, 2772, 2773, 2774, 2775, 
+              2791, 2792, 2793, 2794, 2795, 2796, 2797, 2798, 2799, 2800, 2801, 2802, 2803, 2804, 2805, 2806, 2807
+            };
 
     for (size_t i = 0; i < vChipIDs.size(); ++i) {
       chipID_to_index[vChipIDs[i]] = i;
@@ -554,7 +606,33 @@ int indexChip(int index) {
               1217, 1218, 1219, 1220, 1221, 1222,
               1249, 1250, 1251, 1252, 1253, 1254,
               1281, 1282, 1283, 1284, 1285, 1286,
-              1313, 1314, 1315, 1316, 1317, 1318
+              1313, 1314, 1315, 1316, 1317, 1318,
+              // -- layer 3
+              2055, 2056, 2057, 2058, 2059, 2060, 2061, 2062, 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, 2071, 
+              2087, 2088, 2089, 2090, 2091, 2092, 2093, 2094, 2095, 2096, 2097, 2098, 2099, 2100, 2101, 2102, 2103, 
+              2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134, 2135, 
+              2151, 2152, 2153, 2154, 2155, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2165, 2166, 2167, 
+              2183, 2184, 2185, 2186, 2187, 2188, 2189, 2190, 2191, 2192, 2193, 2194, 2195, 2196, 2197, 2198, 2199, 
+              2215, 2216, 2217, 2218, 2219, 2220, 2221, 2222, 2223, 2224, 2225, 2226, 2227, 2228, 2229, 2230, 2231, 
+              2247, 2248, 2249, 2250, 2251, 2252, 2253, 2254, 2255, 2256, 2257, 2258, 2259, 2260, 2261, 2262, 2263, 
+              2279, 2280, 2281, 2282, 2283, 2284, 2285, 2286, 2287, 2288, 2289, 2290, 2291, 2292, 2293, 2294, 2295, 
+              2311, 2312, 2313, 2314, 2315, 2316, 2317, 2318, 2319, 2320, 2321, 2322, 2323, 2324, 2325, 2326, 2327, 
+              2343, 2344, 2345, 2346, 2347, 2348, 2349, 2350, 2351, 2352, 2353, 2354, 2355, 2356, 2357, 2358, 2359, 
+              2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 
+              2407, 2408, 2409, 2410, 2411, 2412, 2413, 2414, 2415, 2416, 2417, 2418, 2419, 2420, 2421, 2422, 2423, 
+              2439, 2440, 2441, 2442, 2443, 2444, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 
+              2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2482, 2483, 2484, 2485, 2486, 2487, 
+              2503, 2504, 2505, 2506, 2507, 2508, 2509, 2510, 2511, 2512, 2513, 2514, 2515, 2516, 2517, 2518, 2519, 
+              2535, 2536, 2537, 2538, 2539, 2540, 2541, 2542, 2543, 2544, 2545, 2546, 2547, 2548, 2549, 2550, 2551, 
+              2567, 2568, 2569, 2570, 2571, 2572, 2573, 2574, 2575, 2576, 2577, 2578, 2579, 2580, 2581, 2582, 2583, 
+              2599, 2600, 2601, 2602, 2603, 2604, 2605, 2606, 2607, 2608, 2609, 2610, 2611, 2612, 2613, 2614, 2615, 
+              2631, 2632, 2633, 2634, 2635, 2636, 2637, 2638, 2639, 2640, 2641, 2642, 2643, 2644, 2645, 2646, 2647, 
+              2663, 2664, 2665, 2666, 2667, 2668, 2669, 2670, 2671, 2672, 2673, 2674, 2675, 2676, 2677, 2678, 2679, 
+              2695, 2696, 2697, 2698, 2699, 2700, 2701, 2702, 2703, 2704, 2705, 2706, 2707, 2708, 2709, 2710, 2711, 
+              2727, 2728, 2729, 2730, 2731, 2732, 2733, 2734, 2735, 2736, 2737, 2738, 2739, 2740, 2741, 2742, 2743, 
+              2759, 2760, 2761, 2762, 2763, 2764, 2765, 2766, 2767, 2768, 2769, 2770, 2771, 2772, 2773, 2774, 2775, 
+              2791, 2792, 2793, 2794, 2795, 2796, 2797, 2798, 2799, 2800, 2801, 2802, 2803, 2804, 2805, 2806, 2807
+          
               };
 
     for (size_t i = 0; i < vChipIDs.size(); ++i) {
@@ -570,6 +648,8 @@ int indexChip(int index) {
 int linkStatus(calPixelQualityLM *pPQ, unsigned int chipid) {
   int result(0);
   if (pPQ->getLinkStatus(chipid, 0) == 0) ++result;
+  // -- layer 3 has only one link
+  if (chipid >= 2055) return result;
   if (pPQ->getLinkStatus(chipid, 1) == 0) ++result;
   if (pPQ->getLinkStatus(chipid, 2) == 0) ++result;
   return result;
@@ -578,19 +658,26 @@ int linkStatus(calPixelQualityLM *pPQ, unsigned int chipid) {
 // ----------------------------------------------------------------------
 // -- plot the histograms
 void plotHistograms(string filename, string suffix) {
+  const int nChips = 516;
+
   // -- open the file
   TFile *pFile = new TFile(filename.c_str());
 
+  // -- by default pdf, except for hard-coded pngs (2D plots)
+  string format(".pdf");
+ 
   // -- plot the histograms
-  TCanvas *c1 = new TCanvas("c1", "c1", 1000, 1000);
+  TCanvas *c1 = new TCanvas("c1", "c1", 3000, 2000);
   shrinkPad(0.12, 0.15, 0.15);
 
+  // -- plot the link status
   TH2D *rLinkStatus  = (TH2D*)pFile->Get("rLinkStatus");
   cout << " plotting rLinkStatus" << endl;
-  setRunLabelsY(rLinkStatus);
   rLinkStatus->SetStats(0);
   rLinkStatus->Draw("colz");
-  c1->SaveAs(("rLinkStatus" + suffix + ".pdf").c_str());
+  setRunLabelsY(rLinkStatus);
+  // -- png mandatory because else pdf aliasing make single-bin and double-bin columns very similar
+  c1->SaveAs(("rLinkStatus" + suffix + ".png").c_str());
 
   c1->Clear();
   c1->SetRightMargin(0.1);
@@ -603,7 +690,7 @@ void plotHistograms(string filename, string suffix) {
   cout << " plotting hLinkStatus" << endl;
   hLinkStatus->SetStats(0);
   hLinkStatus->Draw("hist");
-  c1->SaveAs(("hLinkStatus" + suffix + ".pdf").c_str());
+  c1->SaveAs(("hLinkStatus" + suffix + format).c_str());
 
 
   TH1D *rNoisyPixels = (TH1D*)pFile->Get("rNoisyPixels");
@@ -614,48 +701,48 @@ void plotHistograms(string filename, string suffix) {
   rNoisyPixels->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
   rNoisyPixels->Draw("hist");
-  c1->SaveAs(("rNoisyPixels" + suffix + ".pdf").c_str());
+  c1->SaveAs(("rNoisyPixels" + suffix + format).c_str());
 
   TH1D *hNoisyPixels = (TH1D*)pFile->Get("hNoisyPixels");
   cout << " plotting hNoisyPixels" << endl;
   hNoisyPixels->SetStats(0);
   hNoisyPixels->Draw("hist");
-  c1->SaveAs(("hNoisyPixels" + suffix + ".pdf").c_str());
+  c1->SaveAs(("hNoisyPixels" + suffix + format).c_str());
 
   TH1D *cNoisyPixels = (TH1D*)pFile->Get("cNoisyPixels");
   cout << " plotting cNoisyPixels" << endl;
   cNoisyPixels->SetStats(11111);
   cNoisyPixels->Draw("hist");
-  c1->SaveAs(("cNoisyPixels" + suffix + ".pdf").c_str());
+  c1->SaveAs(("cNoisyPixels" + suffix + format).c_str());
 
   TH1D *rGoodPixel = (TH1D*)pFile->Get("rGoodPixel");
   cout << " plotting rGoodPixel" << endl;
   setRunLabelsX(rGoodPixel);
   rGoodPixel->SetMinimum(1.e5);
-  rGoodPixel->SetMaximum(1.35*108.*64000.);
+  rGoodPixel->SetMaximum(1.35*nChips*64000.);
   rGoodPixel->SetStats(0);
   rGoodPixel->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
   rGoodPixel->Draw("hist");
-  TLine *l1 = new TLine(0., 108*64000., rGoodPixel->GetXaxis()->GetBinCenter(rGoodPixel->GetNbinsX()), 108*64000.);
+  TLine *l1 = new TLine(0., nChips*64000., rGoodPixel->GetXaxis()->GetBinCenter(rGoodPixel->GetNbinsX()), nChips*64000.);
   l1->SetLineColor(kBlack);
   l1->SetLineStyle(kDashed);
   l1->Draw();
   TLatex *t1 = new TLatex();
   t1->SetTextColor(kBlack);
   t1->SetTextSize(0.02);
-  t1->DrawLatexNDC(0.2, 0.86, "N_{pix}^{VTX} = 108*64000");
+  t1->DrawLatexNDC(0.2, 0.86, Form("N_{pix}^{VTX} = %d*64000", nChips));
 
-  c1->SaveAs(("rGoodPixel" + suffix + ".pdf").c_str());
+  c1->SaveAs(("rGoodPixel" + suffix + format).c_str());
 
   TH1D *hGoodPixel = (TH1D*)pFile->Get("hGoodPixel");
   cout << " plotting hGoodPixel" << endl;
   hGoodPixel->SetStats(0);
   hGoodPixel->Draw("hist");
   t1->DrawLatexNDC(0.2, 0.86, Form("<N_{good}> = %d", static_cast<int>(hGoodPixel->GetMean())));
-  t1->DrawLatexNDC(0.2, 0.81, Form("#varepsilon = %4.3f", hGoodPixel->GetMean()/108./64000.));
+  t1->DrawLatexNDC(0.2, 0.81, Form("#varepsilon = %4.3f", hGoodPixel->GetMean()/nChips/64000.));
 
-  c1->SaveAs(("hGoodPixel" + suffix + ".pdf").c_str());
+  c1->SaveAs(("hGoodPixel" + suffix + format).c_str());
 
 
 
@@ -667,7 +754,7 @@ void plotHistograms(string filename, string suffix) {
   rPayloadSize->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
   rPayloadSize->Draw("hist");
-  c1->SaveAs(("rPayloadSize" + suffix + ".pdf").c_str());
+  c1->SaveAs(("rPayloadSize" + suffix + format).c_str());
 
 
 
@@ -679,13 +766,13 @@ void plotHistograms(string filename, string suffix) {
   rEEE->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
   rEEE->Draw("hist");
-  c1->SaveAs(("rEEE" + suffix + ".pdf").c_str());
+  c1->SaveAs(("rEEE" + suffix + format).c_str());
 
   TH1D *hEEE = (TH1D*)pFile->Get("hEEE");
   cout << " plotting hEEE" << endl;
   hEEE->SetStats(0);
   hEEE->Draw("hist");
-  c1->SaveAs(("hEEE" + suffix + ".pdf").c_str());
+  c1->SaveAs(("hEEE" + suffix + format).c_str());
 
   // -- close the file  
   pFile->Close();
@@ -699,14 +786,18 @@ void setRunLabelsY(TH2D *h) {
   h->GetYaxis()->SetTickLength(0.0);
 
   int empty(5);
-  if (nRuns > 100) empty = 50;
-  if (nRuns > 1000) empty = 100;
+  if (nRuns > 100) empty = 20;
+  if (nRuns > 500) empty = 50;
+  if (nRuns > 1000) empty = 200;
 
-  for (int i = 1; i < h->GetNbinsY(); i++) {
-    if (i ==1 || i % empty == 0) {
-      h->GetYaxis()->SetBinLabel(i, Form("%d", indexRun(i)));
+  TLine *l1 = new TLine();
+  l1->SetLineStyle(kDashed);
+  for (int i = 0; i < h->GetNbinsY(); i++) {
+    if (i == 0 || i % empty == 0) {
+      h->GetYaxis()->SetBinLabel(i+1, Form("%d", indexRun(i)));
+      l1->DrawLine(h->GetXaxis()->GetBinCenter(1), h->GetYaxis()->GetBinCenter(i+1), h->GetXaxis()->GetBinCenter(h->GetNbinsX()), h->GetYaxis()->GetBinCenter(i+1));
     } else {
-      h->GetYaxis()->SetBinLabel(i, "");
+      h->GetYaxis()->SetBinLabel(i+1, "");
     }
   }
 
@@ -731,60 +822,6 @@ void setRunLabelsX(TH1D *h) {
       h->GetXaxis()->SetBinLabel(i, "");
     }
   }
-}
-
-// ----------------------------------------------------------------------
-// -- print the good run list
-struct runQuality jakGoodRunList(calPixelQualityLM *pPQ, int runnumber, vector<int> &vJaksRuns) {
-  uint32_t chipid(0);
-  pPQ->resetIterator();
-  struct runQuality rn = {runnumber, 0, 0, 0, 0, 0, 0, 0};
-  string sStatus("");
-  while (pPQ->getNextID(chipid)) {
-    int status(0), nNoisy(0), nDeadLinks(0), nBadLinks(0);
-    nNoisy = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy);
-    rn.nNoisyPixels += nNoisy;
-    for (int i = 0; i < 3; i++) {
-      if (pPQ->getLinkStatus(chipid, i) == 4 || pPQ->getLinkStatus(chipid, i) == 5) {
-        nBadLinks |= (1 << i);
-      }
-
-      if (pPQ->isLinkDead(chipid, i)) {
-        nDeadLinks++;
-        rn.nDeadLinks++;
-      }
-    }
-    if (7 == nBadLinks) {
-      //  n is NOT a counter!!
-      status = 5;
-      sStatus += "/" + to_string(chipid) + "/"+ " EEE,";
-      rn.nEEE++;
-    }
-
-    if (nDeadLinks < 3) {
-      rn.nActiveChips++;
-    }
-
-    if (nNoisy > 10) {
-      if (0 == status) {
-        sStatus += "/" + to_string(chipid) + "/" + " Ns: " + to_string(nNoisy) + ",";
-      } else {
-        sStatus +=  " Ns: " + to_string(nNoisy) + ",";
-      }
-      status = 5;
-    }
-    if (5 == status) {
-      rn.nStatus5++;
-    }
-  }
-
-  if (rn.nStatus5 < 0.2*rn.nActiveChips) {
-    cout << "******************** Run " << runnumber << " is good, has " << rn.nActiveChips << " active chips and " << rn.nStatus5 << " status 5" << endl;
-    vJaksRuns.push_back(runnumber);
-  } else {
-    cout << "Run " << runnumber << " is bad, has " << rn.nActiveChips << " active chips and nStatus5 = " << rn.nStatus5 << " -> " << sStatus << "<-" << endl;
-  }
-  return rn;
 }
 
 // ----------------------------------------------------------------------
