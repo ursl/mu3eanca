@@ -141,7 +141,7 @@ static void styleOcc(TH1F* h, double titleSize, double labelSize) {
   h->GetXaxis()->SetTitleOffset(0.95);
   h->GetYaxis()->SetTitleOffset(0.85);
   h->SetLineColor(kBlue + 1);
-  h->SetMinimum(0.01);
+  h->SetMinimum(0.0001);
   h->SetMaximum(100.);
 }
 
