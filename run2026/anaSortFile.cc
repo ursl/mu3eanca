@@ -359,7 +359,7 @@ int main(int argc, char** argv) {
       c->cd(ladderNo);
       gPad->SetLeftMargin(0.16);
       gPad->SetBottomMargin(0.16);
-      gPad->SetRightMargin(0.04);
+      gPad->SetRightMargin(0.16);
       gPad->SetTopMargin(0.10);
       gPad->SetLogy(1);
       h->Draw("HIST");
