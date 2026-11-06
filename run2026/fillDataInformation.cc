@@ -57,10 +57,12 @@ using namespace std;
 // ----------------------------------------------------------------------
 void parseMidasMetaData(string filename);
 
-string MLZRDIR("/Users/ursl/data/mu3e/run2026/mlzr");
-string DATADIR("/Users/ursl/data/mu3e/run2026/raw");
+//string MLZRDIR("/Users/ursl/data/mu3e/run2026/mlzr");
+//string DATADIR("/Users/ursl/data/mu3e/run2026/raw");
 
-//string DATADIR("/data/experiment/mu3e/data/2026/mlzr");
+string MLZRDIR("/data/experiment/mu3e/data/2026/mlzr");
+string DATADIR("/data/experiment/mu3e/data/2026/raw");
+
 
 
 // ----------------------------------------------------------------------
