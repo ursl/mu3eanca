@@ -317,14 +317,22 @@
              color: #000;
          }
 
-         /* No data (value 3). Empty box, black label. Distinct from the gray unset dash. */
+         /* No data (value 3). Same filled box as data present, in light salmon. */
          #runs td input[type="checkbox"][id^="dq"].dq-nodata[disabled]:not(:checked):not(:indeterminate) {
-             background-color: #fff;
-             border-color: #000;
+             background-color: #f4a8a0;
+             border-color: #f4a8a0;
          }
 
          #runs td input[type="checkbox"][id^="dq"].dq-nodata[disabled]:not(:checked):not(:indeterminate)::after {
-             content: '';
+             content: '●';
+             position: absolute;
+             left: 50%;
+             top: 50%;
+             transform: translate(-50%, -50%);
+             color: #6b2d2d;
+             font-size: 12px;
+             font-weight: bold;
+             line-height: 1;
          }
 
          #runs td input[type="checkbox"][id^="dq"].dq-nodata[disabled]:not(:checked):not(:indeterminate) + label,
