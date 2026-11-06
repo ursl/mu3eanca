@@ -116,9 +116,9 @@ static string currentDateTime() {
 
 // ----------------------------------------------------------------------
 // Write subsystem grades on the last DataQuality attribute.
-// desired maps a subsystem to "2" (hits) or "3" (no data, only sent with -f).
-// Without force, "0" and "1" are left unchanged and an existing "2" is kept.
-// With force, the four grades replace whatever is stored. No hits becomes DQ_NODATA, not unset.
+// desired maps a subsystem to DQ_PRESENT ("2") or DQ_NODATA ("3").
+// Hits become "2". A histogram with no hits becomes "3", not unset.
+// "0" and "1" stay unless -f replaces them.
 void uploadDataPresent(int run, const map<string, string> &desired, const string &host, bool dry, bool force) {
   if (desired.empty()) return;
 
@@ -169,14 +169,9 @@ void uploadDataPresent(int run, const map<string, string> &desired, const string
       for (const auto &kv : desired) {
         const string &k = kv.first;
         const string &want = kv.second;
-        if (!force) {
-          if (want != "2") continue;
-          if (dq.contains(k) && dqGradeLocked(dq[k])) {
-            cout << "leave " << k << " = " << dqGradeString(dq[k]) << endl;
-            continue;
-          }
-          if (dq.contains(k) && dqGradeString(dq[k]) == "2") continue;
-        } else if (dq.contains(k) && dqGradeString(dq[k]) == want) {
+        if (dq.contains(k) && dqGradeString(dq[k]) == want) continue;
+        if (!force && dq.contains(k) && dqGradeLocked(dq[k])) {
+          cout << "leave " << k << " = " << dqGradeString(dq[k]) << endl;
           continue;
         }
         dq[k] = want;
@@ -409,12 +404,12 @@ int main(int argc, char* argv[]) {
   }
   }
 
-  // Subsystem -> grade. DQ_NODATA is included only with -f, so a wrong "2" can be cleared.
+  // Subsystem -> grade. No hits is DQ_NODATA, including when the stored grade is still unset.
   map<string, string> desired;
   auto consider = [&](const string &name, bool known, double hits) {
     if (!known) return;
     if (hits > 0.) desired[name] = to_string(DQ_PRESENT);
-    else if (force) desired[name] = to_string(DQ_NODATA);
+    else desired[name] = to_string(DQ_NODATA);
   };
   if (haveMlzr) {
     consider("vertex", true, nVtxHits);
@@ -423,7 +418,7 @@ int main(int argc, char* argv[]) {
     consider("fibres", haveFibres, nFibreHits);
   }
   if (desired.empty()) {
-    cout << "no subsystem with hits, DataQuality unchanged" << endl;
+    cout << "no mlzr grades, DataQuality unchanged" << endl;
   } else {
     uploadDataPresent(run, desired, host, dry, force);
   }
