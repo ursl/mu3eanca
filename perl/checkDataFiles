@@ -19,6 +19,7 @@ use strict;
 use Getopt::Std;
 use File::Basename;
 
+our ($opt_l, $opt_r);
 getopts('l:r:');
 
 my $rawdir = $opt_r;
