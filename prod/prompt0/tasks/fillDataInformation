@@ -1,0 +1,53 @@
+#! /usr/bin/perl
+# fillDataInformation — DataQuality grades from the mlzr histograms.
+#
+#   fillDataInformation -r1 RUN -r2 RUN
+#
+# One prompt run is one run number, so both ends of the range are that run.
+# Login node, cwd = run2026 (the same directory as fillQualityPixels).
+use strict;
+use warnings;
+use Cwd qw(getcwd);
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $name = "fillDataInformation";
+
+my $anca = $ctx->{mu3eanca} // "";
+my $rundir = TaskLib::resolve_path(
+    $ctx,
+    $ctx->{fill_quality_pixels_rundir} // "{mu3eanca}/run2026",
+    $anca,
+);
+my $rel = "bin/fillDataInformation";
+my $exe = TaskLib::resolve_path($ctx, $rel, $rundir);
+
+my @cmd = ($exe, "-r1", $run, "-r2", $run);
+
+if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
+    exit 0;
+}
+
+if ($rundir eq "" || !-d $rundir) {
+    TaskLib::task_log($ctx, $name, "rundir missing: $rundir");
+    exit 2;
+}
+if (!-x $exe && !-f $exe) {
+    TaskLib::task_log($ctx, $name, "fillDataInformation not found: $exe");
+    exit 2;
+}
+
+my $cwd = getcwd();
+chdir($rundir) or die "fillDataInformation: cannot chdir $rundir: $!\n";
+
+TaskLib::task_log($ctx, $name, "cwd=$rundir");
+TaskLib::task_log($ctx, $name, "@cmd");
+my $rc = system(@cmd);
+
+chdir($cwd) or die "fillDataInformation: cannot chdir back to $cwd: $!\n";
+
+exit(($rc == 0) ? 0 : 2);
