@@ -337,6 +337,13 @@ int main(int argc, char** argv) {
   gStyle->SetOptStat(0);
 
   int run = runNumberFromPath(sortfile);
+  string rootName = run >= 0 ? Form("run%d.root", run) : "occupancy.root";
+  TFile* out = new TFile(rootName.c_str(), "RECREATE");
+  if (!out || out->IsZombie()) {
+    cout << "Error: could not open " << rootName << endl;
+    return 1;
+  }
+  vector<TH1F*> hists;
   const int nCol[3] = {2, 2, 4};
   const int nRow[3] = {4, 5, 6};
   for (int il = 0; il < 3; ++il) {
@@ -352,6 +359,7 @@ int main(int argc, char** argv) {
                         Form("%s ladder %d", g.name, ladderNo),
                         nFramesInBin);
       styleOcc(h, 0.07, 0.06);
+      hists.push_back(h);
       for (int b = 0; b < nBins; ++b) {
         double occ = nFramesInBin[b] > 0 ? double(sumHits[il][lad][b]) / nFramesInBin[b] : 0.;
         h->SetBinContent(b + 1, occ);
@@ -375,6 +383,7 @@ int main(int argc, char** argv) {
                              800, 600);
     TH1F* h = bookOcc(Form("h%s", tag), tag, nFramesInBin);
     styleOcc(h, 0.05, 0.045);
+    hists.push_back(h);
     for (int b = 0; b < nBins; ++b) {
       double occ = nFramesInBin[b] > 0 ? double(sum[b]) / nFramesInBin[b] : 0.;
       h->SetBinContent(b + 1, occ);
@@ -389,5 +398,10 @@ int main(int argc, char** argv) {
   };
   drawOne("fhit", sumFhit);
   drawOne("thit", sumThit);
+
+  out->cd();
+  for (auto* h : hists) h->Write();
+  out->Close();
+  cout << "wrote " << rootName << endl;
   return 0;
 }
