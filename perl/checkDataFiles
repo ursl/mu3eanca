@@ -27,6 +27,10 @@ my @rawfiles = glob("$rawdir/*.mid.lz4");
 
 @rawfiles = sort @rawfiles;
 
+print "Checking $rawdir and $lazydir\n";
+
 foreach my $rawfile (@rawfiles) {
-  print $rawfile, "\n";
+  my $lazyfile = $rawfile;
+  $lazyfile =~ s/$rawdir/$lazydir/;
+  print $rawfile, "-> $lazyfile\n";
 }
