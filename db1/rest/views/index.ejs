@@ -182,6 +182,35 @@
     .run-class-test { background: #d9d9d9; color: #333; }
     .run-class-junk { background: #f5a142; color: #3a2200; }
 
+    .main-table th.dq-sum, .main-table td.dq-sum {
+        text-align: center;
+        white-space: nowrap;
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+    .dq-sum-head span,
+    .dq-box {
+        display: inline-block;
+        width: 10px;
+        margin: 0 1px;
+        text-align: center;
+        vertical-align: middle;
+        box-sizing: content-box;
+    }
+    .dq-sum-head span {
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .dq-box {
+        height: 10px;
+        border-radius: 2px;
+    }
+    .dq-box.dq-good { background: #2e7d32; }
+    .dq-box.dq-bad { background: #c62828; }
+    .dq-box.dq-present { background: #1565c0; }
+    .dq-box.dq-unset { background: #bdbdbd; }
+
     .table-container {
         flex: 1;
         display: block;
@@ -241,14 +270,15 @@
     /* Column widths - total should be 100% */
     .main-table th:nth-child(1), .main-table td:nth-child(1) { width: 3%; }
     .main-table th:nth-child(2), .main-table td:nth-child(2) { width: 5%; }
-    .main-table th:nth-child(3), .main-table td:nth-child(3) { width: 13%; }
-    .main-table th:nth-child(4), .main-table td:nth-child(4) { width: 13%; }
+    .main-table th:nth-child(3), .main-table td:nth-child(3) { width: 12%; }
+    .main-table th:nth-child(4), .main-table td:nth-child(4) { width: 12%; }
     .main-table th:nth-child(5), .main-table td:nth-child(5) { width: 2%; }
-    .main-table th:nth-child(6), .main-table td:nth-child(6) { width: 12%; }
-    .main-table th:nth-child(7), .main-table td:nth-child(7) { width: 5%; }
-    .main-table th:nth-child(8), .main-table td:nth-child(8) { width: 12%; }
-    .main-table th:nth-child(9), .main-table td:nth-child(9) { width: 25%; }
-    .main-table th:nth-child(10), .main-table td:nth-child(10) { width: 10%; }
+    .main-table th:nth-child(6), .main-table td:nth-child(6) { width: 8%; }
+    .main-table th:nth-child(7), .main-table td:nth-child(7) { width: 8%; }
+    .main-table th:nth-child(8), .main-table td:nth-child(8) { width: 7%; white-space: nowrap; }
+    .main-table th:nth-child(9), .main-table td:nth-child(9) { width: 10%; }
+    .main-table th:nth-child(10), .main-table td:nth-child(10) { width: 23%; }
+    .main-table th:nth-child(11), .main-table td:nth-child(11) { width: 10%; }
 
     /* Collapsible CSV box styles */
     .csv-box {
@@ -1167,6 +1197,7 @@ async function updateCsvDisplay() {
                         <th>End time</th>
                         <th>Sig.</th>
                         <th>Class</th>
+                        <th class="dq-sum" title="Vertex, Pixel, Fibres, Tiles"><span class="dq-sum-head"><span>V</span><span>P</span><span>F</span><span>T</span></span></th>
                         <th>Events</th>
                         <th>Shift crew</th>
                         <th>Shift Comments</th>
@@ -1174,6 +1205,29 @@ async function updateCsvDisplay() {
                     </tr>
                 </thead>
                 <tbody>
+                    <%
+                    function dqBoxes(result) {
+                        const dq = (result.lastDataQuality && result.lastDataQuality.DataQuality) || {};
+                        const fields = [
+                            ["Vertex", dq.vertex],
+                            ["Pixel", dq.pixel],
+                            ["Fibres", dq.fibres],
+                            ["Tiles", dq.tiles]
+                        ];
+                        let html = '<td class="dq-sum">';
+                        for (const [name, value] of fields) {
+                            const v = (value === undefined || value === null) ? "" : String(value);
+                            let cls = "dq-unset";
+                            let label = "unset";
+                            if (v === "1") { cls = "dq-good"; label = "good"; }
+                            else if (v === "0") { cls = "dq-bad"; label = "bad"; }
+                            else if (v === "2") { cls = "dq-present"; label = "present"; }
+                            html += '<span class="dq-box ' + cls + '" title="' + name + ': ' + label + '"></span>';
+                        }
+                        html += '</td>';
+                        return html;
+                    }
+                    %>
                     <% data.map((result) => { %>
                         <tr>
                             <td><input type="checkbox" class="run-select" data-run="<%= result.BOR["Run number"] %>" onchange="toggleRun(this)"></td>
@@ -1202,6 +1256,7 @@ async function updateCsvDisplay() {
                                             <span class="status-unset">n/a</span>
                                         <% } %>
                                     </td>
+                                    <%- dqBoxes(result) %>
                                     <td><%= result.EOR["Events"] %></td>
                                     <td><%= result.BOR["Shift crew"] %></td>
                                     <td>
@@ -1210,6 +1265,7 @@ async function updateCsvDisplay() {
                                 <% } else { %>
                                     <td><span class="status-unset">N/A</span></td>
                                     <td><span class="status-unset">n/a</span></td>
+                                    <%- dqBoxes(result) %>
                                     <td><%= result.EOR["Events"] %></td>
                                     <td><%= result.BOR["Shift crew"] %></td>
                                     <td><%= result.EOR["Comments"] %></td>
@@ -1217,6 +1273,7 @@ async function updateCsvDisplay() {
                             <% } else { %>
                                 <td>-</td>
                                 <td><span class="status-unset">n/a</span></td>
+                                <%- dqBoxes(result) %>
                                 <td><%= result.EOR["Events"] %></td>
                                 <td><%= result.BOR["Shift crew"] %></td>
                                 <td><%= result.EOR["Comments"] %></td>
