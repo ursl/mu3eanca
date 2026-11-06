@@ -312,9 +312,9 @@
              line-height: 1;
          }
 
-         #runs td input[type="checkbox"][id^="dq"].dq-present[disabled] + label,
+         #runs td input[type="checkbox"][id^="dq"].dq-present[disabled]:not(:checked):not(:indeterminate) + label,
          #runs td label.dq-present {
-             color: #1565c0;
+             color: #000;
          }
 
          /* Unset/Indeterminate state - Neutral gray */
@@ -340,7 +340,7 @@
          #runs td input[type="checkbox"][id^="dq"][disabled]:indeterminate + label,
          #runs td input[type="checkbox"][id^="dq"].dq-unset[disabled] + label,
          #runs td label.dq-unset {
-             color: #333;
+             color: #9e9e9e;
          }
 
          /* When enabled (edit mode), use standard colors */
