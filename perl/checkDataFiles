@@ -1,0 +1,32 @@
+#! /usr/bin/perl
+
+# ----------------------------------------------------------------------
+# checkDataFiles rawdir lazydir 
+# =============================
+#           
+# Usage:   cd .../mu3eanca/perl
+#          ./checkDataFiles  -l ~/data/2026/lazy -r ~/data/2026/raw/012
+#
+# History 
+#         2026/11/06 first shot
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urslangenegger@gmail.com>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+use File::Basename;
+
+getopts('l:r:');
+
+my $rawdir = $opt_r;
+my $lazydir = $opt_l;
+
+my @rawfiles = glob("$rawdir/*.mid.lz4");
+
+@rawfiles = sort @rawfiles;
+
+foreach my $rawfile (@rawfiles) {
+  print $rawfile, "\n";
+}
