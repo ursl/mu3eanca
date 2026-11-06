@@ -21,6 +21,7 @@
 
 #include "cdbJSON.hh"
 #include "base64.hh"
+#include "DataQuality.hh"
 
 #include <nlohmann/json.hpp>
 #include <curl/curl.h>
@@ -115,9 +116,9 @@ static string currentDateTime() {
 
 // ----------------------------------------------------------------------
 // Write subsystem grades on the last DataQuality attribute.
-// desired maps a subsystem to "2" (hits) or "-1" (no hits, only sent with -f).
+// desired maps a subsystem to "2" (hits) or "3" (no data, only sent with -f).
 // Without force, "0" and "1" are left unchanged and an existing "2" is kept.
-// With force, the four grades replace whatever is stored.
+// With force, the four grades replace whatever is stored. No hits becomes DQ_NODATA, not unset.
 void uploadDataPresent(int run, const map<string, string> &desired, const string &host, bool dry, bool force) {
   if (desired.empty()) return;
 
@@ -408,12 +409,12 @@ int main(int argc, char* argv[]) {
   }
   }
 
-  // Subsystem -> grade. "-1" is included only with -f, so a wrong "2" can be cleared.
+  // Subsystem -> grade. DQ_NODATA is included only with -f, so a wrong "2" can be cleared.
   map<string, string> desired;
   auto consider = [&](const string &name, bool known, double hits) {
     if (!known) return;
-    if (hits > 0.) desired[name] = "2";
-    else if (force) desired[name] = "-1";
+    if (hits > 0.) desired[name] = to_string(DQ_PRESENT);
+    else if (force) desired[name] = to_string(DQ_NODATA);
   };
   if (haveMlzr) {
     consider("vertex", true, nVtxHits);

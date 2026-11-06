@@ -317,6 +317,21 @@
              color: #000;
          }
 
+         /* No data (value 3). Empty box, black label. Distinct from the gray unset dash. */
+         #runs td input[type="checkbox"][id^="dq"].dq-nodata[disabled]:not(:checked):not(:indeterminate) {
+             background-color: #fff;
+             border-color: #000;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"].dq-nodata[disabled]:not(:checked):not(:indeterminate)::after {
+             content: '';
+         }
+
+         #runs td input[type="checkbox"][id^="dq"].dq-nodata[disabled]:not(:checked):not(:indeterminate) + label,
+         #runs td label.dq-nodata {
+             color: #000;
+         }
+
          /* Unset/Indeterminate state - Neutral gray */
          #runs td input[type="checkbox"][id^="dq"][disabled]:indeterminate,
          #runs td input[type="checkbox"][id^="dq"].dq-unset[disabled] {
@@ -710,6 +725,13 @@
                             element.dataset.dq = "2";
                             element.title = "data present";
                             dqOrig.set(prop, "2");
+                        } else if (propValue === '3') {
+                            console.log("prop " + prop + " no data");
+                            element.checked = false;
+                            element.indeterminate = false;
+                            element.dataset.dq = "3";
+                            element.title = "no data";
+                            dqOrig.set(prop, "3");
                         } else {
                             console.log("prop " + prop + " unset");
                             element.indeterminate = true;
@@ -745,13 +767,16 @@
          if (!label || label.tagName !== 'LABEL') return;
          
          // Remove any existing state classes
-         checkbox.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present');
-         label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present');
+         checkbox.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata');
+         label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata');
          
          if (checkbox.disabled) {
              if (checkbox.dataset.dq === "2") {
                  checkbox.classList.add('dq-present');
                  label.classList.add('dq-present');
+             } else if (checkbox.dataset.dq === "3") {
+                 checkbox.classList.add('dq-nodata');
+                 label.classList.add('dq-nodata');
              } else if (checkbox.indeterminate) {
                  checkbox.classList.add('dq-unset');
                  label.classList.add('dq-unset');
@@ -829,10 +854,10 @@
                          console.log("key: " + key + " unsetting disabled: " + value);
                          element.disabled = false;
                          // Remove styling classes when enabled (edit mode)
-                         element.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present');
+                         element.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata');
                          const label = element.nextElementSibling;
                          if (label && label.tagName === 'LABEL') {
-                             label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present');
+                             label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata');
                          }
                      }
                  }
@@ -1037,8 +1062,8 @@
                  var status = "-3";
                  const element = document.getElementById(value);
                  if (element) {
-                     if (element.dataset.dq === "2") {
-                         status = "2";
+                     if (element.dataset.dq === "2" || element.dataset.dq === "3") {
+                         status = element.dataset.dq;
                      } else if (element.indeterminate) {
                          status = "-1";
                      } else if (element.checked) {
