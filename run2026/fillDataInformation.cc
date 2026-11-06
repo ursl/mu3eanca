@@ -114,15 +114,12 @@ static string currentDateTime() {
 }
 
 // ----------------------------------------------------------------------
-// Same rule as syncRDB mode 11: write "2" (data present) on the last DataQuality.
-void uploadDataPresent(int run, const string &subsystems, const string &host, bool dry) {
-  vector<string> keys;
-  stringstream ks(subsystems);
-  string part;
-  while (getline(ks, part, ',')) {
-    if (!part.empty()) keys.push_back(part);
-  }
-  if (keys.empty()) return;
+// Write subsystem grades on the last DataQuality attribute.
+// desired maps a subsystem to "2" (hits) or "-1" (no hits, only sent with -f).
+// Without force, "0" and "1" are left unchanged and an existing "2" is kept.
+// With force, the four grades replace whatever is stored.
+void uploadDataPresent(int run, const map<string, string> &desired, const string &host, bool dry, bool force) {
+  if (desired.empty()) return;
 
   string responseData;
   CURL *curl = curl_easy_init();
@@ -167,30 +164,37 @@ void uploadDataPresent(int run, const string &subsystems, const string &host, bo
     }
 
     vector<string> changed;
+    auto applyGrades = [&](json &dq) {
+      for (const auto &kv : desired) {
+        const string &k = kv.first;
+        const string &want = kv.second;
+        if (!force) {
+          if (want != "2") continue;
+          if (dq.contains(k) && dqGradeLocked(dq[k])) {
+            cout << "leave " << k << " = " << dqGradeString(dq[k]) << endl;
+            continue;
+          }
+          if (dq.contains(k) && dqGradeString(dq[k]) == "2") continue;
+        } else if (dq.contains(k) && dqGradeString(dq[k]) == want) {
+          continue;
+        }
+        dq[k] = want;
+        changed.push_back(k + "=" + want);
+      }
+    };
+
     if (lastIdx < 0) {
       json dq = {
         {"mu3e", "-1"}, {"beam", "-1"}, {"vertex", "-1"}, {"pixel", "-1"},
         {"fibres", "-1"}, {"tiles", "-1"}, {"links", "-1"}, {"version", "1"}
       };
-      for (const auto &k : keys) {
-        dq[k] = "2";
-        changed.push_back(k);
-      }
+      applyGrades(dq);
       json attr;
       attr["DataQuality"] = dq;
       if (!j.contains("Attributes") || !j["Attributes"].is_array()) j["Attributes"] = json::array();
       j["Attributes"].push_back(attr);
     } else {
-      json &dq = j["Attributes"][lastIdx]["DataQuality"];
-      for (const auto &k : keys) {
-        if (dq.contains(k) && dqGradeLocked(dq[k])) {
-          cout << "leave " << k << " = " << dqGradeString(dq[k]) << endl;
-          continue;
-        }
-        if (dq.contains(k) && dqGradeString(dq[k]) == "2") continue;
-        dq[k] = "2";
-        changed.push_back(k);
-      }
+      applyGrades(j["Attributes"][lastIdx]["DataQuality"]);
     }
 
     if (changed.empty()) {
@@ -200,7 +204,7 @@ void uploadDataPresent(int run, const string &subsystems, const string &host, bo
       return;
     }
 
-    string comment = "DataQuality data present:";
+    string comment = force ? "DataQuality replaced:" : "DataQuality data present:";
     for (const auto &k : changed) comment += " " + k;
     json historyEntry = {{"date", currentDateTime()}, {"comment", comment}};
     if (j.contains("History") && j["History"].is_array()) j["History"].push_back(historyEntry);
@@ -267,7 +271,7 @@ int main(int argc, char* argv[]) {
 
   // -- command line arguments
   int verbose(0), run(0);
-  bool dry(false);
+  bool dry(false), force(false);
   string fstub("dqm_histos"), mstub("run"), filename("");
   string gt("datav7.1=2026V2");
   string host("mu3edb0");
@@ -277,6 +281,7 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-r"))      {run = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-h"))      {host = argv[++i];}
     if (!strcmp(argv[i], "-d"))      {dry = true;}
+    if (!strcmp(argv[i], "-f"))      {force = true;}
   }
    
   // -- open midas meta data file
@@ -301,14 +306,14 @@ int main(int argc, char* argv[]) {
   cout << "fibreHits = " << fibreHits << " (" << Form("%llu", fibreHits) << ")" << endl;
   cout << "midasEvts = " << midasEvts << " (" << Form("%d", midasEvts) << ")" << endl;
 
-  // -- tiles and fibres come from the MIDAS counters.
-  //    vertex (layer 1+2) and pixel (layer 3) need the mlzr hitmaps.
-  vector<string> present;
-  if (tileHits > 0) present.push_back("tiles");
-  if (fibreHits > 0) present.push_back("fibres");
-
+  // -- vertex, pixel, tiles, and fibres all come from the mlzr histograms.
+  //    MIDAS n_thit / n_fhit are printed above and are not used for the grade.
   double nVtxHits = 0.;
   double nPixHits = 0.;
+  double nTileHits = 0.;
+  double nFibreHits = 0.;
+  bool haveTiles = false;
+  bool haveFibres = false;
   bool haveMlzr = false;
   string mlzrFile = "NOT FOUND";
   try {
@@ -321,7 +326,7 @@ int main(int argc, char* argv[]) {
   if (f && !f->IsZombie()) {
     haveMlzr = true;
   } else {
-    cout << "no mlzr file, vertex and pixel left unchanged" << endl;
+    cout << "no mlzr file, DataQuality left unchanged" << endl;
   }
 
   if (haveMlzr) {
@@ -382,22 +387,35 @@ int main(int argc, char* argv[]) {
 
   TH2 *hTiles = (TH2*)f->Get("tile/Zphi_TileHitmap_Global");
   TH2 *hFibres = (TH2*)f->Get("fibre/channelID_all");
-  if (hTiles) cout << "nTileHitsTotal = " << hTiles->GetSumOfWeights() << endl;
-  if (hFibres) cout << "nFibreHitsTotal = " << hFibres->GetSumOfWeights() << endl;
-
-  if (nVtxHits > 0.) present.push_back("vertex");
-  if (nPixHits > 0.) present.push_back("pixel");
+  if (hTiles) {
+    haveTiles = true;
+    nTileHits = hTiles->GetSumOfWeights();
+    cout << "nTileHitsTotal = " << nTileHits << endl;
+  }
+  if (hFibres) {
+    haveFibres = true;
+    nFibreHits = hFibres->GetSumOfWeights();
+    cout << "nFibreHitsTotal = " << nFibreHits << endl;
+  }
   }
 
-  string keylist;
-  for (size_t i = 0; i < present.size(); ++i) {
-    if (i) keylist += ",";
-    keylist += present[i];
+  // Subsystem -> grade. "-1" is included only with -f, so a wrong "2" can be cleared.
+  map<string, string> desired;
+  auto consider = [&](const string &name, bool known, double hits) {
+    if (!known) return;
+    if (hits > 0.) desired[name] = "2";
+    else if (force) desired[name] = "-1";
+  };
+  if (haveMlzr) {
+    consider("vertex", true, nVtxHits);
+    consider("pixel", true, nPixHits);
+    consider("tiles", haveTiles, nTileHits);
+    consider("fibres", haveFibres, nFibreHits);
   }
-  if (keylist.empty()) {
+  if (desired.empty()) {
     cout << "no subsystem with hits, DataQuality unchanged" << endl;
   } else {
-    uploadDataPresent(run, keylist, host, dry);
+    uploadDataPresent(run, desired, host, dry, force);
   }
   if (f) f->Close();
 
