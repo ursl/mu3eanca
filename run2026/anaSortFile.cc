@@ -41,8 +41,9 @@ using namespace std;
 // -----------
 // Occupancy versus frame index.
 // A frame is every tree entry that shares one frameId.
-// Each histogram bin covers -b frames. Its content is
-// (hits in that bin) / (frames in the bin).
+// -b is the maximum number of bins. The frames of the run are split
+// across those bins, and the bin content is hits divided by the
+// frames that landed in the bin.
 // Pixels are per ladder. Fibres (fhit) and tiles (thit) are one count per frame.
 //
 // Examples:
@@ -129,6 +130,14 @@ static string pdfName(int run, const string& tag) {
 }
 
 // ----------------------------------------------------------------------
+static TH1F* bookOcc(const char* name, const char* title, const vector<int>& nInBin) {
+  int n = (int)nInBin.size();
+  vector<double> edges(n + 1, 0.);
+  for (int b = 0; b < n; ++b) edges[b + 1] = edges[b] + nInBin[b];
+  return new TH1F(name, title, n, &edges[0]);
+}
+
+// ----------------------------------------------------------------------
 static void styleOcc(TH1F* h, double titleSize, double labelSize) {
   h->SetDirectory(0);
   h->SetXTitle("frame index");
@@ -148,7 +157,7 @@ static void styleOcc(TH1F* h, double titleSize, double labelSize) {
 // ----------------------------------------------------------------------
 int main(int argc, char** argv) {
   string sortfile;
-  int binWidth = 1000;
+  int maxBins = 1000;
   bool showLayer[3] = {true, true, true};
   bool layersSet = false;
 
@@ -156,7 +165,7 @@ int main(int argc, char** argv) {
     string arg = argv[i];
     if (arg == "-l") {
       if (i + 1 >= argc) {
-        cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b frames] <sortfile>" << endl;
+        cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b bins] <sortfile>" << endl;
         return 1;
       }
       showLayer[0] = showLayer[1] = showLayer[2] = false;
@@ -174,24 +183,24 @@ int main(int argc, char** argv) {
       }
     } else if (arg == "-b") {
       if (i + 1 >= argc) {
-        cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b frames] <sortfile>" << endl;
+        cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b bins] <sortfile>" << endl;
         return 1;
       }
-      binWidth = atoi(argv[++i]);
-      if (binWidth <= 0) {
-        cout << "Error: -b expects a positive number of frames per bin" << endl;
+      maxBins = atoi(argv[++i]);
+      if (maxBins <= 0) {
+        cout << "Error: -b expects a positive maximum number of bins" << endl;
         return 1;
       }
     } else if (sortfile.empty()) {
       sortfile = arg;
     } else {
       cout << "Error: unexpected argument " << arg << endl;
-      cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b frames] <sortfile>" << endl;
+      cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b bins] <sortfile>" << endl;
       return 1;
     }
   }
   if (sortfile.empty() || (layersSet && !showLayer[0] && !showLayer[1] && !showLayer[2])) {
-    cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b frames] <sortfile>" << endl;
+    cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b bins] <sortfile>" << endl;
     return 1;
   }
 
@@ -208,6 +217,31 @@ int main(int argc, char** argv) {
 
   tree->SetBranchStatus("*", 0);
   if (tree->GetBranch("frameId")) tree->SetBranchStatus("frameId", 1);
+
+  ULong64_t frameId = 0;
+  if (tree->GetBranch("frameId")) tree->SetBranchAddress("frameId", &frameId);
+
+  Long64_t nEntries = tree->GetEntries();
+  long long nFramesTotal = 0;
+  ULong64_t seenFrame = 0;
+  bool seen = false;
+  for (Long64_t entry = 0; entry < nEntries; ++entry) {
+    tree->GetEntry(entry);
+    if (seen && frameId != seenFrame) ++nFramesTotal;
+    if (!seen || frameId != seenFrame) {
+      seenFrame = frameId;
+      seen = true;
+    }
+  }
+  if (seen) ++nFramesTotal;
+
+  long long framesPerBin = 1;
+  if (nFramesTotal > 0) framesPerBin = (nFramesTotal + maxBins - 1) / maxBins;
+  cout << "frames " << nFramesTotal
+       << "  max bins " << maxBins
+       << "  frames/bin " << framesPerBin << endl;
+  if (nFramesTotal == 0) return 0;
+
   bool havePixel = tree->GetBranch("hit_pixelid") != 0;
   bool havePhit = tree->GetBranch("phit") != 0;
   if (havePixel) tree->SetBranchStatus("hit_pixelid", 1);
@@ -217,12 +251,10 @@ int main(int argc, char** argv) {
   if (haveFhit) tree->SetBranchStatus("fhit", 1);
   if (haveThit) tree->SetBranchStatus("thit", 1);
 
-  ULong64_t frameId = 0;
   vector<ULong64_t>* phit = 0;
   vector<unsigned int>* pixelId = 0;
   vector<ULong64_t>* fhit = 0;
   vector<ULong64_t>* thit = 0;
-  if (tree->GetBranch("frameId")) tree->SetBranchAddress("frameId", &frameId);
   if (havePixel) tree->SetBranchAddress("hit_pixelid", &pixelId);
   else if (havePhit) tree->SetBranchAddress("phit", &phit);
   if (haveFhit) tree->SetBranchAddress("fhit", &fhit);
@@ -235,7 +267,7 @@ int main(int argc, char** argv) {
   int frameHits[3][24] = {{0}};
   int frameFhit = 0;
   int frameThit = 0;
-  int framesInBin = 0;
+  long long framesInBin = 0;
   long long nFrames = 0;
   ULong64_t currentFrame = 0;
   bool inFrame = false;
@@ -264,12 +296,13 @@ int main(int argc, char** argv) {
     frameFhit = 0;
     frameThit = 0;
     framesInBin++;
-    if (framesInBin == binWidth) framesInBin = 0;
+    if (framesInBin == framesPerBin) framesInBin = 0;
     ++nFrames;
     if (nFrames % 200000 == 0) cout << "frames " << nFrames << endl;
   };
 
-  Long64_t nEntries = tree->GetEntries();
+  inFrame = false;
+  currentFrame = 0;
   for (Long64_t entry = 0; entry < nEntries; ++entry) {
     tree->GetEntry(entry);
     if (inFrame && frameId != currentFrame) commitFrame();
@@ -297,7 +330,7 @@ int main(int argc, char** argv) {
   if (inFrame) commitFrame();
 
   int nBins = (int)nFramesInBin.size();
-  cout << "frames " << nFrames << "  bin " << binWidth << "  bins " << nBins << endl;
+  cout << "bins " << nBins << endl;
   if (nBins == 0) return 0;
 
   gROOT->SetBatch(true);
@@ -310,14 +343,14 @@ int main(int argc, char** argv) {
     if (!showLayer[il]) continue;
     const LayerGeom& g = kLayer[il];
     TCanvas* c = new TCanvas(Form("c%s", g.name),
-                             Form("%s  hits/frame  (%d frames/bin)", g.name, binWidth),
+                             Form("%s  hits/frame  (%lld frames/bin)", g.name, framesPerBin),
                              900, 1000);
     c->Divide(nCol[il], nRow[il]);
     for (int lad = 0; lad < g.nLadder; ++lad) {
       int ladderNo = lad + 1;
-      TH1F* h = new TH1F(Form("h%s_lad%d", g.name, ladderNo),
-                         Form("%s ladder %d", g.name, ladderNo),
-                         nBins, 0., nBins * (double)binWidth);
+      TH1F* h = bookOcc(Form("h%s_lad%d", g.name, ladderNo),
+                        Form("%s ladder %d", g.name, ladderNo),
+                        nFramesInBin);
       styleOcc(h, 0.07, 0.06);
       for (int b = 0; b < nBins; ++b) {
         double occ = nFramesInBin[b] > 0 ? double(sumHits[il][lad][b]) / nFramesInBin[b] : 0.;
@@ -338,10 +371,9 @@ int main(int argc, char** argv) {
 
   auto drawOne = [&](const char* tag, const vector<long long>& sum) {
     TCanvas* c = new TCanvas(Form("c%s", tag),
-                             Form("%s  hits/frame  (%d frames/bin)", tag, binWidth),
+                             Form("%s  hits/frame  (%lld frames/bin)", tag, framesPerBin),
                              800, 600);
-    TH1F* h = new TH1F(Form("h%s", tag), tag,
-                       nBins, 0., nBins * (double)binWidth);
+    TH1F* h = bookOcc(Form("h%s", tag), tag, nFramesInBin);
     styleOcc(h, 0.05, 0.045);
     for (int b = 0; b < nBins; ++b) {
       double occ = nFramesInBin[b] > 0 ? double(sum[b]) / nFramesInBin[b] : 0.;
