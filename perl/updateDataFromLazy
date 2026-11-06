@@ -8,6 +8,7 @@
 #          ./updateDataFromLazy
 #
 # History 
+#         2026/11/06 add check that file in lazy is closed before copying
 #         2026/10/20 first shot
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -24,13 +25,58 @@ my $LAZYDIR = "/data/experiment/mu3e/data/2026/lazy";
 my $RUNRAWDATA = "/data/experiment/mu3e/data/2026/raw/";
 
 # ---------------------------------------------------------------------
+# fuser exits 0 while some process still has the file open.
+sub file_is_open {
+  my $path = shift;
+  system("fuser", "-s", $path);
+  return 0 if $? == -1;
+  return ($? >> 8) == 0;
+}
+
+# Size and mtime were sampled before a short wait. A writer still
+# appending moves one of them; a paused local writer is still open.
+sub file_is_closed {
+  my ($path, $before) = @_;
+  return 0 if file_is_open($path);
+  my ($size, $mtime) = (stat($path))[7, 9];
+  return 0 unless defined $size && defined $before && defined $before->[0];
+  return $size == $before->[0] && $mtime == $before->[1];
+}
+
+# ---------------------------------------------------------------------
 sub getLazyFiles {
   my $lazyDir = shift;
   opendir(my $dh, $lazyDir) or die "Cannot open $lazyDir: $!\n";
-  my @files = grep { $_ ne '.' && $_ ne '..' && ($_ =~ /\.json$/ || $_ =~ /\.mid.lz4$/) } readdir($dh);
+  my @names = grep { $_ ne '.' && $_ ne '..' && ($_ =~ /\.json$/ || $_ =~ /\.mid.lz4$/) } readdir($dh);
   closedir($dh);
-  @files = sort { $b cmp $a } @files;
-  return @files;
+
+  my @ready;
+  my @pending;
+  for my $file (@names) {
+    my $rawFile = $RUNRAWDATA . getRawSubDir($file) . "/" . $file;
+    if (-f $rawFile) {
+      push @ready, $file;
+    } else {
+      push @pending, $file;
+    }
+  }
+
+  my %stamp;
+  for my $file (@pending) {
+    $stamp{$file} = [ (stat("$lazyDir/$file"))[7, 9] ];
+  }
+  sleep 2 if @pending;
+
+  for my $file (@pending) {
+    my $path = "$lazyDir/$file";
+    if (!file_is_closed($path, $stamp{$file})) {
+      print "skip $file, not yet closed\n";
+      next;
+    }
+    push @ready, $file;
+  }
+  @ready = sort { $b cmp $a } @ready;
+  return @ready;
 }
 
 # ---------------------------------------------------------------------
