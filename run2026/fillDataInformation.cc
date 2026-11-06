@@ -270,25 +270,34 @@ string findFile(string dir, string filename, int run) {
 int main(int argc, char* argv[]) {
 
   // -- command line arguments
-  int verbose(0), run(0);
+  int verbose(0), run1(-1), run2(-1);
   bool dry(false), force(false);
   string fstub("dqm_histos"), mstub("run"), filename("");
   string gt("datav7.1=2026V2");
   string host("mu3edb0");
 
   for (int i = 0; i < argc; i++) {
-    if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
-    if (!strcmp(argv[i], "-r"))      {run = atoi(argv[++i]);}
-    if (!strcmp(argv[i], "-h"))      {host = argv[++i];}
     if (!strcmp(argv[i], "-d"))      {dry = true;}
     if (!strcmp(argv[i], "-f"))      {force = true;}
+    if (!strcmp(argv[i], "-g"))      {gt = argv[++i];}
+    if (!strcmp(argv[i], "-r1"))     {run1 = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-r2"))     {run2 = atoi(argv[++i]);}
+    if (!strcmp(argv[i], "-h"))      {host = argv[++i];}
   }
    
+  if (run1 < 0 || run2 < run1) {
+    cout << "need -r1 and -r2, with run1 <= run2" << endl;
+    return 1;
+  }
+
+  for (int run = run1; run <= run2; ++run) {
+  cout << "-------- run " << run << endl;
+
   // -- open midas meta data file
   filename = DATADIR + "/" + getDataSubdir(run) + Form("/%s%d.mid.lz4.json", mstub.c_str(), run);
   if (!fileExists(filename)) {
-    cout << "XXXXXXXXX fillDataInformation failed to open file " << filename << endl;
-    return 0;
+    cout << "no midas metadata for run " << run << ", skipping" << endl;
+    continue;
   }
   json j; 
   ifstream mf(filename); 
@@ -417,7 +426,12 @@ int main(int argc, char* argv[]) {
   } else {
     uploadDataPresent(run, desired, host, dry, force);
   }
-  if (f) f->Close();
+  if (f) {
+    f->Close();
+    delete f;
+  }
+
+  }
 
   return 0;
 }
