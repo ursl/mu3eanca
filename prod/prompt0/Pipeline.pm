@@ -264,6 +264,7 @@ sub _ctx_kv {
         fill_quality_pixels_rundir => _strip($cfg->{fill_quality_pixels_rundir} //
             "{mu3eanca}/run2025/analysis"),
         fill_quality_pixels_meta => _strip($cfg->{fill_quality_pixels_meta} // ""),
+        anasortframes_nbins => 0 + (_strip($cfg->{anasortframes_nbins} // "400")),
         cdb_json           => _strip($cfg->{cdb_json} // ""),
         cdb_pixelqualitylm_tag => _strip($cfg->{cdb_pixelqualitylm_tag} // ""),
         cdb_pixelqualitylm_comment => _strip($cfg->{cdb_pixelqualitylm_comment} // ""),

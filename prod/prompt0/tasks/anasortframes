@@ -1,0 +1,85 @@
+#! /usr/bin/perl
+# anasortframes — occupancy vs frame from the sorted ROOT file.
+#
+# Login node, cwd = run2026:
+#   ./bin/anaSortFile -b <anasortframes_nbins> -o anasort <sorted.root>
+#
+# No RDB upload. An existing run<RUN>.root skips the job unless -f.
+use strict;
+use warnings;
+use Cwd qw(getcwd);
+use File::Path qw(make_path);
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $name = "anasortframes";
+
+my $srun = sprintf("%05d", $run);
+my $block = TaskLib::block_dir($run);
+my $sortdir = $ctx->{sort_dir} // "";
+my $sorted = ($sortdir ne "") ? "$sortdir/$block/run$srun-sorted.root" : "";
+
+my $anca = $ctx->{mu3eanca} // "";
+my $rundir = TaskLib::resolve_path($ctx, "{mu3eanca}/run2026", $anca);
+my $exe = TaskLib::resolve_path($ctx, "bin/anaSortFile", $rundir);
+my $outdir = "$rundir/anasort";
+my $root = "$outdir/run$run.root";
+
+my $nbins = $ctx->{anasortframes_nbins} // "";
+$nbins = 400 if $nbins eq "";
+if ($nbins !~ /^\d+$/ || $nbins < 1) {
+    TaskLib::task_log($ctx, $name, "anasortframes_nbins must be a positive integer, got '$nbins'");
+    exit 2;
+}
+
+my @cmd = ($exe, "-b", $nbins, "-o", "anasort", $sorted);
+
+if (-f $root && !$ctx->{force}) {
+    TaskLib::task_log($ctx, $name, "output $root already exists, skipping");
+    exit 0;
+}
+if (-f $root) {
+    TaskLib::task_log($ctx, $name, "output $root already exists, redoing");
+}
+
+if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
+    exit 0;
+}
+
+if ($rundir eq "" || !-d $rundir) {
+    TaskLib::task_log($ctx, $name, "rundir missing: $rundir");
+    exit 2;
+}
+if (!-x $exe && !-f $exe) {
+    TaskLib::task_log($ctx, $name, "anaSortFile not found: $exe");
+    exit 2;
+}
+if ($sorted eq "" || !-f $sorted) {
+    TaskLib::task_log($ctx, $name, "sorted ROOT missing: $sorted");
+    exit 2;
+}
+
+make_path($outdir);
+
+my $cwd = getcwd();
+chdir($rundir) or die "anasortframes: cannot chdir $rundir: $!\n";
+
+TaskLib::task_log($ctx, $name, "cwd=$rundir");
+TaskLib::task_log($ctx, $name, "@cmd");
+my $rc = system(@cmd);
+
+chdir($cwd) or die "anasortframes: cannot chdir back to $cwd: $!\n";
+
+if ($rc != 0) {
+    exit 2;
+}
+if (!-f $root) {
+    TaskLib::task_log($ctx, $name, "output missing: $root");
+    exit 2;
+}
+TaskLib::task_log($ctx, $name, "root=$root");
+exit 0;

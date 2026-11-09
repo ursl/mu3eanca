@@ -48,7 +48,7 @@ using namespace std;
 //
 // Examples:
 //          ./bin/anaSortFile ~/data/mu3e/run2026/sort/v04/012/run12272-sorted.root
-//          ./bin/anaSortFile -l 1,2 -b 5000 <sortfile>
+//          ./bin/anaSortFile -l 1,2 -b 5000 -o anasort <sortfile>
 //
 // hit_pixelid is
 //   row = id & 0xFF, col = (id >> 8) & 0xFF, sensor = (id >> 16) & 0xFFFF
@@ -130,6 +130,20 @@ static string pdfName(int run, const string& tag) {
 }
 
 // ----------------------------------------------------------------------
+static void usage(const char* argv0) {
+  cout << "Usage: " << argv0 << " [-l 1,2,3] [-b bins] [-o dir] <sortfile>" << endl;
+}
+
+// ----------------------------------------------------------------------
+static string outPath(const string& dir, const string& name) {
+  if (dir.empty() || dir == ".") return name;
+  string d = dir;
+  while (!d.empty() && d.back() == '/') d.pop_back();
+  if (d.empty()) return name;
+  return d + "/" + name;
+}
+
+// ----------------------------------------------------------------------
 static TH1F* bookOcc(const char* name, const char* title, const vector<int>& nInBin) {
   int n = (int)nInBin.size();
   vector<double> edges(n + 1, 0.);
@@ -157,6 +171,7 @@ static void styleOcc(TH1F* h, double titleSize, double labelSize) {
 // ----------------------------------------------------------------------
 int main(int argc, char** argv) {
   string sortfile;
+  string outdir;
   int maxBins = 1000;
   bool showLayer[3] = {true, true, true};
   bool layersSet = false;
@@ -165,7 +180,7 @@ int main(int argc, char** argv) {
     string arg = argv[i];
     if (arg == "-l") {
       if (i + 1 >= argc) {
-        cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b bins] <sortfile>" << endl;
+        usage(argv[0]);
         return 1;
       }
       showLayer[0] = showLayer[1] = showLayer[2] = false;
@@ -183,7 +198,7 @@ int main(int argc, char** argv) {
       }
     } else if (arg == "-b") {
       if (i + 1 >= argc) {
-        cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b bins] <sortfile>" << endl;
+        usage(argv[0]);
         return 1;
       }
       maxBins = atoi(argv[++i]);
@@ -191,17 +206,33 @@ int main(int argc, char** argv) {
         cout << "Error: -b expects a positive maximum number of bins" << endl;
         return 1;
       }
+    } else if (arg == "-o") {
+      if (i + 1 >= argc) {
+        usage(argv[0]);
+        return 1;
+      }
+      outdir = argv[++i];
+      if (outdir.empty()) {
+        cout << "Error: -o expects an output directory" << endl;
+        return 1;
+      }
     } else if (sortfile.empty()) {
       sortfile = arg;
     } else {
       cout << "Error: unexpected argument " << arg << endl;
-      cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b bins] <sortfile>" << endl;
+      usage(argv[0]);
       return 1;
     }
   }
   if (sortfile.empty() || (layersSet && !showLayer[0] && !showLayer[1] && !showLayer[2])) {
-    cout << "Usage: " << argv[0] << " [-l 1,2,3] [-b bins] <sortfile>" << endl;
+    usage(argv[0]);
     return 1;
+  }
+  if (!outdir.empty() && outdir != "." && gSystem->AccessPathName(outdir.c_str())) {
+    if (gSystem->mkdir(outdir.c_str(), true) != 0) {
+      cout << "Error: could not create output directory " << outdir << endl;
+      return 1;
+    }
   }
 
   TFile* file = TFile::Open(sortfile.c_str());
@@ -337,7 +368,7 @@ int main(int argc, char** argv) {
   gStyle->SetOptStat(0);
 
   int run = runNumberFromPath(sortfile);
-  string rootName = run >= 0 ? Form("run%d.root", run) : "occupancy.root";
+  string rootName = outPath(outdir, run >= 0 ? Form("run%d.root", run) : "occupancy.root");
   TFile* out = new TFile(rootName.c_str(), "RECREATE");
   if (!out || out->IsZombie()) {
     cout << "Error: could not open " << rootName << endl;
@@ -372,7 +403,7 @@ int main(int argc, char** argv) {
       gPad->SetLogy(1);
       h->Draw("HIST");
     }
-    string pdf = pdfName(run, string(g.name) + "-phit-vs-frame");
+    string pdf = outPath(outdir, pdfName(run, string(g.name) + "-phit-vs-frame"));
     c->Print(pdf.c_str());
     cout << "wrote " << pdf << endl;
   }
@@ -392,7 +423,7 @@ int main(int argc, char** argv) {
     c->SetBottomMargin(0.12);
     c->SetLogy(1);
     h->Draw("HIST");
-    string pdf = pdfName(run, string(tag) + "-vs-frame");
+    string pdf = outPath(outdir, pdfName(run, string(tag) + "-vs-frame"));
     c->Print(pdf.c_str());
     cout << "wrote " << pdf << endl;
   };
