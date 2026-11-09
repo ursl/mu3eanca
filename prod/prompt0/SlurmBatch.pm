@@ -14,7 +14,7 @@ package SlurmBatch;
 #     njobs   => 1,              # force one job (sort); else int(total/chunk)+1
 #     chunk   => 100000,
 #     total   => $nevents,
-#     skip_if => $merged_file,
+#     skip_if => $merged_file,   # ignored when ctx.force is set (./prompt -f)
 #     env     => [ [STORAGE1 => $s], [DATADIR => $d], ... ],
 #     job_env => sub { my ($j) = @_; return [ [ ANLZR => "-s$j->{skip} -e$j->{chunk}" ] ]; },
 #     merge   => sub { ... },
@@ -241,8 +241,12 @@ sub run {
     die "SlurmBatch: slurm_run empty in ctx\n" if $slurm eq "";
 
     if (defined $spec->{skip_if} && $spec->{skip_if} ne "" && -e $spec->{skip_if}) {
-        task_log($ctx, $name, "merged file $spec->{skip_if} already exists, skipping");
-        return 0;
+        if ($ctx->{force}) {
+            task_log($ctx, $name, "merged file $spec->{skip_if} already exists, redoing");
+        } else {
+            task_log($ctx, $name, "merged file $spec->{skip_if} already exists, skipping");
+            return 0;
+        }
     }
 
     my $tar = _tar($ctx);

@@ -3,7 +3,8 @@
 #
 # The binary writes <raw file>.json beside the MIDAS file. That path is
 # what cdb_eventstuffv2 reads. A copy is also left under
-# slurm/storage1/mmeta/<run>/. An existing JSON skips the job.
+# slurm/storage1/mmeta/<run>/. An existing JSON skips the job
+# unless ./prompt -f (ctx force) is set.
 use strict;
 use warnings;
 use File::Basename qw(basename);
