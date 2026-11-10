@@ -141,18 +141,19 @@ int main(int argc, char* argv[]) {
     if (!strcmp(argv[i], "-v"))      {verbose = atoi(argv[++i]);}
   }
   
-  
+  int nruns(525);
+
   TFile *f = new TFile("linkErrorRates.root", "RECREATE");
   TH1D *hLinkErrorRates = new TH1D("hLinkErrorRates", "Link Error Rates", 1000, 0, 1.e6);
   TH1D *hLinkErrorRates2 = new TH1D("hLinkErrorRates2", "Link Error Rates 2", 1000, 0, 2.e4);
-  TH2D *hLinkErrorRatesVsRun = new TH2D("hLinkErrorRatesVsRun", "Link Error Rates vs run", 500, 0, 500, 100, 0, 1.e6);
+  TH2D *hLinkErrorRatesVsRun = new TH2D("hLinkErrorRatesVsRun", "Link Error Rates vs run", nruns, 0, nruns, 100, 0, 1.e6);
   const double linkErrY[] = {
-    0, 10, 20, 50, 100, 500, 1000, 5000, 10000, 50000,
+    0, 1, 2, 5, 10, 20, 50, 100, 500, 1000, 5000, 10000, 50000,
     100000, 500000, 1e6, 10e6, 100e6, 1e9, 10e9
   };
   const int nLinkErrY = sizeof(linkErrY) / sizeof(linkErrY[0]) - 1;
   TH2D *hLinkErrorRatesVsRun2 = new TH2D("hLinkErrorRatesVsRun2", "Link Error Rates vs run 2",
-                                         500, 0, 500, nLinkErrY, linkErrY);
+                                         nruns, 0, nruns, nLinkErrY, linkErrY);
   
   if (run1 < 0 || run2 < run1) {
     cout << "need -r1 and -r2, with run1 <= run2" << endl;
