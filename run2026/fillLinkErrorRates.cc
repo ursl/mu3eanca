@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
           hLinkErrorRates->Fill(it.second.abcLinkErrs[link]);
           hLinkErrorRates2->Fill(it.second.abcLinkErrs[link]);
           hLinkErrorRatesVsRun->Fill(runIdx, it.second.abcLinkErrs[link]);
-          hLinkErrorRatesVsRun2->Fill(runIdx, linkErrY[it.second.abcLinkErrs[link]]);
+          hLinkErrorRatesVsRun2->Fill(runIdx, it.second.abcLinkErrs[link]);
         }
       }
     }
