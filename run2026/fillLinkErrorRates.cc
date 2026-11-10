@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
   TFile *f = new TFile("linkErrorRates.root", "RECREATE");
   TH1D *hLinkErrorRates = new TH1D("hLinkErrorRates", "Link Error Rates", 1000, 0, 1.e6);
   TH1D *hLinkErrorRates2 = new TH1D("hLinkErrorRates2", "Link Error Rates 2", 1000, 0, 2.e4);
-  TH2D *hLinkErrorRatesVsRun = new TH2D("hLinkErrorRatesVsRun", "Link Error Rates vs run", 400, 0, 400, 100, 0, 1.e8);
+  TH2D *hLinkErrorRatesVsRun = new TH2D("hLinkErrorRatesVsRun", "Link Error Rates vs run", 400, 0, 400, 100, 0, 1.e6);
   
   
   if (run1 < 0 || run2 < run1) {
@@ -188,8 +188,6 @@ int main(int argc, char* argv[]) {
     }
     
     // ------------------------------------------------------------------    
-    double meanRate(0);
-    int nLinks(0);
     for (auto it : gRunInfoMap) {
       if (0) cout  << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
       << " linkMask = " << it.second.linkMask[0] << it.second.linkMask[1] << it.second.linkMask[2]
@@ -205,13 +203,10 @@ int main(int argc, char* argv[]) {
         if (it.second.abcLinkMask[link] == 1) {
           hLinkErrorRates->Fill(it.second.abcLinkErrs[link]);
           hLinkErrorRates2->Fill(it.second.abcLinkErrs[link]);
-          meanRate += it.second.abcLinkErrs[link];
-          nLinks++;
+          hLinkErrorRatesVsRun->Fill(runIdx, it.second.abcLinkErrs[link]);
         }
       }
     }
-    meanRate /= nLinks;
-    hLinkErrorRatesVsRun->Fill(runIdx, meanRate);
     runIdx++;
   }
   
