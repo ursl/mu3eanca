@@ -95,6 +95,7 @@ int main(int argc, char** argv) {
       return 1;
     }
     outRun->Write();
+    in->Close();
 
   }
 
