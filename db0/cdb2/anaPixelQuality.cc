@@ -22,6 +22,8 @@
 
 #include "cdbRest.hh"
 #include "cdbJSON.hh"
+#include "runRecord.hh"
+
 
 #include "Mu3eConditions.hh"
 
@@ -308,6 +310,13 @@ int main(int argc, char *argv[]) {
   TH1D *hNoisyPixels = new TH1D("hNoisyPixels", "Noisy pixels per run", 100, 0, 100000.);
   setTitles(hNoisyPixels, "Noisy pixels", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
+  // -- Number of masked/LVDS error pixels per run
+  TH1D *rErrorPixels = new TH1D("rErrorPixels", "Total number of masked/LVDS error pixels per run", nRuns, 0, nRuns);
+  setTitles(rErrorPixels, "Run", "Masked/LVDS error pixels", 0.05, 1.0, 1.2);
+  TH1D *hErrorPixels = new TH1D("hErrorPixels", "Masked/LVDS error pixels per run", 100, 0, 4.e7);
+  setTitles(hErrorPixels, "Masked/LVDS error pixels", "Number of runs", 0.05, 1.0, 1.2, 0.04);
+
+
   // -- Number of noisy pixels per chip
   TH1D *cNoisyPixels = new TH1D("cNoisyPixels", "Total number of noisy pixels per chip", 100, 0, 2000.);
   setTitles(cNoisyPixels, "Noisy pixels", "Number of chips", 0.05, 1.0, 1.2, 0.04);
@@ -320,7 +329,7 @@ int main(int argc, char *argv[]) {
   // -- this is only for debugging (e.g. if some illegal chipIDs sneaked in)
   TH1D *rGoodPixel = new TH1D("rGoodPixel", "Total number of good pixels per run", nRuns, 0, nRuns);
   setTitles(rGoodPixel, "Run", "Good pixels", 0.05, 1.0, 1.2);
-  TH1D *hGoodPixel = new TH1D("hGoodPixel", "Good pixels per run", 70, 0, 7.e6);
+  TH1D *hGoodPixel = new TH1D("hGoodPixel", "Good pixels per run", 70, 0, 4.e7);
   setTitles(hGoodPixel, "Good pixels", "Number of runs", 0.05, 1.0, 1.2, 0.04);
 
   // -- Size of JSON payload
@@ -381,15 +390,33 @@ int main(int argc, char *argv[]) {
       pPQ->readPayloadFromFile(hash, payloadDir);
       pPQ->calculate(hash);
     }
-    uint32_t chipid(0);
-    pPQ->resetIterator();
-    int nNoisyPixels(0);
-    int nGoodPixels(0);
-    int nChips(0);
+
     //cout << " Working links: "; 
     int nWorkingLinks(0);
     int runIdx = runIndex(itIoV)+1;
+
+
+    runRecord rr = pDC->getRunRecord(itIoV);
+    rr.print();
+    string runclass = rr.fBORRunClass;
+    int qVertex = rr.fvDQ[rr.fDataQualityIdx].vertex;
+    bool okVertex = (qVertex != DQ_UNSET);
+    okVertex = okVertex && (qVertex != DQ_NODATA);
+
+    int qPixel  = rr.fvDQ[rr.fDataQualityIdx].pixel;
+    bool okPixel = (qPixel != DQ_UNSET);
+    okPixel = okPixel && (qPixel != DQ_NODATA);
+    cout << "Run " << itIoV << " (index = " << runIdx << ") has runclass = " << runclass 
+         << " and qVertex = " << qVertex 
+         << " and qPixel = " << qPixel 
+         << endl;
     // -- loop over all chips
+    uint32_t chipid(0);
+    int nNoisyPixels(0);
+    int nErrorPixels(0);
+    int nGoodPixels(0);
+    int nChips(0);
+    pPQ->resetIterator();
     while (pPQ->getNextID(chipid)) {
       int lStatus = linkStatus(pPQ, chipid);
       nWorkingLinks += lStatus;
@@ -398,10 +425,22 @@ int main(int argc, char *argv[]) {
 
       int chipNoisy = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Noisy); 
       int chipGood = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Good);
+      int chipError = pPQ->getNpixWithStatus(chipid, calPixelQualityLM::LVDSErrorLink);
+      chipError += pPQ->getNpixWithStatus(chipid, calPixelQualityLM::LVDSErrorOtherLink);
+      chipError += pPQ->getNpixWithStatus(chipid, calPixelQualityLM::LVDSErrorTopBottomEdge);
+      chipError += pPQ->getNpixWithStatus(chipid, calPixelQualityLM::Masked);
+      cout << "Run " << itIoV << " (index = " << runIdx << ") has chip " << chipid 
+           << " with " << chipNoisy << " noisy pixels and " 
+           << chipError << " masked/LVDS error pixels and "
+           << chipGood << " good pixels" 
+           << endl;
       nNoisyPixels += chipNoisy;
       nGoodPixels += chipGood;
-      // -- count noisy pixels for all chips that are not completely dead
-      if (!pPQ->isChipDead(chipid)) {
+      nErrorPixels += chipError;
+      // -- count noisy pixels  
+      //    - for all chips that are not completely dead
+      //    - runs where vtx/pixel data are present
+      if (!pPQ->isChipDead(chipid) && okVertex && okPixel) {
         double xNoisy = chipNoisy;
         const TAxis *ax = cNoisyPixels->GetXaxis();
         if (xNoisy >= ax->GetXmax()) {
@@ -420,7 +459,20 @@ int main(int argc, char *argv[]) {
     // -- fill the histograms per run
     hLinkStatus->Fill(nWorkingLinks);
     // -- fill the histograms per run only if there are working links
-    if (nWorkingLinks > 0) {
+    if (nNoisyPixels == 0) {
+      cout << "Run " << itIoV << " (index = " << runIdx << ") has no noisy pixels" 
+           << " and nGoodPixels = " << nGoodPixels
+           << " and nWorkingLinks = " << nWorkingLinks
+           << " and is " << (okVertex ? "vertex" : "no vertex")
+           << " and is " << (okPixel ? "pixel" : "no pixel")
+           << "*****************************************************"
+      << endl;
+    }
+    hErrorPixels->Fill(nErrorPixels);
+    rErrorPixels->Fill(runIdx, nErrorPixels);
+
+    if (nWorkingLinks > 0 && okVertex && okPixel) {
+      cout << "  filling nNoisyPixels = " << nNoisyPixels << endl;
       hNoisyPixels->Fill(nNoisyPixels);
       hGoodPixel->Fill(nGoodPixels);
       rNoisyPixels->Fill(runIdx, nNoisyPixels);
@@ -738,11 +790,34 @@ void plotHistograms(string filename, string suffix) {
   cNoisyPixels->Draw("hist");
   c1->SaveAs(("cNoisyPixels" + suffix + format).c_str());
 
+
+  TH1D *rErrorPixels = (TH1D*)pFile->Get("rErrorPixels");
+  cout << " plotting rErrorPixels" << endl;
+  setRunLabelsX(rErrorPixels);
+  rErrorPixels->SetMinimum(0.5);
+  rErrorPixels->SetStats(0);
+  rErrorPixels->GetXaxis()->SetTitleOffset(1.3);
+  c1->SetLogy(1);
+  rErrorPixels->Draw("hist");
+  c1->SaveAs(("rErrorPixels" + suffix + format).c_str());
+
+  TH1D *hErrorPixels = (TH1D*)pFile->Get("hErrorPixels");
+  cout << " plotting hErrorPixels" << endl;
+  hErrorPixels->SetStats(0);
+  hErrorPixels->Draw("hist");
+  t1->DrawLatexNDC(0.2, 0.86, Form("<N_{error}> = %d", static_cast<int>(hErrorPixels->GetMean())));
+  t1->DrawLatexNDC(0.2, 0.81, Form("f = %4.3f", hErrorPixels->GetMean()/nChips/64000.));
+
+  c1->SaveAs(("hErrorPixels" + suffix + format).c_str());
+
+
+
+
   TH1D *rGoodPixel = (TH1D*)pFile->Get("rGoodPixel");
   cout << " plotting rGoodPixel" << endl;
   setRunLabelsX(rGoodPixel);
   rGoodPixel->SetMinimum(1.e5);
-  rGoodPixel->SetMaximum(1.35*nChips*64000.);
+  rGoodPixel->SetMaximum(1.5*nChips*64000.);
   rGoodPixel->SetStats(0);
   rGoodPixel->GetXaxis()->SetTitleOffset(1.3);
   c1->SetLogy(1);
@@ -751,7 +826,7 @@ void plotHistograms(string filename, string suffix) {
   l1->SetLineColor(kBlack);
   l1->SetLineStyle(kDashed);
   l1->Draw();
-  t1->DrawLatexNDC(0.2, 0.86, Form("N_{pix}^{VTX} = %d*64000", nChips));
+  t1->DrawLatexNDC(0.2, 0.87, Form("N_{pix} = %d #times 64000", nChips));
 
   c1->SaveAs(("rGoodPixel" + suffix + format).c_str());
 
