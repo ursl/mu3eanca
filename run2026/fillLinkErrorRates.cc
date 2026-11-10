@@ -144,8 +144,8 @@ int main(int argc, char* argv[]) {
   
   TFile *f = new TFile("linkErrorRates.root", "RECREATE");
   TH1D *hLinkErrorRates = new TH1D("hLinkErrorRates", "Link Error Rates", 1000, 0, 1.e6);
-  TH1D *hLinkErrorRates2 = new TH1D("hLinkErrorRates2", "Link Error Rates 2", 1000, 0, 1.e5);
-  TH2D *hLinkErrorRatesVsRun = new TH2D("hLinkErrorRatesVsRun", "Link Error Rates vs run", 400, 0, 400, 1000, 0, 1.e6);
+  TH1D *hLinkErrorRates2 = new TH1D("hLinkErrorRates2", "Link Error Rates 2", 1000, 0, 2.e4);
+  TH2D *hLinkErrorRatesVsRun = new TH2D("hLinkErrorRatesVsRun", "Link Error Rates vs run", 400, 0, 400, 100, 0, 1.e8);
   
   
   if (run1 < 0 || run2 < run1) {
