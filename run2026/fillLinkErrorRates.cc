@@ -53,8 +53,8 @@ void parseMidasMetaData(string filename);
 void printRunInfoMap();
 
 
-string DATADIR("/Users/ursl/data/mu3e/run2026/raw");
-//string DATADIR("/data/experiment/mu3e/data/2026/raw");
+//string DATADIR("/Users/ursl/data/mu3e/run2026/raw");
+string DATADIR("/data/experiment/mu3e/data/2026/raw");
 
 // ----------------------------------------------------------------------
 static bool fileExists(const string& filename) {
