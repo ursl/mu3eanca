@@ -144,13 +144,16 @@ int main(int argc, char* argv[]) {
   
   TFile *f = new TFile("linkErrorRates.root", "RECREATE");
   TH1D *hLinkErrorRates = new TH1D("hLinkErrorRates", "Link Error Rates", 1000, 0, 1.e6);
+  TH1D *hLinkErrorRates2 = new TH1D("hLinkErrorRates2", "Link Error Rates 2", 1000, 0, 1.e5);
+  TH2D *hLinkErrorRatesVsRun = new TH2D("hLinkErrorRatesVsRun", "Link Error Rates vs run", 400, 0, 400, 1000, 0, 1.e6);
   
   
   if (run1 < 0 || run2 < run1) {
     cout << "need -r1 and -r2, with run1 <= run2" << endl;
     return 1;
   }
-  
+
+  int runIdx(1);
   for (int run = run1; run <= run2; ++run) {
     cout << "-------- run " << run << endl;
     
@@ -184,9 +187,9 @@ int main(int argc, char* argv[]) {
       allSensorIDs.push_back(cpa->id(i));
     }
     
-    // ------------------------------------------------------------------
-    cout << "gRunInfoMap.size() = " << gRunInfoMap.size() << endl;
-    
+    // ------------------------------------------------------------------    
+    double meanRate(0);
+    int nLinks(0);
     for (auto it : gRunInfoMap) {
       if (0) cout  << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
       << " linkMask = " << it.second.linkMask[0] << it.second.linkMask[1] << it.second.linkMask[2]
@@ -201,9 +204,15 @@ int main(int argc, char* argv[]) {
         if (it.first >= 2055 && link > 0) continue;
         if (it.second.abcLinkMask[link] == 1) {
           hLinkErrorRates->Fill(it.second.abcLinkErrs[link]);
+          hLinkErrorRates2->Fill(it.second.abcLinkErrs[link]);
+          meanRate += it.second.abcLinkErrs[link];
+          nLinks++;
         }
       }
     }
+    meanRate /= nLinks;
+    hLinkErrorRatesVsRun->Fill(runIdx, meanRate);
+    runIdx++;
   }
   
   f->Write();
