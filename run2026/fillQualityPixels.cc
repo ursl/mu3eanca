@@ -70,6 +70,10 @@ struct pixhit {
   int status;
 };
 
+
+// A link above this LVDS error rate [Hz] is bad.
+static const long long kLvdsBadHz = 1000;
+
 // ----------------------------------------------------------------------
 void parseMidasMetaData(string filename);
 void printRunInfoMap();
@@ -586,9 +590,9 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     if (vLink[i] < 1) lkStatus[i] = calPixelQualityLM::NoHits;
     if (MMDvalid && 0 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
     if (MMDvalid && 9 == ai.abcLinkMask[idx]) lkStatus[i] = calPixelQualityLM::Masked;
-    if (MMDvalid && ai.abcLinkErrs[idx] > 10.) lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
+    if (MMDvalid && ai.abcLinkErrs[idx] > kLvdsBadHz) lkStatus[i] = calPixelQualityLM::LVDSErrorLink;
     // -- if LVDS error rate is high and link is not masked, set to badChip!
-    if (MMDvalid && ai.abcLinkErrs[idx] > 10. && 1 == ai.abcLinkMask[idx]) {
+    if (MMDvalid && ai.abcLinkErrs[idx] > kLvdsBadHz && 1 == ai.abcLinkMask[idx]) {
       badChip = 1;
       ++nBadLinks;
       badLink[i] = true;
@@ -625,7 +629,7 @@ bool determineBrokenLinks(TH2 *h, vector<int> &links) {
     if (DBX) cout << "Chip " << chipID << " NO overflow: " << iOverFlow << " status = " << lkStatus[3] <<  endl;
   }
 
-  // -- badChip is true for unmasked links with LVDS error rates > 10 Hz. 
+  // -- badChip is true for unmasked links with LVDS error rates > kLvdsBadHz Hz. 
   //    These leak into other matrices.
   if (badChip >= 0) {    
     cout << "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZ gID = " << chipID 
@@ -922,9 +926,6 @@ static bool fileExists(const string& filename) {
   ifstream in(filename.c_str());
   return in.good();
 }
-
-// A link above this LVDS error rate [Hz] is bad.
-static const long long kLvdsBadHz = 10;
 
 // ----------------------------------------------------------------------
 // Section names such as "L1 US 1-4" and "L2 DS 8-10".
