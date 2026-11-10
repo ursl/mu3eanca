@@ -8,7 +8,7 @@
 # are created there before the executable runs. The PDF written into
 # output/ is uploaded to rdb_url (mu3edb0 on merlin) as description=dqm.
 # comment is the production directory (prompt_workdir). A re-upload
-# replaces only the resource with that description and comment.
+# removes every resource with that description, then stores the new PDF.
 use strict;
 use warnings;
 use Cwd qw(getcwd);
@@ -47,9 +47,7 @@ my @cmd = (
 my $rdb = $ctx->{rdb_url} // "";
 $rdb =~ s{/+$}{};
 my $comment = $ctx->{workdir} // "";
-my %rm = (description => "dqm");
-$rm{comment} = $comment if $comment ne "";
-my $rm_json = encode_json(\%rm);
+my $rm_json = encode_json({description => "dqm"});
 
 if ($ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "would: mkdir $rundir/output $rundir/csv");

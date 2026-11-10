@@ -4,7 +4,8 @@
 # The job runs in the mu3eana checkout. mu3eCor26 prefixes results/ itself:
 #   _build/sfh/Correlations/mu3eCor26 <sorted.root> results-$RUN -1
 #   results/results-$RUN/results-$RUN.pdf
-# After the job, that PDF is uploaded to the RDB (description=cor26).
+# After the job, that PDF is uploaded to the RDB (description=cor26),
+# replacing every earlier cor26 PDF for the run. comment is prompt_workdir.
 use strict;
 use warnings;
 use JSON::PP qw(encode_json);
@@ -93,9 +94,7 @@ sub _upload {
         return;
     }
     my $comment = $c->{workdir} // "";
-    my %rm = (description => "cor26");
-    $rm{comment} = $comment if $comment ne "";
-    my $rm_json = encode_json(\%rm);
+    my $rm_json = encode_json({description => "cor26"});
 
     if ($c->{dry_run}) {
         TaskLib::task_log($c, $name,
