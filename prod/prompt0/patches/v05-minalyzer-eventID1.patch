@@ -1,0 +1,16 @@
+diff --git a/config/prompt.json b/config/prompt.json
+index e64f52e..6f875a5 100644
+--- a/config/prompt.json
++++ b/config/prompt.json
+@@ -4,8 +4,10 @@
+         "gt": "datav6.1=2025CosmicsVtxOnly"
+     },
+     "fillhits": {
++        "enabled": true,
+         "ignoreSensors": [],
+-        "removeDuplicates": true
++        "removeDuplicates": true,
++        "eventIDs": [1]
+     },
+     "filllvds": {
+         "plot": ["PCLS"],
