@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
     cout << "-------- run " << run << endl;
     
     // -- open midas meta data file
-    string filename = DATADIR + "/" + getDataSubdir(run) + Form("/%s%d.mid.lz4.json", mstub.c_str(), run);
+    string filename = getDataSubdir(run) + Form("/%s%d.mid.lz4.json", mstub.c_str(), run);
     if (!fileExists(filename)) {
       cout << "no midas metadata (" << filename << ") for run " << run << ", skipping" << endl;
       continue;
