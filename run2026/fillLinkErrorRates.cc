@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
     // -- open midas meta data file
     string filename = DATADIR + "/" + getDataSubdir(run) + Form("/%s%d.mid.lz4.json", mstub.c_str(), run);
     if (!fileExists(filename)) {
-      cout << "no midas metadata for run " << run << ", skipping" << endl;
+      cout << "no midas metadata (" << filename << ") for run " << run << ", skipping" << endl;
       continue;
     }
     
@@ -182,14 +182,6 @@ int main(int argc, char* argv[]) {
     cpa->resetIterator();
     while(cpa->getNextID(i)) {
       allSensorIDs.push_back(cpa->id(i));
-    }
-    
-    string sbla(filename);
-    cout << "filename ->" << filename << "<-" << endl;
-    if (string::npos != filename.find_last_of("/")) {
-      string dir = filename.substr(0, filename.find_last_of("/")+1);
-      cout << "dir ->" << dir << "<-" << endl;
-      (sbla, dir, "");
     }
     
     // ------------------------------------------------------------------
