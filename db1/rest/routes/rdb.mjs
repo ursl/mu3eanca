@@ -793,8 +793,10 @@ async function deleteResourceFiles(bucket, resources) {
 
 // ----------------------------------------------------------------------
 // -- Add a resource to a run record.
-// A previous resource with the same description is replaced.
-// When comment is non-empty, only that description and comment are replaced.
+// Every previous resource with the same description is replaced, including
+// one whose comment names another production directory (v04 vs v05).
+// The link is /rdb/resource/:run/:description, so an older copy cannot
+// be fetched once a newer one exists.
 // curl -X POST -F "pdf=@/path/to/file" -F "description=dqm" http://localhost:5050/rdb/addResource/780
 router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
     try {
@@ -818,10 +820,7 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
 
         const description = req.body.description || "Resource";
         const comment = typeof req.body.comment === "string" ? req.body.comment : "";
-        // A non-empty comment replaces only that description+comment pair,
-        // so v04 does not remove a dqm PDF uploaded from another workdir.
-        const scope = comment !== "" ? comment : null;
-        const previous = (result.Resources || []).filter((r) => resourceMatches(r, description, scope));
+        const previous = (result.Resources || []).filter((r) => resourceMatches(r, description, null));
         await deleteResourceFiles(bucket, previous);
 
         // Upload to GridFS
@@ -859,7 +858,7 @@ router.post("/addResource/:id", upload.single('pdf'), async (req, res) => {
         const updateData = { ...result };
         delete updateData._id;
 
-        const kept = (updateData.Resources || []).filter((r) => !resourceMatches(r, description, scope));
+        const kept = (updateData.Resources || []).filter((r) => !resourceMatches(r, description, null));
         kept.push(resourceEntry);
         updateData.Resources = kept;
 
