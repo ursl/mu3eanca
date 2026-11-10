@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
     parseMidasMetaData(filename);
     //printRunInfoMap();
     
-   
+    
     // -- this is just to get the list of all chipIDs
     cdbAbs *pDB = new cdbJSON(jsondir, verbose);
     Mu3eConditions* pDC = Mu3eConditions::instance(igt, pDB);
@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
     cout << "gRunInfoMap.size() = " << gRunInfoMap.size() << endl;
     
     for (auto it : gRunInfoMap) {
-      cout  << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
+      if (0) cout  << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
       << " linkMask = " << it.second.linkMask[0] << it.second.linkMask[1] << it.second.linkMask[2]
       << " linkMatrix = " << it.second.linkMatrix[0] << it.second.linkMatrix[1] << it.second.linkMatrix[2]
       << " abcLinkMask = " << it.second.abcLinkMask[0] << it.second.abcLinkMask[1] << it.second.abcLinkMask[2]
