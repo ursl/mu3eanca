@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
 
   int runIdx(1);
   for (int run = run1; run <= run2; ++run) {
-    cout << "-------- run " << run << endl;
+    cout << "-------- run " << run << " (" << runIdx << ")" << endl;
     
     // -- open midas meta data file
     string filename = getDataSubdir(run) + Form("/%s%d.mid.lz4.json", mstub.c_str(), run);
@@ -173,26 +173,7 @@ int main(int argc, char* argv[]) {
     
     parseMidasMetaData(filename);
     //printRunInfoMap();
-    
-    
-    // -- this is just to get the list of all chipIDs
-    cdbAbs *pDB = new cdbJSON(jsondir, verbose);
-    Mu3eConditions* pDC = Mu3eConditions::instance(igt, pDB);
-    pDC->setRunNumber(1);
-    if(!pDC->getDB()) {
-      std::cout << "CDB database not found" << std::endl;
-    }
-    
-    vector<uint32_t> allSensorIDs;
-    allSensorIDs.reserve(3000);
-    calAbs* cal = pDC->getCalibration("pixelalignment_");
-    calPixelAlignment* cpa = dynamic_cast<calPixelAlignment*>(cal);
-    uint32_t i = 0;
-    cpa->resetIterator();
-    while(cpa->getNextID(i)) {
-      allSensorIDs.push_back(cpa->id(i));
-    }
-    
+        
     // ------------------------------------------------------------------    
     for (auto it : gRunInfoMap) {
       if (0) cout  << " globalChipID = " << it.first << " globalId = " << it.second.globalId 
