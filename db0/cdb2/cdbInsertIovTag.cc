@@ -5,8 +5,13 @@
 #include <sstream>
 #include <algorithm>
 #include <cstring>
+#include <cerrno>
+#include <ctime>
 #include <dirent.h>
+#include <fcntl.h>
 #include <set>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "cdbUtil.hh"
 
@@ -130,18 +135,114 @@ void removeRunFromVector(vector<int>& runs, int runNumber) {
 }
 
 // ----------------------------------------------------------------------
-// Create backup of a file
-bool backupFile(const string& filepath) {
-  string oldfilepath = filepath.substr(0, filepath.find_last_of('/')) + "/../old/";
-  if (!fileExists(oldfilepath)) {
-    system(string("mkdir -p " + oldfilepath).c_str());
+// /cdb/tags/../locks -> /cdb/locks
+static string collapseParent(string path) {
+  const string mark = "/../";
+  size_t p;
+  while ((p = path.find(mark)) != string::npos) {
+    size_t slash = path.rfind('/', p - 1);
+    if (slash == string::npos) break;
+    path.erase(slash, (p + mark.size() - 1) - slash);
+  }
+  return path;
+}
+
+
+// ----------------------------------------------------------------------
+// tags/<tag> -> <cdb>/old or <cdb>/locks (siblings of tags/)
+static string siblingOfTags(const string& tagFile, const string& name) {
+  string tagsDir = tagFile.substr(0, tagFile.find_last_of('/'));
+  return collapseParent(tagsDir + "/../" + name);
+}
+
+
+// ----------------------------------------------------------------------
+static bool ensureDir(const string& dir) {
+  if (isDirectory(dir)) return true;
+  if (mkdir(dir.c_str(), 0755) == 0) return true;
+  if (errno == EEXIST && isDirectory(dir)) return true;
+  cerr << "insertIovTag: cannot create directory " << dir << endl;
+  return false;
+}
+
+
+// ----------------------------------------------------------------------
+// Exclusive lock: <cdb>/locks/lock-<tag>. O_EXCL fails if the name exists.
+// Another holder: wait 30 s and try again, until this process creates it.
+// Removed when the holder goes out of scope, including on a failed rewrite.
+class TagFileLock {
+public:
+  ~TagFileLock() { release(); }
+
+  bool acquire(const string& tagFile) {
+    string dir = siblingOfTags(tagFile, "locks");
+    if (!ensureDir(dir)) return false;
+    fPath = dir + "/lock-" + pathBaseName(tagFile);
+    while (true) {
+      int fd = open(fPath.c_str(), O_CREAT | O_EXCL | O_WRONLY, 0644);
+      if (fd >= 0) {
+        string line = timeStamp() + " pid " + to_string(getpid()) + "\n";
+        ssize_t nw = write(fd, line.c_str(), line.size());
+        (void)nw;
+        close(fd);
+        fHeld = true;
+        cout << "insertIovTag: " << timeStamp() << " lock created " << fPath << endl;
+        return true;
+      }
+      if (errno != EEXIST) {
+        cerr << "insertIovTag: " << timeStamp() << " cannot create lock " << fPath << endl;
+        fPath.clear();
+        return false;
+      }
+      cout << "insertIovTag: " << timeStamp() << " lock exists " << fPath << ", waiting 30 s" << endl;
+      sleep(30);
+    }
   }
 
-  string cmd = "mv " + filepath + " " + oldfilepath;
-  if (system(cmd.c_str()) != 0) {
-    cerr << "insertIovTag: Failed to mv backup from " << filepath << " to " << oldfilepath << endl;
+  void release() {
+    if (!fHeld) return;
+    string path = fPath;
+    fHeld = false;
+    if (unlink(path.c_str()) != 0) {
+      cerr << "insertIovTag: " << timeStamp() << " failed to remove lock " << path << endl;
+      return;
+    }
+    cout << "insertIovTag: " << timeStamp() << " lock removed " << path << endl;
+  }
+
+private:
+  string fPath;
+  bool fHeld = false;
+};
+
+
+// ----------------------------------------------------------------------
+// Move an existing tag file to <cdb>/old/YYMMDD-HHMMSS-<tag>.
+// A second backup in the same second keeps the earlier file and uses -2, -3, ...
+// A missing tag file is not an error (first insert).
+bool backupFile(const string& filepath) {
+  if (!fileExists(filepath)) return true;
+
+  string oldDir = siblingOfTags(filepath, "old");
+  if (!ensureDir(oldDir)) return false;
+
+  time_t t = time(nullptr);
+  tm r;
+  localtime_r(&t, &r);
+  char stamp[20];
+  strftime(stamp, sizeof(stamp), "%y%m%d-%H%M%S", &r);
+
+  string dest = oldDir + "/" + stamp + "-" + pathBaseName(filepath);
+  if (fileExists(dest)) {
+    int n = 2;
+    while (fileExists(dest + "-" + to_string(n))) ++n;
+    dest = dest + "-" + to_string(n);
+  }
+  if (rename(filepath.c_str(), dest.c_str()) != 0) {
+    cerr << "insertIovTag: Failed to mv backup from " << filepath << " to " << dest << endl;
     return false;
   }
+  cout << "insertIovTag: " << timeStamp() << " backup " << filepath << " -> " << dest << endl;
   return true;
 }
 
@@ -316,10 +417,7 @@ int processTagFile(const string& jsondir, const string& tag, int insertRun, int 
   }
   cout << ", last index = " << (runs.empty() ? -1 : (int)runs.size() - 1) << endl;
 
-  // Create backup
-  if (!backupFile(file)) {
-
-  }
+  if (!backupFile(file)) return 1;
 
   // Write updated file (preserve comment)
   if (!writeIOVsToFile(file, tag, runs, clear, comment)) {
@@ -363,7 +461,11 @@ int main(int argc, char* argv[]) {
       printUsage(argv[0]);
       return 1;
     }
-    if (!writeIOVsToFile(jsondir + "/tags/" + tag, tag, {1}, false, "")) {
+    string file = jsondir + "/tags/" + tag;
+    TagFileLock lock;
+    if (!lock.acquire(file)) return 1;
+    if (!backupFile(file)) return 1;
+    if (!writeIOVsToFile(file, tag, {1}, false, "")) {
       return 1;
     }
     return 0;
@@ -377,6 +479,10 @@ int main(int argc, char* argv[]) {
       return 1;
     }
     
+    string file = jsondir + "/tags/" + tag;
+    TagFileLock lock;
+    if (!lock.acquire(file)) return 1;
+
     cout << "insertIovTag: meta mode - scanning " << payloaddir << " for pattern " << pattern << endl;
     vector<int> payloadRuns = extractRunsFromPayloads(payloaddir, pattern);
     
@@ -387,8 +493,6 @@ int main(int argc, char* argv[]) {
     }
     cout << endl;
     
-    // Read existing IOVs and comment once
-    string file = jsondir + "/tags/" + tag;
     auto pr = readIOVsAndCommentFromFile(file);
     vector<int> runs = pr.first;
     string comment = pr.second;
@@ -412,9 +516,7 @@ int main(int argc, char* argv[]) {
     }
     cout << ", last index = " << (runs.empty() ? -1 : (int)runs.size() - 1) << endl;
     
-    // Create backup and write once (preserve comment)
-    if (!backupFile(file)) {
-    }
+    if (!backupFile(file)) return 1;
     if (!writeIOVsToFile(file, tag, runs, false, comment)) {
       return 1;
     }
@@ -439,6 +541,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  // Process the tag file
+  string file = jsondir + "/tags/" + tag;
+  TagFileLock lock;
+  if (!lock.acquire(file)) return 1;
   return processTagFile(jsondir, tag, insertRun, removeRun, clear);
 }
