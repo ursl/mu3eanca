@@ -220,7 +220,7 @@ private:
 // Move an existing tag file to <cdb>/old/YYMMDD-HHMMSS-<tag>.
 // A second backup in the same second keeps the earlier file and uses -2, -3, ...
 // A missing tag file is not an error (first insert).
-bool backupFile(const string& filepath) {
+bool backupFile(const string& filepath, const string& srun) {
   if (!fileExists(filepath)) return true;
 
   string oldDir = siblingOfTags(filepath, "old");
@@ -232,7 +232,7 @@ bool backupFile(const string& filepath) {
   char stamp[20];
   strftime(stamp, sizeof(stamp), "%y%m%d-%H%M%S", &r);
 
-  string dest = oldDir + "/" + stamp + "-" + pathBaseName(filepath);
+  string dest = oldDir + "/" + stamp + "-" + srun + "-" + pathBaseName(filepath);
   if (fileExists(dest)) {
     int n = 2;
     while (fileExists(dest + "-" + to_string(n))) ++n;
@@ -397,8 +397,10 @@ int processTagFile(const string& jsondir, const string& tag, int insertRun, int 
   cout << endl;
 
   // Modify the runs list
+  string srun = to_string(-99);
   if (removeRun > 0) {
     cout << "insertIovTag: removing run " << removeRun << endl;
+    srun = to_string(removeRun);
     removeRunFromVector(runs, removeRun);
     cout << "insertIovTag: removed run " << removeRun << ", new list = ";
     for (size_t i = 0; i < runs.size(); i++) {
@@ -407,6 +409,7 @@ int processTagFile(const string& jsondir, const string& tag, int insertRun, int 
     }
     cout << endl;
   } else if (insertRun > 0) {
+    srun = to_string(insertRun);
     insertRunIntoVector(runs, insertRun);
   }
 
@@ -417,7 +420,7 @@ int processTagFile(const string& jsondir, const string& tag, int insertRun, int 
   }
   cout << ", last index = " << (runs.empty() ? -1 : (int)runs.size() - 1) << endl;
 
-  if (!backupFile(file)) return 1;
+  if (!backupFile(file, srun)) return 1;
 
   // Write updated file (preserve comment)
   if (!writeIOVsToFile(file, tag, runs, clear, comment)) {
@@ -464,7 +467,7 @@ int main(int argc, char* argv[]) {
     string file = jsondir + "/tags/" + tag;
     TagFileLock lock;
     if (!lock.acquire(file)) return 1;
-    if (!backupFile(file)) return 1;
+    if (!backupFile(file, "1")) return 1;
     if (!writeIOVsToFile(file, tag, {1}, false, "")) {
       return 1;
     }
@@ -516,7 +519,7 @@ int main(int argc, char* argv[]) {
     }
     cout << ", last index = " << (runs.empty() ? -1 : (int)runs.size() - 1) << endl;
     
-    if (!backupFile(file)) return 1;
+    if (!backupFile(file, to_string(payloadRuns.front()))) return 1;
     if (!writeIOVsToFile(file, tag, runs, false, comment)) {
       return 1;
     }
