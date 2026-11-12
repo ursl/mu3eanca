@@ -15,6 +15,7 @@ DataQuality::DataQuality() :
   fibres(0),
   calibration(0),
   links(0),
+  deff(0),
   version("unset") {
 }
 
@@ -34,6 +35,7 @@ string DataQuality::json() const {
   sjson += "\"fibres\":\"" + to_string(fibres) + "\", ";
   sjson += "\"calibration\":\"" + to_string(calibration) + "\", ";
   sjson += "\"links\":\"" + to_string(links) + "\", ";
+  sjson += "\"deff\":\"" + to_string(deff) + "\", ";
   sjson += "\"version\":\"" + version + "\"}}";
   return sjson;
 }
@@ -110,6 +112,8 @@ size_t DataQuality::parse(const string &jsonString, size_t startPos) {
         } else {
           links = stoi(val);
         }
+        val = extractValue(dqJson, "deff");
+        deff = (val != "unset") ? stoi(val) : 0;
         version = extractValue(dqJson, "version");
 
         return end;  // Return position after the parsed DataQuality

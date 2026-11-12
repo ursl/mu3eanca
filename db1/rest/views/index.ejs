@@ -613,8 +613,8 @@ window.onload = function() {
     }
     
     // Set Data Quality filter values from URL parameters
-    const dqFilterIds = ['filterDqMu3e', 'filterDqBeam', 'filterDqVtx', 'filterDqPix', 'filterDqFib', 'filterDqTil', 'filterDqLks'];
-    const dqFilterParams = ['dqMu3e', 'dqBeam', 'dqVtx', 'dqPix', 'dqFib', 'dqTil', 'dqLks'];
+    const dqFilterIds = ['filterDqMu3e', 'filterDqBeam', 'filterDqVtx', 'filterDqPix', 'filterDqFib', 'filterDqTil', 'filterDqLks', 'filterDqDeff'];
+    const dqFilterParams = ['dqMu3e', 'dqBeam', 'dqVtx', 'dqPix', 'dqFib', 'dqTil', 'dqLks', 'dqDeff'];
     
     dqFilterIds.forEach((id, index) => {
         const element = document.getElementById(id);
@@ -678,7 +678,7 @@ window.onload = function() {
     const hasActiveDqFilters = urlParams.get('dqMu3e') || urlParams.get('dqBeam') || 
                                  urlParams.get('dqVtx') || urlParams.get('dqPix') || 
                                  urlParams.get('dqFib') || urlParams.get('dqTil') || 
-                                 urlParams.get('dqLks');
+                                 urlParams.get('dqLks') || urlParams.get('dqDeff');
     if (hasActiveDqFilters) {
         const dqContent = document.getElementById('dqFilterContent');
         const dqToggleIcon = document.querySelector('.dq-toggle-icon');
@@ -756,6 +756,7 @@ function applyFilters() {
     const dqFib = document.getElementById("filterDqFib").value;
     const dqTil = document.getElementById("filterDqTil").value;
     const dqLks = document.getElementById("filterDqLks").value;
+    const dqDeff = document.getElementById("filterDqDeff").value;
 
     // Only add Data Quality parameters that have values
     if (dqMu3e) urlParams.set('dqMu3e', dqMu3e);
@@ -765,6 +766,7 @@ function applyFilters() {
     if (dqFib) urlParams.set('dqFib', dqFib);
     if (dqTil) urlParams.set('dqTil', dqTil);
     if (dqLks) urlParams.set('dqLks', dqLks);
+    if (dqDeff) urlParams.set('dqDeff', dqDeff);
 
     // Preserve pagination parameters (reset to page 1, but keep pageSize)
     urlParams.set('page', '1');
@@ -940,7 +942,7 @@ async function updateCsvDisplay() {
             
             // Copy all filter parameters
             ['onlySignificant', 'minRun', 'maxRun', 'startTime', 'stopTime', 'runClass', 'comment',
-             'years', 'dqMu3e', 'dqBeam', 'dqVtx', 'dqPix', 'dqFib', 'dqTil', 'dqLks'].forEach(param => {
+             'years', 'dqMu3e', 'dqBeam', 'dqVtx', 'dqPix', 'dqFib', 'dqTil', 'dqLks', 'dqDeff'].forEach(param => {
                 if (currentParams.has(param)) {
                     url.searchParams.set(param, currentParams.get(param));
                 }
@@ -1129,6 +1131,18 @@ async function updateCsvDisplay() {
                                 <option value="2" <% if (locals.dqLks === '2') { %>selected<% } %>>Present</option>
                                 <option value="3" <% if (locals.dqLks === '3') { %>selected<% } %>>No data</option>
                                 <option value="-1" <% if (locals.dqLks === '-1') { %>selected<% } %>>Unset</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filterDqDeff">DEFF</label>
+                            <select id="filterDqDeff">
+                                <option value="">Any</option>
+                                <option value="1" <% if (locals.dqDeff === '1') { %>selected<% } %>>Good</option>
+                                <option value="0" <% if (locals.dqDeff === '0') { %>selected<% } %>>Bad</option>
+                                <option value="notbad" <% if (locals.dqDeff === 'notbad') { %>selected<% } %>>Not Bad</option>
+                                <option value="2" <% if (locals.dqDeff === '2') { %>selected<% } %>>Present</option>
+                                <option value="3" <% if (locals.dqDeff === '3') { %>selected<% } %>>No data</option>
+                                <option value="-1" <% if (locals.dqDeff === '-1') { %>selected<% } %>>Unset</option>
                             </select>
                         </div>
                     </div>

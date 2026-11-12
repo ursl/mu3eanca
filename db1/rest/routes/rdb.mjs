@@ -326,7 +326,8 @@ function buildRunListPipeline(query) {
         dqPix: "pixel",
         dqFib: "fibres",
         dqTil: "tiles",
-        dqLks: "links"
+        dqLks: "links",
+        dqDeff: "deff"
     };
 
     for (const [paramName, fieldName] of Object.entries(dqFieldMap)) {
@@ -364,7 +365,7 @@ function buildRunListPipeline(query) {
 const LIST_QUERY_KEYS = [
     "onlySignificant", "minRun", "maxRun", "nRun",
     "startTime", "stopTime", "runClass", "comment", "years",
-    "dqMu3e", "dqBeam", "dqVtx", "dqPix", "dqFib", "dqTil", "dqLks",
+    "dqMu3e", "dqBeam", "dqVtx", "dqPix", "dqFib", "dqTil", "dqLks", "dqDeff",
     "page", "pageSize"
 ];
 
@@ -453,9 +454,10 @@ router.get("/", async (req, res) => {
     const dqFib = req.query.dqFib;
     const dqTil = req.query.dqTil;
     const dqLks = req.query.dqLks;
+    const dqDeff = req.query.dqDeff;
     const years = parseRunYears(req.query.years);
 
-    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass, comment, years, dqMu3e, dqBeam, dqVtx, dqPix, dqFib, dqTil, dqLks });
+    console.log("Query params:", { nruns, minrun, maxrun, onlySignificant, starttime, stoptime, runClass, comment, years, dqMu3e, dqBeam, dqVtx, dqPix, dqFib, dqTil, dqLks, dqDeff });
 
     try {
         let pipeline = buildRunListPipeline(req.query);
@@ -565,6 +567,7 @@ router.get("/", async (req, res) => {
                 'dqFib': dqFib || '',
                 'dqTil': dqTil || '',
                 'dqLks': dqLks || '',
+                'dqDeff': dqDeff || '',
                 'years': years,
                 'pagination': pagination,
                 'page': page,

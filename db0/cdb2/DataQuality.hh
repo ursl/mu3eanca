@@ -26,6 +26,7 @@ struct DataQuality {
     int fibres;
     int calibration;
     int links;
+    int deff;
     std::string version;
 
     DataQuality();

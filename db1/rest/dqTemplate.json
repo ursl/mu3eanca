@@ -8,6 +8,7 @@
         "tiles": "-1",
         "calibration": "-1",
         "links": "-1",        
+        "deff": "-1",
         "version": "unset"
     }
 }

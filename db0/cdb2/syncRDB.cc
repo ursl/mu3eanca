@@ -1558,7 +1558,7 @@ void rdbMode11(int irun, string subsystems, bool debug) {
     if (lastIdx < 0) {
       json dq = {
         {"mu3e", "-1"}, {"beam", "-1"}, {"vertex", "-1"}, {"pixel", "-1"},
-        {"fibres", "-1"}, {"tiles", "-1"}, {"links", "-1"}, {"version", "1"}
+        {"fibres", "-1"}, {"tiles", "-1"}, {"links", "-1"}, {"deff", "-1"}, {"version", "1"}
       };
       for (const auto &k : keys) {
         dq[k] = "2";
