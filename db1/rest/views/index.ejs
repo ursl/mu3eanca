@@ -1208,7 +1208,7 @@ async function updateCsvDisplay() {
                         <th class="dq-sum" title="Vertex, Pixel, Fibres, Tiles"><span class="dq-sum-head"><span>V</span><span>P</span><span>F</span><span>T</span></span></th>
                         <th>Events</th>
                         <th>Shift crew</th>
-                        <th>Shift Comments</th>
+                        <th>Shift/RunInfo Comments</th>
                         <th>Resources</th>
                     </tr>
                 </thead>
@@ -1270,6 +1270,9 @@ async function updateCsvDisplay() {
                                     <td><%= result.BOR["Shift crew"] %></td>
                                     <td>
                                         <%= result.EOR["Comments"] %>
+                                        <% if (lastRunInfo.RunInfo.Comments && lastRunInfo.RunInfo.Comments !== "unset") { %>
+                                            /<%= lastRunInfo.RunInfo.Comments %>
+                                        <% } %>
                                     </td>
                                 <% } else { %>
                                     <td><span class="status-unset">N/A</span></td>
