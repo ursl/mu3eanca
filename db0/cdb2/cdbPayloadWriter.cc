@@ -24,6 +24,7 @@
 #include "calDetSetupV1.hh"
 #include "calEventStuffV1.hh"
 #include "calEventStuffV2.hh"
+#include "calEventStuffV3.hh"
 #include "calFibreAlignment.hh"
 #include "calFibreQuality.hh"
 #include "calMppcAlignment.hh"
@@ -1367,6 +1368,82 @@ void cdbPayloadWriter::writeEventStuffV2IdealInput(std::string filename, std::st
   ONS.close();
 }
 
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writeEventStuffV3IdealInput(std::string filename, std::string mode) {
+  cout << "   ->cdbWritePayload::writeEventStuffV3IdealInput> writing local template eventstuffv3 ideal JSON to file " << filename
+       << " for mode " << mode
+       << endl;
+  (void)mode;
+  ofstream ONS(filename);
+  if (!ONS.is_open()) {
+    cerr << "   ->cdbWritePayload::writeEventStuffV3IdealInput> ERROR: cannot open " << filename << endl;
+    return;
+  }
+  ONS << "{ " << endl
+      << "  \"eventdata\" : {" << endl
+      << "    \"startframedata\" : 0," << endl
+      << "    \"endframedata\" : -1," << endl
+      << "    \"firstframewithfebproblems\" : -1," << endl
+      << "    \"n_ts\" : -1," << endl
+      << "    \"n_unexpected_ts\" : -1," << endl
+      << "    \"n_midasevent\" : -1," << endl
+      << "    \"n_inv_dsin\" : -1" << endl
+      << "  }," << endl
+      << "  \"pixeldata\" : {" << endl
+      << "    \"startframegooddata\" : 0," << endl
+      << "    \"endframegooddata\" : -1," << endl
+      << "    \"firstframewithfebunsortedhitdata\" : -1," << endl
+      << "    \"pixel_febs_ok\" : false," << endl
+      << "    \"n_phit\" : -1," << endl
+      << "    \"n_phit_dup\" : -1," << endl
+      << "    \"maskdirname\" : \"nada\"," << endl
+      << "    \"maskdirname_ok\" : false" << endl
+      << "  }," << endl
+      << "  \"tiledata\" : {" << endl
+      << "    \"startframegooddata\" : 0," << endl
+      << "    \"endframegooddata\" : -1," << endl
+      << "    \"firstframewithfebunsortedhitdata\" : -1," << endl
+      << "    \"n_thit\" : -1," << endl
+      << "    \"tile_febs_ok\" : false" << endl
+      << "  }," << endl
+      << "  \"fibredata\" : {" << endl
+      << "    \"startframegooddata\" : 0," << endl
+      << "    \"endframegooddata\" : -1," << endl
+      << "    \"firstframewithfebunsortedhitdata\" : -1," << endl
+      << "    \"n_fhit\" : -1," << endl
+      << "    \"fibre_febs_ok\" : false" << endl
+      << "  }," << endl
+      << "  \"daqdata\" : {" << endl
+      << "    \"n_deff\" : 0," << endl
+      << "    \"deff_name\" : []," << endl
+      << "    \"deff_value\" : []," << endl
+      << "    \"n_link\" : 0," << endl
+      << "    \"lvde_name\" : []," << endl
+      << "    \"lvde_value\" : []" << endl
+      << "  }," << endl
+      << "  \"magnetdata\" : {" << endl
+      << "    \"current_0\" : -1," << endl
+      << "    \"current_1\" : -1" << endl
+      << "  }," << endl
+      << "  \"beamdata\" : {" << endl
+      << "    \"beam_shutter\" : -1," << endl
+      << "    \"proton_current\" : -1," << endl
+      << "    \"filename\" : \"nada\"" << endl
+      << "  }," << endl
+      << "  \"reservedata\" : {" << endl
+      << "    \"nint\" : 0," << endl
+      << "    \"int_name\" : []," << endl
+      << "    \"int_value\" : []," << endl
+      << "    \"nuint64\" : 0," << endl
+      << "    \"uint64_name\" : []," << endl
+      << "    \"uint64_value\" : []," << endl
+      << "    \"ndouble\" : 0," << endl
+      << "    \"double_name\" : []," << endl
+      << "    \"double_value\" : []" << endl
+      << "  }" << endl
+      << "}" << endl;
+  ONS.close();
+}
 
 // ----------------------------------------------------------------------
 void cdbPayloadWriter::writeEventStuffV2Payloads(string payloaddir, string gt, string filename, string annotation, int iov) {
@@ -1388,6 +1465,28 @@ void cdbPayloadWriter::writeEventStuffV2Payloads(string payloaddir, string gt, s
   cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and schema " << pl.fSchema << endl;
   delete ces;
 }
+
+// ----------------------------------------------------------------------
+void cdbPayloadWriter::writeEventStuffV3Payloads(string payloaddir, string gt, string filename, string annotation, int iov) {
+  cout << "->cdbPayloadWriter::writeEventStuffV3Payloads> writing local template eventstuffv3 payloads" << endl;
+  cout << "  payloaddir: " << payloaddir << endl;
+  cout << "  gt: " << gt << endl;
+  cout << "  filename: " << filename << endl;
+  cout << "  annotation: " << annotation << endl;
+  cout << "  iov: " << iov << endl;
+  calEventStuffV3 *ces = new calEventStuffV3();
+  ces->readJSON(filename);
+  string hash = "tag_eventstuffv3_" + gt + "_iov_" + to_string(iov);
+  payload pl;
+  pl.fHash = hash;
+  pl.fComment = annotation;
+  pl.fSchema  = ces->getSchema();
+  pl.fBLOB = ces->makeBLOB();
+  ces->writePayloadToFile(hash, payloaddir, pl);
+  cout << "   ->cdbWritePayload> writing IOV " << iov << " with " << hash << " and schema " << pl.fSchema << endl;
+  delete ces;
+}
+
 
 
 // ----------------------------------------------------------------------

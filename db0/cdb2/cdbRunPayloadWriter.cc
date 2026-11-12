@@ -170,6 +170,37 @@ int main(int argc, const char* argv[]) {
     writer.writeEventStuffV2Payloads(uri+"/payloads/", tagname, filename, annotation, run);
     return 0;
   }
+
+  // -- IDEAL eventstuffv3 
+  if (string::npos != mode.find("eventstuffv3") && string::npos != mode.find("ideal")) {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m eventstuffv3-ideal -f filename" << endl;
+      return 0;
+    }
+    writer.writeEventStuffV3IdealInput(filename, mode);
+    return 0;
+  }
+
+   // -- single eventstuffv3 
+   if (string::npos != mode.find("eventstuffv3")) {
+    if (filename == "unset") {
+      cout << "Error: filename is unset" << endl;
+      cout << "Usage: cdbRunPayloadWriter -m eventstuffv3 -f filename" << endl;
+      return 0;
+    }
+    cout << "== cdbRunPayloadWriter::main> writing eventstuffv3 payloads" << endl;
+    cout << "   uri: " << uri << endl;
+    cout << "   tagname: " << tagname << endl;
+    cout << "   filename: " << filename << endl;
+    cout << "   annotation: " << annotation << endl;
+    cout << "   run: " << run << endl;
+    writer.writeEventStuffV3Payloads(uri+"/payloads/", tagname, filename, annotation, run);
+    return 0;
+  }
+
+
+
   // -- IDEAL tiletimecalibration 
   if (string::npos != mode.find("tiletimecalibration") && string::npos != mode.find("ideal")) {
     if (filename == "unset") {

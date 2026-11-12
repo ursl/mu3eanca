@@ -38,6 +38,9 @@ public:
   void writeEventStuffV2Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   void writeEventStuffV2IdealInput(std::string filename, std::string mode);
 
+  void writeEventStuffV3Payloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
+  void writeEventStuffV3IdealInput(std::string filename, std::string mode);
+
   // -- QUALITY/MASK payloads
   void writeFibreQualityPayloads(std::string payloaddir, std::string gt, std::string filename, std::string annotation, int iov);
   void writeFibreQualityIdealInput(std::string filename, std::string mode = "all");
