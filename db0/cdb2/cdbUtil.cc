@@ -143,6 +143,17 @@ std::array<char,8> uint642Blob(uint64_t a) {
 
 
 // ----------------------------------------------------------------------
+std::vector<char> string2Blob(std::string s) {
+  std::vector<char> v;
+  auto append = [&v](const std::array<char,8>& a) {
+    v.insert(v.end(), a.begin(), a.end());
+  };
+  append(int2Blob(static_cast<int>(s.size())));
+  for (unsigned char c : s) append(int2Blob(static_cast<int>(c)));
+  return v;
+}
+
+// ----------------------------------------------------------------------
 std::array<char,8> getData(vector<char>::iterator &it) {
   array<char,8> v;
   for (unsigned int i = 0; i < 8; ++i) {
@@ -152,6 +163,17 @@ std::array<char,8> getData(vector<char>::iterator &it) {
   return v;
 }
 
+// ----------------------------------------------------------------------
+std::string getStringData(std::vector<char>::iterator &it) {
+  int size = blob2Int(getData(it));
+  string s(size, ' ');
+  for (int i = 0; i < size; ++i) {
+    std::array<char,8> c = getData(it);
+    int ichar = blob2Int(c);
+    s[i] = static_cast<char>(ichar);
+  }
+  return s;
+}
 
 // ----------------------------------------------------------------------
 string dumpArray(std::array<char,8> v) {
@@ -160,12 +182,22 @@ string dumpArray(std::array<char,8> v) {
   return sstr.str();
 }
 
+// ----------------------------------------------------------------------
+string dumpVector(std::vector<char> v) {
+  stringstream sstr;
+  for (auto it: v) sstr << it;
+  return sstr.str();
+}
 
 // ----------------------------------------------------------------------
 void printArray(ofstream &OS, std::array<char,8> v) {
   for (auto it: v) OS << it;
 }
 
+// ----------------------------------------------------------------------
+void printVector(ofstream &OS, std::vector<char> v) {
+  for (auto it: v) OS << it;
+}
 
 // ----------------------------------------------------------------------
 string jsFormat(vector<string> v) {

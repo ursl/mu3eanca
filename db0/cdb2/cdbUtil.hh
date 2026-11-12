@@ -109,11 +109,18 @@ std::array<char,8> int2Blob(int a);
 std::array<char,8> uint2Blob(unsigned int a);
 std::array<char,8> double2Blob(double a);
 std::array<char,8> uint642Blob(uint64_t a);
+std::vector<char> string2Blob(std::string s);
 
 std::array<char,8> getData(std::vector<char>::iterator &it);
 
+// -- get string from data. A string is first 8 chars (int size) and then size*8chars(ASCII)
+std::string        getStringData(std::vector<char>::iterator &it);
+
 std::string dumpArray(std::array<char,8> v);
+std::string dumpVector(std::vector<char> v);
+
 void printArray(std::ofstream &OS, std::array<char,8> v);
+void printVector(std::ofstream &OS, std::vector<char> v);
 
 
 std::vector<std::string>  split(const std::string &s, char delim);

@@ -1,7 +1,10 @@
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <vector>
 #include <string.h>
+
+#include "base64.hh"
 
 #include "Mu3eConditions.hh"
 #include "cdbUtil.hh"
@@ -68,7 +71,7 @@ int main(int argc, char* argv[]) {
   
   // -- command line arguments
   int mode(0), run(4001), verbose(0);
-  string db("/Users/ursl/data/mu3e/cdb"), gt("mcidealv6.5");
+  string db("/Users/ursl/data/mu3e/cdb"), gt("datav7.1=2026V2");
   string scals, sconfigs, chipid("0");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-cal")) {scals = string(argv[++i]);}
@@ -567,6 +570,47 @@ int main(int argc, char* argv[]) {
     cout << "is valid? for run 4756 ->" << ces->isValid(4756) << "<- and for run 4757 ->" << ces->isValid(4757) << "<-"  
          << endl;
     cout << "IOV run ->" << ces->getIovRun() << "<-" << endl;
+  } else if (26 == mode) {
+    cout << "Test string contents in BLOB" << endl;
+    string s = "Hello, World!";
+    vector<char> v;
+    auto appendA = [&v](const array<char,8>& a) {
+      v.insert(v.end(), a.begin(), a.end());
+    };
+    auto appendV = [&v](const vector<char>& a) {
+      v.insert(v.end(), a.begin(), a.end());
+    };
+    appendA(uint2Blob(0xdeadface));
+    appendV(string2Blob(s));
+    const int nums[] = {7, 42, -3};
+    for (int n : nums) appendA(int2Blob(n));
+    appendV(string2Blob("done"));
+
+    cout << "string: " << s << endl;
+    string raw(v.begin(), v.end());
+    string filename = "stringblob.b64";
+    ofstream out(filename);
+    out << base64_encode(raw) << endl;
+    out.close();
+
+    ifstream in(filename);
+    string b64;
+    getline(in, b64);
+    in.close();
+    cout << "reading from file" << endl;
+    string decoded = base64_decode(b64);
+    vector<char> back(decoded.begin(), decoded.end());
+    vector<char>::iterator it = back.begin();
+    unsigned int header = blob2UnsignedInt(getData(it));
+    string text = getStringData(it);
+    int n0 = blob2Int(getData(it));
+    int n1 = blob2Int(getData(it));
+    int n2 = blob2Int(getData(it));
+    string tail = getStringData(it);
+    cout << "header: 0x" << hex << header << dec << endl;
+    cout << "blob2string: " << text << endl;
+    cout << "numbers: " << n0 << " " << n1 << " " << n2 << endl;
+    cout << "tail: " << tail << endl;
   }
   return 0;
 }
