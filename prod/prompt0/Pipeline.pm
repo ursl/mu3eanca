@@ -270,6 +270,8 @@ sub _ctx_kv {
         cdb_pixelqualitylm_comment => _strip($cfg->{cdb_pixelqualitylm_comment} // ""),
         cdb_eventstuffv2_tag => _strip($cfg->{cdb_eventstuffv2_tag} // ""),
         cdb_eventstuffv2_comment => _strip($cfg->{cdb_eventstuffv2_comment} // ""),
+        cdb_eventstuffv3_tag => _strip($cfg->{cdb_eventstuffv3_tag} // ""),
+        cdb_eventstuffv3_comment => _strip($cfg->{cdb_eventstuffv3_comment} // ""),
         cdb_payload_dir      => _strip($cfg->{cdb_payload_dir} // ""),
     );
     $kv{tar_file} = ($pctx->{root} ne "" && $workdir ne "")
