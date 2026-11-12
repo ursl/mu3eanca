@@ -18,6 +18,7 @@
 #include "calDetConfV1.hh"
 #include "calEventStuffV1.hh"
 #include "calEventStuffV2.hh"
+#include "calEventStuffV3.hh"
 
 #include "calPixelQualityLM.hh"
 #include "calPixelTimeCalibration.hh"
@@ -71,13 +72,14 @@ int main(int argc, char* argv[]) {
   
   // -- command line arguments
   int mode(0), run(4001), verbose(0);
-  string db("/Users/ursl/data/mu3e/cdb"), gt("datav7.1=2026V2");
+  string db("/Users/ursl/data/mu3e/cdb"), gt("datav7.1=2026V2"), filename("nada");
   string scals, sconfigs, chipid("0");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-cal")) {scals = string(argv[++i]);}
     if (!strcmp(argv[i], "-chipid")) {chipid = string(argv[++i]);}
     if (!strcmp(argv[i], "-cfg")) {sconfigs = string(argv[++i]);}
     if (!strcmp(argv[i], "-db"))  {db = string(argv[++i]);}
+    if (!strcmp(argv[i], "-f"))  {filename = string(argv[++i]);}
     if (!strcmp(argv[i], "-gt"))  {gt = string(argv[++i]);}
     if (!strcmp(argv[i], "-m"))   {mode = atoi(argv[++i]);}
     if (!strcmp(argv[i], "-r"))   {run = atoi(argv[++i]);}
@@ -611,6 +613,32 @@ int main(int argc, char* argv[]) {
     cout << "blob2string: " << text << endl;
     cout << "numbers: " << n0 << " " << n1 << " " << n2 << endl;
     cout << "tail: " << tail << endl;
+  } else if (27 == mode) {
+    cout << "Test event stuff V3" << endl;
+    calEventStuffV3 *ces = new calEventStuffV3();
+    if (filename != "nada") {
+      ces->readJSON(filename);
+    } else {
+      ces->readJSON("/Users/ursl/data/mu3e/run2026/raw/012/run12609.mid.lz4.json");
+    }
+    string sblob = ces->makeBLOB();
+    ces->printBLOB(sblob, 1000);
+    payload pl;
+    pl.fHash = "tag_eventstuffv3_datav7.1=2026V0_iov_" + to_string(run);
+    pl.fComment = "test run " + to_string(run);
+    pl.fSchema = ces->getSchema();
+    pl.fBLOB = sblob;
+    cout << "######################################################################" << endl;
+    cout << "### createPayload" << endl;
+    cout <<  pl.printString(false) << endl;
+    ces->printBLOB(sblob, 1);
+    cout << "######################################################################" << endl;
+    ces->writePayloadToFile(pl.fHash, ".", pl);
+    cout << "Payload written to " << pl.fHash << endl;
+    cout << "and now readback" << endl;
+    ces->readPayloadFromFile(pl.fHash, ".");
+    ces->calculate(pl.fHash);
+    ces->printBLOB(ces->makeBLOB(), 1000);
   }
   return 0;
 }
