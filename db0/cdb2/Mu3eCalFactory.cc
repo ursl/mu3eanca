@@ -4,6 +4,7 @@
 #include "calDetSetupV1.hh"
 #include "calEventStuffV1.hh"
 #include "calEventStuffV2.hh"
+#include "calEventStuffV3.hh"
 #include "calFibreAlignment.hh"
 #include "calFibreQuality.hh"
 #include "calMppcAlignment.hh"
@@ -136,6 +137,8 @@ calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
     a = new calEventStuffV1();
   } else if (hash.find("eventstuffv2_") != string::npos)  {
     a = new calEventStuffV2();
+  } else if (hash.find("eventstuffv3_") != string::npos)  {
+    a = new calEventStuffV3();
   } else if (hash.find("fibrealignment_") != string::npos) {
     a = new calFibreAlignment();
   } else if (hash.find("fibrequality_") != string::npos)  {

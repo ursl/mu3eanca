@@ -71,6 +71,9 @@ Mu3eConditions::Mu3eConditions(std::string gt, cdbAbs *db) : fDB(db), fGT(gt) {
   cal = createClass("eventstuffv2_");
   if (cal) cal->setVerbosity(verbose);
 
+  cal = createClass("eventstuffv3_");
+  if (cal) cal->setVerbosity(verbose);
+
   cal = createClass("fibrealignment_");
   if (cal) cal->setVerbosity(verbose);
   cal = createClass("fibrequality_");
