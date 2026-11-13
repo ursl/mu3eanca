@@ -528,6 +528,14 @@
                 <% } %>
             <% } %>
 
+            <tr>
+                <td> eventstuffv3 </td>
+                <td>
+                    <% const es3Hash = "tag_eventstuffv3_datav7.1=2026V0_iov_" + data.BOR["Run number"]; %>
+                    <a href="/cdb?payload=<%= encodeURIComponent(es3Hash) %>"><%= es3Hash %></a>
+                </td>
+            </tr>
+
         </table>
         
         <% if (data.hasOwnProperty('Resources') && data.Resources.length > 0) { %>

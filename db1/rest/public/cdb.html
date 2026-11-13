@@ -1008,6 +1008,140 @@
                 (schema.includes("ui_mask") || schema.includes("c_mask"));
         }
 
+        // calEventStuffV3: scalars are 8-byte words, a string is a length plus
+        // one 8-byte word per character, and a list is a count, then that many
+        // strings, then that many values.
+        function isEventStuffV3Schema(schema, hash) {
+            if (hash && String(hash).includes("eventstuffv3")) return true;
+            return !!schema && schema.includes("eventdata.") && schema.includes("s_maskdirname");
+        }
+
+        function decodeEventStuffV3Blob(base64, schema) {
+            const binaryStr = atob(base64);
+            const size = binaryStr.length;
+            const bytes = new Uint8Array(size);
+            for (let i = 0; i < size; ++i) bytes[i] = binaryStr.charCodeAt(i);
+            const dataView = new DataView(bytes.buffer);
+            const lines = [];
+            if (schema && schema.trim().length > 0) {
+                lines.push("Schema:");
+                lines.push(schema.trim());
+                lines.push("");
+            }
+            if (size < 8) {
+                lines.push("HEADER: (insufficient data, need at least 8 bytes)");
+                return { text: lines.join("\n"), size };
+            }
+
+            let offset = 0;
+            const headerVal = dataView.getUint32(0, true);
+            offset = 8;
+            const expectedHeader = 0xDEADFACE >>> 0;
+            lines.push(headerVal === expectedHeader
+                ? "HEADER: DEADFACE"
+                : `HEADER: ${headerVal.toString(16).toUpperCase().padStart(8, "0")} (expected DEADFACE)`);
+
+            function need(n) {
+                if (offset + n > size) {
+                    throw new Error(`truncated eventstuffv3 blob at offset ${offset}`);
+                }
+            }
+            function i32() {
+                need(8);
+                const v = dataView.getInt32(offset, true);
+                offset += 8;
+                return v;
+            }
+            function u64() {
+                need(8);
+                const v = dataView.getBigUint64(offset, true).toString();
+                offset += 8;
+                return v;
+            }
+            function f64() {
+                need(8);
+                const v = dataView.getFloat64(offset, true);
+                offset += 8;
+                return v;
+            }
+            function flag() {
+                return i32() !== 0;
+            }
+            function str() {
+                const n = i32();
+                if (n < 0 || n > 1000000) throw new Error("string length " + n);
+                let s = "";
+                for (let i = 0; i < n; ++i) s += String.fromCharCode(i32() & 0xff);
+                return s;
+            }
+            function named(title, readVal) {
+                let n = i32();
+                if (n < 0) n = 0;
+                const names = [];
+                for (let i = 0; i < n; ++i) names.push(str());
+                const values = [];
+                for (let i = 0; i < n; ++i) values.push(readVal());
+                lines.push(`${title} n=${n}`);
+                for (let i = 0; i < n; ++i) {
+                    lines.push(`  ${names[i]} = ${values[i]}`);
+                }
+            }
+            function field(name, value) {
+                lines.push(`  .${name} = ${value}`);
+            }
+
+            lines.push("eventdata");
+            field("startframedata", u64());
+            field("endframedata", u64());
+            field("firstframewithfebproblems", u64());
+            field("n_ts", u64());
+            field("n_unexpected_ts", u64());
+            field("n_midasevent", u64());
+            field("n_inv_dsin", u64());
+
+            lines.push("pixeldata");
+            field("startframegooddata", u64());
+            field("endframegooddata", u64());
+            field("firstframewithfebunsortedhitdata", u64());
+            field("pixel_febs_ok", flag());
+            field("n_phit", u64());
+            field("n_phit_dup", u64());
+            field("maskdirname", str());
+            field("maskdirname_ok", flag());
+
+            lines.push("tiledata");
+            field("startframegooddata", u64());
+            field("endframegooddata", u64());
+            field("firstframewithfebunsortedhitdata", u64());
+            field("n_thit", u64());
+            field("tile_febs_ok", flag());
+
+            lines.push("fibredata");
+            field("startframegooddata", u64());
+            field("endframegooddata", u64());
+            field("firstframewithfebunsortedhitdata", u64());
+            field("n_fhit", u64());
+            field("fibre_febs_ok", flag());
+
+            named("daqdata deff", f64);
+            named("daqdata lvde", f64);
+
+            lines.push("magnetdata");
+            field("current_0", f64());
+            field("current_1", f64());
+            lines.push("beamdata");
+            field("beam_shutter", f64());
+            field("proton_current", f64());
+            field("filename", str());
+
+            named("reservedata int", i32);
+            named("reservedata uint64", u64);
+            named("reservedata double", f64);
+
+            if (offset < size) lines.push(`(${size - offset} trailing bytes)`);
+            return { text: lines.join("\n"), size };
+        }
+
         function decodePayloadBlobField(blobField, schema, options = {}) {
             if (!blobField) return { text: "(no BLOB field found)", size: 0 };
 
@@ -1026,6 +1160,18 @@
             // Special-case fixed-size pixel mask payload:
             // ui_id + char mask[256*250]
             // Accept both legacy "ui_mask" and new "c_mask[64000]" schema naming.
+            if (isEventStuffV3Schema(schema, options.hash)) {
+                try {
+                    return decodeEventStuffV3Blob(base64, schema);
+                } catch (e) {
+                    console.warn("Failed eventstuffv3 decode", e);
+                    return {
+                        text: "Failed to decode eventstuffv3 BLOB: " + e.message,
+                        size: Math.floor(base64.length * 0.75)
+                    };
+                }
+            }
+
             if (isPixelMaskSchema(schema)) {
                 try {
                     return decodePixelMaskBlobField(base64, schema, options);
@@ -1340,8 +1486,11 @@
         function renderPayloadDecoded() {
             if (!currentPayloadDecodeContext) return;
             const fullDetails = document.getElementById("payloadPixelMaskFullDetails").checked;
-            const { blobField, schema } = currentPayloadDecodeContext;
-            const { text, size } = decodePayloadBlobField(blobField, schema, { pixelMaskFullDetails: fullDetails });
+            const { blobField, schema, hash } = currentPayloadDecodeContext;
+            const { text, size } = decodePayloadBlobField(blobField, schema, {
+                pixelMaskFullDetails: fullDetails,
+                hash
+            });
             document.getElementById("payloadDetailBlobSize").textContent =
                 size ? `${size} bytes (approx.)` : "(unknown)";
             document.getElementById("payloadDetailDecoded").textContent = text;
@@ -1385,7 +1534,16 @@
                     payloadDoc.data ||
                     null;
                 const schema = payloadDoc.schema || rowData.schema || "";
-                currentPayloadDecodeContext = { blobField, schema };
+                if (payloadDoc.schema) {
+                    document.getElementById("payloadDetailSchema").textContent = payloadDoc.schema;
+                }
+                if (payloadDoc.comment) {
+                    document.getElementById("payloadDetailComment").textContent = payloadDoc.comment;
+                }
+                if (payloadDoc.date) {
+                    document.getElementById("payloadDetailDate").textContent = payloadDoc.date;
+                }
+                currentPayloadDecodeContext = { blobField, schema, hash };
                 fullDetailsCheckbox.disabled = !isPixelMaskSchema(schema);
                 renderPayloadDecoded();
             } catch (error) {
@@ -2102,6 +2260,12 @@
             loadGlobaltags();
             loadHostname();
             showView(currentViewFromHash());
+            const payloadHash = new URLSearchParams(window.location.search).get("payload");
+            if (payloadHash) {
+                const iov = payloadHash.split("_iov_")[1] || "";
+                const tag = payloadHash.replace(/^tag_/, "").replace(/_iov_.*$/, "");
+                showPayloadDetails({ hash: payloadHash, iov, tag, schema: "", comment: "", date: "" });
+            }
         });
     </script>
 </body>
