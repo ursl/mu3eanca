@@ -1,5 +1,7 @@
 #! /usr/bin/perl
 # minalyzer — SLURM minalyzer over the raw file (processRuns submitJobsRawMinalyzer).
+# Jobs cover the run in steps of minalyzer_n_events. Each job analyzes the
+# first minalyzer_prescale fraction of its step (-s skip -e take).
 use strict;
 use warnings;
 use File::Basename qw(dirname basename);
@@ -23,7 +25,15 @@ if (!defined $total || $total eq "") {
     $total = TaskLib::rdb_events($ctx, $run);
     TaskLib::ctx_set($ctxfile, n_events => $total);
 }
-my $chunk = 0 + ($ctx->{n_events_chunk} // 100000);
+my $chunk = 0 + ($ctx->{minalyzer_n_events} // 2000);
+my $prescale = 0 + ($ctx->{minalyzer_prescale} // 1);
+$prescale = 1 if $prescale <= 0 || $prescale > 1;
+my $take = $chunk;
+if ($prescale < 1 && $chunk > 0) {
+    $take = int($chunk * $prescale + 1e-9);
+    $take = 1 if $take < 1;
+}
+TaskLib::task_log($ctx, $name, "chunk=$chunk prescale=$prescale take=$take");
 
 if (!-f $file && !$ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "raw file missing: $file");
@@ -51,7 +61,17 @@ my $rc = SlurmBatch::run($ctx, {
     ],
     job_env => sub {
         my ($j) = @_;
-        my $anl = $j->{last} ? "-s$j->{skip}" : "-s$j->{skip} -e$j->{chunk}";
+        my $anl;
+        if ($prescale >= 1 && $j->{last}) {
+            $anl = "-s$j->{skip}";
+        } else {
+            my $n = $take;
+            if ($j->{last} && $total > $j->{skip}) {
+                my $remain = $total - $j->{skip};
+                $n = $remain if $remain < $n;
+            }
+            $anl = "-s$j->{skip} -e$n";
+        }
         return [ [ ANLZR => $anl ] ];
     },
     merge => sub {
