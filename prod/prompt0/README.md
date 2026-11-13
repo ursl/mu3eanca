@@ -101,6 +101,14 @@ Options:
 -r RUNS        run numbers: 12345,12346 or inclusive 12345..12350
 -j N           make -jN
 -n             dry-run
+-f, --force    redo a task whose output file already exists (also --redo)
+```
+
+`-f` goes with the other options, before the target:
+
+```tcsh
+./prompt -f -P beam run 12345
+./prompt -f -P midasmeta run 11800
 ```
 
 ---
@@ -134,6 +142,7 @@ pipeline_alias: test=midasmeta
 
 ```tcsh
 ./prompt -n run 12345
+./prompt -f -P beam run 12345
 ./prompt -P beam run 12345
 ./prompt -P minalyzer_pdf run 12345
 ./prompt -P fillQualityPixels run 9410
