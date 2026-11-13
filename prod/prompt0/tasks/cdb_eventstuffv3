@@ -5,10 +5,11 @@
 #   {raw_dir}/011/run11015.mid.lz4.json
 # readJSON also reads the sibling ODB file run11015.json (DEFF, LVDE, TDAC).
 #
-# This step only writes the local payload. IOV insertion and the CDB REST
-# upload are not done here.
+# Writes the local payload, then uploads that file. No IOV insertion and
+# no tag upload.
 #
 #   cdbRunPayloadWriter -u $CDB -m eventstuffv3 -a $cdb_eventstuffv3_comment -f <json> -t $cdb_eventstuffv3_tag -r RUN
+#   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync payload --name tag_eventstuffv3_<tag>_iov_RUN --del
 #
 # The file is $CDB/payloads/eventstuffv3_<tag>/<block>/tag_eventstuffv3_<tag>_iov_RUN
 use strict;
@@ -37,13 +38,28 @@ my $comment = $ctx->{cdb_eventstuffv3_comment} // "";
 $comment = "prompt" if $comment eq "";
 my $payload = "tag_eventstuffv3_${short}_iov_$run";
 
-my @cmd = ($bindir . "/cdbRunPayloadWriter",
-    "-u", $cdb, "-m", "eventstuffv3", "-a", $comment,
-    "-f", $json, "-t", $short, "-r", $run);
+my $rest = "http://mu3edb0/cdb";
+my $dbc = $ctx->{cdb_dbconn} // "";
+if ($dbc =~ m{^https?://}) {
+    $rest = $dbc;
+    $rest =~ s{/$}{};
+} elsif (($ctx->{rdb_url} // "") =~ m{^(https?)://([^/:]+)}) {
+    $rest = "$1://$2/cdb";
+}
+
+my @steps = (
+    [$bindir . "/cdbRunPayloadWriter",
+        "-u", $cdb, "-m", "eventstuffv3", "-a", $comment,
+        "-f", $json, "-t", $short, "-r", $run],
+    [$bindir . "/syncMu3eDB0",
+        "--dir", $cdb, "--host", $rest, "--sync", "payload", "--name", $payload, "--del"],
+);
 
 if ($ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "would: cd $cdbdir");
-    TaskLib::task_log($ctx, $name, "would: @cmd");
+    for my $cmd (@steps) {
+        TaskLib::task_log($ctx, $name, "would: @$cmd");
+    }
     exit 0;
 }
 
@@ -59,9 +75,11 @@ if (!-f $json) {
     TaskLib::task_log($ctx, $name, "metadata JSON missing: $json");
     exit 2;
 }
-if (!-x $cmd[0] && !-f $cmd[0]) {
-    TaskLib::task_log($ctx, $name, "program missing: $cmd[0]");
-    exit 2;
+for my $exe (map { $_->[0] } @steps) {
+    if (!-x $exe && !-f $exe) {
+        TaskLib::task_log($ctx, $name, "program missing: $exe");
+        exit 2;
+    }
 }
 
 my $cwd = getcwd();
@@ -70,16 +88,21 @@ chdir($cdbdir) or do {
     exit 2;
 };
 TaskLib::task_log($ctx, $name, "cwd=$cdbdir");
-TaskLib::task_log($ctx, $name, "@cmd");
-my $rc = system(@cmd);
+
+for my $cmd (@steps) {
+    TaskLib::task_log($ctx, $name, "@$cmd");
+    my $rc = system(@$cmd);
+    if ($rc != 0) {
+        chdir($cwd);
+        TaskLib::task_log($ctx, $name, "failed ($rc): $cmd->[0]");
+        exit 2;
+    }
+}
+
 chdir($cwd) or do {
     TaskLib::task_log($ctx, $name, "cannot chdir back to $cwd: $!");
     exit 2;
 };
-if ($rc != 0) {
-    TaskLib::task_log($ctx, $name, "failed ($rc): $cmd[0]");
-    exit 2;
-}
 
 TaskLib::task_log($ctx, $name, "payload $payload");
 exit 0;
