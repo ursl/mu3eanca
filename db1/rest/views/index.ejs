@@ -1246,7 +1246,11 @@ async function updateCsvDisplay() {
                             else if (v === "0") { cls = "dq-bad"; label = "bad"; }
                             else if (v === "2") { cls = "dq-present"; label = "present"; }
                             else if (v === "3") { cls = "dq-nodata"; label = "no data"; }
-                            html += '<span class="dq-box ' + cls + '" title="' + name + ': ' + label + '"></span>';
+                            let tip = name + ": " + label;
+                            if (name === "DEFF" && (v === "1" || v === "0")) {
+                                tip += ", eff(pixel,fibres) > 0.99, eff(tiles) > 0.75?";
+                            }
+                            html += '<span class="dq-box ' + cls + '" title="' + tip + '"></span>';
                         }
                         html += '</td>';
                         return html;
