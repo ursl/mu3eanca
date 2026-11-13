@@ -755,6 +755,18 @@
                 }
             }
         }
+        // A grade that is not in the record is unset. An untouched checkbox
+        // is unchecked, which the summary paints as bad.
+        for (const [prop, id] of detMap) {
+            if (Object.prototype.hasOwnProperty.call(onlinedq, prop)) continue;
+            const element = document.getElementById(id);
+            if (!element) continue;
+            element.checked = false;
+            element.indeterminate = true;
+            delete element.dataset.dq;
+            dqOrig.set(prop, "-1");
+            updateDQCheckboxStyle(element);
+        }
      } else {
          if (hasAttributes) {
              console.log("Set attributes to indeterminate");
