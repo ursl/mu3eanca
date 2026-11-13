@@ -164,6 +164,7 @@ sub prompt_context {
         data_products  => [qw(mlzr trirec sort)],
         dry_run        => $opts{dry_run} // 0,
         force          => $opts{force} ? 1 : 0,
+        interactive    => $opts{interactive} ? 1 : 0,
         jobs           => $opts{jobs},
     };
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Usage:        run [-C] [-D dest] [-p short | standard | long] -c run.csh -t tarfile -m {debug|local|batch} [-b] -r {pattern1%pattern2}
+# Usage:        run [-C] [-D dest] [-p short | standard | long] -c run.csh -t tarfile -m {debug|local|batch|interactive} [-b] -r {pattern1%pattern2}
 # ------            [-x 'bin/runTreeReaders -r bmmReader -C cuts/bla.cuts'] *
 #
 # Examples:    run -t ../220318.tar.gz -c ~/mu3e/mu3eanca/slurm/slurm-mu3eSim.csh -r 'STORAGE1 /psi/home/langenegger/data/slurm/root%SITE T3_CH_PSI' run-test.mac
@@ -246,6 +246,26 @@ foreach $jobfile (@ARGV) {
             close(IN);
             system("/usr/bin/tail -2 $jobsList >> ../$jobsList");
         }
+    } elsif ($opt_m eq "interactive") {
+        print "interactive running: $job.csh\n";
+        if ($opt_d) {
+            print("./$job.csh\n");
+        } else {
+            system("./$job.csh");
+            my $status = $?;
+            my $rc = $status >> 8;
+            $rc = 1 if $rc == 0 && ($status & 127);
+            if ($rc != 0) {
+                print "interactive $job.csh failed (exit $rc)\n";
+                exit($rc);
+            }
+            open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
+            print IN "###Submitted Job Ids###\n";
+            print IN "interactive $tdir \n";
+            print IN "\# $timeStamp $pwd/$tdir $host $host\n";
+            close(IN);
+            system("/usr/bin/tail -2 $jobsList >> ../$jobsList");
+        }
     } elsif ($opt_m eq "batch") {
         print "batch submission: $job\n";
         if ($jobName eq "nada") {
@@ -301,7 +321,7 @@ sub makeCshFile {
     open(OUT, ">$ljob.csh")  || die "Cannot open $ljob.csh\n";
     my $datum = `/bin/date`; chop $datum;
     while (<IN>) {
-        if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug") && /\# BATCH START/) {
+        if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug" || $opt_m eq "interactive") && /\# BATCH START/) {
             print OUT "# BATCH START\n";
             print OUT "mkdir -p /scratch/$user\n";
             print OUT "cd /scratch/$user\n";
@@ -315,7 +335,7 @@ sub makeCshFile {
             print OUT "/bin/cp $pwd/$tdir/$ljobfile .\n";
         }
 
-        if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug") && /\# BATCH END/) {
+        if (($opt_m eq "batch" || $opt_m eq "local" || $opt_m eq "debug" || $opt_m eq "interactive") && /\# BATCH END/) {
             if ($opt_m eq "debug") {
                 # do nothing!
             } else {

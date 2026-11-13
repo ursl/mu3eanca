@@ -166,7 +166,7 @@ sub _submit_one {
     chdir($cwd) or die "SlurmBatch: cannot chdir back to $cwd: $!\n";
     if ($rc != 0) {
         task_log($ctx, $name, "slurm/run exited " . ($rc >> 8));
-        return (0, "");
+        return (0, "", $rc);
     }
 
     my $slurmid = 0;
@@ -182,7 +182,7 @@ sub _submit_one {
     if ($slurmid > 0) {
         task_log($ctx, $name, "SLURM job $slurmid -> $slurmout");
     }
-    return ($slurmid, $slurmout);
+    return ($slurmid, $slurmout, 0);
 }
 
 # ----------------------------------------------------------------------
@@ -269,8 +269,13 @@ sub run {
     my $total = 0 + ($spec->{total} // 0);
     task_log($ctx, $name, "NJOBS: $njobs  total=$total chunk=$chunk");
 
+    my $interactive = $ctx->{interactive} ? 1 : 0;
     my @q = _queue_args($ctx->{slurm_queue} // "-p hourly");
     my @cmd0 = ((-x $slurm) ? ($slurm) : ($^X, $slurm), @q, "-t", $tar, "-c", $wrap);
+    if ($interactive) {
+        push @cmd0, "-m", "interactive";
+        task_log($ctx, $name, "interactive: run here and wait");
+    }
     my $abbr = $spec->{abbr} // $stage;
     my $split = ($chunk > 0 || $njobs > 1) ? 1 : 0;
 
@@ -295,7 +300,11 @@ sub run {
         }
         my $r = encode_replace(\@pairs);
         my @cmd = (@cmd0, "-j", $jname, "-r", $r, $job);
-        my ($sid, $sout) = _submit_one($ctx, $name, $dirs->{rundir}, \@cmd);
+        my ($sid, $sout, $subrc) = _submit_one($ctx, $name, $dirs->{rundir}, \@cmd);
+        if ($interactive && !$ctx->{dry_run} && $subrc) {
+            task_log($ctx, $name, "interactive job $job failed");
+            return 2;
+        }
         push @jobs, $job;
         if ($sid > 0) {
             my $logrel = "tmp-$job/" . ($sout ne "" ? $sout : $job) . ".slurm.log";
@@ -317,12 +326,13 @@ sub run {
         }
         return 0;
     }
-    if (!keys %ids) {
-        task_log($ctx, $name, "ERROR no slurm job submitted, something went wrong?!");
-        return 2;
+    if (!$interactive) {
+        if (!keys %ids) {
+            task_log($ctx, $name, "ERROR no slurm job submitted, something went wrong?!");
+            return 2;
+        }
+        wait_jobs($ctx, $name, $dirs->{rundir}, \%ids);
     }
-
-    wait_jobs($ctx, $name, $dirs->{rundir}, \%ids);
 
     if ($spec->{merge}) {
         $spec->{merge}->($ctx, {

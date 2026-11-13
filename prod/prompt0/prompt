@@ -7,6 +7,8 @@
 #   ./prompt init
 #   ./prompt bootstrap          # setup + init
 #   ./prompt [-P beam] run 12345
+#   ./prompt [-P minalyzer] irun 12345   # batch tasks on this node; prompt waits
+#   ./prompt [-P dqm] irun 12345
 #   ./prompt -f -P midasmeta run 11800 # redo even if the output file exists
 #   ./prompt [-P beam] process 10482   # that run, every later raw file, then sleep
 #   ./prompt processEven 10482        # same scan, only even run numbers
@@ -121,6 +123,7 @@ Targets:
   status         paths and build/tar state
   list           print resolved config + packages (default)
   run RUN ...    run the pipeline for each RUN (see -P)
+  irun RUN ...   same as run; SLURM tasks run on this node and prompt waits
   process RUN    from RUN forward through raw files (010, 011, ...), then sleep and look again
   processEven RUN  same as process, only even run numbers
   processOdd RUN   same as process, only odd run numbers
@@ -226,7 +229,7 @@ if ($target =~ /^(pool|prod)(\d+)$/) {
 
 my @runs;
 my $from_range = {};
-if ($target eq "run" || $target eq "cleanup" || $target eq "process"
+if ($target eq "run" || $target eq "irun" || $target eq "cleanup" || $target eq "process"
     || $target eq "processEven" || $target eq "processOdd" || $pool_mode ne "") {
     my ($runlist, $range_mark) = _collect_runs($target, @ARGV);
     @runs = @$runlist;
@@ -248,6 +251,7 @@ my $banner = prefix() . "config=$cfg_file host=$host target=$target"
     . (@packages ? " packages=" . join(",", @packages) : "")
     . ($pipeline ne "" ? " pipeline=$pipeline" : "")
     . (@runs ? " runs=" . join(",", @runs) : "")
+    . ($target eq "irun" ? " (interactive)" : "")
     . ($force ? " (force)" : "")
     . ($dry_run ? " (dry-run)" : "");
 print($banner, "\n");
@@ -547,7 +551,8 @@ if ($target eq "setup") {
         print(prefix(), "$target: sleep ${pause}s\n");
         $wait_io->($pause);
     }
-} elsif ($target eq "run") {
+} elsif ($target eq "run" || $target eq "irun") {
+    $opts{interactive} = 1 if $target eq "irun";
     $opts{runs} = \@runs;
     $opts{range_runs} = $from_range;
     $opts{banner} = $banner;

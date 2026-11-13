@@ -226,6 +226,7 @@ sub _ctx_kv {
         year             => $year,
         dry_run          => $pctx->{dry_run} ? 1 : 0,
         force            => $pctx->{force} ? 1 : 0,
+        interactive      => $pctx->{interactive} ? 1 : 0,
         root             => $pctx->{root} // "",
         parent           => $pctx->{parent} // "",
         workdir          => $workdir,
@@ -310,6 +311,7 @@ sub pipeline_run {
 
     _log("pipeline: " . join(",", @tasks)
         . "  runs=" . join(",", @runs)
+        . ($pctx->{interactive} ? " (interactive)" : "")
         . ($pctx->{force} ? " (force)" : "")
         . ($dry ? " (dry-run)" : ""));
 
