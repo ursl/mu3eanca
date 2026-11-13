@@ -1,0 +1,24 @@
+diff --git a/env-merlin b/env-merlin
+index 407ce19..a9d9822 100644
+--- a/env-merlin
++++ b/env-merlin
+@@ -1,7 +1,16 @@
+-source /data/project/mu3e/mu3e_env.sh
++export BASEDIR=/data/experiment/mu3e/code
++source $BASEDIR/mu3e_env.sh
+ export PKG_CONFIG_PATH=$Eigen3_DIR/share/pkgconfig/
+-export CMAKE_PREFIX_PATH=/data/project/mu3e/software/yaml-cpp-0.8.0/lib64/cmake/yaml-cpp:$CMAKE_PREFIX_PATH
+-export LD_LIBRARY_PATH=/data/project/mu3e/software/yaml-cpp-0.8.0/lib64:$LD_LIBRARY_PATH
++export CMAKE_PREFIX_PATH=$BASEDIR/software/yaml-cpp-0.8.0/lib64/cmake/yaml-cpp:$CMAKE_PREFIX_PATH
++
++export CMAKE_PREFIX_PATH="$HOME/prompt/local${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
++export CXXFLAGS="-I$HOME/prompt/local/include ${CXXFLAGS:-}"
++
++export LD_LIBRARY_PATH=$BASEDIR/software/yaml-cpp-0.8.0/lib64:$LD_LIBRARY_PATH
++export LD_LIBRARY_PATH="$HOME/prompt/local/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
++
++export LDFLAGS="-pthread ${LDFLAGS:-}"
++
+ ##Install nlohmann_json
+ #mkdir software && cd software
+ #wget https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz
