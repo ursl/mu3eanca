@@ -1219,7 +1219,7 @@ async function updateCsvDisplay() {
                         <th>End time</th>
                         <th>Sig.</th>
                         <th>Class</th>
-                        <th class="dq-sum" title="Vertex, Pixel, Fibres, Tiles"><span class="dq-sum-head"><span>V</span><span>P</span><span>F</span><span>T</span></span></th>
+                        <th class="dq-sum" title="Vertex, Pixel, Fibres, Tiles, DEFF"><span class="dq-sum-head"><span>V</span><span>P</span><span>F</span><span>T</span><span>D</span></span></th>
                         <th>Events</th>
                         <th>Shift crew</th>
                         <th>Shift/RunInfo Comments</th>
@@ -1234,7 +1234,8 @@ async function updateCsvDisplay() {
                             ["Vertex", dq.vertex],
                             ["Pixel", dq.pixel],
                             ["Fibres", dq.fibres],
-                            ["Tiles", dq.tiles]
+                            ["Tiles", dq.tiles],
+                            ["DEFF", dq.deff]
                         ];
                         let html = '<td class="dq-sum">';
                         for (const [name, value] of fields) {
