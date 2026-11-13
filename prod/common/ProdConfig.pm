@@ -214,9 +214,11 @@ sub read_cfg_file {
         if ($line =~ /^\s*([A-Za-z0-9_]+)\s*:\s*(.*)$/) {
             my ($key, $val) = ($1, _parse_value($2));
             if ($mode ne "") {
-                # Repeated patch:, symlink:, build_subdir:, and make_subdir: lines accumulate.
+                # Repeated patch:, symlink:, build_subdir:, make_subdir:,
+                # and build_source: lines accumulate.
                 if ($key eq "patch" || $key eq "symlink"
-                    || $key eq "build_subdir" || $key eq "make_subdir") {
+                    || $key eq "build_subdir" || $key eq "make_subdir"
+                    || $key eq "build_source") {
                     $block{$key} = [] unless ref($block{$key}) eq "ARRAY";
                     push @{$block{$key}}, $val;
                 } else {
@@ -269,6 +271,7 @@ my @REPO_SUFFIXES = qw(
     checkout_branch
     checkout_tag
     cmake_args
+    build_source
     build_subdir
     make_subdir
     patch
@@ -371,11 +374,16 @@ sub _normalize_repo {
     }
     my @build_subdirs = _repo_rel_paths($id, "build_subdir", $raw->{build_subdir});
     my @make_subdirs  = _repo_rel_paths($id, "make_subdir", $raw->{make_subdir});
+    my @build_sources = _repo_rel_paths($id, "build_source", $raw->{build_source});
     if (!$cmake && @build_subdirs) {
         die "repo $id: build_subdir is for cmake; use make_subdir with cmake: false\n";
     }
     if ($cmake && @make_subdirs) {
         die "repo $id: make_subdir is for cmake: false; use build_subdir\n";
+    }
+    if (@build_sources && ($cmake_args ne "" || @build_subdirs || @make_subdirs)) {
+        die "repo $id: build_source is the build; remove cmake_args, "
+            . "build_subdir, and make_subdir\n";
     }
 
     return {
@@ -389,8 +397,9 @@ sub _normalize_repo {
         build        => $build,
         build_subdirs => \@build_subdirs,
         make_subdirs  => \@make_subdirs,
-        cmake        => $cmake,
-        relink       => $relink,
+        cmake         => $cmake,
+        build_sources => \@build_sources,
+        relink        => $relink,
         submodules   => $submodules,
         install      => $install,
         make_jobs    => 0 + $jobs,

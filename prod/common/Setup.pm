@@ -27,6 +27,7 @@ package Setup;
 #         2026/07/13 first shot
 #         2026/07/13 multi-repo rewrite
 #         2026/10/14 build_subdir: cmake inside a clone subdirectory
+#         2026/11/13 build_source: bash-source scripts instead of cmake/make
 # ----------------------------------------------------------------------
 
 use strict;
@@ -193,6 +194,7 @@ sub setup_contexts_from_config {
             build_subdirs => [ @{$repo->{build_subdirs} // []} ],
             make_subdirs  => [ @{$repo->{make_subdirs} // []} ],
             cmake         => $repo->{cmake} ? 1 : 0,
+            build_sources => [ @{$repo->{build_sources} // []} ],
             relink        => $repo->{relink},
             submodules    => $repo->{submodules},
             install       => $repo->{install} ? 1 : 0,
@@ -545,9 +547,43 @@ sub _build_one {
 }
 
 # ----------------------------------------------------------------------
+# Quote for a bash single-quoted word.
+sub _sh_quote {
+    my ($s) = @_;
+    $s =~ s/'/'\\''/g;
+    return "'$s'";
+}
+
+# ----------------------------------------------------------------------
+# build_source files are sourced, in order, by one bash in the clone.
+# install.sh uses `return`, so it has to be sourced rather than executed.
+sub _build_sources {
+    my ($s) = @_;
+    my @rels = @{$s->{build_sources} // []};
+    return unless @rels;
+
+    my @steps;
+    for my $rel (@rels) {
+        my $file = "$s->{path}/$rel";
+        die "Setup: build_source '$rel' not found under $s->{path}\n"
+            unless $s->{dry_run} || -f $file;
+        push @steps, "source " . _sh_quote($rel);
+    }
+    my $script = "set -e; cd " . _sh_quote($s->{path})
+        . " && " . join(" && ", @steps);
+    _log($s, "bash source: $script");
+    _run($s, "bash", "-c", $script);
+}
+
+# ----------------------------------------------------------------------
 sub setup_build {
     my ($s) = @_;
     return unless $s->{build};
+
+    if (@{$s->{build_sources} // []}) {
+        _build_sources($s);
+        return;
+    }
 
     my $label = $s->{cmake} ? "build_subdir" : "make_subdir";
     my @subs = @{$s->{cmake} ? ($s->{build_subdirs} // []) : ($s->{make_subdirs} // [])};
@@ -742,7 +778,9 @@ sub setup_status_repo {
     my @syms = map { "$_->{name}=$_->{target}" } @{$s->{symlinks} // []};
     print("  symlinks:  ", (@syms ? join(", ", @syms) : "(none)"), "\n");
     print("  build:     ", ($s->{build} ? "yes" : "no"), "\n");
-    print("  cmake:     ", ($s->{cmake} ? "yes" : "no"), "\n") if $s->{build};
+    my @bsrc = @{$s->{build_sources} // []};
+    print("  build_source: ", join(", ", @bsrc), "\n") if @bsrc;
+    print("  cmake:     ", ($s->{cmake} ? "yes" : "no"), "\n") if $s->{build} && !@bsrc;
     my @bsubs = @{$s->{build_subdirs} // []};
     print("  build_subdir: ", join(", ", @bsubs), "\n") if @bsubs;
     my @msubs = @{$s->{make_subdirs} // []};
