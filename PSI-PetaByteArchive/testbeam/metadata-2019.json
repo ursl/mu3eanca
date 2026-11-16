@@ -1,7 +1,8 @@
 {
+    "datasetName": "mu3e-testbeam-2019",
     "principalInvestigator": "urs.langenegger@psi.ch",
     "creationLocation": "/data/project/mu3e/testbeam/2019",
-    "dataFormat": "mid.lz4",
+    "dataFormat": "mid",
     "sourceFolder": "/data/project/mu3e/testbeam/2019",
     "owner": "mu3e collaboration",
     "ownerEmail": "urs.langenegger@psi.ch",
