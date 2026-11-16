@@ -1,0 +1,38 @@
+# --------------------------------------------------- 
+# HELPFILE for interactions with the PetaByte archive
+# --------------------------------------------------- 
+
+# Manual
+https://data-catalog-services.pages.psi.ch/scicat/ingestorManual/
+
+# -- Location
+merlin-l-001>pwd
+/data/project/general/pioneer/backup-run2026/PetaByteArchive
+
+
+# -- environment
+module load datacatalog
+setenv SCICAT_TOKEN [login to discovery.psi.ch and then go to USERNAME->Settings]
+
+
+# -- ingest (= preparing for upload to the PetaByteArchive), e.g. for 2025
+cd ..../mu3eanca/PSI-PetaByteArchive/2025
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-2026-009.json
+datasetIngestor --token $SCICAT_TOKEN --ingest --autoarchive metadata-2026-010.json
+
+# -- list datasets web interface
+https://discovery.psi.ch/datasets
+
+# -- list datasets command line version (requires merlin password)
+merlin-l-001>datasetRetriever -token $SCICAT_TOKEN .
+
+# -- list datasets
+merlin-l-002>datasetRetriever -token $SCICAT_TOKEN .
+
+# -- before retrieval:
+on discovery.psi.ch select datasets, "add to cart", go to cart, click the "retrieve" button
+cf. https://melanie.gitpages.psi.ch/SciCatPages/#sec-6  -> 6.1 First Step
+
+# -- retrieve
+merlin-l-002>datasetRetriever -dataset 20.500.11935/ed647bd8-4efe-4757-b5a0-b8d286beebcc -retrieve -token $SCICAT_TOKEN .
+
