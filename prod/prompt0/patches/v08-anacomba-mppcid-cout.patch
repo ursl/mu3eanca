@@ -1,0 +1,13 @@
+diff --git a/src/convertRawHitsToGlobal.cpp b/src/convertRawHitsToGlobal.cpp
+index 21fe6e0..e38baa1 100644
+--- a/src/convertRawHitsToGlobal.cpp
++++ b/src/convertRawHitsToGlobal.cpp
+@@ -274,7 +274,7 @@ void convertRawFibreHitsToGlobal(
+          }
+          else
+          {
+-             std::cout << "[DEBUG]: mppcId: " << mppcId << " not found!" << std::endl;
++          //             std::cout << "[DEBUG]: mppcId: " << mppcId << " not found!" << std::endl;
+              fHit.x = fHit.y = std::numeric_limits<double>::quiet_NaN();
+          }
+          fHit.column = scifi_column;
