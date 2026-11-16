@@ -1,0 +1,12 @@
+{
+    "datasetName": "mu3e-2026-raw017",
+    "principalInvestigator": "urs.langenegger@psi.ch",
+    "creationLocation": "piE5",
+    "dataFormat": "mid.lz4",
+    "sourceFolder": "/data/project/mu3e/data/2026/raw/017",
+    "owner": "mu3e collaboration",
+    "ownerEmail": "urs.langenegger@psi.ch",
+    "type": "raw",
+    "description": "mu3e 2026 data 017",
+    "ownerGroup": "a-41514"
+}
