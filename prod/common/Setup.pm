@@ -28,6 +28,7 @@ package Setup;
 #         2026/07/13 multi-repo rewrite
 #         2026/10/14 build_subdir: cmake inside a clone subdirectory
 #         2026/11/13 build_source: bash-source scripts instead of cmake/make
+#         2026/11/16 build_source: set -e only around the first script
 # ----------------------------------------------------------------------
 
 use strict;
@@ -557,6 +558,10 @@ sub _sh_quote {
 # ----------------------------------------------------------------------
 # build_source files are sourced, in order, by one bash in the clone.
 # install.sh uses `return`, so it has to be sourced rather than executed.
+# `set -e` applies only to the first script (the environment). Later
+# scripts are installers written for an interactive `source`: a missing
+# optional command, such as clhep-config in anaComba install.sh, must
+# not abort them. A `return 1` from an installer still fails the bootstrap.
 sub _build_sources {
     my ($s) = @_;
     my @rels = @{$s->{build_sources} // []};
@@ -569,8 +574,11 @@ sub _build_sources {
             unless $s->{dry_run} || -f $file;
         push @steps, "source " . _sh_quote($rel);
     }
-    my $script = "set -e; cd " . _sh_quote($s->{path})
-        . " && " . join(" && ", @steps);
+    my $script = "cd " . _sh_quote($s->{path});
+    for (my $i = 0; $i < @steps; $i++) {
+        $script .= ($i == 0) ? " && set -e && " : " && set +e && ";
+        $script .= $steps[$i];
+    }
     _log($s, "bash source: $script");
     _run($s, "bash", "-c", $script);
 }

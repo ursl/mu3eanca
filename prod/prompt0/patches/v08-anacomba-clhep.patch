@@ -1,0 +1,14 @@
+diff --git a/install.sh b/install.sh
+--- a/install.sh
++++ b/install.sh
+@@ -90,7 +90,9 @@
+ # create env-anaComba in mainDir to be sourced on new (terminal) sessions
+ echo "Creating an environment file to be sourced in every new session"
+ ROOT_src_script="$(root-config --prefix)/bin/thisroot.sh"
+-CLHEP_LIB_DIR="$(clhep-config --prefix)/lib"
++if command -v clhep-config >/dev/null 2>&1; then
++    CLHEP_LIB_DIR="$(clhep-config --prefix)/lib"
++fi
+ 
+ cd $mainDir
+ 
