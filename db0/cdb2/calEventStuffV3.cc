@@ -375,6 +375,7 @@ string readTextFile(const string& filename) {
   if (!in.is_open()) {
     cout << "calEventStuffV3::readTextFile> Error, file " << filename << " not found" << endl;
     return "";
+  }
   stringstream buf;
   buf << in.rdbuf();
   return buf.str();
