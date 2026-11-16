@@ -9,7 +9,7 @@ LDIRECTORY = $(shell pwd)
 UTIL := ../../util
 
 # -- ARGH!? But it works ...
-ifneq (,$(or $(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
+ifneq (,$(or $(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring cn000,$(LHOST)),$(findstring login002,$(LHOST))))
   INCMONGODB    =
   LIBMONGODB    =
   LIBCURL       = -L/usr/lib64 -lcurl
@@ -95,7 +95,7 @@ LBINARIES = testCDB anaPixelQuality anaEventStuff syncJSON syncMu3eDB0 \
 
 MONGOBINARIES = syncMongo  syncRDB uploadDetConfig downloadDetConfig deleteDetConfig
 
-ifneq (,$(or $(findstring mu3edb0,$(LHOST)),$(findstring merlin,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
+ifneq (,$(or $(findstring mu3edb0,$(LHOST)),$(findstring merlin,$(LHOST)),$(findstring cn000,$(LHOST)),$(findstring login001,$(LHOST)),$(findstring login002,$(LHOST))))
        $(info ************  MERLIN/mu3edb0 VERSION ************)
        FILES = $(filter-out cdbMongo.o, $(LFILES))
        BINARIES = $(filter-out fillDB syncCloud syncRDB syncMongo uploadDetConfig downloadDetConfig deleteDetConfig, $(LBINARIES))

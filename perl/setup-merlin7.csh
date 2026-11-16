@@ -12,7 +12,7 @@ setenv LZ4_ROOT "${SW}/lz4-1.10.0"
 setenv LD_LIBRARY_PATH "${Boost_DIR}/lib:${LZ4_ROOT}/lib:${LD_LIBRARY_PATH}"
 
 setenv ROOTSYS "${SW}/root-v6-29-02"
-setenv PATH "${ROOTSYS}/bin:${PATH}"
+setenv PATH "${ROOTSYS}/bin:${PATH}:/data/user/langenegger/mu3e/mu3eanca/perl:/data/user/langenegger/mu3e/mu3eanca/slurm"
 setenv LD_LIBRARY_PATH "${ROOTSYS}/lib:${LD_LIBRARY_PATH}"
 source "${SW}/geant4-v11.1.2/bin/geant4.csh" ${SW}/geant4-v11.1.2/bin
 
@@ -35,18 +35,30 @@ if ("$MU3E_TAG" != "-") then
     else
         setenv CMAKE_PREFIX_PATH "${MU3E_PREFIX}"
     endif
-    setenv PATH "${MU3E_PREFIX}/bin:${PATH}"
-    setenv LD_LIBRARY_PATH "${MU3E_PREFIX}/lib64:${LD_LIBRARY_PATH}"
+#    setenv PATH "${PATH}:${MU3E_PREFIX}/bin"
+#    setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${MU3E_PREFIX}/lib64"
 endif
 
 setenv CDB "/data/project/mu3e/cdb"
 
-setenv MIDASSYS        /data/user/langenegger/midas/250904/midas
-setenv MIDAS_DIR       /data/user/langenegger/midas/250904/midas
-setenv MIDAS_EXPTAB    /data/user/langenegger/midas/exptab
-setenv MIDAS_EXPT_NAME Mu3e
+#setenv MIDASSYS        /data/user/langenegger/midas/250904/midas
+#setenv MIDAS_DIR       /data/user/langenegger/midas/250904/midas
+#setenv MIDAS_EXPTAB    /data/user/langenegger/midas/exptab
+#setenv MIDAS_EXPT_NAME Mu3e
 
-setenv PATH ${PATH}:$MIDASSYS/bin
-setenv LIBPATH $MIDASSYS/lib
+#setenv PATH ${PATH}:$MIDASSYS/bin
+#setenv LIBPATH $MIDASSYS/lib
 
-setenv PATH ${PATH}:/data/user/langenegger/mu3e/mu3eanca/slurm/
+# midas
+setenv MIDASSYS "$SW/midas"
+if ( $?CMAKE_PREFIX_PATH ) then
+    setenv CMAKE_PREFIX_PATH "${MIDASSYS}:${CMAKE_PREFIX_PATH}"
+else
+    setenv CMAKE_PREFIX_PATH "${MIDASSYS}"
+endif
+
+setenv PATH "${PATH}:${MIDASSYS}/bin"
+setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${MIDASSYS}/lib"
+ 
+
+
