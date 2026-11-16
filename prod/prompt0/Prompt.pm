@@ -150,6 +150,7 @@ sub prompt_context {
         mlzr_dir       => ($data ne "" && $workdir ne "") ? "$data/mlzr/$workdir" : "",
         trirec_dir     => ($data ne "" && $workdir ne "") ? "$data/trirec/$workdir" : "",
         sort_dir       => ($data ne "" && $workdir ne "") ? "$data/sort/$workdir" : "",
+        anacomba_dir   => ($data ne "" && $workdir ne "") ? "$data/anacomba/$workdir" : "",
         mu3eanca       => $anca,
         slurm_run      => $slurm_run,
         slurm_queue    => _strip($cfg->{slurm_queue} // "-p hourly"),
@@ -160,9 +161,9 @@ sub prompt_context {
         minalyzer_n_events => 0 + (_strip($cfg->{minalyzer_n_events} // "2000")),
         minalyzer_prescale => 0 + (_strip($cfg->{minalyzer_prescale} // "1")),
         min_events     => 0 + (_strip($cfg->{min_events} // "10000")),
-        slurm_stages   => [ _cfg_list($cfg, "slurm_stages", qw(mlzr trirec sort cor26 mmeta)) ],
-        tar_packages   => [ _cfg_list($cfg, "tar_packages", qw(mu3e minalyzer)) ],
-        data_products  => [qw(mlzr trirec sort)],
+        slurm_stages   => [ _cfg_list($cfg, "slurm_stages", qw(mlzr trirec sort cor26 mmeta anacomba)) ],
+        tar_packages   => [ _cfg_list($cfg, "tar_packages", qw(mu3e minalyzer anacomba)) ],
+        data_products  => [qw(mlzr trirec sort anacomba)],
         dry_run        => $opts{dry_run} // 0,
         force          => $opts{force} ? 1 : 0,
         interactive    => $opts{interactive} ? 1 : 0,
@@ -266,6 +267,7 @@ sub _make_tar {
         "--exclude", "mu3e/install",
         "--exclude", "minalyzer/json_output",
         "--exclude", "minalyzer/root_output_files",
+        "--exclude", "anacomba/anacomba-build",
         "--exclude", "CMakeFiles",
         "--exclude", "*.o",
         "--exclude", "*.gch",
@@ -360,6 +362,7 @@ sub prompt_status {
     print("  mlzr_dir:          $ctx->{mlzr_dir}\n") if $ctx->{mlzr_dir} ne "";
     print("  trirec_dir:        $ctx->{trirec_dir}\n") if $ctx->{trirec_dir} ne "";
     print("  sort_dir:          $ctx->{sort_dir}\n") if $ctx->{sort_dir} ne "";
+    print("  anacomba_dir:      $ctx->{anacomba_dir}\n") if ($ctx->{anacomba_dir} // "") ne "";
     print("  cdb_dbconn:        $ctx->{cdb_dbconn}\n");
     print("  cdb_GT:            $ctx->{cdb_GT}\n");
     print("  slurm_run:         $ctx->{slurm_run}\n");

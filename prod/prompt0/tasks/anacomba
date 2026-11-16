@@ -1,0 +1,121 @@
+#! /usr/bin/perl
+# anacomba — SLURM anaComba on the mu3esort output.
+# One hit combination (anacomba_hits, default 4).
+# anacomba_n_events <= 0: one job, -n 0 -s 0 (every event).
+# anacomba_n_events > 0: jobs of that many events. The last job uses
+# -n 0 so it reads from its skip to the end of the file.
+# hadd to {data}/anacomba/{workdir}/{block}/anacomba_run{srun}_{hits}hits.root.
+use strict;
+use warnings;
+use File::Basename qw(dirname basename);
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+use SlurmBatch;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $name = "anacomba";
+
+my $srun = sprintf("%05d", $run);
+my $block = TaskLib::block_dir($run);
+my $sortdir = $ctx->{sort_dir} // "";
+my $sorted = ($sortdir ne "") ? "$sortdir/$block/run$srun-sorted.root" : "";
+my $raw = TaskLib::raw_file($ctx, $run);
+my $json = dirname($raw) . "/run$srun.json";
+my $out = $ctx->{anacomba_dir} // "";
+my $hits = 0 + ($ctx->{anacomba_hits} // 4);
+my $merged = ($out ne "") ? "$out/$block/anacomba_run${srun}_${hits}hits.root" : "";
+
+if (!$ctx->{dry_run}) {
+    if (!-f $sorted) {
+        TaskLib::task_log($ctx, $name, "sorted file missing: $sorted");
+        exit 2;
+    }
+    if (!-f $json) {
+        TaskLib::task_log($ctx, $name, "ODB JSON missing: $json");
+        exit 2;
+    }
+}
+
+my $chunk = 0 + ($ctx->{anacomba_n_events} // 0);
+$chunk = 0 if $chunk < 0;
+my $total = 0;
+if ($chunk > 0) {
+    $total = _tree_entries($sorted);
+    if ($total < 1) {
+        $total = 0 + ($ctx->{n_events} // 0);
+    }
+}
+TaskLib::task_log($ctx, $name,
+    "sorted=$sorted json=$json chunk=$chunk total=$total hits=$hits");
+
+my $storage1 = "$ctx->{root}/slurm/storage1/anacomba";
+my $cdb = $ctx->{cdb_dbconn} // "";
+
+my $rc = SlurmBatch::run($ctx, {
+    name    => $name,
+    stage   => "anacomba",
+    abbr    => "b",
+    wrapper => $ctx->{slurm_anacomba_csh},
+    total   => $total,
+    chunk   => $chunk,
+    skip_if => $merged,
+    env     => [
+        [ STORAGE1   => $storage1 ],
+        [ SORTEDDIR  => dirname($sorted) ],
+        [ SORTEDFILE => basename($sorted) ],
+        [ JSONFILE   => $json ],
+        [ RUN        => $run ],
+        [ HITS       => $hits ],
+        [ DET        => 0 + ($ctx->{anacomba_detector} // 39) ],
+        [ CLASS      => $ctx->{anacomba_run_class} // "Beam" ],
+        [ YAML       => $ctx->{anacomba_yaml} // "anaComba_2026.yaml" ],
+        [ GT         => $ctx->{cdb_GT} ],
+        [ CDB        => $cdb ],
+    ],
+    job_env => sub {
+        my ($j) = @_;
+        my $n = ($chunk < 1 || $j->{last}) ? 0 : $chunk;
+        return [
+            [ ROOTFILE => "anacomba-run$j->{job}.root" ],
+            [ NENTRIES => $n ],
+            [ SKIP     => $j->{skip} ],
+        ];
+    },
+    merge => sub {
+        my ($c, $m) = @_;
+        return if $merged eq "";
+        my @in;
+        for my $job (@{ $m->{jobs} }) {
+            push @in, "$m->{storage}/anacomba-run$job.root";
+        }
+        SlurmBatch::hadd($c, $name, $merged, @in) or exit 2;
+    },
+});
+
+exit($rc == 0 ? 0 : 2);
+
+# ----------------------------------------------------------------------
+# Sorted ROOT tree entries. Must use -q or ROOT stays at a prompt.
+sub _tree_entries {
+    my ($file) = @_;
+    return 0 unless defined $file && $file ne "" && -f $file;
+    my $esc = $file;
+    $esc =~ s/\\/\\\\/g;
+    $esc =~ s/"/\\"/g;
+    my $cmd = 'root -l -b -q -e '
+        . "'TFile*f=TFile::Open(\"$esc\");"
+        . "TTree*t=(f&&!f->IsZombie())?(TTree*)f->Get(\"mu3e\"):0;"
+        . "std::cout<<(t?t->GetEntries():0)<<std::endl;"
+        . "gSystem->Exit(0);'";
+    TaskLib::task_log($ctx, $name, "count entries: $file");
+    my $out = `$cmd`;
+    my $rc = $? >> 8;
+    $out =~ s/root \[\d+\]//g;
+    $out =~ s/\s+//g;
+    return 0 + $out if $out =~ /^\d+$/;
+    TaskLib::task_log($ctx, $name,
+        "could not count mu3e entries (root exit $rc), using n_events");
+    return 0;
+}
