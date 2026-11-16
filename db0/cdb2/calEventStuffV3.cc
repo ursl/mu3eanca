@@ -371,7 +371,10 @@ const string kMidasSuffix = ".mid.lz4.json";
 
 string readTextFile(const string& filename) {
   ifstream in(filename);
-  if (!in.is_open()) return "";
+  cout << "calEventStuffV3::readTextFile> reading file " << filename << endl;
+  if (!in.is_open()) {
+    cout << "calEventStuffV3::readTextFile> Error, file " << filename << " not found" << endl;
+    return "";
   stringstream buf;
   buf << in.rdbuf();
   return buf.str();
