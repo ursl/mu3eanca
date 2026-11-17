@@ -1,8 +1,8 @@
 #! /usr/bin/perl
 # mu3esort — SLURM mu3eSort (processRuns submitJobsRawSort).
 # Three jobs per run, no event splitting. Each passes --sort.gsevTriggers:
-#   255  random triggers        run{srun}-sorted-0xff.root
-#   1    3-hit track triggers   run{srun}-sorted-0x01.root
+#   255  random triggers        run{srun}-0xff-sorted.root
+#   1    3-hit track triggers   run{srun}-0x01-sorted.root
 #   0    128 ns half frames     run{srun}-sorted.root
 # Runs from mu3e/run/ inside the tar (alignment ROOT lives there).
 use strict;
@@ -25,12 +25,14 @@ my $block = TaskLib::block_dir($run);
 # block = run/1000 as 3 digits (same as mlzr/trirec).
 my $sortdir = $ctx->{sort_dir} // "";
 my @streams = (
-    { triggers => 255, suffix => "-0xff" },
-    { triggers => 1,   suffix => "-0x01" },
-    { triggers => 0,   suffix => "" },
+    { triggers => 255, tag => "0xff" },
+    { triggers => 1,   tag => "0x01" },
+    { triggers => 0,   tag => "" },
 );
 for my $s (@streams) {
-    my $base = "run$srun-sorted$s->{suffix}.root";
+    my $base = ($s->{tag} ne "")
+        ? "run$srun-$s->{tag}-sorted.root"
+        : "run$srun-sorted.root";
     $s->{out} = ($sortdir ne "") ? "$sortdir/$block/$base" : "";
 }
 
