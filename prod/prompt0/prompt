@@ -76,6 +76,7 @@ use Prompt qw(
     prompt_status
     prompt_list
     prompt_cleanup
+    prompt_link
 );
 use Pipeline qw(pipeline_run);
 use TaskLib qw(forward_runs);
@@ -132,6 +133,8 @@ Targets:
   poolN RUN      from RUN upward, or only the runs in RUN..RUN
   prodN RUN      one start run; keep scanning from RUN, alternate newest and oldest
   cleanup RUN ... remove per-run output (keeps timestamped logs in runs/XXXXX/)
+  linkSort       symlink missing sort files to the newest older vNN
+  linkMlzr       symlink missing mlzr files to the newest older vNN
 
 Options:
   -c FILE        config file (default: prompt-v7.1.cfg)
@@ -567,6 +570,9 @@ if ($target eq "setup") {
 } elsif ($target eq "cleanup") {
     $opts{runs} = \@runs;
     prompt_cleanup($cfg, %opts);
+} elsif ($target eq "linkSort" || $target eq "linkMlzr") {
+    $opts{link_kind} = ($target eq "linkSort") ? "sort" : "mlzr";
+    prompt_link($cfg, %opts);
 } else {
     die "unknown target '$target'\n";
 }

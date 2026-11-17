@@ -89,6 +89,8 @@ Production area:
 | `poolN RUN` | One run: reprocess raw files from that run upward. A range `A..B` reprocesses only runs in that inclusive range that have a raw file; missing numbers are logged and skipped. At most N children until `pool_long_from` (default `mu3esort`); that task and the ones after it do not hold a slot. The master prints submissions and exits only. Each child writes `runs/RUN/<stamp>-<pipeline>.log`. Stops when every child has finished |
 | `prodN RUN` | Same pool as `poolN`. Each pass scans again from the start run and queues every raw file not already taken. A free slot starts the newest waiting run, then the oldest, and alternates. After the current files, sleep `process_sleep` and look again |
 | `cleanup RUN ...` | Remove per-run output; keep timestamped logs in `runs/XXXXX/` |
+| `linkSort` | In `{data}/{year}/sort/{prompt_workdir}/`, symlink each missing `runNNNNN-sorted.root` (and any `runNNNNN-0xHH-sorted.root`) to the same path in the newest older `vNN` | 
+| `linkMlzr` | Same for `{data}/{year}/mlzr/{prompt_workdir}/dqm_histos_NNNNN.root` |
 
 Options:
 
@@ -110,6 +112,8 @@ Options:
 ```tcsh
 ./prompt -f -P beam run 12345
 ./prompt -f -P midasmeta run 11800
+./prompt -c prompt-v09.cfg -n linkSort
+./prompt -c prompt-v09.cfg linkMlzr
 ```
 
 ---

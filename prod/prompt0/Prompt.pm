@@ -31,6 +31,7 @@ our @EXPORT_OK = qw(
     prompt_status
     prompt_list
     prompt_cleanup
+    prompt_link
 );
 
 # ----------------------------------------------------------------------
@@ -421,6 +422,117 @@ sub _rm_matching {
         next unless $f =~ $re;
         _rm_path($ctx, "$dir/$f");
     }
+}
+
+# linkSort / linkMlzr. For the current prompt_workdir (v09), each
+# run file that this version does not have is symlinked to the same
+# path in the highest older vNN that does have it.
+#   sort: {data}/{year}/sort/vNN/{block}/runNNNNN-sorted.root
+#         and runNNNNN-0xHH-sorted.root when an older version wrote one
+#   mlzr: {data}/{year}/mlzr/vNN/{block}/dqm_histos_NNNNN.root
+sub prompt_link {
+    my ($cfg, %opts) = @_;
+    my $kind = $opts{link_kind} // "";
+    my %file_re = (
+        sort => qr/^run\d+(?:-0x[0-9a-fA-F]+)?-sorted\.root$/,
+        mlzr => qr/^dqm_histos_\d+\.root$/,
+    );
+    die "prompt: link kind must be sort or mlzr\n" unless $file_re{$kind};
+
+    my $ctx = prompt_context($cfg, %opts);
+    my $wd = $ctx->{workdir} // "";
+    die "prompt: prompt_workdir required (v09, ...)\n" if $wd eq "";
+    die "prompt: prompt_workdir must look like v09 (got $wd)\n"
+        unless $wd =~ /^v(\d+)$/;
+    my $cur = 0 + $1;
+
+    my $template = _strip($cfg->{data_dir} // "");
+    die "prompt: data_dir unset\n" if $template eq "";
+
+    require TaskLib;
+    require File::Spec;
+    my $p = TaskLib::parse_run_years($cfg);
+    my %years;
+    $years{$p->{open}} = 1 if ($p->{open} // "") ne "";
+    $years{$_->[1]} = 1 for @{ $p->{bounds} // [] };
+    my @years = sort keys %years;
+    die "prompt: no year in run_year (data_dir uses {year})\n"
+        if !@years && $template =~ /\{year\}/;
+    @years = ("") unless @years;
+
+    my $label = $kind eq "sort" ? "linkSort" : "linkMlzr";
+    my ($linked, $kept) = (0, 0);
+    for my $year (@years) {
+        my $data = TaskLib::expand_year($template, $year);
+        my $root = "$data/$kind";
+        my ($n, $k) = _link_version_tree($ctx, $root, $wd, $cur, $file_re{$kind});
+        $linked += $n;
+        $kept += $k;
+    }
+    _log("$label: linked $linked, already present $kept");
+}
+
+# ----------------------------------------------------------------------
+sub _link_version_tree {
+    my ($ctx, $root, $wd, $cur, $re) = @_;
+    unless (-d $root) {
+        _log("link: no directory $root");
+        return (0, 0);
+    }
+    opendir my $dh, $root or die "prompt: cannot read $root: $!\n";
+    my @vers;
+    for my $name (readdir $dh) {
+        next unless $name =~ /^v(\d+)$/;
+        my $n = 0 + $1;
+        next unless $n < $cur && -d "$root/$name";
+        push @vers, [ $n, $name ];
+    }
+    closedir $dh;
+    @vers = sort { $b->[0] <=> $a->[0] } @vers;
+    _log("link: $root $wd from "
+        . (@vers ? join(",", map { $_->[1] } @vers) : "(no older version)"));
+
+    # rel path block/file -> newest older version that has a real file
+    my %best;
+    for my $v (@vers) {
+        my $vdir = "$root/$v->[1]";
+        opendir my $bd, $vdir or next;
+        my @blocks = grep { /^\d+$/ && -d "$vdir/$_" } readdir $bd;
+        closedir $bd;
+        for my $block (@blocks) {
+            my $bdir = "$vdir/$block";
+            opendir my $fd, $bdir or next;
+            my @files = grep { /$re/ && -f "$bdir/$_" } readdir $fd;
+            closedir $fd;
+            for my $file (@files) {
+                my $rel = "$block/$file";
+                $best{$rel} = $v->[1] unless exists $best{$rel};
+            }
+        }
+    }
+
+    my ($linked, $kept) = (0, 0);
+    for my $rel (sort keys %best) {
+        my $src = "$root/$best{$rel}/$rel";
+        my $dst = "$root/$wd/$rel";
+        if (-e $dst || -l $dst) {
+            $kept++;
+            next;
+        }
+        my $dir = $dst;
+        $dir =~ s{/[^/]+$}{};
+        my $relsrc = File::Spec->abs2rel($src, $dir);
+        if ($ctx->{dry_run}) {
+            _log("would link $dst -> $relsrc");
+        } else {
+            make_path($dir);
+            symlink($relsrc, $dst)
+                or die "prompt: cannot symlink $dst -> $relsrc: $!\n";
+            _log("link $dst -> $relsrc");
+        }
+        $linked++;
+    }
+    return ($linked, $kept);
 }
 
 sub prompt_cleanup {
