@@ -1,6 +1,9 @@
 #! /usr/bin/perl
 # mu3esort — SLURM mu3eSort (processRuns submitJobsRawSort).
-# One job per run (njobs => 1, no event splitting).
+# Three jobs per run, no event splitting. Each passes --sort.gsevTriggers:
+#   255  random triggers        run{srun}-sorted-0xff.root
+#   1    3-hit track triggers   run{srun}-sorted-0x01.root
+#   0    128 ns half frames     run{srun}-sorted.root
 # Runs from mu3e/run/ inside the tar (alignment ROOT lives there).
 use strict;
 use warnings;
@@ -18,14 +21,30 @@ my $file = TaskLib::raw_file($ctx, $run);
 my $srun = sprintf("%05d", $run);
 my $block = TaskLib::block_dir($run);
 
-# Output: {data_dir}/sort/{workdir}/{block}/run{srun}-sorted.root
+# Output under {data_dir}/sort/{workdir}/{block}/.
 # block = run/1000 as 3 digits (same as mlzr/trirec).
 my $sortdir = $ctx->{sort_dir} // "";
-my $merged  = ($sortdir ne "") ? "$sortdir/$block/run$srun-sorted.root" : "";
+my @streams = (
+    { triggers => 255, suffix => "-0xff" },
+    { triggers => 1,   suffix => "-0x01" },
+    { triggers => 0,   suffix => "" },
+);
+for my $s (@streams) {
+    my $base = "run$srun-sorted$s->{suffix}.root";
+    $s->{out} = ($sortdir ne "") ? "$sortdir/$block/$base" : "";
+}
 
 if (!-f $file && !$ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "raw file missing: $file");
     exit 2;
+}
+
+if (!$ctx->{force}) {
+    my @missing = grep { $_->{out} eq "" || !-f $_->{out} } @streams;
+    if (!@missing) {
+        TaskLib::task_log($ctx, $name, "sorted files already exist, skipping");
+        exit 0;
+    }
 }
 
 my $storage1 = "$ctx->{root}/slurm/storage1/sort";
@@ -35,42 +54,52 @@ my $midas    = basename($file);
 # conf file selection: prefer sort_conf from cfg, else default beam conf.
 my $anlzr = $ctx->{sort_anlzr}
     // "--alignment.file=mu3e_alignment.root --conf trirec_threelayer_beam.conf ";
+$anlzr =~ s/\s+$//;
 
 my $rc = SlurmBatch::run($ctx, {
     name    => $name,
     stage   => "sort",
     abbr    => "s",
     wrapper => $ctx->{slurm_sort_csh},
-    njobs   => 1,
-    skip_if => $merged,
+    njobs   => scalar @streams,
     env     => [
         [ STORAGE1  => $storage1 ],
         [ DATADIR   => $datadir ],
         [ MIDASFILE => $midas ],
         [ RUN       => $run ],
         [ GT        => $ctx->{cdb_GT} ],
-        [ ANLZR     => $anlzr ],
-        [ SORTEDFILE => "sorted-run${run}_0.root" ],
     ],
+    job_env => sub {
+        my ($j) = @_;
+        my $s = $streams[$j->{i}];
+        return [
+            [ ANLZR => "$anlzr --sort.gsevTriggers=$s->{triggers}" ],
+            [ SORTEDFILE => "sorted-run$j->{job}.root" ],
+        ];
+    },
     merge => sub {
         my ($c, $m) = @_;
-        return if $merged eq "";
-        # Only one job; copy sorted file to the output location.
-        my $job = "${run}_0";
-        my $src = "$m->{storage}/sorted-run$job.root";
+        return if $sortdir eq "";
         require File::Path;
-        File::Path::make_path(dirname($merged));
-        if (!$c->{dry_run}) {
-            unlink($merged) if -e $merged;
-            if (!-f $src) {
-                TaskLib::task_log($c, $name, "sorted file missing: $src");
-                exit 2;
+        require File::Copy;
+        File::Path::make_path("$sortdir/$block") unless $c->{dry_run};
+        for (my $i = 0; $i < @streams; $i++) {
+            my $s = $streams[$i];
+            my $job = $m->{jobs}[$i];
+            my $src = "$m->{storage}/sorted-run$job.root";
+            my $dst = $s->{out};
+            if (!$c->{dry_run}) {
+                if (!-f $src) {
+                    TaskLib::task_log($c, $name, "sorted file missing: $src");
+                    exit 2;
+                }
+                unlink($dst) if -e $dst;
+                File::Copy::copy($src, $dst)
+                    or die "mu3esort: cannot cp $src -> $dst: $!\n";
             }
-            require File::Copy;
-            File::Copy::copy($src, $merged)
-                or die "mu3esort: cannot cp $src -> $merged: $!\n";
+            TaskLib::task_log($c, $name,
+                "sorted file (gsevTriggers=$s->{triggers}): $dst");
         }
-        TaskLib::task_log($c, $name, "sorted file: $merged");
     },
 });
 

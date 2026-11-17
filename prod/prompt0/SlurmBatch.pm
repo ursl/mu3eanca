@@ -36,7 +36,7 @@ our @EXPORT_OK = qw(run njobs prepare_dirs encode_replace);
 # ----------------------------------------------------------------------
 sub njobs {
     my (%a) = @_;
-    return 1 if defined $a{njobs} && $a{njobs} > 0;
+    return 0 + $a{njobs} if defined $a{njobs} && $a{njobs} > 0;
     my $total = 0 + ($a{total} // 0);
     my $chunk = 0 + ($a{chunk} // 0);
     return 1 if $chunk < 1;
