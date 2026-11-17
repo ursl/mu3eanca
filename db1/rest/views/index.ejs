@@ -1220,7 +1220,7 @@ async function updateCsvDisplay() {
                         <th>End time</th>
                         <th>Sig.</th>
                         <th>Class</th>
-                        <th class="dq-sum" title="Vertex, Pixel, Fibres, Tiles, DEFF"><span class="dq-sum-head"><span>V</span><span>P</span><span>F</span><span>T</span><span>D</span></span></th>
+                        <th class="dq-sum" title="Mu3e, Pixel, Fibres, Tiles, DEFF"><span class="dq-sum-head"><span>M</span><span>P</span><span>F</span><span>T</span><span>D</span></span></th>
                         <th>Events</th>
                         <th>Shift crew</th>
                         <th>Shift/RunInfo Comments</th>
@@ -1232,7 +1232,7 @@ async function updateCsvDisplay() {
                     function dqBoxes(result) {
                         const dq = (result.lastDataQuality && result.lastDataQuality.DataQuality) || {};
                         const fields = [
-                            ["Vertex", dq.vertex],
+                            ["Mu3e", dq.mu3e],
                             ["Pixel", dq.pixel],
                             ["Fibres", dq.fibres],
                             ["Tiles", dq.tiles],

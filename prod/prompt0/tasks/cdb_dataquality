@@ -2,11 +2,11 @@
 # cdb_dataquality — merge detector_status Grading into the RDB DataQuality.
 #
 # Reads {dqm_pdf}/summary_pdf/output/detector_status_runRUN.json:
-#   "Grading": { "pixel": 0.0, "fibre": 2.0, "tile": 2.0 }
+#   "Grading": { "pixel": 0.0, "fibre": 2.0, "tile": 2.0, "overall_run_grade": 1.0 }
 #
 # That scale is not the RDB scale (DataQuality.hh):
 #   -1 unset, 0 bad, 1 partially good (DQ_PARTIALLY_GOOD, "4"), 2 good (DQ_GOOD, "1")
-# pixel/fibre/tile are written to pixel/fibres/tiles. Other DataQuality
+# pixel/fibre/tile/overall_run_grade are written to pixel/fibres/tiles/mu3e. Other DataQuality
 # fields are left as they are. The latest attribute is downloaded, those
 # fields are replaced, and the run record is put back. -z (no_upload)
 # still downloads and merges; it stops before the PUT.
@@ -34,6 +34,7 @@ my %field = (
     pixel => "pixel",
     fibre => "fibres",
     tile  => "tiles",
+    overall_run_grade => "mu3e",
 );
 
 my $rundir = TaskLib::resolve_path($ctx, $ctx->{minalyzer_pdf_rundir} // "{dqm_pdf}/summary_pdf", "");
@@ -74,7 +75,7 @@ for my $src (sort keys %field) {
     TaskLib::task_log($ctx, $name, "$src $n -> $field{$src}=$grade{$key}");
 }
 if (!%want) {
-    TaskLib::task_log($ctx, $name, "Grading has no pixel, fibre, or tile");
+    TaskLib::task_log($ctx, $name, "Grading has no pixel, fibre, tile, or overall_run_grade");
     exit 2;
 }
 
@@ -131,7 +132,7 @@ push @$hist, { date => $when, comment => $comment };
 $doc->{History} = $hist;
 TaskLib::task_log($ctx, $name, $comment);
 TaskLib::task_log($ctx, $name,
-    "pixel=$dq->{pixel} fibres=$dq->{fibres} tiles=$dq->{tiles}");
+    "mu3e=$dq->{mu3e} pixel=$dq->{pixel} fibres=$dq->{fibres} tiles=$dq->{tiles}");
 
 if ($ctx->{no_upload} || $ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "no-upload: not uploaded");
