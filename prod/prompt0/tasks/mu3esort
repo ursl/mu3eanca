@@ -25,8 +25,8 @@ my $block = TaskLib::block_dir($run);
 # block = run/1000 as 3 digits (same as mlzr/trirec).
 my $sortdir = $ctx->{sort_dir} // "";
 my @streams = (
-    { triggers => 255, tag => "0xff" },
-    { triggers => 1,   tag => "0x01" },
+#    { triggers => 255, tag => "0xff" },
+#    { triggers => 1,   tag => "0x01" },
     { triggers => 0,   tag => "" },
 );
 for my $s (@streams) {
