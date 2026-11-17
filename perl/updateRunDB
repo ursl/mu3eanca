@@ -12,6 +12,7 @@
 #           -r X   do run X only
 #
 # History 
+#         2026/11/17 blacklist a run after 3 unsuccessful uploads
 #         2026/10/16 start with 2026, add single run capability
 #         2025/05/16 add upload of DataQuality and RunInfo attributes
 #         2025/05/06 migration of path
@@ -37,6 +38,9 @@ my $RDBADDURL = "http://mu3edb0/rdb/addAttribute";
 my $RUNLOGDIR = "/home/mu3e/online/message/runlogs";
 my $ATTRDIR = "/home/ursl/mu3e/software/mu3eanca/db1/rest";
 my $RUNSDONE = "/home/ursl/mu3e/software/mu3eanca/runs.txt";
+my $RUNSFAIL = "/home/ursl/mu3e/software/mu3eanca/runs.fail";
+my $RUNSIGNORE = "/home/ursl/mu3e/software/mu3eanca/runs.ignore";
+my $FAILMAX = 3;
 
 my $singleRun = -1;
 if ($opt_r) {
@@ -53,6 +57,30 @@ while(<IN>) {
 }
 close(IN); 
 
+# -- runs.fail: "runlog_NNNNN.json <count>", last line for a run wins
+my %failcount;
+if (-f $RUNSFAIL) {
+    open(IN, "$RUNSFAIL") || die "updateRunDB: Cannot open $RUNSFAIL\n";
+    while (<IN>) {
+        chop($_);
+        next unless /^(\S+)\s+(\d+)$/;
+        $failcount{$1} = $2;
+    }
+    close(IN);
+}
+
+# -- blacklist: same names as runs.txt, one runlog file per line
+my @runsignore;
+if (-f $RUNSIGNORE) {
+    open(IN, "$RUNSIGNORE") || die "updateRunDB: Cannot open $RUNSIGNORE\n";
+    while (<IN>) {
+        chop($_);
+        next if $_ eq "";
+        push @runsignore, $_;
+    }
+    close(IN);
+}
+
 # -- read runlog file(names)
 opendir(RNLG, "$RUNLOGDIR") || die "Cannot read $RUNLOGDIR\n";
 @filelist = sort(grep(/\.json$/,readdir(RNLG)));
@@ -64,7 +92,17 @@ if ($opt_f && $opt_f == $d) {
     my $goodFile; 
     foreach $d (@filelist) {
         #  print "->$d\n";
-        if (grep(/$d/, @runsdone)) {
+        my $ignored = grep { $_ eq $d } @runsignore;
+        my $nfail = $failcount{$d} || 0;
+        if ($nfail >= $FAILMAX && !$ignored) {
+            open(IGN, ">>$RUNSIGNORE") || die "updateRunDB: Cannot open $RUNSIGNORE for output\n";
+            print IGN "$d\n";
+            close(IGN);
+            push @runsignore, $d;
+            $ignored = 1;
+            print("blacklisted $d after $nfail unsuccessful uploads\n");
+        }
+        if (grep(/$d/, @runsdone) || $ignored) {
         } else {
             # -- check that this runlog is already complete
             @stringd = ();
@@ -126,6 +164,19 @@ foreach $d (@runsToDo) {
         }
         if ($res eq "Uh oh! An unexpected error occured.") {
             print("  transfer unsuccessful?! $d   $now_string\n");
+            my $nfail = ($failcount{$d} || 0) + 1;
+            $failcount{$d} = $nfail;
+            open(FAIL, ">>$RUNSFAIL") || die "updateRunDB: Cannot open $RUNSFAIL for output\n";
+            print FAIL "$d $nfail\n";
+            close(FAIL);
+            print("  unsuccessful uploads for $d: $nfail\n");
+            if ($nfail >= $FAILMAX) {
+                open(IGN, ">>$RUNSIGNORE") || die "updateRunDB: Cannot open $RUNSIGNORE for output\n";
+                print IGN "$d\n";
+                close(IGN);
+                push @runsignore, $d;
+                print("  blacklisted $d after $nfail unsuccessful uploads\n");
+            }
             system("cat $RUNLOGDIR/$d");
             print("end file\n");
         } elsif ($opt_f && $opt_f == $d) {
