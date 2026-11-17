@@ -2,6 +2,7 @@
 # minalyzer — SLURM minalyzer over the raw file (processRuns submitJobsRawMinalyzer).
 # Jobs cover the run in steps of minalyzer_n_events. Each job analyzes the
 # first minalyzer_prescale fraction of its step (-s skip -e take).
+# n_events is the MIDAS event count from the RDB (Pipeline, else fetched here).
 use strict;
 use warnings;
 use File::Basename qw(dirname basename);

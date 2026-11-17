@@ -11,8 +11,12 @@ my ($run, $ctxfile) = TaskLib::args(@ARGV);
 my $ctx = TaskLib::load($ctxfile);
 my $min = 0 + ($ctx->{min_events} // 0);
 
-my $n = TaskLib::rdb_events($ctx, $run);
-TaskLib::ctx_set($ctxfile, n_events => $n);
+# Pipeline records n_events before the first task. Fetch only if it did not.
+my $n = $ctx->{n_events};
+if (!defined $n || $n eq "") {
+    $n = TaskLib::rdb_events($ctx, $run);
+    TaskLib::ctx_set($ctxfile, n_events => $n);
+}
 TaskLib::task_log($ctx, "skipSmallRuns", "run $run events=$n min_events=$min");
 
 if ($min > 0 && $n < $min) {

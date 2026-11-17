@@ -6,7 +6,10 @@ package TaskLib;
 #   my ($run, $ctxfile) = TaskLib::args(@ARGV);
 #   my $ctx = TaskLib::load($ctxfile);
 #   TaskLib::task_log($ctx, "skipSmallRuns", "events=$n");
-#   TaskLib::ctx_set($ctxfile, n_events => $n);
+#   TaskLib::ctx_set($ctxfile, n_events => $n, n_frames => $nf);
+#
+# n_events  MIDAS events from the RDB (processRuns countEvents)
+# n_frames  entries in the mu3e tree of the sorted ROOT file
 #
 # Exit convention (honoured by Pipeline.pm):
 #   0  continue with the next task
@@ -22,7 +25,7 @@ our @EXPORT_OK = qw(
     args load task_log ctx_set
     task_prefix
     block_dir raw_file forward_runs
-    rdb_events
+    rdb_events mu3e_entries
     parse_run_years year_for_run expand_year
     expand_ctx resolve_path
 );
@@ -253,6 +256,31 @@ sub resolve_path {
     return $base if $spec eq "" || $spec eq ".";
     return $spec if $spec =~ m{^/};
     return ($base ne "") ? "$base/$spec" : $spec;
+}
+
+# ----------------------------------------------------------------------
+# Entries in the mu3e tree of a sorted ROOT file (processRuns submitJobsRawTrirec).
+# -q and gSystem->Exit: without them ROOT stays at a prompt after exit(0).
+# Returns 0 when the file is missing or the count cannot be read.
+sub mu3e_entries {
+    my ($ctx, $file) = @_;
+    return 0 unless defined $file && $file ne "" && -f $file;
+    my $esc = $file;
+    $esc =~ s/\\/\\\\/g;
+    $esc =~ s/"/\\"/g;
+    my $cmd = 'root -l -b -q -e '
+        . "'TFile*f=TFile::Open(\"$esc\");"
+        . "TTree*t=(f&&!f->IsZombie())?(TTree*)f->Get(\"mu3e\"):0;"
+        . "std::cout<<(t?t->GetEntries():0)<<std::endl;"
+        . "gSystem->Exit(0);'";
+    task_log($ctx, "mu3eEntries", "count $file");
+    my $out = `$cmd`;
+    my $rc = $? >> 8;
+    $out =~ s/root \[\d+\]//g;
+    $out =~ s/\s+//g;
+    return 0 + $out if $out =~ /^\d+$/;
+    task_log($ctx, "mu3eEntries", "could not count mu3e entries (root exit $rc)");
+    return 0;
 }
 
 # ----------------------------------------------------------------------

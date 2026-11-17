@@ -31,7 +31,8 @@ use POSIX qw(strftime);
 use IO::Handle;
 
 use Prompt qw(prompt_context prompt_repo_dir);
-use TaskLib qw(task_prefix year_for_run expand_year expand_ctx raw_file);
+use TaskLib qw(task_prefix year_for_run expand_year expand_ctx raw_file
+    block_dir rdb_events mu3e_entries ctx_set);
 
 our @EXPORT_OK = qw(
     pipeline_aliases
@@ -365,6 +366,7 @@ sub pipeline_run {
 
         my $err = "";
         eval {
+            _record_counts($kv, $ctx, $dry);
             _log("run $run year=$kv->{year}  " . join(" -> ", @tasks));
             my $stopped = 0;
             for my $t (@tasks) {
@@ -396,6 +398,39 @@ sub pipeline_run {
         die $err if $err;
     }
     return $hard;
+}
+
+# ----------------------------------------------------------------------
+# n_events: MIDAS events from the RDB. n_frames: mu3e entries in the
+# sort file, when that file is already there. Tasks that produce the
+# sort file record n_frames themselves afterwards.
+sub _record_counts {
+    my ($kv, $ctxpath, $dry) = @_;
+    my $run = $kv->{run};
+    if (($kv->{rdb_url} // "") ne "") {
+        my $n = rdb_events($kv, $run);
+        _log("run $run n_events=$n");
+        $kv->{n_events} = $n;
+        ctx_set($ctxpath, n_events => $n) unless $dry;
+    } else {
+        _log("run $run n_events unset (rdb_url empty)");
+    }
+
+    my $sortdir = $kv->{sort_dir} // "";
+    my $sorted = "";
+    if ($sortdir ne "") {
+        my $srun = sprintf("%05d", $run);
+        $sorted = "$sortdir/" . block_dir($run) . "/run$srun-sorted.root";
+    }
+    if ($sorted ne "" && -f $sorted) {
+        my $nf = mu3e_entries($kv, $sorted);
+        _log("run $run n_frames=$nf");
+        $kv->{n_frames} = $nf;
+        ctx_set($ctxpath, n_frames => $nf) unless $dry;
+    } else {
+        _log("run $run n_frames unset"
+            . ($sorted ne "" ? " (no sort file $sorted)" : ""));
+    }
 }
 
 # ----------------------------------------------------------------------

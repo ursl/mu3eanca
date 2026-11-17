@@ -28,9 +28,11 @@ if (!-f $sorted && !$ctx->{dry_run}) {
 
 TaskLib::task_log($ctx, $name, "sorted=$sorted");
 
-my $total = _tree_entries($sorted);
-if ($total < 1) {
-    $total = 0 + ($ctx->{n_events} // 0);
+# n_frames is mu3e->GetEntries in the sort file, not the MIDAS n_events.
+my $total = 0 + ($ctx->{n_frames} // 0);
+if ($total < 1 && -f $sorted) {
+    $total = TaskLib::mu3e_entries($ctx, $sorted);
+    TaskLib::ctx_set($ctxfile, n_frames => $total);
 }
 my $chunk = 0 + ($ctx->{trirec_n_events} // 2000000);
 my $extra = $ctx->{trirec_anlzr} // "--conf trirec_twolayer_beam.conf";
@@ -76,27 +78,3 @@ my $rc = SlurmBatch::run($ctx, {
 });
 
 exit($rc == 0 ? 0 : 2);
-
-# ----------------------------------------------------------------------
-# Sorted ROOT tree entries. Must use -q or ROOT stays at a prompt.
-sub _tree_entries {
-    my ($file) = @_;
-    return 0 unless defined $file && $file ne "" && -f $file;
-    my $esc = $file;
-    $esc =~ s/\\/\\\\/g;
-    $esc =~ s/"/\\"/g;
-    my $cmd = 'root -l -b -q -e '
-        . "'TFile*f=TFile::Open(\"$esc\");"
-        . "TTree*t=(f&&!f->IsZombie())?(TTree*)f->Get(\"mu3e\"):0;"
-        . "std::cout<<(t?t->GetEntries():0)<<std::endl;"
-        . "gSystem->Exit(0);'";
-    TaskLib::task_log($ctx, $name, "count entries: $file");
-    my $out = `$cmd`;
-    my $rc = $? >> 8;
-    $out =~ s/root \[\d+\]//g;
-    $out =~ s/\s+//g;
-    return 0 + $out if $out =~ /^\d+$/;
-    TaskLib::task_log($ctx, $name,
-        "could not count mu3e entries (root exit $rc), using n_events");
-    return 0;
-}
