@@ -268,6 +268,7 @@ sub _ctx_kv {
         minalyzer_pdf_bin  => _strip($cfg->{minalyzer_pdf_bin} //
             "_build/Minalyzer_pdf"),
         minalyzer_pdf_rundir => _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}"),
+        minalyzer_pdf_csv  => _strip($cfg->{minalyzer_pdf_csv} // ""),
         minalyzer_pdf_mode => _strip($cfg->{minalyzer_pdf_mode} // "pdf"),
         fill_quality_pixels_bin => _strip($cfg->{fill_quality_pixels_bin} //
             "bin/fillQualityPixels"),

@@ -4,8 +4,9 @@
 #   Minalyzer_pdf --dqm-dir MLZR/BLOCK --run RUN \
 #       --output-dir output --csv-dir csv --data-dir RAW/BLOCK
 #
-# Login node (not SLURM). cwd is minalyzer_pdf_rundir. output/ and csv/
-# are created there before the executable runs. The PDF written into
+# Login node (not SLURM). cwd is minalyzer_pdf_rundir. output/ is created
+# there. csv/ is a local directory, or a symlink when minalyzer_pdf_csv
+# is set (v08: ../../mu3eanca/run2026/csv). The PDF written into
 # output/ is uploaded to rdb_url (mu3edb0 on merlin) as description=dqm.
 # comment is the production directory (prompt_workdir). A re-upload
 # removes every resource with that description, then stores the new PDF.
@@ -49,8 +50,14 @@ $rdb =~ s{/+$}{};
 my $comment = $ctx->{workdir} // "";
 my $rm_json = encode_json({description => "dqm"});
 
+my $csv_link = $ctx->{minalyzer_pdf_csv} // "";
 if ($ctx->{dry_run}) {
-    TaskLib::task_log($ctx, $name, "would: mkdir $rundir/output $rundir/csv");
+    if ($csv_link ne "" && $csv_link ne "csv") {
+        TaskLib::task_log($ctx, $name, "would: symlink $rundir/csv -> $csv_link");
+    } else {
+        TaskLib::task_log($ctx, $name, "would: mkdir $rundir/csv");
+    }
+    TaskLib::task_log($ctx, $name, "would: mkdir $rundir/output");
     TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");
     if ($rdb eq "") {
         TaskLib::task_log($ctx, $name, "rdb_url empty; PDF would not be uploaded");
@@ -84,9 +91,8 @@ if ($datadir eq "" || !-d $datadir) {
     exit 2;
 }
 
-for my $d (qw(output csv)) {
-    make_path("$rundir/$d");
-}
+make_path("$rundir/output");
+_ensure_csv($ctx, $name, $rundir, $csv_link);
 
 if ($rdb eq "") {
     TaskLib::task_log($ctx, $name, "rdb_url empty; cannot upload the PDF");
@@ -135,6 +141,41 @@ push @up, "-F", "comment=$comment" if $comment ne "";
 push @up, "$rdb/addResource/$run";
 my $up = system(@up);
 exit($up == 0 ? 0 : 2);
+
+# csv next to the executable's cwd. A minalyzer_pdf_csv value other than
+# "csv" is the symlink target (relative to the rundir). An empty directory
+# left by an earlier run is replaced; a directory that already holds files
+# is left in place.
+sub _ensure_csv {
+    my ($ctx, $name, $rundir, $spec) = @_;
+    $spec = "" unless defined $spec;
+    my $link = "$rundir/csv";
+    if ($spec eq "" || $spec eq "csv") {
+        make_path($link);
+        return;
+    }
+    my $target_dir = ($spec =~ m{^/}) ? $spec : "$rundir/$spec";
+    make_path($target_dir);
+    if (-l $link) {
+        my $cur = readlink($link) // "";
+        return if $cur eq $spec;
+        unlink($link) or die "minalyzer_pdf: cannot replace $link: $!\n";
+    } elsif (-d $link) {
+        rmdir($link) or do {
+            TaskLib::task_log($ctx, $name,
+                "csv is a real directory with files: $link");
+            TaskLib::task_log($ctx, $name,
+                "remove it so it can link to $spec");
+            exit 2;
+        };
+    } elsif (-e $link) {
+        TaskLib::task_log($ctx, $name, "csv exists and is not a symlink: $link");
+        exit 2;
+    }
+    symlink($spec, $link)
+        or die "minalyzer_pdf: cannot symlink $link -> $spec: $!\n";
+    TaskLib::task_log($ctx, $name, "csv -> $spec");
+}
 
 # Newest PDF written by this run. Prefer a name that contains the run number.
 sub _result_pdf {
