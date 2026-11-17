@@ -342,6 +342,11 @@ function buildRunListPipeline(query) {
                         { [`lastDataQuality.DataQuality.${fieldName}`]: { $in: ["-1", -1, null, "unset", ""] } }
                     ]
                 });
+            } else if (filterValue === "atleast") {
+                // Partially good ("4") or good ("1").
+                dqMatchConditions.push({
+                    [`lastDataQuality.DataQuality.${fieldName}`]: { $in: ["1", 1, "4", 4] }
+                });
             } else {
                 const numValue = parseInt(filterValue, 10);
                 dqMatchConditions.push({
