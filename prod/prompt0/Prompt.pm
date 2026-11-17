@@ -424,20 +424,23 @@ sub _rm_matching {
     }
 }
 
-# linkSort / linkMlzr. For the current prompt_workdir (v09), each
-# run file that this version does not have is symlinked to the same
+# linkSort / linkMlzr / linkCsv. For the current prompt_workdir (v09),
+# each run file that this version does not have is symlinked to the same
 # path in the highest older vNN that does have it.
 #   sort: {data}/{year}/sort/vNN/{block}/runNNNNN-sorted.root
 #         and runNNNNN-0xHH-sorted.root when an older version wrote one
 #   mlzr: {data}/{year}/mlzr/vNN/{block}/dqm_histos_NNNNN.root
+#   csv:  {setup_basedir}/vNN/mu3eanca/run2026/csv/pixelqualitylm-runN.csv
+#         and validatepixelqualitylm-runN.csv
 sub prompt_link {
     my ($cfg, %opts) = @_;
     my $kind = $opts{link_kind} // "";
     my %file_re = (
         sort => qr/^run\d+(?:-0x[0-9a-fA-F]+)?-sorted\.root$/,
         mlzr => qr/^dqm_histos_\d+\.root$/,
+        csv  => qr/^(?:validate)?pixelqualitylm-run\d+\.csv$/,
     );
-    die "prompt: link kind must be sort or mlzr\n" unless $file_re{$kind};
+    die "prompt: link kind must be sort, mlzr, or csv\n" unless $file_re{$kind};
 
     my $ctx = prompt_context($cfg, %opts);
     my $wd = $ctx->{workdir} // "";
@@ -446,35 +449,49 @@ sub prompt_link {
         unless $wd =~ /^v(\d+)$/;
     my $cur = 0 + $1;
 
-    my $template = _strip($cfg->{data_dir} // "");
-    die "prompt: data_dir unset\n" if $template eq "";
-
     require TaskLib;
     require File::Spec;
-    my $p = TaskLib::parse_run_years($cfg);
-    my %years;
-    $years{$p->{open}} = 1 if ($p->{open} // "") ne "";
-    $years{$_->[1]} = 1 for @{ $p->{bounds} // [] };
-    my @years = sort keys %years;
-    die "prompt: no year in run_year (data_dir uses {year})\n"
-        if !@years && $template =~ /\{year\}/;
-    @years = ("") unless @years;
-
-    my $label = $kind eq "sort" ? "linkSort" : "linkMlzr";
+    my %label = (sort => "linkSort", mlzr => "linkMlzr", csv => "linkCsv");
     my ($linked, $kept) = (0, 0);
-    for my $year (@years) {
-        my $data = TaskLib::expand_year($template, $year);
-        my $root = "$data/$kind";
-        my ($n, $k) = _link_version_tree($ctx, $root, $wd, $cur, $file_re{$kind});
+    if ($kind eq "csv") {
+        my $parent = $ctx->{parent} // "";
+        die "prompt: setup_basedir unset\n" if $parent eq "";
+        my $anca = "mu3eanca";
+        for my $r (@{ $cfg->{setup_repos} // [] }) {
+            next unless ref($r) eq "HASH" && ($r->{id} // "") eq "mu3eanca";
+            my $w = _strip($r->{workdir} // "");
+            $anca = $w if $w ne "";
+        }
+        my ($n, $k) = _link_version_tree(
+            $ctx, $parent, $wd, $cur, $file_re{csv}, "$anca/run2026/csv");
         $linked += $n;
         $kept += $k;
+    } else {
+        my $template = _strip($cfg->{data_dir} // "");
+        die "prompt: data_dir unset\n" if $template eq "";
+        my $p = TaskLib::parse_run_years($cfg);
+        my %years;
+        $years{$p->{open}} = 1 if ($p->{open} // "") ne "";
+        $years{$_->[1]} = 1 for @{ $p->{bounds} // [] };
+        my @years = sort keys %years;
+        die "prompt: no year in run_year (data_dir uses {year})\n"
+            if !@years && $template =~ /\{year\}/;
+        @years = ("") unless @years;
+        for my $year (@years) {
+            my $data = TaskLib::expand_year($template, $year);
+            my ($n, $k) = _link_version_tree(
+                $ctx, "$data/$kind", $wd, $cur, $file_re{$kind});
+            $linked += $n;
+            $kept += $k;
+        }
     }
-    _log("$label: linked $linked, already present $kept");
+    _log("$label{$kind}: linked $linked, already present $kept");
 }
 
 # ----------------------------------------------------------------------
 sub _link_version_tree {
-    my ($ctx, $root, $wd, $cur, $re) = @_;
+    my ($ctx, $root, $wd, $cur, $re, $sub) = @_;
+    $sub = "" unless defined $sub;
     unless (-d $root) {
         _log("link: no directory $root");
         return (0, 0);
@@ -496,6 +513,18 @@ sub _link_version_tree {
     my %best;
     for my $v (@vers) {
         my $vdir = "$root/$v->[1]";
+        if ($sub ne "") {
+            my $cdir = "$vdir/$sub";
+            next unless -d $cdir;
+            opendir my $fd, $cdir or next;
+            my @files = grep { /$re/ && -f "$cdir/$_" } readdir $fd;
+            closedir $fd;
+            for my $file (@files) {
+                my $rel = "$sub/$file";
+                $best{$rel} = $v->[1] unless exists $best{$rel};
+            }
+            next;
+        }
         opendir my $bd, $vdir or next;
         my @blocks = grep { /^\d+$/ && -d "$vdir/$_" } readdir $bd;
         closedir $bd;

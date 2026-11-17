@@ -91,6 +91,7 @@ Production area:
 | `cleanup RUN ...` | Remove per-run output; keep timestamped logs in `runs/XXXXX/` |
 | `linkSort` | In `{data}/{year}/sort/{prompt_workdir}/`, symlink each missing `runNNNNN-sorted.root` (and any `runNNNNN-0xHH-sorted.root`) to the same path in the newest older `vNN` | 
 | `linkMlzr` | Same for `{data}/{year}/mlzr/{prompt_workdir}/dqm_histos_NNNNN.root` |
+| `linkCsv` | Same for `{setup_basedir}/{prompt_workdir}/mu3eanca/run2026/csv/pixelqualitylm-runN.csv` and `validatepixelqualitylm-runN.csv` |
 
 Options:
 
@@ -114,6 +115,7 @@ Options:
 ./prompt -f -P midasmeta run 11800
 ./prompt -c prompt-v09.cfg -n linkSort
 ./prompt -c prompt-v09.cfg linkMlzr
+./prompt -c prompt-v09.cfg linkCsv
 ```
 
 ---

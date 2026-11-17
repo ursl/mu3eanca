@@ -135,6 +135,7 @@ Targets:
   cleanup RUN ... remove per-run output (keeps timestamped logs in runs/XXXXX/)
   linkSort       symlink missing sort files to the newest older vNN
   linkMlzr       symlink missing mlzr files to the newest older vNN
+  linkCsv        symlink missing pixelqualitylm csv files to the newest older vNN
 
 Options:
   -c FILE        config file (default: prompt-v09.cfg)
@@ -570,8 +571,10 @@ if ($target eq "setup") {
 } elsif ($target eq "cleanup") {
     $opts{runs} = \@runs;
     prompt_cleanup($cfg, %opts);
-} elsif ($target eq "linkSort" || $target eq "linkMlzr") {
-    $opts{link_kind} = ($target eq "linkSort") ? "sort" : "mlzr";
+} elsif ($target eq "linkSort" || $target eq "linkMlzr" || $target eq "linkCsv") {
+    $opts{link_kind} = $target eq "linkSort" ? "sort"
+                     : $target eq "linkMlzr" ? "mlzr"
+                     : "csv";
     prompt_link($cfg, %opts);
 } else {
     die "unknown target '$target'\n";
