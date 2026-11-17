@@ -317,6 +317,29 @@
              color: #000;
          }
 
+         /* Partially good (value 4). Amber, same shape as data present. */
+         #runs td input[type="checkbox"][id^="dq"].dq-partial[disabled]:not(:checked):not(:indeterminate) {
+             background-color: #f9a825;
+             border-color: #f9a825;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"].dq-partial[disabled]:not(:checked):not(:indeterminate)::after {
+             content: '●';
+             position: absolute;
+             left: 50%;
+             top: 50%;
+             transform: translate(-50%, -50%);
+             color: white;
+             font-size: 12px;
+             font-weight: bold;
+             line-height: 1;
+         }
+
+         #runs td input[type="checkbox"][id^="dq"].dq-partial[disabled]:not(:checked):not(:indeterminate) + label,
+         #runs td label.dq-partial {
+             color: #000;
+         }
+
          /* No data (value 3). Same filled box as data present, in light salmon. */
          #runs td input[type="checkbox"][id^="dq"].dq-nodata[disabled]:not(:checked):not(:indeterminate) {
              background-color: #f4a8a0;
@@ -751,6 +774,13 @@
                             element.dataset.dq = "3";
                             element.title = "no data";
                             dqOrig.set(prop, "3");
+                        } else if (propValue === '4') {
+                            console.log("prop " + prop + " partially good");
+                            element.checked = false;
+                            element.indeterminate = false;
+                            element.dataset.dq = "4";
+                            element.title = "partially good";
+                            dqOrig.set(prop, "4");
                         } else {
                             console.log("prop " + prop + " unset");
                             element.indeterminate = true;
@@ -798,13 +828,16 @@
          if (!label || label.tagName !== 'LABEL') return;
          
          // Remove any existing state classes
-         checkbox.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata');
-         label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata');
+         checkbox.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata', 'dq-partial');
+         label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata', 'dq-partial');
          
          if (checkbox.disabled) {
              if (checkbox.dataset.dq === "2") {
                  checkbox.classList.add('dq-present');
                  label.classList.add('dq-present');
+             } else if (checkbox.dataset.dq === "4") {
+                 checkbox.classList.add('dq-partial');
+                 label.classList.add('dq-partial');
              } else if (checkbox.dataset.dq === "3") {
                  checkbox.classList.add('dq-nodata');
                  label.classList.add('dq-nodata');
@@ -885,10 +918,10 @@
                          console.log("key: " + key + " unsetting disabled: " + value);
                          element.disabled = false;
                          // Remove styling classes when enabled (edit mode)
-                         element.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata');
+                         element.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata', 'dq-partial');
                          const label = element.nextElementSibling;
                          if (label && label.tagName === 'LABEL') {
-                             label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata');
+                             label.classList.remove('dq-good', 'dq-bad', 'dq-unset', 'dq-present', 'dq-nodata', 'dq-partial');
                          }
                      }
                  }
@@ -1094,7 +1127,7 @@
                  var status = "-3";
                  const element = document.getElementById(value);
                  if (element) {
-                     if (element.dataset.dq === "2" || element.dataset.dq === "3") {
+                     if (element.dataset.dq === "2" || element.dataset.dq === "3" || element.dataset.dq === "4") {
                          status = element.dataset.dq;
                      } else if (element.indeterminate) {
                          status = "-1";

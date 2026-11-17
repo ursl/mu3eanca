@@ -207,6 +207,7 @@
         border-radius: 2px;
     }
     .dq-box.dq-good { background: #2e7d32; }
+    .dq-box.dq-partial { background: #f9a825; }
     .dq-box.dq-bad { background: #c62828; }
     .dq-box.dq-present { background: #1565c0; }
     .dq-box.dq-nodata { background: #f4a8a0; }
@@ -1243,6 +1244,7 @@ async function updateCsvDisplay() {
                             let cls = "dq-unset";
                             let label = "unset";
                             if (v === "1") { cls = "dq-good"; label = "good"; }
+                            else if (v === "4") { cls = "dq-partial"; label = "partially good"; }
                             else if (v === "0") { cls = "dq-bad"; label = "bad"; }
                             else if (v === "2") { cls = "dq-present"; label = "present"; }
                             else if (v === "3") { cls = "dq-nodata"; label = "no data"; }

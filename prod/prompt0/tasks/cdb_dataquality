@@ -1,0 +1,166 @@
+#! /usr/bin/perl
+# cdb_dataquality — merge detector_status Grading into the RDB DataQuality.
+#
+# Reads {dqm_pdf}/summary_pdf/output/detector_status_runRUN.json:
+#   "Grading": { "pixel": 0.0, "fibre": 2.0, "tile": 2.0 }
+#
+# That scale is not the RDB scale (DataQuality.hh):
+#   -1 unset, 0 bad, 1 partially good (DQ_PARTIALLY_GOOD, "4"), 2 good (DQ_GOOD, "1")
+# pixel/fibre/tile are written to pixel/fibres/tiles. Other DataQuality
+# fields are left as they are. The latest attribute is downloaded, those
+# fields are replaced, and the run record is put back. A dry run still
+# downloads and merges; it stops before the upload.
+use strict;
+use warnings;
+use POSIX qw(strftime);
+use JSON::PP qw(decode_json encode_json);
+use File::Temp qw(tempfile);
+use FindBin;
+use lib "$FindBin::Bin/..";
+use TaskLib;
+
+my ($run, $ctxfile) = TaskLib::args(@ARGV);
+my $ctx = TaskLib::load($ctxfile);
+my $name = "cdb_dataquality";
+
+# JSON Grading number -> RDB string. fibre/tile are the RDB key names.
+my %grade = (
+    -1 => "-1",   # DQ_UNSET
+     0 => "0",    # DQ_BAD
+     1 => "4",    # DQ_PARTIALLY_GOOD
+     2 => "1",    # DQ_GOOD
+);
+my %field = (
+    pixel => "pixel",
+    fibre => "fibres",
+    tile  => "tiles",
+);
+
+my $rundir = TaskLib::resolve_path($ctx, $ctx->{minalyzer_pdf_rundir} // "{dqm_pdf}/summary_pdf", "");
+my $status = "$rundir/output/detector_status_run$run.json";
+
+my $rdb = $ctx->{rdb_url} // "";
+$rdb =~ s{/+$}{};
+
+if ($rundir eq "" || !-f $status) {
+    TaskLib::task_log($ctx, $name, "detector status missing: $status");
+    exit 2;
+}
+if ($rdb eq "") {
+    TaskLib::task_log($ctx, $name, "rdb_url empty");
+    exit 2;
+}
+
+my $grading = _grading($status);
+if (!defined $grading) {
+    TaskLib::task_log($ctx, $name, "no Grading object in $status");
+    exit 2;
+}
+
+my %want;
+for my $src (sort keys %field) {
+    next unless exists $grading->{$src};
+    my $n = $grading->{$src};
+    if (!defined $n || $n !~ /^-?\d+(?:\.\d+)?$/) {
+        TaskLib::task_log($ctx, $name, "Grading.$src is not a number");
+        exit 2;
+    }
+    my $key = int($n + ($n < 0 ? -0.5 : 0.5));
+    if (!exists $grade{$key}) {
+        TaskLib::task_log($ctx, $name, "Grading.$src=$n is not -1, 0, 1, or 2");
+        exit 2;
+    }
+    $want{$field{$src}} = $grade{$key};
+    TaskLib::task_log($ctx, $name, "$src $n -> $field{$src}=$grade{$key}");
+}
+if (!%want) {
+    TaskLib::task_log($ctx, $name, "Grading has no pixel, fibre, or tile");
+    exit 2;
+}
+
+my $get = "$rdb/run/$run/json";
+my $body = `curl -fsS "$get"`;
+if ($? != 0 || $body eq "") {
+    TaskLib::task_log($ctx, $name, "GET failed: $get");
+    exit 2;
+}
+my $doc = eval { decode_json($body) };
+if (!$doc || ref($doc) ne "HASH") {
+    TaskLib::task_log($ctx, $name, "run record is not a JSON object");
+    exit 2;
+}
+delete $doc->{_id};
+
+my $attrs = $doc->{Attributes};
+$attrs = [] unless ref($attrs) eq "ARRAY";
+my $last = -1;
+for (my $i = 0; $i < @$attrs; $i++) {
+    my $a = $attrs->[$i];
+    $last = $i if ref($a) eq "HASH" && ref($a->{DataQuality}) eq "HASH";
+}
+my $dq;
+if ($last < 0) {
+    $dq = {
+        mu3e => "-1", beam => "-1", vertex => "-1", pixel => "-1",
+        fibres => "-1", tiles => "-1", links => "-1", deff => "-1",
+        version => "1",
+    };
+    push @$attrs, { DataQuality => $dq };
+    $doc->{Attributes} = $attrs;
+} else {
+    $dq = $attrs->[$last]{DataQuality};
+}
+
+my @changed;
+for my $k (sort keys %want) {
+    my $cur = exists $dq->{$k} ? "$dq->{$k}" : "";
+    next if $cur eq $want{$k};
+    $dq->{$k} = $want{$k};
+    push @changed, "$k=$want{$k}";
+}
+if (!@changed) {
+    TaskLib::task_log($ctx, $name, "DataQuality already set");
+    exit 0;
+}
+
+my $comment = "DataQuality grading: " . join(" ", @changed);
+my $when = strftime("%Y/%m/%d %H:%M:%S", localtime);
+my $hist = $doc->{History};
+$hist = [] unless ref($hist) eq "ARRAY";
+push @$hist, { date => $when, comment => $comment };
+$doc->{History} = $hist;
+TaskLib::task_log($ctx, $name, $comment);
+TaskLib::task_log($ctx, $name,
+    "pixel=$dq->{pixel} fibres=$dq->{fibres} tiles=$dq->{tiles}");
+
+if ($ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "dry-run: not uploaded");
+    exit 0;
+}
+
+my ($fh, $tmp) = tempfile(UNLINK => 1);
+print $fh encode_json($doc);
+close $fh;
+my $rc = system(
+    "curl", "-fsS", "-X", "PUT",
+    "-H", "Content-Type: application/json",
+    "--data-binary", "\@$tmp",
+    "$rdb/runrecords",
+);
+if ($rc != 0) {
+    TaskLib::task_log($ctx, $name, "PUT $rdb/runrecords failed");
+    exit 2;
+}
+TaskLib::task_log($ctx, $name, "uploaded DataQuality");
+exit 0;
+
+sub _grading {
+    my ($path) = @_;
+    open my $fh, "<", $path or return undef;
+    local $/;
+    my $text = <$fh>;
+    close $fh;
+    my $doc = eval { decode_json($text) };
+    return undef unless ref($doc) eq "HASH" && ref($doc->{Grading}) eq "HASH";
+    return $doc->{Grading};
+}

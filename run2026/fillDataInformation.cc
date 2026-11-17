@@ -89,15 +89,16 @@ static size_t curlWrite(void *contents, size_t size, size_t nmemb, void *userp) 
 }
 
 // ----------------------------------------------------------------------
-// "0" bad and "1" good stay as they are. Unset (and a missing field) becomes "2".
+// "0" bad, "1" good, and "4" partially good stay as they are.
+// Unset (and a missing field) becomes "2".
 static bool dqGradeLocked(const json &v) {
   if (v.is_string()) {
     string s = v.get<string>();
-    return s == "0" || s == "1";
+    return s == "0" || s == "1" || s == "4";
   }
   if (v.is_number_integer()) {
     int n = v.get<int>();
-    return n == 0 || n == 1;
+    return n == 0 || n == 1 || n == 4;
   }
   return false;
 }

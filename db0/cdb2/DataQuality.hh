@@ -9,13 +9,16 @@
 //   "-1" unset, "0" bad, "1" good.
 // "2" is data present: hits were seen, and nobody has marked the subsystem good or bad.
 // "3" is no data: the histograms were read and contain no hits.
+// "4" is partially good (detector_status Grading 1.0).
 // Unset means the subsystem has not been judged. No data is a judgment.
 // 1 stays "good", so existing records and the Good/Bad filters keep their meaning.
+// detector_status Grading uses a different scale: -1 unset, 0 bad, 1 partial, 2 good.
 static const int DQ_UNSET   = -1;
 static const int DQ_BAD     = 0;
 static const int DQ_PRESENT = 2;
 static const int DQ_NODATA  = 3;
 static const int DQ_GOOD    = 1;
+static const int DQ_PARTIALLY_GOOD = 4;
 
 struct DataQuality {
     int mu3e;
