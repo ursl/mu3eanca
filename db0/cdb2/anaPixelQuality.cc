@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   // -- command line arguments
   string filename("anaPixelQuality.root");
   // -- datav7.1=2026V2 does not include the mask files, much faster
-  string gt("datav7.1=2026V2");
+  string gt("datav7.1=2026V2-1000Hz");
   string db("/Users/ursl/data/mu3e/cdb");
   string metaMidasTreeFile("");
   int first(0), last(0);
@@ -369,8 +369,7 @@ int main(int argc, char *argv[]) {
 
   // ---------------------------------------------------------------------------------------------------
   // -- loop over all runs
-  vector<int> vRunsWithZeroWorkingLinks, vRunsWithZeroNoisyPixels;
-
+  vector<int> vRunsWithZeroWorkingLinks, vRunsWithZeroNoisyPixels, vRunsAll;
   for (auto itIoV: vIoV) {
     if (vRuns.size() > 0 && find(vRuns.begin(), vRuns.end(), itIoV) == vRuns.end()) {
       continue;
@@ -410,6 +409,9 @@ int main(int argc, char *argv[]) {
          << " and qVertex = " << qVertex 
          << " and qPixel = " << qPixel 
          << endl;
+
+    vRunsAll.push_back(itIoV);
+
     // -- loop over all chips
     uint32_t chipid(0);
     int nNoisyPixels(0);
@@ -542,7 +544,9 @@ int main(int argc, char *argv[]) {
   cout << "Good run list has " << vGoodRuns.size() << " runs" << endl;
   sfilename = "goodRunsList" + suffix + ".txt";
   writeRunList(sfilename, vGoodRuns);
-
+  cout << "All run list has " << vRunsAll.size() << " runs" << endl;
+  sfilename = "allRunsList" + suffix + ".txt";
+  writeRunList(sfilename, vRunsAll);
 
 
   return 0;
