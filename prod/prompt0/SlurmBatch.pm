@@ -70,8 +70,11 @@ sub _rotate {
     my $dest = "$old_parent/$name";
     if (-e $dest) {
         system("rm", "-rf", $dest);
+        die "SlurmBatch: cannot remove $dest\n" if -e $dest;
     }
-    move($dir, $old_parent) or die "SlurmBatch: cannot mv $dir -> $old_parent: $!\n";
+    # Move onto old/RUN. move(dir, old) tries to replace the old directory
+    # itself, and that fails once old/ already exists.
+    move($dir, $dest) or die "SlurmBatch: cannot mv $dir -> $dest: $!\n";
 }
 
 # ----------------------------------------------------------------------
