@@ -30,6 +30,8 @@ using json = nlohmann::ordered_json;
 #include "TKey.h"
 #include "TROOT.h"
 #include "TSystem.h"
+#include "TLine.h"
+#include "TLatex.h"
 
 #include <map>
 #include <cstdint>
@@ -46,10 +48,12 @@ using namespace std;
 // frames that landed in the bin.
 // Pixels are per ladder. Fibres (fhit) and tiles (thit) are one count per frame.
 //
+// -p does plotting/fitting on result of previously filled file
+//    or a combined file of multiple runs.
 // Examples:
 //          ./bin/anaSortFile ~/data/mu3e/run2026/sort/v04/012/run12272-sorted.root
-//          ./bin/anaSortFile -l 1,2 -b 5000 -o anasort <sortfile>
-//
+//          ./bin/anaSortFile -l 1,2 -b 400 -o anasort <sortfile>
+//          ./bin/anaSortFile -p combined.root|run12345.root
 // hit_pixelid is
 //   row = id & 0xFF, col = (id >> 8) & 0xFF, sensor = (id >> 16) & 0xFFFF
 // and the sensor word is station<<12 | layer<<10 | ladder<<5 | chip.
@@ -97,6 +101,7 @@ static PixHit decodeHit(uint32_t pixelId, uint32_t timestamp, int tot) {
   return h;
 }
 
+// ----------------------------------------------------------------------
 // phit: sensor/col/row in bits 61..32, ToT in 31..27, time in 26..0.
 static PixHit decodePhit(ULong64_t word) {
   uint32_t pixelId = uint32_t(word >> 32) & 0x3FFFFFFF;
@@ -169,15 +174,90 @@ static void styleOcc(TH1F* h, double titleSize, double labelSize) {
 }
 
 // ----------------------------------------------------------------------
+void plotForFile(const string& plotfile, const string& rundir, const string& ldr) {
+  TFile* in = TFile::Open(plotfile.c_str());
+  if (!in) {
+    cout << "Error: could not open file " << plotfile << endl;
+    return;
+  }
+  in->cd(rundir.c_str());
+
+  TH1F* h = (TH1F*)gDirectory->Get(ldr.c_str());
+  if (!h) {
+    cout << "Error: could not get histogram " << ldr << " from file " << plotfile << endl;
+    return;
+  }
+  h->Draw();
+  double ymax = 1.;
+  //  ymax = h->GetBinContent(h->GetMaximumBin());
+  TH1D *hy = new TH1D("hy", "y vs x", 40, 0., ymax);
+  for (int i = 1; i <= h->GetNbinsX(); ++i) {
+    hy->Fill(h->GetBinContent(i));
+  }
+  double mean = hy->GetMean();
+  double rms = hy->GetRMS();
+  if (rms > mean) rms = 0.3*mean;
+
+  double upCnt(0.), downCnt(0.);
+  for (int i = 1; i <= h->GetNbinsX(); ++i) {
+    double y = h->GetBinContent(i);
+    double chi2 = (y - mean)/rms;
+    chi2 *= chi2;
+    if (y > mean + 2.*rms) upCnt += chi2;
+     if (y < mean - 2.*rms) downCnt += chi2;
+  }
+
+
+  TCanvas* c = new TCanvas("c", "c", 600, 1200);
+  c->Divide(1, 2);
+  c->cd(1);
+  gPad->SetLogy(1);
+  h->Draw();
+  TLine *l = new TLine;
+  l->SetLineColor(kRed);
+  l->DrawLine(h->GetXaxis()->GetBinLowEdge(1), mean - 2.*rms, 
+              h->GetXaxis()->GetBinUpEdge(h->GetNbinsX()), mean - 2.*rms);
+  l->DrawLine(h->GetXaxis()->GetBinLowEdge(1), mean + 2.*rms, 
+              h->GetXaxis()->GetBinUpEdge(h->GetNbinsX()), mean + 2.*rms);
+
+  TLatex *lt = new TLatex;
+  lt->SetTextSize(0.05);
+  lt->SetTextAlign(22);
+  lt->SetTextFont(42);
+  lt->DrawLatexNDC(0.42, 0.80, Form("mean %.4f, rms %.4f", mean, rms));
+  lt->DrawLatexNDC(0.42, 0.72, Form("up %.2f, down %.2f", upCnt, downCnt));
+
+  c->cd(2);
+  hy->Draw();
+  string pdf = Form("h-%s-%s.pdf", rundir.c_str(), ldr.c_str());
+  c->Print(pdf.c_str());
+  cout << "wrote " << pdf << endl;
+  delete c;
+  delete hy;
+  delete h;
+  in->Close();
+
+}
+
+
+
+
+// ----------------------------------------------------------------------
 int main(int argc, char** argv) {
-  string sortfile;
-  string outdir;
+  string sortfile, outdir;
+  string plotfile("nada"), ldr("hL1_lad2");
+  string rundir("run11800");
   int maxBins = 1000;
   bool showLayer[3] = {true, true, true};
   bool layersSet = false;
 
+  // -- parse the command line arguments
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
+    if (!strcmp(argv[i], "-p"))      {plotfile = argv[++i];}
+    if (!strcmp(argv[i], "-x"))      {ldr = argv[++i];}
+    if (!strcmp(argv[i], "-r"))      {rundir = argv[++i];}
+
     if (arg == "-l") {
       if (i + 1 >= argc) {
         usage(argv[0]);
@@ -218,16 +298,20 @@ int main(int argc, char** argv) {
       }
     } else if (sortfile.empty()) {
       sortfile = arg;
-    } else {
-      cout << "Error: unexpected argument " << arg << endl;
-      usage(argv[0]);
-      return 1;
-    }
+    } 
   }
+
+  if (plotfile != "nada") {
+    plotForFile(plotfile, rundir, ldr);
+    return 0;
+  }
+
+  // -- check the command line arguments
   if (sortfile.empty() || (layersSet && !showLayer[0] && !showLayer[1] && !showLayer[2])) {
     usage(argv[0]);
     return 1;
   }
+  // -- create the output directory
   if (!outdir.empty() && outdir != "." && gSystem->AccessPathName(outdir.c_str())) {
     if (gSystem->mkdir(outdir.c_str(), true) != 0) {
       cout << "Error: could not create output directory " << outdir << endl;
@@ -235,6 +319,7 @@ int main(int argc, char** argv) {
     }
   }
 
+  // -- open the sort file
   TFile* file = TFile::Open(sortfile.c_str());
   if (!file) {
     cout << "Error: could not open file " << sortfile << endl;
