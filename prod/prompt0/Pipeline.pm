@@ -226,6 +226,7 @@ sub _ctx_kv {
         srun             => $srun,
         year             => $year,
         dry_run          => $pctx->{dry_run} ? 1 : 0,
+        no_upload        => $pctx->{no_upload} ? 1 : 0,
         force            => $pctx->{force} ? 1 : 0,
         interactive      => $pctx->{interactive} ? 1 : 0,
         root             => $pctx->{root} // "",
@@ -323,7 +324,8 @@ sub pipeline_run {
         . "  runs=" . join(",", @runs)
         . ($pctx->{interactive} ? " (interactive)" : "")
         . ($pctx->{force} ? " (force)" : "")
-        . ($dry ? " (dry-run)" : ""));
+        . ($dry ? " (dry-run)" : "")
+        . ($pctx->{no_upload} ? " (no-upload)" : ""));
 
     my $from_range = $opts{range_runs} // {};
 

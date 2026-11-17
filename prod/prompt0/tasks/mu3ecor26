@@ -44,7 +44,7 @@ if (!$ctx->{dry_run}) {
         TaskLib::task_log($ctx, $name, "sorted ROOT missing: $sorted");
         exit 2;
     }
-    if ($rdb eq "") {
+    if ($rdb eq "" && !$ctx->{no_upload}) {
         TaskLib::task_log($ctx, $name, "rdb_url empty; cannot upload the PDF");
         exit 2;
     }
@@ -88,6 +88,10 @@ exit($rc == 0 ? 0 : 2);
 # ----------------------------------------------------------------------
 sub _upload {
     my ($c, $name, $rdb, $run, $pdf) = @_;
+    if ($c->{no_upload}) {
+        TaskLib::task_log($c, $name, "no-upload: $pdf");
+        return;
+    }
     if ($rdb eq "") {
         TaskLib::task_log($c, $name, "rdb_url empty; PDF would not be uploaded");
         exit 2 unless $c->{dry_run};

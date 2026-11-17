@@ -58,6 +58,17 @@ if ($ctx->{dry_run}) {
     }
     exit 0;
 }
+my @run_steps = @steps;
+if ($ctx->{no_upload}) {
+    @run_steps = ();
+    for my $cmd (@steps) {
+        if ($cmd->[0] =~ /syncMu3eDB0$/) {
+            TaskLib::task_log($ctx, $name, "no-upload: skip @$cmd");
+        } else {
+            push @run_steps, $cmd;
+        }
+    }
+}
 
 if ($tag eq "") {
     TaskLib::task_log($ctx, $name, "cdb_pixelqualitylm_tag and cdb_GT unset");
@@ -71,7 +82,7 @@ if (!-f $payload_file) {
     TaskLib::task_log($ctx, $name, "payload missing: $payload_file");
     exit 2;
 }
-for my $exe (map { $_->[0] } @steps) {
+for my $exe (map { $_->[0] } @run_steps) {
     if (!-x $exe && !-f $exe) {
         TaskLib::task_log($ctx, $name, "program missing: $exe");
         exit 2;
@@ -85,7 +96,7 @@ chdir($cdbdir) or do {
 };
 TaskLib::task_log($ctx, $name, "cwd=$cdbdir");
 
-for my $cmd (@steps) {
+for my $cmd (@run_steps) {
     TaskLib::task_log($ctx, $name, "@$cmd");
     my $rc = system(@$cmd);
     if ($rc != 0) {

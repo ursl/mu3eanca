@@ -26,6 +26,10 @@ my $rel = "bin/fillDataInformation";
 my $exe = TaskLib::resolve_path($ctx, $rel, $rundir);
 
 my @cmd = ($exe, "-r1", $run, "-r2", $run);
+if ($ctx->{no_upload}) {
+    push @cmd, "-d";
+    TaskLib::task_log($ctx, $name, "no-upload: -d skips the RDB PUT");
+}
 
 if ($ctx->{dry_run}) {
     TaskLib::task_log($ctx, $name, "would: (cd $rundir && @cmd)");

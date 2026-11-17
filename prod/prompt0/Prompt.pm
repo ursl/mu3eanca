@@ -165,6 +165,7 @@ sub prompt_context {
         tar_packages   => [ _cfg_list($cfg, "tar_packages", qw(mu3e minalyzer anacomba)) ],
         data_products  => [qw(mlzr trirec sort anacomba)],
         dry_run        => $opts{dry_run} // 0,
+        no_upload      => $opts{no_upload} ? 1 : 0,
         force          => $opts{force} ? 1 : 0,
         interactive    => $opts{interactive} ? 1 : 0,
         jobs           => $opts{jobs},

@@ -94,7 +94,7 @@ if ($datadir eq "" || !-d $datadir) {
 make_path("$rundir/output");
 _ensure_csv($ctx, $name, $rundir, $csv_link);
 
-if ($rdb eq "") {
+if ($rdb eq "" && !$ctx->{no_upload}) {
     TaskLib::task_log($ctx, $name, "rdb_url empty; cannot upload the PDF");
     exit 2;
 }
@@ -116,6 +116,10 @@ my $pdf = _result_pdf("$rundir/output", $run, $started);
 if ($pdf eq "") {
     TaskLib::task_log($ctx, $name, "no PDF written in $rundir/output");
     exit 2;
+}
+if ($ctx->{no_upload}) {
+    TaskLib::task_log($ctx, $name, "no-upload: $pdf");
+    exit 0;
 }
 
 my $rm = system(

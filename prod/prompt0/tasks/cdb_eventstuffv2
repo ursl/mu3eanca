@@ -64,6 +64,17 @@ if ($ctx->{dry_run}) {
     }
     exit 0;
 }
+my @run_steps = @steps;
+if ($ctx->{no_upload}) {
+    @run_steps = ();
+    for my $cmd (@steps) {
+        if ($cmd->[0] =~ /syncMu3eDB0$/) {
+            TaskLib::task_log($ctx, $name, "no-upload: skip @$cmd");
+        } else {
+            push @run_steps, $cmd;
+        }
+    }
+}
 
 if ($short eq "") {
     TaskLib::task_log($ctx, $name, "cdb_eventstuffv2_tag and cdb_GT unset");
@@ -77,7 +88,7 @@ if (!-f $json) {
     TaskLib::task_log($ctx, $name, "metadata JSON missing: $json");
     exit 2;
 }
-for my $exe (map { $_->[0] } @steps) {
+for my $exe (map { $_->[0] } @run_steps) {
     if (!-x $exe && !-f $exe) {
         TaskLib::task_log($ctx, $name, "program missing: $exe");
         exit 2;
@@ -91,7 +102,7 @@ chdir($cdbdir) or do {
 };
 TaskLib::task_log($ctx, $name, "cwd=$cdbdir");
 
-for my $cmd (@steps) {
+for my $cmd (@run_steps) {
     TaskLib::task_log($ctx, $name, "@$cmd");
     my $rc = system(@$cmd);
     if ($rc != 0) {

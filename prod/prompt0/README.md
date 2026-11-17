@@ -100,7 +100,8 @@ Options:
 -P PIPE        pipeline alias or comma-separated tasks (default: cfg pipeline:)
 -r RUNS        run numbers: 12345,12346 or inclusive 12345..12350
 -j N           make -jN
--n             dry-run
+-n             dry-run (do not start the tasks)
+-z             run the tasks; do not upload to the RDB or the CDB
 -f, --force    redo a task whose output file already exists (also --redo)
 ```
 
@@ -142,6 +143,7 @@ pipeline_alias: test=midasmeta
 
 ```tcsh
 ./prompt -n run 12345
+./prompt -z -P beam run 12345
 ./prompt -f -P beam run 12345
 ./prompt -P beam run 12345
 ./prompt -P minalyzer_pdf run 12345

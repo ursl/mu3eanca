@@ -8,8 +8,8 @@
 #   -1 unset, 0 bad, 1 partially good (DQ_PARTIALLY_GOOD, "4"), 2 good (DQ_GOOD, "1")
 # pixel/fibre/tile are written to pixel/fibres/tiles. Other DataQuality
 # fields are left as they are. The latest attribute is downloaded, those
-# fields are replaced, and the run record is put back. A dry run still
-# downloads and merges; it stops before the upload.
+# fields are replaced, and the run record is put back. -z (no_upload)
+# still downloads and merges; it stops before the PUT.
 use strict;
 use warnings;
 use POSIX qw(strftime);
@@ -133,8 +133,8 @@ TaskLib::task_log($ctx, $name, $comment);
 TaskLib::task_log($ctx, $name,
     "pixel=$dq->{pixel} fibres=$dq->{fibres} tiles=$dq->{tiles}");
 
-if ($ctx->{dry_run}) {
-    TaskLib::task_log($ctx, $name, "dry-run: not uploaded");
+if ($ctx->{no_upload} || $ctx->{dry_run}) {
+    TaskLib::task_log($ctx, $name, "no-upload: not uploaded");
     exit 0;
 }
 
