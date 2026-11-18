@@ -517,6 +517,8 @@ window.addEventListener('pageshow', function (event) {
     const fromHistory = event.persisted || (nav && nav.type === 'back_forward');
     if (fromHistory) {
         window.location.reload();
+    } else {
+        restoreSelectedRuns();
     }
 });
 
@@ -788,6 +790,45 @@ function significantFilter() {
 }
 
 let selectedRuns = new Set();
+const SELECTED_RUNS_KEY = 'rdbSelectedRuns';
+
+function rememberSelectedRuns() {
+    if (selectedRuns.size > 0) {
+        sessionStorage.setItem(SELECTED_RUNS_KEY, JSON.stringify(Array.from(selectedRuns)));
+    } else {
+        sessionStorage.removeItem(SELECTED_RUNS_KEY);
+    }
+}
+
+// The reload after a bulk action restores the ticks, but not this set.
+// Keep the run list in sessionStorage and put it back, including runs
+// that are still on the page, so the next action uses the same selection.
+function restoreSelectedRuns() {
+    const raw = sessionStorage.getItem(SELECTED_RUNS_KEY);
+    if (!raw) return;
+    let stored;
+    try {
+        stored = JSON.parse(raw);
+    } catch (e) {
+        return;
+    }
+    if (!Array.isArray(stored)) return;
+    const want = new Set(stored.map(String));
+    selectedRuns = new Set();
+    const boxes = document.querySelectorAll('.run-select');
+    boxes.forEach(cb => {
+        const runNumber = cb.getAttribute('data-run');
+        if (want.has(String(runNumber))) {
+            cb.checked = true;
+            selectedRuns.add(runNumber);
+        }
+    });
+    const header = document.querySelector('.main-table thead input[type="checkbox"]');
+    if (header) {
+        header.checked = boxes.length > 0 && Array.from(boxes).every(cb => cb.checked);
+    }
+    updateBulkActionsVisibility();
+}
 
 function toggleAllRuns(checkbox) {
     const runCheckboxes = document.querySelectorAll('.run-select');
@@ -815,12 +856,16 @@ function toggleRun(checkbox) {
 
 function updateBulkActionsVisibility() {
     const bulkActions = document.querySelector('.bulk-actions');
+    if (!bulkActions) return;
     if (selectedRuns.size > 0) {
         bulkActions.classList.add('visible');
     } else {
         bulkActions.classList.remove('visible');
     }
+    rememberSelectedRuns();
 }
+
+document.addEventListener('DOMContentLoaded', restoreSelectedRuns);
 
 async function performBulkAction(action) {
     const runs = Array.from(selectedRuns);
@@ -1214,7 +1259,7 @@ async function updateCsvDisplay() {
             <table class="main-table">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" onchange="toggleAllRuns(this)"></th>
+                        <th><input type="checkbox" autocomplete="off" onchange="toggleAllRuns(this)"></th>
                         <th>Run</th>
                         <th>Start time</th>
                         <th>End time</th>
@@ -1260,7 +1305,7 @@ async function updateCsvDisplay() {
                     %>
                     <% data.map((result) => { %>
                         <tr>
-                            <td><input type="checkbox" class="run-select" data-run="<%= result.BOR["Run number"] %>" onchange="toggleRun(this)"></td>
+                            <td><input type="checkbox" class="run-select" autocomplete="off" data-run="<%= result.BOR["Run number"] %>" onchange="toggleRun(this)"></td>
                             <td><a href="/rdb/run/<%= result.BOR["Run number"] %><%= listQuery ? '?' + listQuery : '' %>"><%= result.BOR["Run number"] %></a></td>
                             <td><%= result.BOR["Start time"] %></td>
                             <td><%= result.EOR["Stop time"] %></td>
