@@ -12,6 +12,7 @@
 #           -r X   do run X only
 #
 # History 
+#         2026/11/18 only the last 100 runlog names are considered
 #         2026/11/17 blacklist a run after 3 unsuccessful uploads
 #         2026/10/16 start with 2026, add single run capability
 #         2025/05/16 add upload of DataQuality and RunInfo attributes
@@ -41,6 +42,7 @@ my $RUNSDONE = "/home/ursl/mu3e/software/mu3eanca/runs.txt";
 my $RUNSFAIL = "/home/ursl/mu3e/software/mu3eanca/runs.fail";
 my $RUNSIGNORE = "/home/ursl/mu3e/software/mu3eanca/runs.ignore";
 my $FAILMAX = 3;
+my $LAST = 100;
 
 my $singleRun = -1;
 if ($opt_r) {
@@ -48,14 +50,25 @@ if ($opt_r) {
 }
 
 
-# -- read list of runs already done
-open(IN,  "$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE\n";
-my @runsdone;
-while(<IN>) {
-    chop($_);
-    push @runsdone, $_;
+# -- last $LAST lines of runs already done, read from the end of the file
+open(IN, "$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE\n";
+seek(IN, 0, 2);
+my $pos = tell(IN);
+my $buf = "";
+my $nl = 0;
+while ($pos > 0 && $nl <= $LAST) {
+    my $n = ($pos >= 4096) ? 4096 : $pos;
+    $pos -= $n;
+    seek(IN, $pos, 0) || die "updateRunDB: Cannot seek $RUNSDONE\n";
+    my $read = "";
+    read(IN, $read, $n);
+    $buf = $read . $buf;
+    $nl = ($buf =~ tr/\n/\n/);
 }
-close(IN); 
+close(IN);
+my @runsdone = split(/\n/, $buf);
+shift @runsdone if $pos > 0;
+@runsdone = splice(@runsdone, -$LAST) if @runsdone > $LAST; 
 
 # -- runs.fail: "runlog_NNNNN.json <count>", last line for a run wins
 my %failcount;
@@ -84,6 +97,9 @@ if (-f $RUNSIGNORE) {
 # -- read runlog file(names)
 opendir(RNLG, "$RUNLOGDIR") || die "Cannot read $RUNLOGDIR\n";
 @filelist = sort(grep(/\.json$/,readdir(RNLG)));
+if (@filelist > $LAST) {
+    @filelist = @filelist[-$LAST .. -1];
+}
 @runsToDo = (); 
 if ($opt_f && $opt_f == $d) {
     push @runsToDo, $d;
