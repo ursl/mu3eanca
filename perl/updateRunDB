@@ -51,6 +51,7 @@ if ($opt_r) {
 
 
 # -- last $LAST lines of runs already done, read from the end of the file
+print("reading $LAST lines from $RUNSDONE\n");
 open(IN, "$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE\n";
 seek(IN, 0, 2);
 my $pos = tell(IN);
@@ -73,6 +74,7 @@ shift @runsdone if $pos > 0;
 # -- runs.fail: "runlog_NNNNN.json <count>", last line for a run wins
 my %failcount;
 if (-f $RUNSFAIL) {
+    print("reading $RUNSFAIL\n");
     open(IN, "$RUNSFAIL") || die "updateRunDB: Cannot open $RUNSFAIL\n";
     while (<IN>) {
         chop($_);
@@ -85,6 +87,7 @@ if (-f $RUNSFAIL) {
 # -- blacklist: same names as runs.txt, one runlog file per line
 my @runsignore;
 if (-f $RUNSIGNORE) {
+    print("reading $RUNSIGNORE\n");
     open(IN, "$RUNSIGNORE") || die "updateRunDB: Cannot open $RUNSIGNORE\n";
     while (<IN>) {
         chop($_);
@@ -95,9 +98,12 @@ if (-f $RUNSIGNORE) {
 }
 
 # -- read runlog file(names)
-opendir(RNLG, "$RUNLOGDIR") || die "Cannot read $RUNLOGDIR\n";
+print("reading $RUNLOGDIR\n");
+opendir(RNLG, "$RUNLOGDIR") ||  die "Cannot read $RUNLOGDIR\n";
 @filelist = sort(grep(/\.json$/,readdir(RNLG)));
+print("found ". scalar(@filelist) . " runlog files\n");
 if (@filelist > $LAST) {
+    print("limiting to last $LAST runlog files\n");
     @filelist = @filelist[-$LAST .. -1];
 }
 @runsToDo = (); 
@@ -147,6 +153,7 @@ if ($opt_f && $opt_f == $d) {
 closedir RNLG;
 
 my $cnt = 0; 
+print("processing ". scalar(@runsToDo) . " runlog files\n");
 foreach $d (@runsToDo) {
 
     my $runno = $d;
