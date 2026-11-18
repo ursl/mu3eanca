@@ -29,7 +29,7 @@ my @streams = (
     { triggers => 128, tag => "0x80" },
 #    { triggers => 1,   tag => "0x01" },
 #    { triggers => 0,   tag => "" },
-    { triggers => -1,  tag => "all" },
+    { triggers => -1,  tag => "" },
 );
 for my $s (@streams) {
     my $base = ($s->{tag} ne "")
