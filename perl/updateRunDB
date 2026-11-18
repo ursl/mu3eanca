@@ -29,8 +29,7 @@
 use Getopt::Std;
 use File::Basename;
 
-getopts('df:n:r:');
-
+getopts('df:n:r:v');
 
 print "updateRunDB executed at ". localtime, "\n";
 
@@ -43,15 +42,19 @@ my $RUNSFAIL = "/home/ursl/mu3e/software/mu3eanca/runs.fail";
 my $RUNSIGNORE = "/home/ursl/mu3e/software/mu3eanca/runs.ignore";
 my $FAILMAX = 3;
 my $LAST = 100;
+my $verbose = 0;
 
 my $singleRun = -1;
 if ($opt_r) {
     $singleRun = $opt_r;
 }
 
+if ($opt_v) {
+    $verbose = 1;
+}
 
 # -- last $LAST lines of runs already done, read from the end of the file
-print("reading $LAST lines from $RUNSDONE\n");
+if ($verbose) {print("reading $LAST lines from $RUNSDONE\n");}
 open(IN, "$RUNSDONE") || die "updateRunDB: Cannot open $RUNSDONE\n";
 seek(IN, 0, 2);
 my $pos = tell(IN);
@@ -74,7 +77,7 @@ shift @runsdone if $pos > 0;
 # -- runs.fail: "runlog_NNNNN.json <count>", last line for a run wins
 my %failcount;
 if (-f $RUNSFAIL) {
-    print("reading $RUNSFAIL\n");
+    if ($verbose) {print("reading $RUNSFAIL\n");}
     open(IN, "$RUNSFAIL") || die "updateRunDB: Cannot open $RUNSFAIL\n";
     while (<IN>) {
         chop($_);
@@ -87,7 +90,7 @@ if (-f $RUNSFAIL) {
 # -- blacklist: same names as runs.txt, one runlog file per line
 my @runsignore;
 if (-f $RUNSIGNORE) {
-    print("reading $RUNSIGNORE\n");
+    if ($verbose) {print("reading $RUNSIGNORE\n");}
     open(IN, "$RUNSIGNORE") || die "updateRunDB: Cannot open $RUNSIGNORE\n";
     while (<IN>) {
         chop($_);
@@ -98,12 +101,12 @@ if (-f $RUNSIGNORE) {
 }
 
 # -- read runlog file(names)
-print("reading $RUNLOGDIR\n");
+if ($verbose) {print("reading $RUNLOGDIR\n");}
 opendir(RNLG, "$RUNLOGDIR") ||  die "Cannot read $RUNLOGDIR\n";
 @filelist = sort(grep(/\.json$/,readdir(RNLG)));
-print("found ". scalar(@filelist) . " runlog files\n");
+if ($verbose) {print("found ". scalar(@filelist) . " runlog files\n");}
 if (@filelist > $LAST) {
-    print("limiting to last $LAST runlog files\n");
+    if ($verbose) {print("limiting to last $LAST runlog files\n");}
     @filelist = @filelist[-$LAST .. -1];
 }
 @runsToDo = (); 
@@ -138,7 +141,7 @@ if ($opt_f && $opt_f == $d) {
             $clos = pop(@stringd);
             if ((grep(/EOR/, @stringd)) && ($clos eq '}')) {
                 $goodFile = 1;     
-                print("found all for $d, will add to runsToDo\n");
+                if ($verbose) {print("found all for $d, will add to runsToDo\n");}
             } elsif  ($clos =~ /\},/) {
                 # print("incomplete file for $d\n");
             } else {
@@ -153,7 +156,7 @@ if ($opt_f && $opt_f == $d) {
 closedir RNLG;
 
 my $cnt = 0; 
-print("processing ". scalar(@runsToDo) . " runlog files\n");
+if ($verbose) {print("processing ". scalar(@runsToDo) . " runlog files\n");}
 foreach $d (@runsToDo) {
 
     my $runno = $d;
