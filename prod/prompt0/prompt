@@ -79,7 +79,7 @@ use Prompt qw(
     prompt_link
 );
 use Pipeline qw(pipeline_run);
-use TaskLib qw(forward_runs);
+use TaskLib qw(forward_runs raw_held);
 
 sub prefix {
     my $now = localtime;
@@ -128,6 +128,7 @@ Targets:
   run RUN ...    run the pipeline for each RUN (see -P)
   irun RUN ...   same as run; SLURM tasks run on this node and prompt waits
   process RUN    from RUN forward through raw files (010, 011, ...), then sleep and look again
+                 a file still open or still growing waits for a later pass
   processEven RUN  same as process, only even run numbers
   processOdd RUN   same as process, only odd run numbers
   poolN RUN      from RUN upward, or only the runs in RUN..RUN
@@ -298,7 +299,7 @@ if ($target eq "setup") {
             my $which = $want == 0 ? "even" : "odd";
             print(prefix(), "$target: no $which runs at or after $start (raw: "
                 . join(",", @fwd) . ")\n");
-        } else {
+        } elsif (!raw_held()) {
             print(prefix(), "$target: no raw files at or after $start\n");
         }
         $start = $fwd[-1] + 1 if @fwd;
@@ -461,11 +462,14 @@ if ($target eq "setup") {
         for my $r (@runs) { $lo = $r if $r < $lo; }
         my %want = map { $_ => 1 } @runs;
         my %have = map { $_ => 1 } grep { $want{$_} } forward_runs($cfg, $lo);
+        my %held = map { $_ => 1 } raw_held();
         my @missing;
         for my $r (sort { $a <=> $b } @runs) {
             if ($have{$r}) {
                 next if $seen{$r}++;
                 push @queue, $r;
+            } elsif ($held{$r}) {
+                next;
             } else {
                 push @missing, $r;
             }
@@ -475,7 +479,10 @@ if ($target eq "setup") {
         }
     }
     if (!@queue && ($pool_mode eq "pool" || $dry_run)) {
-        if ($pool_mode eq "pool" && !$one_start) {
+        my @held = raw_held();
+        if (@held) {
+            print(prefix(), "$target: not yet closed " . _run_ranges(@held) . "\n");
+        } elsif ($pool_mode eq "pool" && !$one_start) {
             my @asked = sort { $a <=> $b } @runs;
             print(prefix(), "$target: no raw files in " . _run_ranges(@asked) . "\n");
         } else {

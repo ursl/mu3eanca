@@ -24,7 +24,7 @@ use Exporter qw(import);
 our @EXPORT_OK = qw(
     args load task_log ctx_set
     task_prefix
-    block_dir raw_file forward_runs
+    block_dir raw_file forward_runs raw_held
     rdb_events mu3e_entries
     parse_run_years year_for_run expand_year
     expand_ctx resolve_path
@@ -121,13 +121,52 @@ sub raw_file {
 }
 
 # ----------------------------------------------------------------------
+# fuser exits 0 while some process still has the file open.
+# A missing fuser is treated as "not open" ($? == -1).
+sub _file_is_open {
+    my ($path) = @_;
+    open(my $save_out, ">&STDOUT") or return 0;
+    open(my $save_err, ">&STDERR") or return 0;
+    open(STDOUT, ">", "/dev/null");
+    open(STDERR, ">", "/dev/null");
+    system("fuser", "-s", $path);
+    my $rc = $?;
+    open(STDOUT, ">&", $save_out);
+    open(STDERR, ">&", $save_err);
+    close $save_out;
+    close $save_err;
+    return 0 if $rc == -1;
+    return ($rc >> 8) == 0;
+}
+
+# $size/$mtime were sampled before the settle wait. A writer still
+# appending moves one of them; a paused writer is still open.
+sub _file_is_closed {
+    my ($path, $size, $mtime) = @_;
+    return 0 if _file_is_open($path);
+    my ($sz, $mt) = (stat($path))[7, 9];
+    return 0 unless defined $sz && defined $size;
+    return $sz == $size && $mt == $mtime;
+}
+
+# Runs left out of the last forward_runs call because the raw file was
+# still open or still growing. The next scan tries them again.
+our @raw_held_runs;
+sub raw_held { return @raw_held_runs; }
+
+# ----------------------------------------------------------------------
 # Run numbers >= $start that already have a raw file, increasing.
 # runblock3 scans {raw}/{010}/, {raw}/{011}/, ... and skips a block whose
 # last run is still below $start. flat scans the raw directory itself.
+# A file whose mtime is within the last two minutes is kept only when
+# fuser shows it closed and its size and mtime are unchanged across
+# raw_settle seconds (default 2; 0 disables the check). Older files are
+# taken as they are. Same test as perl/updateDataFromLazy.
 sub forward_runs {
     my ($cfg, $start) = @_;
     die "TaskLib: bad start run '$start'\n" unless defined $start && $start =~ /^\d+$/;
     $start = 0 + $start;
+    @raw_held_runs = ();
 
     my $layout = _strip($cfg->{raw_input_layout} // "runblock3");
     my $raw_t  = _strip($cfg->{raw_input_base} // "");
@@ -144,7 +183,7 @@ sub forward_runs {
     }
 
     my %seen;
-    my @runs;
+    my @cand;
     for my $y (sort keys %year) {
         next if $y eq "";
         my $base = $raw_t ne "" ? expand_year($raw_t, $y) : expand_year("$data_t/raw", $y);
@@ -170,12 +209,42 @@ sub forward_runs {
                 next if $run < $start;
                 next if year_for_run($cfg, $run) ne $y;
                 next if $seen{$run}++;
-                push @runs, $run;
+                my $path = "$dir/$name";
+                my ($size, $mtime) = (stat($path))[7, 9];
+                next unless defined $size;
+                push @cand, { run => $run, path => $path, size => $size, mtime => $mtime };
             }
             closedir($dh);
         }
     }
+
+    my $settle = 0 + (_strip($cfg->{raw_settle} // "2"));
+    $settle = 0 if $settle < 0;
+    # Anything quiet for this long is not the file currently being written.
+    my $recent = 120;
+    my $now = time;
+    my @fresh;
+    my @runs;
+    for my $c (@cand) {
+        if ($settle < 1 || $now - $c->{mtime} >= $recent) {
+            push @runs, $c->{run};
+        } else {
+            push @fresh, $c;
+        }
+    }
+    if (@fresh) {
+        sleep($settle);
+        for my $c (@fresh) {
+            if (_file_is_closed($c->{path}, $c->{size}, $c->{mtime})) {
+                push @runs, $c->{run};
+            } else {
+                push @raw_held_runs, $c->{run};
+                print(task_prefix("raw"), "run $c->{run} not yet closed\n");
+            }
+        }
+    }
     @runs = sort { $a <=> $b } @runs;
+    @raw_held_runs = sort { $a <=> $b } @raw_held_runs;
     return @runs;
 }
 

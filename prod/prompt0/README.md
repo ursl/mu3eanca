@@ -83,11 +83,11 @@ Production area:
 | `status` | Paths, binaries, tar |
 | `list` | Resolved config + packages (default) |
 | `run RUN ...` | Execute the pipeline for each run (`-P` selects the list). Numbers may be `12345` or `12345..12350` |
-| `process RUN` | One starting run. Find `runNNNNN.mid.lz4` at that number and every higher one under `{raw_input_base}/010`, `011`, … and run the pipeline in that order. Then sleep `process_sleep` seconds (default 60) and look again. `-n` scans once and does not sleep |
+| `process RUN` | One starting run. Find `runNNNNN.mid.lz4` at that number and every higher one under `{raw_input_base}/010`, `011`, … and run the pipeline in that order. A file touched in the last two minutes is taken only when `fuser` shows it closed and its size and mtime stay put for `raw_settle` seconds (default 2); otherwise it waits for a later pass. Then sleep `process_sleep` seconds (default 60) and look again. `-n` scans once and does not sleep |
 | `processEven RUN` | Same scan as `process`. Only even run numbers are passed to the pipeline |
 | `processOdd RUN` | Same scan as `process`. Only odd run numbers are passed to the pipeline |
 | `poolN RUN` | One run: reprocess raw files from that run upward. A range `A..B` reprocesses only runs in that inclusive range that have a raw file; missing numbers are logged and skipped. At most N children until `pool_long_from` (default `mu3esort`); that task and the ones after it do not hold a slot. The master prints submissions and exits only. Each child writes `runs/RUN/<stamp>-<pipeline>.log`. Stops when every child has finished |
-| `prodN RUN` | Same pool as `poolN`. Each pass scans again from the start run and queues every raw file not already taken. A free slot starts the newest waiting run, then the oldest, and alternates. After the current files, sleep `process_sleep` and look again |
+| `prodN RUN` | Same pool as `poolN`. Each pass scans again from the start run and queues every raw file not already taken. A file that is still open or still growing is left for the next pass (`raw_settle`, same test as `process`). A free slot starts the newest waiting run, then the oldest, and alternates. After the current files, sleep `process_sleep` and look again |
 | `cleanup RUN ...` | Remove per-run output; keep timestamped logs in `runs/XXXXX/` |
 | `linkSort` | In `{data}/{year}/sort/{prompt_workdir}/`, symlink each missing `runNNNNN-sorted.root` (and any `runNNNNN-0xHH-sorted.root`) to the same path in the newest older `vNN` | 
 | `linkMlzr` | Same for `{data}/{year}/mlzr/{prompt_workdir}/dqm_histos_NNNNN.root` |
