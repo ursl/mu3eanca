@@ -1,0 +1,23 @@
+#!/bin/tcsh
+# One pass over each tree, then sleep. A second start exits at once.
+if ( ! $?SYNC_SERVICE03_LOCKED ) then
+  setenv SYNC_SERVICE03_LOCKED 1
+  if ( ! -d $HOME/run ) mkdir -p $HOME/run
+  exec flock -n $HOME/run/sync-service03.lock $0
+  exit 1
+endif
+
+set srcroot = /data/experiment/mu3e/data/2026
+set dstroot = "langenegger@service03.merlin7.psi.ch:/data/project/mu3e/data/2026"
+set trees = ( sort mlzr raw history anacomba )
+set pause = 120
+
+while (1)
+  echo "`date` sync pass start"
+  foreach tree ( $trees )
+    echo "`date` $tree"
+    rsync -a --no-links --no-group --chmod=Dg+s $srcroot/$tree/ $dstroot/$tree/
+  end
+  echo "`date` sync pass done"
+  sleep $pause
+end
