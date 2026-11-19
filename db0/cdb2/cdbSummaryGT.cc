@@ -35,21 +35,23 @@ using namespace std;
 // Usage: ./cdbSummaryGT -u <URI> -g <GT>
 //    or: ./cdbSummaryGT -u <URI> -t <tag>
 //
-//   -u, --uri   CDB URI: path for cdbJSON, or http(s) URL for cdbRest
+//   -d          dump the payload(s) contained in 
 //   -g, --gt    Global tag name (required unless -t is used)
-//   -t, --tag   List all global tags whose tag list contains <tag> (exact match)
-//   -p, --pat   Pattern to match GT names, when no -g or -t is used (summary for all GTs matching pattern)
 //   -n          Do NOT read all payloads of a tag
+//   -p, --pat   Pattern to match GT names, when no -g or -t is used (summary for all GTs matching pattern)
+//   -t, --tag   List all global tags whose tag list contains <tag> (exact match)
+//   -u, --uri   CDB URI: path for cdbJSON, or http(s) URL for cdbRest
 //
 // ----------------------------------------------------------------------
 
 void printUsage(const char* progname) {
   cout << "Usage: " << progname << " -u <URI> (-g <GT> | -t <tag> | -p <pattern>)" << endl;
-  cout << "  -u, --uri   CDB URI (path for JSON, http URL for REST)" << endl;
+  cout << "  -d          dump the payload(s) contained in the GT" << endl;
   cout << "  -g, --gt    Global tag name (summary for one GT)" << endl;
+  cout << "  -n          Do NOT read all payloads of a tag" << endl;
   cout << "  -p, --pat   Pattern to match GT names, when no -g or -t is used (summary for all GTs matching pattern)" << endl;
   cout << "  -t, --tag   List GT names + comments that include this tag (exact)" << endl;
-  cout << "  -n          Do NOT read all payloads of a tag" << endl;
+  cout << "  -u, --uri   CDB URI (path for JSON, http URL for REST)" << endl;
   cout << endl;
   cout << "Examples:" << endl;
   cout << "  cdbSummaryGT -u http://mu3edb0/cdb" << endl;
@@ -118,6 +120,7 @@ int main(int argc, char* argv[]) {
   int verbose = 0;
   string filterTag("unset");
   bool noPayloads = false;
+  bool dump = false;
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-u") == 0 && i + 1 < argc) uri = argv[++i];
     else if (strcmp(argv[i], "--uri") == 0 && i + 1 < argc) uri = argv[++i];
@@ -129,6 +132,7 @@ int main(int argc, char* argv[]) {
     else if (strcmp(argv[i], "--tag") == 0 && i + 1 < argc) filterTag = argv[++i];
     else if (strcmp(argv[i], "-v") == 0 && i + 1 < argc) verbose = atoi(argv[++i]);
     else if (strcmp(argv[i], "-n") == 0) noPayloads = true;
+    else if (strcmp(argv[i], "-d") == 0) dump = true;
     else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
       printUsage(argv[0]);
       return 0;
@@ -282,6 +286,27 @@ int main(int argc, char* argv[]) {
         cout << "    comment: " << wrapComment(tagComment, 60, "             ") << endl;
       }
       continue;
+    }
+
+    // detsetup and eventstuff report payload size 0, so this is outside that check.
+    // Default verbosity matches cdbPrintPayload, which prints the whole BLOB.
+    if (dump && it != iovs.end()) {
+      int dumpVerbose = verbose > 0 ? verbose : 10000;
+      calAbs* calIov = getCalClass(tag, pDB);
+      if (calIov) {
+        for (int iov : it->second) {
+          string hashIov = "tag_" + tag + "_iov_" + to_string(iov);
+          calIov->update(hashIov);
+          payload pl = calIov->getPayload(hashIov);
+          cout << "    IOV " << setw(8) << iov << endl;
+          cout << "hash:    " << pl.fHash << endl;
+          cout << "comment: " << pl.fComment << endl;
+          cout << "schema:  " << pl.fSchema << endl;
+          cout << "date:    " << pl.fDate << endl;
+          calIov->printBLOB(pl.fBLOB, dumpVerbose);
+        }
+        delete calIov;
+      }
     }
 
     if (payloadSize > 0) {
