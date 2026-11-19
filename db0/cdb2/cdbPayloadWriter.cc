@@ -1647,6 +1647,7 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
   
   string tmpFilename("");
   if (string::npos != ifilename.find(".root")) {
+    cout << "cdbPayloadWriter: root file " << ifilename << endl;
     tmpFilename = ifilename;
     size_t pos = tmpFilename.find(".root");
     if (pos != string::npos) tmpFilename.replace(pos, 5, "_tmp.csv");
@@ -1749,7 +1750,12 @@ void cdbPayloadWriter::writeAlignmentPayloads(string payloaddir, string gt, stri
         }
         mppcs.insert(make_pair(m.mppc, m)); 
       }
-      cout << "   ->cdbWritePayload> read " << mppcs.size() << " mppcs" << endl;
+      cout << "   ->cdbWritePayload> read " << mppcs.size() << " mppcs";
+      if (!mppcs.empty()) {
+        cout << " ids";
+        for (auto &m : mppcs) cout << " " << m.first;
+      }
+      cout << endl;
       ofstream ONS; ONS.open(tmpFilename);
       for (auto &m : mppcs) ONS << m.first << "," << std::setprecision(15) << m.second.vx << "," << m.second.vy << "," << m.second.vz << "," << m.second.colx << "," << m.second.coly << "," << m.second.colz << "," << m.second.ncol << endl;
       ONS.close(); file->Close();
