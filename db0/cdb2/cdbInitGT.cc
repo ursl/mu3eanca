@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <vector>
 #include <sstream>
@@ -66,7 +68,40 @@ int main(int argc, const char* argv[]) {
   // -- global tags
   // ----------------------------------------------------------------------
   map<string, structGT> iniStructGT = {
-    // -- MC ideal
+    // -- v8.0 
+    {"mcidealv8.0V0", {
+      .gt = "mcidealv8.0V0",
+      .tags = {"detsetupv1_ideal", "eventstuffv2_ideal", 
+               "fibrealignment_", "fibrequality_ideal",
+               "mppcalignment_", 
+               "pixelalignment_", "pixelqualitylm_ideal", 
+               "pixelefficiency_ideal", "pixeltimecalibration_ideal", 
+               "tilealignment_", "tilequality_ideal", "tiletimecalibration_ideal"},
+      .comment = "Sensor swapped geometry correction for MC ideal (=complete) detector geometry. No deficiencies, all 100% efficient",
+      .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_swap_corrected.root"
+    }},
+    {"datav8.0=2026V0", {
+      .gt = "datav8.0=2026V0",
+      .tags = {"detsetupv1_", "eventstuffv2_", 
+               "fibrealignment_", "fibrequality_", 
+               "mppcalignment_",  
+               "pixelalignment_", "pixelqualitylm_datav7.1=2026V1", "pixelefficiency_", "pixeltimecalibration_", 
+               "tilealignment_", "tilequality_", "tiletimecalibration_"},
+      .comment = "Sensor swapped geometry correction for data (=complete) detector geometry",
+      .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_swap_corrected.root"
+    }},
+    {"mcrealisticv8.0=2026V0", {
+      .gt = "mcrealisticv8.0=2026V0",
+      .tags = {"detsetupv1_", "eventstuffv2_", 
+               "fibrealignment_", "fibrequality_datav8.0=2026V0", 
+               "mppcalignment_", 
+               "pixelalignment_", "pixelefficiency_datav8.0=2026V0", "pixelqualitylm_datav8.0=2026V0", "pixeltimecalibration_", 
+               "tilealignment_", "tilequality_datav8.0=2026V0",  "tiletimecalibration_", 
+               },
+      .comment = "Sensor swapped geometry correction for MC realistic (=complete) detector geometry. Should describe 2026 data",
+      .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_swap_corrected.root"
+    }},
+    // -- v6.5
     {"mcidealv6.5", {
       .gt = "mcidealv6.5",
       .tags = {"pixelalignment_", "fibrealignment_", "tilealignment_", "mppcalignment_", 
@@ -94,7 +129,6 @@ int main(int argc, const char* argv[]) {
       .comment = "MC ideal 2026 detector geometry v6.5 (VTX + central L3 + DS tiles + all fibres). No deficiencies, all 100% efficient. No time-walk corrections (zero shift and uncertainty).",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_mcidealv6.5.root"
     }},
-    // -- MC realistic
     {"mcrealisticv6.5=2025V0", {
       .gt = "mcrealisticv6.5=2025V0",
       .tags = {"pixelalignment_mcidealv6.5=2025", "fibrealignment_mcidealv6.5=2025", "tilealignment_mcidealv6.5=2025", "mppcalignment_mcidealv6.5=2025", 
@@ -108,18 +142,31 @@ int main(int argc, const char* argv[]) {
   
   // -- comments for tags. Since tags can be part of multiple GT, do not insert this into iniStructGT
   map<string, string> tagComments = {
+    {"detsetupv1_ideal", "Ideal with magnet turned on."},
+    {"eventstuffv2_ideal", "Ideal eventstuffv2: no frame limits."},
+
+    {"fibrequality_ideal", "Perfect fibre detector with no deficiencies."},
+
+    {"pixelefficiency_ideal", "Fully efficient for complete pixel detector."},
+    {"pixelqualitylm_ideal", "Perfect pixel detector with no deficiencies."},
+    {"pixeltimecalibration_ideal", "Pixel time calibration for the entire detector with zero shifts and uncertainties, i.e. no time walk corrections for ideal MC."},
+
+    {"tilequality_ideal", "Perfect tile detector with no deficiencies."},
+
+    {"pixelalignment_datav8.0=2026V0", "Swapped sensor geometry correction"},
+    {"pixelalignment_mcidealv8.0V0", "Swapped sensor geometry correction"},
+    {"pixelalignment_mcrealisticv8.0=2026V0", "Swapped sensor geometry correction"},
+    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o "},
+    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o "},
+    {"mppcalignment_mcrealisticv8.0=2026V0", "Correct MPPC IDs as in det r/o "},
+
     {"pixelalignment_mcidealv6.5", "Ideal detector geometry with pixel alignment using MC truth from v6.5."},
     {"pixelalignment_mcidealv6.5=2025", "Ideal detector geometry (VTX and complete fibres and tiles) with pixel alignment using MC truth from v6.5."},
     {"tilealignment_mcidealv6.5", "Ideal detector geometry with tile alignment using MC truth from v6.5."},
     {"fibrealignment_mcidealv6.5", "Ideal detector geometry with fibre alignment using MC truth from v6.5."},
     {"mppcalignment_mcidealv6.5", "Ideal detector geometry with mppc alignment using MC truth from v6.5."},
-    {"pixeltimecalibration_ideal", "Pixel time calibration for the entire detector with zero shifts and uncertainties, i.e. no time walk corrections for ideal MC."},
-    {"pixelqualitylm_ideal", "Perfect pixel detector with no deficiencies."},
-    {"fibrequality_ideal", "Perfect fibre detector with no deficiencies."},
-    {"tilequality_ideal", "Perfect tile detector with no deficiencies."},
-    {"pixelefficiency_ideal", "Fully efficient for complete pixel detector."},
     {"eventstuffv1_ideal", "No limitations to time stamps."},
-    {"detsetupv1_ideal", "Magnet turned on."},
+    {"eventstuffv2_datav8.0=2026V0", "IOV 1 is the ideal eventstuffv2 input."}
   };
   
   // -- complete the tags by replacing trailing _ with the _GT
@@ -140,11 +187,21 @@ int main(int argc, const char* argv[]) {
   // ----------------------------------------------------------------------
 
   // -- command line arguments
-  string jsondir("");
+  string jsondir("~/data/mu3e/test-cdb");
   string gt("");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-j"))  {jsondir    = argv[++i];}
     if (!strcmp(argv[i], "-g"))  {gt         = argv[++i];}
+  }
+
+  // opendir and ofstream leave '~' literal. system("mkdir -p ...") runs a
+  // shell, which expands it, so the 0000 block dir is created under $HOME
+  // while the payload is opened at a path that does not exist.
+  if (!jsondir.empty() && jsondir[0] == '~') {
+    const char *home = getenv("HOME");
+    if (home && home[0] != '\0' && (jsondir.size() == 1 || jsondir[1] == '/')) {
+      jsondir = string(home) + jsondir.substr(1);
+    }
   }
   
   cout << "===============" << endl;
@@ -185,6 +242,7 @@ int main(int argc, const char* argv[]) {
       string tag = ('_' == it.back()? it + its.first: it);
       arrayBuilder.push_back(tag);
     }
+    sort(arrayBuilder.begin(), arrayBuilder.end());
     stringstream sstr;
     sstr << "{ \"gt\" : \"" << its.first << "\", \"tags\" : ";
     sstr << jsFormat(arrayBuilder);
@@ -206,13 +264,18 @@ int main(int argc, const char* argv[]) {
   for (auto its : iniStructGT) {
     if (gt != its.first) continue;
     cout << "************* processing global tag " << its.first << " and gt = " << gt << endl;
+    cout << "cdbInitGT: alignment root file " << its.second.rootfile << endl;
     for (auto it2 : its.second.tags) {
       tagLabel = it2.substr(it2.rfind('_') + 1);
       cout << "tagLabel = " << tagLabel << " it2 = " << it2 << " its.first = " << its.first << endl;
 
-      // Do not overwrite an existing tag file or payloads/<fullTag>/ tree (shared tags across GTs,
-      // or re-run cdbInitGT for another GT that reuses the same calibration tag name).
-      if (cdbTagOrPayloadTreeExists(jsondir, payloaddir, it2)) {
+      // A tag whose name ends with this GT is owned by it and is rewritten, so a
+      // corrected alignment root file replaces the previous mppc/sensor IDs.
+      // A borrowed or shared tag (fibrequality_ideal, another GT's alignment)
+      // is left in place.
+      bool owned = its.first.size() <= it2.size()
+          && it2.compare(it2.size() - its.first.size(), its.first.size(), its.first) == 0;
+      if (!owned && cdbTagOrPayloadTreeExists(jsondir, payloaddir, it2)) {
         cout << "cdbInitGT: skip tag \"" << it2 << "\" (existing " << jsondir << "/tags/" << it2
              << " and/or " << payloaddir << "/" << it2 << "/)" << endl;
         continue;
@@ -230,6 +293,7 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/sensors-" + tagLabel + ".csv";
         }
+        cout << "cdbInitGT: " << it2 << " from " << asciiFilename << endl;
         writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
@@ -240,6 +304,7 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/tiles-" + tagLabel + ".csv";
         }
+        cout << "cdbInitGT: " << it2 << " from " << asciiFilename << endl;
         writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
@@ -250,6 +315,7 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/fibres-" + tagLabel + ".csv";
         }
+        cout << "cdbInitGT: " << it2 << " from " << asciiFilename << endl;
         writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
@@ -260,6 +326,7 @@ int main(int argc, const char* argv[]) {
         } else {
           asciiFilename = string(LOCALDIR) + "/ascii/mppcs-" + tagLabel + ".csv";
         }
+        cout << "cdbInitGT: " << it2 << " from " << asciiFilename << endl;
         writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
@@ -298,6 +365,12 @@ int main(int argc, const char* argv[]) {
         writer.writeEventStuffV1Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/eventstuff-ideal.json", tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
+
+      // IOV 1 of a data tag is the ideal input; later runs are added separately.
+      if (string::npos != it2.find("eventstuffv2_")) {
+        writer.writeEventStuffV2Payloads(payloaddir, tagLabel, string(LOCALDIR) + "/ascii/eventstuffv2-ideal.json", tagComments[it2], 1);
+        writeInitialTag(jsondir, gt, it2, tagComments[it2]);
+      }
       
       if (string::npos != it2.find("pixelefficiency_")) {
         asciiFilename = string(LOCALDIR) + "/tmp-pixelefficiency-" + tagLabel + ".csv";
@@ -311,6 +384,16 @@ int main(int argc, const char* argv[]) {
         asciiFilename = string(LOCALDIR) + "/tmp-pixeltimecalibration-" + tagLabel + ".calib";
         writer.writePixelTimeCalibrationIdealInput(asciiFilename, tagLabel);      
         writer.writePixelTimeCalibrationPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
+        writeInitialTag(jsondir, gt, it2, tagComments[it2]);
+        //remove(asciiFilename.c_str());
+      }
+
+      // Zero offsets and timewalk. The GT name selects the tiles:
+      // mcideal (no year) is US+DS, a name containing 2026 or 2025 is that year's set.
+      if (string::npos != it2.find("tiletimecalibration_")) {
+        asciiFilename = string(LOCALDIR) + "/tmp-tiletimecalibration-" + tagLabel + ".json";
+        writer.writeTileTimeCalibrationIdealInput(asciiFilename, gt);
+        writer.writeTileTimeCalibrationPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
         //remove(asciiFilename.c_str());
       }
