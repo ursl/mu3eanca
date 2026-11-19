@@ -50,7 +50,7 @@ public:
   std::string printBLOBString(std::string blob, int verbosity = -1) override;
   std::string readJSON(std::string filename);
   std::string getSchema() override {return fSchema;}
-  size_t      getPayloadSize() const override {return 0;}
+  size_t      getPayloadSize() const override {return 1;}
 
 private:
   std::string fEventStuffTag{"eventstuffv2_"};

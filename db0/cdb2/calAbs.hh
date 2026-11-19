@@ -39,7 +39,7 @@ public:
 
   virtual std::string  getSchema() = 0;
 
-  // -- number of detector units (map size); 0 for classes without a map
+  // -- number of detector units (map size). A single constants record (detsetup, eventstuff) is 1.
   virtual size_t       getPayloadSize() const = 0;
 
   // -- direct interactions
