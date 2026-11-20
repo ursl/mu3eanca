@@ -74,28 +74,27 @@ int main(int argc, const char* argv[]) {
       .tags = {"detsetupv1_ideal", "eventstuffv2_ideal", 
                "fibrealignment_", "fibrequality_ideal",
                "mppcalignment_", 
-               "pixelalignment_", "pixelqualitylm_ideal", 
-               "pixelefficiency_ideal", "pixeltimecalibration_ideal", 
+               "pixelalignment_", "pixelqualitylm_ideal", "pixelefficiency_ideal", "pixeltimecalibration_ideal", 
                "tilealignment_", "tilequality_ideal", "tiletimecalibration_ideal"},
       .comment = "Sensor swapped geometry correction for MC ideal (=complete) detector geometry. No deficiencies, all 100% efficient",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_swap_corrected.root"
     }},
     {"datav8.0=2026V0", {
       .gt = "datav8.0=2026V0",
-      .tags = {"detsetupv1_", "eventstuffv2_", 
+      .tags = {"detsetupv1_datav7.1=2026V0", "eventstuffv2_datav7.1=2026V0", 
                "fibrealignment_", "fibrequality_", 
-               "mppcalignment_",  
+               "mppcalignment_",    
                "pixelalignment_", "pixelqualitylm_datav7.1=2026V1", "pixelefficiency_", "pixeltimecalibration_", 
                "tilealignment_", "tilequality_", "tiletimecalibration_"},
-      .comment = "Sensor swapped geometry correction for data (=complete) detector geometry",
+      .comment = "Sensor swapped geometry correction for data (=complete) detector geometry, alignment_test2026_v5 by DF",
       .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_swap_corrected.root"
     }},
     {"mcrealisticv8.0=2026V0", {
       .gt = "mcrealisticv8.0=2026V0",
-      .tags = {"detsetupv1_", "eventstuffv2_", 
+      .tags = {"detsetupv1_datav7.1=2026V0", "eventstuffv2_datav7.1=2026V0", 
                "fibrealignment_", "fibrequality_datav8.0=2026V0", 
                "mppcalignment_", 
-               "pixelalignment_", "pixelefficiency_datav8.0=2026V0", "pixelqualitylm_datav8.0=2026V0", "pixeltimecalibration_", 
+               "pixelalignment_", "pixelefficiency_datav8.0=2026V0", "pixelqualitylm_datav7.1=2026V1", "pixeltimecalibration_", 
                "tilealignment_", "tilequality_datav8.0=2026V0",  "tiletimecalibration_", 
                },
       .comment = "Sensor swapped geometry correction for MC realistic (=complete) detector geometry. Should describe 2026 data",
@@ -156,10 +155,13 @@ int main(int argc, const char* argv[]) {
     {"pixelalignment_datav8.0=2026V0", "Swapped sensor geometry correction"},
     {"pixelalignment_mcidealv8.0V0", "Swapped sensor geometry correction"},
     {"pixelalignment_mcrealisticv8.0=2026V0", "Swapped sensor geometry correction"},
+    {"pixelalignment_datav8.0=2026V0", "Swapped sensor geometry correction with alignment_test2026_v5 by DF"},
+
     {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o "},
     {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o "},
     {"mppcalignment_mcrealisticv8.0=2026V0", "Correct MPPC IDs as in det r/o "},
 
+    // -- old stuff
     {"pixelalignment_mcidealv6.5", "Ideal detector geometry with pixel alignment using MC truth from v6.5."},
     {"pixelalignment_mcidealv6.5=2025", "Ideal detector geometry (VTX and complete fibres and tiles) with pixel alignment using MC truth from v6.5."},
     {"tilealignment_mcidealv6.5", "Ideal detector geometry with tile alignment using MC truth from v6.5."},
@@ -265,6 +267,21 @@ int main(int argc, const char* argv[]) {
     if (gt != its.first) continue;
     cout << "************* processing global tag " << its.first << " and gt = " << gt << endl;
     cout << "cdbInitGT: alignment root file " << its.second.rootfile << endl;
+    // datav8.0=2026V0 -> "2026". A name without =YYYY stays "all" (full detector).
+    // Used for alignment and for the ideal quality, efficiency, and time-calibration tags.
+    string payloadMode = "all";
+    size_t eq = gt.find('=');
+    if (eq != string::npos && eq + 4 <= gt.size()) {
+      string year = gt.substr(eq + 1, 4);
+      if (year.size() == 4
+          && year[0] >= '0' && year[0] <= '9'
+          && year[1] >= '0' && year[1] <= '9'
+          && year[2] >= '0' && year[2] <= '9'
+          && year[3] >= '0' && year[3] <= '9') {
+        payloadMode = year;
+      }
+    }
+    cout << "cdbInitGT: payload mode " << payloadMode << endl;
     for (auto it2 : its.second.tags) {
       tagLabel = it2.substr(it2.rfind('_') + 1);
       cout << "tagLabel = " << tagLabel << " it2 = " << it2 << " its.first = " << its.first << endl;
@@ -281,11 +298,10 @@ int main(int argc, const char* argv[]) {
         continue;
       }
 
-      bool RF(false); // RF = rootfile
+      // A GT with a root file uses it for every alignment tag. The CSV names
+      // are the fallback for a GT that has none.
+      bool RF = !its.second.rootfile.empty();
       string asciiFilename("");
-      if (string::npos != its.first.find("mcideal")) {
-        RF = true;
-      }
       
       if (string::npos != it2.find("pixelalignment_")) {
         if (RF) {
@@ -294,7 +310,7 @@ int main(int argc, const char* argv[]) {
           asciiFilename = string(LOCALDIR) + "/ascii/sensors-" + tagLabel + ".csv";
         }
         cout << "cdbInitGT: " << it2 << " from " << asciiFilename << endl;
-        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1, payloadMode);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
       
@@ -305,7 +321,7 @@ int main(int argc, const char* argv[]) {
           asciiFilename = string(LOCALDIR) + "/ascii/tiles-" + tagLabel + ".csv";
         }
         cout << "cdbInitGT: " << it2 << " from " << asciiFilename << endl;
-        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1, payloadMode);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
       
@@ -316,7 +332,7 @@ int main(int argc, const char* argv[]) {
           asciiFilename = string(LOCALDIR) + "/ascii/fibres-" + tagLabel + ".csv";
         }
         cout << "cdbInitGT: " << it2 << " from " << asciiFilename << endl;
-        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1, payloadMode);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
       
@@ -327,13 +343,13 @@ int main(int argc, const char* argv[]) {
           asciiFilename = string(LOCALDIR) + "/ascii/mppcs-" + tagLabel + ".csv";
         }
         cout << "cdbInitGT: " << it2 << " from " << asciiFilename << endl;
-        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1);
+        writer.writeAlignmentPayloads(payloaddir, tagLabel, it2, asciiFilename, tagComments[it2], 1, payloadMode);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
       }
       
       if (string::npos != it2.find("pixelqualitylm_")) {
         asciiFilename = string(LOCALDIR) + "/tmp-pixelqualitylm-" + tagLabel + ".csv";
-        writer.writePixelQualityLMIdealInput(asciiFilename, tagLabel);
+        writer.writePixelQualityLMIdealInput(asciiFilename, payloadMode);
         writer.writePixelQualityLMPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
         //remove(asciiFilename.c_str());
@@ -341,7 +357,7 @@ int main(int argc, const char* argv[]) {
       
       if (string::npos != it2.find("fibrequality_")) {  
         asciiFilename = string(LOCALDIR) + "/tmp-fibrequality-" + tagLabel + ".csv";
-        writer.writeFibreQualityIdealInput(asciiFilename, tagLabel);
+        writer.writeFibreQualityIdealInput(asciiFilename, payloadMode);
         writer.writeFibreQualityPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
         //remove(asciiFilename.c_str());
@@ -349,7 +365,7 @@ int main(int argc, const char* argv[]) {
       
       if (string::npos != it2.find("tilequality_")) {
         asciiFilename = string(LOCALDIR) + "/tmp-tilequality-" + tagLabel + ".json";
-        writer.writeTileQualityIdealInput(asciiFilename, tagLabel);
+        writer.writeTileQualityIdealInput(asciiFilename, payloadMode);
         writer.writeTileQualityPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
         //remove(asciiFilename.c_str());
@@ -374,7 +390,7 @@ int main(int argc, const char* argv[]) {
       
       if (string::npos != it2.find("pixelefficiency_")) {
         asciiFilename = string(LOCALDIR) + "/tmp-pixelefficiency-" + tagLabel + ".csv";
-        writer.writePixelEfficiencyIdealInput(asciiFilename, tagLabel);
+        writer.writePixelEfficiencyIdealInput(asciiFilename, payloadMode);
         writer.writePixelEfficiencyPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
         //remove(asciiFilename.c_str());
@@ -382,17 +398,16 @@ int main(int argc, const char* argv[]) {
       
       if (string::npos != it2.find("pixeltimecalibration_")) {
         asciiFilename = string(LOCALDIR) + "/tmp-pixeltimecalibration-" + tagLabel + ".calib";
-        writer.writePixelTimeCalibrationIdealInput(asciiFilename, tagLabel);      
+        writer.writePixelTimeCalibrationIdealInput(asciiFilename, payloadMode);      
         writer.writePixelTimeCalibrationPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
         //remove(asciiFilename.c_str());
       }
 
-      // Zero offsets and timewalk. The GT name selects the tiles:
-      // mcideal (no year) is US+DS, a name containing 2026 or 2025 is that year's set.
+      // Zero offsets and timewalk. payloadMode selects the tiles.
       if (string::npos != it2.find("tiletimecalibration_")) {
         asciiFilename = string(LOCALDIR) + "/tmp-tiletimecalibration-" + tagLabel + ".json";
-        writer.writeTileTimeCalibrationIdealInput(asciiFilename, gt);
+        writer.writeTileTimeCalibrationIdealInput(asciiFilename, payloadMode);
         writer.writeTileTimeCalibrationPayloads(payloaddir, tagLabel, asciiFilename, tagComments[it2], 1);
         writeInitialTag(jsondir, gt, it2, tagComments[it2]);
         //remove(asciiFilename.c_str());
