@@ -376,6 +376,15 @@ static void deleteTagExact(mongocxx::database& db, const string& tag) {
 
 
 // ----------------------------------------------------------------------
+// REST findOne/tags returns the newest commented document, so a second
+// insert of the same name hides the production IOV list.
+static bool tagDocumentExists(mongocxx::database& db, const string& tag) {
+  auto existing = db["tags"].find_one(document{} << "tag" << tag << finalize);
+  return static_cast<bool>(existing);
+}
+
+
+// ----------------------------------------------------------------------
 static void deletePayloadHashExact(mongocxx::database& db, const string& hash) {
   auto c = db["payloads"];
   auto existing = c.find_one(document{} << "hash" << hash << finalize);
@@ -418,7 +427,8 @@ static void printSyncMongoUsage(const char* prog) {
     "  --sync <what>  all | gt | tag | payload\n"
     "  --name <name>  Required for gt, tag, payload (see below).\n"
     "  --deep         With gt or tag: also upload member tags and/or all payload files\n"
-    "                 under payloads/<tag>/ for each tag.\n"
+    "                 under payloads/<tag>/ for each tag. A tag that already has a\n"
+    "                 document in Mongo is left unchanged (tag and payloads), unless --del.\n"
     "  --del          Delete matching Mongo documents before insert (see below).\n"
     "  --noupload     After optional --del, skip all inserts (delete-only / no re-upload).\n"
     "  --pat <re>     Legacy: regex when clearing/scanning a single collection directory.\n"
@@ -429,7 +439,9 @@ static void printSyncMongoUsage(const char* prog) {
     "  all       Run legacy upload on globaltags/, tags/, and payloads/.\n"
     "  gt        Insert globaltags/<name>. With --deep: for each tag listed in that GT file,\n"
     "            insert tags/<tag> if present, then every file under payloads/<tag>/.\n"
+    "            A tag already in Mongo is skipped, with its payloads, unless --del.\n"
     "  tag       Insert tags/<name>. With --deep: every file under payloads/<name>/.\n"
+    "            An existing tag is skipped, with its payloads, unless --del.\n"
     "  payload   If --name is tag_<tag>_iov_<n>: single payload file.\n"
     "            Otherwise --name is a tag directory: all files under payloads/<name>/.\n"
     "\n"
@@ -536,6 +548,10 @@ int main(int argc, char* argv[]) {
         if (deep) {
           vector<string> ttags = parseTagsFromGtJsonFile(gtFile);
           for (const string& t : ttags) {
+            if (noDeletion && tagDocumentExists(db, t)) {
+              cout << "syncMongo: tag already in Mongo, skip tag and payloads: " << t << endl;
+              continue;
+            }
             string tf = pathJoin(pathJoin(dirPath, "tags"), t);
             if (fileExists(tf)) {
               insertOneJsonFile(tf, "tags", db);
@@ -562,14 +578,18 @@ int main(int argc, char* argv[]) {
         deleteTagExact(db, syncName);
       }
       if (!noUpload) {
-        if (!insertOneJsonFile(tagFile, "tags", db)) {
-          cerr << "syncMongo: failed to insert tag file " << tagFile << endl;
-          return 1;
-        }
-        if (deep) {
-          string pdir = pathJoin(pathJoin(dirPath, "payloads"), syncName);
-          for (const string& pf : allPayloadPaths(pdir)) {
-            insertOneJsonFile(pf, "payloads", db);
+        if (noDeletion && tagDocumentExists(db, syncName)) {
+          cout << "syncMongo: tag already in Mongo, skip tag and payloads: " << syncName << endl;
+        } else {
+          if (!insertOneJsonFile(tagFile, "tags", db)) {
+            cerr << "syncMongo: failed to insert tag file " << tagFile << endl;
+            return 1;
+          }
+          if (deep) {
+            string pdir = pathJoin(pathJoin(dirPath, "payloads"), syncName);
+            for (const string& pf : allPayloadPaths(pdir)) {
+              insertOneJsonFile(pf, "payloads", db);
+            }
           }
         }
       }
