@@ -150,9 +150,6 @@ int main(int argc, const char* argv[]) {
     {"pixelqualitylm_ideal", "Perfect pixel detector with no deficiencies."},
     {"pixeltimecalibration_ideal", "Pixel time calibration for the entire detector with zero shifts and uncertainties, i.e. no time walk corrections for ideal MC."},
 
-    {"tilequality_ideal", "Perfect tile detector with no deficiencies."},
-
-    {"pixelalignment_datav8.0=2026V0", "Swapped sensor geometry correction"},
     {"pixelalignment_mcidealv8.0V0", "Swapped sensor geometry correction"},
     {"pixelalignment_mcrealisticv8.0=2026V0", "Swapped sensor geometry correction"},
     {"pixelalignment_datav8.0=2026V0", "Swapped sensor geometry correction with alignment_test2026_v5 by DF"},
@@ -160,6 +157,8 @@ int main(int argc, const char* argv[]) {
     {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o "},
     {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o "},
     {"mppcalignment_mcrealisticv8.0=2026V0", "Correct MPPC IDs as in det r/o "},
+
+    {"tilequality_ideal", "Perfect tile detector with no deficiencies."},
 
     // -- old stuff
     {"pixelalignment_mcidealv6.5", "Ideal detector geometry with pixel alignment using MC truth from v6.5."},
