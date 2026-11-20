@@ -257,6 +257,9 @@ int main(int argc, char* argv[]) {
     size_t iovLen = (it != iovs.end()) ? it->second.size() : 0;
     string tagComment = pDB->getTagComment(tag);
 
+    if (dump) {
+      cout << "**************************************************" << endl;
+    }
     cout << setw(2) << cntTag++ << ") " << tag << endl;
     cout << "    IOV length: " << iovLen 
     << (iovLen == 0 ? " XXXXXXXXXX ERROR XXXXXXXXXX" : " ")
@@ -288,28 +291,27 @@ int main(int argc, char* argv[]) {
       continue;
     }
 
-    // detsetup and eventstuff report payload size 0, so this is outside that check.
-    // Default verbosity matches cdbPrintPayload, which prints the whole BLOB.
-    if (dump && it != iovs.end()) {
-      int dumpVerbose = verbose > 0 ? verbose : 10000;
-      calAbs* calIov = getCalClass(tag, pDB);
-      if (calIov) {
-        for (int iov : it->second) {
-          string hashIov = "tag_" + tag + "_iov_" + to_string(iov);
-          calIov->update(hashIov);
-          payload pl = calIov->getPayload(hashIov);
-          cout << "    IOV " << setw(8) << iov << endl;
-          cout << "hash:    " << pl.fHash << endl;
-          cout << "comment: " << pl.fComment << endl;
-          cout << "schema:  " << pl.fSchema << endl;
-          cout << "date:    " << pl.fDate << endl;
-          calIov->printBLOB(pl.fBLOB, dumpVerbose);
-        }
-        delete calIov;
-      }
-    }
-
     if (payloadSize > 0) {
+      // Default verbosity matches cdbPrintPayload, which prints the whole BLOB.
+      if (dump && it != iovs.end()) {
+        int dumpVerbose = verbose > 0 ? verbose : 10000;
+        calAbs* calIov = getCalClass(tag, pDB);
+        if (calIov) {
+          for (int iov : it->second) {
+            string hashIov = "tag_" + tag + "_iov_" + to_string(iov);
+            calIov->update(hashIov);
+            payload pl = calIov->getPayload(hashIov);
+            cout << "    IOV " << setw(8) << iov << endl;
+            cout << "hash:    " << pl.fHash << endl;
+            cout << "comment: " << pl.fComment << endl;
+            cout << "schema:  " << pl.fSchema << endl;
+            cout << "date:    " << pl.fDate << endl;
+            calIov->printBLOB(pl.fBLOB, dumpVerbose);
+          }
+          delete calIov;
+        }
+      }
+
       cout << "    size: " << payloadSize << " detector units";
       // -- If multiple IOVs: check all payload sizes are the same
       if (it != iovs.end() && it->second.size() > 1) {
