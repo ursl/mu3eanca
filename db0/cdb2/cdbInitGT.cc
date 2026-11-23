@@ -77,7 +77,7 @@ int main(int argc, const char* argv[]) {
                "pixelalignment_", "pixelqualitylm_ideal", "pixelefficiency_ideal", "pixeltimecalibration_ideal", 
                "tilealignment_", "tilequality_ideal", "tiletimecalibration_ideal"},
       .comment = "Sensor swapped geometry correction for MC ideal (=complete) detector geometry. No deficiencies, all 100% efficient",
-      .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_swap_corrected.root"
+      .rootfile = string(LOCALDIR) + "/ascii/correctedAlignment2026Final.root"
     }},
     {"datav8.0=2026V0", {
       .gt = "datav8.0=2026V0",
@@ -87,7 +87,7 @@ int main(int argc, const char* argv[]) {
                "pixelalignment_", "pixelqualitylm_datav7.1=2026V1", "pixelefficiency_", "pixeltimecalibration_", 
                "tilealignment_", "tilequality_", "tiletimecalibration_"},
       .comment = "Sensor swapped geometry correction for data (=complete) detector geometry, alignment_test2026_v5 by DF",
-      .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_swap_corrected.root"
+      .rootfile = string(LOCALDIR) + "/ascii/correctedAlignment2026Final.root"
     }},
     {"mcrealisticv8.0=2026V0", {
       .gt = "mcrealisticv8.0=2026V0",
@@ -98,7 +98,7 @@ int main(int argc, const char* argv[]) {
                "tilealignment_", "tilequality_datav8.0=2026V0",  "tiletimecalibration_", 
                },
       .comment = "Sensor swapped geometry correction for MC realistic (=complete) detector geometry. Should describe 2026 data",
-      .rootfile = string(LOCALDIR) + "/ascii/mu3e_alignment_swap_corrected.root"
+      .rootfile = string(LOCALDIR) + "/ascii/correctedAlignment2026Final.root"
     }},
     // -- v6.5
     {"mcidealv6.5", {
@@ -150,13 +150,13 @@ int main(int argc, const char* argv[]) {
     {"pixelqualitylm_ideal", "Perfect pixel detector with no deficiencies."},
     {"pixeltimecalibration_ideal", "Pixel time calibration for the entire detector with zero shifts and uncertainties, i.e. no time walk corrections for ideal MC."},
 
-    {"pixelalignment_mcidealv8.0V0", "Swapped sensor geometry correction"},
-    {"pixelalignment_mcrealisticv8.0=2026V0", "Swapped sensor geometry correction"},
+    {"pixelalignment_mcidealv8.0V0", "corrected sensor geometries (correctedAlignment2026Final.root) "},
+    {"pixelalignment_mcrealisticv8.0=2026V0", "corrected sensor geometries (correctedAlignment2026Final.root)"},
     {"pixelalignment_datav8.0=2026V0", "Swapped sensor geometry correction with alignment_test2026_v5 by DF"},
 
-    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o "},
-    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o "},
-    {"mppcalignment_mcrealisticv8.0=2026V0", "Correct MPPC IDs as in det r/o "},
+    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o (mu3e_alignment_swap_corrected)"},
+    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o (mu3e_alignment_swap_corrected)"},
+    {"mppcalignment_mcrealisticv8.0=2026V0", "Correct MPPC IDs as in det r/o (mu3e_alignment_swap_corrected)"},
 
     {"tilequality_ideal", "Perfect tile detector with no deficiencies."},
 
