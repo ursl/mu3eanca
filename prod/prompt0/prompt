@@ -27,7 +27,7 @@ use warnings;
 # no_ignore_case: otherwise -H is -h (help) and -p is -P (pipeline).
 use Getopt::Long qw(:config no_ignore_case);
 
-my $config   = "prompt-v09.cfg";
+my $config   = "prompt-v10.cfg";
 my $help     = 0;
 my $host_opt = "";
 my $dry_run  = 0;
