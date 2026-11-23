@@ -36,8 +36,8 @@ Production area:
   minalyzer/
   mutrig-offline-calibration/
   slurm/{prompt_workdir}.tar.gz
-  slurm/jobs/{mlzr,trirec,sort,cor26,mmeta}/
-  slurm/storage1/{mlzr,trirec,sort,cor26,mmeta}/
+  slurm/jobs/{mlzr,trirec,sort,cor26,mmeta,anacomba,vertex}/
+  slurm/storage1/{mlzr,trirec,sort,cor26,mmeta,anacomba,vertex}/
   githashes
   payloads/          # cdb_payload_dir, when set in the version cfg
 ```
@@ -146,6 +146,7 @@ pipeline_alias: test=midasmeta
 | `mu3esort` | SLURM mu3eSort (`njobs => 1`, no event splitting); output `run{srun}-sorted.root` under `sort/{workdir}/{block}/` | live |
 | `mu3ecor26` | SLURM `mu3eCor26` (`njobs => 1`, no event splitting) on `run{srun}-sorted.root`; uploads `results/results-<run>/results-<run>.pdf` (`description=cor26`) | live |
 | `mu3etrirec` | SLURM mu3eTrirec on the sorted ROOT (event splitting); hadd to `run{srun}-trirec.root` under `trirec/{workdir}/{block}/` | live |
+| `mu3evertex` | SLURM mu3eVertexFit on the trirec ROOT (event splitting); hadd to `run{srun}-vertex.root` under `vertex/{workdir}/{block}/` | live |
 
 ```tcsh
 ./prompt -n run 12345
@@ -156,6 +157,7 @@ pipeline_alias: test=midasmeta
 ./prompt -P fillQualityPixels run 9410
 ./prompt -P mu3esort run 9410
 ./prompt -P mu3etrirec run 9410
+./prompt -P mu3evertex run 9410
 ./prompt -P midasmeta,skipSmallRuns -n run 12345 12346
 ./prompt -P beam -r 12345..12350 run
 ```

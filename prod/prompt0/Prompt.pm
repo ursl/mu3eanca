@@ -152,6 +152,7 @@ sub prompt_context {
         trirec_dir     => ($data ne "" && $workdir ne "") ? "$data/trirec/$workdir" : "",
         sort_dir       => ($data ne "" && $workdir ne "") ? "$data/sort/$workdir" : "",
         anacomba_dir   => ($data ne "" && $workdir ne "") ? "$data/anacomba/$workdir" : "",
+        vertex_dir     => ($data ne "" && $workdir ne "") ? "$data/vertex/$workdir" : "",
         mu3eanca       => $anca,
         slurm_run      => $slurm_run,
         slurm_queue    => _strip($cfg->{slurm_queue} // "-p hourly"),
@@ -162,9 +163,9 @@ sub prompt_context {
         minalyzer_n_events => 0 + (_strip($cfg->{minalyzer_n_events} // "2000")),
         minalyzer_prescale => 0 + (_strip($cfg->{minalyzer_prescale} // "1")),
         min_events     => 0 + (_strip($cfg->{min_events} // "10000")),
-        slurm_stages   => [ _cfg_list($cfg, "slurm_stages", qw(mlzr trirec sort cor26 mmeta anacomba)) ],
+        slurm_stages   => [ _cfg_list($cfg, "slurm_stages", qw(mlzr trirec sort cor26 mmeta anacomba vertex)) ],
         tar_packages   => [ _cfg_list($cfg, "tar_packages", qw(mu3e minalyzer anacomba)) ],
-        data_products  => [qw(mlzr trirec sort anacomba)],
+        data_products  => [qw(mlzr trirec sort anacomba vertex)],
         dry_run        => $opts{dry_run} // 0,
         no_upload      => $opts{no_upload} ? 1 : 0,
         force          => $opts{force} ? 1 : 0,
@@ -365,6 +366,7 @@ sub prompt_status {
     print("  trirec_dir:        $ctx->{trirec_dir}\n") if $ctx->{trirec_dir} ne "";
     print("  sort_dir:          $ctx->{sort_dir}\n") if $ctx->{sort_dir} ne "";
     print("  anacomba_dir:      $ctx->{anacomba_dir}\n") if ($ctx->{anacomba_dir} // "") ne "";
+    print("  vertex_dir:        $ctx->{vertex_dir}\n") if ($ctx->{vertex_dir} // "") ne "";
     print("  cdb_dbconn:        $ctx->{cdb_dbconn}\n");
     print("  cdb_GT:            $ctx->{cdb_GT}\n");
     print("  slurm_run:         $ctx->{slurm_run}\n");

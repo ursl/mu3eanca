@@ -239,6 +239,7 @@ sub _ctx_kv {
         trirec_dir       => ($data ne "" && $workdir ne "") ? "$data/trirec/$workdir" : "",
         sort_dir         => ($data ne "" && $workdir ne "") ? "$data/sort/$workdir" : "",
         anacomba_dir     => ($data ne "" && $workdir ne "") ? "$data/anacomba/$workdir" : "",
+        vertex_dir       => ($data ne "" && $workdir ne "") ? "$data/vertex/$workdir" : "",
         mu3eanca         => $pctx->{mu3eanca} // "",
         prompt_dir       => abs_path(dirname(__FILE__)),
         slurm_run        => $pctx->{slurm_run} // "",
@@ -256,6 +257,7 @@ sub _ctx_kv {
         slurm_cor26_csh    => _strip($cfg->{slurm_cor26_csh} // ""),
         slurm_midasmeta_csh => _strip($cfg->{slurm_midasmeta_csh} // ""),
         slurm_anacomba_csh => _strip($cfg->{slurm_anacomba_csh} // ""),
+        slurm_vertex_csh   => _strip($cfg->{slurm_vertex_csh} // ""),
         anacomba_n_events  => 0 + (_strip($cfg->{anacomba_n_events} // "0")),
         anacomba_hits      => 0 + (_strip($cfg->{anacomba_hits} // "4")),
         anacomba_detector  => 0 + (_strip($cfg->{anacomba_detector} // "39")),
@@ -266,6 +268,8 @@ sub _ctx_kv {
         trirec_anlzr       => _strip($cfg->{trirec_anlzr} //
             "--conf trirec_threelayer_beam.conf"),
         trirec_n_events    => 0 + (_strip($cfg->{trirec_n_events} // "2000000")),
+        vertex_n_events    => 0 + (_strip($cfg->{vertex_n_events} // "2000000")),
+        vertex_anlzr       => _strip($cfg->{vertex_anlzr} // ""),
         minalyzer_pdf_bin  => _strip($cfg->{minalyzer_pdf_bin} //
             "_build/Minalyzer_pdf"),
         minalyzer_pdf_rundir => _strip($cfg->{minalyzer_pdf_rundir} // "{mu3eana}"),
