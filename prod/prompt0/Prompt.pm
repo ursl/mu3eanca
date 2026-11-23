@@ -156,6 +156,7 @@ sub prompt_context {
         mu3eanca       => $anca,
         slurm_run      => $slurm_run,
         slurm_queue    => _strip($cfg->{slurm_queue} // "-p hourly"),
+        slurm_mem      => _strip($opts{slurm_mem} // ""),
         raw_input_layout => _strip($cfg->{raw_input_layout} // "runblock3"),
         cdb_dbconn     => _strip($cfg->{cdb_dbconn} // ""),
         cdb_GT         => _strip($cfg->{cdb_GT} // ""),

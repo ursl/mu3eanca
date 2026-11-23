@@ -48,7 +48,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('bCc:dl:j:L:m:p:qr:R:t:v:w:x:');
+getopts('bCc:dl:j:L:m:M:p:qr:R:t:v:w:x:');
 
 # -- User setup
 my $siesta = 120;
@@ -279,9 +279,12 @@ foreach $jobfile (@ARGV) {
             my $queue = "-p $opt_p";
             if ($opt_p eq "mu3e") {
                 $queue = "-p $opt_p -A mu3e";
-            } 
-            print "$sbatch -J $jobName $queue -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
-            $result = `$sbatch -J $jobName $queue -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh`;
+            }
+            # Command-line --mem overrides #SBATCH --mem in the wrapper.
+            my $mem = "";
+            $mem = "--mem=$opt_M" if $opt_M;
+            print "$sbatch -J $jobName $queue $mem -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh\n";
+            $result = `$sbatch -J $jobName $queue $mem -o $pwd/$tdir/$job.slurm.log -e $pwd/$tdir/$job.slurm.err ./$job.csh`;
             chop($result);
             $result =~ s/Submitted batch job //g;
             print "Submitted ->$result<- with name ->$jobName<-\n";

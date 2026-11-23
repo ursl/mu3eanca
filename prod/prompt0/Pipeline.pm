@@ -244,6 +244,7 @@ sub _ctx_kv {
         prompt_dir       => abs_path(dirname(__FILE__)),
         slurm_run        => $pctx->{slurm_run} // "",
         slurm_queue      => $pctx->{slurm_queue} // "",
+        slurm_mem        => $pctx->{slurm_mem} // "",
         cdb_dbconn       => $pctx->{cdb_dbconn} // "",
         cdb_GT           => $pctx->{cdb_GT} // "",
         rdb_url          => $pctx->{rdb_url} // "",

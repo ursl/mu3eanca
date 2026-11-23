@@ -275,6 +275,8 @@ sub run {
     my $interactive = $ctx->{interactive} ? 1 : 0;
     my @q = _queue_args($ctx->{slurm_queue} // "-p hourly");
     my @cmd0 = ((-x $slurm) ? ($slurm) : ($^X, $slurm), @q, "-t", $tar, "-c", $wrap);
+    my $mem = $ctx->{slurm_mem} // "";
+    push @cmd0, "-M", $mem if $mem ne "";
     if ($interactive) {
         push @cmd0, "-m", "interactive";
         task_log($ctx, $name, "interactive: run here and wait");

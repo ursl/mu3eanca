@@ -38,6 +38,7 @@ my @packages   = ();
 my $pipeline   = "";
 my $runs_opt   = "";
 my $force      = 0;
+my $slurm_mem  = "";
 
 # Saved before GetOptions, which removes the flags from @ARGV.
 my @invocation = ($0, @ARGV);
@@ -53,6 +54,7 @@ GetOptions(
     "n"          => \$dry_run,
     "z"          => \$no_upload,
     "f|force|redo" => \$force,
+    "M|mem=s"    => \$slurm_mem,
     "h|help"     => \$help,
 ) or usage(2);
 
@@ -117,7 +119,7 @@ sub usage {
     my ($code) = @_;
     $code = 1 unless defined $code;
     print <<"END";
-Usage: $0 [-c FILE] [-H platform] [-s YYMMDD] [-p ID] [-P PIPE] [-n] [-z] [-f] [-j N] [target] [RUN ...]
+Usage: $0 [-c FILE] [-H platform] [-s YYMMDD] [-p ID] [-P PIPE] [-n] [-z] [-f] [-M MEM] [-j N] [target] [RUN ...]
 
 Targets:
   setup          clone/checkout/build/relink [repo] packages
@@ -149,6 +151,7 @@ Options:
   -n             dry-run (do not start the tasks)
   -z             run the tasks; do not upload to the RDB or the CDB
   -f, --force    redo tasks whose output file already exists (also --redo)
+  -M, --mem MEM  sbatch --mem for this invocation (overrides #SBATCH --mem)
   -h             help
 END
     exit($code);
@@ -161,6 +164,13 @@ sub _opts {
     $opts{repo_ids} = \@packages if @packages;
     $opts{pipeline} = $pipeline if $pipeline ne "";
     $opts{force} = 1 if $force;
+    $slurm_mem =~ s/^\s+|\s+$//g;
+    $slurm_mem =~ s/^[\"']|[\"']$//g;
+    if ($slurm_mem ne "" && $slurm_mem !~ /^\d+([KMGT]B?)?$/i) {
+        die "prompt: -M wants a Slurm size such as 12G (got '$slurm_mem')\n";
+    }
+    $slurm_mem =~ s/B$//i;
+    $opts{slurm_mem} = $slurm_mem if $slurm_mem ne "";
     return %opts;
 }
 
@@ -335,6 +345,7 @@ if ($target eq "setup") {
         push @cmd, "-s", $setup_name if $setup_name ne "";
         push @cmd, "-P", $pipeline if $pipeline ne "";
         push @cmd, "-f" if $force;
+        push @cmd, "-M", $slurm_mem if $slurm_mem ne "";
         push @cmd, "-z" if $no_upload;
         push @cmd, "run", $run;
         return @cmd;

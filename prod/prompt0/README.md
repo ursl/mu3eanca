@@ -106,6 +106,7 @@ Options:
 -n             dry-run (do not start the tasks)
 -z             run the tasks; do not upload to the RDB or the CDB
 -f, --force    redo a task whose output file already exists (also --redo)
+-M, --mem MEM  sbatch --mem for this invocation only (wrappers stay at 8G)
 ```
 
 `-f` goes with the other options, before the target:
@@ -113,6 +114,7 @@ Options:
 ```tcsh
 ./prompt -f -P beam run 12345
 ./prompt -f -P midasmeta run 11800
+./prompt -M 12G -P dqm run 11800
 ./prompt -c prompt-v09.cfg -n linkSort
 ./prompt -c prompt-v09.cfg linkMlzr
 ./prompt -c prompt-v09.cfg linkCsv
