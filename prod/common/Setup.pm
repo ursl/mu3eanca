@@ -18,7 +18,7 @@ package Setup;
 #
 # Per-repo steps:
 #   clone/fetch → checkout tag|branch → merge → [submodules] → [patch]
-#   → [symlink] → [build] → [relink]
+#   → [symlink] → [copy] → [build] → [relink]
 #
 # Local relval histogram tools (no git repo):
 #   ana_build: true  → make -C <relval_code_basedir>/ana
@@ -29,6 +29,7 @@ package Setup;
 #         2026/10/14 build_subdir: cmake inside a clone subdirectory
 #         2026/11/13 build_source: bash-source scripts instead of cmake/make
 #         2026/11/16 build_source: set -e only around the first script
+#         2026/11/23 copy: SRC=DEST, a real file (survives the slurm tar)
 # ----------------------------------------------------------------------
 
 use strict;
@@ -203,6 +204,7 @@ sub setup_contexts_from_config {
             cmake_args    => _strip($repo->{cmake_args} // ""),
             patches       => [ @{$repo->{patches} // []} ],
             symlinks      => [ @{$repo->{symlinks} // []} ],
+            copies        => [ @{$repo->{copies} // []} ],
             relink_script => _strip($cfg->{relink_script} // ""),
             util_merges   => \@util_merges,
             util_subdir   => $util_subdir,
@@ -704,6 +706,34 @@ sub setup_apply_symlinks {
 }
 
 # ----------------------------------------------------------------------
+# copy: SRC=DEST. SRC is inside the clone. DEST is relative to the clone,
+# so ../mu3e/run/file.root lands in the sibling checkout. A real file, not
+# a symlink: the slurm tar packs mu3e and does not follow links.
+sub setup_apply_copies {
+    my ($s) = @_;
+    my @copies = @{$s->{copies} // []};
+    return unless @copies;
+
+    require File::Copy;
+    for my $c (@copies) {
+        my $src = "$s->{path}/$c->{src}";
+        my $dest = "$s->{path}/$c->{dest}";
+        _log($s, "copy $src -> $dest");
+        next if $s->{dry_run};
+
+        die "Setup: copy source missing: $src (repo $s->{id})\n" unless -f $src;
+        die "Setup: copy dest is a directory: $dest\n" if -d $dest && !-l $dest;
+        if (-l $dest) {
+            unlink($dest) or die "Setup: cannot replace symlink $dest: $!\n";
+        }
+        my $parent = dirname($dest);
+        make_path($parent) unless -d $parent;
+        File::Copy::copy($src, $dest)
+            or die "Setup: cannot copy $src -> $dest: $!\n";
+    }
+}
+
+# ----------------------------------------------------------------------
 sub setup_run_repo {
     my ($s) = @_;
     _log($s, "setup_run path=$s->{path}");
@@ -712,6 +742,7 @@ sub setup_run_repo {
     setup_update_submodules($s);
     setup_apply_patches($s);
     setup_apply_symlinks($s);
+    setup_apply_copies($s);
     setup_build($s);
     setup_relink($s);
     _log($s, "setup_run done");
@@ -785,6 +816,8 @@ sub setup_status_repo {
     print("  patches:   ", (@{$s->{patches} // []} ? join(", ", @{$s->{patches}}) : "(none)"), "\n");
     my @syms = map { "$_->{name}=$_->{target}" } @{$s->{symlinks} // []};
     print("  symlinks:  ", (@syms ? join(", ", @syms) : "(none)"), "\n");
+    my @copies = map { "$_->{src}=$_->{dest}" } @{$s->{copies} // []};
+    print("  copies:    ", (@copies ? join(", ", @copies) : "(none)"), "\n");
     print("  build:     ", ($s->{build} ? "yes" : "no"), "\n");
     my @bsrc = @{$s->{build_sources} // []};
     print("  build_source: ", join(", ", @bsrc), "\n") if @bsrc;

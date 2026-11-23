@@ -214,9 +214,9 @@ sub read_cfg_file {
         if ($line =~ /^\s*([A-Za-z0-9_]+)\s*:\s*(.*)$/) {
             my ($key, $val) = ($1, _parse_value($2));
             if ($mode ne "") {
-                # Repeated patch:, symlink:, build_subdir:, make_subdir:,
+                # Repeated patch:, symlink:, copy:, build_subdir:, make_subdir:,
                 # and build_source: lines accumulate.
-                if ($key eq "patch" || $key eq "symlink"
+                if ($key eq "patch" || $key eq "symlink" || $key eq "copy"
                     || $key eq "build_subdir" || $key eq "make_subdir"
                     || $key eq "build_source") {
                     $block{$key} = [] unless ref($block{$key}) eq "ARRAY";
@@ -372,6 +372,18 @@ sub _normalize_repo {
         die "repo $id: symlink target empty\n" if $target eq "";
         push @symlinks, { name => $name, target => $target };
     }
+    my @copies;
+    for my $spec (_split_list($raw->{copy})) {
+        die "repo $id: copy must be SRC=DEST (got '$spec')\n"
+            unless $spec =~ /^([^=]+)=(.+)$/;
+        my ($src, $dest) = (_strip($1), _strip($2));
+        die "repo $id: copy source must be a relative path inside the clone "
+            . "(got '$src')\n"
+            if $src eq "" || $src =~ m{^/} || $src =~ m{(^|/)\.\.(/|$)};
+        die "repo $id: copy dest must be a relative path (got '$dest')\n"
+            if $dest eq "" || $dest =~ m{^/};
+        push @copies, { src => $src, dest => $dest };
+    }
     my @build_subdirs = _repo_rel_paths($id, "build_subdir", $raw->{build_subdir});
     my @make_subdirs  = _repo_rel_paths($id, "make_subdir", $raw->{make_subdir});
     my @build_sources = _repo_rel_paths($id, "build_source", $raw->{build_source});
@@ -406,6 +418,7 @@ sub _normalize_repo {
         cmake_args   => $cmake_args,
         patches      => \@patches,
         symlinks     => \@symlinks,
+        copies       => \@copies,
     };
 }
 
