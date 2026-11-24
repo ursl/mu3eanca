@@ -50,6 +50,8 @@ void insertIovTag(const std::string &jsondir, const std::string &tag, int insert
 // -- create a global tag with all tags/payloads 
 // merlin> ./bin/cdbInitGT -g mcidealv6.5 -j ~/data/mu3e/cdb 
 //
+// -- -x allows definition of complete workflows, adding e.g. a second iov
+//
 // ----------------------------------------------------------------------
 
 struct structGT {
@@ -244,6 +246,7 @@ int main(int argc, const char* argv[]) {
       command = "./bin/cdbInitGT -g mcidealv8.0V0 -j " + jsondir;
       system(command.c_str());
 
+      // -- manually add DF's alignment payload
       command = "./bin/cdbRunPayloadWriter -m 2026 -c pixelalignment ";
       command += "-f ascii/alignment_test2026_v8.root ";
       command += "-a \"DF alignment from 2026/11/24 (alignment_test2026_v8.root)\" ";
@@ -251,12 +254,25 @@ int main(int argc, const char* argv[]) {
       command += "-t datav8.0=2026V0 -i 9411";
       system(command.c_str());
       
+      // -- manually add corresponding IOV into tag
+      command = "./bin/cdbInsertIovTag -t pixelalignment_datav8.0=2026V0 ";
+      command += "-j " + jsondir + " -d " + jsondir + "/payloads/pixelalignment_datav8.0=2026V0 ";
+      command += "-i 9411";
+      system(command.c_str());
+
+      // -- summary
       command = "./bin/cdbSummaryGT -u " + jsondir + " -g mcidealv8.0V0 -d > mcidealv8.0V0.log";
       system(command.c_str());
       command = "./bin/cdbSummaryGT -u " + jsondir + " -g datav8.0=2026V0 -d > datav8.0=2026V0.log";
       system(command.c_str());
       command = "./bin/cdbSummaryGT -u " + jsondir + " -g mcrealisticv8.0=2026V0 -d > mcrealisticv8.0=2026V0.log";
       system(command.c_str());
+
+      // -- recommendation how to proceed
+      cout << "now you need to do (make sure DBHOST is set to localhost initially)" << endl;
+      cout << "./bin/syncMongo --dir " + jsondir + " --host $DBHOST --sync gt --name datav8.0=2026V0 --deep " << endl;
+      cout << "./bin/syncMongo --dir " + jsondir + " --host $DBHOST --sync gt --name mcrealisticv8.0=2026V0 --deep " << endl;
+      cout << "./bin/syncMongo --dir " + jsondir + " --host $DBHOST --sync gt --name mcidealv8.0V0 --deep " << endl;
       return 0;
     } else {
       cout << "don't know what to do with " << execute << endl;
