@@ -86,7 +86,7 @@ int main(int argc, const char* argv[]) {
                "mppcalignment_",    
                "pixelalignment_", "pixelqualitylm_datav7.1=2026V1", "pixelefficiency_", "pixeltimecalibration_", 
                "tilealignment_", "tilequality_", "tiletimecalibration_"},
-      .comment = "Sensor swapped geometry correction for data (=complete) detector geometry, alignment_test2026_v5 by DF",
+      .comment = "Sensor swapped geometry correction for data (= complete! also US tiles) detector geometry, alignment_test2026_v8.root by DF",
       .rootfile = string(LOCALDIR) + "/ascii/correctedAlignment2026Final.root"
     }},
     {"mcrealisticv8.0=2026V0", {
@@ -150,13 +150,13 @@ int main(int argc, const char* argv[]) {
     {"pixelqualitylm_ideal", "Perfect pixel detector with no deficiencies."},
     {"pixeltimecalibration_ideal", "Pixel time calibration for the entire detector with zero shifts and uncertainties, i.e. no time walk corrections for ideal MC."},
 
-    {"pixelalignment_mcidealv8.0V0", "corrected sensor geometries (correctedAlignment2026Final.root) "},
-    {"pixelalignment_mcrealisticv8.0=2026V0", "corrected sensor geometries (correctedAlignment2026Final.root)"},
-    {"pixelalignment_datav8.0=2026V0", "Swapped sensor geometry correction with alignment_test2026_v5 by DF"},
+    {"pixelalignment_mcidealv8.0V0", "corrected sensor geometry (TK correctedAlignment2026Final.root) "},
+    {"pixelalignment_mcrealisticv8.0=2026V0", "corrected sensor geometry (TK correctedAlignment2026Final.root)"},
+    {"pixelalignment_datav8.0=2026V0", "Swapped sensor geometry correction with correctedAlignment2026Final.root (TK) and alignment_test2026_v8.root by DF"},
 
-    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o (mu3e_alignment_swap_corrected)"},
-    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o (mu3e_alignment_swap_corrected)"},
-    {"mppcalignment_mcrealisticv8.0=2026V0", "Correct MPPC IDs as in det r/o (mu3e_alignment_swap_corrected)"},
+    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o (TK correctedAlignment2026Final.root)"},
+    {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o (TK correctedAlignment2026Final.root)"},
+    {"mppcalignment_mcrealisticv8.0=2026V0", "Correct MPPC IDs as in det r/o (TK correctedAlignment2026Final.root)"},
 
     {"tilequality_ideal", "Perfect tile detector with no deficiencies."},
 
@@ -190,9 +190,11 @@ int main(int argc, const char* argv[]) {
   // -- command line arguments
   string jsondir("~/data/mu3e/test-cdb");
   string gt("");
+  string execute("");
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "-j"))  {jsondir    = argv[++i];}
     if (!strcmp(argv[i], "-g"))  {gt         = argv[++i];}
+    if (!strcmp(argv[i], "-x"))  {execute    = argv[++i];}
   }
 
   // opendir and ofstream leave '~' literal. system("mkdir -p ...") runs a
@@ -231,6 +233,40 @@ int main(int argc, const char* argv[]) {
     }
   }
   
+  // -- execute commands
+  if (!execute.empty()) {
+    if (execute == "v8.0") {
+      cout << "executing v8.0" << endl;
+      string command = "./bin/cdbInitGT -g datav8.0=2026V0 -j " + jsondir;
+      system(command.c_str());
+      command = "./bin/cdbInitGT -g mcrealisticv8.0=2026V0 -j " + jsondir;
+      system(command.c_str());
+      command = "./bin/cdbInitGT -g mcidealv8.0V0 -j " + jsondir;
+      system(command.c_str());
+
+      command = "./bin/cdbRunPayloadWriter -m 2026 -c pixelalignment ";
+      command += "-f ascii/alignment_test2026_v5_corrThick.root ";
+      command += "-a \"DF alignment from 2026/11/20 (alignment_test2026_v5_corrThick.root)\" ";
+      command += "-p " + jsondir + "/payloads ";
+      command += "-t datav8.0=2026V0 -i 9411";
+      system(command.c_str());
+      
+      command = "./bin/cdbSummaryGT -u " + jsondir + " -g mcidealv8.0V0 -d > mcidealv8.0V0.log";
+      system(command.c_str());
+      command = "./bin/cdbSummaryGT -u " + jsondir + " -g datav8.0=2026V0 -d > datav8.0=2026V0.log";
+      system(command.c_str());
+      command = "./bin/cdbSummaryGT -u " + jsondir + " -g mcrealisticv8.0=2026V0 -d > mcrealisticv8.0=2026V0.log";
+      system(command.c_str());
+      return 0;
+    } else {
+      cout << "don't know what to do with " << execute << endl;
+      return 0;
+    }
+  }
+
+
+
+
   ofstream JS;
   
   string jdir  = jsondir + "/globaltags";
