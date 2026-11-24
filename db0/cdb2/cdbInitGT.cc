@@ -245,8 +245,8 @@ int main(int argc, const char* argv[]) {
       system(command.c_str());
 
       command = "./bin/cdbRunPayloadWriter -m 2026 -c pixelalignment ";
-      command += "-f ascii/alignment_test2026_v5_corrThick.root ";
-      command += "-a \"DF alignment from 2026/11/20 (alignment_test2026_v5_corrThick.root)\" ";
+      command += "-f ascii/alignment_test2026_v8.root ";
+      command += "-a \"DF alignment from 2026/11/24 (alignment_test2026_v8.root)\" ";
       command += "-p " + jsondir + "/payloads ";
       command += "-t datav8.0=2026V0 -i 9411";
       system(command.c_str());
