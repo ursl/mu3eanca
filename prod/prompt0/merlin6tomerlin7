@@ -9,7 +9,7 @@ endif
 
 set srcroot = /data/experiment/mu3e/data/2026
 set dstroot = "langenegger@service03.merlin7.psi.ch:/data/project/mu3e/data/2026"
-set trees = ( sort mlzr raw history anacomba )
+set trees = ( sort mlzr raw history anacomba trirec vertex)
 set pause = 120
 
 while (1)
