@@ -467,7 +467,9 @@ def flatten_record(path, data):
 def rebuild_cache(runrecords_dir):
     rows = []
     n_err = 0
+    n_seen = 0
     for path in iter_runrecord_files(runrecords_dir):
+        n_seen += 1
         try:
             with open(path, "r") as fh:
                 data = json.load(fh)
@@ -475,8 +477,10 @@ def rebuild_cache(runrecords_dir):
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             eprint("rdb.py: skip %s (%s)" % (path, exc))
             n_err += 1
-            continue
-        rows.append(row)
+        else:
+            rows.append(row)
+        if n_seen % 500 == 0:
+            eprint("rdb.py: %d files (%d rows, %d errors)" % (n_seen, len(rows), n_err))
     rows.sort(key=lambda r: (r.get("run") is None, r.get("run") if r.get("run") is not None else 0))
 
     ipath = index_path(runrecords_dir)
