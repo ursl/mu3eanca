@@ -30,7 +30,7 @@ import sys
 from datetime import datetime, timezone
 
 CACHE_VERSION = 1
-VERSION = "1.3"
+VERSION = "1.4"
 UPDATE_URL = "https://raw.githubusercontent.com/ursl/mu3eanca/master/db0/cdb2/rdb.py"
 VERSION_RE = re.compile(r'^VERSION = "([^"]+)"', re.M)
 DEFAULT_HOST = "mu3edb0"
@@ -724,6 +724,25 @@ def print_rows(rows, args, n_total):
     raise SystemExit("rdb.py: unknown --format %s" % fmt)
 
 
+PRETTY_ORDER = ("BOR", "EOR", "Attributes", "History")
+PRETTY_DROP = {"Resources", "_id"}
+
+
+def pretty_record(data):
+    """BOR, EOR, Attributes, History. Drop Resources and _id."""
+    if not isinstance(data, dict):
+        return data
+    out = {}
+    for key in PRETTY_ORDER:
+        if key in data:
+            out[key] = data[key]
+    for key, val in data.items():
+        if key in out or key in PRETTY_DROP:
+            continue
+        out[key] = val
+    return out
+
+
 def print_dump(rows, n_total, args, pretty=False):
     for row in rows:
         path = row.get("file")
@@ -740,7 +759,7 @@ def print_dump(rows, n_total, args, pretty=False):
             except json.JSONDecodeError as exc:
                 eprint("rdb.py: %s is not JSON (%s)" % (path, exc))
             else:
-                text = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+                text = json.dumps(pretty_record(data), indent=2, ensure_ascii=False) + "\n"
         sys.stdout.write(text)
         if not text.endswith("\n"):
             print()
@@ -801,7 +820,8 @@ Output (stdout = matching run numbers unless dump/prettydump/count)
            json         JSON array of run numbers
            line         one run number per line
            dump         original JSON of matching runs
-           prettydump   same records, indented JSON
+           prettydump   indented JSON: BOR, EOR, Attributes, History
+                        (Resources and _id omitted)
            count        number of matches only
   --summary             print "rdb.py: N / TOTAL" to stderr after the result
   --list-fields         print cache column names and exit
