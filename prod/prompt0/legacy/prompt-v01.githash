@@ -1,0 +1,41 @@
+===== mu3e (/data/experiment/mu3e/data/prod/prompt/v01/mu3e) =====
+commit b3ac30d61daae19cd5dc6abff54c3ef2df060d18
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Sat Oct 24 16:36:25 2026 +0200
+
+    update mu3eUtil
+
+===== minalyzer (/data/experiment/mu3e/data/prod/prompt/v01/minalyzer) =====
+commit f4236d77c51cb6e0a1d38dd5a88d1774057712aa
+Author: estein05 <erik1999.steinkamp@gmail.com>
+Date:   Tue Oct 27 15:36:31 2026 +0100
+
+    Fixed&updated tile dqm page
+
+===== dqm_pdf (/data/experiment/mu3e/data/prod/prompt/v01/dqm_pdf) =====
+commit 78bf7574b064e54bc4b8f2f6626693d4bb5f0d1f
+Author: Natalia Zubova <natalia.zubova@bristol.ac.uk>
+Date:   Tue Oct 27 13:49:16 2026 +0000
+
+    PLL fibre plot
+
+===== util (/data/experiment/mu3e/data/prod/prompt/v01/util) =====
+commit ec6ceceabab5dcc3945acfc0e41a6463122ba901
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Mon Oct 26 17:18:29 2026 +0100
+
+    don't know why these were missing
+
+===== mu3eanca (/data/experiment/mu3e/data/prod/prompt/v01/mu3eanca) =====
+commit 8c166fcf74b5dc55534410b5b1f85b9048f42a6e
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Tue Oct 27 16:37:23 2026 +0100
+
+    hike dqm_pdf hash
+
+===== mu3e/modules/mu3eUtil (/data/experiment/mu3e/data/prod/prompt/v01/mu3e/modules/mu3eUtil) =====
+commit 8e6fcc2051d8ee8adc8f3576f6b4003dd7b1fbc9
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Sat Oct 24 16:35:21 2026 +0200
+
+    data_mid - count only consecutive dup hits

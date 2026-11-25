@@ -1,0 +1,55 @@
+===== mu3e (/data/experiment/mu3e/data/prod/prompt/v10/mu3e) =====
+commit 7a9a72c7e753bb002655a4aea545b7b4f78f8cf1
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Mon Nov 23 18:19:06 2026 +0100
+
+    [sort] fix xxls entries
+
+===== minalyzer (/data/experiment/mu3e/data/prod/prompt/v10/minalyzer) =====
+commit 8bb39e32b0ba050c3e3b486a63fa37ec959b2d11
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Tue Nov 24 06:53:47 2026 +0000
+
+    .gitmodules edited online with Bitbucket
+
+===== dqm_pdf (/data/experiment/mu3e/data/prod/prompt/v10/dqm_pdf) =====
+commit 6e4f6a39fd8ca8ac9fec931c4ae1e52afc1fd0ab
+Author: Natalia Zubova <natalia.zubova@bristol.ac.uk>
+Date:   Fri Nov 20 16:46:05 2026 +0100
+
+    fixing bugs in time correlations plots
+
+===== util (/data/experiment/mu3e/data/prod/prompt/v10/util) =====
+commit ec6ceceabab5dcc3945acfc0e41a6463122ba901
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Mon Oct 26 17:18:29 2026 +0100
+
+    don't know why these were missing
+
+===== mu3eanca (/data/experiment/mu3e/data/prod/prompt/v10/mu3eanca) =====
+commit d5d9368d02f47c7f2d8027e17e8c8d20131c694b
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Wed Nov 25 09:18:52 2026 +0100
+
+    update wrong mu3eana commit hash
+
+===== mu3eana (/data/experiment/mu3e/data/prod/prompt/v10/mu3eana) =====
+commit 4e4ee9ea56bb4e0bbfe31aaddf3e2f79bd8e1637
+Author: Niklaus Berger <niberger@uni-mainz.de>
+Date:   Tue Nov 24 15:16:13 2026 +0100
+
+    File writing
+
+===== anacomba (/data/experiment/mu3e/data/prod/prompt/v10/anacomba) =====
+commit 6054248880ae8488f6648d5a8ff2ee9f77a36d95
+Author: kartamasi <kar@physi.uni-heidelberg.de>
+Date:   Sun Nov 15 11:10:43 2026 +0100
+
+    preparing v2.3.2
+
+===== mu3e/modules/mu3eUtil (/data/experiment/mu3e/data/prod/prompt/v10/mu3e/modules/mu3eUtil) =====
+commit 7fe2f4e0b8a6e24fc672e188ad422b4666bcb9f8
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Mon Nov 23 18:17:53 2026 +0100
+
+    [tools] data_mid - fix double PHIT push

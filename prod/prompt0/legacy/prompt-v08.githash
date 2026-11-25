@@ -1,0 +1,59 @@
+===== mu3e (/data/experiment/mu3e/data/prod/prompt/v08/mu3e) =====
+commit ef1b179dd314b30d4d1a4c91f1364790a27a733d
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Mon Nov 16 11:07:08 2026 +0100
+
+    [farm] update hists limits
+
+===== minalyzer (/data/experiment/mu3e/data/prod/prompt/v08/minalyzer) =====
+commit 1017037b69f2cb8e8bb3ed30dfbefb5a76e3ba11
+Merge: 982150a a1f1b5f
+Author: Franca Maat <frmaat@ethz.ch>
+Date:   Fri Nov 13 17:11:07 2026 +0000
+
+    Merged in franca_scifi_dev2 (pull request #109)
+    
+    Changes to add left / right cluster view plots that were added in AnaFibreHistos_LowMultiplicity also to AnaFibreHistos
+
+===== dqm_pdf (/data/experiment/mu3e/data/prod/prompt/v08/dqm_pdf) =====
+commit a0bb073e596c3e8fd2fbf346bac13fdcb9e48efb
+Author: Nicolas Alonso <nicolas.cobo.21@ucl.ac.uk>
+Date:   Mon Nov 16 02:29:43 2026 +0000
+
+    Added brief tile info
+
+===== util (/data/experiment/mu3e/data/prod/prompt/v08/util) =====
+commit ec6ceceabab5dcc3945acfc0e41a6463122ba901
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Mon Oct 26 17:18:29 2026 +0100
+
+    don't know why these were missing
+
+===== mu3eanca (/data/experiment/mu3e/data/prod/prompt/v08/mu3eanca) =====
+commit 8e075e8ba49ed122ebfee045e39afd9fc2a54ac4
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Mon Nov 16 16:05:25 2026 +0100
+
+    patch for anacomba installation
+
+===== mu3eana (/data/experiment/mu3e/data/prod/prompt/v08/mu3eana) =====
+commit 8987fa111deebed02366901ded08eaba4c45bfd7
+Author: Niklaus Berger <niberger@uni-mainz.de>
+Date:   Mon Nov 16 17:15:59 2026 +0100
+
+    Now with double histograms
+
+===== anacomba (/data/experiment/mu3e/data/prod/prompt/v08/anacomba) =====
+commit 6054248880ae8488f6648d5a8ff2ee9f77a36d95
+Author: kartamasi <kar@physi.uni-heidelberg.de>
+Date:   Sun Nov 15 11:10:43 2026 +0100
+
+    preparing v2.3.2
+
+===== mu3e/modules/mu3eUtil (/data/experiment/mu3e/data/prod/prompt/v08/mu3e/modules/mu3eUtil) =====
+commit 9a4228dcf045cdfdd2579bf5e83b1e474b491b78
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Mon Nov 16 10:08:20 2026 +0100
+
+    [tools] frameSize is int
+

@@ -1,0 +1,55 @@
+===== mu3e (/data/experiment/mu3e/data/prod/prompt/v07/mu3e) =====
+commit bb2f9e932350bf4ce63b97f89e5fa6df051f92e2
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Wed Nov 11 11:05:08 2026 +0100
+
+    update mu3eUtil
+
+===== minalyzer (/data/experiment/mu3e/data/prod/prompt/v07/minalyzer) =====
+commit 796becd7603371aee0272b622287b6a1187fef30
+Author: Natalia Zubova <natalia.s.zubova@gmail.com>
+Date:   Fri Nov 13 11:14:56 2026 +0000
+
+    adding 3-layer config to minalyzer
+
+===== dqm_pdf (/data/experiment/mu3e/data/prod/prompt/v07/dqm_pdf) =====
+commit 438e17b26768aaf9260a80da4b726ae7f437899b
+Author: Nicolas Alonso <nicolas.cobo.21@ucl.ac.uk>
+Date:   Fri Nov 13 09:13:00 2026 +0000
+
+    Included grading on the JSON file
+
+===== util (/data/experiment/mu3e/data/prod/prompt/v07/util) =====
+commit ec6ceceabab5dcc3945acfc0e41a6463122ba901
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Mon Oct 26 17:18:29 2026 +0100
+
+    don't know why these were missing
+
+===== mu3eanca (/data/experiment/mu3e/data/prod/prompt/v07/mu3eanca) =====
+commit 23d17d80a1decdc7e03011fa1628bb85569102b8
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Fri Nov 13 15:22:18 2026 +0100
+
+    update two commit hashes
+
+===== mu3eana (/data/experiment/mu3e/data/prod/prompt/v07/mu3eana) =====
+commit d5513ed1582d430ef19c89205a8cb06a846a4f74
+Author: Niklaus Berger <niberger@uni-mainz.de>
+Date:   Tue Nov 10 14:19:19 2026 +0100
+
+    Work towards a 2026 time calibration
+
+===== anacomba (/data/experiment/mu3e/data/prod/prompt/v07/anacomba) =====
+commit ce229016db759a045143c4b30c7dfb909f3464ca
+Author: kartamasi <kar@physi.uni-heidelberg.de>
+Date:   Thu Nov 12 19:37:44 2026 +0100
+
+    toto from 0 to 31
+
+===== mu3e/modules/mu3eUtil (/data/experiment/mu3e/data/prod/prompt/v07/mu3e/modules/mu3eUtil) =====
+commit d6f81fa53b54da7f1f290fad6dc374573142aed3
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Wed Nov 11 11:02:26 2026 +0100
+
+    [util] midas_file_t - handle incomplete (e.g. padding) bank headers

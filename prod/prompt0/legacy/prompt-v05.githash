@@ -1,0 +1,48 @@
+===== mu3e (/data/experiment/mu3e/data/prod/prompt/v05/mu3e) =====
+commit 49b3bfaba8da246edbaead0ba38c0a0ee72693c5
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Mon Nov 9 12:41:28 2026 +0100
+
+    update mu3eUtil
+
+===== minalyzer (/data/experiment/mu3e/data/prod/prompt/v05/minalyzer) =====
+commit cb94be1c3965457a47633dd985b7b48719769d64
+Author: Mikio Sakurai <m.sakurai@ucl.ac.uk>
+Date:   Tue Nov 10 18:12:40 2026 +0100
+
+    [config] use correct gt tag in prompt.json
+
+===== dqm_pdf (/data/experiment/mu3e/data/prod/prompt/v05/dqm_pdf) =====
+commit 6f9ff35fc98c59c299d98424af21a0c68554a42d
+Author: Nicolas Alonso <nicolas.cobo.21@ucl.ac.uk>
+Date:   Tue Nov 10 15:33:12 2026 +0000
+
+    Added explanation of grading
+
+===== util (/data/experiment/mu3e/data/prod/prompt/v05/util) =====
+commit ec6ceceabab5dcc3945acfc0e41a6463122ba901
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Mon Oct 26 17:18:29 2026 +0100
+
+    don't know why these were missing
+
+===== mu3eanca (/data/experiment/mu3e/data/prod/prompt/v05/mu3eanca) =====
+commit f8d1d508a743f1df8c34afed2bb30c456df8dcdc
+Author: Urs Langenegger <urslangenegger@gmail.com>
+Date:   Tue Nov 10 18:16:08 2026 +0100
+
+    proper minalyzer commit hash
+
+===== mu3eana (/data/experiment/mu3e/data/prod/prompt/v05/mu3eana) =====
+commit d5513ed1582d430ef19c89205a8cb06a846a4f74
+Author: Niklaus Berger <niberger@uni-mainz.de>
+Date:   Tue Nov 10 14:19:19 2026 +0100
+
+    Work towards a 2026 time calibration
+
+===== mu3e/modules/mu3eUtil (/data/experiment/mu3e/data/prod/prompt/v05/mu3e/modules/mu3eUtil) =====
+commit c441a1b6e95b187c654321971cadd567cf3ea553
+Author: Alexandr Kozlinskiy <akozlins@gmail.com>
+Date:   Mon Nov 9 12:40:51 2026 +0100
+
+    [util] add CUDA_ASSERT_ERROR
