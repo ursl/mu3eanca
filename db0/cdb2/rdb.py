@@ -724,7 +724,7 @@ def print_rows(rows, args, n_total):
     raise SystemExit("rdb.py: unknown --format %s" % fmt)
 
 
-def print_dump(rows, n_total, args):
+def print_dump(rows, n_total, args, pretty=False):
     for row in rows:
         path = row.get("file")
         print("# %s" % path)
@@ -734,6 +734,13 @@ def print_dump(rows, n_total, args):
         except OSError as exc:
             eprint("rdb.py: cannot read %s (%s)" % (path, exc))
             continue
+        if pretty:
+            try:
+                data = json.loads(text)
+            except json.JSONDecodeError as exc:
+                eprint("rdb.py: %s is not JSON (%s)" % (path, exc))
+            else:
+                text = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
         sys.stdout.write(text)
         if not text.endswith("\n"):
             print()
@@ -789,11 +796,12 @@ Filters (AND unless noted)
   --shift TEXT          substring on BOR Shift crew
   --components / --components-out    substring on those RunInfo fields
 
-Output (stdout = matching run numbers unless dump/count)
+Output (stdout = matching run numbers unless dump/prettydump/count)
   --format csv          comma-separated run numbers, one line (default)
            json         JSON array of run numbers
            line         one run number per line
            dump         original JSON of matching runs
+           prettydump   same records, indented JSON
            count        number of matches only
   --summary             print "rdb.py: N / TOTAL" to stderr after the result
   --list-fields         print cache column names and exit
@@ -819,6 +827,7 @@ Examples
   python3 rdb.py --dir ~/data/mu3e/cdb --class beam --format json
   python3 rdb.py --dir ~/data/mu3e/cdb --significant --format line
   python3 rdb.py --dir ~/data/mu3e/cdb -r 226 --format dump
+  python3 rdb.py --dir ~/data/mu3e/cdb -r 226 --format prettydump
   python3 rdb.py --update
 """
 
@@ -891,9 +900,9 @@ def build_parser():
     p.add_argument("--components-out", dest="components_out", default=None,
                    metavar="TEXT",
                    help="substring on RunInfo.ComponentsOut")
-    p.add_argument("--format", choices=("csv", "json", "line", "dump", "count"),
+    p.add_argument("--format", choices=("csv", "json", "line", "dump", "prettydump", "count"),
                    default="csv", metavar="FMT",
-                   help="run-list format: csv (default), json, line; or dump / count")
+                   help="run-list format: csv (default), json, line; or dump / prettydump / count")
     p.add_argument("--summary", action="store_true",
                    help="print match count to stderr (N / TOTAL)")
     p.add_argument("--list-fields", action="store_true",
@@ -951,8 +960,8 @@ def main(argv=None):
         return 0
 
     selected = apply_filters(rows, args)
-    if args.format == "dump":
-        print_dump(selected, len(rows), args)
+    if args.format in ("dump", "prettydump"):
+        print_dump(selected, len(rows), args, pretty=(args.format == "prettydump"))
     else:
         print_rows(selected, args, len(rows))
     return 0
