@@ -78,8 +78,8 @@ int main(int argc, const char* argv[]) {
                "mppcalignment_", 
                "pixelalignment_", "pixelqualitylm_ideal", "pixelefficiency_ideal", "pixeltimecalibration_ideal", 
                "tilealignment_", "tilequality_ideal", "tiletimecalibration_ideal"},
-      .comment = "Sensor swapped geometry correction for MC ideal (=complete) detector geometry. No deficiencies, all 100% efficient",
-      .rootfile = string(LOCALDIR) + "/ascii/correctedAlignment2026Final.root"
+      .comment = "Geometry (L3 rotations)/mppcID corrections for MC ideal (=complete) detector. No deficiencies, all 100% efficient",
+      .rootfile = string(LOCALDIR) + "/ascii/mcidealv8.0-sim-beam.root"
     }},
     {"datav8.0=2026V0", {
       .gt = "datav8.0=2026V0",
@@ -88,9 +88,9 @@ int main(int argc, const char* argv[]) {
                "mppcalignment_",    
                "pixelalignment_", "pixelqualitylm_datav7.1=2026V1", "pixelefficiency_", "pixeltimecalibration_", 
                "tilealignment_", "tilequality_", "tiletimecalibration_"},
-      .comment = "Sensor swapped geometry correction for data (= complete! also US tiles) detector geometry, alignment_test2026_v8.root by DF",
+      .comment = "Sensor geometry + swaps + DF alignment + mppcID correction for 2026 detector",
       .rootfile = string(LOCALDIR) + "/ascii/correctedAlignment2026Final.root"
-    }},
+    }}, 
     {"mcrealisticv8.0=2026V0", {
       .gt = "mcrealisticv8.0=2026V0",
       .tags = {"detsetupv1_datav7.1=2026V0", "eventstuffv2_datav7.1=2026V0", 
@@ -99,8 +99,8 @@ int main(int argc, const char* argv[]) {
                "pixelalignment_", "pixelefficiency_datav8.0=2026V0", "pixelqualitylm_datav7.1=2026V1", "pixeltimecalibration_", 
                "tilealignment_", "tilequality_datav8.0=2026V0",  "tiletimecalibration_", 
                },
-      .comment = "Sensor swapped geometry correction for MC realistic (=complete) detector geometry. Should describe 2026 data",
-      .rootfile = string(LOCALDIR) + "/ascii/correctedAlignment2026Final.root"
+      .comment = "Geometry (L3 rotation)/mppcID corrections for MC realistic 2026 detector. Should describe 2026 data",
+      .rootfile = string(LOCALDIR) + "/ascii/mcrealisticv8.0-sim-conf17.root"
     }},
     // -- v6.5
     {"mcidealv6.5", {
@@ -152,8 +152,8 @@ int main(int argc, const char* argv[]) {
     {"pixelqualitylm_ideal", "Perfect pixel detector with no deficiencies."},
     {"pixeltimecalibration_ideal", "Pixel time calibration for the entire detector with zero shifts and uncertainties, i.e. no time walk corrections for ideal MC."},
 
-    {"pixelalignment_mcidealv8.0V0", "corrected sensor geometry (TK correctedAlignment2026Final.root) "},
-    {"pixelalignment_mcrealisticv8.0=2026V0", "corrected sensor geometry (TK correctedAlignment2026Final.root)"},
+    {"pixelalignment_mcidealv8.0V0", "Geometry (L3 rotations) corrections for MC ideal detector "},
+    {"pixelalignment_mcrealisticv8.0=2026V0", "Geometry (L3 rotations) corrections for MC realistic 2026 detector "},
     {"pixelalignment_datav8.0=2026V0", "Swapped sensor geometry correction with correctedAlignment2026Final.root (TK) and alignment_test2026_v8.root by DF"},
 
     {"mppcalignment_mcidealv8.0V0", "Correct MPPC IDs as in det r/o (TK correctedAlignment2026Final.root)"},
