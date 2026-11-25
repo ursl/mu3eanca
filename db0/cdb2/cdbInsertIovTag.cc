@@ -440,17 +440,18 @@ int main(int argc, char* argv[]) {
   int removeRun = 0;
   bool clear = false;
   bool init = false;
-
+  bool verbose = false;
   // -- Parse command line arguments
   for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "-init") == 0) init = true;
-    if (strcmp(argv[i], "-j") == 0 && i + 1 < argc) jsondir = argv[++i];
-    if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) tag = argv[++i];
-    if (strcmp(argv[i], "-i") == 0 && i + 1 < argc) insertRun = stoi(argv[++i]);
-    if (strcmp(argv[i], "-r") == 0 && i + 1 < argc) removeRun = stoi(argv[++i]);
     if (strcmp(argv[i], "-c") == 0)                 clear = true;
     if (strcmp(argv[i], "-d") == 0 && i + 1 < argc) payloaddir = argv[++i];
+    if (strcmp(argv[i], "-i") == 0 && i + 1 < argc) insertRun = stoi(argv[++i]);
+    if (strcmp(argv[i], "-j") == 0 && i + 1 < argc) jsondir = argv[++i];
+    if (strcmp(argv[i], "-init") == 0) init = true;
+    if (strcmp(argv[i], "-r") == 0 && i + 1 < argc) removeRun = stoi(argv[++i]);
     if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) pattern = argv[++i];
+    if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) tag = argv[++i];
+    if (strcmp(argv[i], "-v") == 0)                 verbose = true;
     if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
       printUsage(argv[0]);
       return 0;
@@ -500,13 +501,17 @@ int main(int argc, char* argv[]) {
     vector<int> runs = pr.first;
     string comment = pr.second;
     
-    cout << "insertIovTag: oldRuns = ";
-    for (size_t i = 0; i < runs.size(); i++) {
-      cout << runs[i];
-      if (i + 1 < runs.size()) cout << " ";
-    }
-    cout << endl;
-    
+    if (verbose) {
+      cout << "insertIovTag: oldRuns = ";
+      for (size_t i = 0; i < runs.size(); i++) {
+        cout << runs[i];
+        if (i + 1 < runs.size()) cout << " ";
+      }
+      cout << endl;
+    } else {
+      cout << "insertIovTag: oldRuns.size() = " << runs.size() << " output suppressed"<< endl;
+    }    
+
     // Insert all found runs
     for (int run : payloadRuns) {
       insertRunIntoVector(runs, run);
