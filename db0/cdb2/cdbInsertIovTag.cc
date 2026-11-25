@@ -26,6 +26,9 @@ using namespace std;
 //          cdbInsertIovTag -j jsondir -t tag -c
 //          cdbInsertIovTag -j jsondir -t tag -init
 //          cdbInsertIovTag -j jsondir -t tag -d payloaddir -p pat
+//          cdbInsertIovTag -j jsondir -t tag -i 265 -L
+//            -L: caller already holds locks/lock-<tag> and releases it
+//                after the tag file has been uploaded
 //          ./bin/cdbInsertIovTag -t pixelqualitylm_datav6.5=2025V0 -j /Users/ursl/data/mu3e/test-cdb 
 //            -d ~/data/mu3e/test-cdb/payloads/pixelqualitylm_datav6.5=2025V0/ -p pixelqualitylm_datav6.5=2025V0
 //
@@ -48,6 +51,7 @@ void printUsage(const char* progname) {
   cerr << "  -c            : Clear IOVs to [1]" << endl;
   cerr << "  -d payloaddir : Payload directory (for meta mode: extract runs from payloads)" << endl;
   cerr << "  -p pat        : Pattern to match in payload filenames (for meta mode: extract runs from payloads)" << endl;
+  cerr << "  -L            : Caller holds locks/lock-<tag>; do not take or release it" << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -214,6 +218,21 @@ private:
   string fPath;
   bool fHeld = false;
 };
+
+
+// ----------------------------------------------------------------------
+// -L: the caller created locks/lock-<tag> and will unlink it after the
+// tag upload. This process must not take or release that lock.
+static bool beginTagLock(TagFileLock& lock, const string& tagFile, bool callerHoldsLock) {
+  if (!callerHoldsLock) return lock.acquire(tagFile);
+  string lockPath = siblingOfTags(tagFile, "locks") + "/lock-" + pathBaseName(tagFile);
+  if (!fileExists(lockPath)) {
+    cerr << "insertIovTag: -L set but lock is absent " << lockPath << endl;
+    return false;
+  }
+  cout << "insertIovTag: " << timeStamp() << " lock held by caller " << lockPath << endl;
+  return true;
+}
 
 
 // ----------------------------------------------------------------------
@@ -441,12 +460,14 @@ int main(int argc, char* argv[]) {
   bool clear = false;
   bool init = false;
   bool verbose = false;
+  bool callerHoldsLock = false;
   // -- Parse command line arguments
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-c") == 0)                 clear = true;
     if (strcmp(argv[i], "-d") == 0 && i + 1 < argc) payloaddir = argv[++i];
     if (strcmp(argv[i], "-i") == 0 && i + 1 < argc) insertRun = stoi(argv[++i]);
     if (strcmp(argv[i], "-j") == 0 && i + 1 < argc) jsondir = argv[++i];
+    if (strcmp(argv[i], "-L") == 0)                 callerHoldsLock = true;
     if (strcmp(argv[i], "-init") == 0) init = true;
     if (strcmp(argv[i], "-r") == 0 && i + 1 < argc) removeRun = stoi(argv[++i]);
     if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) pattern = argv[++i];
@@ -467,7 +488,7 @@ int main(int argc, char* argv[]) {
     }
     string file = jsondir + "/tags/" + tag;
     TagFileLock lock;
-    if (!lock.acquire(file)) return 1;
+    if (!beginTagLock(lock, file, callerHoldsLock)) return 1;
     if (!backupFile(file, "1")) return 1;
     if (!writeIOVsToFile(file, tag, {1}, false, "")) {
       return 1;
@@ -485,7 +506,7 @@ int main(int argc, char* argv[]) {
     
     string file = jsondir + "/tags/" + tag;
     TagFileLock lock;
-    if (!lock.acquire(file)) return 1;
+    if (!beginTagLock(lock, file, callerHoldsLock)) return 1;
 
     cout << "insertIovTag: meta mode - scanning " << payloaddir << " for pattern " << pattern << endl;
     vector<int> payloadRuns = extractRunsFromPayloads(payloaddir, pattern);
@@ -551,6 +572,6 @@ int main(int argc, char* argv[]) {
 
   string file = jsondir + "/tags/" + tag;
   TagFileLock lock;
-  if (!lock.acquire(file)) return 1;
+  if (!beginTagLock(lock, file, callerHoldsLock)) return 1;
   return processTagFile(jsondir, tag, insertRun, removeRun, clear);
 }

@@ -19,6 +19,8 @@ package TaskLib;
 
 use strict;
 use warnings;
+use Errno qw(EEXIST);
+use Fcntl qw(O_CREAT O_EXCL O_WRONLY);
 use Exporter qw(import);
 
 our @EXPORT_OK = qw(
@@ -97,6 +99,46 @@ sub task_log {
     my ($ctx, $name, @msg) = @_;
     $name = $ctx->{id} if (!defined $name || $name eq "") && ref($ctx) eq "HASH";
     print(task_prefix($name), @msg, "\n");
+}
+
+# ----------------------------------------------------------------------
+# Same lock file as cdbInsertIovTag: <cdb>/locks/lock-<tag>.
+# Held by this process until tag_lock_release, so the tag rewrite and the
+# following tag upload cannot overlap another writer of this tag.
+sub tag_lock_acquire {
+    my ($ctx, $task, $cdb, $tag) = @_;
+    $cdb =~ s{/$}{} if defined $cdb;
+    my $dir = "$cdb/locks";
+    unless (-d $dir || mkdir($dir, 0755) || -d $dir) {
+        task_log($ctx, $task, "cannot create directory $dir: $!");
+        return;
+    }
+    my $path = "$dir/lock-$tag";
+    while (1) {
+        if (sysopen(my $fh, $path, O_CREAT | O_EXCL | O_WRONLY, 0644)) {
+            print $fh scalar(localtime) . " pid $$\n";
+            close $fh;
+            task_log($ctx, $task, "lock created $path");
+            return $path;
+        }
+        if ($! != EEXIST) {
+            task_log($ctx, $task, "cannot create lock $path: $!");
+            return;
+        }
+        task_log($ctx, $task, "lock exists $path, waiting 30 s");
+        sleep 30;
+    }
+}
+
+sub tag_lock_release {
+    my ($ctx, $task, $path) = @_;
+    return 1 unless defined $path && $path ne "" && -e $path;
+    if (unlink $path) {
+        task_log($ctx, $task, "lock removed $path");
+        return 1;
+    }
+    task_log($ctx, $task, "failed to remove lock $path: $!");
+    return 0;
 }
 
 # ----------------------------------------------------------------------

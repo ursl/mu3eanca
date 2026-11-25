@@ -6,9 +6,13 @@
 # with <tag> = cdb_pixelqualitylm_tag. This task inserts the IOV and uploads
 # the payload and the tag. cwd is db0/cdb2 (lib/libCDB.so).
 #
-#   cdbInsertIovTag -j $CDB -t pixelqualitylm_$cdb_pixelqualitylm_tag -i RUN
+#   lock <cdb>/locks/lock-pixelqualitylm_<tag>
+#   cdbInsertIovTag -j $CDB -t pixelqualitylm_$cdb_pixelqualitylm_tag -i RUN -L
 #   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync payload --name tag_pixelqualitylm_${tag}_iov_RUN --del
 #   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync tag     --name pixelqualitylm_$cdb_pixelqualitylm_tag --del
+#   unlock
+# -L tells cdbInsertIovTag that this process already holds the lock. The lock
+# stays until the tag POST returns.
 use strict;
 use warnings;
 use Cwd qw(getcwd);
@@ -19,6 +23,15 @@ use TaskLib;
 my ($run, $ctxfile) = TaskLib::args(@ARGV);
 my $ctx = TaskLib::load($ctxfile);
 my $name = "cdb_pixelqualitylm";
+my $tag_lock;
+
+END {
+    if ($tag_lock) {
+        my $p = $tag_lock;
+        $tag_lock = undef;
+        TaskLib::tag_lock_release($ctx, $name, $p);
+    }
+}
 
 my $gt  = $ctx->{cdb_GT} // "";
 my $tag = $ctx->{cdb_pixelqualitylm_tag} // "";
@@ -56,6 +69,7 @@ if ($ctx->{dry_run}) {
     for my $cmd (@steps) {
         TaskLib::task_log($ctx, $name, "would: @$cmd");
     }
+    TaskLib::task_log($ctx, $name, "would: hold $cdb/locks/lock-$iovtag until tag sync returns");
     exit 0;
 }
 my @run_steps = @steps;
@@ -96,7 +110,17 @@ chdir($cdbdir) or do {
 };
 TaskLib::task_log($ctx, $name, "cwd=$cdbdir");
 
+my $hold_tag_lock = 0;
 for my $cmd (@run_steps) {
+    $hold_tag_lock = 1 if $cmd->[0] =~ /syncMu3eDB0$/ && "@$cmd" =~ / --sync tag /;
+}
+
+for my $cmd (@run_steps) {
+    if ($hold_tag_lock && !$tag_lock && $cmd->[0] =~ /cdbInsertIovTag$/) {
+        $tag_lock = TaskLib::tag_lock_acquire($ctx, $name, $cdb, $iovtag)
+            or exit 2;
+        push @$cmd, "-L";
+    }
     TaskLib::task_log($ctx, $name, "@$cmd");
     my $rc = system(@$cmd);
     if ($rc != 0) {

@@ -6,9 +6,14 @@
 #   {raw_dir}/011/run11015.mid.lz4.json
 #
 #   cdbRunPayloadWriter -u $CDB -m eventstuffv2 -a $cdb_eventstuffv2_comment -f <json> -t $cdb_eventstuffv2_tag -r RUN
-#   cdbInsertIovTag     -j $CDB -t eventstuffv2_$cdb_eventstuffv2_tag -i RUN
+#   lock <cdb>/locks/lock-eventstuffv2_<tag>
+#   cdbInsertIovTag     -j $CDB -t eventstuffv2_$cdb_eventstuffv2_tag -i RUN -L
 #   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync payload --name tag_eventstuffv2_${tag}_iov_RUN --del
 #   syncMu3eDB0 --dir $CDB --host $cdb_dbconn --sync tag     --name eventstuffv2_$cdb_eventstuffv2_tag --del
+#   unlock
+# -L tells cdbInsertIovTag that this process already holds the lock. The lock
+# stays until the tag POST returns, so another run cannot rewrite the tag file
+# while it is being uploaded.
 use strict;
 use warnings;
 use Cwd qw(getcwd);
@@ -44,6 +49,15 @@ my $tag = "eventstuffv2_$short";
 my $payload = "tag_${tag}_iov_$run";
 my $comment = $ctx->{cdb_eventstuffv2_comment} // "";
 $comment = "prompt" if $comment eq "";
+my $tag_lock;
+
+END {
+    if ($tag_lock) {
+        my $p = $tag_lock;
+        $tag_lock = undef;
+        TaskLib::tag_lock_release($ctx, $name, $p);
+    }
+}
 
 my @steps = (
     [$bindir . "/cdbRunPayloadWriter",
@@ -62,6 +76,7 @@ if ($ctx->{dry_run}) {
     for my $cmd (@steps) {
         TaskLib::task_log($ctx, $name, "would: @$cmd");
     }
+    TaskLib::task_log($ctx, $name, "would: hold $cdb/locks/lock-$tag until tag sync returns");
     exit 0;
 }
 my @run_steps = @steps;
@@ -102,7 +117,17 @@ chdir($cdbdir) or do {
 };
 TaskLib::task_log($ctx, $name, "cwd=$cdbdir");
 
+my $hold_tag_lock = 0;
 for my $cmd (@run_steps) {
+    $hold_tag_lock = 1 if $cmd->[0] =~ /syncMu3eDB0$/ && "@$cmd" =~ / --sync tag /;
+}
+
+for my $cmd (@run_steps) {
+    if ($hold_tag_lock && !$tag_lock && $cmd->[0] =~ /cdbInsertIovTag$/) {
+        $tag_lock = TaskLib::tag_lock_acquire($ctx, $name, $cdb, $tag)
+            or exit 2;
+        push @$cmd, "-L";
+    }
     TaskLib::task_log($ctx, $name, "@$cmd");
     my $rc = system(@$cmd);
     if ($rc != 0) {
