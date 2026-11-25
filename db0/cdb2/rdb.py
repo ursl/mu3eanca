@@ -30,7 +30,7 @@ import sys
 from datetime import datetime, timezone
 
 CACHE_VERSION = 1
-VERSION = "1.2"
+VERSION = "1.3"
 UPDATE_URL = "https://raw.githubusercontent.com/ursl/mu3eanca/master/db0/cdb2/rdb.py"
 VERSION_RE = re.compile(r'^VERSION = "([^"]+)"', re.M)
 DEFAULT_HOST = "mu3edb0"
