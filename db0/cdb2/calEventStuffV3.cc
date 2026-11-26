@@ -209,8 +209,8 @@ string calEventStuffV3::printBLOBString(std::string sblob, int verbosity) {
   auto showDoubles = [&](const string& title, int n, const vector<string>& names, const vector<double>& values) {
     ss << title << " n=" << n << endl;
     for (int i = 0; i < n; ++i) {
-      ss << "  " << (i < (int)names.size() ? names[i] : string("?"))
-         << " = " << (i < (int)values.size() ? values[i] : 0.0) << endl;
+      ss << "  " << (i < static_cast<int>(names.size()) ? names[i] : string("?"))
+         << " = " << (i < static_cast<int>(values.size()) ? values[i] : 0.0) << endl;
     }
   };
 
@@ -260,13 +260,13 @@ string calEventStuffV3::printBLOBString(std::string sblob, int verbosity) {
 
   ss << "reservedata int n=" << c.reserveData.nInt << endl;
   for (int i = 0; i < c.reserveData.nInt; ++i) {
-    ss << "  " << (i < (int)c.reserveData.int_names.size() ? c.reserveData.int_names[i] : string("?"))
-       << " = " << (i < (int)c.reserveData.int_values.size() ? c.reserveData.int_values[i] : 0) << endl;
+    ss << "  " << (i < static_cast<int>(c.reserveData.int_names.size()) ? c.reserveData.int_names[i] : string("?"))
+       << " = " << (i < static_cast<int>(c.reserveData.int_values.size()) ? c.reserveData.int_values[i] : 0) << endl;
   }
   ss << "reservedata uint64 n=" << c.reserveData.nUint64 << endl;
   for (int i = 0; i < c.reserveData.nUint64; ++i) {
-    ss << "  " << (i < (int)c.reserveData.uint64_names.size() ? c.reserveData.uint64_names[i] : string("?"))
-       << " = " << (i < (int)c.reserveData.uint64_values.size() ? c.reserveData.uint64_values[i] : 0) << endl;
+    ss << "  " << (i < static_cast<int>(c.reserveData.uint64_names.size()) ? c.reserveData.uint64_names[i] : string("?"))
+       << " = " << (i < static_cast<int>(c.reserveData.uint64_values.size()) ? c.reserveData.uint64_values[i] : 0) << endl;
   }
   showDoubles("reservedata double", c.reserveData.nDouble, c.reserveData.double_names, c.reserveData.double_values);
   return ss.str();
@@ -314,17 +314,17 @@ string calEventStuffV3::makeBLOB() {
 
   i32(fConstants.daqData.n_deff);
   for (int i = 0; i < fConstants.daqData.n_deff; ++i) {
-    str(i < (int)fConstants.daqData.deff_names.size() ? fConstants.daqData.deff_names[i] : string());
+    str(i < static_cast<int>(fConstants.daqData.deff_names.size()) ? fConstants.daqData.deff_names[i] : string());
   }
   for (int i = 0; i < fConstants.daqData.n_deff; ++i) {
-    dbl(i < (int)fConstants.daqData.deff_values.size() ? fConstants.daqData.deff_values[i] : 0.0);
+    dbl(i < static_cast<int>(fConstants.daqData.deff_values.size()) ? fConstants.daqData.deff_values[i] : 0.0);
   }
   i32(fConstants.daqData.n_link);
   for (int i = 0; i < fConstants.daqData.n_link; ++i) {
-    str(i < (int)fConstants.daqData.lvde_names.size() ? fConstants.daqData.lvde_names[i] : string());
+    str(i < static_cast<int>(fConstants.daqData.lvde_names.size()) ? fConstants.daqData.lvde_names[i] : string());
   }
   for (int i = 0; i < fConstants.daqData.n_link; ++i) {
-    dbl(i < (int)fConstants.daqData.lvde_values.size() ? fConstants.daqData.lvde_values[i] : 0.0);
+    dbl(i < static_cast<int>(fConstants.daqData.lvde_values.size()) ? fConstants.daqData.lvde_values[i] : 0.0);
   }
 
   dbl(fConstants.magnetData.current_0);
@@ -335,24 +335,24 @@ string calEventStuffV3::makeBLOB() {
 
   i32(fConstants.reserveData.nInt);
   for (int i = 0; i < fConstants.reserveData.nInt; ++i) {
-    str(i < (int)fConstants.reserveData.int_names.size() ? fConstants.reserveData.int_names[i] : string());
+    str(i < static_cast<int>(fConstants.reserveData.int_names.size()) ? fConstants.reserveData.int_names[i] : string());
   }
   for (int i = 0; i < fConstants.reserveData.nInt; ++i) {
-    i32(i < (int)fConstants.reserveData.int_values.size() ? fConstants.reserveData.int_values[i] : 0);
+    i32(i < static_cast<int>(fConstants.reserveData.int_values.size()) ? fConstants.reserveData.int_values[i] : 0);
   }
   i32(fConstants.reserveData.nUint64);
   for (int i = 0; i < fConstants.reserveData.nUint64; ++i) {
-    str(i < (int)fConstants.reserveData.uint64_names.size() ? fConstants.reserveData.uint64_names[i] : string());
+    str(i < static_cast<int>(fConstants.reserveData.uint64_names.size()) ? fConstants.reserveData.uint64_names[i] : string());
   }
   for (int i = 0; i < fConstants.reserveData.nUint64; ++i) {
-    u64(i < (int)fConstants.reserveData.uint64_values.size() ? fConstants.reserveData.uint64_values[i] : 0);
+    u64(i < static_cast<int>(fConstants.reserveData.uint64_values.size()) ? fConstants.reserveData.uint64_values[i] : 0);
   }
   i32(fConstants.reserveData.nDouble);
   for (int i = 0; i < fConstants.reserveData.nDouble; ++i) {
-    str(i < (int)fConstants.reserveData.double_names.size() ? fConstants.reserveData.double_names[i] : string());
+    str(i < static_cast<int>(fConstants.reserveData.double_names.size()) ? fConstants.reserveData.double_names[i] : string());
   }
   for (int i = 0; i < fConstants.reserveData.nDouble; ++i) {
-    dbl(i < (int)fConstants.reserveData.double_values.size() ? fConstants.reserveData.double_values[i] : 0.0);
+    dbl(i < static_cast<int>(fConstants.reserveData.double_values.size()) ? fConstants.reserveData.double_values[i] : 0.0);
   }
   return s.str();
 }
