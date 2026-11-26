@@ -24,7 +24,6 @@
 #include "calPixelCablingMap.hh"
 #include "calPixelQualityLM.hh"
 
-#include "calDetConfV1.hh" // decrepit!
 #include "calDetSetupV1.hh"
 
 using namespace std;

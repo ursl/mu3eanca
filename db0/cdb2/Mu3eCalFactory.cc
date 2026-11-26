@@ -80,6 +80,8 @@ calAbs* Mu3eCalFactory::createClass(string name, string tag) {
 calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
   calAbs* a(0);
   if (name.find("detconfv1_") != string::npos)  {
+    cout << "ERROR: detconfv1_ is deprecated. Use detsetupv1_ instead" << endl;
+    return 0;
     a = new calDetConfV1(db, tag);
   } else if (name.find("detsetupv1_") != string::npos)  {
     a = new calDetSetupV1(db, tag);
@@ -130,7 +132,8 @@ calAbs* Mu3eCalFactory::createClassWithDB(string name, string tag, cdbAbs *db) {
 calAbs* Mu3eCalFactory::createClassFromFile(string hash, string dir) {
   calAbs* a(0);
   if (hash.find("detconfv1_") != string::npos)  {
-    a = new calDetConfV1();
+    cout << "ERROR: detconfv1 is deprecated. Use detsetupv1_ instead" << endl;
+    return 0;
   } else if (hash.find("detsetupv1_") != string::npos)  {
     a = new calDetSetupV1();
   } else if (hash.find("eventstuffv1_") != string::npos)  {

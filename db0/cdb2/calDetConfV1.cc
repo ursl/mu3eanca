@@ -5,6 +5,12 @@
 #include <iostream>
 #include <sstream>
 
+// ----------------------------------------------------------------------
+// deprecated DetConf class deprecated 
+// will be removed in an upcoming release!
+// use calDetSetupV1 instead
+// ----------------------------------------------------------------------
+
 
 using namespace std;
 

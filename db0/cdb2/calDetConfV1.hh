@@ -7,7 +7,9 @@
 #include <map>
 
 // ----------------------------------------------------------------------
-// DetConf class
+// deprecated DetConf class deprecated 
+// will be removed in an upcoming release!
+// use calDetSetupV1 instead
 // ----------------------------------------------------------------------
 class calDetConfV1 : public calAbs {
 public:

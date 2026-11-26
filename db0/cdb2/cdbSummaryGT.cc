@@ -8,7 +8,6 @@
 
 #include "cdbJSON.hh"
 #include "cdbRest.hh"
-#include "calDetConfV1.hh"
 #include "calDetSetupV1.hh"
 #include "calEventStuffV1.hh"
 #include "calEventStuffV2.hh"
@@ -91,8 +90,10 @@ string wrapComment(const string& text, size_t width = 60, const string& indent =
 // ----------------------------------------------------------------------
 calAbs* getCalClass(string tag, cdbAbs* pDB) {
   calAbs* cal = nullptr;
-  if (tag.find("detconfv1") == 0) cal = new calDetConfV1(pDB);
-  else if (tag.find("detsetupv1") == 0) cal = new calDetSetupV1(pDB);
+  if (tag.find("detconfv1") == 0) {
+    cout << "ERROR: detconfv1 is deprecated. Use detsetupv1 instead" << endl;
+    return nullptr;
+  } else if (tag.find("detsetupv1") == 0) cal = new calDetSetupV1(pDB);
   else if (tag.find("eventstuffv1") == 0) cal = new calEventStuffV1(pDB);
   else if (tag.find("eventstuffv2") == 0) cal = new calEventStuffV2(pDB);
   else if (tag.find("eventstuffv3") == 0) cal = new calEventStuffV3(pDB);

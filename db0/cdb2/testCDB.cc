@@ -15,7 +15,7 @@
 
 #include "calPixelAlignment.hh"
 #include "calMppcAlignment.hh"
-#include "calDetConfV1.hh"
+#include "calDetSetupV1.hh"
 #include "calEventStuffV1.hh"
 #include "calEventStuffV2.hh"
 #include "calEventStuffV3.hh"
@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
   } else if (7 == mode) {
     string jsonFileName = string(LOCALDIR) + string("/ascii/detector.json");
     cout << "Test reading from " << jsonFileName << endl;
-    calDetConfV1 *cdc = new calDetConfV1();
+    calDetSetupV1 *cdc = new calDetSetupV1();
     cdc->setVerbosity(10);
     cdc->readJSON(jsonFileName);
     string sbla = cdc->makeBLOB();
