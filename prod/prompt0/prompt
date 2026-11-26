@@ -13,7 +13,7 @@
 #   ./prompt [-P beam] process 10482   # that run, every later raw file, then sleep
 #   ./prompt processEven 10482        # same scan, only even run numbers
 #   ./prompt processOdd  10482        # same scan, only odd run numbers
-#   ./prompt -P dqm pool10 11000      # up to 10 children until mu3esort
+#   ./prompt -P dqm pool10 11000      # up to 10 children until that -P spec's pool_long_from
 #   ./prompt -P dqm pool10 11000..11020
 #   ./prompt -P dqm prod10 11000      # same pool, then sleep and pick up new runs
 #
@@ -80,7 +80,7 @@ use Prompt qw(
     prompt_cleanup
     prompt_link
 );
-use Pipeline qw(pipeline_run);
+use Pipeline qw(pipeline_run pool_long_from);
 use TaskLib qw(forward_runs raw_held);
 
 sub prefix {
@@ -332,9 +332,7 @@ if ($target eq "setup") {
     my %kids;
     my %long;
     my $hard = 0;
-    my $long_from = $cfg->{pool_long_from} // "mu3esort";
-    $long_from =~ s/^\s+|\s+$//g;
-    $long_from =~ s/^['"]|['"]$//g;
+    my $long_from = pool_long_from($cfg, $pipeline);
     my ($rd, $wr);
     my $relbuf = "";
 

@@ -40,6 +40,7 @@ our @EXPORT_OK = qw(
     pipeline_print
     pipeline_run
     pipeline_task_dir
+    pool_long_from
 );
 
 # ----------------------------------------------------------------------
@@ -157,6 +158,44 @@ sub pipeline_name {
     $spec =~ s/,+/-/g;
     $spec =~ s/[^\w.-]+/_/g;
     return $spec ne "" ? $spec : "pipeline";
+}
+
+# ----------------------------------------------------------------------
+# Comma list with spaces around commas treated as the same -P spec.
+sub _spec_key {
+    my ($s) = @_;
+    $s = _strip($s);
+    $s =~ s/\s*,\s*/,/g;
+    return $s;
+}
+
+# ----------------------------------------------------------------------
+# Task at which poolN/prodN drops this -P spec out of the slot count.
+# pool_long_from lines are either a bare task (the default) or SPEC=TASK.
+# An empty TASK means the child holds its slot until it exits.
+# A spec with no line uses the bare default, or mu3esort when none is set.
+sub pool_long_from {
+    my ($cfg, $pipeline) = @_;
+    my $raw = $cfg->{pool_long_from};
+    my @lines = ref($raw) eq "ARRAY" ? @$raw : (defined $raw ? ($raw) : ());
+    my $default = "mu3esort";
+    my $spec = _spec_key($pipeline);
+    my $matched;
+    for my $line (@lines) {
+        $line = _strip($line);
+        next if $line eq "";
+        if ($line =~ /^(.*?)=(.*)$/) {
+            my $task = _strip($2);
+            $task =~ s/^["']|["']$//g;
+            $matched = $task if _spec_key($1) eq $spec;
+        } else {
+            my $task = $line;
+            $task =~ s/^["']|["']$//g;
+            $default = $task;
+        }
+    }
+    return $matched if defined $matched;
+    return $default;
 }
 
 # ----------------------------------------------------------------------
