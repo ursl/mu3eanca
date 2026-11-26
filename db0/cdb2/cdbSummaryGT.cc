@@ -12,6 +12,7 @@
 #include "calDetSetupV1.hh"
 #include "calEventStuffV1.hh"
 #include "calEventStuffV2.hh"
+#include "calEventStuffV3.hh"
 #include "calFibreAlignment.hh"
 #include "calFibreQuality.hh"
 #include "calMppcAlignment.hh"
@@ -94,6 +95,7 @@ calAbs* getCalClass(string tag, cdbAbs* pDB) {
   else if (tag.find("detsetupv1") == 0) cal = new calDetSetupV1(pDB);
   else if (tag.find("eventstuffv1") == 0) cal = new calEventStuffV1(pDB);
   else if (tag.find("eventstuffv2") == 0) cal = new calEventStuffV2(pDB);
+  else if (tag.find("eventstuffv3") == 0) cal = new calEventStuffV3(pDB);
   else if (tag.find("fibrealignment") == 0) cal = new calFibreAlignment(pDB);
   else if (tag.find("fibrequality") == 0) cal = new calFibreQuality(pDB);
   else if (tag.find("mppcalignment") == 0) cal = new calMppcAlignment(pDB);
