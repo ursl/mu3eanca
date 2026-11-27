@@ -16,7 +16,7 @@ while (1)
   echo "`date` sync pass start"
   foreach tree ( $trees )
     echo "`date` $tree"
-    rsync -a --no-links --no-group --chmod=Dg+s $srcroot/$tree/ $dstroot/$tree/
+    rsync -av --no-links --no-group --chmod=Dg+s $srcroot/$tree/ $dstroot/$tree/
   end
   echo "`date` sync pass done"
   sleep $pause
